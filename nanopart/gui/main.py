@@ -7,7 +7,7 @@ import nanopart
 
 from nanopart.gui.charts import ParticleChart, ParticleResultsChart
 from nanopart.gui.util import ParticleModel
-from nanopart.gui.widgets import RangeSlider, UnitsWidget
+from nanopart.gui.widgets import RangeSlider, UnitsWidget, ValidColorLineEdit
 
 from typing import Dict
 
@@ -90,20 +90,29 @@ class ParticleWidget(QtWidgets.QWidget):
 
         # Instrument wide settings
         self.dwelltime = UnitsWidget(units={"ms": 1e-3, "s": 1.0}, unit="s")
-        self.dwelltime.changed.connect(self.updateOutputs)
-        self.dwelltime.changed.connect(self.updateChartLines)
-
         self.uptake = UnitsWidget(units=uptake_units, unit="ml/min")
         self.response = UnitsWidget(units=response_units, unit="counts/(μg/L)")
         self.density = UnitsWidget(units=density_units, unit="g/cm³")
-        self.efficiency = QtWidgets.QLineEdit()
+        self.efficiency = ValidColorLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+
+        self.dwelltime.le.setToolTip(
+            "ICP-MS dwell-time. Read from imported file if time column exists."
+        )
+        self.uptake.le.setToolTip("ICP-MS sample flowrate.")
+        self.response.le.setToolTip("ICP-MS response for ionic standard.")
+        self.density.le.setToolTip("Sample and reference particle density.")
+        self.efficiency.setToolTip(
+            "Nebulisation efficiency. Can be calculated using a reference particle."
+        )
 
         # Complete Changed
         self.model.rowsRemoved.connect(self.completeChanged)
         self.model.rowsInserted.connect(self.completeChanged)
         self.model.modelReset.connect(self.completeChanged)
         self.dwelltime.changed.connect(self.completeChanged)
+        self.dwelltime.changed.connect(self.updateOutputs)
+        self.dwelltime.changed.connect(self.updateChartLines)
         self.uptake.changed.connect(self.completeChanged)
         self.response.changed.connect(self.completeChanged)
         self.density.changed.connect(self.completeChanged)
@@ -236,8 +245,11 @@ class ParticleWidget(QtWidgets.QWidget):
 class ParticleSampleWidget(ParticleWidget):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        self.molarratio = QtWidgets.QLineEdit()
+        self.molarratio = ValidColorLineEdit()
         self.molarratio.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 6))
+        self.molarratio.setToolTip(
+            "Ratio of the mass of the particle to the mass of the analyte."
+        )
 
         self.molarratio.textChanged.connect(self.completeChanged)
 
@@ -265,9 +277,13 @@ class ParticleSampleWidget(ParticleWidget):
 class ParticleReferenceWidget(ParticleWidget):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
+        self.efficiency.setReadOnly(True)
+
         self.concentration = UnitsWidget(units=concentration_units, unit="ng/L")
         self.diameter = UnitsWidget(units={"nm": 1e-9, "μm": 1e-6, "m": 1.0}, unit="nm")
-        self.efficiency.setReadOnly(True)
+
+        self.concentration.le.setToolTip("The concentration of the reference used.")
+        self.diameter.le.setToolTip("The diameter of the reference particle used.")
 
         self.inputs.layout().addRow("Concentration:", self.concentration)
         self.inputs.layout().addRow("Diameter:", self.diameter)
@@ -434,13 +450,8 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.tabs.addTab(self.results, "Results")
 
         widget = QtWidgets.QWidget()
-        # layout_io = QtWidgets.QHBoxLayout()
-        # layout_io.addWidget(self.elements)
-        # layout_io.addWidget(self.inputs)
 
         layout = QtWidgets.QVBoxLayout()
-        # layout.addWidget(ParticleImportWidget())
-        # layout.addLayout(layout_io, 0)
         layout.addWidget(self.tabs, 1)
         widget.setLayout(layout)
         self.setCentralWidget(widget)

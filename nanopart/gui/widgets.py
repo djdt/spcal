@@ -200,6 +200,30 @@ class RangeSlider(QtWidgets.QSlider):
         )
 
 
+class ValidColorLineEdit(QtWidgets.QLineEdit):
+    def __init__(self, text: str = "", parent: QtWidgets.QWidget = None):
+        super().__init__(text, parent)
+        self.textChanged.connect(self.revalidate)
+        self.color_good = self.palette().color(QtGui.QPalette.Base)
+        self.color_bad = QtGui.QColor.fromRgb(255, 172, 172)
+
+    def setValidator(self, validator: QtGui.QValidator) -> None:
+        super().setValidator(validator)
+        self.revalidate()
+
+    def revalidate(self) -> None:
+        self.setValid(self.hasAcceptableInput())
+
+    def setValid(self, valid: bool) -> None:
+        palette = self.palette()
+        if valid:
+            color = self.color_good
+        else:
+            color = self.color_bad
+        palette.setColor(QtGui.QPalette.Base, color)
+        self.setPalette(palette)
+
+
 class UnitsWidget(QtWidgets.QWidget):
     changed = QtCore.Signal()
 
@@ -216,7 +240,7 @@ class UnitsWidget(QtWidgets.QWidget):
         self.units = units
         self.update_value_with_unit = update_value_with_unit
 
-        self.le = QtWidgets.QLineEdit(str(value or ""))
+        self.le = ValidColorLineEdit(str(value or ""))
         self.le.setValidator(QtGui.QDoubleValidator(0.0, 1e99, 10))
         self.le.textChanged.connect(self.changed)
 
