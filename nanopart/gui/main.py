@@ -271,7 +271,7 @@ class ParticleWidget(QtWidgets.QWidget):
 class ParticleSampleWidget(ParticleWidget):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        self.molarratio = ValidColorLineEdit()
+        self.molarratio = ValidColorLineEdit("1.0")
         self.molarratio.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 6))
         self.molarratio.setToolTip(
             "Ratio of the mass of the particle to the mass of the analyte."
