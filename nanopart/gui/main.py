@@ -60,6 +60,7 @@ class ParticleWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
+        self.setAcceptDrops(True)
 
         self.detections: np.ndarray = None
         # self.regions: np.ndarray = None
@@ -67,10 +68,11 @@ class ParticleWidget(QtWidgets.QWidget):
         self.true_background = 0.0
 
         self.button_file = QtWidgets.QPushButton("Open File")
-        self.button_file.pressed.connect(self.loadFile)
+        self.button_file.pressed.connect(self.dialogLoadfile)
 
         self.chart = ParticleChart()
         self.chartview = QtCharts.QChartView(self.chart)
+        # self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
 
         self.model = ParticleModel(np.ndarray((0, 1), dtype=np.float64))
@@ -157,6 +159,28 @@ class ParticleWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+        if (
+            event.mimeData().hasHtml()
+            or event.mimeData().hasText()
+            or event.mimeData().hasUrls()
+        ):
+            event.acceptProposedAction()
+        else:  # pragma: no cover
+            super().dragEnterEvent(event)
+
+    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                self.loadFile(url.toLocalFile())
+            event.acceptProposedAction()
+        elif event.mimeData().hasHtml():
+            pass
+        elif event.mimeData().hasText():
+            pass
+        else:
+            super().dropEvent(event)
+
     def isComplete(self) -> bool:
         return (
             self.uptake.le.hasAcceptableInput()
@@ -176,10 +200,12 @@ class ParticleWidget(QtWidgets.QWidget):
         responses = self.model.array[self.slider.left() : self.slider.right(), 0]
         return responses * factors[self.table.response.currentText()]
 
-    def loadFile(self) -> np.ndarray:
+    def dialogLoadfile(self) -> None:
         file, _filter = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "")
-        if file == "":
-            return
+        if file != "":
+            self.loadFile(file)
+
+    def loadFile(self, file: str) -> np.ndarray:
         self.model.beginResetModel()
         data = np.genfromtxt(file, delimiter=",", skip_footer=4, skip_header=4)
         self.model.array = data[:, 1][:, None]
@@ -376,6 +402,7 @@ class ParticleResultsWidget(QtWidgets.QWidget):
 
     def updateChart(self) -> None:
         self.chart.setData(self.sizes * 1e9, bins=128)
+        self.chart.setLines(np.mean(self.sizes) * 1e9, np.median(self.sizes) * 1e9)
 
     def updateForSample(
         self,
@@ -448,6 +475,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")
         self.tabs.addTab(self.results, "Results")
+        self.tabs.setTabEnabled(self.tabs.indexOf(self.results), False)
 
         widget = QtWidgets.QWidget()
 
