@@ -4,6 +4,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
 import nanopart
+from nanopart.io import read_nanoparticle_file
 
 from nanopart.gui.charts import ParticleChart, ParticleResultsChart
 from nanopart.gui.util import ParticleModel
@@ -87,8 +88,8 @@ class ParticleWidget(QtWidgets.QWidget):
         self.slider.setRange(0, 100)
         self.slider.valueChanged.connect(self.updateChartTrim)
         self.slider.value2Changed.connect(self.updateChartTrim)
-        self.slider.sliderReleased.connect(self.updateChartLines)
         self.slider.sliderReleased.connect(self.updateOutputs)
+        self.slider.sliderReleased.connect(self.updateChartLines)
 
         # Instrument wide settings
         self.dwelltime = UnitsWidget(units={"ms": 1e-3, "s": 1.0}, unit="s")
@@ -206,15 +207,22 @@ class ParticleWidget(QtWidgets.QWidget):
             self.loadFile(file)
 
     def loadFile(self, file: str) -> np.ndarray:
-        self.model.beginResetModel()
-        data = np.genfromtxt(file, delimiter=",", skip_footer=4, skip_header=4)
-        self.model.array = data[:, 1][:, None]
-        # self.model.array = np.stack((np.arange(data.shape[0]), data[:, 1]), axis=1)
-        self.model.endResetModel()
+        try:
+            responses, parameters = read_nanoparticle_file(file, delimiter=",")
+        except ValueError:
+            return
 
         # Update dwell time
-        dwell = np.round(np.mean(np.diff(data[:, 0])), 6)
-        self.dwelltime.le.setText(str(dwell))
+        if "dwelltime" in parameters:
+            self.dwelltime.le.setText(str(parameters["dwelltime"]))
+
+        self.table.response.blockSignals(True)
+        self.table.response.setCurrentText("cps" if parameters["cps"] else "counts")
+        self.table.response.blockSignals(True)
+
+        self.model.beginResetModel()
+        self.model.array = responses[:, None]
+        self.model.endResetModel()
 
         # Update Chart and slider
         self.slider.setRange(0, self.model.rowCount())
@@ -228,13 +236,17 @@ class ParticleWidget(QtWidgets.QWidget):
         if not self.dwelltime.le.hasAcceptableInput():
             return
 
-        # Update the ub, lc, ld
         response = self.responseAsCounts()
+        if response.size == 0:
+            self.limits = None
+            self.detections = None
+            return
 
+        # Update the ub, lc, ld
         ub = np.nanmean(response)
         yc, yd = nanopart.poisson_limits(ub)
 
-        self.limits = (ub, yc - ub, yd - ub)
+        self.limits = (ub, yc + ub, yd + ub)
         self.detections, regions = nanopart.accumulate_detections(response - ub, yd, yc)
         self.true_background = np.nanmean(response[regions == 0])
 
@@ -249,13 +261,10 @@ class ParticleWidget(QtWidgets.QWidget):
         self.updateChartTrim()
 
     def updateChartLines(self) -> None:
-        if not self.dwelltime.le.hasAcceptableInput():
+        if not self.dwelltime.le.hasAcceptableInput() or self.limits is None:
             return
 
-        ub = np.nanmean(self.responseAsCounts())
-        yc, yd = nanopart.poisson_limits(ub)
-        lc, ld = yc + ub, yd + ub
-
+        ub, lc, ld = self.limits
         if self.table.response.currentText() == "cps":
             dwell = self.dwelltime.baseValue()
             ub /= dwell
