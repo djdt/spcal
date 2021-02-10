@@ -1,43 +1,43 @@
 import numpy as np
-import scipy.ndimage as ndi
+# import scipy.ndimage as ndi
 
 from typing import Tuple
 
 
-def accumulate_detections_scipy(
-    y: np.ndarray,
-    limit_detection: float,
-    limit_accumulation: float,
-    # return_regions: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Returns an array of accumulated detections.
+# def accumulate_detections_scipy(
+#     y: np.ndarray,
+#     limit_detection: float,
+#     limit_accumulation: float,
+#     # return_regions: bool = False,
+# ) -> Tuple[np.ndarray, np.ndarray]:
+#     """Returns an array of accumulated detections.
 
-    Contiguous regions above `limit_accumulation` that contain at least one value above
-    `limit_detection` are summed.
+#     Contiguous regions above `limit_accumulation` that contain at least one value above
+#     `limit_detection` are summed.
 
-    Args:
-        y: array
-        limit_detection: value for detection of region
-        limit_accumulation: minimum accumulation value
+#     Args:
+#         y: array
+#         limit_detection: value for detection of region
+#         limit_accumulation: minimum accumulation value
 
-    Returns:
-        summed detection regions
-        labels of regions
-    """
-    # Label regions above the Lc
-    labels, n = ndi.label(y > limit_accumulation)
-    # Idx of labels without background
-    idx = np.arange(1, n)
-    if idx.size == 0:
-        return np.array([]), np.array([])
-    # Remove indices without a value above the Ld
-    idx = idx[ndi.maximum(y, labels=labels, index=idx) > limit_detection]
-    # Compute the sum (minus the mean of background) of remaining regions
-    sums = ndi.sum(y, labels=labels, index=idx)
-    # Remove labels of undetected regions
-    labels[~np.isin(labels, idx)] = 0
+#     Returns:
+#         summed detection regions
+#         labels of regions
+#     """
+#     # Label regions above the Lc
+#     labels, n = ndi.label(y > limit_accumulation)
+#     # Idx of labels without background
+#     idx = np.arange(1, n)
+#     if idx.size == 0:
+#         return np.array([]), np.array([])
+#     # Remove indices without a value above the Ld
+#     idx = idx[ndi.maximum(y, labels=labels, index=idx) > limit_detection]
+#     # Compute the sum (minus the mean of background) of remaining regions
+#     sums = ndi.sum(y, labels=labels, index=idx)
+#     # Remove labels of undetected regions
+#     labels[~np.isin(labels, idx)] = 0
 
-    return sums, labels
+#     return sums, labels
 
 
 def accumulate_detections(
@@ -60,42 +60,57 @@ def accumulate_detections(
         summed detection regions
         labels of regions
     """
-    # Label regions above the Lc
+    if limit_detection < limit_accumulation:
+        raise ValueError("limit_detection must be greater than limit_accumulation.")
+    # Get start and end positions of regions above accumulation limit
     diff = np.diff((y > limit_accumulation).astype(np.int8), prepend=0)
-    n = np.count_nonzero(diff == 1)
-    ix = np.arange(1, n + 1)
-    diff[diff == 1] = ix
-    m = np.count_nonzero(diff == -1)
-    nx = np.arange(1, m + 1)
-    diff[diff == -1] = -nx
-    labels = np.cumsum(diff)
+    starts = np.flatnonzero(diff == 1)
+    ends = np.flatnonzero(diff == -1)
+    # Stack into pairs of start, end. If no final end position set it as end of array.
+    end_point_added = False
+    if starts.size != ends.size:
+        ends = np.concatenate((ends, [diff.size - 1]))
+        end_point_added = True
+    regions = np.stack((starts, ends), axis=1)
 
-    regions = labels == ix[:, None]
-    # labels, n = ndi.label(y > limit_accumulation)
-    maximums = np.maximum()
-    # Idx of labels without background
-    # idx = np.arange(1, n)
-    # if idx.size == 0:
-    #     return np.array([]), np.array([])
-    # Remove indices without a value above the Ld
-    # idx = idx[ndi.maximum(y, labels=labels, index=idx) > limit_detection]
-    # Compute the sum (minus the mean of background) of remaining regions
-    sums = ndi.sum(y, labels=labels, index=idx)
-    # Remove labels of undetected regions
-    labels[~np.isin(labels, idx)] = 0
+    # Get maximum values in each region
+    maxes = np.maximum.reduceat(y, regions.ravel())[::2]
+    detections = maxes > limit_detection
+    # Remove regions without a max value above detection limit
+    regions = regions[detections]
+    # Sum regions
+    sums = np.add.reduceat(y, regions.ravel())[::2]
+
+    # Create a label array of detections
+    labels = np.zeros(y.size, dtype=np.int16)
+    ix = np.arange(1, regions.shape[0] + 1)
+    # Set start, end pairs to +i, -i
+    labels[regions[:, 0]] = ix
+    if end_point_added:
+        labels[regions[:-1, 1]] = -ix[:-1]
+    else:
+        labels[regions[:, 1]] = -ix
+    # Cumsum to label
+    labels = np.cumsum(labels)
 
     return sums, labels
 
-import time
 
-x = np.random.random(10000)
-start = time.time()
-r, l = accumulate_detections_scipy(x, 0.5, 0.25)
-print(time.time() - start)
-start = time.time()
-r2, l2 = accumulate_detections(x, 0.5, 0.25)
-print(time.time() - start)
-print(np.all(r == r2))
+# import time
+
+# x = np.random.random(10000)
+# start = time.time()
+# r, l = accumulate_detections_scipy(x, 0.9, 0.25)
+# print(time.time() - start)
+# start = time.time()
+# r2, l2 = accumulate_detections(x, 0.9, 0.25)
+# print(time.time() - start)
+# # print(l
+# i = np.argmax(l2 < 0)
+# print(i, l2[i-50:i+50])
+# print(np.all(np.isclose(r, r2)))
+# print(np.all((l > 0) == (l2 > 0)))
+
 
 def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
     """Calulate Yc and Yd for mean `ub`.
