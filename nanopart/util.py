@@ -1,43 +1,6 @@
 import numpy as np
-# import scipy.ndimage as ndi
 
 from typing import Tuple
-
-
-# def accumulate_detections_scipy(
-#     y: np.ndarray,
-#     limit_detection: float,
-#     limit_accumulation: float,
-#     # return_regions: bool = False,
-# ) -> Tuple[np.ndarray, np.ndarray]:
-#     """Returns an array of accumulated detections.
-
-#     Contiguous regions above `limit_accumulation` that contain at least one value above
-#     `limit_detection` are summed.
-
-#     Args:
-#         y: array
-#         limit_detection: value for detection of region
-#         limit_accumulation: minimum accumulation value
-
-#     Returns:
-#         summed detection regions
-#         labels of regions
-#     """
-#     # Label regions above the Lc
-#     labels, n = ndi.label(y > limit_accumulation)
-#     # Idx of labels without background
-#     idx = np.arange(1, n)
-#     if idx.size == 0:
-#         return np.array([]), np.array([])
-#     # Remove indices without a value above the Ld
-#     idx = idx[ndi.maximum(y, labels=labels, index=idx) > limit_detection]
-#     # Compute the sum (minus the mean of background) of remaining regions
-#     sums = ndi.sum(y, labels=labels, index=idx)
-#     # Remove labels of undetected regions
-#     labels[~np.isin(labels, idx)] = 0
-
-#     return sums, labels
 
 
 def accumulate_detections(
@@ -94,22 +57,6 @@ def accumulate_detections(
     labels = np.cumsum(labels)
 
     return sums, labels
-
-
-# import time
-
-# x = np.random.random(10000)
-# start = time.time()
-# r, l = accumulate_detections_scipy(x, 0.9, 0.25)
-# print(time.time() - start)
-# start = time.time()
-# r2, l2 = accumulate_detections(x, 0.9, 0.25)
-# print(time.time() - start)
-# # print(l
-# i = np.argmax(l2 < 0)
-# print(i, l2[i-50:i+50])
-# print(np.all(np.isclose(r, r2)))
-# print(np.all((l > 0) == (l2 > 0)))
 
 
 def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
