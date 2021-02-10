@@ -2,11 +2,12 @@ batch conversion
 
 gaussian
 options for epislon / sigma limits
-LOD on hist
-
-print image to png
 
 calculate the Neb Eff from size alone
 maybe also the response
 
+LOD on hist
 fit a gaussian / log / to hist
+hover points for hist
+
+print image to png
