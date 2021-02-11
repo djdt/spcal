@@ -91,7 +91,7 @@ def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
 # Particle functions
 
 
-def nebulisation_efficiency(
+def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flow: float, time: float
 ) -> float:
     """The nebulistaion efficiency.
@@ -105,6 +105,27 @@ def nebulisation_efficiency(
     """
 
     return count / (concentration / mass * flow * time)
+
+
+def nebulisation_efficiency_from_mass(
+    signal: np.ndarray,
+    dwell: float,
+    mass: float,
+    flowrate: float,
+    response_factor: float,
+    mass_fraction: float = 1.0,
+) -> np.ndarray:
+    """Calculates efficiency for signals given a defined mass.
+
+    Args:
+        signal: array of reference particle signals
+        dwell: dwell time (s)
+        mass: of reference particle (kg)
+        flowrate: sample inlet flowrate (L/s)
+        response_factor: counts / concentration (kg/L)
+        mass_fraction: molar mass particle / molar mass analyte
+    """
+    return (mass * response_factor) / (signal * (dwell * flowrate * mass_fraction))
 
 
 def particle_mass(
