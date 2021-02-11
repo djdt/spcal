@@ -163,7 +163,6 @@ class NPInputWidget(QtWidgets.QWidget):
             detections, labels = nanopart.accumulate_detections(
                 responses, self.limits[3], self.limits[2]
             )
-            print(detections[:50])
 
             self.detections = detections
             self.count.setText(str(detections.size))
@@ -184,7 +183,7 @@ class NPInputWidget(QtWidgets.QWidget):
             self.options.dwelltime.baseValue(),
             trim=(self.slider.left(), self.slider.right()),
         )
-        if responses is None:
+        if responses is None or responses.size == 0:
             return
 
         mean = np.mean(responses)

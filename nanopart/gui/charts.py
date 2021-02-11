@@ -122,7 +122,6 @@ class ParticleChart(QtCharts.QChart):
         xmin, xmax = 0, self.series.count()
         for line, value in zip(self.hlines, values):
             line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
-        print("setting", values)
         self.update()
 
     def setVerticalLines(self, values: List[float]) -> None:
