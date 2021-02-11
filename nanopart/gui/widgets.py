@@ -201,11 +201,26 @@ class RangeSlider(QtWidgets.QSlider):
 
 
 class ValidColorLineEdit(QtWidgets.QLineEdit):
-    def __init__(self, text: str = "", parent: QtWidgets.QWidget = None):
+    def __init__(
+        self,
+        text: str = "",
+        color_good: QtGui.QColor = None,
+        color_bad: QtGui.QColor = None,
+        parent: QtWidgets.QWidget = None,
+    ):
         super().__init__(text, parent)
+        self.active = True
         self.textChanged.connect(self.revalidate)
-        self.color_good = self.palette().color(QtGui.QPalette.Base)
-        self.color_bad = QtGui.QColor.fromRgb(255, 172, 172)
+        if color_good is None:
+            color_good = self.palette().color(QtGui.QPalette.Base)
+        if color_bad is None:
+            color_bad = QtGui.QColor.fromRgb(255, 172, 172)
+        self.color_good = color_good
+        self.color_bad = color_bad
+
+    def setActive(self, active: bool) -> None:
+        self.active = active
+        self.revalidate()
 
     def setValidator(self, validator: QtGui.QValidator) -> None:
         super().setValidator(validator)
@@ -216,66 +231,9 @@ class ValidColorLineEdit(QtWidgets.QLineEdit):
 
     def setValid(self, valid: bool) -> None:
         palette = self.palette()
-        if valid:
+        if valid or not self.active:
             color = self.color_good
         else:
             color = self.color_bad
         palette.setColor(QtGui.QPalette.Base, color)
         self.setPalette(palette)
-
-
-class UnitsWidget(QtWidgets.QWidget):
-    changed = QtCore.Signal()
-
-    def __init__(
-        self,
-        units: Dict[str, float],
-        value: float = None,
-        unit: str = None,
-        update_value_with_unit: bool = False,
-        parent: QtWidgets.QWidget = None,
-    ):
-        super().__init__(parent)
-
-        self.units = units
-        self.update_value_with_unit = update_value_with_unit
-
-        self.le = ValidColorLineEdit(str(value or ""))
-        self.le.setValidator(QtGui.QDoubleValidator(0.0, 1e99, 10))
-        self.le.textChanged.connect(self.changed)
-
-        self.combo = QtWidgets.QComboBox()
-        self.combo.addItems(units.keys())
-        if unit is not None:
-            self.combo.setCurrentText(unit)
-        self.combo.currentTextChanged.connect(self.unitChanged)
-
-        self.previous_unit = self.combo.currentText()
-
-        layout = QtWidgets.QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.le, 1)
-        layout.addWidget(self.combo, 0)
-        self.setLayout(layout)
-
-    def unitChanged(self, unit: str) -> None:
-        if self.update_value_with_unit and self.le.hasAcceptableInput():
-            base = float(self.le.text()) * self.units[self.previous_unit]
-            self.setBaseValue(base)
-        else:
-            self.changed.emit()
-        self.previous_unit = unit
-
-    def sync(self, other: "UnitsWidget") -> None:
-        self.le.textChanged.connect(other.le.setText)
-        other.le.textChanged.connect(self.le.setText)
-        self.combo.currentTextChanged.connect(other.combo.setCurrentText)
-        other.combo.currentTextChanged.connect(self.combo.setCurrentText)
-
-    def baseValue(self) -> float:
-        unit = self.combo.currentText()
-        return float(self.le.text()) * self.units[unit]
-
-    def setBaseValue(self, base: float) -> None:
-        unit = self.combo.currentText()
-        self.le.setText(f"{base / self.units[unit]:.6g}")

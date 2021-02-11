@@ -33,52 +33,102 @@ class ParticleChart(QtCharts.QChart):
         self.series.attachAxis(self.xaxis)
         self.series.attachAxis(self.yaxis)
 
-        self.lines: List[QtCharts.QLineSeries] = []
-        for color, name in zip(
-            [QtCore.Qt.red, QtCore.Qt.green, QtCore.Qt.blue], ["μb", "Lc", "Ld"]
-        ):
-            line = QtCharts.QLineSeries()
-            line.setPen(QtGui.QPen(color, 1.0, QtCore.Qt.DashLine))
-            line.setName(name)
-
-            self.addSeries(line)
-            line.attachAxis(self.xaxis)
-            line.attachAxis(self.yaxis)
-            self.lines.append(line)
-
-        self.trims: List[QtCharts.QLineSeries] = []
-        for i in range(2):
-            line = QtCharts.QLineSeries()
-            line.setPen(QtGui.QPen(QtCore.Qt.red, 2.0, QtCore.Qt.SolidLine))
-
-            self.addSeries(line)
-            line.attachAxis(self.xaxis)
-            line.attachAxis(self.yaxis)
-            self.trims.append(line)
+        self.hlines: List[QtCharts.QLineSeries] = []
+        self.vlines: List[QtCharts.QLineSeries] = []
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
-        for series in self.trims:
-            self.legend().markers(series)[0].setVisible(False)
+
+    def clearHorizontalLines(self) -> None:
+        for line in self.hlines:
+            self.removeSeries(line)
+        self.hlines.clear()
+
+    def clearVerticalLines(self) -> None:
+        for line in self.vlines:
+            self.removeSeries(line)
+        self.vlines.clear()
 
     def setData(self, points: np.ndarray) -> None:
         self.yvalues = points[:, 1]
         poly = array_to_polygonf(points)
         self.series.replace(poly)
 
-    def setTrim(self, left: int, right: int) -> None:
-        ymin, ymax = 0, 1e99
+    def drawHorizontalLines(
+        self,
+        values: List[float],
+        colors: List[QtGui.QColor] = None,
+        names: List[str] = None,
+        styles: List[QtCore.Qt.PenStyle] = None,
+        visible_in_legend: bool = True,
+    ) -> None:
 
-        for line, value in zip(self.trims, [left, right]):
-            line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
+        # Clear lines
+        self.clearHorizontalLines()
+
+        for i, value in enumerate(values):
+            pen = QtGui.QPen()
+            if colors is not None:
+                pen.setColor(colors[i])
+            if styles is not None:
+                pen.setStyle(styles[i])
+            line = QtCharts.QLineSeries()
+            line.setPen(pen)
+            if names is not None:
+                line.setName(names[i])
+
+            self.addSeries(line)
+            line.attachAxis(self.xaxis)
+            line.attachAxis(self.yaxis)
+            if not visible_in_legend:
+                self.legend().markers(line)[0].setVisible(False)
+            self.hlines.append(line)
+
+        self.setHorizontalLines(values)
+
+    def drawVerticalLines(
+        self,
+        values: List[float],
+        colors: List[QtGui.QColor] = None,
+        names: List[str] = None,
+        styles: List[QtCore.Qt.PenStyle] = None,
+        visible_in_legend: bool = True,
+    ) -> None:
+        self.clearVerticalLines()
+
+        for i, value in enumerate(values):
+            pen = QtGui.QPen()
+            if colors is not None:
+                pen.setColor(colors[i])
+            if styles is not None:
+                pen.setStyle(styles[i])
+            line = QtCharts.QLineSeries()
+            line.setPen(pen)
+            if names is not None:
+                line.setName(names[i])
+
+            self.addSeries(line)
+            line.attachAxis(self.xaxis)
+            line.attachAxis(self.yaxis)
+
+            if not visible_in_legend:
+                self.legend().markers(line)[0].setVisible(False)
+            self.vlines.append(line)
+
+        self.setVerticalLines(values)
+
+    def setHorizontalLines(self, values: List[float]) -> None:
+        xmin, xmax = 0, self.series.count()
+        for line, value in zip(self.hlines, values):
+            line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
+        print("setting", values)
         self.update()
 
-    def setLines(self, ub: float, lc: float, ld: float) -> None:
-        xmin, xmax = 0, self.series.count()
-
-        for line, value in zip(self.lines, [ub, lc, ld]):
-            line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
+    def setVerticalLines(self, values: List[float]) -> None:
+        ymin, ymax = 0, 1e99
+        for line, value in zip(self.vlines, values):
+            line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 
     def updateYRange(self, xmin: float = None, xmax: float = None) -> None:

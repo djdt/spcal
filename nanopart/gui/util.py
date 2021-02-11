@@ -162,26 +162,3 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
             return None
 
         return str(section)
-
-
-class ParticleModel(NumpyArrayTableModel):
-    def __init__(
-        self,
-        array: np.ndarray,
-        parent: QtCore.QObject = None,
-    ):
-        super().__init__(array, (0, 1), np.nan, parent)
-
-    def headerData(
-        self,
-        section: int,
-        orientation: QtCore.Qt.Orientation,
-        role: QtCore.Qt.ItemDataRole,
-    ) -> str:
-        if role != QtCore.Qt.DisplayRole:  # pragma: no cover
-            return None
-
-        if orientation == QtCore.Qt.Horizontal:
-            return "Response"
-        else:
-            return str(section)
