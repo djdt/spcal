@@ -10,8 +10,6 @@ from nanopart.gui.npoptions import NPOptionsWidget
 from nanopart.gui.npinputs import NPSampleWidget
 from nanopart.gui.units import UnitsWidget
 
-from typing import Dict
-
 
 class NPResultsWidget(QtWidgets.QWidget):
     def __init__(
@@ -45,14 +43,17 @@ class NPResultsWidget(QtWidgets.QWidget):
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
-            [0, 0, 0],
+            [0, 0],
+            # [0, 0, 0],
             colors=[
                 QtGui.QColor(255, 0, 0),
                 QtGui.QColor(0, 0, 255),
-                QtGui.QColor(0, 255, 0),
+                # QtGui.QColor(0, 255, 0),
             ],
             names=["mean", "median", "lod"],
-            styles=[QtCore.Qt.DashLine] * 3,
+            # names=["mean", "median", "lod"],
+            styles=[QtCore.Qt.DashLine] * 2,
+            # styles=[QtCore.Qt.DashLine] * 3,
         )
         self.chartview = QtCharts.QChartView(self.chart)
 
@@ -90,7 +91,7 @@ class NPResultsWidget(QtWidgets.QWidget):
             [
                 np.mean(self.sizes) * 1e9,
                 np.median(self.sizes) * 1e9,
-                self.background_lod_size * 1e9,
+                # self.background_lod_size * 1e9,
             ]
         )
 
@@ -128,7 +129,7 @@ class NPResultsWidget(QtWidgets.QWidget):
 
         self.ionic_background = self.sample.background / response
         self.background_lod_mass = nanopart.particle_mass(
-            self.ionic_background,
+            self.sample.limits[3],
             dwell=dwelltime,
             efficiency=efficiency,
             flowrate=uptake,
@@ -138,8 +139,6 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.background_lod_size = nanopart.particle_size(
             self.background_lod_mass, density=density
         )
-        print(self.background_lod_mass)
-        print(self.background_lod_size)
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)
