@@ -1,4 +1,3 @@
-import re
 from PySide2 import QtCore, QtGui, QtWidgets
 from nanopart.gui.widgets import ValidColorLineEdit
 
@@ -90,8 +89,12 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def setValue(self, value: Union[float, str]) -> None:
         if isinstance(value, float):
-            value = self.lineedit.validator.fixup(str(value))
-        self.lineedit.setText(value)
+            decimals = self.lineedit.validator().decimals()
+            self.lineedit.setText(f"{value:.{decimals}g}")
+            if not self.lineedit.hasAcceptableInput():
+                self.lineedit.setText(f"{value:.{decimals}f}")
+        else:
+            self.lineedit.setText(value)
 
     def baseValue(self) -> float:
         unit = self.combo.currentText()
@@ -101,11 +104,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def setBaseValue(self, base: float) -> None:
         unit = self.combo.currentText()
-        # text = self.lineedit.validator().fixup(str(base / self.units[unit]))
-        decimals = self.lineedit.validator().decimals()
-        self.lineedit.setText(f"{base / self.units[unit]:.{decimals}g}")
-        if not self.lineedit.hasAcceptableInput():
-            self.lineedit.setText(f"{base / self.units[unit]:.{decimals}f}")
+        self.setValue(base / self.units[unit])
 
     def unitChanged(self, unit: str) -> None:
         if self.update_value_with_unit and self.lineedit.hasAcceptableInput():
