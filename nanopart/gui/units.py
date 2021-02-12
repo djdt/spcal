@@ -1,3 +1,4 @@
+import re
 from PySide2 import QtCore, QtGui, QtWidgets
 from nanopart.gui.widgets import ValidColorLineEdit
 
@@ -20,6 +21,35 @@ from typing import Dict, Tuple, Union
 #     "counts/(mg/L)": 1e6,
 # }
 # flowrate = {"ml/min": 1e-3 / 60.0, "ml/s": 1e-3, "L/min": 1.0 / 60.0, "L/s": 1.0}
+
+
+# class SigFigValidator(QtWidgets.QDoubleValidator):
+#     sigfig_re = re.compile("[^0]")
+
+#     def __init__(
+#         self,
+#         bottom: float,
+#         top: float,
+#         decimals: int = 4,
+
+#         parent: QtWidgets.QWidget = None,
+#     ):
+#         super().__init__(bottom, top, decimals, parent)
+
+#     def count_significant(self, input: str) -> int:
+#         sigfigs = input.replace(".", "").replace("E", "e").split("e")
+#         match = self.sigfig_re.search(sigfigs)
+#         if match:
+#             return len(sigfigs) - match.start()
+#         return -1
+
+#     def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
+#         sigfigs = input.replace(".", "").replace("E", "e").split("e")[0]
+#         match = self.sigfig_re.search(sigfigs)
+#         if match:
+#             count = len(sigfigs) - match.start()
+#         else:
+#             count = -1
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -73,11 +103,12 @@ class UnitsWidget(QtWidgets.QWidget):
         unit = self.combo.currentText()
         # text = self.lineedit.validator().fixup(str(base / self.units[unit]))
         decimals = self.lineedit.validator().decimals()
-        text = f"{base / self.units[unit]:.{decimals}g}"
-        self.lineedit.setText(text)
+        self.lineedit.setText(f"{base / self.units[unit]:.{decimals}g}")
+        if not self.lineedit.hasAcceptableInput():
+            self.lineedit.setText(f"{base / self.units[unit]:.{decimals}f}")
 
     def unitChanged(self, unit: str) -> None:
-        if self.update_value_with_unit and self.lineedit.hasAcceptablineeditInput():
+        if self.update_value_with_unit and self.lineedit.hasAcceptableInput():
             base = float(self.lineedit.text()) * self.units[self._previous_unit]
             self.setBaseValue(base)
         else:

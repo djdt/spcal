@@ -170,25 +170,60 @@ class ParticleHistogram(QtCharts.QChart):
         self.series.attachAxis(self._xaxis)
         self.series.attachAxis(self.yaxis)
 
-        self.lines: List[QtCharts.QLineSeries] = []
+        self.vlines: List[QtCharts.QLineSeries] = []
 
-        for color, name in zip([QtCore.Qt.red, QtCore.Qt.blue], ["mean", "median"]):
-            line = QtCharts.QLineSeries()
-            line.setPen(QtGui.QPen(color, 1.0, QtCore.Qt.DashLine))
-            line.setName(name)
+        # for color, name in zip([QtCore.Qt.red, QtCore.Qt.blue], ["mean", "median"]):
+        #     line = QtCharts.QLineSeries()
+        #     line.setPen(QtGui.QPen(color, 1.0, QtCore.Qt.DashLine))
+        #     line.setName(name)
 
-            self.addSeries(line)
-            line.attachAxis(self.xaxis)
-            line.attachAxis(self.yaxis)
-            self.lines.append(line)
+        #     self.addSeries(line)
+        #     line.attachAxis(self.xaxis)
+        #     line.attachAxis(self.yaxis)
+        #     self.lines.append(line)
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
 
-    def setLines(self, mean: float, median: float) -> None:
-        ymin, ymax = self.yaxis.min(), self.yaxis.max()
+    def clearVerticalLines(self) -> None:
+        for line in self.vlines:
+            self.removeSeries(line)
+        self.vlines.clear()
 
-        for line, value in zip(self.lines, [mean, median]):
+    def drawVerticalLines(
+        self,
+        values: List[float],
+        colors: List[QtGui.QColor] = None,
+        names: List[str] = None,
+        styles: List[QtCore.Qt.PenStyle] = None,
+        visible_in_legend: bool = True,
+    ) -> None:
+        self.clearVerticalLines()
+
+        for i, value in enumerate(values):
+            pen = QtGui.QPen()
+            if colors is not None:
+                pen.setColor(colors[i])
+            if styles is not None:
+                pen.setStyle(styles[i])
+            line = QtCharts.QLineSeries()
+            line.setPen(pen)
+            if names is not None:
+                line.setName(names[i])
+
+            self.addSeries(line)
+            line.attachAxis(self.xaxis)
+            line.attachAxis(self.yaxis)
+
+            if not visible_in_legend:
+                self.legend().markers(line)[0].setVisible(False)
+            self.vlines.append(line)
+
+        self.setVerticalLines(values)
+
+    def setVerticalLines(self, values: List[float]) -> None:
+        ymin, ymax = self.yaxis.min(), self.yaxis.max()
+        for line, value in zip(self.vlines, values):
             line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 

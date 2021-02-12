@@ -28,8 +28,8 @@ class NPInputWidget(QtWidgets.QWidget):
         self.options.method.currentTextChanged.connect(self.updateLimits)
 
         self.limits: Tuple[str, float, float, float] = None
-        self.detections: np.ndarray = None
-        self.true_background = 0.0
+        self.detections: np.ndarray = np.array([])
+        self.background = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadfile)
@@ -58,13 +58,13 @@ class NPInputWidget(QtWidgets.QWidget):
 
         self.count = QtWidgets.QLineEdit("0")
         self.count.setReadOnly(True)
-        self.background = QtWidgets.QLineEdit()
-        self.background.setReadOnly(True)
+        self.background_count = QtWidgets.QLineEdit()
+        self.background_count.setReadOnly(True)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
-        self.outputs.layout().addRow("Background mean:", self.background)
+        self.outputs.layout().addRow("Background count:", self.background_count)
 
         layout_table = QtWidgets.QVBoxLayout()
         layout_table.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
@@ -165,14 +165,18 @@ class NPInputWidget(QtWidgets.QWidget):
             )
 
             self.detections = detections
+            self.background = np.mean(responses[labels == 0])
+
             self.count.setText(str(detections.size))
-            background = np.mean(responses[labels == 0])
-            self.background.setText(f"{background:.4g}")
+            self.background_count.setText(f"{self.background:.4g}")
             self.detectionsChanged.emit(detections.size)
         else:
+            self.detections = np.array([])
+            self.background = None
+
             self.count.setText("")
-            self.background.setText("")
-            self.detectionsChanged.emit(0)
+            self.background_count.setText("")
+        self.detectionsChanged.emit(detections.size)
 
     def updateLimits(self) -> None:
         self.chart.clearHorizontalLines()

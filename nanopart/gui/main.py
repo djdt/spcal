@@ -10,12 +10,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         super().__init__(parent)
 
         self.tabs = QtWidgets.QTabWidget()
-        # self.tabs.currentChanged.connect(self.onTabChanged)
+        self.tabs.currentChanged.connect(self.onTabChanged)
 
         self.options = NPOptionsWidget()
         self.sample = NPSampleWidget(self.options)
         self.reference = NPReferenceWidget(self.options)
-        self.results = NPResultsWidget()  # self.options)
+        self.results = NPResultsWidget(self.options, self.sample)
 
         self.reference.efficiency.textChanged.connect(self.options.setEfficiency)
 
@@ -43,7 +43,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def onInputsChanged(self, detections: int) -> None:
+        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
+
+    def onInputsChanged(self) -> None:
         results_enabled = self.options.isComplete() and self.sample.isComplete()
         self.tabs.setTabEnabled(self.tabs.indexOf(self.results), results_enabled)
 
@@ -52,11 +54,5 @@ class NanoPartWindow(QtWidgets.QMainWindow):
     #     self.tabs.setTabEnabled(self.tabs.indexOf(self.results), complete)
 
     def onTabChanged(self, index: int) -> None:
-        if self.tabs.widget(index) == self.results:
-            self.results.updateForSample(
-                self.sample.detections,
-                self.sample.true_background,
-                self.sample.poisson_limits[2],
-                self.sample.parameters(),
-            )
-            # self.results.updateChart()
+        if index == self.tabs.indexOf(self.results):
+            self.results.updateResults()

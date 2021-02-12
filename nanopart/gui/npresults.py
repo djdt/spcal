@@ -44,6 +44,16 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.background_lod_size = 0.0
 
         self.chart = ParticleHistogram()
+        self.chart.drawVerticalLines(
+            [0, 0, 0],
+            colors=[
+                QtGui.QColor(255, 0, 0),
+                QtGui.QColor(0, 0, 255),
+                QtGui.QColor(0, 255, 0),
+            ],
+            names=["mean", "median", "lod"],
+            styles=[QtCore.Qt.DashLine] * 3,
+        )
         self.chartview = QtCharts.QChartView(self.chart)
 
         self.outputs = QtWidgets.QGroupBox("outputs")
@@ -76,17 +86,23 @@ class NPResultsWidget(QtWidgets.QWidget):
 
     def updateChart(self) -> None:
         self.chart.setData(self.sizes * 1e9, bins=128)
-        self.chart.setLines(np.mean(self.sizes) * 1e9, np.median(self.sizes) * 1e9)
+        self.chart.setVerticalLines(
+            [
+                np.mean(self.sizes) * 1e9,
+                np.median(self.sizes) * 1e9,
+                self.background_lod_size * 1e9,
+            ]
+        )
 
     def updateResults(self) -> None:
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
         response = self.options.response.baseValue()
-        efficiency = float(self.options.efficiency)
+        efficiency = float(self.options.efficiency.text())
 
         time = self.sample.timeAsSeconds()
         density = self.sample.density.baseValue()
-        molarratio = float(self.sample.molarratio)
+        molarratio = float(self.sample.molarratio.text())
 
         self.masses = nanopart.particle_mass(
             self.sample.detections,
@@ -98,7 +114,7 @@ class NPResultsWidget(QtWidgets.QWidget):
         )
         self.sizes = nanopart.particle_size(self.masses, density=density)
         self.number_concentration = nanopart.particle_number_concentration(
-            detections.size,
+            self.sample.detections.size,
             efficiency=efficiency,
             flowrate=uptake,
             time=time,
@@ -110,9 +126,9 @@ class NPResultsWidget(QtWidgets.QWidget):
             time=time,
         )
 
-        self.ionic_background = background / response
+        self.ionic_background = self.sample.background / response
         self.background_lod_mass = nanopart.particle_mass(
-            limit_detection,
+            self.ionic_background,
             dwell=dwelltime,
             efficiency=efficiency,
             flowrate=uptake,
@@ -122,8 +138,12 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.background_lod_size = nanopart.particle_size(
             self.background_lod_mass, density=density
         )
+        print(self.background_lod_mass)
+        print(self.background_lod_size)
 
-        self.count.setText(f"{detections.size}")
+        self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)
         self.conc.setBaseValue(self.concentration)
         self.background.setBaseValue(self.ionic_background)
+
+        self.updateChart()
