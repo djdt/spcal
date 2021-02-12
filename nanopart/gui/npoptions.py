@@ -13,15 +13,6 @@ class NPOptionsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
 
-        # concentration_units = {
-        #     "fg/L": 1e-18,
-        #     "pg/L": 1e-15,
-        #     "ng/L": 1e-12,
-        #     "μg/L": 1e-9,
-        #     "mg/L": 1e-6,
-        #     "g/L": 1e-3,
-        #     "kg/L": 1.0,
-        # }
         # density_units = {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0}
         response_units = {
             "counts/(pg/L)": 1e15,
@@ -105,27 +96,37 @@ class NPOptionsWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def options(self) -> Dict[str, float]:
-        return {
-            "dwelltime": self.dwelltime.baseValue(),
-            "efficiency": float(self.efficiency.text())
-            if self.efficiency.hasAcceptableInput()
-            else None,
-            "response": self.response.baseValue(),
-            "uptake": self.uptake.baseValue(),
-        }
+    def isComplete(self) -> bool:
+        return all(
+            [
+                self.dwelltime.hasAcceptableInput(),
+                self.efficiency.hasAcceptableInput(),
+                self.response.hasAcceptableInput(),
+                self.uptake.hasAcceptableInput(),
+            ]
+        )
 
-    def setOptions(self, options: Dict[str, float]) -> None:
-        self.blockSignals(True)
-        if "dwelltime" in options:
-            self.dwelltime.setBaseValue(options["dwelltime"])
-        if "efficiency" in options:
-            self.efficiency.setText(float(options["efficiency"]))
-        if "response" in options:
-            self.response.setBaseValue(options["response"])
-        if "uptake" in options:
-            self.uptake.setBaseValue(options["uptake"])
-        self.blockSignals(False)
+    # def options(self) -> Dict[str, float]:
+    #     return {
+    #         "dwelltime": self.dwelltime.baseValue(),
+    #         "efficiency": float(self.efficiency.text())
+    #         if self.efficiency.hasAcceptableInput()
+    #         else None,
+    #         "response": self.response.baseValue(),
+    #         "uptake": self.uptake.baseValue(),
+    #     }
+
+    # def setOptions(self, options: Dict[str, float]) -> None:
+    #     self.blockSignals(True)
+    #     if "dwelltime" in options:
+    #         self.dwelltime.setBaseValue(options["dwelltime"])
+    #     if "efficiency" in options:
+    #         self.efficiency.setText(float(options["efficiency"]))
+    #     if "response" in options:
+    #         self.response.setBaseValue(options["response"])
+    #     if "uptake" in options:
+    #         self.uptake.setBaseValue(options["uptake"])
+    #     self.blockSignals(False)
 
     def setEfficiency(self, text: str) -> None:
         self.efficiency.setEnabled(text == "")

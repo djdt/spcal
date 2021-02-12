@@ -145,7 +145,7 @@ class ParticleChart(QtCharts.QChart):
         self.yaxis.setRange(0.0, ymax)
 
 
-class ParticleResultsChart(QtCharts.QChart):
+class ParticleHistogram(QtCharts.QChart):
     def __init__(self, parent: QtWidgets.QGraphicsItem = None):
         super().__init__(parent)
         self.setMinimumSize(640, 320)

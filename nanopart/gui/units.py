@@ -94,6 +94,9 @@ class UnitsWidget(QtWidgets.QWidget):
     def hasAcceptableInput(self) -> bool:
         return self.lineedit.hasAcceptableInput()
 
+    def setReadOnly(self, readonly: bool) -> None:
+        self.lineedit.setReadOnly(readonly)
+
     def setToolTip(self, text: str) -> None:
         self.lineedit.setToolTip(text)
         self.combo.setToolTip(text)

@@ -252,6 +252,14 @@ class NPSampleWidget(NPInputWidget):
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar ratio:", self.molarratio)
 
+    def isComplete(self) -> bool:
+        return (
+            self.detections is not None
+            and self.detections.size > 0
+            and self.molarratio.hasAcceptableInput()
+            and self.density.hasAcceptableInput()
+        )
+
 
 class NPReferenceWidget(NPInputWidget):
     def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
