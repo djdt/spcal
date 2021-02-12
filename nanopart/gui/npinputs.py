@@ -4,6 +4,7 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 
 import nanopart
+from nanopart import elementdata
 
 from nanopart.gui.charts import ParticleChart
 from nanopart.gui.tables import ParticleModel, ParticleTable
@@ -43,7 +44,7 @@ class NPInputWidget(QtWidgets.QWidget):
         self.model.dataChanged.connect(self.updateLimits)
 
         self.table = ParticleTable(self.model)
-        self.table.unitChanged.connect(self.updateLimits)
+        self.table.unitChanged.connect(self.redrawChart)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
@@ -155,6 +156,7 @@ class NPInputWidget(QtWidgets.QWidget):
         self.chart.drawVerticalLines(
             values, colors=colors, visible_in_legend=False  # type: ignore
         )
+        self.chart.updateYRange()
 
         self.updateLimits()
 
@@ -176,7 +178,8 @@ class NPInputWidget(QtWidgets.QWidget):
 
             self.count.setText("")
             self.background_count.setText("")
-        self.detectionsChanged.emit(detections.size)
+
+        self.detectionsChanged.emit(self.detections.size)
 
     def updateLimits(self) -> None:
         self.chart.clearHorizontalLines()
@@ -193,6 +196,10 @@ class NPInputWidget(QtWidgets.QWidget):
         mean = np.mean(responses)
         gaussian = None
         poisson = None
+
+        if method == "Automatic":
+            method = "Poisson" if mean < 50.0 else "Gaussian"
+
         if method in ["Highest", "Gaussian"]:
             if self.options.sigma.hasAcceptableInput():
                 sigma = float(self.options.sigma.text())
@@ -229,6 +236,7 @@ class NPInputWidget(QtWidgets.QWidget):
                 styles=[QtCore.Qt.DashLine] * 3,
             )
 
+        print(mean, self.limits)
         self.updateDetections(responses)
 
     def updateTrim(self) -> None:
@@ -239,6 +247,9 @@ class NPInputWidget(QtWidgets.QWidget):
 class NPSampleWidget(NPInputWidget):
     def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(options, parent=parent)
+
+        self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
+        self.element.textChanged.connect(self.elementChanged)
 
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
@@ -253,6 +264,7 @@ class NPSampleWidget(NPInputWidget):
         self.density.valueChanged.connect(self.optionsChanged)
         self.molarratio.textChanged.connect(self.optionsChanged)
 
+        self.inputs.layout().addRow("Element:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar ratio:", self.molarratio)
 
@@ -263,6 +275,20 @@ class NPSampleWidget(NPInputWidget):
             and self.molarratio.hasAcceptableInput()
             and self.density.hasAcceptableInput()
         )
+
+    def elementChanged(self, text: str) -> None:
+        if text in elementdata.symbols_from_names:
+            text = elementdata.symbols_from_names[text]
+
+        if text in elementdata.density:
+            # self.elementSelected.emit(text, elementdata.density[text])
+            self.element.setValid(True)
+            self.density.setValue(elementdata.density[text])
+            self.density.combo.setCurrentText("g/cm³")
+            self.density.setEnabled(False)
+        else:
+            self.element.setValid(False)
+            self.density.setEnabled(True)
 
 
 class NPReferenceWidget(NPInputWidget):

@@ -1,11 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
-from nanopart import elemental_data
-
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import ValidColorLineEdit
-
-from typing import Dict
 
 
 class NPOptionsWidget(QtWidgets.QWidget):
@@ -75,7 +71,7 @@ class NPOptionsWidget(QtWidgets.QWidget):
         self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Highest", "Poisson", "Gaussian"])
+        self.method.addItems(["Automatic", "Highest", "Poisson", "Gaussian"])
         self.method.currentTextChanged.connect(self.limitOptionsChanged)
 
         self.epsilon.setToolTip(
@@ -93,8 +89,6 @@ class NPOptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
         self.limit_inputs.layout().addRow("LOD method:", self.method)
 
-        self.element = QtWidgets.QLineEdit(self.on)
-        self.element.textChanged.connect()
         self.diameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
             default_unit="μm",
@@ -103,19 +97,17 @@ class NPOptionsWidget(QtWidgets.QWidget):
 
         self.cell_inputs = QtWidgets.QGroupBox("Single Cell Options")
         self.cell_inputs.setLayout(QtWidgets.QFormLayout())
+        self.cell_inputs.layout().addRow("Hypothesised diamter:", self.diameter)
+
+        layout_left = QtWidgets.QVBoxLayout()
+        layout_left.addWidget(self.limit_inputs)
+        layout_left.addWidget(self.cell_inputs)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.limit_inputs, 0, QtCore.Qt.AlignRight)
-        layout.addWidget(self.inputs, 0, QtCore.Qt.AlignRight)
+        layout.addWidget(self.inputs)
+        layout.addLayout(layout_left)
 
         self.setLayout(layout)
-
-    def onElementInputChanged(self, text: str) -> None:
-        if text in elemental_data.symbols_from_names:
-            text = elemental_data.symbols_from_names[text]
-
-        if text in elemental_data.density:
-            self.elementSelected.emit(text, elemental_data.density[text])
 
     def isComplete(self) -> bool:
         return all(
