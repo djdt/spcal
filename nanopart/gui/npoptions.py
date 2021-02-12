@@ -117,7 +117,7 @@ class NPOptionsWidget(QtWidgets.QWidget):
                 self.response.hasAcceptableInput(),
                 self.uptake.hasAcceptableInput(),
             ]
-        )
+        ) or self.diameter.hasAcceptableInput()
 
     # def options(self) -> Dict[str, float]:
     #     return {

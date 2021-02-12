@@ -55,4 +55,4 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            self.results.updateResults()
+            self.results.updateResultsNanoParticle()
