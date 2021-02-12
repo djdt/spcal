@@ -1,5 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
+from nanopart import elemental_data
+
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import ValidColorLineEdit
 
@@ -8,6 +10,7 @@ from typing import Dict
 
 class NPOptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
+    elementSelected = QtCore.Signal(str, float)
     limitOptionsChanged = QtCore.Signal()
 
     def __init__(self, parent: QtWidgets.QWidget = None):
@@ -95,6 +98,13 @@ class NPOptionsWidget(QtWidgets.QWidget):
         layout.addWidget(self.inputs, 0, QtCore.Qt.AlignRight)
 
         self.setLayout(layout)
+
+    def onElementInputChanged(self, text: str) -> None:
+        if text in elemental_data.symbols_from_names:
+            text = elemental_data.symbols_from_names[text]
+
+        if text in elemental_data.density:
+            self.elementSelected.emit(text, elemental_data.density[text])
 
     def isComplete(self) -> bool:
         return all(

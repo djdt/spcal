@@ -57,6 +57,9 @@ class NPResultsWidget(QtWidgets.QWidget):
         )
         self.chartview = QtCharts.QChartView(self.chart)
 
+        self.method = QtWidgets.QComboBox()
+        self.method.addItem(["Sizes", "Masses"])
+
         self.outputs = QtWidgets.QGroupBox("outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
 
