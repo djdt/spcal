@@ -90,6 +90,17 @@ class NPOptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
         self.limit_inputs.layout().addRow("LOD method:", self.method)
 
+        self.element = QtWidgets.QLineEdit(self.on)
+        self.element.textChanged.connect()
+        self.diameter = UnitsWidget(
+            units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            default_unit="μm",
+            invalid_color=QtGui.QColor(255, 255, 172)
+        )
+
+        self.cell_inputs = QtWidgets.QGroupBox("Single Cell Options")
+        self.cell_inputs.setLayout(QtWidgets.QFormLayout())
+
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.limit_inputs, 0, QtCore.Qt.AlignRight)
         layout.addWidget(self.inputs, 0, QtCore.Qt.AlignRight)
