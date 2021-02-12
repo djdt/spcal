@@ -3,53 +3,6 @@ from nanopart.gui.widgets import ValidColorLineEdit
 
 from typing import Dict, Tuple, Union
 
-# mass_per_volume = {
-#     "fg/L": 1e-18,
-#     "pg/L": 1e-15,
-#     "ng/L": 1e-12,
-#     "μg/L": 1e-9,
-#     "mg/L": 1e-6,
-#     "g/L": 1e-3,
-#     "kg/L": 1.0,
-# }
-# density = {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0}
-# response_units = {
-#     "counts/(pg/L)": 1e15,
-#     "counts/(ng/L)": 1e12,
-#     "counts/(μg/L)": 1e9,
-#     "counts/(mg/L)": 1e6,
-# }
-# flowrate = {"ml/min": 1e-3 / 60.0, "ml/s": 1e-3, "L/min": 1.0 / 60.0, "L/s": 1.0}
-
-
-# class SigFigValidator(QtWidgets.QDoubleValidator):
-#     sigfig_re = re.compile("[^0]")
-
-#     def __init__(
-#         self,
-#         bottom: float,
-#         top: float,
-#         decimals: int = 4,
-
-#         parent: QtWidgets.QWidget = None,
-#     ):
-#         super().__init__(bottom, top, decimals, parent)
-
-#     def count_significant(self, input: str) -> int:
-#         sigfigs = input.replace(".", "").replace("E", "e").split("e")
-#         match = self.sigfig_re.search(sigfigs)
-#         if match:
-#             return len(sigfigs) - match.start()
-#         return -1
-
-#     def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
-#         sigfigs = input.replace(".", "").replace("E", "e").split("e")[0]
-#         match = self.sigfig_re.search(sigfigs)
-#         if match:
-#             count = len(sigfigs) - match.start()
-#         else:
-#             count = -1
-
 
 class UnitsWidget(QtWidgets.QWidget):
     valueChanged = QtCore.Signal()
