@@ -43,17 +43,14 @@ class NPResultsWidget(QtWidgets.QWidget):
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
-            [0, 0],
-            # [0, 0, 0],
+            [0, 0, 0],
             colors=[
                 QtGui.QColor(255, 0, 0),
                 QtGui.QColor(0, 0, 255),
-                # QtGui.QColor(0, 255, 0),
+                QtGui.QColor(0, 172, 0),
             ],
             names=["mean", "median", "lod"],
-            # names=["mean", "median", "lod"],
-            styles=[QtCore.Qt.DashLine] * 2,
-            # styles=[QtCore.Qt.DashLine] * 3,
+            styles=[QtCore.Qt.DashLine] * 3,
         )
         self.chartview = QtCharts.QChartView(self.chart)
 
@@ -94,7 +91,7 @@ class NPResultsWidget(QtWidgets.QWidget):
             [
                 np.mean(self.sizes) * 1e9,
                 np.median(self.sizes) * 1e9,
-                # self.background_lod_size * 1e9,
+                self.background_lod_size * 1e9,
             ]
         )
 
@@ -151,7 +148,7 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.updateChart()
 
     def updateResultsSingleCell(self) -> None:
-        size = self.options.diameter.baseValue()
+        # size = self.options.diameter.baseValue()
 
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()

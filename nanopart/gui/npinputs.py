@@ -229,7 +229,7 @@ class NPInputWidget(QtWidgets.QWidget):
                 [self.limits[1], self.limits[2], self.limits[3]],
                 colors=[
                     QtGui.QColor(255, 0, 0),
-                    QtGui.QColor(0, 255, 0),
+                    QtGui.QColor(0, 172, 0),
                     QtGui.QColor(0, 0, 255),
                 ],
                 names=["mean", "Lc", "Ld"],

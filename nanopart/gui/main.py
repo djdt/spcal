@@ -44,6 +44,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
         self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
+        self.options.uptake.setBaseValue(0.000001566666666)
+        self.options.response.setBaseValue(20e9)
+        self.options.efficiency.setText("0.062")
+        self.sample.density.setBaseValue(19.32e3)
 
     def onInputsChanged(self) -> None:
         results_enabled = self.options.isComplete() and self.sample.isComplete()

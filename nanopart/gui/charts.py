@@ -170,20 +170,30 @@ class ParticleHistogram(QtCharts.QChart):
         self.series.attachAxis(self._xaxis)
         self.series.attachAxis(self.yaxis)
 
+        self.set = QtCharts.QBarSet("sizes")
+        self.set.setColor(QtCore.Qt.black)
+        self.set.hovered.connect(self.barHovered)
+        self.series.append(self.set)
+
+        self.label_series = QtCharts.QScatterSeries()
+        self.label_series.append(0, 0)
+        self.label_series.setBrush(QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.NoBrush))
+        self.label_series.setPen(QtCore.Qt.NoPen)
+        font = QtGui.QFont("sans", 12)
+        self.label_series.setPointLabelsFont(font)
+        self.label_series.setPointLabelsColor(QtGui.QColor(255, 128, 128))
+        self.label_series.setPointLabelsFormat("(@xPoint, @yPoint)")
+
+        self.addSeries(self.label_series)
+        self.label_series.attachAxis(self.xaxis)
+        self.label_series.attachAxis(self.yaxis)
+
         self.vlines: List[QtCharts.QLineSeries] = []
-
-        # for color, name in zip([QtCore.Qt.red, QtCore.Qt.blue], ["mean", "median"]):
-        #     line = QtCharts.QLineSeries()
-        #     line.setPen(QtGui.QPen(color, 1.0, QtCore.Qt.DashLine))
-        #     line.setName(name)
-
-        #     self.addSeries(line)
-        #     line.attachAxis(self.xaxis)
-        #     line.attachAxis(self.yaxis)
-        #     self.lines.append(line)
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
+        self.legend().markers(self.series)[0].setVisible(False)
+        self.legend().markers(self.label_series)[0].setVisible(False)
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -234,23 +244,29 @@ class ParticleHistogram(QtCharts.QChart):
         min_bins: int = 64,
         max_bins: int = 256,
     ) -> None:
-        barset = QtCharts.QBarSet("sizes")
-        barset.setColor(QtCore.Qt.black)
 
-        bin_edges = np.histogram_bin_edges(data, bins=bins)
+        bin_edges = np.histogram_bin_edges(data, range=(0, data.max()), bins=bins)
         if bin_edges.size > max_bins:
-            bin_edges = np.histogram_bin_edges(data, bins=max_bins)
+            bin_edges = np.histogram_bin_edges(
+                data, range=(0, data.max()), bins=max_bins
+            )
         elif bin_edges.size < min_bins:
-            bin_edges = np.histogram_bin_edges(data, bins=min_bins)
+            bin_edges = np.histogram_bin_edges(
+                data, range=(0, data.max()), bins=min_bins
+            )
 
         hist, edges = np.histogram(data, bins=bin_edges)
-        barset.append(list(hist))
-
-        self.series.clear()
-        self.series.append(barset)
-        self.legend().markers(self.series)[0].setVisible(False)
+        self.set.remove(0, self.set.count())
+        self.set.append(list(hist))
 
         self._xaxis.setRange(-0.5, hist.size - 0.5)
         self.xaxis.setRange(edges[0], edges[-1])
         self.yaxis.setRange(0, np.amax(hist))
         self.yaxis.applyNiceNumbers()
+
+    def barHovered(self, state: bool, index: int) -> None:
+        self.label_series.setPointLabelsVisible(state)
+        x = np.round(index * (self.xaxis.max() / self.set.count()), 2)
+        y = self.set.at(index)
+        if state:
+            self.label_series.replace(0, x, y)
