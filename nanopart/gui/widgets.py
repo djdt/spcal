@@ -1,6 +1,6 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
-from typing import Dict, Tuple
+from typing import Tuple
 
 
 class RangeSlider(QtWidgets.QSlider):

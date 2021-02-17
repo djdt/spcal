@@ -4,7 +4,7 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 
 import nanopart
-from nanopart import elementdata
+from nanopart import npdata
 
 from nanopart.gui.charts import ParticleChart
 from nanopart.gui.tables import ParticleModel, ParticleTable
@@ -248,7 +248,12 @@ class NPSampleWidget(NPInputWidget):
     def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(options, parent=parent)
 
+        self.elementdata = npdata.elements
+        self.elementdata.update(npdata.nitrides)
+        self.elementdata.update(npdata.oxides)
+
         self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
+        self.element.setCompleter(QtWidgets.QCompleter(list(self.elementdata.keys())))
         self.element.textChanged.connect(self.elementChanged)
 
         self.density = UnitsWidget(
@@ -277,13 +282,10 @@ class NPSampleWidget(NPInputWidget):
         )
 
     def elementChanged(self, text: str) -> None:
-        if text in elementdata.symbols_from_names:
-            text = elementdata.symbols_from_names[text]
-
-        if text in elementdata.density:
+        if text in self.elementdata:
             # self.elementSelected.emit(text, elementdata.density[text])
             self.element.setValid(True)
-            self.density.setValue(elementdata.density[text])
+            self.density.setValue(self.elementdata[text][0])
             self.density.combo.setCurrentText("g/cm³")
             self.density.setEnabled(False)
         else:
