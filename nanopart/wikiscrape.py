@@ -3,6 +3,27 @@ import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from typing import List, Tuple
+
+
+def parse_formula(formula: str) -> List[Tuple[str, int]]:
+    validre = re.compile("([A-Z][a-z]?|[0-9]+)+")
+    tokenre = re.compile("[A-Z][a-z]?|[0-9]+")
+    if not validre.fullmatch(formula):
+        return None
+
+    tokens = tokenre.findall(formula)
+    symbols: List[Tuple[str, int]] = []
+    for token in tokens:
+        try:
+            n = int(token)
+            symbols[-1] = (symbols[-1][0], n)
+        except ValueError:
+            symbols.append((token, 1))
+        except IndexError:
+            return None
+    return symbols
+
 
 def get_wiki_formula_and_density(link: str):
     page = BeautifulSoup(requests.get(link).text, "html.parser")
