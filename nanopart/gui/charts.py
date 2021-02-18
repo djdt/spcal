@@ -188,6 +188,11 @@ class ParticleHistogram(QtCharts.QChart):
         self.label_series.attachAxis(self.xaxis)
         self.label_series.attachAxis(self.yaxis)
 
+        self.fit = QtCharts.QLineSeries()
+        self.addSeries(self.fit)
+        self.fit.attachAxis(self.xaxis)
+        self.fit.attachAxis(self.yaxis)
+
         self.vlines: List[QtCharts.QLineSeries] = []
 
         # Clean legend
@@ -237,32 +242,19 @@ class ParticleHistogram(QtCharts.QChart):
             line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 
-    def setData(
-        self,
-        data: np.ndarray,
-        bins: Union[int, str] = "auto",
-        min_bins: int = 64,
-        max_bins: int = 256,
-    ) -> None:
-
-        bin_edges = np.histogram_bin_edges(data, range=(0, data.max()), bins=bins)
-        if bin_edges.size > max_bins:
-            bin_edges = np.histogram_bin_edges(
-                data, range=(0, data.max()), bins=max_bins
-            )
-        elif bin_edges.size < min_bins:
-            bin_edges = np.histogram_bin_edges(
-                data, range=(0, data.max()), bins=min_bins
-            )
-
-        hist, edges = np.histogram(data, bins=bin_edges)
+    def setData(self, data: np.ndarray, bins: np.ndarray) -> None:
         self.set.remove(0, self.set.count())
-        self.set.append(list(hist))
+        self.set.append(list(data))
 
-        self._xaxis.setRange(-0.5, hist.size - 0.5)
-        self.xaxis.setRange(edges[0], edges[-1])
-        self.yaxis.setRange(0, np.amax(hist))
+        self._xaxis.setRange(-0.5, data.size - 0.5)
+        self.xaxis.setRange(bins[0], bins[-1])
+        self.yaxis.setRange(0, np.amax(data))
         self.yaxis.applyNiceNumbers()
+
+    def setFit(self, bins: np.ndarray, fit: np.ndarray) -> None:
+        poly = array_to_polygonf(np.stack((bins, fit), axis=1))
+        self.fit.replace(poly)
+        pass
 
     def barHovered(self, state: bool, index: int) -> None:
         self.label_series.setPointLabelsVisible(state)

@@ -4,6 +4,7 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 
 import nanopart
+from nanopart.fit import fit_normal, fit_lognormal
 
 from nanopart.gui.charts import ParticleHistogram
 from nanopart.gui.npoptions import NPOptionsWidget
@@ -86,7 +87,19 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def updateChart(self) -> None:
-        self.chart.setData(self.sizes * 1e9, bins=128)
+        data = self.sizes * 1e9
+        hist, bins = np.histogram(data, bins=128, range=(0, data.max()))
+        self.chart.setData(hist, bins)
+
+        hist, bins2 = np.histogram(
+            data, bins=256, range=(data.min(), data.max()), density=True
+        )
+        result_log = fit_lognormal(bins2[1:], hist)
+        result_norm = fit_normal(bins2[1:], hist)
+        fit, err, opts = result_log if result_log[1] < result_norm[1] else result_norm
+        fit = fit * (bins[1] - bins[0]) * data.size
+        self.chart.setFit(bins2[1:], fit)
+
         self.chart.setVerticalLines(
             [
                 np.mean(self.sizes) * 1e9,
