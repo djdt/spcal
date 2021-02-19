@@ -15,42 +15,8 @@ def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     return 1.0 / (x * sigma * _s2pi) * np.exp(-0.5 * ((np.log(x) - mu) / sigma) ** 2)
 
 
-def fit_pdf(
-    x: np.ndarray,
-    y: np.ndarray,
-    pdf: Callable,
-    args: List[np.ndarray],
-) -> Tuple[np.ndarray, float, Tuple[float, ...]]:
-    ndim = len(args) + 1
-    dims = [tuple(i for i in range(ndim) if i != j) for j in range(len(args))]
-
-    pdfs = pdf(x, *[np.expand_dims(arg, axis=dim) for arg, dim in zip(args, dims)])
-
-    errs = np.sum(np.square(pdfs - y), axis=-1)
-    minerr = np.argmin(errs)
-
-    idx = np.unravel_index(minerr, errs.shape)
-    opt = [arg[i] for arg, i in zip(args, idx)]
-
-    return pdfs[idx], errs[idx], tuple(opt)
-
-
-def fit_normal(x: np.ndarray, y: np.ndarray, n: int = 100):
-    mu = np.linspace(x.min(), x.max(), n)
-    sigma = np.linspace(1e-3, 10.0, n)
-
-    return fit_pdf(x, y, normal_pdf, [mu, sigma])
-
-
-def fit_lognormal(x: np.ndarray, y: np.ndarray, n: int = 100):
-    mu = np.linspace(0, np.log(x.max()), n)
-    sigma = np.linspace(1e-3, 10.0, n)
-
-    return fit_pdf(x, y, lognormal_pdf, [mu, sigma])
-
-
 def nelder_mead(
-    func: Callable,
+    func: Callable[[np.ndarray, np.ndarray, ...], float],
     x: np.ndarray,
     y: np.ndarray,
     simplex: np.ndarray,
@@ -63,7 +29,7 @@ def nelder_mead(
 ) -> np.ndarray:
 
     # Calculate the values at each point in simplex
-    fx = np.array([func(x, y, s) for s in simplex])
+    fx = np.array([func(x, y, *s) for s in simplex])
 
     i = 1
     while i < max_iterations:
@@ -80,14 +46,14 @@ def nelder_mead(
 
         # Reflected point
         reflected = centroid + alpha * (centroid - simplex[-1])
-        fxr = func(x, y, reflected)
+        fxr = func(x, y, *reflected)
 
         if fx[0] <= fxr < fx[-2]:  # Relfection
             simplex[-1] = reflected
             fx[-1] = fxr
         elif fxr < fx[0]:  # Expansion
             expanded = centroid + gamma * (reflected - centroid)
-            fxe = func(x, y, expanded)
+            fxe = func(x, y, *expanded)
             if fxe < fxr:  # Jusk kidding, reflected
                 simplex[-1] = expanded
                 fx[-1] = fxe
@@ -96,13 +62,13 @@ def nelder_mead(
                 fx[-1] = fxr
         else:  # Contraction
             contracted = centroid + rho * (simplex[-1] - centroid)
-            fxc = func(x, y, contracted)
+            fxc = func(x, y, *contracted)
             if fxc < fx[-1]:
                 simplex[-1] = contracted
                 fx[-1] = fxc
             else:  # Shrink
                 simplex[1:] = simplex[0] + sigma * (simplex[1:] - simplex[0])
-                fx[1:] = np.array([func(x, y, s) for s in simplex[1:]])
+                fx[1:] = np.array([func(x, y, *s) for s in simplex[1:]])
 
         i += 1
 
@@ -117,8 +83,20 @@ def get_simplex(mins: np.ndarray, maxs: np.ndarray) -> np.ndarray:
     return simplex
 
 
-def gradient_normal(x, y, args):
-    return np.abs(y - normal_pdf(x, *args)).sum()
+def fit_normal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def gradient(
+        x: np.ndarray, y: np.ndarray, mu: float, sigma: float, scale: float
+    ) -> float:
+        return np.sum(np.abs(y - normal_pdf(x * scale, mu, sigma)))
+
+    # Guess for result
+    x0 = [np.mean(x), np.std(x), 0.0]
+    simplex = np.ndarray(
+        [x0, [np.max(x), x0[1], x0[2]], [x0[0], 10.0, x0[2]], [x0[0], x0[1], 10.0]]
+    )
+
+    fit = nelder_mead(gradient, x, y, simplex)
+    return fit
 
 
 import matplotlib.pyplot as plt
@@ -131,6 +109,7 @@ c, bins, _ = plt.hist(x, bins=64, density=True)
 sim = get_simplex([0.1, 0.1], [10, 10])
 
 import time
+
 s = time.time()
 fit = nelder_mead(gradient_normal, bins[1:], c, sim)
 print(time.time() - s)
