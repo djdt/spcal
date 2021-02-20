@@ -4,7 +4,7 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 
 import nanopart
-from nanopart.fit import fit_normal
+from nanopart.fit import fit_normal, fit_lognormal
 
 from nanopart.gui.charts import ParticleHistogram
 from nanopart.gui.npoptions import NPOptionsWidget
@@ -23,6 +23,7 @@ class NPResultsWidget(QtWidgets.QWidget):
 
         self.options = options
         self.sample = sample
+        self.fitmethod = "Normal"
 
         concentration_units = {
             "fg/L": 1e-18,
@@ -91,15 +92,6 @@ class NPResultsWidget(QtWidgets.QWidget):
         hist, bins = np.histogram(data, bins=128, range=(0, data.max()))
         self.chart.setData(hist, bins)
 
-        hist, bins2 = np.histogram(
-            data, bins=256, range=(data.min(), data.max()), density=True
-        )
-        # result_log = fit_lognormal(bins2[1:], hist)
-        fit, _, _ = fit_normal(bins2[1:], hist)
-        # fit, err, opts = result_log if result_log[1] < result_norm[1] else result_norm
-        fit = fit * (bins[1] - bins[0]) * data.size
-        self.chart.setFit(bins2[1:], fit)
-
         self.chart.setVerticalLines(
             [
                 np.mean(self.sizes) * 1e9,
@@ -107,6 +99,21 @@ class NPResultsWidget(QtWidgets.QWidget):
                 self.background_lod_size * 1e9,
             ]
         )
+
+        if self.fitmethod == "None":
+            return
+
+        fithist, fitbins = np.histogram(
+            data, bins=256, range=(data.min(), data.max()), density=True
+        )
+
+        if self.fitmethod == "Normal":
+            fit, err, opts = fit_normal(fitbins[1:], fithist)
+        elif self.fitmethod == "Lognormal":
+            fit, err, opts = fit_lognormal(fitbins[1:], fithist)
+
+        fit = fit * (bins[1] - bins[0]) * data.size
+        self.chart.setFit(fitbins[1:], fit)
 
     def updateResultsNanoParticle(self) -> None:
         dwelltime = self.options.dwelltime.baseValue()
