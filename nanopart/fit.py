@@ -1,6 +1,6 @@
 import numpy as np
 
-from typing import Callable, List, Tuple
+from typing import Callable
 
 
 _s2 = np.sqrt(2.0)
@@ -16,7 +16,7 @@ def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
 
 
 def nelder_mead(
-    func: Callable[[np.ndarray, np.ndarray, ...], float],
+    func: Callable[..., float],
     x: np.ndarray,
     y: np.ndarray,
     simplex: np.ndarray,
