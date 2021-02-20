@@ -23,7 +23,6 @@ class NPResultsWidget(QtWidgets.QWidget):
 
         self.options = options
         self.sample = sample
-        self.fitmethod = "Normal"
 
         concentration_units = {
             "fg/L": 1e-18,
@@ -55,9 +54,16 @@ class NPResultsWidget(QtWidgets.QWidget):
             styles=[QtCore.Qt.DashLine] * 3,
         )
         self.chartview = QtCharts.QChartView(self.chart)
+        self.fitmethod = QtWidgets.QComboBox()
+        self.fitmethod.addItems(["None", "Normal", "Lognormal"])
+        self.fitmethod.setCurrentText("Normal")
+
+        self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
 
         self.method = QtWidgets.QComboBox()
         self.method.addItems(["Sizes", "Masses"])
+
+        self.method.currentIndexChanged.connect(self.updateChart)
 
         self.outputs = QtWidgets.QGroupBox("outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
@@ -82,8 +88,13 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("Concentration:", self.conc)
         self.outputs.layout().addRow("Ionic Background:", self.background)
 
+        layout_methods = QtWidgets.QHBoxLayout()
+        layout_methods.addWidget(self.method)
+        layout_methods.addWidget(self.fitmethod)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.outputs)
+        layout.addLayout(layout_methods)
         layout.addWidget(self.chartview)
         self.setLayout(layout)
 
@@ -100,20 +111,26 @@ class NPResultsWidget(QtWidgets.QWidget):
             ]
         )
 
-        if self.fitmethod == "None":
+        self.updateChartFit()
+
+    def updateChartFit(self) -> None:
+        data = self.sizes * 1e9
+        method = self.fitmethod.currentText()
+
+        if method == "None":
             return
 
-        fithist, fitbins = np.histogram(
+        hist, bins = np.histogram(
             data, bins=256, range=(data.min(), data.max()), density=True
         )
 
-        if self.fitmethod == "Normal":
-            fit, err, opts = fit_normal(fitbins[1:], fithist)
-        elif self.fitmethod == "Lognormal":
-            fit, err, opts = fit_lognormal(fitbins[1:], fithist)
+        if method == "Normal":
+            fit, err, opts = fit_normal(bins[1:], hist)
+        elif method == "Lognormal":
+            fit, err, opts = fit_lognormal(bins[1:], hist)
 
-        fit = fit * (bins[1] - bins[0]) * data.size
-        self.chart.setFit(fitbins[1:], fit)
+        fit = fit * (bins[1] - bins[0]) * (256 / 128) * data.size
+        self.chart.setFit(bins[1:], fit)
 
     def updateResultsNanoParticle(self) -> None:
         dwelltime = self.options.dwelltime.baseValue()
