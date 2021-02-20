@@ -25,6 +25,7 @@ def nelder_mead(
     rho: float = 0.5,
     sigma: float = 0.5,
     max_iterations: int = 1000,
+    stol: float = 1e-3,
     ftol: float = 1e-3,
 ) -> np.ndarray:
 
@@ -38,7 +39,10 @@ def nelder_mead(
         fx = fx[idx]
         simplex = simplex[idx]
 
-        if np.max(np.abs(fx[0] - fx[1:])) < ftol:
+        if (
+            np.max(np.abs(simplex[0] - simplex[1:])) < stol
+            and np.max(np.abs(fx[0] - fx[1:])) < ftol
+        ):
             break
 
         # Centroid of all but n+1
@@ -70,8 +74,6 @@ def nelder_mead(
                 simplex[1:] = simplex[0] + sigma * (simplex[1:] - simplex[0])
                 fx[1:] = np.array([func(x, y, *s) for s in simplex[1:]])
 
-        if any(fx == np.inf):
-            print('a')
         i += 1
 
     idx = np.argmax(fx)
@@ -89,9 +91,9 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, scale: float
     ) -> float:
-        if sigma <= 0:
+        if mu <= 0 or sigma <= 0:
             return np.inf
-        return np.sum(np.abs(y - normal_pdf(x * scale, mu, sigma)))
+        return np.sum(np.square(y - normal_pdf(x * scale, mu, sigma)))
 
     # Guess for result
     mu = np.mean(x)
@@ -101,8 +103,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     )
 
     args = nelder_mead(gradient, x, y, simplex)
-
-    return normal_pdf(x, y, *args), gradient(x, y, *args), args
+    return normal_pdf(x * args[2], args[0], args[1]), gradient(x, y, *args), args
 
 
 def fit_lognormal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -112,7 +113,7 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
         xl = x + loc
         if sigma <= 0.0 or any(xl < 0.0):
             return np.inf
-        return np.sum(np.abs(y - lognormal_pdf(xl, mu, sigma)))
+        return np.sum(np.square(y - lognormal_pdf(xl, mu, sigma)))
 
     # Guess for result
     mu = np.log(np.median(x))
@@ -127,24 +128,4 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     )
 
     args = nelder_mead(gradient, x, y, simplex)
-
-    return lognormal_pdf(x, y, *args), gradient(x, y, *args), args
-
-# import matplotlib.pyplot as plt
-
-
-# s = np.random.seed(9873245)
-# x = np.random.lognormal(0.1, 0.2, 1000) + 20.5
-
-# c, bins, _ = plt.hist(x, bins=64, range=(0, x.max()), density=True)
-
-# import time
-# s = time.time()
-# fit = fit_lognormal(bins[1:], c)
-# print(time.time() - s)
-# print(fit)
-
-# fit = fit_lognormal(bins[1:], c)
-# fitted = lognormal_pdf(bins[1:] + fit[2], fit[0], fit[1])
-# plt.plot(bins[1:], fitted)
-# plt.show()
+    return lognormal_pdf(x + args[2], args[0], args[1]), gradient(x, y, *args), args
