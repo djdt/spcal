@@ -2,6 +2,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
 import numpy as np
+from pathlib import Path
 
 import nanopart
 from nanopart import npdata
@@ -9,7 +10,7 @@ from nanopart import npdata
 from nanopart.gui.charts import ParticleChart
 from nanopart.gui.tables import ParticleModel, ParticleTable
 from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import RangeSlider, ValidColorLineEdit
+from nanopart.gui.widgets import ElidedLabel, RangeSlider, ValidColorLineEdit
 
 from nanopart.gui.options import OptionsWidget
 
@@ -34,6 +35,11 @@ class InputWidget(QtWidgets.QWidget):
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadfile)
+
+        self.label_file = ElidedLabel()
+        self.label_file.setSizePolicy(
+            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
+        )
 
         self.chart = ParticleChart()
         self.chartview = QtCharts.QChartView(self.chart)
@@ -67,9 +73,13 @@ class InputWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
 
+        layout_file = QtWidgets.QHBoxLayout()
+        layout_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
+        layout_file.addWidget(self.label_file, 1)
+
         layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
-        layout_table.addWidget(self.table)
+        layout_table.addLayout(layout_file, 0)
+        layout_table.addWidget(self.table, 1)
 
         layout_slider = QtWidgets.QHBoxLayout()
         layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
@@ -128,6 +138,8 @@ class InputWidget(QtWidgets.QWidget):
             parameters = self.table.loadFile(file)
         except ValueError:
             return
+
+        self.label_file.setText(Path(file).name)
 
         # Update dwell time
         if "dwelltime" in parameters:
