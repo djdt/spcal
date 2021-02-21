@@ -7,16 +7,16 @@ import nanopart
 from nanopart.fit import fit_normal, fit_lognormal
 
 from nanopart.gui.charts import ParticleHistogram
-from nanopart.gui.npoptions import NPOptionsWidget
-from nanopart.gui.npinputs import NPSampleWidget
+from nanopart.gui.options import OptionsWidget
+from nanopart.gui.inputs import SampleWidget
 from nanopart.gui.units import UnitsWidget
 
 
-class NPResultsWidget(QtWidgets.QWidget):
+class ResultsWidget(QtWidgets.QWidget):
     def __init__(
         self,
-        options: NPOptionsWidget,
-        sample: NPSampleWidget,
+        options: OptionsWidget,
+        sample: SampleWidget,
         parent: QtWidgets.QWidget = None,
     ):
         super().__init__(parent)
@@ -61,7 +61,8 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Sizes", "Masses"])
+        self.method.addItems(["Mass", "Size"])
+        self.method.setCurrentText("Size")
 
         self.method.currentIndexChanged.connect(self.updateChart)
 
@@ -99,26 +100,36 @@ class NPResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def updateChart(self) -> None:
-        data = self.sizes * 1e9
-        hist, bins = np.histogram(data, bins=128, range=(0, data.max()))
+        method = self.method.currentText()
+        if method == "Size":
+            data = self.sizes * 1e9  # nm
+            lod = self.background_lod_size * 1e9  # nm
+            self.chart.xaxis.setTitleText("Size (nm)")
+        elif method == "Mass":
+            data = self.masses * 1e21  # ag
+            lod = self.background_lod_mass * 1e21  # ag
+            self.chart.xaxis.setTitleText("Mass (ag)")
+
+        hist, bins = np.histogram(data, bins=128, range=(0, np.percentile(data, 99.95)))
         self.chart.setData(hist, bins)
 
-        self.chart.setVerticalLines(
-            [
-                np.mean(self.sizes) * 1e9,
-                np.median(self.sizes) * 1e9,
-                self.background_lod_size * 1e9,
-            ]
-        )
+        self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
 
         self.updateChartFit()
 
     def updateChartFit(self) -> None:
-        data = self.sizes * 1e9
+        method = self.method.currentText()
+        if method == "Size":
+            data = self.sizes * 1e9  # nm
+        elif method == "Mass":
+            data = self.masses * 1e21  # ag
         method = self.fitmethod.currentText()
 
         if method == "None":
+            self.chart.fit.clear()
             return
+
+        histwidth = np.percentile(data, 99.95) / 128.0
 
         hist, bins = np.histogram(
             data, bins=256, range=(data.min(), data.max()), density=True
@@ -129,7 +140,7 @@ class NPResultsWidget(QtWidgets.QWidget):
         elif method == "Lognormal":
             fit, err, opts = fit_lognormal(bins[1:], hist)
 
-        fit = fit * (bins[1] - bins[0]) * (256 / 128) * data.size
+        fit = fit * histwidth * data.size
         self.chart.setFit(bins[1:], fit)
 
     def updateResultsNanoParticle(self) -> None:

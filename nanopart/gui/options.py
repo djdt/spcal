@@ -4,7 +4,7 @@ from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import ValidColorLineEdit
 
 
-class NPOptionsWidget(QtWidgets.QWidget):
+class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
     limitOptionsChanged = QtCore.Signal()

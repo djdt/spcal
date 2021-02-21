@@ -11,16 +11,16 @@ from nanopart.gui.tables import ParticleModel, ParticleTable
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import RangeSlider, ValidColorLineEdit
 
-from nanopart.gui.npoptions import NPOptionsWidget
+from nanopart.gui.options import OptionsWidget
 
 from typing import Tuple
 
 
-class NPInputWidget(QtWidgets.QWidget):
+class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     detectionsChanged = QtCore.Signal(int)
 
-    def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
+    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
@@ -243,8 +243,8 @@ class NPInputWidget(QtWidgets.QWidget):
         self.chart.setVerticalLines(values)  # type: ignore
 
 
-class NPSampleWidget(NPInputWidget):
-    def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
+class SampleWidget(InputWidget):
+    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(options, parent=parent)
 
         self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
@@ -294,8 +294,8 @@ class NPSampleWidget(NPInputWidget):
             self.molarratio.setEnabled(True)
 
 
-class NPReferenceWidget(NPInputWidget):
-    def __init__(self, options: NPOptionsWidget, parent: QtWidgets.QWidget = None):
+class ReferenceWidget(InputWidget):
+    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(options, parent=parent)
 
         concentration_units = {

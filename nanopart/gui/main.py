@@ -1,8 +1,8 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
-from nanopart.gui.npoptions import NPOptionsWidget
-from nanopart.gui.npinputs import NPSampleWidget, NPReferenceWidget
-from nanopart.gui.npresults import NPResultsWidget
+from nanopart.gui.options import OptionsWidget
+from nanopart.gui.inputs import SampleWidget, ReferenceWidget
+from nanopart.gui.results import ResultsWidget
 
 
 class NanoPartWindow(QtWidgets.QMainWindow):
@@ -12,10 +12,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
 
-        self.options = NPOptionsWidget()
-        self.sample = NPSampleWidget(self.options)
-        self.reference = NPReferenceWidget(self.options)
-        self.results = NPResultsWidget(self.options, self.sample)
+        self.options = OptionsWidget()
+        self.sample = SampleWidget(self.options)
+        self.reference = ReferenceWidget(self.options)
+        self.results = ResultsWidget(self.options, self.sample)
 
         self.reference.efficiency.textChanged.connect(self.options.setEfficiency)
 
@@ -43,7 +43,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
+        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
         self.options.uptake.setBaseValue(0.000001566666666)
         self.options.response.setBaseValue(20e9)
         self.options.efficiency.setText("0.062")
