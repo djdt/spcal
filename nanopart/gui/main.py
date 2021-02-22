@@ -53,10 +53,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
     def createMenuBar(self) -> None:
         action_open_sample = QtWidgets.QAction("Open Sample", self)
-        action_open_sample.triggered.connect(self.sample.dialogLoadfile)
+        action_open_sample.triggered.connect(self.sample.dialogLoadFile)
 
         action_open_reference = QtWidgets.QAction("Open Reference", self)
-        action_open_reference.triggered.connect(self.reference.dialogLoadfile)
+        action_open_reference.triggered.connect(self.reference.dialogLoadFile)
 
         action_close = QtWidgets.QAction("Quit", self)
         action_close.triggered.connect(self.close)

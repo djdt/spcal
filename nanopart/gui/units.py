@@ -40,6 +40,9 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
 
+    def value(self) -> float:
+        return float(self.lineedit.text())
+
     def setValue(self, value: Union[float, str]) -> None:
         if isinstance(value, float):
             decimals = self.lineedit.validator().decimals()
@@ -53,11 +56,17 @@ class UnitsWidget(QtWidgets.QWidget):
         unit = self.combo.currentText()
         if not self.lineedit.hasAcceptableInput():
             return None
-        return float(self.lineedit.text()) * self.units[unit]
+        return self.value() * self.units[unit]
 
     def setBaseValue(self, base: float) -> None:
         unit = self.combo.currentText()
         self.setValue(base / self.units[unit])
+
+    def unit(self) -> str:
+        return self.combo.currentText()
+
+    def setUnit(self, unit: str) -> None:
+        self.combo.setCurrentText(unit)
 
     def unitChanged(self, unit: str) -> None:
         if self.update_value_with_unit and self.lineedit.hasAcceptableInput():

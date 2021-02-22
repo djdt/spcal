@@ -34,7 +34,7 @@ class InputWidget(QtWidgets.QWidget):
         self.background = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
-        self.button_file.pressed.connect(self.dialogLoadfile)
+        self.button_file.pressed.connect(self.dialogLoadFile)
 
         self.label_file = ElidedLabel()
         self.label_file.setSizePolicy(
@@ -128,7 +128,7 @@ class InputWidget(QtWidgets.QWidget):
             return None
         return (self.slider.right() - self.slider.left()) * dwell
 
-    def dialogLoadfile(self) -> None:
+    def dialogLoadFile(self) -> None:
         file, _filter = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "")
         if file != "":
             self.loadFile(file)
@@ -296,7 +296,7 @@ class SampleWidget(InputWidget):
             density, mw, mr = npdata.data[text]
             self.element.setValid(True)
             self.density.setValue(density)
-            self.density.combo.setCurrentText("g/cm³")
+            self.density.setUnit("g/cm³")
             self.density.setEnabled(False)
             self.molarratio.setText(str(mr))
             self.molarratio.setEnabled(False)
@@ -418,7 +418,7 @@ class ReferenceWidget(InputWidget):
             density, mw, mr = npdata.data[text]
             self.element.setValid(True)
             self.density.setValue(density)
-            self.density.combo.setCurrentText("g/cm³")
+            self.density.setUnit("g/cm³")
             self.density.setEnabled(False)
             self.molarratio.setText(str(mr))
             self.molarratio.setEnabled(False)

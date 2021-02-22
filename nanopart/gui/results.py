@@ -89,6 +89,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("Concentration:", self.conc)
         self.outputs.layout().addRow("Ionic Background:", self.background)
 
+        self.button_export = QtWidgets.QPushButton("Export")
+        self.button_export.pressed.connect(self.dialogExportResults)
+
         layout_methods = QtWidgets.QHBoxLayout()
         layout_methods.addStretch(1)
         layout_methods.addWidget(QtWidgets.QLabel("Data:"), 0, QtCore.Qt.AlignRight)
@@ -100,12 +103,55 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addWidget(self.outputs)
         layout.addLayout(layout_methods)
         layout.addWidget(self.chartview)
+        layout.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
         self.setLayout(layout)
+
+    def dialogExportResults(self) -> None:
+        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export", "", "CSV Documents (.csv)"
+        )
+        if file != "":
+            self.exportResults(file)
+
+    def exportResults(self, path: str) -> None:
+        text = (
+            f"Detected particles {self.sizes.size}\n"
+            f"Number concentration: {self.number.value()} {self.number.unit()}\n"
+            f"Concentration: {self.conc.value()} {self.conc.unit()}\n"
+            f"Ionic background: {self.background.value()} {self.background.unit()}\n"
+            f"Mean NP size: {np.mean(self.sizes) * 1e9} nm\n"
+            f"Median NP size: {np.median(self.sizes) * 1e9} nm\n"
+            f"LOD equivalent size: {self.background_lod_size * 1e9} nm\n"
+        )
+
+        if False:
+            text += (
+                f"Median atoms per particle: {np.median(atoms)}\n"
+                f"Background equivalent atoms: {beatoms}\n"
+            )
+
+        # # Output
+        # if args.output:
+        #     if args.molarmass:
+        if False:
+            header = text + "Masses (kg),Sizes (m),Atoms"
+            data = np.stack((self.masses, self.sizes, self.atoms), axis=1)
+        else:
+            header = text + "Masses,Sizes"
+            data = np.stack((self.masses, self.sizes), axis=1)
+
+            np.savetxt(
+                path,
+                data,
+                delimiter=",",
+                header=header,
+            )
 
     def updateChart(self) -> None:
         method = self.method.currentText()
         if method == "Size":
             data = self.sizes * 1e9  # nm
+            data -= 234
             lod = self.background_lod_size * 1e9  # nm
             self.chart.xaxis.setTitleText("Size (nm)")
         elif method == "Mass":
@@ -113,7 +159,7 @@ class ResultsWidget(QtWidgets.QWidget):
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
 
-        hist, bins = np.histogram(data, bins=128, range=(0, np.percentile(data, 99.95)))
+        hist, bins = np.histogram(data, bins=128, range=(np.min(data), np.percentile(data, 99.95)))
         self.chart.setData(hist, bins)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
