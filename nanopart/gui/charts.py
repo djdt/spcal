@@ -9,7 +9,7 @@ from typing import List
 
 
 class NiceValueAxis(QtCharts.QValueAxis):
-    nicenums = [1.0, 2.0, 2.5, 5.0, 7.5]
+    nicenums = [1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 7.5]
 
     def __init__(self, nticks: int = 6, parent: QtCore.QObject = None):
         super().__init__(parent)
@@ -25,18 +25,17 @@ class NiceValueAxis(QtCharts.QValueAxis):
     def fixValues(self, amin: float, amax: float) -> None:
         delta = amax - amin
 
-        interval = delta / (self.nticks - 1)
+        interval = delta / self.nticks
         pwr = 10 ** int(np.log10(interval))
         interval = interval / pwr
 
-        print(pwr, interval)
         idx = np.searchsorted(NiceValueAxis.nicenums, interval)
-        # idx = min(idx, len(NiceValueAxis.nicenums) - 1)
-        interval = NiceValueAxis.nicenums[idx - 1] * pwr
+        idx = min(idx, len(NiceValueAxis.nicenums) - 1)
+        interval = NiceValueAxis.nicenums[idx] * pwr
 
+        print(amin, interval)
         anchor = int(amin / interval) * interval
 
-        #TODO: Nticks not obeyed
         self.setTickAnchor(anchor)
         self.setTickInterval(interval)
 
@@ -185,9 +184,11 @@ class ParticleHistogram(QtCharts.QChart):
 
         self._xaxis = QtCharts.QValueAxis()
         self._xaxis.setVisible(False)
+
         self.xaxis = NiceValueAxis()
         self.xaxis.setTitleText("Size (nm)")
         self.xaxis.setGridLineVisible(False)
+        self.xaxis.tickIntervalChanged.connect(self.updateBarAxis)
 
         self.yaxis = NiceValueAxis()
         self.yaxis.setGridLineVisible(False)
@@ -221,7 +222,7 @@ class ParticleHistogram(QtCharts.QChart):
         self.label_series.attachAxis(self.xaxis)
         self.label_series.attachAxis(self.yaxis)
 
-        self.fit = QtCharts.QLineSeries()
+        self.fit = QtCharts.QSplineSeries()
         self.addSeries(self.fit)
         self.fit.attachAxis(self.xaxis)
         self.fit.attachAxis(self.yaxis)
@@ -287,6 +288,8 @@ class ParticleHistogram(QtCharts.QChart):
     def setFit(self, bins: np.ndarray, fit: np.ndarray) -> None:
         poly = array_to_polygonf(np.stack((bins, fit), axis=1))
         self.fit.replace(poly)
+
+    def updateBarAxis(self) -> None:
         pass
 
     def barHovered(self, state: bool, index: int) -> None:

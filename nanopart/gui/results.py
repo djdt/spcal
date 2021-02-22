@@ -54,6 +54,7 @@ class ResultsWidget(QtWidgets.QWidget):
             styles=[QtCore.Qt.DashLine] * 3,
         )
         self.chartview = QtCharts.QChartView(self.chart)
+        self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
         self.fitmethod.setCurrentText("Normal")
@@ -151,7 +152,6 @@ class ResultsWidget(QtWidgets.QWidget):
         method = self.method.currentText()
         if method == "Size":
             data = self.sizes * 1e9  # nm
-            data -= 234
             lod = self.background_lod_size * 1e9  # nm
             self.chart.xaxis.setTitleText("Size (nm)")
         elif method == "Mass":
@@ -159,7 +159,9 @@ class ResultsWidget(QtWidgets.QWidget):
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
 
-        hist, bins = np.histogram(data, bins=128, range=(np.min(data), np.percentile(data, 99.95)))
+        hist, bins = np.histogram(
+            data, bins=128, range=(0, np.percentile(data, 99.9))
+        )
         self.chart.setData(hist, bins)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
@@ -178,7 +180,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.chart.fit.clear()
             return
 
-        histwidth = np.percentile(data, 99.95) / 128.0
+        histwidth = np.percentile(data, 99.9) / 128.0
 
         hist, bins = np.histogram(
             data, bins=256, range=(data.min(), data.max()), density=True
