@@ -90,8 +90,11 @@ class ResultsWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("Ionic Background:", self.background)
 
         layout_methods = QtWidgets.QHBoxLayout()
-        layout_methods.addWidget(self.method)
-        layout_methods.addWidget(self.fitmethod)
+        layout_methods.addStretch(1)
+        layout_methods.addWidget(QtWidgets.QLabel("Data:"), 0, QtCore.Qt.AlignRight)
+        layout_methods.addWidget(self.method, 0, QtCore.Qt.AlignRight)
+        layout_methods.addWidget(QtWidgets.QLabel("Fit:"), 0, QtCore.Qt.AlignRight)
+        layout_methods.addWidget(self.fitmethod, 0, QtCore.Qt.AlignRight)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.outputs)
