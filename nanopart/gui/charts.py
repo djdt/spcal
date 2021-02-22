@@ -5,7 +5,40 @@ from PySide2.QtCharts import QtCharts
 
 from nanopart.gui.util import array_to_polygonf
 
-from typing import List, Union
+from typing import List
+
+
+class NiceValueAxis(QtCharts.QValueAxis):
+    nicenums = [1.0, 2.0, 2.5, 5.0, 7.5]
+
+    def __init__(self, nticks: int = 6, parent: QtCore.QObject = None):
+        super().__init__(parent)
+        self.nticks = nticks
+
+        self.setLabelFormat("%.4g")
+        self.setTickType(QtCharts.QValueAxis.TicksDynamic)
+        self.setTickAnchor(0.0)
+        self.setTickInterval(1e3)
+
+        self.rangeChanged.connect(self.fixValues)
+
+    def fixValues(self, amin: float, amax: float) -> None:
+        delta = amax - amin
+
+        interval = delta / (self.nticks - 1)
+        pwr = 10 ** int(np.log10(interval))
+        interval = interval / pwr
+
+        print(pwr, interval)
+        idx = np.searchsorted(NiceValueAxis.nicenums, interval)
+        # idx = min(idx, len(NiceValueAxis.nicenums) - 1)
+        interval = NiceValueAxis.nicenums[idx - 1] * pwr
+
+        anchor = int(amin / interval) * interval
+
+        #TODO: Nticks not obeyed
+        self.setTickAnchor(anchor)
+        self.setTickInterval(interval)
 
 
 class ParticleChart(QtCharts.QChart):
@@ -152,11 +185,11 @@ class ParticleHistogram(QtCharts.QChart):
 
         self._xaxis = QtCharts.QValueAxis()
         self._xaxis.setVisible(False)
-        self.xaxis = QtCharts.QValueAxis()
+        self.xaxis = NiceValueAxis()
         self.xaxis.setTitleText("Size (nm)")
         self.xaxis.setGridLineVisible(False)
 
-        self.yaxis = QtCharts.QValueAxis()
+        self.yaxis = NiceValueAxis()
         self.yaxis.setGridLineVisible(False)
         self.yaxis.setLabelFormat("%d")
 
