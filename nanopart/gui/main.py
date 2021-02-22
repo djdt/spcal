@@ -43,11 +43,29 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
+        self.createMenuBar()
+
         self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
         self.options.uptake.setBaseValue(0.000001566666666)
         self.options.response.setBaseValue(20e9)
         self.options.efficiency.setText("0.062")
         self.sample.density.setBaseValue(19.32e3)
+
+    def createMenuBar(self) -> None:
+        action_open_sample = QtWidgets.QAction("Open Sample", self)
+        action_open_sample.triggered.connect(self.sample.dialogLoadfile)
+
+        action_open_reference = QtWidgets.QAction("Open Reference", self)
+        action_open_reference.triggered.connect(self.reference.dialogLoadfile)
+
+        action_close = QtWidgets.QAction("Quit", self)
+        action_close.triggered.connect(self.close)
+
+        menufile = self.menuBar().addMenu("&File")
+        menufile.addAction(action_open_sample)
+        menufile.addAction(action_open_reference)
+        menufile.addSeparator()
+        menufile.addAction(action_close)
 
     def onInputsChanged(self) -> None:
         results_enabled = self.options.isComplete() and self.sample.isComplete()
