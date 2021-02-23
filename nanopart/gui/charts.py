@@ -31,13 +31,12 @@ class NiceValueAxis(QtCharts.QValueAxis):
 
         idx = np.searchsorted(NiceValueAxis.nicenums, interval)
         idx = min(idx, len(NiceValueAxis.nicenums) - 1)
-        interval = NiceValueAxis.nicenums[idx] * pwr
 
-        print(amin, interval)
+        interval = NiceValueAxis.nicenums[idx] * pwr
         anchor = int(amin / interval) * interval
 
-        self.setTickAnchor(anchor)
         self.setTickInterval(interval)
+        self.setTickAnchor(anchor)
 
 
 class ParticleChart(QtCharts.QChart):
@@ -90,9 +89,8 @@ class ParticleChart(QtCharts.QChart):
     def drawHorizontalLines(
         self,
         values: List[float],
-        colors: List[QtGui.QColor] = None,
         names: List[str] = None,
-        styles: List[QtCore.Qt.PenStyle] = None,
+        pens: List[QtGui.QPen] = None,
         visible_in_legend: bool = True,
     ) -> None:
 
@@ -100,13 +98,9 @@ class ParticleChart(QtCharts.QChart):
         self.clearHorizontalLines()
 
         for i, value in enumerate(values):
-            pen = QtGui.QPen()
-            if colors is not None:
-                pen.setColor(colors[i])
-            if styles is not None:
-                pen.setStyle(styles[i])
             line = QtCharts.QLineSeries()
-            line.setPen(pen)
+            if pens is not None:
+                line.setPen(pens[i])
             if names is not None:
                 line.setName(names[i])
 
@@ -122,21 +116,16 @@ class ParticleChart(QtCharts.QChart):
     def drawVerticalLines(
         self,
         values: List[float],
-        colors: List[QtGui.QColor] = None,
         names: List[str] = None,
-        styles: List[QtCore.Qt.PenStyle] = None,
+        pens: List[QtGui.QPen] = None,
         visible_in_legend: bool = True,
     ) -> None:
         self.clearVerticalLines()
 
         for i, value in enumerate(values):
-            pen = QtGui.QPen()
-            if colors is not None:
-                pen.setColor(colors[i])
-            if styles is not None:
-                pen.setStyle(styles[i])
             line = QtCharts.QLineSeries()
-            line.setPen(pen)
+            if pens is not None:
+                line.setPen(pens[i])
             if names is not None:
                 line.setName(names[i])
 
@@ -188,7 +177,6 @@ class ParticleHistogram(QtCharts.QChart):
         self.xaxis = NiceValueAxis()
         self.xaxis.setTitleText("Size (nm)")
         self.xaxis.setGridLineVisible(False)
-        self.xaxis.tickIntervalChanged.connect(self.updateBarAxis)
 
         self.yaxis = NiceValueAxis()
         self.yaxis.setGridLineVisible(False)
@@ -199,7 +187,7 @@ class ParticleHistogram(QtCharts.QChart):
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
 
         self.series = QtCharts.QBarSeries()
-        self.series.setBarWidth(1.0)
+        self.series.setBarWidth(0.9)
         self.addSeries(self.series)
         self.series.attachAxis(self._xaxis)
         self.series.attachAxis(self.yaxis)
@@ -209,30 +197,25 @@ class ParticleHistogram(QtCharts.QChart):
         self.set.hovered.connect(self.barHovered)
         self.series.append(self.set)
 
-        self.label_series = QtCharts.QScatterSeries()
-        self.label_series.append(0, 0)
-        self.label_series.setBrush(QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.NoBrush))
-        self.label_series.setPen(QtCore.Qt.NoPen)
-        font = QtGui.QFont("sans", 12)
-        self.label_series.setPointLabelsFont(font)
-        self.label_series.setPointLabelsColor(QtGui.QColor(255, 128, 128))
-        self.label_series.setPointLabelsFormat("(@xPoint, @yPoint)")
-
-        self.addSeries(self.label_series)
-        self.label_series.attachAxis(self.xaxis)
-        self.label_series.attachAxis(self.yaxis)
-
         self.fit = QtCharts.QSplineSeries()
+        self.fit.setPen(QtGui.QPen(QtGui.QColor(255, 172, 0), 2.0))
         self.addSeries(self.fit)
         self.fit.attachAxis(self.xaxis)
         self.fit.attachAxis(self.yaxis)
+
+        self.hovered = QtWidgets.QGraphicsTextItem(self)
+        self.plotAreaChanged.connect(self.updateHoveredLabelPos)
 
         self.vlines: List[QtCharts.QLineSeries] = []
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
-        self.legend().markers(self.label_series)[0].setVisible(False)
+
+    def updateHoveredLabelPos(self) -> None:
+        a = QtCore.QRectF()
+        a.topLeft()
+        self.hovered.setPos(self.plotArea().topRight())
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -242,21 +225,16 @@ class ParticleHistogram(QtCharts.QChart):
     def drawVerticalLines(
         self,
         values: List[float],
-        colors: List[QtGui.QColor] = None,
         names: List[str] = None,
-        styles: List[QtCore.Qt.PenStyle] = None,
+        pens: List[QtGui.QPen] = None,
         visible_in_legend: bool = True,
     ) -> None:
         self.clearVerticalLines()
 
         for i, value in enumerate(values):
-            pen = QtGui.QPen()
-            if colors is not None:
-                pen.setColor(colors[i])
-            if styles is not None:
-                pen.setStyle(styles[i])
             line = QtCharts.QLineSeries()
-            line.setPen(pen)
+            if pens is not None:
+                line.setPen(pens[i])
             if names is not None:
                 line.setName(names[i])
 
@@ -289,12 +267,17 @@ class ParticleHistogram(QtCharts.QChart):
         poly = array_to_polygonf(np.stack((bins, fit), axis=1))
         self.fit.replace(poly)
 
-    def updateBarAxis(self) -> None:
-        pass
-
     def barHovered(self, state: bool, index: int) -> None:
-        self.label_series.setPointLabelsVisible(state)
-        x = np.round(index * (self.xaxis.max() / self.set.count()), 2)
-        y = self.set.at(index)
+        self.hovered.setVisible(state)
         if state:
-            self.label_series.replace(0, x, y)
+            x = np.round(index * (self.xaxis.max() / self.set.count()), 2)
+            y = self.set.at(index)
+            text = f"{x:.4g}, {y:.4g}"
+            self.hovered.setPlainText(text)
+            self.hovered.setPos(
+                self.plotArea().topRight()
+                - QtCore.QPointF(
+                    self.hovered.boundingRect().width(),
+                    self.hovered.boundingRect().height(),
+                )
+            )

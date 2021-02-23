@@ -163,10 +163,13 @@ class InputWidget(QtWidgets.QWidget):
         events = np.arange(responses.size)
         self.chart.setData(np.stack((events, responses), axis=1))
 
-        values = [self.slider.left(), self.slider.right()]
-        colors = [QtGui.QColor(255, 0, 0), QtGui.QColor(255, 0, 0)]
         self.chart.drawVerticalLines(
-            values, colors=colors, visible_in_legend=False  # type: ignore
+            [self.slider.left(), self.slider.right()],
+            pens=[
+                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
+                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
+            ],
+            visible_in_legend=False,  # type: ignore
         )
         self.chart.updateYRange()
 
@@ -231,21 +234,22 @@ class InputWidget(QtWidgets.QWidget):
             self.limits = (method, mean, gaussian, gaussian)
             self.chart.drawHorizontalLines(
                 [self.limits[1], self.limits[3]],
-                colors=[QtGui.QColor(255, 0, 0), QtGui.QColor(0, 0, 255)],
                 names=["mean", f"{sigma}σ"],
-                styles=[QtCore.Qt.DashLine] * 2,
+                pens=[
+                    QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
+                    QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
+                ],
             )
         elif method == "Poisson" and poisson is not None:
             self.limits = (method, mean, *poisson)
             self.chart.drawHorizontalLines(
                 [self.limits[1], self.limits[2], self.limits[3]],
-                colors=[
-                    QtGui.QColor(255, 0, 0),
-                    QtGui.QColor(0, 172, 0),
-                    QtGui.QColor(0, 0, 255),
-                ],
                 names=["mean", "Lc", "Ld"],
-                styles=[QtCore.Qt.DashLine] * 3,
+                pens=[
+                    QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
+                    QtGui.QPen(QtGui.QColor(0, 172, 0), 1.0, QtCore.Qt.DashLine),
+                    QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
+                ],
             )
 
         self.updateDetections(responses)

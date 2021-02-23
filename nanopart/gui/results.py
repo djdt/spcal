@@ -45,13 +45,12 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
             [0, 0, 0],
-            colors=[
-                QtGui.QColor(255, 0, 0),
-                QtGui.QColor(0, 0, 255),
-                QtGui.QColor(0, 172, 0),
-            ],
             names=["mean", "median", "lod"],
-            styles=[QtCore.Qt.DashLine] * 3,
+            pens=[
+                QtGui.QPen(QtGui.QColor(255, 0, 0), 1.5, QtCore.Qt.DashLine),
+                QtGui.QPen(QtGui.QColor(0, 0, 255), 1.5, QtCore.Qt.DashLine),
+                QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
+            ],
         )
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
@@ -159,9 +158,7 @@ class ResultsWidget(QtWidgets.QWidget):
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
 
-        hist, bins = np.histogram(
-            data, bins=128, range=(0, np.percentile(data, 99.9))
-        )
+        hist, bins = np.histogram(data, bins=128, range=(0, np.percentile(data, 99.9)))
         self.chart.setData(hist, bins)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
@@ -193,6 +190,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         fit = fit * histwidth * data.size
         self.chart.setFit(bins[1:], fit)
+        self.chart.fit.setName(method)
 
     def updateResultsNanoParticle(self) -> None:
         dwelltime = self.options.dwelltime.baseValue()
