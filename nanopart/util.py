@@ -91,6 +91,20 @@ def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
 # Particle functions
 
 
+def atoms_per_particle(
+    masses: np.ndarray,
+    molarmass: float,
+) -> float:
+    """Number of atoms per particle.
+
+    Args:
+        masses: array of particle signals (kg)
+        molarmass: molecular weight (kg/mol)
+    """
+    Na = 6.02214076e23
+    return masses * Na / molarmass
+
+
 def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flow: float, time: float
 ) -> float:
@@ -147,20 +161,6 @@ def particle_mass(
         mass_fraction: molar mass particle / molar mass analyte
     """
     return signal * (dwell * flowrate * efficiency * mass_fraction / response_factor)
-
-
-def particle_number_atoms(
-    masses: np.ndarray,
-    molarmass: float,
-) -> float:
-    """Concentration of particles per L.
-
-    Args:
-        masses: array of particle signals (kg)
-        molarmass: molecular weight (kg/mol)
-    """
-    Na = 6.02214076e23
-    return masses * Na / molarmass
 
 
 def particle_number_concentration(

@@ -12,6 +12,9 @@ from nanopart.gui.inputs import SampleWidget
 from nanopart.gui.units import UnitsWidget
 
 
+# TODO instead of plotting atoms (same as mass) plot cell conc
+
+
 class ResultsWidget(QtWidgets.QWidget):
     def __init__(
         self,
@@ -34,11 +37,13 @@ class ResultsWidget(QtWidgets.QWidget):
             "kg/L": 1.0,
         }
 
+        self.atoms: np.ndarray = None
         self.masses: np.ndarray = None
         self.sizes: np.ndarray = None
         self.number_concentration = 0.0
         self.concentration = 0.0
         self.ionic_background = 0.0
+        self.background_lod_atoms = 0.0
         self.background_lod_mass = 0.0
         self.background_lod_size = 0.0
 
@@ -61,7 +66,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Mass", "Size"])
+        self.method.addItems(["Atoms", "Mass", "Size"])
         self.method.setCurrentText("Size")
 
         self.method.currentIndexChanged.connect(self.updateChart)
@@ -149,16 +154,22 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateChart(self) -> None:
         method = self.method.currentText()
-        if method == "Size":
-            data = self.sizes * 1e9  # nm
-            lod = self.background_lod_size * 1e9  # nm
-            self.chart.xaxis.setTitleText("Size (nm)")
+        if method == "Atoms":
+            data = self.atoms  # ag
+            lod = 0.0
+            # self.chart.xaxis.setTitleText("Mass (ag)")
         elif method == "Mass":
             data = self.masses * 1e21  # ag
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
+        elif method == "Size":
+            data = self.sizes * 1e9  # nm
+            lod = self.background_lod_size * 1e9  # nm
+            self.chart.xaxis.setTitleText("Size (nm)")
 
-        hist, bins = np.histogram(data, bins=128, range=(0, np.percentile(data, 99.9)))
+        hist, bins = np.histogram(
+            data, bins=128, range=(0.0, np.percentile(data, 99.9))
+        )
         self.chart.setData(hist, bins)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
@@ -167,17 +178,19 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateChartFit(self) -> None:
         method = self.method.currentText()
-        if method == "Size":
-            data = self.sizes * 1e9  # nm
+        if method == "Atoms":
+            data = self.atoms  # ag
         elif method == "Mass":
             data = self.masses * 1e21  # ag
-        method = self.fitmethod.currentText()
+        elif method == "Size":
+            data = self.sizes * 1e9  # nm
 
+        method = self.fitmethod.currentText()
         if method == "None":
             self.chart.fit.clear()
             return
 
-        histwidth = np.percentile(data, 99.9) / 128.0
+        histwidth = (np.percentile(data, 99.9) - 0.0) / 128.0
 
         hist, bins = np.histogram(
             data, bins=256, range=(data.min(), data.max()), density=True
@@ -201,6 +214,7 @@ class ResultsWidget(QtWidgets.QWidget):
         time = self.sample.timeAsSeconds()
         density = self.sample.density.baseValue()
         molarratio = float(self.sample.molarratio.text())
+        molarmass = self.sample.molarmass.baseValue()
 
         self.masses = nanopart.particle_mass(
             self.sample.detections,
@@ -236,6 +250,15 @@ class ResultsWidget(QtWidgets.QWidget):
         self.background_lod_size = nanopart.particle_size(
             self.background_lod_mass, density=density
         )
+
+        if molarmass is not None:
+            self.atoms = nanopart.atoms_per_particle(self.masses, molarmass)
+            self.background_lod_atoms = nanopart.atoms_per_particle(
+                self.background_lod_mass, molarmass
+            )
+        else:
+            self.atoms = None
+            self.background_lod_atoms = 0.0
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)
