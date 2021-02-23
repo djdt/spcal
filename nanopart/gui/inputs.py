@@ -272,18 +272,28 @@ class SampleWidget(InputWidget):
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
         )
+        self.molarmass = UnitsWidget(
+            {"g/mol": 1e-3, "kg/mol": 1.0},
+            default_unit="g/mol",
+            invalid_color=QtGui.QColor(255, 255, 172),
+        )
         self.molarratio = ValidColorLineEdit("1.0")
         self.molarratio.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
         self.element.setToolTip("Input formula for density and molarratio.")
         self.density.setToolTip("Sample particle density.")
+        self.molarmass.setToolTip(
+            "Molecular weight, used to calcullate # atoms per particle."
+        )
         self.molarratio.setToolTip("Ratio of the mass of the particle to the analyte.")
 
         self.density.valueChanged.connect(self.optionsChanged)
+        self.molarmass.valueChanged.connect(self.optionsChanged)
         self.molarratio.textChanged.connect(self.optionsChanged)
 
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
+        self.inputs.layout().addRow("Molar mass:", self.molarmass)
         self.inputs.layout().addRow("Molar ratio:", self.molarratio)
 
     def isComplete(self) -> bool:
@@ -296,17 +306,20 @@ class SampleWidget(InputWidget):
 
     def elementChanged(self, text: str) -> None:
         if text in npdata.data:
-            # self.elementSelected.emit(text, elementdata.density[text])
             density, mw, mr = npdata.data[text]
             self.element.setValid(True)
             self.density.setValue(density)
             self.density.setUnit("g/cm³")
             self.density.setEnabled(False)
+            self.molarmass.setValue(mw)
+            self.molarmass.setUnit("g/mol")
+            self.molarmass.setEnabled(False)
             self.molarratio.setText(str(mr))
             self.molarratio.setEnabled(False)
         else:
             self.element.setValid(False)
             self.density.setEnabled(True)
+            self.molarmass.setEnabled(True)
             self.molarratio.setEnabled(True)
 
 

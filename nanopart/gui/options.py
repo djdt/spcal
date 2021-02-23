@@ -92,7 +92,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.diameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
             default_unit="μm",
-            invalid_color=QtGui.QColor(255, 255, 172)
+            invalid_color=QtGui.QColor(255, 255, 172),
         )
 
         self.cell_inputs = QtWidgets.QGroupBox("Single Cell Options")
@@ -110,36 +110,17 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        return all(
-            [
-                self.dwelltime.hasAcceptableInput(),
-                self.efficiency.hasAcceptableInput(),
-                self.response.hasAcceptableInput(),
-                self.uptake.hasAcceptableInput(),
-            ]
-        ) or self.diameter.hasAcceptableInput()
-
-    # def options(self) -> Dict[str, float]:
-    #     return {
-    #         "dwelltime": self.dwelltime.baseValue(),
-    #         "efficiency": float(self.efficiency.text())
-    #         if self.efficiency.hasAcceptableInput()
-    #         else None,
-    #         "response": self.response.baseValue(),
-    #         "uptake": self.uptake.baseValue(),
-    #     }
-
-    # def setOptions(self, options: Dict[str, float]) -> None:
-    #     self.blockSignals(True)
-    #     if "dwelltime" in options:
-    #         self.dwelltime.setBaseValue(options["dwelltime"])
-    #     if "efficiency" in options:
-    #         self.efficiency.setText(float(options["efficiency"]))
-    #     if "response" in options:
-    #         self.response.setBaseValue(options["response"])
-    #     if "uptake" in options:
-    #         self.uptake.setBaseValue(options["uptake"])
-    #     self.blockSignals(False)
+        return (
+            all(
+                [
+                    self.dwelltime.hasAcceptableInput(),
+                    self.response.hasAcceptableInput(),
+                    self.uptake.hasAcceptableInput(),
+                ]
+            )
+            and self.efficiency.hasAcceptableInput()
+            or self.diameter.hasAcceptableInput()
+        )
 
     def setEfficiency(self, text: str) -> None:
         self.efficiency.setEnabled(text == "")
