@@ -39,5 +39,4 @@ def read_nanoparticle_file(
 
     response = response[~np.isnan(response)]
 
-    print(parameters)
     return response, parameters
