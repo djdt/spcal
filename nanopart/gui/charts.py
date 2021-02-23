@@ -20,7 +20,9 @@ class NiceValueAxis(QtCharts.QValueAxis):
         self.setTickAnchor(0.0)
         self.setTickInterval(1e3)
 
-        self.rangeChanged.connect(self.fixValues)
+    def setRange(self, amin: float, amax: float) -> None:
+        self.fixValues(amin, amax)
+        super().setRange(amin, amax)
 
     def fixValues(self, amin: float, amax: float) -> None:
         delta = amax - amin
@@ -35,8 +37,8 @@ class NiceValueAxis(QtCharts.QValueAxis):
         interval = NiceValueAxis.nicenums[idx] * pwr
         anchor = int(amin / interval) * interval
 
-        self.setTickInterval(interval)
         self.setTickAnchor(anchor)
+        self.setTickInterval(interval)
 
 
 class ParticleChart(QtCharts.QChart):
@@ -178,7 +180,7 @@ class ParticleHistogram(QtCharts.QChart):
         self.xaxis.setTitleText("Size (nm)")
         self.xaxis.setGridLineVisible(False)
 
-        self.yaxis = NiceValueAxis()
+        self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
         self.yaxis.setLabelFormat("%d")
 
