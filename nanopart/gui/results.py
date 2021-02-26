@@ -37,13 +37,11 @@ class ResultsWidget(QtWidgets.QWidget):
             "kg/L": 1.0,
         }
 
-        self.atoms: np.ndarray = None
         self.masses: np.ndarray = None
         self.sizes: np.ndarray = None
         self.number_concentration = 0.0
         self.concentration = 0.0
         self.ionic_background = 0.0
-        self.background_lod_atoms = 0.0
         self.background_lod_mass = 0.0
         self.background_lod_size = 0.0
 
@@ -66,7 +64,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Atoms", "Mass", "Size"])
+        self.method.addItems(["Mass", "Size"])
         self.method.setCurrentText("Size")
 
         self.method.currentIndexChanged.connect(self.updateChart)
@@ -129,36 +127,32 @@ class ResultsWidget(QtWidgets.QWidget):
             f"LOD equivalent size: {self.background_lod_size * 1e9} nm\n"
         )
 
-        if False:
-            text += (
-                f"Median atoms per particle: {np.median(atoms)}\n"
-                f"Background equivalent atoms: {beatoms}\n"
-            )
+        # if False:
+        #     text += (
+        #         f"Median atoms per particle: {np.median(atoms)}\n"
+        #         f"Background equivalent atoms: {beatoms}\n"
+        #     )
 
         # # Output
         # if args.output:
         #     if args.molarmass:
-        if False:
-            header = text + "Masses (kg),Sizes (m),Atoms"
-            data = np.stack((self.masses, self.sizes, self.atoms), axis=1)
-        else:
-            header = text + "Masses,Sizes"
-            data = np.stack((self.masses, self.sizes), axis=1)
+        # if False:
+        #     header = text + "Masses (kg),Sizes (m),Atoms"
+        #     data = np.stack((self.masses, self.sizes, self.atoms), axis=1)
+        # else:
+        header = text + "Masses (kg),Sizes (m)"
+        data = np.stack((self.masses, self.sizes), axis=1)
 
-            np.savetxt(
-                path,
-                data,
-                delimiter=",",
-                header=header,
-            )
+        np.savetxt(
+            path,
+            data,
+            delimiter=",",
+            header=header,
+        )
 
     def updateChart(self) -> None:
         method = self.method.currentText()
-        if method == "Atoms":
-            data = self.atoms  # ag
-            lod = 0.0
-            # self.chart.xaxis.setTitleText("Mass (ag)")
-        elif method == "Mass":
+        if method == "Mass":
             data = self.masses * 1e21  # ag
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
@@ -178,9 +172,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateChartFit(self) -> None:
         method = self.method.currentText()
-        if method == "Atoms":
-            data = self.atoms  # ag
-        elif method == "Mass":
+        if method == "Mass":
             data = self.masses * 1e21  # ag
         elif method == "Size":
             data = self.sizes * 1e9  # nm
@@ -251,14 +243,14 @@ class ResultsWidget(QtWidgets.QWidget):
             self.background_lod_mass, density=density
         )
 
-        if molarmass is not None:
-            self.atoms = nanopart.atoms_per_particle(self.masses, molarmass)
-            self.background_lod_atoms = nanopart.atoms_per_particle(
-                self.background_lod_mass, molarmass
-            )
-        else:
-            self.atoms = None
-            self.background_lod_atoms = 0.0
+        # if molarmass is not None:
+        #     self.atoms = nanopart.atoms_per_particle(self.masses, molarmass)
+        #     self.background_lod_atoms = nanopart.atoms_per_particle(
+        #         self.background_lod_mass, molarmass
+        #     )
+        # else:
+        #     self.atoms = None
+        #     self.background_lod_atoms = 0.0
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)
