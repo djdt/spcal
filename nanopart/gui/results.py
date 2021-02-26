@@ -118,13 +118,13 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def exportResults(self, path: str) -> None:
         text = (
-            f"Detected particles {self.sizes.size}\n"
-            f"Number concentration: {self.number.value()} {self.number.unit()}\n"
-            f"Concentration: {self.conc.value()} {self.conc.unit()}\n"
-            f"Ionic background: {self.background.value()} {self.background.unit()}\n"
-            f"Mean NP size: {np.mean(self.sizes) * 1e9} nm\n"
-            f"Median NP size: {np.median(self.sizes) * 1e9} nm\n"
-            f"LOD equivalent size: {self.background_lod_size * 1e9} nm\n"
+            f"Detected particles,{self.sizes.size}\n"
+            f"Number concentration,{self.number.value()},{self.number.unit()}\n"
+            f"Concentration,{self.conc.value()},{self.conc.unit()}\n"
+            f"Ionic background,{self.background.value()},{self.background.unit()}\n"
+            f"Mean NP size,{np.mean(self.sizes) * 1e9},nm\n"
+            f"Median NP size,{np.median(self.sizes) * 1e9},nm\n"
+            f"LOD equivalent size,{self.background_lod_size * 1e9},nm\n"
         )
 
         # if False:
