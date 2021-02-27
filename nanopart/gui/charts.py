@@ -256,13 +256,29 @@ class ParticleHistogram(QtCharts.QChart):
             line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 
-    def setData(self, data: np.ndarray, bins: np.ndarray) -> None:
+    def setData(
+        self, data: np.ndarray, bins: np.ndarray, xmin: float = None, xmax: float = None
+    ) -> None:
+        if xmin is None:
+            xmin = bins[0]
+        if xmax is None:
+            xmax = bins[-1]
+
+        binwidth = bins[1] - bins[0]
+        _xpad = ()
+        _xmin = int(xmin / binwidth)
+        _xmax = int((xmax - xmin) / binwidth)
+
+        # print("x:", xmin, xmax)
+        # print("bw:", binwidth)
+        print("_x:", _xmin, _xmax)
+
         self.set.remove(0, self.set.count())
         self.set.append(list(data))
 
-        self._xaxis.setRange(-0.5, data.size - 0.5)
-        self.xaxis.setRange(bins[0], bins[-1])
-        self.yaxis.setRange(0, np.amax(data))
+        self._xaxis.setRange(_xmin, _xmax)
+        self.xaxis.setRange(xmin, xmax)
+        self.yaxis.setRange(0.0, np.amax(data))
         self.yaxis.applyNiceNumbers()
 
     def setFit(self, bins: np.ndarray, fit: np.ndarray) -> None:
