@@ -40,7 +40,7 @@ class OptionsWidget(QtWidgets.QWidget):
             default_unit="counts/(μg/L)",
         )
         self.efficiency = ValidColorLineEdit()
-        self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+        self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
 
         self.dwelltime.setToolTip(
             "ICP-MS dwell-time, updated from imported files if time column exists."

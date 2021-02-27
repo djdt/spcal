@@ -37,6 +37,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "kg/L": 1.0,
         }
 
+        self.nbins = 64
         self.masses: np.ndarray = None
         self.sizes: np.ndarray = None
         self.number_concentration = 0.0
@@ -162,9 +163,9 @@ class ResultsWidget(QtWidgets.QWidget):
             self.chart.xaxis.setTitleText("Size (nm)")
 
         hist, bins = np.histogram(
-            data, bins=128, range=(0.0, np.percentile(data, 99.9))
+            data, bins=self.nbins, range=(data.min(), np.percentile(data, 99.9))
         )
-        self.chart.setData(hist, bins)
+        self.chart.setData(hist, bins, xmin=0.0)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
 
@@ -182,10 +183,12 @@ class ResultsWidget(QtWidgets.QWidget):
             self.chart.fit.clear()
             return
 
-        histwidth = (np.percentile(data, 99.9) - 0.0) / 128.0
+        # vmin and vmax are for non-ednsity histogram
+        vmin = 0.0
+        vmax = np.percentile(data, 99.9)
 
         hist, bins = np.histogram(
-            data, bins=256, range=(data.min(), data.max()), density=True
+            data, bins=self.nbins, range=(data.min(), vmax), density=True
         )
 
         if method == "Normal":
@@ -193,6 +196,8 @@ class ResultsWidget(QtWidgets.QWidget):
         elif method == "Lognormal":
             fit, err, opts = fit_lognormal(bins[1:], hist)
 
+        # Fit to the non-density histogram
+        histwidth = (vmax - vmin) / self.nbins
         fit = fit * histwidth * data.size
         self.chart.setFit(bins[1:], fit)
         self.chart.fit.setName(method)
