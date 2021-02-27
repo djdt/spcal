@@ -147,7 +147,7 @@ def nebulisation_efficiency_from_mass(
     mass: float,
     flowrate: float,
     response_factor: float,
-    mass_fraction: float = 1.0,
+    molar_ratio: float = 1.0,
 ) -> np.ndarray:
     """Calculates efficiency for signals given a defined mass.
 
@@ -157,9 +157,9 @@ def nebulisation_efficiency_from_mass(
         mass: of reference particle (kg)
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        mass_fraction: molar mass particle / molar mass analyte
+        molar_ratio: molar mass analyte / molar mass particle
     """
-    return (mass * response_factor) / (signal * (dwell * flowrate * mass_fraction))
+    return (mass * response_factor * molar_ratio) / (signal * (dwell * flowrate))
 
 
 def particle_mass(
@@ -168,7 +168,7 @@ def particle_mass(
     efficiency: float,
     flowrate: float,
     response_factor: float,
-    mass_fraction: float = 1.0,
+    molar_ratio: float = 1.0,
 ) -> np.ndarray:
     """Array of particle masses given their integrated responses (kg).
 
@@ -178,9 +178,9 @@ def particle_mass(
         efficiency: nebulisation efficiency
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        mass_fraction: molar mass particle / molar mass analyte
+        molar_ratio:  molar mass analyte / molar mass particle
     """
-    return signal * (dwell * flowrate * efficiency * mass_fraction / response_factor)
+    return signal * (dwell * flowrate * efficiency * molar_ratio / response_factor)
 
 
 def particle_number_concentration(

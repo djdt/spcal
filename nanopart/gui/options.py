@@ -123,5 +123,8 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
     def setEfficiency(self, text: str) -> None:
-        self.efficiency.setEnabled(text == "")
-        self.efficiency.setText(text)
+        if text == "":
+            self.efficiency.setEnabled(True)
+        else:
+            self.efficiency.setEnabled(False)
+            self.efficiency.setText(text)
