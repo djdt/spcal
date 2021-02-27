@@ -381,22 +381,52 @@ class ReferenceWidget(InputWidget):
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
         self.efficiency.setReadOnly(True)
 
+        self.massresponse = UnitsWidget(
+            {
+                "ag": 1e-21,
+                "fg": 1e-18,
+                "pg": 1e-15,
+                "ng": 1e-12,
+                "μg": 1e-9,
+                "mg": 1e-6,
+                "g": 1e-3,
+                "kg": 1.0,
+            },
+            default_unit="ag",
+            update_value_with_unit=True,
+        )
+        self.massresponse.setReadOnly(True)
+
         self.outputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
-        self.options.response.valueChanged.connect(self.calculateEfficiency)
-        self.optionsChanged.connect(self.calculateEfficiency)
-        self.detectionsChanged.connect(self.calculateEfficiency)
+        self.options.dwelltime.valueChanged.connect(self.recalculate)
+        self.options.response.valueChanged.connect(self.recalculate)
+        self.options.uptake.valueChanged.connect(self.recalculate)
+        self.optionsChanged.connect(self.recalculate)
+        self.detectionsChanged.connect(self.recalculate)
 
-    def calculateEfficiency(self) -> None:
+    def recalculate(self) -> None:
         self.efficiency.setText("")
+        self.massresponse.setValue("")
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
-        if self.detections.size == 0 or density is None or diameter is None:
+        if self.detections.size == 0 or any(
+            x is None for x in [density, diameter]
+        ):
             return
 
         mass = nanopart.reference_particle_mass(density, diameter)
+        molarratio = (
+            float(self.molarratio.text())
+            if self.molarratio.hasAcceptableInput()
+            else None
+        )
+        if molarratio is not None:
+            self.massresponse.setBaseValue(mass * molarratio / np.mean(self.detections))
 
+        # If concentration defined use conc method
         concentration = self.concentration.baseValue()
         uptake = self.options.uptake.baseValue()
         time = self.timeAsSeconds()
@@ -411,21 +441,17 @@ class ReferenceWidget(InputWidget):
             self.efficiency.setText(f"{efficiency:.4g}")
             return
 
+        # Else use the other method
         dwell = self.options.dwelltime.baseValue()
         response = self.options.response.baseValue()
-        ratio = (
-            float(self.molarratio.text())
-            if self.molarratio.hasAcceptableInput()
-            else None
-        )
-        if all(o is not None for o in [dwell, response, ratio, uptake]):
+        if all(o is not None for o in [dwell, response, molarratio, uptake]):
             efficiencies = nanopart.nebulisation_efficiency_from_mass(
                 self.detections,
                 dwell=dwell,
                 mass=mass,
                 flowrate=uptake,
                 response_factor=response,
-                mass_fraction=ratio,
+                molar_ratio=molarratio,
             )
             efficiency = np.mean(efficiencies)
             self.efficiency.setText(f"{efficiency:.4g}")

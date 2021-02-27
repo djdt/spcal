@@ -205,7 +205,8 @@ class ParticleHistogram(QtCharts.QChart):
         self.fit.attachAxis(self.xaxis)
         self.fit.attachAxis(self.yaxis)
 
-        self.hovered = QtWidgets.QGraphicsTextItem(self)
+        self.label_fit = QtWidgets.QGraphicsTextItem(self)
+        self.label_hovered = QtWidgets.QGraphicsTextItem(self)
         self.plotAreaChanged.connect(self.updateHoveredLabelPos)
 
         self.vlines: List[QtCharts.QLineSeries] = []
@@ -217,7 +218,7 @@ class ParticleHistogram(QtCharts.QChart):
     def updateHoveredLabelPos(self) -> None:
         a = QtCore.QRectF()
         a.topLeft()
-        self.hovered.setPos(self.plotArea().topRight())
+        self.label_hovered.setPos(self.plotArea().topRight())
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -286,8 +287,13 @@ class ParticleHistogram(QtCharts.QChart):
         poly = array_to_polygonf(np.stack((bins, fit), axis=1))
         self.fit.replace(poly)
 
+        idx = np.argmax(fit)
+        self.label_fit.setPlainText(f"{bins[idx]}")
+        pos = self.mapToPosition(QtCore.QPointF(bins[idx], fit[idx]))
+        self.label_fit.setPos(pos)
+
     def barHovered(self, state: bool, index: int) -> None:
-        self.hovered.setVisible(state)
+        self.label_hovered.setVisible(state)
         if state:
             x = np.round(
                 index * ((self.xaxis.max() - self.xaxis.min()) / self.set.count())
@@ -296,11 +302,11 @@ class ParticleHistogram(QtCharts.QChart):
             )
             y = self.set.at(index)
             text = f"{x:.4g}, {y:.4g}"
-            self.hovered.setPlainText(text)
-            self.hovered.setPos(
+            self.label_hovered.setPlainText(text)
+            self.label_hovered.setPos(
                 self.plotArea().topRight()
                 - QtCore.QPointF(
-                    self.hovered.boundingRect().width(),
-                    self.hovered.boundingRect().height(),
+                    self.label_hovered.boundingRect().width(),
+                    self.label_hovered.boundingRect().height(),
                 )
             )
