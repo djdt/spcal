@@ -184,11 +184,11 @@ class ResultsWidget(QtWidgets.QWidget):
             return
 
         # vmin and vmax are for non-ednsity histogram
-        vmin = 0.0
+        vmin = data.min()
         vmax = np.percentile(data, 99.9)
 
         hist, bins = np.histogram(
-            data, bins=self.nbins, range=(data.min(), vmax), density=True
+            data, bins=self.nbins, range=(vmin, vmax), density=True
         )
 
         if method == "Normal":
@@ -197,8 +197,8 @@ class ResultsWidget(QtWidgets.QWidget):
             fit, err, opts = fit_lognormal(bins[1:], hist)
 
         # Fit to the non-density histogram
-        histwidth = (vmax - vmin) / self.nbins
-        fit = fit * histwidth * data.size
+        binwidth = bins[1] - bins[0]
+        fit = fit * binwidth * data.size
         self.chart.setFit(bins[1:], fit)
         self.chart.fit.setName(method)
 

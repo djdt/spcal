@@ -265,18 +265,19 @@ class ParticleHistogram(QtCharts.QChart):
             xmax = bins[-1]
 
         binwidth = bins[1] - bins[0]
-        _xpad = ()
-        _xmin = int(xmin / binwidth)
-        _xmax = int((xmax - xmin) / binwidth)
 
-        # print("x:", xmin, xmax)
-        # print("bw:", binwidth)
-        print("_x:", _xmin, _xmax)
+        # Pad histogram with zeros to fit xmin, xmax
+        _xpad = (int((bins[0] - xmin) / binwidth), int((xmax - bins[-1]) / binwidth))
+        data = np.pad(data, _xpad, constant_values=0)
+
+        # Recenter the series on xaxis
+        xmin = bins[0] - _xpad[0] * binwidth + binwidth / 2.0
+        xmax = bins[-1] + _xpad[1] * binwidth + binwidth / 2.0
 
         self.set.remove(0, self.set.count())
         self.set.append(list(data))
 
-        self._xaxis.setRange(_xmin, _xmax)
+        self._xaxis.setRange(-0.5, data.size - 0.5)
         self.xaxis.setRange(xmin, xmax)
         self.yaxis.setRange(0.0, np.amax(data))
         self.yaxis.applyNiceNumbers()
@@ -288,7 +289,11 @@ class ParticleHistogram(QtCharts.QChart):
     def barHovered(self, state: bool, index: int) -> None:
         self.hovered.setVisible(state)
         if state:
-            x = np.round(index * (self.xaxis.max() / self.set.count()), 2)
+            x = np.round(
+                index * ((self.xaxis.max() - self.xaxis.min()) / self.set.count())
+                + self.xaxis.min(),
+                2,
+            )
             y = self.set.at(index)
             text = f"{x:.4g}, {y:.4g}"
             self.hovered.setPlainText(text)
