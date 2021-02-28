@@ -183,6 +183,7 @@ class ResultsWidget(QtWidgets.QWidget):
         method = self.fitmethod.currentText()
         if method == "None":
             self.chart.fit.clear()
+            self.chart.label_fit.setVisible(False)
             return
 
         # vmin and vmax are for non-ednsity histogram
@@ -203,6 +204,7 @@ class ResultsWidget(QtWidgets.QWidget):
         fit = fit * binwidth * data.size
         self.chart.setFit(bins[1:], fit)
         self.chart.fit.setName(method)
+        self.chart.label_fit.setVisible(True)
 
     def updateResultsMassResponse(self) -> None:
         # dwelltime = self.options.dwelltime.baseValue()

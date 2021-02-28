@@ -206,6 +206,9 @@ class ParticleHistogram(QtCharts.QChart):
         self.fit.attachAxis(self.yaxis)
 
         self.label_fit = QtWidgets.QGraphicsTextItem(self)
+        self.label_fit.setFont(QtGui.QFont("sans", 12, italic=False))
+        self.label_fit.setZValue(99)
+        self.label_fit.setDefaultTextColor(QtGui.QColor(255, 172, 0))
         self.label_hovered = QtWidgets.QGraphicsTextItem(self)
         self.plotAreaChanged.connect(self.updateHoveredLabelPos)
 
@@ -288,8 +291,13 @@ class ParticleHistogram(QtCharts.QChart):
         self.fit.replace(poly)
 
         idx = np.argmax(fit)
-        self.label_fit.setPlainText(f"{bins[idx]}")
-        pos = self.mapToPosition(QtCore.QPointF(bins[idx], fit[idx]))
+        x, y = bins[idx], fit[idx]
+        self.label_fit.setPlainText(f"{x:.4g}")
+        pos = self.mapToPosition(QtCore.QPointF(x, y), series=self.fit)
+        pos -= QtCore.QPointF(
+            0,
+            self.label_fit.boundingRect().height(),
+        )
         self.label_fit.setPos(pos)
 
     def barHovered(self, state: bool, index: int) -> None:
