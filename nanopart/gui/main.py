@@ -38,11 +38,11 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
 
-        # self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        # self.options.uptake.setBaseValue(0.000001566666666)
-        # self.options.response.setBaseValue(20e9)
-        # self.options.efficiency.setText("0.062")
-        # self.sample.density.setBaseValue(19.32e3)
+        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        self.options.uptake.setBaseValue(0.000001566666666)
+        self.options.response.setBaseValue(20e9)
+        self.options.efficiency.setText("0.062")
+        self.sample.density.setBaseValue(19.32e3)
 
     def createMenuBar(self) -> None:
         action_open_sample = QtWidgets.QAction("Open Sample", self)
