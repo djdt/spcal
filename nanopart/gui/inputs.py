@@ -19,19 +19,24 @@ from typing import Tuple
 
 # todo changing values in table doesnt update linits
 
+
 class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     detectionsChanged = QtCore.Signal(int)
+    limitsChanged = QtCore.Signal()
 
     def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
+        # self.detectionsChanged.connect(self.redrawChart)
+        self.limitsChanged.connect(self.updateDetections)
+        self.limitsChanged.connect(self.redrawLimits)
+
         self.options = options
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
 
-        self.background: float = None
         self.limits: Tuple[str, float, float, float] = None
         self.detections = np.array([], dtype=np.float64)
 
@@ -49,15 +54,14 @@ class InputWidget(QtWidgets.QWidget):
 
         self.table = ParticleTable()
         self.table.unitChanged.connect(self.updateLimits)
-        self.table.unitChanged.connect(self.redrawChart)
-        self.table.dataChanged.connect(self.updateLimits)
-        self.table.dataChanged.connect(self.redrawChart)
+        self.table.model.dataChanged.connect(self.updateDetections)
+        self.table.model.dataChanged.connect(self.redrawChart)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
-        self.slider.sliderReleased.connect(self.updateLimits)
+        self.slider.sliderReleased.connect(self.updateDetections)
 
         # Sample options
 
@@ -142,76 +146,56 @@ class InputWidget(QtWidgets.QWidget):
 
         self.label_file.setText(Path(file).name)
 
+        # Update Chart and slider
+        self.slider.setRange(0, self.table.model.rowCount())
+        self.slider.setValues(0, self.table.model.rowCount())
+        self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
+
         # Update dwell time
         if "dwelltime" in parameters:
             self.options.dwelltime.setBaseValue(parameters["dwelltime"])
 
-        # Update Chart and slider
-        self.slider.setRange(0, self.table.model.rowCount())
-        self.slider.setValues(0, self.table.model.rowCount())
-
         self.redrawChart()
-        self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
+        self.redrawLimits()
 
-    def redrawChart(self) -> None:
+    def updateDetections(self) -> None:
         responses = self.table.asCounts(
             self.options.dwelltime.baseValue(),
             trim=(self.slider.left(), self.slider.right()),
         )
-        if responses is None:
-            return
+        if self.limits is None or responses is None or responses.size == 0:
+            self.detections = np.array([])
 
-        events = np.arange(responses.size)
-        self.chart.setData(np.stack((events, responses), axis=1))
-
-        self.chart.drawVerticalLines(
-            [self.slider.left(), self.slider.right()],
-            pens=[
-                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
-                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
-            ],
-            visible_in_legend=False,  # type: ignore
-        )
-        self.chart.updateYRange()
-
-        # self.updateLimits()
-
-    def updateDetections(self, responses: np.ndarray) -> None:
-        if self.limits is not None:
+            self.count.setText("")
+            self.background_count.setText("")
+        else:
             detections, labels = nanopart.accumulate_detections(
                 responses, self.limits[3], self.limits[2]
             )
 
             self.detections = detections
-            self.background = np.mean(responses[labels == 0])
+            background = np.mean(responses[labels == 0])
 
             self.count.setText(str(detections.size))
-            self.background_count.setText(f"{self.background:.4g}")
-            self.detectionsChanged.emit(detections.size)
-        else:
-            self.detections = np.array([])
-            self.background = None
-
-            self.count.setText("")
-            self.background_count.setText("")
+            self.background_count.setText(f"{background:.8g}")
 
         self.detectionsChanged.emit(self.detections.size)
 
     def updateLimits(self) -> None:
-        self.chart.clearHorizontalLines()
-        self.limits = None
-
         method = self.options.method.currentText()
         responses = self.table.asCounts(
             self.options.dwelltime.baseValue(),
             trim=(self.slider.left(), self.slider.right()),
         )
+
+        self.limits = None
+
         if responses is None or responses.size == 0:
             return
 
         mean = np.mean(responses)
         gaussian = None
-        poisson = None
+        poisson: Tuple[float, float] = None
 
         if method == "Automatic":
             method = "Poisson" if mean < 50.0 else "Gaussian"
@@ -232,28 +216,62 @@ class InputWidget(QtWidgets.QWidget):
                 method = "Gaussian" if gaussian > poisson[1] else "Poisson"
 
         if method == "Gaussian" and gaussian is not None:
-            self.limits = (method, mean, gaussian, gaussian)
-            self.chart.drawHorizontalLines(
-                [self.limits[1], self.limits[3]],
-                names=["mean", f"{sigma}σ"],
-                pens=[
-                    QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
-                    QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
-                ],
-            )
+            self.limits = (method, mean, sigma, gaussian)
         elif method == "Poisson" and poisson is not None:
-            self.limits = (method, mean, *poisson)
-            self.chart.drawHorizontalLines(
-                [self.limits[1], self.limits[2], self.limits[3]],
-                names=["mean", "Lc", "Ld"],
-                pens=[
-                    QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
-                    QtGui.QPen(QtGui.QColor(0, 172, 0), 1.0, QtCore.Qt.DashLine),
-                    QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
-                ],
-            )
+            self.limits = (method, mean, poisson[0], poisson[1])
 
-        self.updateDetections(responses)
+        self.limitsChanged.emit()
+
+    def redrawChart(self) -> None:
+        responses = self.table.asCounts(
+            self.options.dwelltime.baseValue(),
+        )
+        if responses is None or responses.size == 0:
+            return
+
+        events = np.arange(responses.size)
+        self.chart.setData(np.stack((events, responses), axis=1))
+
+        self.chart.drawVerticalLines(
+            [self.slider.left(), self.slider.right()],
+            pens=[
+                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
+                QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
+            ],
+            visible_in_legend=False,  # type: ignore
+        )
+        self.chart.updateYRange()
+
+    def redrawLimits(self) -> None:
+        if self.limits is None:
+            self.chart.clearHorizontalLines()
+        elif self.limits[0] == "Gaussian":
+            if len(self.chart.hlines) == 2:
+                self.chart.setHorizontalLines([self.limits[1], self.limits[3]])
+            else:
+                self.chart.drawHorizontalLines(
+                    [self.limits[1], self.limits[3]],
+                    names=["mean", f"{self.limits[2]}σ"],
+                    pens=[
+                        QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
+                        QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
+                    ],
+                )
+        else:
+            if len(self.chart.hlines) == 3:
+                self.chart.setHorizontalLines(
+                    [self.limits[1], self.limits[2], self.limits[3]]
+                )
+            else:
+                self.chart.drawHorizontalLines(
+                    [self.limits[1], self.limits[2], self.limits[3]],
+                    names=["mean", "Lc", "Ld"],
+                    pens=[
+                        QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
+                        QtGui.QPen(QtGui.QColor(0, 172, 0), 1.0, QtCore.Qt.DashLine),
+                        QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
+                    ],
+                )
 
     def updateTrim(self) -> None:
         values = [self.slider.left(), self.slider.right()]
@@ -413,9 +431,7 @@ class ReferenceWidget(InputWidget):
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
-        if self.detections.size == 0 or any(
-            x is None for x in [density, diameter]
-        ):
+        if self.detections.size == 0 or any(x is None for x in [density, diameter]):
             return
 
         mass = nanopart.reference_particle_mass(density, diameter)

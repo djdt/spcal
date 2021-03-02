@@ -35,7 +35,6 @@ class NamedColumnModel(NumpyArrayTableModel):
 
 
 class ParticleTable(QtWidgets.QWidget):
-    dataChanged = QtCore.Signal()
     unitChanged = QtCore.Signal(str)
 
     def __init__(self, parent: QtWidgets.QWidget = None):
@@ -63,10 +62,6 @@ class ParticleTable(QtWidgets.QWidget):
 
     def loadFile(self, file: str) -> dict:
         responses, parameters = read_nanoparticle_file(file, delimiter=",")
-
-        # # Update dwell time
-        # if "dwelltime" in parameters:
-        #     self.options.dwelltime.setBaseValue(parameters["dwelltime"])
 
         self.response.blockSignals(True)
         self.response.setCurrentText("cps" if parameters["cps"] else "counts")
