@@ -37,8 +37,9 @@ class InputWidget(QtWidgets.QWidget):
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
 
-        self.limits: Tuple[str, float, float, float] = None
+        self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
+        self.limits: Tuple[str, float, float, float] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -174,10 +175,10 @@ class InputWidget(QtWidgets.QWidget):
             )
 
             self.detections = detections
-            background = np.mean(responses[labels == 0])
+            self.background = np.mean(responses[labels == 0])
 
             self.count.setText(str(detections.size))
-            self.background_count.setText(f"{background:.8g}")
+            self.background_count.setText(f"{self.background:.4g}")
 
         self.detectionsChanged.emit(self.detections.size)
 

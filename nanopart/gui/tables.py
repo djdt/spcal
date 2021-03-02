@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 
 from nanopart.io import read_nanoparticle_file
@@ -6,6 +6,29 @@ from nanopart.io import read_nanoparticle_file
 from nanopart.gui.util import NumpyArrayTableModel
 
 from typing import List, Tuple
+
+
+class DoubleSignificantFiguresDelegate(QtWidgets.QStyledItemDelegate):
+    def __init__(self, sigfigs: int, parent: QtWidgets.QWidget = None):
+        super().__init__(parent)
+        self.sigfigs = sigfigs
+
+    def createEditor(
+        self,
+        parent: QtWidgets.QWidget,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: int,
+    ) -> QtWidgets.QWidget:  # pragma: no cover
+        lineedit = QtWidgets.QLineEdit(parent)
+        lineedit.setValidator(QtGui.QDoubleValidator())
+        return lineedit
+
+    def displayText(self, value: str, locale: str) -> str:
+        try:
+            num = float(value)
+            return f"{num:#.{self.sigfigs}g}".rstrip(".").replace(".e", "e")
+        except (TypeError, ValueError):
+            return str(super().displayText(value, locale))
 
 
 class NamedColumnModel(NumpyArrayTableModel):
@@ -85,29 +108,29 @@ class ParticleTable(QtWidgets.QWidget):
             return None
 
 
-# class ResultsTable(QtWidgets.QWidget):
-#     unitChanged = QtCore.Signal(str, str)
+class ResultsTable(QtWidgets.QWidget):
+    unitChanged = QtCore.Signal(str, str)
 
-#     def __init__(self, model: ParticleResultsModel, parent: QtWidgets.QWidget = None):
-#         super().__init__(self)
-#         self.model = model
+    def __init__(self, parent: QtWidgets.QWidget = None):
+        super().__init__(parent)
+        self.model = NamedColumnModel(["Mass (kg)", "Size (m)"])
 
-#         self.table = QtWidgets.QTableView()
-#         self.table.setModel(model)
-#         self.table.horizontalHeader().setStretchLastSection(True)
-#         self.table.verticalHeader().setVisible(False)
-#         self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.table = QtWidgets.QTableView()
+        self.table.setItemDelegate(DoubleSignificantFiguresDelegate(4))
+        self.table.setModel(self.model)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
-#         self.response = QtWidgets.QComboBox()
-#         self.response.addItems(["counts", "cps"])
-#         self.response.currentTextChanged.connect(self.unitChanged)
+        self.response = QtWidgets.QComboBox()
+        self.response.addItems(["counts", "cps"])
+        # self.response.currentTextChanged.connect(self.unitChanged)
 
-#         layout_unit = QtWidgets.QHBoxLayout()
-#         layout_unit.addWidget(QtWidgets.QLabel("Response units:"), 1)
-#         layout_unit.addWidget(self.response, 0)
+        layout_unit = QtWidgets.QHBoxLayout()
+        layout_unit.addWidget(QtWidgets.QLabel("Response units:"), 1)
+        layout_unit.addWidget(self.response, 0)
 
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addLayout(layout_unit)
-#         layout.addWidget(self.table)
-#         self.setLayout(layout)
-
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(layout_unit)
+        layout.addWidget(self.table)
+        self.setLayout(layout)

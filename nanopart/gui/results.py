@@ -7,8 +7,9 @@ import nanopart
 from nanopart.fit import fit_normal, fit_lognormal
 
 from nanopart.gui.charts import ParticleHistogram
-from nanopart.gui.options import OptionsWidget
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
+from nanopart.gui.options import OptionsWidget
+from nanopart.gui.tables import ResultsTable
 from nanopart.gui.units import UnitsWidget
 
 
@@ -61,7 +62,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        # self.table = QtWidgets.
+        self.table = ResultsTable()
 
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
@@ -108,11 +109,16 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_methods.addWidget(QtWidgets.QLabel("Fit:"), 0, QtCore.Qt.AlignRight)
         layout_methods.addWidget(self.fitmethod, 0, QtCore.Qt.AlignRight)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.outputs)
-        layout.addLayout(layout_methods)
-        layout.addWidget(self.chartview)
-        layout.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
+        layout_right = QtWidgets.QVBoxLayout()
+
+        layout_right.addWidget(self.outputs)
+        layout_right.addLayout(layout_methods)
+        layout_right.addWidget(self.chartview)
+        layout_right.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.table, 0)
+        layout.addLayout(layout_right, 1)
         self.setLayout(layout)
 
     def dialogExportResults(self) -> None:
@@ -315,6 +321,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.number.setBaseValue(self.number_concentration)
         self.conc.setBaseValue(self.concentration)
         self.background.setBaseValue(self.ionic_background)
+
+        self.table.model.beginResetModel()
+        self.table.model.array = np.stack((self.masses, self.sizes), axis=1)
+        self.table.model.endResetModel()
 
         self.updateChart()
 
