@@ -8,7 +8,7 @@ import nanopart
 from nanopart import npdata
 
 from nanopart.gui.charts import ParticleChart
-from nanopart.gui.tables import ParticleModel, ParticleTable
+from nanopart.gui.tables import ParticleTable
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import ElidedLabel, RangeSlider, ValidColorLineEdit
 
@@ -16,6 +16,8 @@ from nanopart.gui.options import OptionsWidget
 
 from typing import Tuple
 
+
+# todo changing values in table doesnt update linits
 
 class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
@@ -29,9 +31,9 @@ class InputWidget(QtWidgets.QWidget):
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
 
+        self.background: float = None
         self.limits: Tuple[str, float, float, float] = None
-        self.detections: np.ndarray = np.array([])
-        self.background = None
+        self.detections = np.array([], dtype=np.float64)
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -45,12 +47,11 @@ class InputWidget(QtWidgets.QWidget):
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
 
-        self.model = ParticleModel(np.ndarray((0, 1), dtype=np.float64))
-        self.model.dataChanged.connect(self.redrawChart)
-        self.model.dataChanged.connect(self.updateLimits)
-
-        self.table = ParticleTable(self.model)
+        self.table = ParticleTable()
+        self.table.unitChanged.connect(self.updateLimits)
         self.table.unitChanged.connect(self.redrawChart)
+        self.table.dataChanged.connect(self.updateLimits)
+        self.table.dataChanged.connect(self.redrawChart)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
@@ -122,7 +123,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
-    def timeAsSeconds(self) -> np.ndarray:
+    def timeAsSeconds(self) -> float:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
             return None
@@ -133,7 +134,7 @@ class InputWidget(QtWidgets.QWidget):
         if file != "":
             self.loadFile(file)
 
-    def loadFile(self, file: str) -> np.ndarray:
+    def loadFile(self, file: str) -> None:
         try:
             parameters = self.table.loadFile(file)
         except ValueError:
@@ -146,8 +147,8 @@ class InputWidget(QtWidgets.QWidget):
             self.options.dwelltime.setBaseValue(parameters["dwelltime"])
 
         # Update Chart and slider
-        self.slider.setRange(0, self.model.rowCount())
-        self.slider.setValues(0, self.model.rowCount())
+        self.slider.setRange(0, self.table.model.rowCount())
+        self.slider.setValues(0, self.table.model.rowCount())
 
         self.redrawChart()
         self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
@@ -173,7 +174,7 @@ class InputWidget(QtWidgets.QWidget):
         )
         self.chart.updateYRange()
 
-        self.updateLimits()
+        # self.updateLimits()
 
     def updateDetections(self, responses: np.ndarray) -> None:
         if self.limits is not None:

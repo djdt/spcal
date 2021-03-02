@@ -60,6 +60,9 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
+
+        self.table = QtWidgets.
+
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
         self.fitmethod.setCurrentText("Lognormal")
