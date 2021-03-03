@@ -259,7 +259,7 @@ class ValidColorLineEdit(QtWidgets.QLineEdit):
         self.revalidate()
 
     def revalidate(self) -> None:
-        self.setValid(self.hasAcceptableInput())
+        self.setValid(self.hasAcceptableInput() or not self.isEnabled())
 
     def setValid(self, valid: bool) -> None:
         palette = self.palette()

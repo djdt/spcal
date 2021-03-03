@@ -92,3 +92,8 @@ class UnitsWidget(QtWidgets.QWidget):
     def setToolTip(self, text: str) -> None:
         self.lineedit.setToolTip(text)
         self.combo.setToolTip(text)
+
+    def setEnabled(self, enabled: bool) -> None:
+        self.lineedit.setEnabled(enabled)
+        self.combo.setEnabled(enabled)
+        self.lineedit.revalidate()

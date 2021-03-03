@@ -109,7 +109,9 @@ def atoms_per_particle(
 #     signals: np.ndarray, density: float, diameter: float, molarmass: float
 # ) -> np.ndarray:
 def particle_concentration(
-    signal: np.ndarray, molarmass: float, response_factor: float,
+    signal: np.ndarray,
+    molarmass: float,
+    response_factor: float,
 ) -> np.ndarray:
     """Intra-cellular concentrations in mol/L.
     # Assumes a spherical cell shape.
@@ -126,7 +128,7 @@ def particle_concentration(
 
 
 def nebulisation_efficiency_from_concentration(
-    count: int, concentration: float, mass: float, flow: float, time: float
+    count: int, concentration: float, mass: float, flowrate: float, time: float
 ) -> float:
     """The nebulistaion efficiency.
 
@@ -134,11 +136,11 @@ def nebulisation_efficiency_from_concentration(
         count: number of detected particles
         concentration: of reference material (kg/L)
         mass: of reference material (kg)
-        flow: sample inlet flow (L/s)
+        flowrate: sample inlet flow (L/s)
         time: total aquisition time (s)
     """
 
-    return count / (concentration / mass * flow * time)
+    return count / (concentration / mass * flowrate * time)
 
 
 def nebulisation_efficiency_from_mass(
@@ -159,7 +161,7 @@ def nebulisation_efficiency_from_mass(
         response_factor: counts / concentration (kg/L)
         molar_ratio: molar mass analyte / molar mass particle
     """
-    return (mass * response_factor * molar_ratio) / (signal * (dwell * flowrate))
+    return (mass * response_factor) / (signal * (dwell * flowrate * molar_ratio))
 
 
 def particle_mass(
@@ -180,7 +182,7 @@ def particle_mass(
         response_factor: counts / concentration (kg/L)
         molar_ratio:  molar mass analyte / molar mass particle
     """
-    return signal * (dwell * flowrate * efficiency * molar_ratio / response_factor)
+    return signal * (dwell * flowrate * efficiency / (response_factor * molar_ratio))
 
 
 def particle_number_concentration(

@@ -65,6 +65,7 @@ class ParticleTable(QtWidgets.QWidget):
         self.model = NamedColumnModel(["Response"])
 
         self.table = QtWidgets.QTableView()
+        self.table.setItemDelegate(DoubleSignificantFiguresDelegate(4))
         self.table.setModel(self.model)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
@@ -113,7 +114,7 @@ class ResultsTable(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        self.model = NamedColumnModel(["Mass (kg)", "Size (m)"])
+        self.model = NamedColumnModel(["Mass", "Size"])
 
         self.table = QtWidgets.QTableView()
         self.table.setItemDelegate(DoubleSignificantFiguresDelegate(4))
@@ -124,7 +125,6 @@ class ResultsTable(QtWidgets.QWidget):
 
         self.response = QtWidgets.QComboBox()
         self.response.addItems(["counts", "cps"])
-        # self.response.currentTextChanged.connect(self.unitChanged)
 
         layout_unit = QtWidgets.QHBoxLayout()
         layout_unit.addWidget(QtWidgets.QLabel("Response units:"), 1)

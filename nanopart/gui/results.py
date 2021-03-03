@@ -215,72 +215,29 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.fit.setName(method)
         self.chart.label_fit.setVisible(True)
 
-    def updateResultsMassResponse(self) -> None:
-        # dwelltime = self.options.dwelltime.baseValue()
-        # uptake = self.options.uptake.baseValue()
-        # response = self.options.response.baseValue()
-        # efficiency = float(self.options.efficiency.text())
+    def updateResults(self) -> None:
+        method = self.options.efficiency_method.currentText()
 
-        # time = self.sample.timeAsSeconds()
-        # molarratio = float(self.sample.molarratio.text())
-        # molarmass = self.sample.molarmass.baseValue()
-        massresponse = self.reference.massresponse.baseValue()
-        density = self.sample.density.baseValue()
+        if method == "Manual":
+            efficiency = float(self.options.efficiency.text())
+            self.updateResultsNebEff(efficiency)
+        elif method == "Reference":
+            efficiency = float(self.reference.efficiency.text())
+            self.updateResultsNebEff(efficiency)
+        elif method == "Mass Response (None)":
+            massresponse = self.reference.massresponse.baseValue()
+            self.updateResultsMassResponse(massresponse)
 
-        self.masses = massresponse / self.sample.detections
+    def updateResultsMassResponse(self, massresponse: float) -> None:
 
-        # self.masses = nanopart.particle_mass(
-        #     self.sample.detections,
-        #     dwell=dwelltime,
-        #     efficiency=efficiency,
-        #     flowrate=uptake,
-        #     response_factor=response,
-        #     mass_fraction=molarratio,
-        # )
-        self.sizes = nanopart.particle_size(self.masses, density=density)
-        self.number_concentration = nanopart.particle_number_concentration(
-            self.sample.detections.size,
-            efficiency=efficiency,
-            flowrate=uptake,
-            time=time,
-        )
-        self.concentration = nanopart.particle_total_concentration(
-            self.masses,
-            efficiency=efficiency,
-            flowrate=uptake,
-            time=time,
-        )
 
-        self.ionic_background = self.sample.background / response
-        self.background_lod_mass = nanopart.particle_mass(
-            self.sample.limits[3],
-            dwell=dwelltime,
-            efficiency=efficiency,
-            flowrate=uptake,
-            response_factor=response,
-            molar_ratio=molarratio,
-        )
-        self.background_lod_size = nanopart.particle_size(
-            self.background_lod_mass, density=density
-        )
-
-        self.count.setText(f"{self.sample.detections.size}")
-        self.number.setBaseValue(self.number_concentration)
-        self.conc.setBaseValue(self.concentration)
-        self.background.setBaseValue(self.ionic_background)
-
-        self.updateChart()
-
-    def updateResultsNebEff(self) -> None:
+    def updateResultsNebEff(self, efficiency: float) -> None:
         dwelltime = self.options.dwelltime.baseValue()
-        uptake = self.options.uptake.baseValue()
-        response = self.options.response.baseValue()
-        efficiency = float(self.options.efficiency.text())
-
-        time = self.sample.timeAsSeconds()
         density = self.sample.density.baseValue()
         molarratio = float(self.sample.molarratio.text())
-        molarmass = self.sample.molarmass.baseValue()
+        time = self.sample.timeAsSeconds()
+        uptake = self.options.uptake.baseValue()
+        response = self.options.response.baseValue()
 
         self.masses = nanopart.particle_mass(
             self.sample.detections,
@@ -291,6 +248,7 @@ class ResultsWidget(QtWidgets.QWidget):
             molar_ratio=molarratio,
         )
         self.sizes = nanopart.particle_size(self.masses, density=density)
+
         self.number_concentration = nanopart.particle_number_concentration(
             self.sample.detections.size,
             efficiency=efficiency,

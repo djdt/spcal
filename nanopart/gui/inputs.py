@@ -487,3 +487,11 @@ class ReferenceWidget(InputWidget):
             self.element.setValid(False)
             self.density.setEnabled(True)
             self.molarratio.setEnabled(True)
+
+    def isComplete(self) -> bool:
+        return (
+            self.detections is not None
+            and self.detections.size > 0
+            and self.molarratio.hasAcceptableInput()
+            and self.density.hasAcceptableInput()
+        )

@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2 import QtWidgets
 
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
@@ -17,11 +17,13 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
 
-        self.reference.efficiency.textChanged.connect(self.options.setEfficiency)
+        # self.reference.efficiency.textChanged.connect(self.options.setEfficiency)
 
         self.options.optionsChanged.connect(self.onInputsChanged)
         self.sample.optionsChanged.connect(self.onInputsChanged)
         self.sample.detectionsChanged.connect(self.onInputsChanged)
+        self.reference.optionsChanged.connect(self.onInputsChanged)
+        self.reference.detectionsChanged.connect(self.onInputsChanged)
 
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
@@ -39,7 +41,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
         self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        self.options.uptake.setBaseValue(0.000001566666666)
+        self.options.uptake.setBaseValue(0.000001567)
         self.options.response.setBaseValue(20e9)
         self.options.efficiency.setText("0.062")
         self.sample.density.setBaseValue(19.32e3)
@@ -61,9 +63,15 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(action_close)
 
     def onInputsChanged(self) -> None:
+        # Reference tab is neb method requires
+        self.tabs.setTabEnabled(
+            self.tabs.indexOf(self.reference),
+            self.options.efficiency_method.currentText()
+            in ["Reference", "Mass Response (None)"],
+        )
         self.tabs.setTabEnabled(
             self.tabs.indexOf(self.results),
-            self.readyForResultsMassResponse() or self.readyForResultsNebEff(),
+            self.readyForResults(),
         )
 
     # def onSampleComplete(self) -> None:
@@ -72,18 +80,14 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            if self.readyForResultsNebEff():
-                self.results.updateResultsNebEff()
-            elif self.readyForResultsMassResponse():
-                self.results.updateResultsMassResponse()
-            else:
-                raise ValueError("Results not ready!")
+            self.results.updateResults()
 
-    def readyForResultsNebEff(self) -> bool:
-        return self.options.isComplete() and self.sample.isComplete()
-
-    def readyForResultsMassResponse(self) -> bool:
-        return (
-            self.reference.massresponse.hasAcceptableInput()
-            and self.sample.isComplete()
+    def readyForResults(self) -> bool:
+        return all(
+            [
+                self.options.isComplete(),
+                self.sample.isComplete(),
+                self.reference.isComplete()
+                or not self.tabs.isTabEnabled(self.tabs.indexOf(self.reference)),
+            ]
         )

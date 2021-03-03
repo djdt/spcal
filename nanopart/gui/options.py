@@ -51,6 +51,10 @@ class OptionsWidget(QtWidgets.QWidget):
             "Nebulisation efficiency. Can be calculated using a reference particle."
         )
 
+        self.efficiency_method = QtWidgets.QComboBox()
+        self.efficiency_method.addItems(["Manual", "Reference", "Mass Response (None)"])
+        self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
+
         # Complete Changed
         self.dwelltime.valueChanged.connect(self.optionsChanged)
         self.uptake.valueChanged.connect(self.optionsChanged)
@@ -63,6 +67,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Dwell time:", self.dwelltime)
         self.inputs.layout().addRow("Response:", self.response)
         self.inputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.inputs.layout().addRow("", self.efficiency_method)
 
         self.epsilon = QtWidgets.QLineEdit("0.5")
         self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
@@ -109,22 +114,44 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def efficiencyMethodChanged(self, method: str) -> None:
+        if method == "Manual":
+            self.response.setEnabled(True)
+            self.uptake.setEnabled(True)
+            self.efficiency.setEnabled(True)
+        elif method == "Reference":
+            self.response.setEnabled(True)
+            self.uptake.setEnabled(True)
+            self.efficiency.setEnabled(False)
+        elif method == "Mass Response (None)":
+            self.response.setEnabled(False)
+            self.uptake.setEnabled(False)
+            self.efficiency.setEnabled(False)
+
+        self.optionsChanged.emit()
+
     def isComplete(self) -> bool:
-        return (
-            all(
+        method = self.efficiency_method.currentText()
+        if method == "Manual":
+            return all(
+                [
+                    self.dwelltime.hasAcceptableInput(),
+                    self.response.hasAcceptableInput(),
+                    self.uptake.hasAcceptableInput(),
+                    self.efficiency.hasAcceptableInput(),
+                ]
+            )
+        elif method == "Reference":
+            return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
                     self.response.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                 ]
             )
-            and self.efficiency.hasAcceptableInput()
-            or self.diameter.hasAcceptableInput()
-        )
-
-    def setEfficiency(self, text: str) -> None:
-        if text == "":
-            self.efficiency.setEnabled(True)
-        else:
-            self.efficiency.setEnabled(False)
-            self.efficiency.setText(text)
+        elif method == "Mass Response (None)":
+            return all(
+                [
+                    self.dwelltime.hasAcceptableInput(),
+                ]
+            )
