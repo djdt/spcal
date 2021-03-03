@@ -108,29 +108,117 @@ class ParticleTable(QtWidgets.QWidget):
         else:
             return None
 
+    # def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+    #     menu = QtWidgets.QMenu(self)
+    #     cut_action.triggered.connect(self._cut)
+    #     copy_action = QtWidgets.QAction(
+    #         QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
+    #     )
+    #     copy_action.triggered.connect(self._copy)
+    #     paste_action = QtWidgets.QAction(
+    #         QtGui.QIcon.fromTheme("edit-paste"), "Paste", self
+    #     )
+    #     paste_action.triggered.connect(self._paste)
 
-class ResultsTable(QtWidgets.QWidget):
-    unitChanged = QtCore.Signal(str, str)
+    #     menu.addAction(cut_action)
+    #     menu.addAction(copy_action)
+    #     menu.addAction(paste_action)
 
+    #     menu.popup(event.globalPos())
+
+    # def keyPressEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover
+    #     if event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+    #         self._advance()
+    #     elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+    #         self._delete()
+    # #     elif event.matches(QtGui.QKeySequence.Copy):
+    # #         self._copy()
+    # #     elif event.matches(QtGui.QKeySequence.Cut):
+    # #         self._cut()
+    # #     elif event.matches(QtGui.QKeySequence.Paste):
+    # #         self._paste()
+    #     else:
+    #         super().keyPressEvent(event)
+
+    # def _advance(self) -> None:
+    #     index = self.moveCursor(
+    #         QtWidgets.QAbstractItemView.MoveDown, QtCore.Qt.NoModifier
+    #     )
+    #     self.setCurrentIndex(index)
+
+    # def _delete(self) -> None:
+    #     for i in self.selectedIndexes():
+    #         if i.flags() & QtCore.Qt.ItemIsEditable:
+    #             self.model().setData(i, np.nan)
+
+    # def _paste(self) -> None:
+    #     text = QtWidgets.QApplication.clipboard().text("plain")[0]
+    #     selection = self.selectedIndexes()
+    #     start_row = min(selection, key=lambda i: i.row()).row()
+    #     start_column = min(selection, key=lambda i: i.column()).column()
+
+    #     for row, row_text in enumerate(text.split("\n")):
+    #         for column, text in enumerate(row_text.split("\t")):
+    #             if self.model().hasIndex(start_row + row, start_column + column):
+    #                 index = self.model().createIndex(
+    #                     start_row + row, start_column + column
+    #                 )
+    #                 if index.isValid() and index.flags() & QtCore.Qt.ItemIsEditable:
+    #                     self.model().setData(index, text)
+
+
+class ResultsTable(QtWidgets.QTableView):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        self.model = NamedColumnModel(["Mass", "Size"])
+        model = NamedColumnModel(["Column"])
+        self.setModel(model)
 
-        self.table = QtWidgets.QTableView()
-        self.table.setItemDelegate(DoubleSignificantFiguresDelegate(4))
-        self.table.setModel(self.model)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.horizontalHeader().setStretchLastSection(True)
+        self.verticalHeader().setVisible(False)
 
-        self.response = QtWidgets.QComboBox()
-        self.response.addItems(["counts", "cps"])
+        self.setItemDelegate(DoubleSignificantFiguresDelegate(4))
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
-        layout_unit = QtWidgets.QHBoxLayout()
-        layout_unit.addWidget(QtWidgets.QLabel("Response units:"), 1)
-        layout_unit.addWidget(self.response, 0)
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        menu = QtWidgets.QMenu(self)
+        copy_action = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
+        )
+        copy_action.triggered.connect(self._copy)
+        menu.addAction(copy_action)
+        menu.popup(event.globalPos())
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_unit)
-        layout.addWidget(self.table)
-        self.setLayout(layout)
+    def keyPressEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover
+        if event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+            self._advance()
+        elif event.matches(QtGui.QKeySequence.Copy):
+            self._copy()
+        else:
+            super().keyPressEvent(event)
+
+    def _copy(self) -> None:
+        selection = sorted(self.selectedIndexes(), key=lambda i: (i.row(), i.column()))
+        data = (
+            '<meta http-equiv="content-type" content="text/html; charset=utf-8"/>'
+            "<table><tr>"
+        )
+        text = ""
+
+        prev = None
+        for i in selection:
+            if prev is not None and prev.row() != i.row():  # New row
+                data += "</tr><tr>"
+                text += "\n"
+            value = i.data()
+            data += f"<td>{value}</td>"
+            if prev is not None and prev.row() == i.row():
+                text += "\t"
+            text += f"{value}"
+            prev = i
+        data += "</tr></table>"
+
+        mime = QtCore.QMimeData()
+        mime.setHtml(data)
+        mime.setText(text)
+        QtWidgets.QApplication.clipboard().setMimeData(mime)

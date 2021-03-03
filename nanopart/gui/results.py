@@ -40,7 +40,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "kg/L": 1.0,
         }
 
-        self.nbins = 64
+        self.nbins = "doane"
         self.masses: np.ndarray = None
         self.sizes: np.ndarray = None
         self.number_concentration = 0.0
@@ -70,13 +70,13 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
 
-        self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Mass", "Size"])
-        self.method.setCurrentText("Size")
+        self.mode = QtWidgets.QComboBox()
+        self.mode.addItems(["Mass", "Size"])
+        self.mode.setCurrentText("Size")
+        self.mode.currentIndexChanged.connect(self.updateTable)
+        self.mode.currentIndexChanged.connect(self.updateChart)
 
-        self.method.currentIndexChanged.connect(self.updateChart)
-
-        self.outputs = QtWidgets.QGroupBox("outputs")
+        self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
 
         self.count = QtWidgets.QLineEdit()
@@ -102,23 +102,29 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export = QtWidgets.QPushButton("Export")
         self.button_export.pressed.connect(self.dialogExportResults)
 
-        layout_methods = QtWidgets.QHBoxLayout()
-        layout_methods.addStretch(1)
-        layout_methods.addWidget(QtWidgets.QLabel("Data:"), 0, QtCore.Qt.AlignRight)
-        layout_methods.addWidget(self.method, 0, QtCore.Qt.AlignRight)
-        layout_methods.addWidget(QtWidgets.QLabel("Fit:"), 0, QtCore.Qt.AlignRight)
-        layout_methods.addWidget(self.fitmethod, 0, QtCore.Qt.AlignRight)
+        layout_table_options = QtWidgets.QHBoxLayout()
+        layout_table_options.addStretch(1)
+        layout_table_options.addWidget(QtWidgets.QLabel("Mode:"), 0)
+        layout_table_options.addWidget(self.mode)
 
-        layout_right = QtWidgets.QVBoxLayout()
+        layout_table = QtWidgets.QVBoxLayout()
+        layout_table.addLayout(layout_table_options)
+        layout_table.addWidget(self.table, 1)
+        layout_table.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
 
-        layout_right.addWidget(self.outputs)
-        layout_right.addLayout(layout_methods)
-        layout_right.addWidget(self.chartview)
-        layout_right.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
+        layout_chart_options = QtWidgets.QHBoxLayout()
+        layout_chart_options.addStretch(1)
+        layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
+        layout_chart_options.addWidget(self.fitmethod)
+
+        layout_outputs = QtWidgets.QVBoxLayout()
+        layout_outputs.addWidget(self.outputs)
+        layout_outputs.addWidget(self.chartview)
+        layout_outputs.addLayout(layout_chart_options)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.table, 0)
-        layout.addLayout(layout_right, 1)
+        layout.addLayout(layout_table, 0)
+        layout.addLayout(layout_outputs, 1)
         self.setLayout(layout)
 
     def dialogExportResults(self) -> None:
@@ -163,12 +169,12 @@ class ResultsWidget(QtWidgets.QWidget):
         )
 
     def updateChart(self) -> None:
-        method = self.method.currentText()
-        if method == "Mass":
+        mode = self.mode.currentText()
+        if mode == "Mass":
             data = self.masses * 1e21  # ag
             lod = self.background_lod_mass * 1e21  # ag
             self.chart.xaxis.setTitleText("Mass (ag)")
-        elif method == "Size":
+        elif mode == "Size":
             data = self.sizes * 1e9  # nm
             lod = self.background_lod_size * 1e9  # nm
             self.chart.xaxis.setTitleText("Size (nm)")
@@ -183,10 +189,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updateChartFit()
 
     def updateChartFit(self) -> None:
-        method = self.method.currentText()
-        if method == "Mass":
+        mode = self.mode.currentText()
+        if mode == "Mass":
             data = self.masses * 1e21  # ag
-        elif method == "Size":
+        elif mode == "Size":
             data = self.sizes * 1e9  # nm
 
         method = self.fitmethod.currentText()
@@ -215,6 +221,16 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.fit.setName(method)
         self.chart.label_fit.setVisible(True)
 
+    def updateTable(self) -> None:
+        mode = self.mode.currentText()
+        if mode == "Mass":
+            data = self.masses
+        elif mode == "Size":
+            data = self.sizes
+        self.table.model().beginResetModel()
+        self.table.model().array = data[:, None]
+        self.table.model().endResetModel()
+
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
@@ -228,8 +244,29 @@ class ResultsWidget(QtWidgets.QWidget):
             massresponse = self.reference.massresponse.baseValue()
             self.updateResultsMassResponse(massresponse)
 
-    def updateResultsMassResponse(self, massresponse: float) -> None:
+        self.count.setText(f"{self.sample.detections.size}")
+        self.number.setBaseValue(self.number_concentration)
+        self.conc.setBaseValue(self.concentration)
+        self.background.setBaseValue(self.ionic_background)
 
+        self.updateTable()
+        self.updateChart()
+
+    def updateResultsMassResponse(self, massresponse: float) -> None:
+        density = self.sample.density.baseValue()
+        molarratio = float(self.sample.molarratio.text())
+
+        self.masses = self.sample.detections * (massresponse / molarratio)
+        self.sizes = nanopart.particle_size(self.masses, density=density)
+
+        self.number_concentration = None
+        self.concentration = None
+        self.ionic_background = None
+
+        self.background_lod_mass = self.sample.limits[3] / (massresponse * molarratio)
+        self.background_lod_size = nanopart.particle_size(
+            self.background_lod_mass, density=density
+        )
 
     def updateResultsNebEff(self, efficiency: float) -> None:
         dwelltime = self.options.dwelltime.baseValue()
@@ -274,17 +311,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.background_lod_size = nanopart.particle_size(
             self.background_lod_mass, density=density
         )
-
-        self.count.setText(f"{self.sample.detections.size}")
-        self.number.setBaseValue(self.number_concentration)
-        self.conc.setBaseValue(self.concentration)
-        self.background.setBaseValue(self.ionic_background)
-
-        self.table.model.beginResetModel()
-        self.table.model.array = np.stack((self.masses, self.sizes), axis=1)
-        self.table.model.endResetModel()
-
-        self.updateChart()
 
     # def updateResultsSingleCell(self) -> None:
     #     # size = self.options.diameter.baseValue()

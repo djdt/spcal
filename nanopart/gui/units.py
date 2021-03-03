@@ -59,8 +59,11 @@ class UnitsWidget(QtWidgets.QWidget):
         return self.value() * self.units[unit]
 
     def setBaseValue(self, base: float) -> None:
-        unit = self.combo.currentText()
-        self.setValue(base / self.units[unit])
+        if base is None:
+            self.setValue("")
+        else:
+            unit = self.combo.currentText()
+            self.setValue(base / self.units[unit])
 
     def unit(self) -> str:
         return self.combo.currentText()
@@ -88,6 +91,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def setReadOnly(self, readonly: bool) -> None:
         self.lineedit.setReadOnly(readonly)
+        self.lineedit.setActive(not readonly)
 
     def setToolTip(self, text: str) -> None:
         self.lineedit.setToolTip(text)

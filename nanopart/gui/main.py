@@ -41,6 +41,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
         self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
         self.options.uptake.setBaseValue(0.000001567)
         self.options.response.setBaseValue(20e9)
         self.options.efficiency.setText("0.062")
