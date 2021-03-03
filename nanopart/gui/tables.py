@@ -1,11 +1,9 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from nanopart.io import read_nanoparticle_file
-
 from nanopart.gui.util import NumpyArrayTableModel
 
-from typing import List, Tuple
+from typing import List
 
 
 class DoubleSignificantFiguresDelegate(QtWidgets.QStyledItemDelegate):
@@ -57,114 +55,63 @@ class NamedColumnModel(NumpyArrayTableModel):
             return str(section)
 
 
-class ParticleTable(QtWidgets.QWidget):
-    unitChanged = QtCore.Signal(str)
-
+class ParticleTable(QtWidgets.QTableView):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        self.model = NamedColumnModel(["Response"])
+        model = NamedColumnModel(["Response"])
+        self.setModel(model)
 
-        self.table = QtWidgets.QTableView()
-        self.table.setItemDelegate(DoubleSignificantFiguresDelegate(4))
-        self.table.setModel(self.model)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-
-        self.response = QtWidgets.QComboBox()
-        self.response.addItems(["counts", "cps"])
-        self.response.currentTextChanged.connect(self.unitChanged)
-
-        layout_unit = QtWidgets.QHBoxLayout()
-        layout_unit.addWidget(QtWidgets.QLabel("Response units:"), 1)
-        layout_unit.addWidget(self.response, 0)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_unit)
-        layout.addWidget(self.table)
-        self.setLayout(layout)
-
-    def loadFile(self, file: str) -> dict:
-        responses, parameters = read_nanoparticle_file(file, delimiter=",")
-
-        self.response.blockSignals(True)
-        self.response.setCurrentText("cps" if parameters["cps"] else "counts")
-        self.response.blockSignals(False)
-
-        self.model.beginResetModel()
-        self.model.array = responses[:, None]
-        self.model.endResetModel()
-
-        return parameters
-
-    def asCounts(
-        self, dwelltime: float = None, trim: Tuple[int, int] = (None, None)
-    ) -> np.ndarray:
-        response = self.model.array[trim[0] : trim[1], 0]
-        if self.response.currentText() == "counts":
-            return response
-        elif dwelltime is not None:
-            return response * dwelltime
-        else:
-            return None
+        self.setItemDelegate(DoubleSignificantFiguresDelegate(4))
+        self.horizontalHeader().setStretchLastSection(True)
+        self.verticalHeader().setVisible(False)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
     # def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
     #     menu = QtWidgets.QMenu(self)
-    #     cut_action.triggered.connect(self._cut)
-    #     copy_action = QtWidgets.QAction(
-    #         QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
-    #     )
-    #     copy_action.triggered.connect(self._copy)
+    # #     cut_action.triggered.connect(self._cut)
+    # #     copy_action = QtWidgets.QAction(
+    # #         QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
+    # #     )
+    # #     copy_action.triggered.connect(self._copy)
     #     paste_action = QtWidgets.QAction(
     #         QtGui.QIcon.fromTheme("edit-paste"), "Paste", self
     #     )
     #     paste_action.triggered.connect(self._paste)
 
-    #     menu.addAction(cut_action)
-    #     menu.addAction(copy_action)
+    # #     menu.addAction(cut_action)
+    # #     menu.addAction(copy_action)
     #     menu.addAction(paste_action)
 
     #     menu.popup(event.globalPos())
 
-    # def keyPressEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover
-    #     if event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
-    #         self._advance()
-    #     elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
-    #         self._delete()
+    def keyPressEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover
+        if event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+            self._advance()
+        elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+            self._delete()
     # #     elif event.matches(QtGui.QKeySequence.Copy):
     # #         self._copy()
     # #     elif event.matches(QtGui.QKeySequence.Cut):
     # #         self._cut()
-    # #     elif event.matches(QtGui.QKeySequence.Paste):
-    # #         self._paste()
-    #     else:
-    #         super().keyPressEvent(event)
+        # elif event.matches(QtGui.QKeySequence.Paste):
+        #     self._paste()
+        else:
+            super().keyPressEvent(event)
 
-    # def _advance(self) -> None:
-    #     index = self.moveCursor(
-    #         QtWidgets.QAbstractItemView.MoveDown, QtCore.Qt.NoModifier
-    #     )
-    #     self.setCurrentIndex(index)
+    def _advance(self) -> None:
+        index = self.moveCursor(
+            QtWidgets.QAbstractItemView.MoveDown, QtCore.Qt.NoModifier
+        )
+        self.setCurrentIndex(index)
 
-    # def _delete(self) -> None:
-    #     for i in self.selectedIndexes():
-    #         if i.flags() & QtCore.Qt.ItemIsEditable:
-    #             self.model().setData(i, np.nan)
-
-    # def _paste(self) -> None:
-    #     text = QtWidgets.QApplication.clipboard().text("plain")[0]
-    #     selection = self.selectedIndexes()
-    #     start_row = min(selection, key=lambda i: i.row()).row()
-    #     start_column = min(selection, key=lambda i: i.column()).column()
-
-    #     for row, row_text in enumerate(text.split("\n")):
-    #         for column, text in enumerate(row_text.split("\t")):
-    #             if self.model().hasIndex(start_row + row, start_column + column):
-    #                 index = self.model().createIndex(
-    #                     start_row + row, start_column + column
-    #                 )
-    #                 if index.isValid() and index.flags() & QtCore.Qt.ItemIsEditable:
-    #                     self.model().setData(index, text)
+    def _delete(self) -> None:
+        self.model().blockSignals(True)
+        indicies = self.selectedIndexes()
+        for i in indicies[1:]:
+            self.model().setData(i, np.nan)
+        self.model().blockSignals(False)
+        self.model().setData(indicies[0], np.nan)
+        self.clearSelection()
 
 
 class ResultsTable(QtWidgets.QTableView):

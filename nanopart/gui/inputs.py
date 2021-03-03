@@ -7,12 +7,13 @@ from pathlib import Path
 import nanopart
 from nanopart import npdata
 
+from nanopart.io import read_nanoparticle_file
+
 from nanopart.gui.charts import ParticleChart
+from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ParticleTable
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import ElidedLabel, RangeSlider, ValidColorLineEdit
-
-from nanopart.gui.options import OptionsWidget
 
 from typing import Tuple
 
@@ -53,10 +54,13 @@ class InputWidget(QtWidgets.QWidget):
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
 
+        self.table_units = QtWidgets.QComboBox()
+        self.table_units.addItems(["Counts", "CPS"])
+        self.table_units.currentTextChanged.connect(self.updateLimits)
+
         self.table = ParticleTable()
-        self.table.unitChanged.connect(self.updateLimits)
-        self.table.model.dataChanged.connect(self.updateDetections)
-        self.table.model.dataChanged.connect(self.redrawChart)
+        self.table.model().dataChanged.connect(self.updateDetections)
+        self.table.model().dataChanged.connect(self.redrawChart)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
@@ -79,12 +83,18 @@ class InputWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
 
-        layout_file = QtWidgets.QHBoxLayout()
-        layout_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
-        layout_file.addWidget(self.label_file, 1)
+        layout_table_file = QtWidgets.QHBoxLayout()
+        layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
+        layout_table_file.addWidget(self.label_file, 1)
+
+        layout_table_units = QtWidgets.QHBoxLayout()
+        layout_table_units.addStretch(1)
+        layout_table_units.addWidget(QtWidgets.QLabel("Response:"), 0)
+        layout_table_units.addWidget(self.table_units, 0)
 
         layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addLayout(layout_file, 0)
+        layout_table.addLayout(layout_table_file, 0)
+        layout_table.addLayout(layout_table_units, 0)
         layout_table.addWidget(self.table, 1)
 
         layout_slider = QtWidgets.QHBoxLayout()
@@ -128,6 +138,20 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
+    def responseAsCounts(self, trim: Tuple[int, int] = None) -> np.ndarray:
+        if trim is None:
+            trim = (self.slider.left(), self.slider.right())
+
+        dwelltime = self.options.dwelltime.baseValue()
+        response = self.table.model().array[trim[0] : trim[1], 0]
+
+        if self.table_units.currentText() == "Counts":
+            return response
+        elif dwelltime is not None:
+            return response * dwelltime
+        else:
+            return None
+
     def timeAsSeconds(self) -> float:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
@@ -141,15 +165,23 @@ class InputWidget(QtWidgets.QWidget):
 
     def loadFile(self, file: str) -> None:
         try:
-            parameters = self.table.loadFile(file)
+            responses, parameters = read_nanoparticle_file(file, delimiter=",")
         except ValueError:
             return
 
         self.label_file.setText(Path(file).name)
 
+        self.table_units.blockSignals(True)
+        self.table_units.setCurrentText("CPS" if parameters["cps"] else "Counts")
+        self.table_units.blockSignals(False)
+
+        self.table.model().beginResetModel()
+        self.table.model().array = responses[:, None]
+        self.table.model().endResetModel()
+
         # Update Chart and slider
-        self.slider.setRange(0, self.table.model.rowCount())
-        self.slider.setValues(0, self.table.model.rowCount())
+        self.slider.setRange(0, self.table.model().rowCount())
+        self.slider.setValues(0, self.table.model().rowCount())
         self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
 
         # Update dwell time
@@ -160,10 +192,8 @@ class InputWidget(QtWidgets.QWidget):
         self.redrawLimits()
 
     def updateDetections(self) -> None:
-        responses = self.table.asCounts(
-            self.options.dwelltime.baseValue(),
-            trim=(self.slider.left(), self.slider.right()),
-        )
+        responses = self.responseAsCounts()
+
         if self.limits is None or responses is None or responses.size == 0:
             self.detections = np.array([])
 
@@ -175,7 +205,7 @@ class InputWidget(QtWidgets.QWidget):
             )
 
             self.detections = detections
-            self.background = np.mean(responses[labels == 0])
+            self.background = np.nanmean(responses[labels == 0])
 
             self.count.setText(str(detections.size))
             self.background_count.setText(f"{self.background:.4g}")
@@ -184,17 +214,14 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateLimits(self) -> None:
         method = self.options.method.currentText()
-        responses = self.table.asCounts(
-            self.options.dwelltime.baseValue(),
-            trim=(self.slider.left(), self.slider.right()),
-        )
+        responses = self.responseAsCounts()
 
         self.limits = None
 
         if responses is None or responses.size == 0:
             return
 
-        mean = np.mean(responses)
+        mean = np.nanmean(responses)
         gaussian = None
         poisson: Tuple[float, float] = None
 
@@ -224,14 +251,12 @@ class InputWidget(QtWidgets.QWidget):
         self.limitsChanged.emit()
 
     def redrawChart(self) -> None:
-        responses = self.table.asCounts(
-            self.options.dwelltime.baseValue(),
-        )
+        responses = self.responseAsCounts(trim=(0, self.table.model().rowCount()))
         if responses is None or responses.size == 0:
             return
 
         events = np.arange(responses.size)
-        self.chart.setData(np.stack((events, responses), axis=1))
+        self.chart.setData(np.stack((events, np.nan_to_num(responses)), axis=1))
 
         self.chart.drawVerticalLines(
             [self.slider.left(), self.slider.right()],

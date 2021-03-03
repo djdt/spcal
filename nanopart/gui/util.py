@@ -125,7 +125,7 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
             pos = [index.row(), index.column()]
             value = self.array[pos[self.axes[0]], pos[self.axes[1]]]
-            return str(value)
+            return "" if np.isnan(value) else str(value)
         else:  # pragma: no cover
             return None
 
@@ -134,6 +134,9 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
     ) -> bool:
         if not index.isValid():
             return False
+
+        if value == "":
+            value = np.nan
 
         if role == QtCore.Qt.EditRole:
             try:

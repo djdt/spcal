@@ -105,26 +105,20 @@ def atoms_per_particle(
     return masses * Na / molarmass
 
 
-# def cell_concentration(
-#     signals: np.ndarray, density: float, diameter: float, molarmass: float
+# def particle_concentration(
+#     signal: np.ndarray,
+#     molarmass: float,
+#     response_factor: float,
 # ) -> np.ndarray:
-def particle_concentration(
-    signal: np.ndarray,
-    molarmass: float,
-    response_factor: float,
-) -> np.ndarray:
-    """Intra-cellular concentrations in mol/L.
-    # Assumes a spherical cell shape.
+#     """Intra-cellular concentrations in mol/L.
+#     # Assumes a spherical cell shape.
 
-    Args:
-        signal: array of signals
-        molarmass: molecular weight (kg/mol)
-        response_factor: ICP-MS response (counts / kg/L)
-    """
-    return signal / (response_factor * molarmass)
-    # return signals * (density / molarmass) / 1e3  # 1e3, m3 => L
-    # volume = (4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3) * 1e3  # 1e3, m3 => L
-    # return signals / (molarmass * volume)
+#     Args:
+#         signal: array of signals
+#         molarmass: molecular weight (kg/mol)
+#         response_factor: ICP-MS response (counts / kg/L)
+#     """
+#     return signal / (response_factor * molarmass)
 
 
 def nebulisation_efficiency_from_concentration(

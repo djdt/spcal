@@ -164,7 +164,7 @@ class ParticleChart(QtCharts.QChart):
         xmin = max(xmin, 0)
         xmax = min(xmax, self.series.count())
 
-        ymax = np.max(self.yvalues[int(xmin) : int(xmax)])
+        ymax = np.nanmax(self.yvalues[int(xmin) : int(xmax)])
         self.yaxis.setRange(0.0, ymax)
 
 
