@@ -170,10 +170,11 @@ class ParticleTable(QtWidgets.QWidget):
 class ResultsTable(QtWidgets.QTableView):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        model = NamedColumnModel(["Column"])
+        model = NamedColumnModel([""])
         self.setModel(model)
 
         self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setVisible(False)
         self.verticalHeader().setVisible(False)
 
         self.setItemDelegate(DoubleSignificantFiguresDelegate(4))
