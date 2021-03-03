@@ -13,7 +13,12 @@ from nanopart.gui.charts import ParticleChart
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ParticleTable
 from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import ElidedLabel, RangeSlider, ValidColorLineEdit
+from nanopart.gui.widgets import (
+    DragDropRedirectFilter,
+    ElidedLabel,
+    RangeSlider,
+    ValidColorLineEdit,
+)
 
 from typing import Tuple
 
@@ -53,20 +58,22 @@ class InputWidget(QtWidgets.QWidget):
         self.chart = ParticleChart()
         self.chartview = QtCharts.QChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
+        self.chartview.setAcceptDrops(False)
+        # self.chartview.installEventFilter(DragDropRedirectFilter(self))
 
         self.table_units = QtWidgets.QComboBox()
         self.table_units.addItems(["Counts", "CPS"])
         self.table_units.currentTextChanged.connect(self.updateLimits)
 
         self.table = ParticleTable()
-        self.table.model().dataChanged.connect(self.updateDetections)
         self.table.model().dataChanged.connect(self.redrawChart)
+        self.table.model().dataChanged.connect(self.updateLimits)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
-        self.slider.sliderReleased.connect(self.updateDetections)
+        self.slider.sliderReleased.connect(self.updateLimits)
 
         # Sample options
 
@@ -130,10 +137,19 @@ class InputWidget(QtWidgets.QWidget):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
                 self.loadFile(url.toLocalFile())
+                break
+            event.acceptProposedAction()
+        elif event.mimeData().hasText():
+            text = event.mimeData().text()
+            data = np.genfromtxt(text.split("\n"), usecols=0, dtype=np.float64)
+            data = data[~np.isnan(data)]
+            if data.size == 0:
+                event.ignore()
+                return
+
+            self.loadData(data)
             event.acceptProposedAction()
         elif event.mimeData().hasHtml():
-            pass
-        elif event.mimeData().hasText():
             pass
         else:
             super().dropEvent(event)
@@ -175,8 +191,15 @@ class InputWidget(QtWidgets.QWidget):
         self.table_units.setCurrentText("CPS" if parameters["cps"] else "Counts")
         self.table_units.blockSignals(False)
 
+        # Update dwell time
+        if "dwelltime" in parameters:
+            self.options.dwelltime.setBaseValue(parameters["dwelltime"])
+
+        self.loadData(responses)
+
+    def loadData(self, data: np.ndarray) -> None:
         self.table.model().beginResetModel()
-        self.table.model().array = responses[:, None]
+        self.table.model().array = data[:, None]
         self.table.model().endResetModel()
 
         # Update Chart and slider
@@ -184,12 +207,8 @@ class InputWidget(QtWidgets.QWidget):
         self.slider.setValues(0, self.table.model().rowCount())
         self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
 
-        # Update dwell time
-        if "dwelltime" in parameters:
-            self.options.dwelltime.setBaseValue(parameters["dwelltime"])
-
         self.redrawChart()
-        self.redrawLimits()
+        self.updateLimits()
 
     def updateDetections(self) -> None:
         responses = self.responseAsCounts()
@@ -231,7 +250,7 @@ class InputWidget(QtWidgets.QWidget):
         if method in ["Highest", "Gaussian"]:
             if self.options.sigma.hasAcceptableInput():
                 sigma = float(self.options.sigma.text())
-                gaussian = mean + sigma * np.std(responses)
+                gaussian = mean + sigma * np.nanstd(responses)
 
         if method in ["Highest", "Poisson"]:
             if self.options.epsilon.hasAcceptableInput():
@@ -244,7 +263,7 @@ class InputWidget(QtWidgets.QWidget):
                 method = "Gaussian" if gaussian > poisson[1] else "Poisson"
 
         if method == "Gaussian" and gaussian is not None:
-            self.limits = (method, mean, sigma, gaussian)
+            self.limits = (method, mean, gaussian, gaussian)
         elif method == "Poisson" and poisson is not None:
             self.limits = (method, mean, poisson[0], poisson[1])
 
@@ -277,12 +296,13 @@ class InputWidget(QtWidgets.QWidget):
             else:
                 self.chart.drawHorizontalLines(
                     [self.limits[1], self.limits[3]],
-                    names=["mean", f"{self.limits[2]}σ"],
+                    names=["mean", "σ"],
                     pens=[
                         QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
                         QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
                     ],
                 )
+                self.chart.updateGeometry()
         else:
             if len(self.chart.hlines) == 3:
                 self.chart.setHorizontalLines(
