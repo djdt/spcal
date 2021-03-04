@@ -5,8 +5,8 @@ from typing import Tuple
 
 def accumulate_detections(
     y: np.ndarray,
-    limit_detection: float,
     limit_accumulation: float,
+    limit_detection: float,
     # return_regions: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.

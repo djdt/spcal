@@ -40,7 +40,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "kg/L": 1.0,
         }
 
-        self.nbins = "doane"
+        self.nbins = "auto"
         self.masses: np.ndarray = None
         self.sizes: np.ndarray = None
         self.number_concentration = 0.0
@@ -77,7 +77,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.currentIndexChanged.connect(self.updateChart)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QFormLayout())
+        self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
         self.count = QtWidgets.QLineEdit()
         self.count.setReadOnly(True)
@@ -94,10 +94,38 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.background.setReadOnly(True)
 
-        self.outputs.layout().addRow("Detected particles:", self.count)
-        self.outputs.layout().addRow("Number concentration:", self.number)
-        self.outputs.layout().addRow("Concentration:", self.conc)
-        self.outputs.layout().addRow("Ionic Background:", self.background)
+        self.lod = UnitsWidget(
+            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            default_unit="nm",
+            update_value_with_unit=True,
+        )
+        self.lod.setReadOnly(True)
+        self.mean = UnitsWidget(
+            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            default_unit="nm",
+            update_value_with_unit=True,
+        )
+        self.mean.setReadOnly(True)
+        self.median = UnitsWidget(
+            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            default_unit="nm",
+            update_value_with_unit=True,
+        )
+        self.median.setReadOnly(True)
+
+        layout_outputs_left = QtWidgets.QFormLayout()
+        layout_outputs_left.addRow("Detected particles:", self.count)
+        layout_outputs_left.addRow("Number concentration:", self.number)
+        layout_outputs_left.addRow("Concentration:", self.conc)
+        layout_outputs_left.addRow("Ionic Background:", self.background)
+
+        layout_outputs_right = QtWidgets.QFormLayout()
+        layout_outputs_right.addRow("Mean size:", self.mean)
+        layout_outputs_right.addRow("Median size:", self.median)
+        layout_outputs_right.addRow("Size LOD:", self.lod)
+
+        self.outputs.layout().addLayout(layout_outputs_left)
+        self.outputs.layout().addLayout(layout_outputs_right)
 
         self.button_export = QtWidgets.QPushButton("Export")
         self.button_export.pressed.connect(self.dialogExportResults)
@@ -243,6 +271,10 @@ class ResultsWidget(QtWidgets.QWidget):
         elif method == "Mass Response (None)":
             massresponse = self.reference.massresponse.baseValue()
             self.updateResultsMassResponse(massresponse)
+
+        self.mean.setBaseValue(np.nanmean(self.sizes))
+        self.median.setBaseValue(np.nanmedian(self.sizes))
+        self.lod.setBaseValue(self.background_lod_size)
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)

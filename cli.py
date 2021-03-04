@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # Critical values
     lc, ld = yc + ub, yd + ub
 
-    detections, regions = nanopart.accumulate_detections(y - ub, yd, yc)
+    detections, regions = nanopart.accumulate_detections(y - ub, yc, yd)
 
     # Calculate background mean of non-detections
     ndub = np.mean(y[regions == 0])

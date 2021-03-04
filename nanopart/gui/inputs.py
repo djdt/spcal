@@ -7,6 +7,7 @@ from pathlib import Path
 import nanopart
 from nanopart import npdata
 
+from nanopart.calc import calculate_limits
 from nanopart.io import read_nanoparticle_file
 
 from nanopart.gui.charts import ParticleChart
@@ -14,7 +15,6 @@ from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ParticleTable
 from nanopart.gui.units import UnitsWidget
 from nanopart.gui.widgets import (
-    DragDropRedirectFilter,
     ElidedLabel,
     RangeSlider,
     ValidColorLineEdit,
@@ -220,7 +220,7 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
         else:
             detections, labels = nanopart.accumulate_detections(
-                responses, self.limits[3], self.limits[2]
+                responses, self.limits[2], self.limits[3]
             )
 
             self.detections = detections
@@ -234,39 +234,18 @@ class InputWidget(QtWidgets.QWidget):
     def updateLimits(self) -> None:
         method = self.options.method.currentText()
         responses = self.responseAsCounts()
+        sigma = (
+            float(self.options.sigma.text())
+            if self.options.sigma.hasAcceptableInput()
+            else None
+        )
+        epsilon = (
+            float(self.options.epsilon.text())
+            if self.options.epsilon.hasAcceptableInput()
+            else None
+        )
 
-        self.limits = None
-
-        if responses is None or responses.size == 0:
-            return
-
-        mean = np.nanmean(responses)
-        gaussian = None
-        poisson: Tuple[float, float] = None
-
-        if method == "Automatic":
-            method = "Poisson" if mean < 50.0 else "Gaussian"
-
-        if method in ["Highest", "Gaussian"]:
-            if self.options.sigma.hasAcceptableInput():
-                sigma = float(self.options.sigma.text())
-                gaussian = mean + sigma * np.nanstd(responses)
-
-        if method in ["Highest", "Poisson"]:
-            if self.options.epsilon.hasAcceptableInput():
-                epsilon = float(self.options.epsilon.text())
-                yc, yd = nanopart.poisson_limits(mean, epsilon=epsilon)
-                poisson = (mean + yc, mean + yd)
-
-        if method == "Highest":
-            if gaussian is not None and poisson is not None:
-                method = "Gaussian" if gaussian > poisson[1] else "Poisson"
-
-        if method == "Gaussian" and gaussian is not None:
-            self.limits = (method, mean, gaussian, gaussian)
-        elif method == "Poisson" and poisson is not None:
-            self.limits = (method, mean, poisson[0], poisson[1])
-
+        self.limits = calculate_limits(responses, method, sigma, epsilon)
         self.limitsChanged.emit()
 
     def redrawChart(self) -> None:
