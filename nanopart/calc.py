@@ -38,3 +38,85 @@ def calculate_limits(
         return (method, mean, poisson[0], poisson[1])
     else:
         return None
+
+
+def results_from_mass_response(
+    detections: np.ndarray,
+    background: float,
+    lod: float,
+    dwelltime: float,
+    density: float,
+    molarratio: float,
+    massresponse: float,
+) -> dict:
+
+    masses = detections * (massresponse / molarratio)
+    sizes = nanopart.particle_size(masses, density=density)
+
+    lod_mass = lod / (massresponse * molarratio)
+    lod_size = nanopart.particle_size(lod_mass, density=density)
+
+    return {
+        "masses": masses,
+        "sizes": sizes,
+        "lod_mass": lod_mass,
+        "lod_size": lod_size,
+    }
+
+
+def results_from_nebulisation_efficiency(
+    detections: np.ndarray,
+    background: float,
+    lod: float,
+    dwelltime: float,
+    density: float,
+    efficiency: float,
+    molarratio: float,
+    uptake: float,
+    response: float,
+    time: float,
+) -> dict:
+
+    masses = nanopart.particle_mass(
+        detections,
+        dwell=dwelltime,
+        efficiency=efficiency,
+        flowrate=uptake,
+        response_factor=response,
+        molar_ratio=molarratio,
+    )
+    sizes = nanopart.particle_size(masses, density=density)
+
+    number_concentration = nanopart.particle_number_concentration(
+        detections.size,
+        efficiency=efficiency,
+        flowrate=uptake,
+        time=time,
+    )
+    concentration = nanopart.particle_total_concentration(
+        masses,
+        efficiency=efficiency,
+        flowrate=uptake,
+        time=time,
+    )
+
+    ionic = background / response
+    lod_mass = nanopart.particle_mass(
+        lod,
+        dwell=dwelltime,
+        efficiency=efficiency,
+        flowrate=uptake,
+        response_factor=response,
+        molar_ratio=molarratio,
+    )
+    lod_size = nanopart.particle_size(lod_mass, density=density)
+
+    return {
+        "masses": masses,
+        "sizes": sizes,
+        "concentration": concentration,
+        "number_concentration": number_concentration,
+        "ionic": ionic,
+        "lod_mass": lod_mass,
+        "lod_size": lod_size,
+    }

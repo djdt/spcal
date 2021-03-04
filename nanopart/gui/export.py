@@ -1,9 +1,16 @@
+import numpy as np
 from pathlib import Path
 
 import nanopart
 from nanopart.io import read_nanoparticle_file
 
-from nanopart.calc import calculate_limits
+from nanopart.calc import (
+    calculate_limits,
+    results_from_mass_response,
+    results_from_nebulisation_efficiency,
+)
+
+from typing import Tuple
 
 
 # def export_results(path: Path,
@@ -28,84 +35,95 @@ from nanopart.calc import calculate_limits
 # )
 
 
+def process_file_detections(
+    file: Path, limit_method: str, limit_sigma: float, limit_epsilon: float
+) -> Tuple[np.ndarray, float, Tuple[str, float, float, float]]:
+    responses, _ = read_nanoparticle_file(file, delimiter=",")
+
+    if responses is None or responses.size == 0:
+        raise ValueError(f"Unabled to import file '{file.name}'.")
+
+    limits = calculate_limits(responses, limit_method, limit_sigma, limit_epsilon)
+
+    if limits is None:
+        raise ValueError("Limit calculations failed for '{file.name}'.")
+
+    detections, labels = nanopart.accumulate_detections(responses, limits[2], limits[3])
+    background = np.nanmean(responses[labels == 0])
+
+    return detections, background, limits
+
+
 def process_file_mass_response(
     file: Path,
     dwelltime: float,
     density: float,
     molarratio: float,
     massresponse: float,
-    options: dict,
+    limit_method: str = "Automatic",
+    limit_sigma: float = 3.0,
+    limit_epsilon: float = 0.5,
 ) -> bool:
+
     responses, _ = read_nanoparticle_file(file, delimiter=",")
 
     if responses is None or responses.size == 0:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
-    limits = calculate_limits(
-        responses, options["limit_method"], options["sigma"], options["epsilon"]
-    )
+    limits = calculate_limits(responses, limit_method, limit_sigma, limit_epsilon)
 
     if limits is None:
         raise ValueError("Limit calculations failed for '{file.name}'.")
 
+    detections, labels = nanopart.accumulate_detections(responses, limits[2], limits[3])
+    background = np.nanmean(responses[labels == 0])
 
-def updateResultsMassResponse(self, massresponse: float) -> None:
-    density = self.sample.density.baseValue()
-    molarratio = float(self.sample.molarratio.text())
-
-    self.masses = self.sample.detections * (massresponse / molarratio)
-    self.sizes = nanopart.particle_size(self.masses, density=density)
-
-    self.number_concentration = None
-    self.concentration = None
-    self.ionic_background = None
-
-    self.background_lod_mass = self.sample.limits[3] / (massresponse * molarratio)
-    self.background_lod_size = nanopart.particle_size(
-        self.background_lod_mass, density=density
+    return results_from_mass_response(
+        detections,
+        background,
+        limits[3],
+        dwelltime=dwelltime,
+        density=density,
+        molarratio=molarratio,
+        massresponse=massresponse,
     )
 
 
-def updateResultsNebEff(self, efficiency: float) -> None:
-    dwelltime = self.options.dwelltime.baseValue()
-    density = self.sample.density.baseValue()
-    molarratio = float(self.sample.molarratio.text())
-    time = self.sample.timeAsSeconds()
-    uptake = self.options.uptake.baseValue()
-    response = self.options.response.baseValue()
+def process_file_nebulisation_efficiency(
+    file: Path,
+    dwelltime: float,
+    density: float,
+    efficiency: float,
+    molarratio: float,
+    uptake: float,
+    response: float,
+    time: float,
+    limit_method: str = "Automatic",
+    limit_sigma: float = 3.0,
+    limit_epsilon: float = 0.5,
+) -> bool:
 
-    self.masses = nanopart.particle_mass(
-        self.sample.detections,
-        dwell=dwelltime,
+    responses, _ = read_nanoparticle_file(file, delimiter=",")
+
+    if responses is None or responses.size == 0:
+        raise ValueError(f"Unabled to import file '{file.name}'.")
+
+    limits = calculate_limits(responses, limit_method, limit_sigma, limit_epsilon)
+
+    if limits is None:
+        raise ValueError("Limit calculations failed for '{file.name}'.")
+
+    detections, labels = nanopart.accumulate_detections(responses, limits[2], limits[3])
+    background = np.nanmean(responses[labels == 0])
+
+    return results_from_nebulisation_efficiency(
+        detections,
+        background,
+        limits[3],
+        dwelltime=dwelltime,
+        density=density,
         efficiency=efficiency,
-        flowrate=uptake,
-        response_factor=response,
-        molar_ratio=molarratio,
-    )
-    self.sizes = nanopart.particle_size(self.masses, density=density)
-
-    self.number_concentration = nanopart.particle_number_concentration(
-        self.sample.detections.size,
-        efficiency=efficiency,
-        flowrate=uptake,
-        time=time,
-    )
-    self.concentration = nanopart.particle_total_concentration(
-        self.masses,
-        efficiency=efficiency,
-        flowrate=uptake,
-        time=time,
-    )
-
-    self.ionic_background = self.sample.background / response
-    self.background_lod_mass = nanopart.particle_mass(
-        self.sample.limits[3],
-        dwell=dwelltime,
-        efficiency=efficiency,
-        flowrate=uptake,
-        response_factor=response,
-        molar_ratio=molarratio,
-    )
-    self.background_lod_size = nanopart.particle_size(
-        self.background_lod_mass, density=density
+        molarratio=molarratio,
+        uptake=uptake,
+        response=response,
     )
