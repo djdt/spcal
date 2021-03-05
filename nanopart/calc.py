@@ -45,7 +45,6 @@ def results_from_mass_response(
     background: float,
     lod: float,
     density: float,
-    dwelltime: float,
     molarratio: float,
     massresponse: float,
 ) -> dict:

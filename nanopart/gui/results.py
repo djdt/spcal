@@ -2,19 +2,20 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
 import numpy as np
+from pathlib import Path
 
-import nanopart
-from nanopart.calc import results_from_mass_response, results_from_nebulisation_efficiency
+from nanopart.calc import (
+    results_from_mass_response,
+    results_from_nebulisation_efficiency,
+)
 from nanopart.fit import fit_normal, fit_lognormal
+from nanopart.io import export_nanoparticle_results
 
 from nanopart.gui.charts import ParticleHistogram
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ResultsTable
 from nanopart.gui.units import UnitsWidget
-
-
-# TODO instead of plotting atoms (same as mass) plot cell conc
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -161,41 +162,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self, "Export", "", "CSV Documents (.csv)"
         )
         if file != "":
-            self.exportResults(file)
-
-    def exportResults(self, path: str) -> None:
-        text = (
-            f"Detected particles,{self.sizes.size}\n"
-            f"Number concentration,{self.number.value()},{self.number.unit()}\n"
-            f"Concentration,{self.conc.value()},{self.conc.unit()}\n"
-            f"Ionic background,{self.background.value()},{self.background.unit()}\n"
-            f"Mean NP size,{np.mean(self.sizes) * 1e9},nm\n"
-            f"Median NP size,{np.median(self.sizes) * 1e9},nm\n"
-            f"LOD equivalent size,{self.background_lod_size * 1e9},nm\n"
-        )
-
-        # if False:
-        #     text += (
-        #         f"Median atoms per particle: {np.median(atoms)}\n"
-        #         f"Background equivalent atoms: {beatoms}\n"
-        #     )
-
-        # # Output
-        # if args.output:
-        #     if args.molarmass:
-        # if False:
-        #     header = text + "Masses (kg),Sizes (m),Atoms"
-        #     data = np.stack((self.masses, self.sizes, self.atoms), axis=1)
-        # else:
-        header = text + "Masses (kg),Sizes (m)"
-        data = np.stack((self.masses, self.sizes), axis=1)
-
-        np.savetxt(
-            path,
-            data,
-            delimiter=",",
-            header=header,
-        )
+            export_nanoparticle_results(Path(file), self.result)
 
     def updateChart(self) -> None:
         mode = self.mode.currentText()
@@ -263,115 +230,108 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
-        if method == "Manual":
-            efficiency = float(self.options.efficiency.text())
-            self.updateResultsNebEff(efficiency)
-        elif method == "Reference":
-            efficiency = float(self.reference.efficiency.text())
-            self.updateResultsNebEff(efficiency)
+        if method in ["Manual", "Reference"]:
+            if method == "Manual":
+                efficiency = float(self.options.efficiency.text())
+            elif method == "Reference":
+                efficiency = float(self.reference.efficiency.text())
+
+            dwelltime = self.options.dwelltime.baseValue()
+            density = self.sample.density.baseValue()
+            molarratio = float(self.sample.molarratio.text())
+            time = self.sample.timeAsSeconds()
+            uptake = self.options.uptake.baseValue()
+            response = self.options.response.baseValue()
+
+            self.result = results_from_nebulisation_efficiency(
+                self.sample.detections,
+                self.sample.background,
+                self.sample.limits[3],
+                density=density,
+                dwelltime=dwelltime,
+                efficiency=efficiency,
+                molarratio=molarratio,
+                uptake=uptake,
+                response=response,
+                time=time,
+            )
         elif method == "Mass Response (None)":
+            density = self.sample.density.baseValue()
+            molarratio = float(self.sample.molarratio.text())
             massresponse = self.reference.massresponse.baseValue()
-            self.updateResultsMassResponse(massresponse)
+
+            self.result = results_from_mass_response(
+                self.sample.detections,
+                self.sample.background,
+                self.sample.limits[3],
+                density=density,
+                molarratio=molarratio,
+                massresponse=massresponse,
+            )
 
         self.mean.setBaseValue(np.mean(self.result["sizes"]))
         self.median.setBaseValue(np.median(self.result["sizes"]))
         self.lod.setBaseValue(self.result.get("background_size", None))
 
         self.count.setText(f"{self.sample.detections.size}")
-        self.number.setBaseValue(self.number_concentration)
-        self.conc.setBaseValue(self.concentration)
-        self.background.setBaseValue(self.ionic_background)
+        self.number.setBaseValue(self.result.get("number_concentration", None))
+        self.conc.setBaseValue(self.result.get("concentration", None))
+        self.background.setBaseValue(self.result.get("background_concentration", None))
 
         self.updateTable()
         self.updateChart()
 
-    def updateResultsMassResponse(self, massresponse: float) -> None:
-        density = self.sample.density.baseValue()
-        molarratio = float(self.sample.molarratio.text())
+    # def updateResultsSingleCell(self) -> None:
+    #     size = self.options.diameter.baseValue()
+    #     density = self.options.density.baseValue()
 
-        self.masses = self.sample.detections * (massresponse / molarratio)
-        self.sizes = nanopart.particle_size(self.masses, density=density)
+    # dwelltime = self.options.dwelltime.baseValue()
+    # uptake = self.options.uptake.baseValue()
+    # response = self.options.response.baseValue()
+    # efficiency = float(self.options.efficiency.text())
 
-        self.number_concentration = None
-        self.concentration = None
-        self.ionic_background = None
+    # time = self.sample.timeAsSeconds()
+    # density = self.sample.density.baseValue()
+    # molarratio = float(self.sample.molarratio.text())
 
-        self.background_lod_mass = self.sample.limits[3] / (massresponse * molarratio)
-        self.background_lod_size = nanopart.particle_size(
-            self.background_lod_mass, density=density
-        )
+    # self.masses = nanopart.particle_mass(
+    #     self.sample.detections,
+    #     dwell=dwelltime,
+    #     efficiency=efficiency,
+    #     flowrate=uptake,
+    #     response_factor=response,
+    #     # mass_fraction=molarratio,
+    # )
+    # self.sizes = nanopart.particle_size(self.masses, density=density)
+    # self.number_concentration = nanopart.particle_number_concentration(
+    #     self.sample.detections.size,
+    #     efficiency=efficiency,
+    #     flowrate=uptake,
+    #     time=time,
+    # )
+    # self.concentration = nanopart.particle_total_concentration(
+    #     self.masses,
+    #     efficiency=efficiency,
+    #     flowrate=uptake,
+    #     time=time,
+    # )
 
-    def updateResultsNebEff(self, efficiency: float) -> None:
-        dwelltime = self.options.dwelltime.baseValue()
-        density = self.sample.density.baseValue()
-        molarratio = float(self.sample.molarratio.text())
-        time = self.sample.timeAsSeconds()
-        uptake = self.options.uptake.baseValue()
-        response = self.options.response.baseValue()
+    # self.ionic_background = self.sample.background / response
+    # self.background_lod_mass = nanopart.particle_mass(
+    #     self.sample.limits[3],
+    #     dwell=dwelltime,
+    #     efficiency=efficiency,
+    #     flowrate=uptake,
+    #     response_factor=response,
+    #     mass_fraction=molarratio,
+    # )
+    # self.background_lod_size = nanopart.particle_size(
+    #     self.background_lod_mass, density=density
+    # )
 
-        self.result = results_from_nebulisation_efficiency(
-            self.sample.detections,
-            self.sample.background,
-            self.sample.limits[3],
-            density=density,
-            dwelltime=dwelltime,
-            efficiency=efficiency,
-            molarratio=molarratio,
-            uptake=uptake,
-            response=response,
-        )
+    # self.count.setText(f"{self.sample.detections.size}")
+    # self.number.setBaseValue(self.number_concentration)
+    # self.conc.setBaseValue(self.concentration)
+    # self.background.setBaseValue(self.ionic_background)
 
-    def updateResultsSingleCell(self) -> None:
-        size = self.options.diameter.baseValue()
-        density = self.options.density.baseValue()
-
-        # dwelltime = self.options.dwelltime.baseValue()
-        # uptake = self.options.uptake.baseValue()
-        # response = self.options.response.baseValue()
-        # efficiency = float(self.options.efficiency.text())
-
-        # time = self.sample.timeAsSeconds()
-        # density = self.sample.density.baseValue()
-        # molarratio = float(self.sample.molarratio.text())
-
-        # self.masses = nanopart.particle_mass(
-        #     self.sample.detections,
-        #     dwell=dwelltime,
-        #     efficiency=efficiency,
-        #     flowrate=uptake,
-        #     response_factor=response,
-        #     # mass_fraction=molarratio,
-        # )
-        # self.sizes = nanopart.particle_size(self.masses, density=density)
-        # self.number_concentration = nanopart.particle_number_concentration(
-        #     self.sample.detections.size,
-        #     efficiency=efficiency,
-        #     flowrate=uptake,
-        #     time=time,
-        # )
-        # self.concentration = nanopart.particle_total_concentration(
-        #     self.masses,
-        #     efficiency=efficiency,
-        #     flowrate=uptake,
-        #     time=time,
-        # )
-
-        # self.ionic_background = self.sample.background / response
-        # self.background_lod_mass = nanopart.particle_mass(
-        #     self.sample.limits[3],
-        #     dwell=dwelltime,
-        #     efficiency=efficiency,
-        #     flowrate=uptake,
-        #     response_factor=response,
-        #     mass_fraction=molarratio,
-        # )
-        # self.background_lod_size = nanopart.particle_size(
-        #     self.background_lod_mass, density=density
-        # )
-
-        # self.count.setText(f"{self.sample.detections.size}")
-        # self.number.setBaseValue(self.number_concentration)
-        # self.conc.setBaseValue(self.concentration)
-        # self.background.setBaseValue(self.ionic_background)
-
-        # self.updateChart()
+    # self.updateChart()export_nanoparticle_results
