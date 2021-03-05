@@ -44,8 +44,8 @@ def results_from_mass_response(
     detections: np.ndarray,
     background: float,
     lod: float,
-    dwelltime: float,
     density: float,
+    dwelltime: float,
     molarratio: float,
     massresponse: float,
 ) -> dict:
@@ -53,12 +53,16 @@ def results_from_mass_response(
     masses = detections * (massresponse / molarratio)
     sizes = nanopart.particle_size(masses, density=density)
 
+    bed = nanopart.particle_size(
+        background * (massresponse / molarratio), density=density
+    )
     lod_mass = lod / (massresponse * molarratio)
     lod_size = nanopart.particle_size(lod_mass, density=density)
 
     return {
         "masses": masses,
         "sizes": sizes,
+        "background_size": bed,
         "lod_mass": lod_mass,
         "lod_size": lod_size,
     }
@@ -68,8 +72,8 @@ def results_from_nebulisation_efficiency(
     detections: np.ndarray,
     background: float,
     lod: float,
-    dwelltime: float,
     density: float,
+    dwelltime: float,
     efficiency: float,
     molarratio: float,
     uptake: float,
@@ -101,6 +105,17 @@ def results_from_nebulisation_efficiency(
     )
 
     ionic = background / response
+    bed = nanopart.particle_size(
+        nanopart.particle_mass(
+            background,
+            dwell=dwelltime,
+            efficiency=efficiency,
+            flowrate=uptake,
+            response_factor=response,
+            molar_ratio=molarratio,
+        ),
+        density=density,
+    )
     lod_mass = nanopart.particle_mass(
         lod,
         dwell=dwelltime,
@@ -116,7 +131,8 @@ def results_from_nebulisation_efficiency(
         "sizes": sizes,
         "concentration": concentration,
         "number_concentration": number_concentration,
-        "ionic": ionic,
+        "background_concentration": ionic,
+        "background_size": bed,
         "lod_mass": lod_mass,
         "lod_size": lod_size,
     }

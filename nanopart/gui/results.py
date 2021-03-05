@@ -4,6 +4,7 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 
 import nanopart
+from nanopart.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from nanopart.fit import fit_normal, fit_lognormal
 
 from nanopart.gui.charts import ParticleHistogram
@@ -272,9 +273,9 @@ class ResultsWidget(QtWidgets.QWidget):
             massresponse = self.reference.massresponse.baseValue()
             self.updateResultsMassResponse(massresponse)
 
-        self.mean.setBaseValue(np.nanmean(self.sizes))
-        self.median.setBaseValue(np.nanmedian(self.sizes))
-        self.lod.setBaseValue(self.background_lod_size)
+        self.mean.setBaseValue(np.mean(self.result["sizes"]))
+        self.median.setBaseValue(np.median(self.result["sizes"]))
+        self.lod.setBaseValue(self.result.get("background_size", None))
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.number_concentration)
@@ -308,40 +309,16 @@ class ResultsWidget(QtWidgets.QWidget):
         uptake = self.options.uptake.baseValue()
         response = self.options.response.baseValue()
 
-        self.masses = nanopart.particle_mass(
+        self.result = results_from_nebulisation_efficiency(
             self.sample.detections,
-            dwell=dwelltime,
-            efficiency=efficiency,
-            flowrate=uptake,
-            response_factor=response,
-            molar_ratio=molarratio,
-        )
-        self.sizes = nanopart.particle_size(self.masses, density=density)
-
-        self.number_concentration = nanopart.particle_number_concentration(
-            self.sample.detections.size,
-            efficiency=efficiency,
-            flowrate=uptake,
-            time=time,
-        )
-        self.concentration = nanopart.particle_total_concentration(
-            self.masses,
-            efficiency=efficiency,
-            flowrate=uptake,
-            time=time,
-        )
-
-        self.ionic_background = self.sample.background / response
-        self.background_lod_mass = nanopart.particle_mass(
+            self.sample.background,
             self.sample.limits[3],
-            dwell=dwelltime,
+            density=density,
+            dwelltime=dwelltime,
             efficiency=efficiency,
-            flowrate=uptake,
-            response_factor=response,
-            molar_ratio=molarratio,
-        )
-        self.background_lod_size = nanopart.particle_size(
-            self.background_lod_mass, density=density
+            molarratio=molarratio,
+            uptake=uptake,
+            response=response,
         )
 
     def updateResultsSingleCell(self) -> None:
