@@ -43,13 +43,7 @@ class ResultsWidget(QtWidgets.QWidget):
         }
 
         self.nbins = "auto"
-        self.masses: np.ndarray = None
-        self.sizes: np.ndarray = None
-        self.number_concentration = 0.0
-        self.concentration = 0.0
-        self.ionic_background = 0.0
-        self.background_lod_mass = 0.0
-        self.background_lod_size = 0.0
+        self.result = {}
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
@@ -167,12 +161,16 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateChart(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
-            data = self.masses * 1e21  # ag
-            lod = self.background_lod_mass * 1e21  # ag
+            data = self.result["masses"] * 1e21  # ag
+            lod = self.result["lod_mass"] * 1e21
             self.chart.xaxis.setTitleText("Mass (ag)")
+        elif mode == "Signal":
+            data = self.result["detections"]  # counts
+            lod = self.result["lod"]
+            self.chart.xaxis.setTitleText("Signal (counts)")
         elif mode == "Size":
-            data = self.sizes * 1e9  # nm
-            lod = self.background_lod_size * 1e9  # nm
+            data = self.result["sizes"] * 1e9  # nm
+            lod = self.result["lod_size"] * 1e9
             self.chart.xaxis.setTitleText("Size (nm)")
 
         hist, bins = np.histogram(
@@ -187,9 +185,11 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateChartFit(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
-            data = self.masses * 1e21  # ag
+            data = self.result["masses"] * 1e21  # ag
+        elif mode == "Signal":
+            data = self.result["detections"]  # counts
         elif mode == "Size":
-            data = self.sizes * 1e9  # nm
+            data = self.result["sizes"] * 1e9  # nm
 
         method = self.fitmethod.currentText()
         if method == "None":
@@ -220,9 +220,11 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateTable(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
-            data = self.masses
+            data = self.result["masses"]
+        elif mode == "Signal":
+            data = self.result["detections"]
         elif mode == "Size":
-            data = self.sizes
+            data = self.result["sizes"]
         self.table.model().beginResetModel()
         self.table.model().array = data[:, None]
         self.table.model().endResetModel()
@@ -271,7 +273,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.mean.setBaseValue(np.mean(self.result["sizes"]))
         self.median.setBaseValue(np.median(self.result["sizes"]))
-        self.lod.setBaseValue(self.result.get("background_size", None))
+        self.lod.setBaseValue(self.result.get("lod_size", None))
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.result.get("number_concentration", None))
