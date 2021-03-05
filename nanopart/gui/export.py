@@ -127,6 +127,7 @@ def process_file_nebulisation_efficiency(
             molarratio=molarratio,
             uptake=uptake,
             response=response,
+            time=time,
         )
     )
 
