@@ -1,5 +1,6 @@
 from PySide2 import QtWidgets
 
+from nanopart.gui.batch import BatchProcessDialog
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.results import ResultsWidget
@@ -54,6 +55,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_open_reference = QtWidgets.QAction("Open Reference", self)
         action_open_reference.triggered.connect(self.reference.dialogLoadFile)
 
+        self.action_batch_process = QtWidgets.QAction("Batch Process Files", self)
+        self.action_batch_process.triggered.connect(self.dialogBatchProcess)
+        self.action_batch_process.setEnabled(False)
+
         action_close = QtWidgets.QAction("Quit", self)
         action_close.triggered.connect(self.close)
 
@@ -61,7 +66,19 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(action_open_sample)
         menufile.addAction(action_open_reference)
         menufile.addSeparator()
+        menufile.addAction(self.action_batch_process)
         menufile.addAction(action_close)
+
+    def dialogBatchProcess(self) -> None:
+        dlg = QtWidgets.QFileDialog(
+            self, "Batch Process Files", "", "CSV Documents (.csv);All files (.*)"
+        )
+        self.setAcceptMode(QtWidgets.QFileDialog.AcceptOpen)
+        self.setFileMode(QtWidgets.QFileDialog.ExistingFiles)
+
+        self.filesSelected.connect(self.batchProcess)
+
+        dlg.open()
 
     def onInputsChanged(self) -> None:
         # Reference tab is neb method requires
@@ -74,6 +91,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.tabs.indexOf(self.results),
             self.readyForResults(),
         )
+        self.action_batch_process.setEnabled(self.readyForResults())
 
     # def onSampleComplete(self) -> None:
     #     complete = self.sample.isComplete()
