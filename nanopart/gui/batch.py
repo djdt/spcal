@@ -87,7 +87,7 @@ def process_file_mass_response(
         )
     )
 
-    export_nanoparticle_results(outfile, result)
+    # export_nanoparticle_results(outfile, result)
 
     return True
 
@@ -131,51 +131,133 @@ def process_file_nebulisation_efficiency(
         )
     )
 
-    export_nanoparticle_results(outfile, result)
+    # export_nanoparticle_results(outfile, result)
 
     return True
 
 
-class BatchProcessDialog(QtWidgets.QFileDialog):
+class BatchProcessDialog(QtWidgets.QDialog):
     fileProccessed = QtCore.Signal()
     proccessingStarted = QtCore.Signal()
     proccessingFinshed = QtCore.Signal()
 
     def __init__(
         self,
+        files: List[str],
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
         parent: QtWidgets.QWidget = None,
     ):
-        super().__init__(
-            parent, "Batch Process Files", "", "CSV Documents (.csv);All files (.*)"
-        )
-        self.setAcceptMode(QtWidgets.QFileDialog.AcceptOpen)
-        self.setFileMode(QtWidgets.QFileDialog.ExistingFiles)
-        self.filesSelected.connect(self.batchProcess)
+        super().__init__(parent)
 
         self.sample = sample
         self.reference = reference
         self.options = options
 
-        self.progress = QtWidgets.QProgressDialog("Processing...", "", 0, 0, self)
-        self.progress.setWindowTitle("Batch Processing")
+        self.button_files = QtWidgets.QPushButton("Open Files")
+        self.button_files.pressed.connect(self.dialogLoadFiles)
+        self.button_output = QtWidgets.QPushButton("Open Directory")
+        self.button_output.pressed.connect(self.dialogOpenOuputDir)
 
-    def dialogLoadFiles(self) -> QtWidgets.QFileDialog:
-        pass
+        self.button_process = QtWidgets.QPushButton("Start Batch Process")
+        self.button_process.setEnabled(len(files) > 0)
+        self.button_process.pressed.connect(self.startProcess)
 
-    def batchProcess(self, files: List[str]) -> None:
-        files = [Path(file) for file in files]
+        self.progress = QtWidgets.QProgressBar()
+
+        self.files = QtWidgets.QListWidget()
+        self.files.addItems(files)
+        self.files.setTextElideMode(QtCore.Qt.ElideLeft)
+        self.files.model().rowsInserted.connect(self.completeChanged)
+        self.files.model().rowsRemoved.connect(self.completeChanged)
+
+        self.inputs = QtWidgets.QGroupBox("Batch Options")
+        self.inputs.setLayout(QtWidgets.QFormLayout())
+
+        self.output_dir = QtWidgets.QLineEdit("")
+        self.output_dir.setPlaceholderText("{same as input}")
+        self.output_dir.setToolTip("Leave blank to use the input directory.")
+        self.output_dir.textChanged.connect(self.completeChanged)
+
+        self.output_name = QtWidgets.QLineEdit("%_result.csv")
+        self.output_name.setToolTip("Use '%' to represent the input file name.")
+        self.output_name.textChanged.connect(self.completeChanged)
+
+        self.inputs.layout().addRow("Output Name:", self.output_name)
+        self.inputs.layout().addRow("Output Directory:", self.output_dir)
+        self.inputs.layout().addWidget(self.button_output)
+
+        layout_list = QtWidgets.QVBoxLayout()
+        layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignRight)
+        layout_list.addWidget(self.files, 1)
+
+        layout_horz = QtWidgets.QHBoxLayout()
+        layout_horz.addLayout(layout_list)
+        layout_horz.addWidget(self.inputs, 0)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(layout_horz)
+        layout.addWidget(self.progress, 0)
+        layout.addWidget(self.button_process, 0, QtCore.Qt.AlignRight)
+
+        self.setLayout(layout)
+
+    def completeChanged(self) -> None:
+        complete = self.isComplete()
+        self.button_process.setEnabled(complete)
+
+    def isComplete(self) -> bool:
+        if self.files.count() == 0:
+            return False
+        if "%" not in self.output_name.text():
+            return False
+        if any(x in self.output_name.text() for x in "<>:/\\|?*"):
+            return False
+        if self.output_dir.text() != "" and not Path(self.output_dir.text()).is_dir():
+            return False
+
+        return True
+
+    def dialogLoadFiles(self) -> None:
+        files, filter = QtWidgets.QFileDialog.getOpenFileNames(
+            self, "Batch Process Files", "", "CSV Documents(*.csv);;All files(*)"
+        )
+
+        if len(files) > 0:
+            self.files.addItems(files)
+
+    def dialogOpenOuputDir(self) -> None:
+        dir = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Output Directory", "", QtWidgets.QFileDialog.ShowDirsOnly
+        )
+        if dir != "":
+            self.output_dir.setText(dir)
+
+    def outputsForFiles(self, files: List[Path]) -> List[Path]:
+        outdir = self.output_dir.text()
+
+        outputs = []
+        for file in files:
+            outname = self.output_name.text().replace("%", file.stem)
+            if outdir == "":
+                outdir = file.parent
+            outputs.append(Path(outdir, outname))
+
+        return outputs
+
+    def startProcess(self) -> None:
+        files = [Path(self.files.item(i).text()) for i in range(self.files.count())]
+        outfiles = self.outputsForFiles(files)
+
         self.progress.setMaximum(len(files))
-        self.progress.open()
-
-        method = self.options.efficiency_method.currentText()
 
         limit_method = self.options.method.currentText()
         sigma = float(self.options.sigma.text())
         epsilon = float(self.options.epsilon.text())
         response_in_cps = self.sample.table_units.currentText() == "CPS"
+
+        method = self.options.efficiency_method.currentText()
 
         if method in ["Manual", "Reference"]:
             if method == "Manual":
@@ -191,10 +273,12 @@ class BatchProcessDialog(QtWidgets.QFileDialog):
             response = self.options.response.baseValue()
 
             with ProcessPoolExecutor() as executor:
+                print("exec")
                 futures = [
                     executor.submit(
                         process_file_nebulisation_efficiency,
                         file,
+                        outfile,
                         density=density,
                         dwelltime=dwelltime,
                         efficiency=efficiency,
@@ -207,7 +291,7 @@ class BatchProcessDialog(QtWidgets.QFileDialog):
                         limit_epsilon=epsilon,
                         response_in_cps=response_in_cps,
                     )
-                    for file in files
+                    for file, outfile in zip(files, outfiles)
                 ]
         elif method == "Mass Response (None)":
             density = self.sample.density.baseValue()
@@ -220,6 +304,7 @@ class BatchProcessDialog(QtWidgets.QFileDialog):
                     executor.submit(
                         process_file_mass_response,
                         file,
+                        outfile,
                         density=density,
                         dwelltime=dwelltime,
                         molarratio=molarratio,
@@ -229,12 +314,12 @@ class BatchProcessDialog(QtWidgets.QFileDialog):
                         limit_epsilon=epsilon,
                         response_in_cps=response_in_cps,
                     )
-                    for file in files
+                    for file, outfile in zip(files, outfiles)
                 ]
 
         completed = 0
         for future in as_completed(futures):
-            self.fileProccessed.emit(completed)
             completed += 1
-
-        self.fileProccessed.emit(len(futures))
+            self.progress.setValue(completed)
+            print(future.result())
+            print(future.exception())

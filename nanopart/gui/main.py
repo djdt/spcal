@@ -42,11 +42,35 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
         self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
-        self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
+        # self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
         self.options.uptake.setBaseValue(0.000001567)
         self.options.response.setBaseValue(20e9)
         self.options.efficiency.setText("0.062")
         self.sample.density.setBaseValue(19.32e3)
+
+        dlg = self.dialogBatchProcess()
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
+        # dlg.startProcess()
 
     def createMenuBar(self) -> None:
         action_open_sample = QtWidgets.QAction("Open Sample", self)
@@ -69,16 +93,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(self.action_batch_process)
         menufile.addAction(action_close)
 
-    def dialogBatchProcess(self) -> None:
-        dlg = QtWidgets.QFileDialog(
-            self, "Batch Process Files", "", "CSV Documents (.csv);All files (.*)"
-        )
-        self.setAcceptMode(QtWidgets.QFileDialog.AcceptOpen)
-        self.setFileMode(QtWidgets.QFileDialog.ExistingFiles)
-
-        self.filesSelected.connect(self.batchProcess)
-
+    def dialogBatchProcess(self) -> BatchProcessDialog:
+        dlg = BatchProcessDialog([], self.sample, self.reference, self.options, parent=self)
         dlg.open()
+        return dlg
 
     def onInputsChanged(self) -> None:
         # Reference tab is neb method requires
