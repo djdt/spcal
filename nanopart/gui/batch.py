@@ -16,7 +16,7 @@ from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 
-from typing import List
+from typing import Dict, List
 
 
 def process_file_detections(
@@ -92,48 +92,161 @@ def process_file_mass_response(
     return True
 
 
-def process_file_nebulisation_efficiency(
-    file: Path,
-    outfile: Path,
-    density: float,
-    dwelltime: float,
-    efficiency: float,
-    molarratio: float,
-    uptake: float,
-    response: float,
-    time: float,
-    limit_method: str = "Automatic",
-    limit_sigma: float = 3.0,
-    limit_epsilon: float = 0.5,
-    response_in_cps: bool = False,
-) -> bool:
+# def process_file_nebulisation_efficiency(
+#     file: Path,
+#     outfile: Path,
+#     density: float,
+#     dwelltime: float,
+#     efficiency: float,
+#     molarratio: float,
+#     uptake: float,
+#     response: float,
+#     time: float,
+#     limit_method: str = "Automatic",
+#     limit_sigma: float = 3.0,
+#     limit_epsilon: float = 0.5,
+#     response_in_cps: bool = False,
+# ) -> bool:
 
-    result = process_file_detections(
-        file,
-        limit_method,
-        limit_sigma,
-        limit_epsilon,
-        cps_dwelltime=dwelltime if response_in_cps else None,
-    )
+#     result = process_file_detections(
+#         file,
+#         limit_method,
+#         limit_sigma,
+#         limit_epsilon,
+#         cps_dwelltime=dwelltime if response_in_cps else None,
+#     )
 
-    result.update(
-        results_from_nebulisation_efficiency(
-            result["detections"],
-            result["background"],
-            result["lod"],
-            density=density,
-            dwelltime=dwelltime,
-            efficiency=efficiency,
-            molarratio=molarratio,
-            uptake=uptake,
-            response=response,
-            time=time,
-        )
-    )
+#     result.update(
+#         results_from_nebulisation_efficiency(
+#             result["detections"],
+#             result["background"],
+#             result["lod"],
+#             density=density,
+#             dwelltime=dwelltime,
+#             efficiency=efficiency,
+#             molarratio=molarratio,
+#             uptake=uptake,
+#             response=response,
+#             time=time,
+#         )
+#     )
 
-    # export_nanoparticle_results(outfile, result)
+#     # export_nanoparticle_results(outfile, result)
 
-    return True
+#     return True
+
+
+# class ProcessPool(QtCore.QObject):
+#     threadFinished = QtCore.Signal(QtCore.QThread)
+#     finsihed = QtCore.Signal()
+
+#     def __init__(self, parent: QtCore.QObject = None):
+#         super().__init__(parent)
+
+#         self.threads: List[QtCore.QThread] = []
+
+#         self.running: List[QtCore.QThread] = []
+#         self.finished: List[QtCore.QThread] = []
+
+#     def addThread(self, thread: QtCore.QThread) -> None:
+#         self.threads.append(thread)
+
+#     def start(self) -> None:
+#         for i in range(QtCore.QThread.idealThreadCount()):
+#             self.runNextThread()
+
+#     def runNextThread(self) -> None:
+#         if len(self.threads) > 0:
+#             thread = self.threads.pop(0)
+#             thread.finished.connect(self.runNextThread)
+#             thread.finished.connect(self.onThreadFinshed)
+#             thread.run()
+#             self.running.append(thread)
+
+#     def onThreadFinshed(self, thread: QtCore.QThread) -> None:
+#         index = self.running.index(thread)
+#         self.finished.append(self.running.pop(index))
+#         if len(self.running) == 0:
+#             self.finished.emit()
+
+
+class ProcessNebulisationThread(QtCore.QThread):
+    proccessComplete = QtCore.Signal(str)
+    proccessFailed = QtCore.Signal(str)
+
+    def __init__(
+        self,
+        infiles: List[Path],
+        outfiles: List[Path],
+        density: float,
+        dwelltime: float,
+        efficiency: float,
+        molarratio: float,
+        uptake: float,
+        response: float,
+        time: float,
+        limit_method: str = "Automatic",
+        limit_epsilon: float = 0.5,
+        limit_sigma: float = 3.0,
+        response_in_cps: bool = False,
+        parent: QtCore.QObject = None,
+    ):
+        super().__init__(parent)
+
+        self.infiles = infiles
+        self.outfiles = outfiles
+
+        self.density = density
+        self.dwelltime = dwelltime
+        self.efficiency = efficiency
+        self.molarratio = molarratio
+        self.uptake = uptake
+        self.response = response
+        self.time = time
+
+        self.limit_method = limit_method
+        self.limit_epsilon = limit_epsilon
+        self.limit_sigma = limit_sigma
+        self.cps_dwelltime = dwelltime if response_in_cps else None
+
+    def run(self) -> None:
+        for infile, outfile in zip(self.infiles, self.outfiles):
+            if self.isInterruptionRequested():
+                break
+            try:
+                result = process_file_detections(
+                    infile,
+                    self.limit_method,
+                    self.limit_sigma,
+                    self.limit_epsilon,
+                    cps_dwelltime=self.cps_dwelltime,
+                )
+            except ValueError:
+                self.proccessFailed.emit(infile.name)
+                continue
+
+            try:
+                result.update(
+                    results_from_nebulisation_efficiency(
+                        result["detections"],
+                        result["background"],
+                        result["lod"],
+                        density=self.density,
+                        dwelltime=self.dwelltime,
+                        efficiency=self.efficiency,
+                        molarratio=self.molarratio,
+                        uptake=self.uptake,
+                        response=self.response,
+                        time=self.time,
+                    )
+                )
+            except ValueError:
+                self.proccessFailed.emit(infile.name)
+                continue
+
+            # export_nanoparticle_results(self.outfile, result)
+
+            self.proccessComplete.emit(infile.name)
 
 
 class BatchProcessDialog(QtWidgets.QDialog):
@@ -160,11 +273,12 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_output = QtWidgets.QPushButton("Open Directory")
         self.button_output.pressed.connect(self.dialogOpenOuputDir)
 
-        self.button_process = QtWidgets.QPushButton("Start Batch Process")
+        self.button_process = QtWidgets.QPushButton("Start Batch")
         self.button_process.setEnabled(len(files) > 0)
-        self.button_process.pressed.connect(self.startProcess)
+        self.button_process.pressed.connect(self.buttonProcess)
 
         self.progress = QtWidgets.QProgressBar()
+        self.thread: QtCore.QThread = None
 
         self.files = QtWidgets.QListWidget()
         self.files.addItems(files)
@@ -246,11 +360,22 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         return outputs
 
-    def startProcess(self) -> None:
-        files = [Path(self.files.item(i).text()) for i in range(self.files.count())]
-        outfiles = self.outputsForFiles(files)
+    def buttonProcess(self) -> None:
+        if self.thread is None:
+            self.button_process.setText("Cancel Batch")
+            self.startProcess()
+        elif self.thread.isRunning():
+            self.thread.requestInterruption()
 
-        self.progress.setMaximum(len(files))
+    def advanceProgress(self) -> None:
+        self.progress.setValue(self.progress.value() + 1)
+
+    def startProcess(self) -> None:
+        infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
+        outfiles = self.outputsForFiles(infiles)
+
+        self.progress.setMaximum(len(infiles))
+        self.progress.setValue(1)
 
         limit_method = self.options.method.currentText()
         sigma = float(self.options.sigma.text())
@@ -272,54 +397,35 @@ class BatchProcessDialog(QtWidgets.QDialog):
             uptake = self.options.uptake.baseValue()
             response = self.options.response.baseValue()
 
-            with ProcessPoolExecutor() as executor:
-                print("exec")
-                futures = [
-                    executor.submit(
-                        process_file_nebulisation_efficiency,
-                        file,
-                        outfile,
-                        density=density,
-                        dwelltime=dwelltime,
-                        efficiency=efficiency,
-                        molarratio=molarratio,
-                        uptake=uptake,
-                        response=response,
-                        time=time,
-                        limit_method=limit_method,
-                        limit_sigma=sigma,
-                        limit_epsilon=epsilon,
-                        response_in_cps=response_in_cps,
-                    )
-                    for file, outfile in zip(files, outfiles)
-                ]
+            self.thread = ProcessNebulisationThread(
+                infiles,
+                outfiles,
+                density=density,
+                dwelltime=dwelltime,
+                efficiency=efficiency,
+                molarratio=molarratio,
+                uptake=uptake,
+                response=response,
+                time=time,
+                limit_method=limit_method,
+                limit_sigma=sigma,
+                limit_epsilon=epsilon,
+                response_in_cps=response_in_cps,
+                parent=self,
+            )
+
         elif method == "Mass Response (None)":
             density = self.sample.density.baseValue()
             dwelltime = self.options.dwelltime.baseValue()
             molarratio = float(self.sample.molarratio.text())
             massresponse = self.reference.massresponse.baseValue()
 
-            with ProcessPoolExecutor() as executor:
-                futures = [
-                    executor.submit(
-                        process_file_mass_response,
-                        file,
-                        outfile,
-                        density=density,
-                        dwelltime=dwelltime,
-                        molarratio=molarratio,
-                        massresponse=massresponse,
-                        limit_method=limit_method,
-                        limit_sigma=sigma,
-                        limit_epsilon=epsilon,
-                        response_in_cps=response_in_cps,
-                    )
-                    for file, outfile in zip(files, outfiles)
-                ]
+        self.thread.proccessComplete.connect(self.advanceProgress)
+        self.thread.proccessFailed.connect(self.advanceProgress)
+        self.thread.finished.connect(self.finishProcess)
+        self.thread.start()
 
-        completed = 0
-        for future in as_completed(futures):
-            completed += 1
-            self.progress.setValue(completed)
-            print(future.result())
-            print(future.exception())
+    def finishProcess(self) -> None:
+        self.button_process.setText("Start Batch")
+        self.progress.setValue(0)
+        self.thread = None
