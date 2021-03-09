@@ -41,36 +41,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
 
-        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
-        # self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
-        self.options.uptake.setBaseValue(0.000001567)
-        self.options.response.setBaseValue(20e9)
-        self.options.efficiency.setText("0.062")
-        self.sample.density.setBaseValue(19.32e3)
-
-        dlg = self.dialogBatchProcess()
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        dlg.files.addItem("/home/tom/MEGA/Scripts/np/Sample 15 nm.csv")
-        # dlg.startProcess()
+        # self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
+        # # self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
+        # self.options.uptake.setBaseValue(0.000001567)
+        # self.options.response.setBaseValue(20e9)
+        # self.options.efficiency.setText("0.062")
+        # self.sample.density.setBaseValue(19.32e3)
 
     def createMenuBar(self) -> None:
         action_open_sample = QtWidgets.QAction("Open Sample", self)
@@ -79,7 +55,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_open_reference = QtWidgets.QAction("Open Reference", self)
         action_open_reference.triggered.connect(self.reference.dialogLoadFile)
 
-        self.action_batch_process = QtWidgets.QAction("Batch Process Files", self)
+        self.action_batch_process = QtWidgets.QAction("Batch Dialog", self)
         self.action_batch_process.triggered.connect(self.dialogBatchProcess)
         self.action_batch_process.setEnabled(False)
 
@@ -91,6 +67,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(action_open_reference)
         menufile.addSeparator()
         menufile.addAction(self.action_batch_process)
+        menufile.addSeparator()
         menufile.addAction(action_close)
 
     def dialogBatchProcess(self) -> BatchProcessDialog:

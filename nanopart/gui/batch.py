@@ -1,6 +1,5 @@
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtCore, QtGui, QtWidgets
 
-from concurrent.futures import as_completed, ProcessPoolExecutor
 import numpy as np
 from pathlib import Path
 
@@ -16,7 +15,7 @@ from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 
 def process_file_detections(
@@ -56,121 +55,7 @@ def process_file_detections(
     }
 
 
-def process_file_mass_response(
-    file: Path,
-    outfile: Path,
-    density: float,
-    dwelltime: float,
-    molarratio: float,
-    massresponse: float,
-    limit_method: str = "Automatic",
-    limit_sigma: float = 3.0,
-    limit_epsilon: float = 0.5,
-    response_in_cps: bool = False,
-) -> bool:
-    result = process_file_detections(
-        file,
-        limit_method,
-        limit_sigma,
-        limit_epsilon,
-        cps_dwelltime=dwelltime if response_in_cps else None,
-    )
-
-    result.update(
-        results_from_mass_response(
-            result["detections"],
-            result["background"],
-            result["lod"],
-            density=density,
-            molarratio=molarratio,
-            massresponse=massresponse,
-        )
-    )
-
-    # export_nanoparticle_results(outfile, result)
-
-    return True
-
-
-# def process_file_nebulisation_efficiency(
-#     file: Path,
-#     outfile: Path,
-#     density: float,
-#     dwelltime: float,
-#     efficiency: float,
-#     molarratio: float,
-#     uptake: float,
-#     response: float,
-#     time: float,
-#     limit_method: str = "Automatic",
-#     limit_sigma: float = 3.0,
-#     limit_epsilon: float = 0.5,
-#     response_in_cps: bool = False,
-# ) -> bool:
-
-#     result = process_file_detections(
-#         file,
-#         limit_method,
-#         limit_sigma,
-#         limit_epsilon,
-#         cps_dwelltime=dwelltime if response_in_cps else None,
-#     )
-
-#     result.update(
-#         results_from_nebulisation_efficiency(
-#             result["detections"],
-#             result["background"],
-#             result["lod"],
-#             density=density,
-#             dwelltime=dwelltime,
-#             efficiency=efficiency,
-#             molarratio=molarratio,
-#             uptake=uptake,
-#             response=response,
-#             time=time,
-#         )
-#     )
-
-#     # export_nanoparticle_results(outfile, result)
-
-#     return True
-
-
-# class ProcessPool(QtCore.QObject):
-#     threadFinished = QtCore.Signal(QtCore.QThread)
-#     finsihed = QtCore.Signal()
-
-#     def __init__(self, parent: QtCore.QObject = None):
-#         super().__init__(parent)
-
-#         self.threads: List[QtCore.QThread] = []
-
-#         self.running: List[QtCore.QThread] = []
-#         self.finished: List[QtCore.QThread] = []
-
-#     def addThread(self, thread: QtCore.QThread) -> None:
-#         self.threads.append(thread)
-
-#     def start(self) -> None:
-#         for i in range(QtCore.QThread.idealThreadCount()):
-#             self.runNextThread()
-
-#     def runNextThread(self) -> None:
-#         if len(self.threads) > 0:
-#             thread = self.threads.pop(0)
-#             thread.finished.connect(self.runNextThread)
-#             thread.finished.connect(self.onThreadFinshed)
-#             thread.run()
-#             self.running.append(thread)
-
-#     def onThreadFinshed(self, thread: QtCore.QThread) -> None:
-#         index = self.running.index(thread)
-#         self.finished.append(self.running.pop(index))
-#         if len(self.running) == 0:
-#             self.finished.emit()
-
-
-class ProcessNebulisationThread(QtCore.QThread):
+class ProcessThread(QtCore.QThread):
     proccessComplete = QtCore.Signal(str)
     proccessFailed = QtCore.Signal(str)
 
@@ -178,17 +63,12 @@ class ProcessNebulisationThread(QtCore.QThread):
         self,
         infiles: List[Path],
         outfiles: List[Path],
-        density: float,
-        dwelltime: float,
-        efficiency: float,
-        molarratio: float,
-        uptake: float,
-        response: float,
-        time: float,
+        method: Callable,
+        method_kws: Dict[str, float],
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
-        response_in_cps: bool = False,
+        cps_dwelltime: float = None,
         parent: QtCore.QObject = None,
     ):
         super().__init__(parent)
@@ -196,18 +76,13 @@ class ProcessNebulisationThread(QtCore.QThread):
         self.infiles = infiles
         self.outfiles = outfiles
 
-        self.density = density
-        self.dwelltime = dwelltime
-        self.efficiency = efficiency
-        self.molarratio = molarratio
-        self.uptake = uptake
-        self.response = response
-        self.time = time
+        self.method = method
+        self.method_kws = method_kws
 
         self.limit_method = limit_method
         self.limit_epsilon = limit_epsilon
         self.limit_sigma = limit_sigma
-        self.cps_dwelltime = dwelltime if response_in_cps else None
+        self.cps_dwelltime = cps_dwelltime
 
     def run(self) -> None:
         for infile, outfile in zip(self.infiles, self.outfiles):
@@ -227,24 +102,22 @@ class ProcessNebulisationThread(QtCore.QThread):
 
             try:
                 result.update(
-                    results_from_nebulisation_efficiency(
+                    self.method(
                         result["detections"],
                         result["background"],
                         result["lod"],
-                        density=self.density,
-                        dwelltime=self.dwelltime,
-                        efficiency=self.efficiency,
-                        molarratio=self.molarratio,
-                        uptake=self.uptake,
-                        response=self.response,
-                        time=self.time,
+                        **self.method_kws,
                     )
                 )
             except ValueError:
                 self.proccessFailed.emit(infile.name)
                 continue
 
-            # export_nanoparticle_results(self.outfile, result)
+            try:
+                export_nanoparticle_results(outfile, result)
+            except ValueError:
+                self.proccessFailed.emit(infile.name)
+                continue
 
             self.proccessComplete.emit(infile.name)
 
@@ -263,6 +136,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         parent: QtWidgets.QWidget = None,
     ):
         super().__init__(parent)
+        self.setWindowTitle("Batch Process")
+        self.setMinimumSize(640, 640)
 
         self.sample = sample
         self.reference = reference
@@ -281,6 +156,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.thread: QtCore.QThread = None
 
         self.files = QtWidgets.QListWidget()
+        self.files.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.files.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.files.addItems(files)
         self.files.setTextElideMode(QtCore.Qt.ElideLeft)
         self.files.model().rowsInserted.connect(self.completeChanged)
@@ -290,7 +167,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.setLayout(QtWidgets.QFormLayout())
 
         self.output_dir = QtWidgets.QLineEdit("")
-        self.output_dir.setPlaceholderText("{same as input}")
+        self.output_dir.setPlaceholderText("Same as input")
         self.output_dir.setToolTip("Leave blank to use the input directory.")
         self.output_dir.textChanged.connect(self.completeChanged)
 
@@ -303,7 +180,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
 
         layout_list = QtWidgets.QVBoxLayout()
-        layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignRight)
+        layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
         layout_list.addWidget(self.files, 1)
 
         layout_horz = QtWidgets.QHBoxLayout()
@@ -316,6 +193,14 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_process, 0, QtCore.Qt.AlignRight)
 
         self.setLayout(layout)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+            items = self.files.selectedIndexes()
+            for item in reversed(sorted(items)):
+                self.files.model().removeRow(item.row())
+        else:
+            super().keyPressEvent(event)
 
     def completeChanged(self) -> None:
         complete = self.isComplete()
@@ -380,7 +265,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
         limit_method = self.options.method.currentText()
         sigma = float(self.options.sigma.text())
         epsilon = float(self.options.epsilon.text())
-        response_in_cps = self.sample.table_units.currentText() == "CPS"
+        if self.sample.table_units.currentText() == "CPS":
+            cps_dwelltime = self.options.dwelltime.baseValue()
+        else:
+            cps_dwelltime = None
 
         method = self.options.efficiency_method.currentText()
 
@@ -390,35 +278,38 @@ class BatchProcessDialog(QtWidgets.QDialog):
             elif method == "Reference":
                 efficiency = float(self.reference.efficiency.text())
 
-            dwelltime = self.options.dwelltime.baseValue()
-            density = self.sample.density.baseValue()
-            molarratio = float(self.sample.molarratio.text())
-            time = self.sample.timeAsSeconds()
-            uptake = self.options.uptake.baseValue()
-            response = self.options.response.baseValue()
-
-            self.thread = ProcessNebulisationThread(
-                infiles,
-                outfiles,
-                density=density,
-                dwelltime=dwelltime,
-                efficiency=efficiency,
-                molarratio=molarratio,
-                uptake=uptake,
-                response=response,
-                time=time,
-                limit_method=limit_method,
-                limit_sigma=sigma,
-                limit_epsilon=epsilon,
-                response_in_cps=response_in_cps,
-                parent=self,
-            )
+            method = results_from_nebulisation_efficiency
+            method_kws = {
+                "density": self.sample.density.baseValue(),
+                "dwelltime": self.options.dwelltime.baseValue(),
+                "efficiency": efficiency,
+                "molarratio": float(self.sample.molarratio.text()),
+                "time": self.sample.timeAsSeconds(),
+                "uptake": self.options.uptake.baseValue(),
+                "response": self.options.response.baseValue(),
+            }
 
         elif method == "Mass Response (None)":
-            density = self.sample.density.baseValue()
-            dwelltime = self.options.dwelltime.baseValue()
-            molarratio = float(self.sample.molarratio.text())
-            massresponse = self.reference.massresponse.baseValue()
+
+            method = results_from_mass_response
+            method_kws = {
+                "density": self.sample.density.baseValue(),
+                "dwelltime": self.options.dwelltime.baseValue(),
+                "molarratio": float(self.sample.molarratio.text()),
+                "massresponse": self.reference.massresponse.baseValue(),
+            }
+
+        self.thread = ProcessThread(
+            infiles,
+            outfiles,
+            method,
+            method_kws,
+            limit_method=limit_method,
+            limit_sigma=sigma,
+            limit_epsilon=epsilon,
+            cps_dwelltime=cps_dwelltime,
+            parent=self,
+        )
 
         self.thread.proccessComplete.connect(self.advanceProgress)
         self.thread.proccessFailed.connect(self.advanceProgress)
