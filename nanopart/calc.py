@@ -1,10 +1,7 @@
 import numpy as np
-from pathlib import Path
-
 from typing import Tuple
 
 import nanopart
-from nanopart.io import read_nanoparticle_file
 
 
 def calculate_limits(
@@ -40,6 +37,7 @@ def calculate_limits(
         return (method, mean, poisson[0], poisson[1])
     else:
         return None
+
 
 def results_from_mass_response(
     detections: np.ndarray,
