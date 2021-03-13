@@ -10,7 +10,7 @@ from nanopart import npdata
 from nanopart.calc import calculate_limits
 from nanopart.io import read_nanoparticle_file
 
-from nanopart.gui.charts import ParticleChart
+from nanopart.gui.charts import ParticleChart, ParticleChartView
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ParticleTable
 from nanopart.gui.units import UnitsWidget
@@ -56,7 +56,7 @@ class InputWidget(QtWidgets.QWidget):
         )
 
         self.chart = ParticleChart()
-        self.chartview = QtCharts.QChartView(self.chart)
+        self.chartview = ParticleChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         self.chartview.setAcceptDrops(False)
         # self.chartview.installEventFilter(DragDropRedirectFilter(self))

@@ -8,6 +8,32 @@ from nanopart.gui.util import array_to_polygonf
 from typing import List
 
 
+class ParticleChartView(QtCharts.QChartView):
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+
+        action_copy_to_clipboard = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("insert-image"), "Copy to Clipboard"
+        )
+        action_copy_to_clipboard.setToolTip(
+            "Copy the chart as an image to the clipboard."
+        )
+        action_copy_to_clipboard.triggered.connect(self.copyToClipboard)
+
+        action_zoom_reset = QtWidgets.QAction(
+            QtGui.QIcon.fromTheme("zoom-original"), "Reset View"
+        )
+        action_zoom_reset.setToolTip("Reset the charts view.")
+        action_zoom_reset.triggered.connect(self.chart().zoomReset)
+
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(action_copy_to_clipboard)
+        menu.addAction(action_zoom_reset)
+        menu.exec_(event.globalPos())
+
+    def copyToClipboard(self) -> None:
+        QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
+
+
 class NiceValueAxis(QtCharts.QValueAxis):
     nicenums = [1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 7.5]
 

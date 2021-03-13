@@ -11,7 +11,7 @@ from nanopart.calc import (
 from nanopart.fit import fit_normal, fit_lognormal
 from nanopart.io import export_nanoparticle_results
 
-from nanopart.gui.charts import ParticleHistogram
+from nanopart.gui.charts import ParticleHistogram, ParticleChartView
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ResultsTable
@@ -55,7 +55,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
             ],
         )
-        self.chartview = QtCharts.QChartView(self.chart)
+        self.chartview = ParticleChartView(self.chart)
         self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.table = ResultsTable()
