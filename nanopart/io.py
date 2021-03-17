@@ -66,7 +66,7 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         fp.write(f"# Mean size,{np.mean(result['sizes'])},m\n")
         fp.write(f"# Median size,{np.median(result['sizes'])},m\n")
 
-        fp.write("Signal,Mass (kg),Size (m)\n")
+        fp.write("Signal (counts),Mass (kg),Size (m)\n")
 
         np.savetxt(
             fp,
