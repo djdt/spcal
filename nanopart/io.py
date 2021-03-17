@@ -45,9 +45,9 @@ def read_nanoparticle_file(
 def export_nanoparticle_results(path: Path, result: dict) -> None:
     with path.open("w") as fp:
         fp.write("# NanoPart Export v0.1\n")
-        fp.write(f"# File,{result['file']}\n")
+        fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
-        fp.write(f"# Detected particles,{result['number']}\n")
+        fp.write(f"# Detected particles,{result['detections'].size}\n")
         fp.write(f"# Limit method,{result['limit_method']}\n")
         fp.write(f"# Background,{result['background']},counts\n")
         if "background_size" in result:
