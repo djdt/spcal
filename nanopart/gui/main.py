@@ -9,6 +9,7 @@ from nanopart.gui.results import ResultsWidget
 class NanoPartWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowTitle("NanoPart")
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
@@ -71,7 +72,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(action_close)
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
-        dlg = BatchProcessDialog([], self.sample, self.reference, self.options, parent=self)
+        dlg = BatchProcessDialog(
+            [], self.sample, self.reference, self.options, parent=self
+        )
         dlg.open()
         return dlg
 
