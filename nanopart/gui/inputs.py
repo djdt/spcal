@@ -154,6 +154,9 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
+    def numberOfEvents(self) -> int:
+        return (self.slider.right() - self.slider.left())
+
     def responseAsCounts(self, trim: Tuple[int, int] = None) -> np.ndarray:
         if trim is None:
             trim = (self.slider.left(), self.slider.right())

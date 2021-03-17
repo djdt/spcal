@@ -45,11 +45,10 @@ def process_file_detections(
     background = np.nanmean(responses[labels == 0])
 
     return {
-        "file": str(file),
-        "events": size,
-        "detections": detections,
-        "number": detections.size,
         "background": background,
+        "detections": detections,
+        "events": size,
+        "file": str(file),
         "limit_method": limits[0],
         "lod": limits[3],
     }
