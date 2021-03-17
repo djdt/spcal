@@ -5,8 +5,8 @@ from typing import Tuple
 
 def accumulate_detections(
     y: np.ndarray,
-    limit_accumulation: float,
-    limit_detection: float,
+    limit_accumulation: np.ndarray,
+    limit_detection: np.ndarray,
     # return_regions: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
@@ -23,7 +23,7 @@ def accumulate_detections(
         summed detection regions
         labels of regions
     """
-    if limit_detection < limit_accumulation:
+    if np.any(limit_detection < limit_accumulation):
         raise ValueError("limit_detection must be greater than limit_accumulation.")
     # Get start and end positions of regions above accumulation limit
     diff = np.diff((y > limit_accumulation).astype(np.int8), prepend=0)
@@ -37,8 +37,7 @@ def accumulate_detections(
     regions = np.stack((starts, ends), axis=1)
 
     # Get maximum values in each region
-    maxes = np.maximum.reduceat(y, regions.ravel())[::2]
-    detections = maxes > limit_detection
+    detections = np.logical_or.reduceat(y > limit_detection, regions.ravel())[::2]
     # Remove regions without a max value above detection limit
     regions = regions[detections]
     # Sum regions
@@ -59,7 +58,9 @@ def accumulate_detections(
     return sums, labels
 
 
-def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
+def poisson_limits(
+    ub: np.ndarray, epsilon: float = 0.5
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calulate Yc and Yd for mean `ub`.
 
     If `ub` if lower than 5.0, the correction factor `epsilon` is added to `ub`.
@@ -82,8 +83,8 @@ def poisson_limits(ub: float, epsilon: float = 0.5) -> Tuple[float, float]:
             J Radioanal Nucl Chem 276, 285–297 (2008).
             https://doi.org/10.1007/s10967-008-0501-5
     """
-    if ub < 5.0:  # 5 counts limit to maintain 0.05 alpha / beta (Currie 2008)
-        ub += epsilon
+    # 5 counts limit to maintain 0.05 alpha / beta (Currie 2008)
+    ub = np.where(ub < 5.0, ub + epsilon, ub)
     # Yc and Yd for paired distribution (Currie 1969)
     return 2.33 * np.sqrt(ub), 2.71 + 4.65 * np.sqrt(ub)
 
