@@ -36,7 +36,7 @@ class NamedColumnModel(NumpyArrayTableModel):
         parent: QtCore.QObject = None,
     ):
         array = np.empty((0, len(column_names)), dtype=np.float64)
-        super().__init__(array, (0, 1), np.nan, parent)
+        super().__init__(array, (0, 1), 0.0, parent)
 
         self.column_names = column_names
 

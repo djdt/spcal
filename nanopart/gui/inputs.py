@@ -155,7 +155,7 @@ class InputWidget(QtWidgets.QWidget):
             super().dropEvent(event)
 
     def numberOfEvents(self) -> int:
-        return (self.slider.right() - self.slider.left())
+        return self.slider.right() - self.slider.left()
 
     def responseAsCounts(self, trim: Tuple[int, int] = None) -> np.ndarray:
         if trim is None:
@@ -248,7 +248,9 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        self.limits = calculate_limits(responses, method, sigma, epsilon)
+        self.limits = calculate_limits(
+            responses, method, sigma, epsilon, window=self.options.windowSize()
+        )
         self.limitsChanged.emit()
 
     def redrawChart(self) -> None:
@@ -256,8 +258,7 @@ class InputWidget(QtWidgets.QWidget):
         if responses is None or responses.size == 0:
             return
 
-        events = np.arange(responses.size)
-        self.chart.setData(np.stack((events, np.nan_to_num(responses)), axis=1))
+        self.chart.setData(np.nan_to_num(responses))
 
         self.chart.drawVerticalLines(
             [self.slider.left(), self.slider.right()],
@@ -271,35 +272,18 @@ class InputWidget(QtWidgets.QWidget):
 
     def redrawLimits(self) -> None:
         if self.limits is None:
-            self.chart.clearHorizontalLines()
-        elif self.limits[0] == "Gaussian":
-            if len(self.chart.hlines) == 2:
-                self.chart.setHorizontalLines([self.limits[1], self.limits[3]])
-            else:
-                self.chart.drawHorizontalLines(
-                    [self.limits[1], self.limits[3]],
-                    names=["mean", "σ"],
-                    pens=[
-                        QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
-                        QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
-                    ],
-                )
-                self.chart.updateGeometry()
+            self.chart.ub.clear()
+            self.chart.lc.clear()
+            self.chart.ld.clear()
+            return
+
+        self.chart.setBackground(self.limits[1])
+        if self.limits[0] == "Poisson":
+            self.chart.setLimitCritical(self.limits[2])
         else:
-            if len(self.chart.hlines) == 3:
-                self.chart.setHorizontalLines(
-                    [self.limits[1], self.limits[2], self.limits[3]]
-                )
-            else:
-                self.chart.drawHorizontalLines(
-                    [self.limits[1], self.limits[2], self.limits[3]],
-                    names=["mean", "Lc", "Ld"],
-                    pens=[
-                        QtGui.QPen(QtGui.QColor(255, 0, 0), 1.0, QtCore.Qt.DashLine),
-                        QtGui.QPen(QtGui.QColor(0, 172, 0), 1.0, QtCore.Qt.DashLine),
-                        QtGui.QPen(QtGui.QColor(0, 0, 255), 1.0, QtCore.Qt.DashLine),
-                    ],
-                )
+            self.chart.lc.clear()
+        self.chart.setLimitDetection(self.limits[3])
+        self.chart.updateGeometry()
 
     def updateTrim(self) -> None:
         values = [self.slider.left(), self.slider.right()]

@@ -1,42 +1,54 @@
 import numpy as np
+from numpy.lib.stride_tricks import sliding_window_view
 from typing import Tuple
 
 import nanopart
 
 
+def centered_sliding_view(x: np.ndarray, window: int) -> np.ndarray:
+    x_pad = np.pad(x, [window // 2, window // 2 - 1], mode="edge")
+    view = sliding_window_view(x_pad, window)
+    return view
+
+
 def calculate_limits(
-    responses: np.ndarray, method: str, sigma: float = None, epsilon: float = None
+    responses: np.ndarray,
+    method: str,
+    sigma: float = None,
+    epsilon: float = None,
+    window: int = None,
 ) -> Tuple[str, float, float, float]:
 
     if responses is None or responses.size == 0:
         return
 
-    mean = np.nanmean(responses)
-    gaussian = None
-    poisson: Tuple[float, float] = None
+    ub = np.mean(responses)
+    if window is None:
+        mean = ub
+    else:
+        mean = np.mean(centered_sliding_view(responses, window), axis=1)
+    # gaussian = None
+    # poisson: Tuple[float, float] = None
 
     if method == "Automatic":
-        method = "Poisson" if mean < 50.0 else "Gaussian"
+        method = "Poisson" if ub < 50.0 else "Gaussian"
+    elif method == "Highest" and sigma is not None and epsilon is not None:
+        lpoisson = ub + nanopart.poisson_limits(mean, epsilon=epsilon)[1]
+        lgaussian = ub + sigma * np.nanstd(responses)
+        method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
-    if method in ["Highest", "Gaussian"]:
-        if sigma is not None:
-            gaussian = mean + sigma * np.nanstd(responses)
-
-    if method in ["Highest", "Poisson"]:
-        if epsilon is not None:
-            yc, yd = nanopart.poisson_limits(mean, epsilon=epsilon)
-            poisson = (mean + yc, mean + yd)
-
-    if method == "Highest":
-        if gaussian is not None and poisson is not None:
-            method = "Gaussian" if gaussian > poisson[1] else "Poisson"
-
-    if method == "Gaussian" and gaussian is not None:
+    if method == "Gaussian" and sigma is not None:
+        if window is None:
+            std = np.std(responses)
+        else:
+            std = np.std(centered_sliding_view(responses, window), axis=1)
+        gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
-    elif method == "Poisson" and poisson is not None:
-        return (method, mean, poisson[0], poisson[1])
-    else:
-        return None
+    elif method == "Poisson" and epsilon is not None:
+        yc, yd = nanopart.poisson_limits(mean, epsilon=epsilon)
+        return (method, mean, mean + yc, mean + yd)
+
+    return None
 
 
 def results_from_mass_response(

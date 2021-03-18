@@ -5,7 +5,7 @@ from PySide2.QtCharts import QtCharts
 
 from nanopart.gui.util import array_to_polygonf
 
-from typing import List
+from typing import List, Union
 
 
 class ParticleChartView(QtCharts.QChartView):
@@ -92,54 +92,98 @@ class ParticleChart(QtCharts.QChart):
         self.series.attachAxis(self.xaxis)
         self.series.attachAxis(self.yaxis)
 
-        self.hlines: List[QtCharts.QLineSeries] = []
+        self.ub = QtCharts.QLineSeries()
+        self.lc = QtCharts.QLineSeries()
+        self.ld = QtCharts.QLineSeries()
+
+        for series, color, label in zip(
+            [self.ub, self.lc, self.ld],
+            [QtGui.QColor(255, 0, 0), QtGui.QColor(0, 255, 0), QtGui.QColor(0, 0, 255)],
+            ["μb", "Lc", "Ld"],
+        ):
+            series.setPen(QtGui.QPen(color, 1.0, QtCore.Qt.DashLine))
+            series.setName(label)
+            series.setUseOpenGL(True)
+            self.addSeries(series)
+            series.attachAxis(self.xaxis)
+            series.attachAxis(self.yaxis)
+
+        # self.hlines: List[QtCharts.QLineSeries] = []
         self.vlines: List[QtCharts.QLineSeries] = []
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
 
-    def clearHorizontalLines(self) -> None:
-        for line in self.hlines:
-            self.removeSeries(line)
-        self.hlines.clear()
+    # def clearHorizontalLines(self) -> None:
+    #     for line in self.hlines:
+    #         self.removeSeries(line)
+    #     self.hlines.clear()
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
             self.removeSeries(line)
         self.vlines.clear()
 
-    def setData(self, points: np.ndarray) -> None:
-        self.yvalues = points[:, 1]
-        poly = array_to_polygonf(points)
+    def setData(self, ys: np.ndarray) -> None:
+        xs = np.arange(ys.size)
+        self.yvalues = ys
+        data = np.stack((xs, ys), axis=1)
+        poly = array_to_polygonf(data)
         self.series.replace(poly)
 
-    def drawHorizontalLines(
-        self,
-        values: List[float],
-        names: List[str] = None,
-        pens: List[QtGui.QPen] = None,
-        visible_in_legend: bool = True,
-    ) -> None:
+    def setBackground(self, ub: Union[float, np.ndarray]) -> None:
+        if isinstance(ub, float):
+            ub = np.full(self.series.count(), ub)
 
-        # Clear lines
-        self.clearHorizontalLines()
+        xs = np.arange(ub.size)
+        data = np.stack((xs, ub), axis=1)
+        poly = array_to_polygonf(data)
+        self.ub.replace(poly)
 
-        for i, value in enumerate(values):
-            line = QtCharts.QLineSeries()
-            if pens is not None:
-                line.setPen(pens[i])
-            if names is not None:
-                line.setName(names[i])
+    def setLimitCritical(self, lc: Union[float, np.ndarray]) -> None:
+        if isinstance(lc, float):
+            lc = np.full(self.series.count(), lc)
 
-            self.addSeries(line)
-            line.attachAxis(self.xaxis)
-            line.attachAxis(self.yaxis)
-            if not visible_in_legend:
-                self.legend().markers(line)[0].setVisible(False)
-            self.hlines.append(line)
+        xs = np.arange(lc.size)
+        data = np.stack((xs, lc), axis=1)
+        poly = array_to_polygonf(data)
+        self.lc.replace(poly)
 
-        self.setHorizontalLines(values)
+    def setLimitDetection(self, ld: Union[float, np.ndarray]) -> None:
+        if isinstance(ld, float):
+            ld = np.full(self.series.count(), ld)
+
+        xs = np.arange(ld.size)
+        poly = array_to_polygonf(np.stack((xs, ld), axis=1))
+        self.ld.replace(poly)
+
+    # def drawHorizontalLines(
+    #     self,
+    #     values: List[float],
+    #     names: List[str] = None,
+    #     pens: List[QtGui.QPen] = None,
+    #     visible_in_legend: bool = True,
+    # ) -> None:
+
+    #     # Clear lines
+    #     self.clearHorizontalLines()
+
+    #     for i, value in enumerate(values):
+    #         line = QtCharts.QLineSeries()
+    #         if pens is not None:
+    #             line.setPen(pens[i])
+    #         if names is not None:
+    #             line.setName(names[i])
+
+    #         self.addSeries(line)
+    #         line.attachAxis(self.xaxis)
+    #         line.attachAxis(self.yaxis)
+    #         if not visible_in_legend:
+    #             self.legend().markers(line)[0].setVisible(False)
+    #         self.hlines.append(line)
+
+    #     self.setHorizontalLines(values)
 
     def drawVerticalLines(
         self,
@@ -167,11 +211,11 @@ class ParticleChart(QtCharts.QChart):
 
         self.setVerticalLines(values)
 
-    def setHorizontalLines(self, values: List[float]) -> None:
-        xmin, xmax = 0, self.series.count()
-        for line, value in zip(self.hlines, values):
-            line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
-        self.update()
+    # def setHorizontalLines(self, values: List[float]) -> None:
+    #     xmin, xmax = 0, self.series.count()
+    #     for line, value in zip(self.hlines, values):
+    #         line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
+    #     self.update()
 
     def setVerticalLines(self, values: List[float]) -> None:
         ymin, ymax = 0, 1e99
