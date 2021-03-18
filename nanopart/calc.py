@@ -23,7 +23,7 @@ def calculate_limits(
         return
 
     ub = np.mean(responses)
-    if window is None:
+    if window is None or window == 0:
         mean = ub
     else:
         mean = np.mean(centered_sliding_view(responses, window), axis=1)
@@ -38,7 +38,7 @@ def calculate_limits(
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
     if method == "Gaussian" and sigma is not None:
-        if window is None:
+        if window is None or window == 0:
             std = np.std(responses)
         else:
             std = np.std(centered_sliding_view(responses, window), axis=1)
