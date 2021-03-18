@@ -21,6 +21,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
         self.units = units
         self.update_value_with_unit = update_value_with_unit
+        self.valid_range = validator[0], validator[1]
 
         self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
         self.lineedit.textChanged.connect(self.valueChanged)
@@ -29,10 +30,14 @@ class UnitsWidget(QtWidgets.QWidget):
         self.combo = QtWidgets.QComboBox()
         self.combo.addItems(units.keys())
         if default_unit is not None:
-            self.combo.setCurrentText(default_unit)
+            if self.combo.currentText() == default_unit:
+                self.unitChanged(default_unit)
+            else:
+                self.setUnit(default_unit)
         self.combo.currentTextChanged.connect(self.unitChanged)
 
         self._previous_unit = self.combo.currentText()
+        self.setBaseValue(value)
 
         layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -77,6 +82,14 @@ class UnitsWidget(QtWidgets.QWidget):
             self.setBaseValue(base)
         else:
             self.valueChanged.emit()
+
+        bottom = self.valid_range[0] / self.units[unit]
+        top = self.valid_range[1] / self.units[unit]
+
+        self.lineedit.validator().setBottom(bottom)
+        self.lineedit.validator().setTop(top)
+        print(unit, bottom, top)
+
         self._previous_unit = unit
 
     def sync(self, other: "UnitsWidget") -> None:
