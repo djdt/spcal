@@ -1,28 +1,9 @@
+import bottleneck as bn
 import numpy as np
-from numpy.lib.stride_tricks import sliding_window_view
-from typing import Tuple
-
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import cpu_count
 
 import nanopart
 
-from typing import Callable
-
-
-def centered_sliding_view(x: np.ndarray, window: int) -> np.ndarray:
-    x_pad = np.pad(x, [window // 2, window // 2 - 1], mode="edge")
-    view = sliding_window_view(x_pad, window)
-    return view
-
-
-def threaded_over_axis(x: np.ndarray, func: Callable, axis: int = 1) -> np.ndarray:
-    with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(np.mean, y, axis=axis)
-            for y in np.array_split(x, cpu_count())
-        ]
-    return np.concatenate([f.result() for f in futures])
+from typing import Tuple
 
 
 def calculate_limits(
@@ -40,11 +21,11 @@ def calculate_limits(
     if window is None or window < 2:
         mean = ub
     else:
-        view = centered_sliding_view(responses, window)
+        pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
-            mean = threaded_over_axis(view, np.median, axis=1)
+            mean = bn.move_median(pad, window, axis=0)[pad.size - responses.size:]
         else:
-            mean = threaded_over_axis(view, np.mean, axis=1)
+            mean = bn.move_mean(pad, window, axis=0)[pad.size - responses.size:]
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -57,7 +38,7 @@ def calculate_limits(
         if window is None or window < 2:
             std = np.std(responses)
         else:
-            std = threaded_over_axis(view, np.std, axis=1)
+            std = bn.move_std(pad, window, axis=0)[pad.size - responses.size:]
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
     elif "Poisson" in method and epsilon is not None:
