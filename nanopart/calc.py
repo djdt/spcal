@@ -79,7 +79,7 @@ def results_from_mass_response(
     bed = nanopart.particle_size(
         background * (massresponse / molarratio), density=density
     )
-    lod_mass = lod / (massresponse * molarratio)
+    lod_mass = lod * (massresponse / molarratio)
     lod_size = nanopart.particle_size(lod_mass, density=density)
 
     return {
