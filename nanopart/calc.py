@@ -41,23 +41,26 @@ def calculate_limits(
         mean = ub
     else:
         view = centered_sliding_view(responses, window)
-        mean = threaded_over_axis(view, np.mean, axis=1)
+        if "Median" in method:
+            mean = threaded_over_axis(view, np.median, axis=1)
+        else:
+            mean = threaded_over_axis(view, np.mean, axis=1)
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
     elif method == "Highest" and sigma is not None and epsilon is not None:
-        lpoisson = ub + nanopart.poisson_limits(mean, epsilon=epsilon)[1]
+        lpoisson = ub + nanopart.poisson_limits(ub, epsilon=epsilon)[1]
         lgaussian = ub + sigma * np.nanstd(responses)
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
-    if method == "Gaussian" and sigma is not None:
+    if "Gaussian" in method and sigma is not None:
         if window is None or window < 2:
             std = np.std(responses)
         else:
             std = threaded_over_axis(view, np.std, axis=1)
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
-    elif method == "Poisson" and epsilon is not None:
+    elif "Poisson" in method and epsilon is not None:
         yc, yd = nanopart.poisson_limits(mean, epsilon=epsilon)
         return (method, mean, mean + yc, mean + yd)
 
