@@ -188,7 +188,12 @@ class InputWidget(QtWidgets.QWidget):
         return (self.slider.right() - self.slider.left()) * dwell
 
     def dialogLoadFile(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "")
+        file, _filter = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Open",
+            "",
+            "CSV Documents(*.csv *.txt *.text);;All files(*)",
+        )
         if file != "":
             self.loadFile(file)
 

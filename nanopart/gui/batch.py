@@ -219,7 +219,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
     def dialogLoadFiles(self) -> None:
         files, filter = QtWidgets.QFileDialog.getOpenFileNames(
-            self, "Batch Process Files", "", "CSV Documents(*.csv);;All files(*)"
+            self,
+            "Batch Process Files",
+            "",
+            "CSV Documents(*.csv *.txt *.text);;All files(*)",
         )
 
         if len(files) > 0:
