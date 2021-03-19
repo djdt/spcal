@@ -77,7 +77,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.count = QtWidgets.QLineEdit()
         self.count.setReadOnly(True)
         self.number = UnitsWidget(
-            {"#/ml": 1e3, "#/L": 1.0}, default_unit="#/L", update_value_with_unit=True
+            {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", update_value_with_unit=True
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
@@ -289,13 +289,19 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
         self.mean.setBaseValue(np.mean(self.result["sizes"]))
+        unit = self.mean.setBestUnit()
         self.median.setBaseValue(np.median(self.result["sizes"]))
+        self.median.setUnit(unit)
         self.lod.setBaseValue(self.result.get("lod_size", None))
+        self.mean.setUnit(unit)
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.result.get("number_concentration", None))
+        self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
+        unit = self.conc.setBestUnit()
         self.background.setBaseValue(self.result.get("background_concentration", None))
+        self.background.setUnit(unit)
 
         self.updateTable()
         self.updateChart()
