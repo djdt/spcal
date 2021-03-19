@@ -88,7 +88,6 @@ class UnitsWidget(QtWidgets.QWidget):
 
         self.lineedit.validator().setBottom(bottom)
         self.lineedit.validator().setTop(top)
-        print(unit, bottom, top)
 
         self._previous_unit = unit
 
