@@ -175,10 +175,15 @@ class ResultsWidget(QtWidgets.QWidget):
         # Crush the LOD for chart
         # TODO use a range
         if isinstance(lod, np.ndarray):
-            lod = np.mean(lod)
+            lod = np.amax(lod)
 
-        hist, bins = np.histogram(
-            data, bins=self.nbins, range=(data.min(), np.percentile(data, 99.9))
+        bins = np.histogram_bin_edges(data, bins=self.nbins)
+        if len(bins) - 1 < 16:
+            bins = np.histogram_bin_edges(data, bins=16)
+        elif len(bins) - 1 > 128:
+            bins = np.histogram_bin_edges(data, bins=128)
+        hist, _ = np.histogram(
+            data, bins=bins, range=(data.min(), np.percentile(data, 99.9))
         )
         self.chart.setData(hist, bins, xmin=0.0)
 
@@ -205,8 +210,13 @@ class ResultsWidget(QtWidgets.QWidget):
         vmin = data.min()
         vmax = np.percentile(data, 99.9)
 
-        hist, bins = np.histogram(
-            data, bins=self.nbins, range=(vmin, vmax), density=True
+        bins = np.histogram_bin_edges(data, bins=self.nbins)
+        if len(bins) - 1 < 16:
+            bins = np.histogram_bin_edges(data, bins=16)
+        elif len(bins) - 1 > 128:
+            bins = np.histogram_bin_edges(data, bins=128)
+        hist, _ = np.histogram(
+            data, bins=bins, range=(vmin, vmax), density=True
         )
 
         if method == "Normal":
@@ -292,7 +302,7 @@ class ResultsWidget(QtWidgets.QWidget):
         unit = self.mean.setBestUnit()
         self.median.setBaseValue(np.median(self.result["sizes"]))
         self.median.setUnit(unit)
-        self.lod.setBaseValue(self.result.get("lod_size", None))
+        self.lod.setBaseValue(np.amax(self.result.get("lod_size", None)))
         self.mean.setUnit(unit)
 
         self.count.setText(f"{self.sample.detections.size}")
