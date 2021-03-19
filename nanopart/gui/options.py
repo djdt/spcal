@@ -90,7 +90,9 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Automatic", "Highest", "Poisson", "Gaussian"])
+        self.method.addItems(
+            ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]
+        )
         self.method.currentTextChanged.connect(self.limitOptionsChanged)
         self.method.setItemData(
             0,
@@ -109,6 +111,11 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.method.setItemData(
             3,
+            "Gaussian threshold with LOD of median + 'simga' * σ.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.method.setItemData(
+            4,
             "Regions of Lc with at least one value above Ld.",
             QtCore.Qt.ToolTipRole,
         )

@@ -44,7 +44,7 @@ class InputWidget(QtWidgets.QWidget):
         self.options = options
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
-        self.options.window_size.textChanged.connect(self.updateLimits)
+        self.options.window_size.editingFinished.connect(self.updateLimits)
 
         self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
@@ -440,16 +440,16 @@ class ReferenceWidget(InputWidget):
 
         self.massresponse = UnitsWidget(
             {
-                "ag": 1e-21,
-                "fg": 1e-18,
-                "pg": 1e-15,
-                "ng": 1e-12,
-                "μg": 1e-9,
-                "mg": 1e-6,
-                "g": 1e-3,
-                "kg": 1.0,
+                "ag/count": 1e-21,
+                "fg/count": 1e-18,
+                "pg/count": 1e-15,
+                "ng/count": 1e-12,
+                "μg/count": 1e-9,
+                "mg/count": 1e-6,
+                "g/count": 1e-3,
+                "kg/count": 1.0,
             },
-            default_unit="ag",
+            default_unit="ag/count",
             update_value_with_unit=True,
         )
         self.massresponse.setReadOnly(True)

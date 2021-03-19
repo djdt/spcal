@@ -26,7 +26,7 @@ class UnitsWidget(QtWidgets.QWidget):
         self.valid_range = validator[0], validator[1]
 
         self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
-        self.lineedit.textChanged.connect(self.valueChanged)
+        self.lineedit.editingFinished.connect(self.valueChanged)
         self.lineedit.setValidator(QtGui.QDoubleValidator(*validator))
 
         self.combo = QtWidgets.QComboBox()
