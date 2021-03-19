@@ -2,15 +2,27 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from typing import Tuple
 
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import cpu_count
+
 import nanopart
 
-# TODO paralellise this
+from typing import Callable
 
 
 def centered_sliding_view(x: np.ndarray, window: int) -> np.ndarray:
     x_pad = np.pad(x, [window // 2, window // 2 - 1], mode="edge")
     view = sliding_window_view(x_pad, window)
     return view
+
+
+def threaded_over_axis(x: np.ndarray, func: Callable, axis: int = 1) -> np.ndarray:
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(np.mean, y, axis=axis)
+            for y in np.array_split(x, cpu_count())
+        ]
+    return np.concatenate([f.result() for f in futures])
 
 
 def calculate_limits(
@@ -28,7 +40,8 @@ def calculate_limits(
     if window is None or window < 2:
         mean = ub
     else:
-        mean = np.mean(centered_sliding_view(responses, window), axis=1)
+        view = centered_sliding_view(responses, window)
+        mean = threaded_over_axis(view, np.mean, axis=1)
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -41,7 +54,7 @@ def calculate_limits(
         if window is None or window < 2:
             std = np.std(responses)
         else:
-            std = np.std(centered_sliding_view(responses, window), axis=1)
+            std = threaded_over_axis(view, np.std, axis=1)
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
     elif method == "Poisson" and epsilon is not None:
