@@ -35,13 +35,16 @@ class InputWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
+        self.redraw_charts_requested = False
+
         # self.detectionsChanged.connect(self.redrawChart)
         self.limitsChanged.connect(self.updateDetections)
-        self.limitsChanged.connect(self.redrawLimits)
+        self.limitsChanged.connect(self.requestRedraw)
 
         self.options = options
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
+        self.options.window_size.textChanged.connect(self.updateLimits)
 
         self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
@@ -66,14 +69,14 @@ class InputWidget(QtWidgets.QWidget):
         self.table_units.currentTextChanged.connect(self.updateLimits)
 
         self.table = ParticleTable()
-        self.table.model().dataChanged.connect(self.redrawChart)
+        # self.table.model().dataChanged.connect(self.requestRedraw)
         self.table.model().dataChanged.connect(self.updateLimits)
 
         self.slider = RangeSlider()
         self.slider.setRange(0, 100)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
-        self.slider.sliderReleased.connect(self.updateLimits)
+        self.slider.sliderReleased.connect(self.requestRedraw)
 
         # Sample options
 
@@ -154,6 +157,13 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        if self.redraw_charts_requested:
+            self.redrawChart()
+            self.redrawLimits()
+            self.redraw_charts_requested = False
+
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
@@ -210,7 +220,6 @@ class InputWidget(QtWidgets.QWidget):
         self.slider.setValues(0, self.table.model().rowCount())
         self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
 
-        self.redrawChart()
         self.updateLimits()
 
     def updateDetections(self) -> None:
@@ -247,9 +256,14 @@ class InputWidget(QtWidgets.QWidget):
             if self.options.epsilon.hasAcceptableInput()
             else None
         )
+        window_size = (
+            int(self.options.window_size.text())
+            if self.options.window_size.hasAcceptableInput()
+            else None
+        )
 
         self.limits = calculate_limits(
-            responses, method, sigma, epsilon, window=self.options.windowSize()
+            responses, method, sigma, epsilon, window=window_size
         )
         self.limitsChanged.emit()
 
@@ -284,6 +298,13 @@ class InputWidget(QtWidgets.QWidget):
             self.chart.lc.clear()
         self.chart.setLimitDetection(self.limits[3])
         self.chart.updateGeometry()
+
+    def requestRedraw(self) -> None:
+        if self.isVisible():
+            self.redrawChart()
+            self.redrawLimits()
+        else:
+            self.redraw_charts_requested = True
 
     def updateTrim(self) -> None:
         values = [self.slider.left(), self.slider.right()]

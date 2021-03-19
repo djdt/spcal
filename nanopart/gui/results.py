@@ -172,6 +172,11 @@ class ResultsWidget(QtWidgets.QWidget):
             lod = self.result["lod_size"] * 1e9
             self.chart.xaxis.setTitleText("Size (nm)")
 
+        # Crush the LOD for chart
+        # TODO use a range
+        if isinstance(lod, np.ndarray):
+            lod = np.mean(lod)
+
         hist, bins = np.histogram(
             data, bins=self.nbins, range=(data.min(), np.percentile(data, 99.9))
         )

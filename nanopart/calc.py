@@ -4,6 +4,8 @@ from typing import Tuple
 
 import nanopart
 
+# TODO paralellise this
+
 
 def centered_sliding_view(x: np.ndarray, window: int) -> np.ndarray:
     x_pad = np.pad(x, [window // 2, window // 2 - 1], mode="edge")
@@ -23,12 +25,10 @@ def calculate_limits(
         return
 
     ub = np.mean(responses)
-    if window is None or window == 0:
+    if window is None or window < 2:
         mean = ub
     else:
         mean = np.mean(centered_sliding_view(responses, window), axis=1)
-    # gaussian = None
-    # poisson: Tuple[float, float] = None
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -38,7 +38,7 @@ def calculate_limits(
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
     if method == "Gaussian" and sigma is not None:
-        if window is None or window == 0:
+        if window is None or window < 2:
             std = np.std(responses)
         else:
             std = np.std(centered_sliding_view(responses, window), axis=1)

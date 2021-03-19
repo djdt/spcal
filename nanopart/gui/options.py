@@ -28,8 +28,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # Instrument wide options
         self.dwelltime = UnitsWidget(
-            {"ms": 1e-3, "s": 1.0},
-            default_unit="ms",
+            {"ms": 1e-3, "s": 1.0}, default_unit="ms", validator=(0.0, 10.0, 10)
         )
         self.uptake = UnitsWidget(
             uptake_units,
@@ -54,6 +53,21 @@ class OptionsWidget(QtWidgets.QWidget):
         self.efficiency_method = QtWidgets.QComboBox()
         self.efficiency_method.addItems(["Manual", "Reference", "Mass Response (None)"])
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
+        self.efficiency_method.setItemData(
+            0,
+            "Manually enter the nebulisation efficiency.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.efficiency_method.setItemData(
+            1,
+            "Calculate the efficiency using a reference particle.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.efficiency_method.setItemData(
+            2,
+            "Use the mass response of a reference particle.",
+            QtCore.Qt.ToolTipRole,
+        )
 
         # Complete Changed
         self.dwelltime.valueChanged.connect(self.optionsChanged)
@@ -69,30 +83,56 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Neb. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
-        self.epsilon = QtWidgets.QLineEdit("0.5")
-        self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
-
-        self.sigma = QtWidgets.QLineEdit("3.0")
-        self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
+        self.window_size = ValidColorLineEdit("1")
+        self.window_size.setValidator(QtGui.QIntValidator(1, 1000000))
+        self.window_size.setToolTip(
+            "Size of the window for moving thresholds. Use 1 for no window."
+        )
 
         self.method = QtWidgets.QComboBox()
         self.method.addItems(["Automatic", "Highest", "Poisson", "Gaussian"])
         self.method.currentTextChanged.connect(self.limitOptionsChanged)
+        self.method.setItemData(
+            0,
+            "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.method.setItemData(
+            1,
+            "Use the highest of Gaussian and Poisson.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.method.setItemData(
+            2,
+            "Gaussian threshold with LOD of mean + 'simga' * σ.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.method.setItemData(
+            3,
+            "Regions of Lc with at least one value above Ld.",
+            QtCore.Qt.ToolTipRole,
+        )
 
+        self.epsilon = QtWidgets.QLineEdit("0.5")
+        self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
         self.epsilon.setToolTip(
             "Correction factor for low background counts. "
             "Default of 0.5 maintains 0.05 alpha / beta."
         )
+
+        self.sigma = QtWidgets.QLineEdit("3.0")
+        self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
         self.sigma.setToolTip("LOD in number of standard deviations from mean.")
 
         self.epsilon.textChanged.connect(self.limitOptionsChanged)
         self.sigma.textChanged.connect(self.limitOptionsChanged)
 
-        self.limit_inputs = QtWidgets.QGroupBox("Limits inputs")
+        self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
+        self.limit_inputs.layout().addRow("Window size:", self.window_size)
+        self.limit_inputs.layout().addRow("LOD method:", self.method)
         self.limit_inputs.layout().addRow("Epsilon:", self.epsilon)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
-        self.limit_inputs.layout().addRow("LOD method:", self.method)
 
         self.diameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -131,6 +171,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
 
     def isComplete(self) -> bool:
+        if not self.window_size.hasAcceptableInput():
+            return False
+
         method = self.efficiency_method.currentText()
         if method == "Manual":
             return all(
