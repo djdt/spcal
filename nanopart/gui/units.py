@@ -1,4 +1,6 @@
 from PySide2 import QtCore, QtGui, QtWidgets
+import numpy as np
+
 from nanopart.gui.widgets import ValidColorLineEdit
 
 from typing import Dict, Tuple, Union
@@ -75,6 +77,12 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def setUnit(self, unit: str) -> None:
         self.combo.setCurrentText(unit)
+
+    def setBestUnit(self) -> str:
+        base = self.baseValue()
+        idx = max(np.searchsorted(list(self.units.values()), base) - 1, 0)
+        self.combo.setCurrentIndex(idx)
+        return self.combo.currentText()
 
     def unitChanged(self, unit: str) -> None:
         if self.update_value_with_unit and self.lineedit.hasAcceptableInput():
