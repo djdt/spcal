@@ -156,7 +156,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def dialogExportResults(self) -> None:
         file, _filter = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Export", "", "CSV Documents (.csv)"
+            self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
@@ -204,7 +204,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # Crush the LOD for chart
         # TODO use a range
         if isinstance(lod, np.ndarray):
-            lod = np.amax(lod)
+            lod = np.mean(lod)
 
         bins = np.histogram_bin_edges(data, bins=self.nbins)
         if len(bins) - 1 < 16:
@@ -264,8 +264,19 @@ class ResultsWidget(QtWidgets.QWidget):
             "events": self.sample.numberOfEvents(),
             "file": self.sample.label_file.text(),
             "limit_method": self.sample.limits[0],
+            "limit_window": int(self.options.window_size.text()),
             "lod": self.sample.limits[3],
         }
+
+        if isinstance(self.result["lod"], np.ndarray):
+            self.result["lod"] = np.array(
+                [
+                    np.amin(self.result["lod"]),
+                    np.amax(self.result["lod"]),
+                    np.mean(self.result["lod"]),
+                    np.median(self.result["lod"]),
+                ]
+            )
 
         if method in ["Manual", "Reference"]:
             if method == "Manual":
@@ -314,7 +325,7 @@ class ResultsWidget(QtWidgets.QWidget):
         unit = self.mean.setBestUnit()
         self.median.setBaseValue(np.median(self.result["sizes"]))
         self.median.setUnit(unit)
-        self.lod.setBaseValue(np.amax(self.result.get("lod_size", None)))
+        self.lod.setBaseValue(np.mean(self.result.get("lod_size", None)))
         self.mean.setUnit(unit)
 
         self.count.setText(f"{self.sample.detections.size}")

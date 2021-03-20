@@ -3,7 +3,7 @@ import numpy as np
 
 import nanopart
 
-from typing import Tuple
+from typing import Tuple, Union
 
 
 def calculate_limits(
@@ -12,7 +12,9 @@ def calculate_limits(
     sigma: float = None,
     epsilon: float = None,
     window: int = None,
-) -> Tuple[str, float, float, float]:
+) -> Tuple[
+    str, Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
+]:
 
     if responses is None or responses.size == 0:
         return
@@ -23,9 +25,9 @@ def calculate_limits(
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
-            mean = bn.move_median(pad, window, axis=0)[pad.size - responses.size:]
+            mean = bn.move_median(pad, window, axis=0)[pad.size - responses.size :]
         else:
-            mean = bn.move_mean(pad, window, axis=0)[pad.size - responses.size:]
+            mean = bn.move_mean(pad, window, axis=0)[pad.size - responses.size :]
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -38,7 +40,7 @@ def calculate_limits(
         if window is None or window < 2:
             std = np.std(responses)
         else:
-            std = bn.move_std(pad, window, axis=0)[pad.size - responses.size:]
+            std = bn.move_std(pad, window, axis=0)[pad.size - responses.size :]
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
     elif "Poisson" in method and epsilon is not None:
@@ -51,11 +53,12 @@ def calculate_limits(
 def results_from_mass_response(
     detections: np.ndarray,
     background: float,
-    lod: float,
+    lod: Union[float, np.ndarray],
     density: float,
     molarratio: float,
     massresponse: float,
 ) -> dict:
+
 
     masses = detections * (massresponse / molarratio)
     sizes = nanopart.particle_size(masses, density=density)
@@ -78,7 +81,7 @@ def results_from_mass_response(
 def results_from_nebulisation_efficiency(
     detections: np.ndarray,
     background: float,
-    lod: float,
+    lod: Union[float, np.ndarray],
     density: float,
     dwelltime: float,
     efficiency: float,
