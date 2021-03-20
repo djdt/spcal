@@ -1,4 +1,5 @@
 from PySide2 import QtCore, QtGui, QtWidgets
+from PySide2.QtCharts import QtCharts
 
 import numpy as np
 from pathlib import Path
@@ -57,6 +58,7 @@ class ResultsWidget(QtWidgets.QWidget):
             ],
         )
         self.chartview = ParticleChartView(self.chart)
+        self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.table = ResultsTable()

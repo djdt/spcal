@@ -79,6 +79,7 @@ class ParticleChart(QtCharts.QChart):
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
         self.yaxis.setLabelFormat("%.2g")
+        self.yaxis.setTitleText("Response")
 
         self.addAxis(self.xaxis, QtCore.Qt.AlignBottom)
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
@@ -108,17 +109,11 @@ class ParticleChart(QtCharts.QChart):
             series.attachAxis(self.xaxis)
             series.attachAxis(self.yaxis)
 
-        # self.hlines: List[QtCharts.QLineSeries] = []
         self.vlines: List[QtCharts.QLineSeries] = []
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
-
-    # def clearHorizontalLines(self) -> None:
-    #     for line in self.hlines:
-    #         self.removeSeries(line)
-    #     self.hlines.clear()
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -158,33 +153,6 @@ class ParticleChart(QtCharts.QChart):
         poly = array_to_polygonf(np.stack((xs, ld), axis=1))
         self.ld.replace(poly)
 
-    # def drawHorizontalLines(
-    #     self,
-    #     values: List[float],
-    #     names: List[str] = None,
-    #     pens: List[QtGui.QPen] = None,
-    #     visible_in_legend: bool = True,
-    # ) -> None:
-
-    #     # Clear lines
-    #     self.clearHorizontalLines()
-
-    #     for i, value in enumerate(values):
-    #         line = QtCharts.QLineSeries()
-    #         if pens is not None:
-    #             line.setPen(pens[i])
-    #         if names is not None:
-    #             line.setName(names[i])
-
-    #         self.addSeries(line)
-    #         line.attachAxis(self.xaxis)
-    #         line.attachAxis(self.yaxis)
-    #         if not visible_in_legend:
-    #             self.legend().markers(line)[0].setVisible(False)
-    #         self.hlines.append(line)
-
-    #     self.setHorizontalLines(values)
-
     def drawVerticalLines(
         self,
         values: List[float],
@@ -210,12 +178,6 @@ class ParticleChart(QtCharts.QChart):
             self.vlines.append(line)
 
         self.setVerticalLines(values)
-
-    # def setHorizontalLines(self, values: List[float]) -> None:
-    #     xmin, xmax = 0, self.series.count()
-    #     for line, value in zip(self.hlines, values):
-    #         line.replace([QtCore.QPointF(xmin, value), QtCore.QPointF(xmax, value)])
-    #     self.update()
 
     def setVerticalLines(self, values: List[float]) -> None:
         ymin, ymax = 0, 1e99
@@ -252,6 +214,7 @@ class ParticleHistogram(QtCharts.QChart):
 
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
+        self.yaxis.setTitleText("Count")
         self.yaxis.setLabelFormat("%d")
 
         self.addAxis(self._xaxis, QtCore.Qt.AlignBottom)
@@ -279,6 +242,8 @@ class ParticleHistogram(QtCharts.QChart):
         self.label_fit.setFont(QtGui.QFont("sans", 12, italic=False))
         self.label_fit.setZValue(99)
         self.label_fit.setDefaultTextColor(QtGui.QColor(255, 172, 0))
+        self.xaxis.rangeChanged.connect(self.updateFitLabelPos)
+
         self.label_hovered = QtWidgets.QGraphicsTextItem(self)
         self.plotAreaChanged.connect(self.updateHoveredLabelPos)
 
@@ -292,6 +257,16 @@ class ParticleHistogram(QtCharts.QChart):
         a = QtCore.QRectF()
         a.topLeft()
         self.label_hovered.setPos(self.plotArea().topRight())
+
+    def updateFitLabelPos(self) -> None:
+        pos = self.label_fit.data(0)
+        if pos is not None:
+            pos = self.mapToPosition(pos, series=self.fit)
+            pos -= QtCore.QPointF(
+                0,
+                self.label_fit.boundingRect().height(),
+            )
+            self.label_fit.setPos(pos)
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -363,12 +338,9 @@ class ParticleHistogram(QtCharts.QChart):
         idx = np.argmax(fit)
         x, y = bins[idx], fit[idx]
         self.label_fit.setPlainText(f"{x:.4g}")
-        pos = self.mapToPosition(QtCore.QPointF(x, y), series=self.fit)
-        pos -= QtCore.QPointF(
-            0,
-            self.label_fit.boundingRect().height(),
-        )
-        self.label_fit.setPos(pos)
+        self.label_fit.setData(0, QtCore.QPointF(x, y))
+
+        self.updateFitLabelPos()
 
     def barHovered(self, state: bool, index: int) -> None:
         self.label_hovered.setVisible(state)

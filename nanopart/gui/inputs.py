@@ -62,14 +62,12 @@ class InputWidget(QtWidgets.QWidget):
         self.chartview = ParticleChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         self.chartview.setAcceptDrops(False)
-        # self.chartview.installEventFilter(DragDropRedirectFilter(self))
 
         self.table_units = QtWidgets.QComboBox()
         self.table_units.addItems(["Counts", "CPS"])
         self.table_units.currentTextChanged.connect(self.updateLimits)
 
         self.table = ParticleTable()
-        # self.table.model().dataChanged.connect(self.requestRedraw)
         self.table.model().dataChanged.connect(self.updateLimits)
 
         self.slider = RangeSlider()
