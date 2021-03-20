@@ -54,7 +54,7 @@ class NiceValueAxis(QtCharts.QValueAxis):
         delta = amax - amin
 
         interval = delta / self.nticks
-        pwr = 10 ** int(np.log10(interval))
+        pwr = 10 ** int(np.log10(interval) - (1 if interval < 1.0 else 0))
         interval = interval / pwr
 
         idx = np.searchsorted(NiceValueAxis.nicenums, interval)

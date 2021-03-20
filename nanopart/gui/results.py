@@ -16,6 +16,8 @@ from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ResultsTable
 from nanopart.gui.units import UnitsWidget
 
+from typing import Tuple
+
 
 class ResultsWidget(QtWidgets.QWidget):
     def __init__(
@@ -63,7 +65,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
         self.fitmethod.setCurrentText("Lognormal")
 
-        self.fitmethod.currentIndexChanged.connect(self.updateChartFit)
+        self.fitmethod.currentIndexChanged.connect(self.updateChart)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass", "Size"])
@@ -157,20 +159,45 @@ class ResultsWidget(QtWidgets.QWidget):
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
 
+    def asBestUnit(self, data: np.ndarray, current_unit: str = "") -> Tuple[float, str]:
+        units = {
+            "z": 1e-21,
+            "a": 1e-18,
+            "f": 1e-15,
+            "p": 1e-12,
+            "n": 1e-9,
+            "μ": 1e-6,
+            "m": 1e-3,
+            "": 1.0,
+            "k": 1e3,
+            "M": 1e6,
+        }
+
+        data = data * units[current_unit]
+
+        mean = np.mean(data)
+        pwr = 10 ** int(np.log10(mean) - (1 if mean < 1.0 else 0))
+
+        vals = list(units.values())
+        names = list(units.keys())
+        idx = np.searchsorted(list(units.values()), pwr) - 1
+
+        return data / vals[idx], vals[idx], names[idx]
+
     def updateChart(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
-            data = self.result["masses"] * 1e21  # ag
-            lod = self.result["lod_mass"] * 1e21
-            self.chart.xaxis.setTitleText("Mass (ag)")
+            data, mult, unit = self.asBestUnit(self.result["masses"], "k")
+            lod = self.result["lod_mass"] / mult
+            self.chart.xaxis.setTitleText(f"Mass ({unit}g)")
         elif mode == "Signal":
             data = self.result["detections"]  # counts
             lod = self.result["lod"]
             self.chart.xaxis.setTitleText("Signal (counts)")
         elif mode == "Size":
-            data = self.result["sizes"] * 1e9  # nm
-            lod = self.result["lod_size"] * 1e9
-            self.chart.xaxis.setTitleText("Size (nm)")
+            data, mult, unit = self.asBestUnit(self.result["sizes"])
+            lod = self.result["lod_size"] / mult
+            self.chart.xaxis.setTitleText(f"Size ({unit}m)")
 
         # Crush the LOD for chart
         # TODO use a range
@@ -189,44 +216,27 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
 
-        self.updateChartFit()
+        self.updateChartFit(hist, bins, data.size)
 
-    def updateChartFit(self) -> None:
-        mode = self.mode.currentText()
-        if mode == "Mass":
-            data = self.result["masses"] * 1e21  # ag
-        elif mode == "Signal":
-            data = self.result["detections"]  # counts
-        elif mode == "Size":
-            data = self.result["sizes"] * 1e9  # nm
-
+    def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
         method = self.fitmethod.currentText()
         if method == "None":
             self.chart.fit.clear()
             self.chart.label_fit.setVisible(False)
             return
 
-        # vmin and vmax are for non-ednsity histogram
-        vmin = data.min()
-        vmax = np.percentile(data, 99.9)
-
-        bins = np.histogram_bin_edges(data, bins=self.nbins)
-        if len(bins) - 1 < 16:
-            bins = np.histogram_bin_edges(data, bins=16)
-        elif len(bins) - 1 > 128:
-            bins = np.histogram_bin_edges(data, bins=128)
-        hist, _ = np.histogram(
-            data, bins=bins, range=(vmin, vmax), density=True
-        )
+        # Convert to density
+        binwidth = bins[1] - bins[0]
+        hist = hist / binwidth / size
 
         if method == "Normal":
             fit, err, opts = fit_normal(bins[1:], hist)
         elif method == "Lognormal":
             fit, err, opts = fit_lognormal(bins[1:], hist)
 
-        # Fit to the non-density histogram
-        binwidth = bins[1] - bins[0]
-        fit = fit * binwidth * data.size
+        # Convert from density
+        fit = fit * binwidth * size
+
         self.chart.setFit(bins[1:], fit)
         self.chart.fit.setName(method)
         self.chart.label_fit.setVisible(True)
