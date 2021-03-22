@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 
 import nanopart
+from nanopart import calc, io
 
 from typing import List, Tuple
 
@@ -11,8 +12,9 @@ from typing import List, Tuple
 def parse_argv(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     # Acquisiton file
-    parser.add_argument("aquisition", help="Output with 2 columns, Time and Counts.")
-
+    parser.add_argument(
+        "aquisition", help="Output with 1 or 2 columns, Counts or Time and Counts."
+    )
     # Acquisiton modifiers
     acqgrp = parser.add_argument_group("acquisition arguments")
     acqgrp.add_argument(
@@ -35,49 +37,70 @@ def parse_argv(argv: List[str]) -> argparse.Namespace:
         help="Number of points to trim from start and end of acquistion.",
     )
 
-    # Required inputs
-    reqgrp = parser.add_argument_group("required arguments")
-    reqgrp.add_argument(
+    param = parser.add_argument_group("parameter arguments")
+    param.add_argument(
         "--density",
         metavar="g/cm3",
         type=float,
-        required=True,
         help="Particle material density.",
     )
-    reqgrp.add_argument(
+    param.add_argument(
         "--efficiency",
         metavar="[0 - 1]",
         type=float,
         help="Nebulisation efficiency.",
-        required=True,
     )
-    reqgrp.add_argument(
-        "--flowrate",
+    param.add_argument(
+        "--uptake",
         metavar="ml/min",
         type=float,
         help="Sample flow rate.",
-        required=True,
     )
-    reqgrp.add_argument(
+    param.add_argument(
         "--response",
-        metavar="μg/L",
+        metavar="counts/(μg/L)",
         type=float,
         help="Response factor in counts per ppb.",
-        required=True,
     )
-
-    # Optional arugments
-    parser.add_argument(
+    param.add_argument(
         "--molarmass",
         metavar="g/mol",
         type=float,
         help="Molecular weight of particle material.",
     )
-    parser.add_argument(
-        "--massfraction",
+    param.add_argument(
+        "--molarratio",
         type=float,
         help="Molar ratio between unit cell and analyte.",
         default=1.0,
+    )
+    limit = parser.add_argument_group("limit arguments")
+    limit.add_argument(
+        "--window", type=int, help="Window size for rolling limit determination."
+    )
+    limit.add_argument(
+        "--method",
+        choices=[
+            "Automatic",
+            "Highest",
+            "Gaussian",
+            "Gaussian Median",
+            "Poisson",
+        ],
+        default="Automatic",
+        help="Method for determining LODs.",
+    )
+    param.add_argument(
+        "--epsilon",
+        default=0.5,
+        type=float,
+        help="Epsilon correct factor for Poisson. Applied when μb < 5.",
+    )
+    param.add_argument(
+        "--sigma",
+        default=3.0,
+        type=float,
+        help="Sigma for Gaussian, LOD = μb + 'sigma' * σ.",
     )
     # parser.add_argument(
     #     "--responsecps",
@@ -120,13 +143,15 @@ def rescale_prefix(x: float, prefix: str) -> Tuple[float, str]:
 
 if __name__ == "__main__":
     args = parse_argv(sys.argv)
-    x, y = np.genfromtxt(
-        args.aquisition, delimiter=",", skip_header=4, skip_footer=4, unpack=True
-    )
+    # x, y = np.genfromtxt(
+    #     args.aquisition, delimiter=",", skip_header=4, skip_footer=4, unpack=True
+    # )
+    y, params = io.read_nanoparticle_file(args.aquisition, delimiter=",")
 
-    if not args.dwelltime:
-        # Read dwell time (to nearest μs) from the aquisition
-        args.dwelltime = np.around(np.mean(np.diff(x)), decimals=6)
+    if not args.dwelltime and "dwelltime" in params:
+        args.dwelltime = params["dwelltime"]
+    else:
+        raise ValueError("Missing / unreadable dwelltime!")
 
     # Convert from counts per second to counts
     if args.cps:
@@ -135,23 +160,20 @@ if __name__ == "__main__":
 
     # Trim data
     if args.trim:
-        x = x[args.trim[0] : x.size - args.trim[1]]
         y = y[args.trim[0] : y.size - args.trim[1]]
 
-    # Mean of background
-    ub = np.mean(y)
-    # Gross critical values
-    yc, yd = nanopart.poisson_limits(ub)
-    # Critical values
-    lc, ld = yc + ub, yd + ub
+    limits = calc.calculate_limits(
+        y, args.method, args.sigma, args.epsilon, args.window
+    )
+    if limits is None:
+        raise ValueError("Unable to calculate limits.")
 
-    detections, regions = nanopart.accumulate_detections(y - ub, yc, yd)
-
+    detections, regions = nanopart.accumulate_detections(y, limits[2], limits[3])
     # Calculate background mean of non-detections
     ndub = np.mean(y[regions == 0])
 
     # Inputs, converted into kg, L, m, s
-    time = x[-1] - x[0]  # s
+    time = y.size * args.dwelltime  # s
     flowrate = args.flowrate * 1e-3 / 60.0  # ml/min -> L/s
     response = args.response * 1e9  # L/μg -> L/kg
     density = args.density * 1e-3 * 1e6  # g/cm3 -> kg/m3
@@ -202,7 +224,12 @@ if __name__ == "__main__":
     # )
     beld_size = nanopart.particle_size(
         nanopart.particle_mass(
-            ld, args.dwelltime, args.efficiency, flowrate, response, args.massfraction
+            limits[3],
+            args.dwelltime,
+            args.efficiency,
+            flowrate,
+            response,
+            args.massfraction,
         ),
         density,
     )
