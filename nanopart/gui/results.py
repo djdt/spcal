@@ -186,7 +186,7 @@ class ResultsWidget(QtWidgets.QWidget):
         names = list(units.keys())
         idx = np.searchsorted(list(units.values()), pwr) - 1
 
-        return data / vals[idx], vals[idx], names[idx]
+        return data / vals[idx], vals[idx] / units[current_unit], names[idx]
 
     def updateChart(self) -> None:
         mode = self.mode.currentText()
