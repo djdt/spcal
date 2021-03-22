@@ -23,6 +23,7 @@ def process_file_detections(
     limit_method: str,
     limit_sigma: float,
     limit_epsilon: float,
+    limit_window: int,
     cps_dwelltime: float = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
@@ -36,7 +37,9 @@ def process_file_detections(
     if responses is None or size == 0:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
-    limits = calculate_limits(responses, limit_method, limit_sigma, limit_epsilon)
+    limits = calculate_limits(
+        responses, limit_method, limit_sigma, limit_epsilon, window=limit_window
+    )
 
     if limits is None:
         raise ValueError("Limit calculations failed for '{file.name}'.")
@@ -50,6 +53,7 @@ def process_file_detections(
         "events": size,
         "file": str(file),
         "limit_method": limits[0],
+        "limit_window": limit_window,
         "lod": limits[3],
     }
 
@@ -67,6 +71,7 @@ class ProcessThread(QtCore.QThread):
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
+        limit_window: int = 0,
         cps_dwelltime: float = None,
         parent: QtCore.QObject = None,
     ):
@@ -81,6 +86,7 @@ class ProcessThread(QtCore.QThread):
         self.limit_method = limit_method
         self.limit_epsilon = limit_epsilon
         self.limit_sigma = limit_sigma
+        self.limit_window = limit_window
         self.cps_dwelltime = cps_dwelltime
 
     def run(self) -> None:
@@ -93,6 +99,7 @@ class ProcessThread(QtCore.QThread):
                     self.limit_method,
                     self.limit_sigma,
                     self.limit_epsilon,
+                    limit_window=self.limit_window,
                     cps_dwelltime=self.cps_dwelltime,
                 )
             except ValueError:
@@ -108,6 +115,7 @@ class ProcessThread(QtCore.QThread):
                         **self.method_kws,
                     )
                 )
+
             except ValueError:
                 self.proccessFailed.emit(infile.name)
                 continue
@@ -272,6 +280,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             cps_dwelltime = None
 
+        window = int(self.options.window_size.text())
+
         method = self.options.efficiency_method.currentText()
 
         if method in ["Manual", "Reference"]:
@@ -309,6 +319,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             limit_method=limit_method,
             limit_sigma=sigma,
             limit_epsilon=epsilon,
+            limit_window=window,
             cps_dwelltime=cps_dwelltime,
             parent=self,
         )

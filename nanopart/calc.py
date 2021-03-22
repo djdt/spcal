@@ -59,6 +59,8 @@ def results_from_mass_response(
     massresponse: float,
 ) -> dict:
 
+    if isinstance(lod, np.ndarray):
+        lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
     masses = detections * (massresponse / molarratio)
     sizes = nanopart.particle_size(masses, density=density)
@@ -73,6 +75,7 @@ def results_from_mass_response(
         "masses": masses,
         "sizes": sizes,
         "background_size": bed,
+        "lod": lod,
         "lod_mass": lod_mass,
         "lod_size": lod_size,
     }
@@ -90,6 +93,9 @@ def results_from_nebulisation_efficiency(
     response: float,
     time: float,
 ) -> dict:
+
+    if isinstance(lod, np.ndarray):
+        lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
     masses = nanopart.particle_mass(
         detections,
@@ -143,6 +149,7 @@ def results_from_nebulisation_efficiency(
         "number_concentration": number_concentration,
         "background_concentration": ionic,
         "background_size": bed,
+        "lod": lod,
         "lod_mass": lod_mass,
         "lod_size": lod_size,
     }

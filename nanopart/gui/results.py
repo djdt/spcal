@@ -204,9 +204,8 @@ class ResultsWidget(QtWidgets.QWidget):
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
 
         # Crush the LOD for chart
-        # TODO use a range
         if isinstance(lod, np.ndarray):
-            lod_min, lod_max = np.amin(lod), np.amax(lod)
+            lod_min, lod_max = lod[0], lod[1]
         else:
             lod_min, lod_max = lod, lod
 
@@ -272,16 +271,6 @@ class ResultsWidget(QtWidgets.QWidget):
             "limit_window": int(self.options.window_size.text()),
             "lod": self.sample.limits[3],
         }
-
-        if isinstance(self.result["lod"], np.ndarray):
-            self.result["lod"] = np.array(
-                [
-                    np.amin(self.result["lod"]),
-                    np.amax(self.result["lod"]),
-                    np.mean(self.result["lod"]),
-                    np.median(self.result["lod"]),
-                ]
-            )
 
         if method in ["Manual", "Reference"]:
             if method == "Manual":
