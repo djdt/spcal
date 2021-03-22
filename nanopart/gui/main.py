@@ -1,5 +1,7 @@
 from PySide2 import QtWidgets
 
+from nanopart import __version__
+
 from nanopart.gui.batch import BatchProcessDialog
 from nanopart.gui.options import OptionsWidget
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
@@ -63,6 +65,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_close = QtWidgets.QAction("Quit", self)
         action_close.triggered.connect(self.close)
 
+        action_about = QtWidgets.QAction("About", self)
+        action_about.triggered.connect(self.about)
+
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(action_open_sample)
         menufile.addAction(action_open_reference)
@@ -70,6 +75,24 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(self.action_batch_process)
         menufile.addSeparator()
         menufile.addAction(action_close)
+
+        menuhelp = self.menuBar().addMenu("&Help")
+        menuhelp.addAction(action_about)
+
+    def about(self) -> QtWidgets.QDialog:
+        dlg = QtWidgets.QMessageBox(
+            QtWidgets.QMessageBox.Information,
+            "About nanopart",
+            (
+                "sp/scICP-MS processing.\n"
+                f"Version {__version__}\n"
+                "Developed by the Atomic Medicine Initiative.\n"
+                "https://github.com/djdt/nanopart"
+            ),
+            parent=self,
+        )
+        dlg.open()
+        return dlg
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
         dlg = BatchProcessDialog(
@@ -90,10 +113,6 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.readyForResults(),
         )
         self.action_batch_process.setEnabled(self.readyForResults())
-
-    # def onSampleComplete(self) -> None:
-    #     complete = self.sample.isComplete()
-    #     self.tabs.setTabEnabled(self.tabs.indexOf(self.results), complete)
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):

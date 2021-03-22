@@ -3,6 +3,8 @@ from pathlib import Path
 
 from typing import Dict, Tuple, Union
 
+from nanopart import __version__
+
 
 def read_nanoparticle_file(
     path: Union[Path, str], delimiter: str = ","
@@ -44,7 +46,7 @@ def read_nanoparticle_file(
 
 def export_nanoparticle_results(path: Path, result: dict) -> None:
     with path.open("w") as fp:
-        fp.write("# NanoPart Export v0.1\n")
+        fp.write(f"# NanoPart Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
         fp.write(f"# Detected particles,{result['detections'].size}\n")
