@@ -527,6 +527,7 @@ class ReferenceWidget(InputWidget):
         return (
             self.detections is not None
             and self.detections.size > 0
+            and self.diameter.hasAcceptableInput()
             and self.molarratio.hasAcceptableInput()
             and self.density.hasAcceptableInput()
         )
