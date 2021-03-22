@@ -278,7 +278,7 @@ class ParticleHistogram(QtCharts.QChart):
         values: List[float],
         names: List[str] = None,
         pens: List[QtGui.QPen] = None,
-        visible_in_legend: bool = True,
+        visible_in_legend: List[bool] = None,
     ) -> None:
         self.clearVerticalLines()
 
@@ -293,7 +293,7 @@ class ParticleHistogram(QtCharts.QChart):
             line.attachAxis(self.xaxis)
             line.attachAxis(self.yaxis)
 
-            if not visible_in_legend:
+            if visible_in_legend is not None and not visible_in_legend[i]:
                 self.legend().markers(line)[0].setVisible(False)
             self.vlines.append(line)
 

@@ -49,13 +49,15 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
-            [0, 0, 0],
-            names=["mean", "median", "lod"],
+            [0, 0, 0, 0],
+            names=["mean", "median", "lod", ""],
             pens=[
                 QtGui.QPen(QtGui.QColor(255, 0, 0), 1.5, QtCore.Qt.DashLine),
                 QtGui.QPen(QtGui.QColor(0, 0, 255), 1.5, QtCore.Qt.DashLine),
                 QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
+                QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
             ],
+            visible_in_legend=[True, True, True, False],
         )
         self.chartview = ParticleChartView(self.chart)
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
@@ -204,19 +206,22 @@ class ResultsWidget(QtWidgets.QWidget):
         # Crush the LOD for chart
         # TODO use a range
         if isinstance(lod, np.ndarray):
-            lod = np.mean(lod)
+            lod_min, lod_max = np.amin(lod), np.amax(lod)
+        else:
+            lod_min, lod_max = lod, lod
 
         bins = np.histogram_bin_edges(data, bins=self.nbins)
         if len(bins) - 1 < 16:
             bins = np.histogram_bin_edges(data, bins=16)
         elif len(bins) - 1 > 128:
             bins = np.histogram_bin_edges(data, bins=128)
+
         hist, _ = np.histogram(
             data, bins=bins, range=(data.min(), np.percentile(data, 99.9))
         )
         self.chart.setData(hist, bins, xmin=0.0)
 
-        self.chart.setVerticalLines([np.mean(data), np.median(data), lod])
+        self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
 
         self.updateChartFit(hist, bins, data.size)
 

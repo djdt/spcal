@@ -283,7 +283,7 @@ class InputWidget(QtWidgets.QWidget):
                 QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
                 QtGui.QPen(QtGui.QColor(255, 0, 0), 2.0),
             ],
-            visible_in_legend=False,  # type: ignore
+            visible_in_legend=[False, False],  # type: ignore
         )
         self.chart.updateYRange()
 
