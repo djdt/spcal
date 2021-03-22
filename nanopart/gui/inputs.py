@@ -488,7 +488,7 @@ class ReferenceWidget(InputWidget):
                 self.detections.size,
                 concentration=concentration,
                 mass=mass,
-                flow=uptake,
+                flowrate=uptake,
                 time=time,
             )
             self.efficiency.setText(f"{efficiency:.4g}")
