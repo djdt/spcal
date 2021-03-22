@@ -145,6 +145,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Batch Process")
         self.setMinimumSize(640, 640)
+        self.setAcceptDrops(True)
 
         self.sample = sample
         self.reference = reference
@@ -200,6 +201,20 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_process, 0, QtCore.Qt.AlignRight)
 
         self.setLayout(layout)
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:  # pragma: no cover
+            super().dragEnterEvent(event)
+
+    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                self.files.addItem(url.toLocalFile())
+            event.acceptProposedAction()
+        else:
+            super().dropEvent(event)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
@@ -265,9 +280,20 @@ class BatchProcessDialog(QtWidgets.QDialog):
     def advanceProgress(self) -> None:
         self.progress.setValue(self.progress.value() + 1)
 
+    def processComplete(self, file: str) -> None:
+        self.completed_files.append(file)
+        self.advanceProgress()
+
+    def processFailed(self, file: str) -> None:
+        self.failed_files.append(file)
+        self.advanceProgress()
+
     def startProcess(self) -> None:
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
+
+        self.completed_files = []
+        self.failed_files = []
 
         self.progress.setMaximum(len(infiles))
         self.progress.setValue(1)
@@ -324,8 +350,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
             parent=self,
         )
 
-        self.thread.proccessComplete.connect(self.advanceProgress)
-        self.thread.proccessFailed.connect(self.advanceProgress)
+        self.thread.proccessComplete.connect(self.processComplete)
+        self.thread.proccessFailed.connect(self.processFailed)
         self.thread.finished.connect(self.finishProcess)
         self.thread.start()
 
@@ -333,3 +359,14 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_process.setText("Start Batch")
         self.progress.setValue(0)
         self.thread = None
+
+        if len(self.failed_files) > 0:
+            msg = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Warning,
+                "Import Failed",
+                f"Failed to process {len(self.failed_files)} files!",
+                parent=self,
+            )
+            newline = "\n"
+            msg.setDetailedText(f"\n{newline.join(f for f in self.failed_files)}")
+            msg.exec_()
