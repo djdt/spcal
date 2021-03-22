@@ -21,8 +21,6 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
 
-        # self.reference.efficiency.textChanged.connect(self.options.setEfficiency)
-
         self.options.optionsChanged.connect(self.onInputsChanged)
         self.sample.optionsChanged.connect(self.onInputsChanged)
         self.sample.detectionsChanged.connect(self.onInputsChanged)
@@ -43,13 +41,6 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
         self.createMenuBar()
-
-        self.sample.loadFile("/home/tom/MEGA/Scripts/np/Sample 50 nm.csv")
-        # self.reference.loadFile("/home/tom/MEGA/Scripts/np/Reference 50 nm.csv")
-        self.options.uptake.setBaseValue(0.000001567)
-        self.options.response.setBaseValue(20e9)
-        self.options.efficiency.setText("0.062")
-        self.sample.density.setBaseValue(19.32e3)
 
     def createMenuBar(self) -> None:
         action_open_sample = QtWidgets.QAction("Open Sample", self)
