@@ -59,8 +59,8 @@ def process_file_detections(
 
 
 class ProcessThread(QtCore.QThread):
-    proccessComplete = QtCore.Signal(str)
-    proccessFailed = QtCore.Signal(str)
+    processComplete = QtCore.Signal(str)
+    processFailed = QtCore.Signal(str)
 
     def __init__(
         self,
@@ -103,7 +103,7 @@ class ProcessThread(QtCore.QThread):
                     cps_dwelltime=self.cps_dwelltime,
                 )
             except ValueError:
-                self.proccessFailed.emit(infile.name)
+                self.processFailed.emit(infile.name)
                 continue
 
             try:
@@ -117,22 +117,22 @@ class ProcessThread(QtCore.QThread):
                 )
 
             except ValueError:
-                self.proccessFailed.emit(infile.name)
+                self.processFailed.emit(infile.name)
                 continue
 
             try:
                 export_nanoparticle_results(outfile, result)
             except ValueError:
-                self.proccessFailed.emit(infile.name)
+                self.processFailed.emit(infile.name)
                 continue
 
-            self.proccessComplete.emit(infile.name)
+            self.processComplete.emit(infile.name)
 
 
 class BatchProcessDialog(QtWidgets.QDialog):
-    fileProccessed = QtCore.Signal()
-    proccessingStarted = QtCore.Signal()
-    proccessingFinshed = QtCore.Signal()
+    fileprocessed = QtCore.Signal()
+    processingStarted = QtCore.Signal()
+    processingFinshed = QtCore.Signal()
 
     def __init__(
         self,
@@ -350,8 +350,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
             parent=self,
         )
 
-        self.thread.proccessComplete.connect(self.processComplete)
-        self.thread.proccessFailed.connect(self.processFailed)
+        self.thread.processComplete.connect(self.processComplete)
+        self.thread.processFailed.connect(self.processFailed)
         self.thread.finished.connect(self.finishProcess)
         self.thread.start()
 
