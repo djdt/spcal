@@ -59,6 +59,8 @@ class UnitsWidget(QtWidgets.QWidget):
         else:
             self.lineedit.setText(value)
 
+        self.valueChanged.emit()
+
     def baseValue(self) -> float:
         unit = self.combo.currentText()
         if not self.lineedit.hasAcceptableInput():
@@ -80,8 +82,9 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def setBestUnit(self) -> str:
         base = self.baseValue()
-        idx = max(np.searchsorted(list(self.units.values()), base) - 1, 0)
-        self.combo.setCurrentIndex(idx)
+        if base is not None:
+            idx = max(np.searchsorted(list(self.units.values()), base) - 1, 0)
+            self.combo.setCurrentIndex(idx)
         return self.combo.currentText()
 
     def unitChanged(self, unit: str) -> None:

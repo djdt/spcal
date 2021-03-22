@@ -315,6 +315,10 @@ class ResultsWidget(QtWidgets.QWidget):
                 )
             )
 
+        if self.options.diameter.hasAcceptableInput():
+            self.result["sizes"] /= np.mean(self.result["sizes"])
+            self.result["sizes"] *= self.options.diameter.baseValue()
+
         self.mean.setBaseValue(np.mean(self.result["sizes"]))
         unit = self.mean.setBestUnit()
         self.median.setBaseValue(np.median(self.result["sizes"]))

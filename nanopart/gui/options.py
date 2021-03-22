@@ -146,6 +146,9 @@ class OptionsWidget(QtWidgets.QWidget):
             default_unit="μm",
             invalid_color=QtGui.QColor(255, 255, 172),
         )
+        self.diameter.setToolTip(
+            "Sets the mean particle size to the hypothesised diameter."
+        )
 
         self.cell_inputs = QtWidgets.QGroupBox("Single Cell Options")
         self.cell_inputs.setLayout(QtWidgets.QFormLayout())
