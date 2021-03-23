@@ -27,15 +27,16 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
     r = np.empty(x.size - n + 1, x.dtype)
     sort = sorted(x[:n])
     m = n // 2
+    m2 = m + n % 2 - 1
 
     for start in range(x.size - n):
-        r[start] = sort[m]
+        r[start] = sort[m] + sort[m2]
         end = start + n
         del sort[bisect_left(sort, x[start])]
         insort(sort, x[end])
 
-    r[-1] = sort[m]
-    return r
+    r[-1] = sort[m] + sort[m2]
+    return r / 2.0
 
 
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
