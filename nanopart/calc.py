@@ -3,6 +3,7 @@ try:
     import bottleneck as bn
     bottleneck_found = True
 except ImportError:
+    from bisect import bisect_left, insort
     bottleneck_found = False
 
 import nanopart
@@ -19,10 +20,22 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_median(x: np.ndarray, n: int) -> np.ndarray:
+    # Not real median if n is even
     if bottleneck_found:
         return bn.move_median(x, n)[n - 1:]
-    view = np.lib.stride_tricks.sliding_window_view(x, n)
-    return np.median(view, axis=1)
+
+    r = np.empty(x.size - n + 1, x.dtype)
+    sort = sorted(x[:n])
+    m = n // 2
+
+    for start in range(x.size - n):
+        r[start] = sort[m]
+        end = start + n
+        del sort[bisect_left(sort, x[start])]
+        insort(sort, x[end])
+
+    r[-1] = sort[m]
+    return r
 
 
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
