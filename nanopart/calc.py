@@ -1,9 +1,35 @@
-import bottleneck as bn
 import numpy as np
+try:
+    import bottleneck as bn
+    bottleneck_found = True
+except ImportError:
+    bottleneck_found = False
 
 import nanopart
 
 from typing import Tuple, Union
+
+
+def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
+    if bottleneck_found:
+        return bn.move_mean(x, n)[n - 1:]
+    r = np.cumsum(x)
+    r[n:] = r[n:] - r[:-n]
+    return r[n - 1 :] / n
+
+
+def moving_median(x: np.ndarray, n: int) -> np.ndarray:
+    if bottleneck_found:
+        return bn.move_median(x, n)[n - 1:]
+    view = np.lib.stride_tricks.sliding_window_view(x, n)
+    return np.median(view, axis=1)
+
+
+def moving_std(x: np.ndarray, n: int) -> np.ndarray:
+    if bottleneck_found:
+        return bn.move_std(x, n)[n - 1:]
+    view = np.lib.stride_tricks.sliding_window_view(x, n)
+    return np.std(view, axis=1)
 
 
 def calculate_limits(
@@ -25,9 +51,9 @@ def calculate_limits(
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
-            mean = bn.move_median(pad, window, axis=0)[pad.size - responses.size :]
+            mean = moving_median(pad, window)[:responses.size]
         else:
-            mean = bn.move_mean(pad, window, axis=0)[pad.size - responses.size :]
+            mean = moving_mean(pad, window)[:responses.size]
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -40,7 +66,7 @@ def calculate_limits(
         if window is None or window < 2:
             std = np.std(responses)
         else:
-            std = bn.move_std(pad, window, axis=0)[pad.size - responses.size :]
+            std = moving_std(pad, window)[:responses.size]
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
     elif "Poisson" in method and epsilon is not None:
