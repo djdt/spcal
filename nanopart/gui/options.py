@@ -83,11 +83,16 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Neb. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
-        self.window_size = ValidColorLineEdit("1")
-        self.window_size.setValidator(QtGui.QIntValidator(1, 1000000))
-        self.window_size.setToolTip(
-            "Size of the window for moving thresholds. Use 1 for no window."
-        )
+        self.window_size = ValidColorLineEdit("999")
+        self.window_size.setValidator(QtGui.QIntValidator(3, 1000000))
+        self.window_size.setToolTip("Size of window for moving thresholds.")
+        self.window_size.setEnabled(False)
+        self.check_use_window = QtWidgets.QCheckBox("Use window")
+        self.check_use_window.toggled.connect(self.window_size.setEnabled)
+
+        layout_window_size = QtWidgets.QHBoxLayout()
+        layout_window_size.addWidget(self.window_size, 1)
+        layout_window_size.addWidget(self.check_use_window)
 
         self.method = QtWidgets.QComboBox()
         self.method.addItems(
@@ -136,7 +141,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
-        self.limit_inputs.layout().addRow("Window size:", self.window_size)
+        self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("LOD method:", self.method)
         self.limit_inputs.layout().addRow("Epsilon:", self.epsilon)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
@@ -181,7 +186,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
 
     def isComplete(self) -> bool:
-        if not self.window_size.hasAcceptableInput():
+        if self.window_size.isEnabled() and not self.window_size.hasAcceptableInput():
             return False
 
         method = self.efficiency_method.currentText()

@@ -306,7 +306,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             cps_dwelltime = None
 
-        window = int(self.options.window_size.text())
+        window = (
+            int(self.options.window_size.text())
+            if self.options.window_size.isEnabled()
+            else None
+        )
 
         method = self.options.efficiency_method.currentText()
 

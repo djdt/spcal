@@ -31,6 +31,8 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")
         self.tabs.addTab(self.results, "Results")
+
+        self.tabs.setTabEnabled(self.tabs.indexOf(self.reference), False)
         self.tabs.setTabEnabled(self.tabs.indexOf(self.results), False)
 
         widget = QtWidgets.QWidget()

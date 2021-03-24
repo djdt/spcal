@@ -45,6 +45,7 @@ class InputWidget(QtWidgets.QWidget):
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
         self.options.window_size.editingFinished.connect(self.updateLimits)
+        self.options.check_use_window.toggled.connect(self.updateLimits)
         self.options.epsilon.editingFinished.connect(self.updateLimits)
         self.options.sigma.editingFinished.connect(self.updateLimits)
 
@@ -264,6 +265,7 @@ class InputWidget(QtWidgets.QWidget):
         window_size = (
             int(self.options.window_size.text())
             if self.options.window_size.hasAcceptableInput()
+            and self.options.window_size.isEnabled()
             else None
         )
 
