@@ -1,10 +1,11 @@
+from bisect import bisect_left, insort
 import numpy as np
 try:
     import bottleneck as bn
     bottleneck_found = True
 except ImportError:
-    from bisect import bisect_left, insort
     bottleneck_found = False
+
 
 import nanopart
 
