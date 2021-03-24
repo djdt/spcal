@@ -41,8 +41,19 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:
         return bn.move_std(x, n)[n - 1:]
-    view = np.lib.stride_tricks.sliding_window_view(x, n)
-    return np.std(view, axis=1)
+
+    sums = np.empty(x.size - n + 1)
+    sqrs = np.empty(x.size - n + 1)
+
+    tab = np.cumsum(x) / n
+    sums[0] = tab[n - 1]
+    sums[1:] = tab[n:] - tab[:-n]
+
+    tab = np.cumsum(x * x) / n
+    sqrs[0] = tab[n - 1]
+    sqrs[1:] = tab[n:] - tab[:-n]
+
+    return np.sqrt(sqrs - sums * sums)
 
 
 def calculate_limits(
