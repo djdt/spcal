@@ -20,7 +20,6 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_median(x: np.ndarray, n: int) -> np.ndarray:
-    # Not real median if n is even
     if bottleneck_found:
         return bn.move_median(x, n)[n - 1:]
 
