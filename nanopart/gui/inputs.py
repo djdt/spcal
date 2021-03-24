@@ -45,6 +45,8 @@ class InputWidget(QtWidgets.QWidget):
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
         self.options.window_size.editingFinished.connect(self.updateLimits)
+        self.options.epsilon.editingFinished.connect(self.updateLimits)
+        self.options.sigma.editingFinished.connect(self.updateLimits)
 
         self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
