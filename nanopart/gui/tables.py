@@ -129,6 +129,7 @@ class ResultsTable(QtWidgets.QTableView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        event.accept()
         menu = QtWidgets.QMenu(self)
         copy_action = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
