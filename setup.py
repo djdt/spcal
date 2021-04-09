@@ -22,7 +22,7 @@ setup(
         "Source": "https://gtihub.com/djdt/nanopart",
     },
     packages=find_packages(include=["nanopart", "nanpart.*"]),
-    install_requires=["numpy"],
+    install_requires=["numpy", "PySide2", "bottleneck"],
     entry_points={"console_scripts": ["nanopart=nanopart.__main__:main"]},
     tests_require=["pytest"],
 )
