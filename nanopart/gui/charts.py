@@ -10,7 +10,7 @@ from typing import List, Union
 
 class ParticleChartView(QtCharts.QChartView):
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
-
+        event.accept()
         action_copy_to_clipboard = QtWidgets.QAction(
             QtGui.QIcon.fromTheme("insert-image"), "Copy to Clipboard"
         )

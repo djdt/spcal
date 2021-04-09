@@ -1,3 +1,3 @@
 from .util import *
 
-__version__ = "v0.2"
+__version__ = "v0.3"
