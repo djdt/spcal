@@ -30,5 +30,5 @@ jobs:
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./dist/nanopart_${{ steps.build-exec.outputs.version }}.exe
-        asset_name: pewpew_${{ steps.build-exec.outputs.version }}.exe
+        asset_name: nanopart_${{ steps.build-exec.outputs.version }}.exe
         asset_content_type: application/octet-stream
