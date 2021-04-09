@@ -1,0 +1,34 @@
+name: Release Windows Exec
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller numpy
+          pip install .
+    - name: Build exec
+      id: build-exec
+      run: |
+        pyinstaller --clean --noupx -y nanopart.spec
+        echo "::set-output name=version::$(python setup.py --version)"
+    - name: Upload binary
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./dist/nanopart_${{ steps.build-exec.outputs.version }}.exe
+        asset_name: pewpew_${{ steps.build-exec.outputs.version }}.exe
+        asset_content_type: application/octet-stream
