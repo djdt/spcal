@@ -88,11 +88,14 @@ class InputWidget(QtWidgets.QWidget):
         self.count.setReadOnly(True)
         self.background_count = QtWidgets.QLineEdit()
         self.background_count.setReadOnly(True)
+        self.lod_count = QtWidgets.QLineEdit()
+        self.lod_count.setReadOnly(True)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
+        self.outputs.layout().addRow("LOD count:", self.lod_count)
 
         layout_table_file = QtWidgets.QHBoxLayout()
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
@@ -236,6 +239,7 @@ class InputWidget(QtWidgets.QWidget):
 
             self.count.setText("")
             self.background_count.setText("")
+            self.lod_count.setText("")
         else:
             detections, labels = nanopart.accumulate_detections(
                 responses, self.limits[2], self.limits[3]
@@ -243,9 +247,11 @@ class InputWidget(QtWidgets.QWidget):
 
             self.detections = detections
             self.background = np.nanmean(responses[labels == 0])
+            lod = np.mean(self.limits[2]) + self.background
 
             self.count.setText(str(detections.size))
             self.background_count.setText(f"{self.background:.4g}")
+            self.lod_count.setText(f"{lod:.4g} ({self.limits[0]})")
 
         self.detectionsChanged.emit(self.detections.size)
 
@@ -322,6 +328,7 @@ class InputWidget(QtWidgets.QWidget):
         self.slider.setValues(0, 100)
         self.count.setText("0")
         self.background_count.setText("")
+        self.lod_count.setText("")
 
         self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
@@ -567,7 +574,6 @@ class ReferenceWidget(InputWidget):
         self.element.setText("")
         self.diameter.setValue(None)
         self.density.setValue(None)
-        self.molarmass.setValue(None)
         self.molarratio.setText("1.0")
         self.concentration.setValue(None)
 
