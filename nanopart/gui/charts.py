@@ -93,6 +93,13 @@ class ParticleChart(QtCharts.QChart):
         self.series.attachAxis(self.xaxis)
         self.series.attachAxis(self.yaxis)
 
+        self.scatter_series = QtCharts.QScatterSeries()
+        self.scatter_series.setColor(QtCore.Qt.red)
+        self.scatter_series.setUseOpenGL(True)
+        self.addSeries(self.scatter_series)
+        self.scatter_series.attachAxis(self.xaxis)
+        self.scatter_series.attachAxis(self.yaxis)
+
         self.ub = QtCharts.QLineSeries()
         self.lc = QtCharts.QLineSeries()
         self.ld = QtCharts.QLineSeries()
@@ -114,6 +121,7 @@ class ParticleChart(QtCharts.QChart):
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
+        self.legend().markers(self.scatter_series)[0].setVisible(False)
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
@@ -126,6 +134,11 @@ class ParticleChart(QtCharts.QChart):
         data = np.stack((xs, ys), axis=1)
         poly = array_to_polygonf(data)
         self.series.replace(poly)
+
+    def setScatter(self, xs: np.ndarray, ys: np.ndarray) -> None:
+        data = np.stack((xs, ys), axis=1)
+        poly = array_to_polygonf(data)
+        self.scatter_series.replace(poly)
 
     def setBackground(self, ub: Union[float, np.ndarray]) -> None:
         if isinstance(ub, float):

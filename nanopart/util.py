@@ -1,14 +1,16 @@
 import numpy as np
 
-from typing import Tuple
+from typing import Tuple, Union
 
 
 def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: np.ndarray,
     limit_detection: np.ndarray,
-    # return_regions: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+    return_regions: bool = False,
+) -> Union[
+    Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above `limit_accumulation` that contain at least one value above
@@ -55,7 +57,10 @@ def accumulate_detections(
     # Cumsum to label
     labels = np.cumsum(labels)
 
-    return sums, labels
+    if return_regions:
+        return sums, labels, regions
+    else:
+        return sums, labels
 
 
 def poisson_limits(

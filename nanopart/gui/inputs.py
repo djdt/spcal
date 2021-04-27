@@ -241,10 +241,11 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            detections, labels = nanopart.accumulate_detections(
-                responses, self.limits[2], self.limits[3]
+            detections, labels, regions = nanopart.accumulate_detections(
+                responses, self.limits[2], self.limits[3], return_regions=True
             )
-
+            centers = (regions[:, 0] + regions[:, 1]) // 2
+            self.centers = centers
             self.detections = detections
             self.background = np.nanmean(responses[labels == 0])
             lod = np.mean(self.limits[2]) + self.background
@@ -285,7 +286,10 @@ class InputWidget(QtWidgets.QWidget):
         if responses is None or responses.size == 0:
             return
 
+        centers = self.centers + self.slider.left()
+
         self.chart.setData(np.nan_to_num(responses))
+        self.chart.setScatter(centers, responses[centers])
 
         self.chart.drawVerticalLines(
             [self.slider.left(), self.slider.right()],
