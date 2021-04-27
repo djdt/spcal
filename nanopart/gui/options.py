@@ -213,3 +213,13 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.dwelltime.hasAcceptableInput(),
                 ]
             )
+
+    def resetInputs(self) -> None:
+        self.blockSignals(True)
+        self.uptake.setValue(None)
+        self.dwelltime.setValue(None)
+        self.response.setValue(None)
+        self.efficiency.setText("")
+        self.diameter.setValue(None)
+        self.blockSignals(False)
+        self.optionsChanged.emit()

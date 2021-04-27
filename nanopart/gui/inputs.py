@@ -317,6 +317,23 @@ class InputWidget(QtWidgets.QWidget):
         values = [self.slider.left(), self.slider.right()]
         self.chart.setVerticalLines(values)  # type: ignore
 
+    def resetInputs(self) -> None:
+        self.blockSignals(True)
+        self.slider.setValues(0, 100)
+        self.count.setText("0")
+        self.background_count.setText("")
+
+        self.background = 0.0
+        self.detections = np.array([], dtype=np.float64)
+        self.limits = None
+
+        self.table.model().beginResetModel()
+        self.table.model().array = np.empty((0, 1), dtype=float)
+        self.table.model().endResetModel()
+        self.blockSignals(False)
+
+        self.optionsChanged.emit()
+
 
 class SampleWidget(InputWidget):
     def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
@@ -380,6 +397,15 @@ class SampleWidget(InputWidget):
             self.density.setEnabled(True)
             self.molarmass.setEnabled(True)
             self.molarratio.setEnabled(True)
+
+    def resetInputs(self) -> None:
+        self.blockSignals(True)
+        self.element.setText("")
+        self.density.setValue(None)
+        self.molarmass.setValue(None)
+        self.molarratio.setText("1.0")
+        self.blockSignals(False)
+        super().resetInputs()
 
 
 class ReferenceWidget(InputWidget):
@@ -535,3 +561,17 @@ class ReferenceWidget(InputWidget):
             and self.molarratio.hasAcceptableInput()
             and self.density.hasAcceptableInput()
         )
+
+    def resetInputs(self) -> None:
+        self.blockSignals(True)
+        self.element.setText("")
+        self.diameter.setValue(None)
+        self.density.setValue(None)
+        self.molarmass.setValue(None)
+        self.molarratio.setText("1.0")
+        self.concentration.setValue(None)
+
+        self.efficiency.setText("")
+        self.massresponse.setValue(None)
+        self.blockSignals(False)
+        super().resetInputs()

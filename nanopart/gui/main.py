@@ -55,6 +55,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.action_batch_process.triggered.connect(self.dialogBatchProcess)
         self.action_batch_process.setEnabled(False)
 
+        action_clear = QtWidgets.QAction("Reset", self)
+        action_clear.triggered.connect(self.resetInputs)
+
         action_close = QtWidgets.QAction("Quit", self)
         action_close.triggered.connect(self.close)
 
@@ -68,6 +71,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menufile.addAction(self.action_batch_process)
         menufile.addSeparator()
         menufile.addAction(action_close)
+
+        menuedit = self.menuBar().addMenu("&Edit")
+        menuedit.addAction(action_clear)
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(action_about)
@@ -120,3 +126,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
                 or not self.tabs.isTabEnabled(self.tabs.indexOf(self.reference)),
             ]
         )
+
+    def resetInputs(self) -> None:
+        self.tabs.setCurrentIndex(0)
+
+        self.options.resetInputs()
+        self.sample.resetInputs()
+        self.reference.resetInputs()
