@@ -325,6 +325,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
+        self.slider.setRange(0, 100)
         self.slider.setValues(0, 100)
         self.count.setText("0")
         self.background_count.setText("")

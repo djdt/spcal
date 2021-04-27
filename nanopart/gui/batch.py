@@ -15,11 +15,12 @@ from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 
 def process_file_detections(
     file: Path,
+    trim: Tuple[int, int],
     limit_method: str,
     limit_sigma: float,
     limit_epsilon: float,
@@ -27,6 +28,7 @@ def process_file_detections(
     cps_dwelltime: float = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
+    responses = responses[trim[0]:trim[1]]
 
     # Convert to counts if required
     if cps_dwelltime is not None:
@@ -68,6 +70,7 @@ class ProcessThread(QtCore.QThread):
         outfiles: List[Path],
         method: Callable,
         method_kws: Dict[str, float],
+        trim: Tuple[int, int] = (None, None),
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
@@ -83,6 +86,8 @@ class ProcessThread(QtCore.QThread):
         self.method = method
         self.method_kws = method_kws
 
+        self.trim = trim
+
         self.limit_method = limit_method
         self.limit_epsilon = limit_epsilon
         self.limit_sigma = limit_sigma
@@ -96,6 +101,7 @@ class ProcessThread(QtCore.QThread):
             try:
                 result = process_file_detections(
                     infile,
+                    self.trim,
                     self.limit_method,
                     self.limit_sigma,
                     self.limit_epsilon,
@@ -160,6 +166,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_process.setEnabled(len(files) > 0)
         self.button_process.pressed.connect(self.buttonProcess)
 
+        self.trim_left = QtWidgets.QCheckBox("Use sample left trim.")
+        self.trim_left.setChecked(True)
+        self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
+        self.trim_right.setChecked(True)
+
         self.progress = QtWidgets.QProgressBar()
         self.thread: QtCore.QThread = None
 
@@ -186,6 +197,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow("Output Name:", self.output_name)
         self.inputs.layout().addRow("Output Directory:", self.output_dir)
         self.inputs.layout().addWidget(self.button_output)
+        self.inputs.layout().addRow(self.trim_left)
+        self.inputs.layout().addRow(self.trim_right)
 
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
@@ -312,6 +325,12 @@ class BatchProcessDialog(QtWidgets.QDialog):
             else None
         )
 
+        trim = [None, None]
+        if self.trim_left.isChecked():
+            trim[0] = self.sample.slider.left()
+        if self.trim_right.isChecked():
+            trim[1] = self.sample.slider.right()
+
         method = self.options.efficiency_method.currentText()
 
         if method in ["Manual", "Reference"]:
@@ -346,6 +365,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             outfiles,
             method,
             method_kws,
+            trim=trim,
             limit_method=limit_method,
             limit_sigma=sigma,
             limit_epsilon=epsilon,
