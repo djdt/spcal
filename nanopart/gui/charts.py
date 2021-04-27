@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
@@ -32,6 +33,18 @@ class ParticleChartView(QtCharts.QChartView):
 
     def copyToClipboard(self) -> None:
         QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
+
+    def saveToFile(self, path: Union[str, Path]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        pixmap = QtGui.QPixmap(self.viewport().size())
+        pixmap.fill()
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.render(painter)
+        pixmap.save(str(path.absolute()))
+        painter.end()
 
 
 class NiceValueAxis(QtCharts.QValueAxis):

@@ -131,6 +131,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export = QtWidgets.QPushButton("Export")
         self.button_export.pressed.connect(self.dialogExportResults)
 
+        self.button_export_image = QtWidgets.QPushButton("Save Image")
+        self.button_export_image.pressed.connect(self.dialogExportImage)
+
         layout_table_options = QtWidgets.QHBoxLayout()
         layout_table_options.addStretch(1)
         layout_table_options.addWidget(QtWidgets.QLabel("Mode:"), 0)
@@ -142,6 +145,7 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_table.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
 
         layout_chart_options = QtWidgets.QHBoxLayout()
+        layout_chart_options.addWidget(self.button_export_image)
         layout_chart_options.addStretch(1)
         layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
         layout_chart_options.addWidget(self.fitmethod)
@@ -162,6 +166,13 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
+
+    def dialogExportImage(self) -> None:
+        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export Image", "", "PNG Images (*.png)"
+        )
+        if file != "":
+            self.chartview.saveToFile(file)
 
     def asBestUnit(self, data: np.ndarray, current_unit: str = "") -> Tuple[float, str]:
         units = {
