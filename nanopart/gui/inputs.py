@@ -77,7 +77,7 @@ class InputWidget(QtWidgets.QWidget):
         self.slider.setRange(0, 100)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
-        self.slider.sliderReleased.connect(self.requestRedraw)
+        self.slider.sliderReleased.connect(self.updateLimits)
 
         # Sample options
 
