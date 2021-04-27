@@ -155,9 +155,9 @@ class OptionsWidget(QtWidgets.QWidget):
             "Sets the mean particle size to the hypothesised diameter."
         )
 
-        self.cell_inputs = QtWidgets.QGroupBox("Single Cell Options")
+        self.cell_inputs = QtWidgets.QGroupBox("Particle Options")
         self.cell_inputs.setLayout(QtWidgets.QFormLayout())
-        self.cell_inputs.layout().addRow("Hypothesised diamter:", self.diameter)
+        self.cell_inputs.layout().addRow("Force diamter:", self.diameter)
 
         layout_left = QtWidgets.QVBoxLayout()
         layout_left.addWidget(self.limit_inputs)
