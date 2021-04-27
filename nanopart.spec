@@ -12,7 +12,7 @@ a = Analysis(
     [Path("nanopart", "__main__.py")],
     binaries=None,
     datas=[],
-    hiddenimports=[],
+    hiddenimports=["bottleneck"],
     hookspath=None,
     runtime_hooks=None,
     win_no_prefer_redirects=False,
