@@ -367,6 +367,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.result = {
             "background": self.sample.background,
             "detections": self.sample.detections,
+            "stddev": float(self.sample.std_count.text()),
             "events": self.sample.numberOfEvents(),
             "file": self.sample.label_file.text(),
             "limit_method": self.sample.limits[0],

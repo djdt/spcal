@@ -28,7 +28,7 @@ def process_file_detections(
     cps_dwelltime: float = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
-    responses = responses[trim[0]:trim[1]]
+    responses = responses[trim[0] : trim[1]]
 
     # Convert to counts if required
     if cps_dwelltime is not None:
@@ -46,12 +46,20 @@ def process_file_detections(
     if limits is None:
         raise ValueError("Limit calculations failed for '{file.name}'.")
 
-    detections, labels = nanopart.accumulate_detections(responses, limits[2], limits[3])
+    detections, labels, regions = nanopart.accumulate_detections(
+        responses, limits[2], limits[3], return_regions=True
+    )
+    centers = (regions[:, 0] + regions[:, 1]) // 2
     background = np.nanmean(responses[labels == 0])
+
+    values = np.linspace(0, responses.size, 3 + 1)
+    indicies = np.searchsorted(centers, values, side="left")
+    detections_std = np.std(np.diff(indicies))
 
     return {
         "background": background,
         "detections": detections,
+        "stddev": detections_std,
         "events": size,
         "file": str(file),
         "limit_method": limits[0],

@@ -91,10 +91,13 @@ class InputWidget(QtWidgets.QWidget):
         self.background_count.setReadOnly(True)
         self.lod_count = QtWidgets.QLineEdit()
         self.lod_count.setReadOnly(True)
+        self.std_count = QtWidgets.QLineEdit()
+        self.std_count.setReadOnly(True)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
+        self.outputs.layout().addRow("Particle stddev:", self.std_count)
         self.outputs.layout().addRow("Background count:", self.background_count)
         self.outputs.layout().addRow("LOD count:", self.lod_count)
 
@@ -259,6 +262,11 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText(f"{self.background:.4g}")
             self.lod_count.setText(f"{lod:.4g} ({self.limits[0]})")
 
+            values = np.linspace(0, responses.size, 3 + 1)
+            indicies = np.searchsorted(self.centers, values, side="left")
+            counts = np.diff(indicies)
+            self.std_count.setText(f"{np.std(counts):.1f}")
+
         self.detectionsChanged.emit(self.detections.size)
 
     def updateLimits(self) -> None:
@@ -339,6 +347,7 @@ class InputWidget(QtWidgets.QWidget):
         self.count.setText("0")
         self.background_count.setText("")
         self.lod_count.setText("")
+        self.std_count.setText("")
 
         self.background = 0.0
         self.detections = np.array([], dtype=np.float64)
