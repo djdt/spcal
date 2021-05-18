@@ -508,7 +508,6 @@ class ReferenceWidget(InputWidget):
                 "kg/count": 1.0,
             },
             default_unit="ag/count",
-            update_value_with_unit=True,
         )
         self.massresponse.setReadOnly(True)
 

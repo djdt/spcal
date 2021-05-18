@@ -95,52 +95,45 @@ class ResultsWidget(QtWidgets.QWidget):
         self.count = QtWidgets.QLineEdit()
         self.count.setReadOnly(True)
         self.number = UnitsWidget(
-            {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", update_value_with_unit=True
+            {"#/L": 1.0, "#/ml": 1e3},
+            default_unit="#/L",
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
-            concentration_units, default_unit="ng/L", update_value_with_unit=True
+            concentration_units,
+            default_unit="ng/L",
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
-            concentration_units, default_unit="ng/L", update_value_with_unit=True
+            concentration_units,
+            default_unit="ng/L",
         )
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
             self.size_units,
             default_unit="nm",
-            update_value_with_unit=True,
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
             self.size_units,
             default_unit="nm",
-            update_value_with_unit=True,
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
             self.size_units,
             default_unit="nm",
-            update_value_with_unit=True,
         )
         self.median.setReadOnly(True)
-        self.std = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-            update_value_with_unit=True,
-        )
-        self.std.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("Detected particles:", self.count)
-        layout_outputs_left.addRow("Number concentration:", self.number)
+        layout_outputs_left.addRow("Particles:", self.count)
+        layout_outputs_left.addRow("Number Conc.:", self.number)
         layout_outputs_left.addRow("Concentration:", self.conc)
-        layout_outputs_left.addRow("Ionic Background:", self.background)
+        layout_outputs_left.addRow("Ionic:", self.background)
 
         layout_outputs_right = QtWidgets.QFormLayout()
         layout_outputs_right.addRow("Mean:", self.mean)
-        layout_outputs_right.addRow("Stddev:", self.std)
         layout_outputs_right.addRow("Median:", self.median)
         layout_outputs_right.addRow("LOD:", self.lod)
 
@@ -325,30 +318,28 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.std(self.result["sizes"]),
             )
 
-        for te in [self.mean, self.median, self.lod, self.std]:
-            te.units = units
-            te.combo.blockSignals(True)
-            te.combo.clear()
-            te.combo.addItems(units.keys())
-            te.combo.blockSignals(False)
-            te._previous_unit = te.combo.currentText()
+        for te in [self.mean, self.median, self.lod]:
+            te.setUnits(units)
 
         self.mean.setBaseValue(mean)
+        self.mean.setBaseError(std)
         self.median.setBaseValue(median)
         self.lod.setBaseValue(lod)
-        self.std.setBaseValue(std)
 
         unit = self.mean.setBestUnit()
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
-        self.std.setUnit(unit)
 
-        self.count.setText(f"{self.sample.detections.size}")
+        self.count.setText(f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}")
         self.number.setBaseValue(self.result.get("number_concentration", None))
         self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
         unit = self.conc.setBestUnit()
         self.background.setBaseValue(self.result.get("background_concentration", None))
+        ionic_error = self.result.get("background_concentration", None)
+        if ionic_error is not None:
+            ionic_error *= (self.result["background_std"] / self.result["background"])
+        self.background.setBaseError(ionic_error)
         self.background.setUnit(unit)
 
     def updateTable(self) -> None:
@@ -376,6 +367,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "limit_window": int(self.options.window_size.text()),
             "lod": self.sample.limits[3],
         }
+        print(self.result)
 
         method = self.options.efficiency_method.currentText()
         if not self.readyForResults():
@@ -396,6 +388,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 time = self.sample.timeAsSeconds()
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
+
+                print(dwelltime, density, time, uptake, response)
 
                 self.result.update(
                     results_from_nebulisation_efficiency(

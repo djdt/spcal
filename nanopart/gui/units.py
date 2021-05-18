@@ -11,6 +11,7 @@ from typing import Dict, Tuple, Union
 
 class UnitsWidget(QtWidgets.QWidget):
     valueChanged = QtCore.Signal()
+    baseValueChanged = QtCore.Signal()
 
     def __init__(
         self,
@@ -18,32 +19,34 @@ class UnitsWidget(QtWidgets.QWidget):
         default_unit: str = None,
         value: float = None,
         validator: Tuple[float, float, int] = (0.0, 1e99, 10),
+        formatter: str = ".6g",
         invalid_color: QtGui.QColor = None,
-        update_value_with_unit: bool = False,
         parent: QtWidgets.QWidget = None,
     ):
         super().__init__(parent)
+        self._base_value = None
+        self._base_error = None
+        self._previous_unit = None
+        self._units = {}
 
-        self._value = None
-
-        self.units = units
-        self.update_value_with_unit = update_value_with_unit
+        self.formatter = formatter
         self.valid_range = validator[0], validator[1]
 
         self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
-        self.lineedit.editingFinished.connect(self.valueChanged)
+        self.lineedit.editingFinished.connect(self.updateValueFromText)
         self.lineedit.setValidator(QtGui.QDoubleValidator(*validator))
 
+        self.valueChanged.connect(self.updateTextFromValue)
+
         self.combo = QtWidgets.QComboBox()
-        self.combo.addItems(units.keys())
+        self.combo.currentTextChanged.connect(self.unitChanged)
+
+        self.setUnits(units)
         if default_unit is not None:
             if self.combo.currentText() == default_unit:
                 self.unitChanged(default_unit)
             else:
                 self.setUnit(default_unit)
-        self.combo.currentTextChanged.connect(self.unitChanged)
-
-        self._previous_unit = self.combo.currentText()
         self.setBaseValue(value)
 
         layout = QtWidgets.QHBoxLayout()
@@ -52,35 +55,78 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
 
+    def updateTextFromValue(self) -> None:
+        value = self.value()
+        if value is None:
+            self.lineedit.setText("")
+        elif self._base_error is None:
+            self.lineedit.setText(f"{value:{self.formatter}}")
+        else:
+            error = self.error()
+            self.lineedit.setText(
+                f"{value:{self.formatter}} ± {error:{self.formatter}}"
+            )
+
+    def updateValueFromText(self) -> None:
+        text = self.lineedit.text()
+        try:
+            value = float(text)
+        except ValueError:
+            value = None
+        self.setValue(value)
+
     def value(self) -> float:
-        return float(self.lineedit.text())
+        if self._base_value is None:
+            return None
+        return self._base_value / self._units[self.combo.currentText()]
 
     def setValue(self, value: Union[float, str]) -> None:
-        if isinstance(value, float):
-            decimals = self.lineedit.validator().decimals()
-            self.lineedit.setText(f"{value:.{decimals}g}")
-            if not self.lineedit.hasAcceptableInput():
-                self.lineedit.setText(f"{value:.{decimals}f}")
+        if isinstance(value, str):
+            if value == "":
+                self.setBaseValue(None)
+            else:
+                self.setBaseValue(float(value))
         else:
-            self.lineedit.setText(value)
-
-        self.valueChanged.emit()
+            self.setBaseValue(value * self._units[self.combo.currentText()])
 
     def baseValue(self) -> float:
-        unit = self.combo.currentText()
-        if not self.lineedit.hasAcceptableInput():
-            return None
-        return self.value() * self.units[unit]
+        return self._base_value
 
     def setBaseValue(self, base: float) -> None:
-        if base is None:
-            self.setValue("")
+        self._base_value = base
+        self.valueChanged.emit()
+
+    def error(self) -> float:
+        if self._base_error is None:
+            return None
+        return self._base_error / self._units[self.combo.currentText()]
+
+    def setError(self, error: Union[float, str]) -> None:
+        if isinstance(error, str):
+            if error == "":
+                self.setBaseError(None)
+            else:
+                self.setBaseError(float(error))
         else:
-            unit = self.combo.currentText()
-            self.setValue(base / self.units[unit])
+            self.setBaseError(error * self._units[self.combo.currentText()])
+
+    def baseError(self) -> float:
+        return self._base_error
+
+    def setBaseError(self, error: float) -> None:
+        self._base_error = error
+        self.valueChanged.emit()
 
     def unit(self) -> str:
         return self.combo.currentText()
+
+    def setUnits(self, units: dict) -> None:
+        self._units = units
+        self.combo.blockSignals(True)
+        self.combo.clear()
+        self.combo.addItems(units.keys())
+        self.combo.blockSignals(False)
+        self._previous_unit = self.combo.currentText()
 
     def setUnit(self, unit: str) -> None:
         self.combo.setCurrentText(unit)
@@ -88,19 +134,15 @@ class UnitsWidget(QtWidgets.QWidget):
     def setBestUnit(self) -> str:
         base = self.baseValue()
         if base is not None:
-            idx = max(np.searchsorted(list(self.units.values()), base) - 1, 0)
+            idx = max(np.searchsorted(list(self._units.values()), base) - 1, 0)
             self.combo.setCurrentIndex(idx)
         return self.combo.currentText()
 
     def unitChanged(self, unit: str) -> None:
-        if self.update_value_with_unit and self.lineedit.hasAcceptableInput():
-            base = float(self.lineedit.text()) * self.units[self._previous_unit]
-            self.setBaseValue(base)
-        else:
-            self.valueChanged.emit()
+        self.valueChanged.emit()
 
-        bottom = self.valid_range[0] / self.units[unit]
-        top = self.valid_range[1] / self.units[unit]
+        bottom = self.valid_range[0] / self._units[unit]
+        top = self.valid_range[1] / self._units[unit]
 
         self.lineedit.validator().setBottom(bottom)
         self.lineedit.validator().setTop(top)
