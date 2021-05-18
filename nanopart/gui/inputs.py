@@ -108,7 +108,6 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_units.addWidget(self.table_units, 0)
 
         layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addLayout(layout_table_file, 0)
         layout_table.addLayout(layout_table_units, 0)
         layout_table.addWidget(self.table, 1)
 
@@ -121,6 +120,7 @@ class InputWidget(QtWidgets.QWidget):
         layout_io.addWidget(self.outputs)
 
         layout_chart = QtWidgets.QVBoxLayout()
+        layout_chart.addLayout(layout_table_file, 0)
         layout_chart.addLayout(layout_io)
         layout_chart.addWidget(self.chartview, 1)
         layout_chart.addLayout(layout_slider)

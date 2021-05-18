@@ -147,7 +147,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.outputs.layout().addLayout(layout_outputs_left)
         self.outputs.layout().addLayout(layout_outputs_right)
 
-        self.button_export = QtWidgets.QPushButton("Export")
+        self.label_file = QtWidgets.QLabel()
+
+        self.button_export = QtWidgets.QPushButton("Export Results")
         self.button_export.pressed.connect(self.dialogExportResults)
 
         self.button_export_image = QtWidgets.QPushButton("Save Image")
@@ -161,7 +163,10 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_table = QtWidgets.QVBoxLayout()
         layout_table.addLayout(layout_table_options)
         layout_table.addWidget(self.table, 1)
-        layout_table.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
+
+        layout_filename = QtWidgets.QHBoxLayout()
+        layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
+        layout_filename.addWidget(self.label_file, 1)
 
         layout_chart_options = QtWidgets.QHBoxLayout()
         layout_chart_options.addWidget(self.button_export_image)
@@ -170,6 +175,7 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_chart_options.addWidget(self.fitmethod)
 
         layout_outputs = QtWidgets.QVBoxLayout()
+        layout_outputs.addLayout(layout_filename)
         layout_outputs.addWidget(self.outputs)
         layout_outputs.addWidget(self.chartview)
         layout_outputs.addLayout(layout_chart_options)
@@ -289,6 +295,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
+        self.label_file.setText(
+            Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
+        )
+
         mode = self.mode.currentText()
         if mode == "Signal":
             units = self.signal_units
