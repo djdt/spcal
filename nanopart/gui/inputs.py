@@ -74,7 +74,8 @@ class InputWidget(QtWidgets.QWidget):
         self.table.model().dataChanged.connect(self.updateLimits)
 
         self.slider = RangeSlider()
-        self.slider.setRange(0, 100)
+        self.slider.setRange(0, 1)
+        self.slider.setValues(0, 1)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
         self.slider.sliderReleased.connect(self.updateLimits)
@@ -225,9 +226,13 @@ class InputWidget(QtWidgets.QWidget):
         self.table.model().endResetModel()
 
         # Update Chart and slider
+        offset = self.slider.maximum() - self.slider.right()
         self.slider.setRange(0, self.table.model().rowCount())
-        self.slider.setValues(0, self.table.model().rowCount())
-        self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
+
+        right = max(self.slider.maximum() - offset, 1)
+        left = min(self.slider.left(), right - 1)
+        self.slider.setValues(left, right)
+        self.chart.xaxis.setRange(self.slider.minimum(), self.slider.maximum())
 
         self.updateLimits()
 
