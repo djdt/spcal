@@ -330,7 +330,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
 
-        self.count.setText(f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}")
+        self.count.setText(
+            f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}"
+        )
         self.number.setBaseValue(self.result.get("number_concentration", None))
         self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
@@ -338,7 +340,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.background.setBaseValue(self.result.get("background_concentration", None))
         ionic_error = self.result.get("background_concentration", None)
         if ionic_error is not None:
-            ionic_error *= (self.result["background_std"] / self.result["background"])
+            ionic_error *= self.result["background_std"] / self.result["background"]
         self.background.setBaseError(ionic_error)
         self.background.setUnit(unit)
 
@@ -367,7 +369,6 @@ class ResultsWidget(QtWidgets.QWidget):
             "limit_window": int(self.options.window_size.text()),
             "lod": self.sample.limits[3],
         }
-        print(self.result)
 
         method = self.options.efficiency_method.currentText()
         if not self.readyForResults():
@@ -388,8 +389,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 time = self.sample.timeAsSeconds()
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
-
-                print(dwelltime, density, time, uptake, response)
 
                 self.result.update(
                     results_from_nebulisation_efficiency(

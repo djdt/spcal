@@ -74,6 +74,8 @@ class UnitsWidget(QtWidgets.QWidget):
         except ValueError:
             value = None
         self.setValue(value)
+        # Error should never be able to be set, use readonly
+        self.setError(None)
 
     def value(self) -> float:
         if self._base_value is None:
