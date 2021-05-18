@@ -89,7 +89,10 @@ class UnitsWidget(QtWidgets.QWidget):
             else:
                 self.setBaseValue(float(value))
         else:
-            self.setBaseValue(value * self._units[self.combo.currentText()])
+            if value is None:
+                self.setBaseValue(None)
+            else:
+                self.setBaseValue(value * self._units[self.combo.currentText()])
 
     def baseValue(self) -> float:
         return self._base_value
@@ -110,7 +113,10 @@ class UnitsWidget(QtWidgets.QWidget):
             else:
                 self.setBaseError(float(error))
         else:
-            self.setBaseError(error * self._units[self.combo.currentText()])
+            if error is None:
+                self.setBaseError(None)
+            else:
+                self.setBaseError(error * self._units[self.combo.currentText()])
 
     def baseError(self) -> float:
         return self._base_error
