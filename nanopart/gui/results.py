@@ -331,6 +331,7 @@ class ResultsWidget(QtWidgets.QWidget):
             te.combo.clear()
             te.combo.addItems(units.keys())
             te.combo.blockSignals(False)
+            te._previous_unit = te.combo.currentText()
 
         self.mean.setBaseValue(mean)
         self.median.setBaseValue(median)
@@ -366,8 +367,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.result = {
             "background": self.sample.background,
+            "background_std": self.sample.background_std,
             "detections": self.sample.detections,
-            "stddev": float(self.sample.std_count.text()),
+            "detections_std": self.sample.detections_std,
             "events": self.sample.numberOfEvents(),
             "file": self.sample.label_file.text(),
             "limit_method": self.sample.limits[0],

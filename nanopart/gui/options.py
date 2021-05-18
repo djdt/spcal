@@ -155,14 +155,9 @@ class OptionsWidget(QtWidgets.QWidget):
             "Sets the mean particle size to the hypothesised diameter."
         )
 
-        # self.stdcount = QtWidgets.QSpinBox()
-        # self.stdcount.setRange(3, 99)
-        # self.stdcount.valueChanged.connect(self.optionsChanged)
-
         self.misc_inputs = QtWidgets.QGroupBox("Particle Options")
         self.misc_inputs.setLayout(QtWidgets.QFormLayout())
         self.misc_inputs.layout().addRow("Force diamter:", self.diameter)
-        # self.misc_inputs.layout().addRow("Stddev windows:", self.stdcount)
 
         layout_left = QtWidgets.QVBoxLayout()
         layout_left.addWidget(self.limit_inputs)

@@ -6,6 +6,9 @@ from nanopart.gui.widgets import ValidColorLineEdit
 from typing import Dict, Tuple, Union
 
 
+# class ErrorUnitsWidget(UnitsWidget):
+
+
 class UnitsWidget(QtWidgets.QWidget):
     valueChanged = QtCore.Signal()
 
@@ -20,6 +23,8 @@ class UnitsWidget(QtWidgets.QWidget):
         parent: QtWidgets.QWidget = None,
     ):
         super().__init__(parent)
+
+        self._value = None
 
         self.units = units
         self.update_value_with_unit = update_value_with_unit

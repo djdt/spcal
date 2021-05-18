@@ -50,13 +50,14 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
         fp.write(f"# Detected particles,{result['detections'].size}\n")
-        fp.write(f"# Detection stddev,{result['stddev']}\n")
+        fp.write(f"# Detection stddev,{result['detections_std']}\n")
         fp.write(f"# Limit method,{result['limit_method']}\n")
         if result["limit_window"] is not None and result["limit_window"] > 1:
             fp.write(f"# Limit window,{result['limit_window']}\n")
 
         # Background
         fp.write(f"# Background,{result['background']},counts\n")
+        fp.write(f"# Background stddev,{result['background_std']},counts\n")
         if "background_size" in result:
             fp.write(f"#,{result['background_size']},m\n")
         if "background_concentration" in result:
