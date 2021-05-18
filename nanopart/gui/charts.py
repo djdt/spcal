@@ -10,6 +10,10 @@ from typing import List, Union
 
 
 class ParticleChartView(QtCharts.QChartView):
+    def __init__(self, chart: QtCharts.QChart, parent: QtWidgets.QWidget = None):
+        super().__init__(chart, parent)
+        self.last_pos = None
+
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         event.accept()
         action_copy_to_clipboard = QtWidgets.QAction(
@@ -30,6 +34,25 @@ class ParticleChartView(QtCharts.QChartView):
         menu.addAction(action_copy_to_clipboard)
         menu.addAction(action_zoom_reset)
         menu.exec_(event.globalPos())
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.last_pos = event.pos()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent) -> None:
+        if self.last_pos is not None:
+            pos = event.pos()
+            offset = self.last_pos - pos
+            self.chart().scroll(offset.x(), 0)
+            self.last_pos = event.pos()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
+        self.last_pos = None
+        super().mouseReleaseEvent(event)
 
     def copyToClipboard(self) -> None:
         QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
@@ -136,6 +159,9 @@ class ParticleChart(QtCharts.QChart):
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
         self.legend().markers(self.series)[0].setVisible(False)
         self.legend().markers(self.scatter_series)[0].setVisible(False)
+
+    def zoomReset(self) -> None:
+        self.xaxis.setRange(0, self.series.count())
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
