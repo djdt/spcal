@@ -50,7 +50,9 @@ class InputWidget(QtWidgets.QWidget):
         self.options.sigma.editingFinished.connect(self.updateLimits)
 
         self.background = 0.0
+        self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
+        self.detections_std = 0.0
         self.limits: Tuple[str, float, float, float] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
@@ -74,7 +76,8 @@ class InputWidget(QtWidgets.QWidget):
         self.table.model().dataChanged.connect(self.updateLimits)
 
         self.slider = RangeSlider()
-        self.slider.setRange(0, 100)
+        self.slider.setRange(0, 1)
+        self.slider.setValues(0, 1)
         self.slider.valueChanged.connect(self.updateTrim)
         self.slider.value2Changed.connect(self.updateTrim)
         self.slider.sliderReleased.connect(self.updateLimits)
@@ -107,7 +110,6 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_units.addWidget(self.table_units, 0)
 
         layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addLayout(layout_table_file, 0)
         layout_table.addLayout(layout_table_units, 0)
         layout_table.addWidget(self.table, 1)
 
@@ -120,6 +122,7 @@ class InputWidget(QtWidgets.QWidget):
         layout_io.addWidget(self.outputs)
 
         layout_chart = QtWidgets.QVBoxLayout()
+        layout_chart.addLayout(layout_table_file, 0)
         layout_chart.addLayout(layout_io)
         layout_chart.addWidget(self.chartview, 1)
         layout_chart.addLayout(layout_slider)
@@ -225,9 +228,13 @@ class InputWidget(QtWidgets.QWidget):
         self.table.model().endResetModel()
 
         # Update Chart and slider
+        offset = self.slider.maximum() - self.slider.right()
         self.slider.setRange(0, self.table.model().rowCount())
-        self.slider.setValues(0, self.table.model().rowCount())
-        self.chart.xaxis.setRange(self.slider.left(), self.slider.right())
+
+        right = max(self.slider.maximum() - offset, 1)
+        left = min(self.slider.left(), right - 1)
+        self.slider.setValues(left, right)
+        self.chart.xaxis.setRange(self.slider.minimum(), self.slider.maximum())
 
         self.updateLimits()
 
@@ -236,6 +243,8 @@ class InputWidget(QtWidgets.QWidget):
 
         if self.limits is None or responses is None or responses.size == 0:
             self.detections = np.array([])
+            self.background_std = 0.0
+            self.detections_std = 0.0
 
             self.count.setText("")
             self.background_count.setText("")
@@ -246,12 +255,19 @@ class InputWidget(QtWidgets.QWidget):
             )
             centers = (regions[:, 0] + regions[:, 1]) // 2
             self.centers = centers
+            values = np.linspace(0, responses.size, 3 + 1)
+            indicies = np.searchsorted(self.centers, values, side="left")
+
             self.detections = detections
+            self.detections_std = np.std(np.diff(indicies))
             self.background = np.nanmean(responses[labels == 0])
+            self.background_std = np.nanstd(responses[labels == 0])
             lod = np.mean(self.limits[2]) + self.background
 
-            self.count.setText(str(detections.size))
-            self.background_count.setText(f"{self.background:.4g}")
+            self.count.setText(f"{detections.size} ± {self.detections_std:.1f}")
+            self.background_count.setText(
+                f"{self.background:.4g} ± {self.background_std:.4g}"
+            )
             self.lod_count.setText(f"{lod:.4g} ({self.limits[0]})")
 
         self.detectionsChanged.emit(self.detections.size)
@@ -336,7 +352,9 @@ class InputWidget(QtWidgets.QWidget):
         self.lod_count.setText("")
 
         self.background = 0.0
+        self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
+        self.detections_std = 0.0
         self.limits = None
 
         self.table.model().beginResetModel()
@@ -490,7 +508,6 @@ class ReferenceWidget(InputWidget):
                 "kg/count": 1.0,
             },
             default_unit="ag/count",
-            update_value_with_unit=True,
         )
         self.massresponse.setReadOnly(True)
 
