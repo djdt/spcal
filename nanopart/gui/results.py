@@ -21,6 +21,17 @@ from typing import Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
+    signal_units = {"cnt": 1.0}
+    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+    mass_units = {
+        "fg": 1e-18,
+        "pg": 1e-15,
+        "ng": 1e-12,
+        "μg": 1e-9,
+        "g": 1e-3,
+        "kg": 1.0,
+    }
+
     def __init__(
         self,
         options: OptionsWidget,
@@ -74,6 +85,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass", "Size"])
         self.mode.setCurrentText("Size")
+        self.mode.currentIndexChanged.connect(self.updateTexts)
         self.mode.currentIndexChanged.connect(self.updateTable)
         self.mode.currentIndexChanged.connect(self.updateChart)
 
@@ -96,19 +108,19 @@ class ResultsWidget(QtWidgets.QWidget):
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
-            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            self.size_units,
             default_unit="nm",
             update_value_with_unit=True,
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
-            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            self.size_units,
             default_unit="nm",
             update_value_with_unit=True,
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
-            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
+            self.size_units,
             default_unit="nm",
             update_value_with_unit=True,
         )
@@ -199,6 +211,17 @@ class ResultsWidget(QtWidgets.QWidget):
 
         return data / vals[idx], vals[idx] / units[current_unit], names[idx]
 
+    def readyForResults(self) -> bool:
+        if not self.options.isComplete():
+            return False
+        if not self.sample.isComplete():
+            return False
+
+        method = self.options.efficiency_method.currentText()
+        if method != "Manual" and not self.reference.isComplete():
+            return False
+        return True
+
     def updateChart(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
@@ -258,6 +281,52 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.fit.setName(method)
         self.chart.label_fit.setVisible(True)
 
+    def updateTexts(self) -> None:
+        mode = self.mode.currentText()
+        if mode == "Signal":
+            units = self.signal_units
+            mean, median, lod = (
+                np.mean(self.result["detections"]),
+                np.median(self.result["detections"]),
+                np.mean(self.result.get("lod", None)),
+            )
+        elif mode == "Mass":
+            units = self.mass_units
+            mean, median, lod = (
+                np.mean(self.result["masses"]),
+                np.median(self.result["masses"]),
+                np.mean(self.result.get("lod_mass", None)),
+            )
+        else:
+            units = self.size_units
+            mean, median, lod = (
+                np.mean(self.result["sizes"]),
+                np.median(self.result["sizes"]),
+                np.mean(self.result.get("lod_size", None)),
+            )
+
+        for te in [self.mean, self.median, self.lod]:
+            te.units = units
+            te.combo.blockSignals(True)
+            te.combo.clear()
+            te.combo.addItems(units.keys())
+            te.combo.blockSignals(False)
+
+        self.mean.setBaseValue(mean)
+        self.median.setBaseValue(median)
+        self.lod.setBaseValue(lod)
+        unit = self.mean.setBestUnit()
+        self.median.setUnit(unit)
+        self.mean.setUnit(unit)
+
+        self.count.setText(f"{self.sample.detections.size}")
+        self.number.setBaseValue(self.result.get("number_concentration", None))
+        self.number.setBestUnit()
+        self.conc.setBaseValue(self.result.get("concentration", None))
+        unit = self.conc.setBestUnit()
+        self.background.setBaseValue(self.result.get("background_concentration", None))
+        self.background.setUnit(unit)
+
     def updateTable(self) -> None:
         mode = self.mode.currentText()
         if mode == "Mass":
@@ -271,7 +340,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.table.model().endResetModel()
 
     def updateResults(self) -> None:
-        method = self.options.efficiency_method.currentText()
 
         self.result = {
             "background": self.sample.background,
@@ -283,67 +351,60 @@ class ResultsWidget(QtWidgets.QWidget):
             "lod": self.sample.limits[3],
         }
 
-        if method in ["Manual", "Reference"]:
-            if method == "Manual":
-                efficiency = float(self.options.efficiency.text())
-            elif method == "Reference":
-                efficiency = float(self.reference.efficiency.text())
+        method = self.options.efficiency_method.currentText()
+        if not self.readyForResults():
+            self.mode.setCurrentText("Signal")
+            self.mode.setEnabled(False)
+        else:
+            self.mode.setEnabled(True)
 
-            dwelltime = self.options.dwelltime.baseValue()
-            density = self.sample.density.baseValue()
-            molarratio = float(self.sample.molarratio.text())
-            time = self.sample.timeAsSeconds()
-            uptake = self.options.uptake.baseValue()
-            response = self.options.response.baseValue()
+            if method in ["Manual", "Reference"]:
+                if method == "Manual":
+                    efficiency = float(self.options.efficiency.text())
+                elif method == "Reference":
+                    efficiency = float(self.reference.efficiency.text())
 
-            self.result.update(
-                results_from_nebulisation_efficiency(
-                    self.result["detections"],
-                    self.result["background"],
-                    self.result["lod"],
-                    density=density,
-                    dwelltime=dwelltime,
-                    efficiency=efficiency,
-                    molarratio=molarratio,
-                    uptake=uptake,
-                    response=response,
-                    time=time,
+                dwelltime = self.options.dwelltime.baseValue()
+                density = self.sample.density.baseValue()
+                molarratio = float(self.sample.molarratio.text())
+                time = self.sample.timeAsSeconds()
+                uptake = self.options.uptake.baseValue()
+                response = self.options.response.baseValue()
+
+                self.result.update(
+                    results_from_nebulisation_efficiency(
+                        self.result["detections"],
+                        self.result["background"],
+                        self.result["lod"],
+                        density=density,
+                        dwelltime=dwelltime,
+                        efficiency=efficiency,
+                        molarratio=molarratio,
+                        uptake=uptake,
+                        response=response,
+                        time=time,
+                    )
                 )
-            )
-        elif method == "Mass Response (None)":
-            density = self.sample.density.baseValue()
-            molarratio = float(self.sample.molarratio.text())
-            massresponse = self.reference.massresponse.baseValue()
+            elif method == "Mass Response (None)":
+                density = self.sample.density.baseValue()
+                molarratio = float(self.sample.molarratio.text())
+                massresponse = self.reference.massresponse.baseValue()
 
-            self.result.update(
-                results_from_mass_response(
-                    self.result["detections"],
-                    self.result["background"],
-                    self.result["lod"],
-                    density=density,
-                    molarratio=molarratio,
-                    massresponse=massresponse,
+                self.result.update(
+                    results_from_mass_response(
+                        self.result["detections"],
+                        self.result["background"],
+                        self.result["lod"],
+                        density=density,
+                        molarratio=molarratio,
+                        massresponse=massresponse,
+                    )
                 )
-            )
 
-        if self.options.diameter.hasAcceptableInput():
-            self.result["sizes"] /= np.mean(self.result["sizes"])
-            self.result["sizes"] *= self.options.diameter.baseValue()
+            if self.options.diameter.hasAcceptableInput():
+                self.result["sizes"] /= np.mean(self.result["sizes"])
+                self.result["sizes"] *= self.options.diameter.baseValue()
 
-        self.mean.setBaseValue(np.mean(self.result["sizes"]))
-        unit = self.mean.setBestUnit()
-        self.median.setBaseValue(np.median(self.result["sizes"]))
-        self.median.setUnit(unit)
-        self.lod.setBaseValue(np.mean(self.result.get("lod_size", None)))
-        self.mean.setUnit(unit)
-
-        self.count.setText(f"{self.sample.detections.size}")
-        self.number.setBaseValue(self.result.get("number_concentration", None))
-        self.number.setBestUnit()
-        self.conc.setBaseValue(self.result.get("concentration", None))
-        unit = self.conc.setBestUnit()
-        self.background.setBaseValue(self.result.get("background_concentration", None))
-        self.background.setUnit(unit)
-
+        self.updateTexts()
         self.updateTable()
         self.updateChart()
