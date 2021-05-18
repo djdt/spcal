@@ -57,11 +57,11 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
 
         # Background
         fp.write(f"# Background,{result['background']},counts\n")
-        fp.write(f"# Background stddev,{result['background_std']},counts\n")
         if "background_size" in result:
             fp.write(f"#,{result['background_size']},m\n")
         if "background_concentration" in result:
             fp.write(f"# Ionic background,{result['background_concentration']},kg/L\n")
+        fp.write(f"# Background stddev,{result['background_std']},counts\n")
 
         # LODs
         if isinstance(result["lod"], np.ndarray):
