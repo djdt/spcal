@@ -324,12 +324,14 @@ class InputWidget(QtWidgets.QWidget):
             self.chart.ld.clear()
             return
 
-        self.chart.setBackground(self.limits[1])
+        xs = np.arange(self.slider.left(), self.slider.right())
+
+        self.chart.setBackground(xs, self.limits[1])
         if self.limits[0] == "Poisson":
-            self.chart.setLimitCritical(self.limits[2])
+            self.chart.setLimitCritical(xs, self.limits[2])
         else:
             self.chart.lc.clear()
-        self.chart.setLimitDetection(self.limits[3])
+        self.chart.setLimitDetection(xs, self.limits[3])
         self.chart.updateGeometry()
 
     def requestRedraw(self) -> None:

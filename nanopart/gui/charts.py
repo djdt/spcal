@@ -154,30 +154,28 @@ class ParticleChart(QtCharts.QChart):
         poly = array_to_polygonf(data)
         self.scatter_series.replace(poly)
 
-    def setBackground(self, ub: Union[float, np.ndarray]) -> None:
+    def setBackground(self, xs: np.ndarray, ub: Union[float, np.ndarray]) -> None:
         if isinstance(ub, float):
-            ub = np.full(self.series.count(), ub)
+            ub = np.full(xs.size, ub)
 
-        xs = np.arange(ub.size)
         data = np.stack((xs, ub), axis=1)
         poly = array_to_polygonf(data)
         self.ub.replace(poly)
 
-    def setLimitCritical(self, lc: Union[float, np.ndarray]) -> None:
+    def setLimitCritical(self, xs: np.ndarray, lc: Union[float, np.ndarray]) -> None:
         if isinstance(lc, float):
-            lc = np.full(self.series.count(), lc)
+            lc = np.full(xs.size, lc)
 
-        xs = np.arange(lc.size)
         data = np.stack((xs, lc), axis=1)
         poly = array_to_polygonf(data)
         self.lc.replace(poly)
 
-    def setLimitDetection(self, ld: Union[float, np.ndarray]) -> None:
+    def setLimitDetection(self, xs: np.ndarray, ld: Union[float, np.ndarray]) -> None:
         if isinstance(ld, float):
-            ld = np.full(self.series.count(), ld)
+            ld = np.full(xs.size, ld)
 
-        xs = np.arange(ld.size)
-        poly = array_to_polygonf(np.stack((xs, ld), axis=1))
+        data = np.stack((xs, ld), axis=1)
+        poly = array_to_polygonf(data)
         self.ld.replace(poly)
 
     def drawVerticalLines(
