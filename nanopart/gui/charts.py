@@ -107,6 +107,7 @@ class ParticleChart(QtCharts.QChart):
         self.series.attachAxis(self.yaxis)
 
         self.scatter_series = QtCharts.QScatterSeries()
+        self.scatter_series.setMarkerSize(5)
         self.scatter_series.setColor(QtCore.Qt.red)
         self.scatter_series.setUseOpenGL(True)
         self.addSeries(self.scatter_series)
