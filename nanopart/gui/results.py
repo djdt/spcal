@@ -125,6 +125,12 @@ class ResultsWidget(QtWidgets.QWidget):
             update_value_with_unit=True,
         )
         self.median.setReadOnly(True)
+        self.std = UnitsWidget(
+            self.size_units,
+            default_unit="nm",
+            update_value_with_unit=True,
+        )
+        self.std.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
         layout_outputs_left.addRow("Detected particles:", self.count)
@@ -133,9 +139,10 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_outputs_left.addRow("Ionic Background:", self.background)
 
         layout_outputs_right = QtWidgets.QFormLayout()
-        layout_outputs_right.addRow("Mean size:", self.mean)
-        layout_outputs_right.addRow("Median size:", self.median)
-        layout_outputs_right.addRow("Size LOD:", self.lod)
+        layout_outputs_right.addRow("Mean:", self.mean)
+        layout_outputs_right.addRow("Stddev:", self.std)
+        layout_outputs_right.addRow("Median:", self.median)
+        layout_outputs_right.addRow("LOD:", self.lod)
 
         self.outputs.layout().addLayout(layout_outputs_left)
         self.outputs.layout().addLayout(layout_outputs_right)
@@ -285,27 +292,30 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
         if mode == "Signal":
             units = self.signal_units
-            mean, median, lod = (
+            mean, median, lod, std = (
                 np.mean(self.result["detections"]),
                 np.median(self.result["detections"]),
                 np.mean(self.result.get("lod", None)),
+                np.std(self.result["detections"]),
             )
         elif mode == "Mass":
             units = self.mass_units
-            mean, median, lod = (
+            mean, median, lod, std = (
                 np.mean(self.result["masses"]),
                 np.median(self.result["masses"]),
                 np.mean(self.result.get("lod_mass", None)),
+                np.std(self.result["masses"]),
             )
         else:
             units = self.size_units
-            mean, median, lod = (
+            mean, median, lod, std = (
                 np.mean(self.result["sizes"]),
                 np.median(self.result["sizes"]),
                 np.mean(self.result.get("lod_size", None)),
+                np.std(self.result["sizes"]),
             )
 
-        for te in [self.mean, self.median, self.lod]:
+        for te in [self.mean, self.median, self.lod, self.std]:
             te.units = units
             te.combo.blockSignals(True)
             te.combo.clear()
@@ -315,9 +325,12 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mean.setBaseValue(mean)
         self.median.setBaseValue(median)
         self.lod.setBaseValue(lod)
+        self.std.setBaseValue(std)
+
         unit = self.mean.setBestUnit()
         self.median.setUnit(unit)
-        self.mean.setUnit(unit)
+        self.lod.setUnit(unit)
+        self.std.setUnit(unit)
 
         self.count.setText(f"{self.sample.detections.size}")
         self.number.setBaseValue(self.result.get("number_concentration", None))
