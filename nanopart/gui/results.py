@@ -24,6 +24,7 @@ class ResultsWidget(QtWidgets.QWidget):
     signal_units = {"cnt": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
     mass_units = {
+        "ag": 1e-21,
         "fg": 1e-18,
         "pg": 1e-15,
         "ng": 1e-12,
@@ -302,7 +303,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.mean(self.result.get("lod", None)),
                 np.std(self.result["detections"]),
             )
-        elif mode == "Mass":
+        elif mode == "Mass (kg)":
             units = self.mass_units
             mean, median, lod, std = (
                 np.mean(self.result["masses"]),
