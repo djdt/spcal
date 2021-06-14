@@ -83,8 +83,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChart)
 
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(["Signal", "Mass", "Size"])
-        self.mode.setCurrentText("Size")
+        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)"])
+        self.mode.setCurrentText("Size (m)")
         self.mode.currentIndexChanged.connect(self.updateTexts)
         self.mode.currentIndexChanged.connect(self.updateTable)
         self.mode.currentIndexChanged.connect(self.updateChart)
@@ -231,7 +231,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateChart(self) -> None:
         mode = self.mode.currentText()
-        if mode == "Mass":
+        if mode == "Mass (kg)":
             data, mult, unit = self.asBestUnit(self.result["masses"], "k")
             lod = self.result["lod_mass"] / mult
             self.chart.xaxis.setTitleText(f"Mass ({unit}g)")
@@ -239,7 +239,7 @@ class ResultsWidget(QtWidgets.QWidget):
             data = self.result["detections"]  # counts
             lod = self.result["lod"]
             self.chart.xaxis.setTitleText("Signal (counts)")
-        elif mode == "Size":
+        elif mode == "Size (m)":
             data, mult, unit = self.asBestUnit(self.result["sizes"])
             lod = self.result["lod_size"] / mult
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
@@ -347,11 +347,11 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateTable(self) -> None:
         mode = self.mode.currentText()
-        if mode == "Mass":
+        if mode == "Mass (kg)":
             data = self.result["masses"]
         elif mode == "Signal":
             data = self.result["detections"]
-        elif mode == "Size":
+        elif mode == "Size (m)":
             data = self.result["sizes"]
         self.table.model().beginResetModel()
         self.table.model().array = data[:, None]
