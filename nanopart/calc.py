@@ -1,7 +1,9 @@
 from bisect import bisect_left, insort
 import numpy as np
+
 try:
     import bottleneck as bn
+
     bottleneck_found = True
 except ImportError:
     bottleneck_found = False
@@ -14,7 +16,7 @@ from typing import Tuple, Union
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:
-        return bn.move_mean(x, n)[n - 1:]
+        return bn.move_mean(x, n)[n - 1 :]
     r = np.cumsum(x)
     r[n:] = r[n:] - r[:-n]
     return r[n - 1 :] / n
@@ -22,7 +24,7 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
 
 def moving_median(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:
-        return bn.move_median(x, n)[n - 1:]
+        return bn.move_median(x, n)[n - 1 :]
 
     r = np.empty(x.size - n + 1, x.dtype)
     sort = sorted(x[:n])
@@ -41,7 +43,7 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
 
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:
-        return bn.move_std(x, n)[n - 1:]
+        return bn.move_std(x, n)[n - 1 :]
 
     sums = np.empty(x.size - n + 1)
     sqrs = np.empty(x.size - n + 1)
@@ -76,9 +78,9 @@ def calculate_limits(
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
-            mean = moving_median(pad, window)[:responses.size]
+            mean = moving_median(pad, window)[: responses.size]
         else:
-            mean = moving_mean(pad, window)[:responses.size]
+            mean = moving_mean(pad, window)[: responses.size]
 
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
@@ -91,7 +93,7 @@ def calculate_limits(
         if window is None or window < 2:
             std = np.std(responses)
         else:
-            std = moving_std(pad, window)[:responses.size]
+            std = moving_std(pad, window)[: responses.size]
         gaussian = mean + sigma * std
         return (method, mean, gaussian, gaussian)
     elif "Poisson" in method and epsilon is not None:
@@ -158,11 +160,13 @@ def results_from_nebulisation_efficiency(
     )
     sizes = nanopart.particle_size(masses, density=density)
 
-    number_concentration = nanopart.particle_number_concentration(
-        detections.size,
-        efficiency=efficiency,
-        flowrate=uptake,
-        time=time,
+    number_concentration = np.around(
+        nanopart.particle_number_concentration(
+            detections.size,
+            efficiency=efficiency,
+            flowrate=uptake,
+            time=time,
+        )
     )
     concentration = nanopart.particle_total_concentration(
         masses,

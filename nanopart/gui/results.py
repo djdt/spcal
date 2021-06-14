@@ -97,6 +97,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.number = UnitsWidget(
             {"#/L": 1.0, "#/ml": 1e3},
             default_unit="#/L",
+            formatter=".0f",
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
