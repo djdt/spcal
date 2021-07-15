@@ -120,7 +120,7 @@ class ParticleChart(QtCharts.QChart):
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
         self.yaxis.setLabelFormat("%.2g")
-        self.yaxis.setTitleText("Response")
+        self.yaxis.setTitleText("Counts")
 
         self.addAxis(self.xaxis, QtCore.Qt.AlignBottom)
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
