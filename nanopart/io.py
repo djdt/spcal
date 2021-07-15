@@ -51,7 +51,7 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         fp.write(f"# Acquisition events,{result['events']}\n")
         fp.write(f"# Detected particles,{result['detections'].size}\n")
         fp.write(f"# Detection stddev,{result['detections_std']}\n")
-        fp.write(f"# Limit method,{result['limit_method']}\n")
+        fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")
         if result["limit_window"] is not None and result["limit_window"] > 1:
             fp.write(f"# Limit window,{result['limit_window']}\n")
 

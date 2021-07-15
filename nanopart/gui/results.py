@@ -281,6 +281,9 @@ class ResultsWidget(QtWidgets.QWidget):
             fit, err, opts = fit_normal(bins[1:], hist)
         elif method == "Lognormal":
             fit, err, opts = fit_lognormal(bins[1:], hist)
+        else:
+            raise ValueError("Unknown fit type")
+
 
         # Convert from density
         fit = fit * binwidth * size
@@ -290,8 +293,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
+        symbol = "ε" if self.result["limit_method"][0] == "Poisson" else "σ"
         self.label_file.setText(
-            Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
+            Path(self.result["file"]).name
+            + f" ({self.result['limit_method'][0]}, {symbol}={self.result['limit_method'][1]:.2g})"
         )
 
         mode = self.mode.currentText()

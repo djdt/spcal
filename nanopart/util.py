@@ -64,7 +64,7 @@ def accumulate_detections(
 
 
 def poisson_limits(
-    ub: np.ndarray, epsilon: float = 0.5
+    ub: np.ndarray, epsilon: float = 0.5, force_epsilon: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calulate Yc and Yd for mean `ub`.
 
@@ -74,6 +74,7 @@ def poisson_limits(
     Args:
         ub: mean of background
         epsilon: low `ub` correct factor
+        force_epsilon: always use `epsilon`
 
     Returns:
         Yc, gross count critical value
@@ -89,7 +90,10 @@ def poisson_limits(
             https://doi.org/10.1007/s10967-008-0501-5
     """
     # 5 counts limit to maintain 0.05 alpha / beta (Currie 2008)
-    ub = np.where(ub < 5.0, ub + epsilon, ub)
+    if force_epsilon:
+        ub = ub + epsilon
+    else:
+        ub = np.where(ub < 5.0, ub + epsilon, ub)
     # Yc and Yd for paired distribution (Currie 1969)
     return 2.33 * np.sqrt(ub), 2.71 + 4.65 * np.sqrt(ub)
 

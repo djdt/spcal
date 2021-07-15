@@ -64,15 +64,35 @@ def calculate_limits(
     method: str,
     sigma: float = 3.0,
     epsilon: float = 0.5,
+    force_epsilon: bool = False,
     window: int = None,
 ) -> Tuple[
-    str, Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
+    Tuple[str, float], Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
 ]:
-
     if responses is None or responses.size == 0:
         return
 
-    if window is not None and window > 1:
+    if "Median" in method:
+        ub = np.median(responses)
+    else:
+        ub = np.mean(responses)
+
+    if method == "Automatic":
+        method = "Poisson" if ub < 50.0 else "Gaussian"
+    elif method == "Highest":
+        lpoisson = ub + nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[1]
+        lgaussian = ub + sigma * np.std(responses)
+        method = "Gaussian" if lgaussian > lpoisson else "Poisson"
+
+    if window is None or window < 2:
+        if "Gaussian" in method:
+            std = np.std(responses)
+            ld = ub + sigma * std
+            return ((method, sigma), ub, ld, ld)
+        else:
+            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)
+            return ((method, epsilon), ub, ub + yc, ub + yd)
+    else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
             ub = moving_median(pad, window)[: responses.size]
@@ -82,22 +102,10 @@ def calculate_limits(
         if "Gaussian" in method:
             std = moving_std(pad, window)[: responses.size]
             ld = ub + sigma * std
-            return (method, ub, ld, ld)
+            return ((method, sigma), ub, ld, ld)
         else:
-            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon)
-            return (method, ub, ub + yc, ub + yd)
-    else:
-        if "Median" in method:
-            ub = np.median(responses)
-        else:
-            ub = np.mean(responses)
-        if "Gaussian" in method:
-            std = np.std(responses)
-            ld = ub + sigma * std
-            return (method, ub, ld, ld)
-        else:
-            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon)
-            return (method, ub, ub + yc, ub + yd)
+            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)
+            return ((method, epsilon), ub, ub + yc, ub + yd)
 
 
 def results_from_mass_response(

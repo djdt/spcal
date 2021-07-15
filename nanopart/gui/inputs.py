@@ -48,12 +48,13 @@ class InputWidget(QtWidgets.QWidget):
         self.options.check_use_window.toggled.connect(self.updateLimits)
         self.options.epsilon.editingFinished.connect(self.updateLimits)
         self.options.sigma.editingFinished.connect(self.updateLimits)
+        self.options.check_force_epsilon.toggled.connect(self.updateLimits)
 
         self.background = 0.0
         self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
         self.detections_std = 0.0
-        self.limits: Optional[Tuple[str, float, float, float]] = None
+        self.limits: Optional[Tuple[Tuple[str, float], float, float, float]] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -268,7 +269,10 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText(
                 f"{self.background:.4g} ± {self.background_std:.4g}"
             )
-            self.lod_count.setText(f"{lod:.4g} ({self.limits[0]})")
+            symbol = "ε" if self.limits[0][0] == "Poisson" else "σ"
+            self.lod_count.setText(
+                f"{lod:.4g} ({self.limits[0][0]}, {symbol}={self.limits[0][1]:.2g})"
+            )
 
         self.detectionsChanged.emit(self.detections.size)
 
@@ -278,12 +282,12 @@ class InputWidget(QtWidgets.QWidget):
         sigma = (
             float(self.options.sigma.text())
             if self.options.sigma.hasAcceptableInput()
-            else None
+            else 3.0
         )
         epsilon = (
             float(self.options.epsilon.text())
             if self.options.epsilon.hasAcceptableInput()
-            else None
+            else 0.5
         )
         window_size = (
             int(self.options.window_size.text())
@@ -293,7 +297,12 @@ class InputWidget(QtWidgets.QWidget):
         )
 
         self.limits = calculate_limits(
-            responses, method, sigma, epsilon, window=window_size
+            responses,
+            method,
+            sigma,
+            epsilon,
+            force_epsilon=self.options.check_force_epsilon.isChecked(),
+            window=window_size,
         )
         self.limitsChanged.emit()
 
@@ -327,7 +336,7 @@ class InputWidget(QtWidgets.QWidget):
         xs = np.arange(self.slider.left(), self.slider.right())
 
         self.chart.setBackground(xs, self.limits[1])
-        if self.limits[0] == "Poisson":
+        if self.limits[0][0] == "Poisson":
             self.chart.setLimitCritical(xs, self.limits[2])
         else:
             self.chart.lc.clear()
