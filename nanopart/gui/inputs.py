@@ -20,7 +20,7 @@ from nanopart.gui.widgets import (
     ValidColorLineEdit,
 )
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 
 # todo changing values in table doesnt update linits
@@ -53,7 +53,7 @@ class InputWidget(QtWidgets.QWidget):
         self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
         self.detections_std = 0.0
-        self.limits: Tuple[str, float, float, float] = None
+        self.limits: Optional[Tuple[str, float, float, float]] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
