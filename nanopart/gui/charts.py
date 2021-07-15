@@ -38,6 +38,8 @@ class ParticleChartView(QtCharts.QChartView):
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.button() == QtCore.Qt.MiddleButton:
             self.last_pos = event.pos()
+        elif event.button() == QtCore.Qt.RightButton:
+            event.ignore()
         else:
             super().mousePressEvent(event)
 
@@ -52,7 +54,10 @@ class ParticleChartView(QtCharts.QChartView):
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
         self.last_pos = None
-        super().mouseReleaseEvent(event)
+        if event.button() == QtCore.Qt.RightButton:
+            event.ignore()
+        else:
+            super().mouseReleaseEvent(event)
 
     def copyToClipboard(self) -> None:
         QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
@@ -213,7 +218,7 @@ class ParticleChart(QtCharts.QChart):
     ) -> None:
         self.clearVerticalLines()
 
-        for i, value in enumerate(values):
+        for i, _ in enumerate(values):
             line = QtCharts.QLineSeries()
             if pens is not None:
                 line.setPen(pens[i])
