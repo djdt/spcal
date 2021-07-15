@@ -107,7 +107,7 @@ class InputWidget(QtWidgets.QWidget):
 
         layout_table_units = QtWidgets.QHBoxLayout()
         layout_table_units.addStretch(1)
-        layout_table_units.addWidget(QtWidgets.QLabel("Response:"), 0)
+        layout_table_units.addWidget(QtWidgets.QLabel("Intensity:"), 0)
         layout_table_units.addWidget(self.table_units, 0)
 
         layout_table = QtWidgets.QVBoxLayout()

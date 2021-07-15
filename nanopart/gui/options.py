@@ -80,7 +80,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Uptake:", self.uptake)
         self.inputs.layout().addRow("Dwell time:", self.dwelltime)
         self.inputs.layout().addRow("Response:", self.response)
-        self.inputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
         self.window_size = ValidColorLineEdit("999")
