@@ -105,7 +105,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.tabs.setTabEnabled(
             self.tabs.indexOf(self.reference),
             self.options.efficiency_method.currentText()
-            in ["Reference", "Mass Response (None)"],
+            in ["Reference Particle", "Mass Response (None)"],
         )
         self.tabs.setTabEnabled(
             self.tabs.indexOf(self.results),

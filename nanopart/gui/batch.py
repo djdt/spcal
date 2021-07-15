@@ -353,10 +353,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         method = self.options.efficiency_method.currentText()
 
-        if method in ["Manual", "Reference"]:
-            if method == "Manual":
+        if method in ["Manual Input", "Reference Particle"]:
+            if method == "Manual Input":
                 efficiency = float(self.options.efficiency.text())
-            elif method == "Reference":
+            elif method == "Reference Particle":
                 efficiency = float(self.reference.efficiency.text())
 
             method = results_from_nebulisation_efficiency

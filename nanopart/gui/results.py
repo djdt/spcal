@@ -129,10 +129,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.median.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("Particles:", self.count)
-        layout_outputs_left.addRow("Number Conc.:", self.number)
+        layout_outputs_left.addRow("No. Detections:", self.count)
+        layout_outputs_left.addRow("No. Concentration:", self.number)
         layout_outputs_left.addRow("Concentration:", self.conc)
-        layout_outputs_left.addRow("Ionic:", self.background)
+        layout_outputs_left.addRow("Ionic Background:", self.background)
 
         layout_outputs_right = QtWidgets.QFormLayout()
         layout_outputs_right.addRow("Mean:", self.mean)
@@ -226,7 +226,7 @@ class ResultsWidget(QtWidgets.QWidget):
             return False
 
         method = self.options.efficiency_method.currentText()
-        if method != "Manual" and not self.reference.isComplete():
+        if method != "Manual Input" and not self.reference.isComplete():
             return False
         return True
 
@@ -337,12 +337,15 @@ class ResultsWidget(QtWidgets.QWidget):
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
 
+        perc_error = self.sample.detections_std / self.sample.detections.size
         self.count.setText(
             f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}"
         )
         self.number.setBaseValue(self.result.get("number_concentration", None))
+        self.number.setBaseError(self.result.get("number_concentration", 0.0) * perc_error)
         self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
+        self.conc.setBaseError(self.result.get("concentration", 0.0) * perc_error)
         unit = self.conc.setBestUnit()
         self.background.setBaseValue(self.result.get("background_concentration", None))
         ionic_error = self.result.get("background_concentration", None)
@@ -384,10 +387,10 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             self.mode.setEnabled(True)
 
-            if method in ["Manual", "Reference"]:
-                if method == "Manual":
+            if method in ["Manual Input", "Reference Particle"]:
+                if method == "Manual Input":
                     efficiency = float(self.options.efficiency.text())
-                elif method == "Reference":
+                elif method == "Reference Particle":
                     efficiency = float(self.reference.efficiency.text())
 
                 dwelltime = self.options.dwelltime.baseValue()

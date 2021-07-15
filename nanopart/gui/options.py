@@ -47,15 +47,15 @@ class OptionsWidget(QtWidgets.QWidget):
         self.uptake.setToolTip("ICP-MS sample flowrate.")
         self.response.setToolTip("ICP-MS response for ionic standard.")
         self.efficiency.setToolTip(
-            "Nebulisation efficiency. Can be calculated using a reference particle."
+            "Transport efficiency. Can be calculated using a reference particle."
         )
 
         self.efficiency_method = QtWidgets.QComboBox()
-        self.efficiency_method.addItems(["Manual", "Reference", "Mass Response (None)"])
+        self.efficiency_method.addItems(["Manual Input", "Reference Particle", "Mass Response (None)"])
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
         self.efficiency_method.setItemData(
             0,
-            "Manually enter the nebulisation efficiency.",
+            "Manually enter the transport efficiency.",
             QtCore.Qt.ToolTipRole,
         )
         self.efficiency_method.setItemData(
@@ -179,11 +179,11 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def efficiencyMethodChanged(self, method: str) -> None:
-        if method == "Manual":
+        if method == "Manual Input":
             self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(True)
-        elif method == "Reference":
+        elif method == "Reference Particle":
             self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
@@ -199,7 +199,7 @@ class OptionsWidget(QtWidgets.QWidget):
             return False
 
         method = self.efficiency_method.currentText()
-        if method == "Manual":
+        if method == "Manual Input":
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
@@ -208,7 +208,7 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.efficiency.hasAcceptableInput(),
                 ]
             )
-        elif method == "Reference":
+        elif method == "Reference Particle":
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),

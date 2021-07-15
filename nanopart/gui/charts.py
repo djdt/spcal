@@ -270,7 +270,7 @@ class ParticleHistogram(QtCharts.QChart):
 
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
-        self.yaxis.setTitleText("Count")
+        self.yaxis.setTitleText("No. Detections")
         self.yaxis.setLabelFormat("%d")
 
         self.addAxis(self._xaxis, QtCore.Qt.AlignBottom)
