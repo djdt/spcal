@@ -26,6 +26,6 @@ setup(
     },
     packages=find_packages(include=["nanopart", "nanpart.*"]),
     install_requires=["numpy", "PySide2", "bottleneck"],
-    extras_require=["pytest"],  # for testing
+    extras_require={"tests": ["pytest"]},
     entry_points={"console_scripts": ["nanopart=nanopart.__main__:main"]},
 )
