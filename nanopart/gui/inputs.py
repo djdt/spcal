@@ -250,7 +250,7 @@ class InputWidget(QtWidgets.QWidget):
             self.lod_count.setText("")
         else:
             detections, labels, regions = nanopart.accumulate_detections(
-                responses, self.limits[2], self.limits[3], return_regions=True
+                responses, self.limits[2], self.limits[3]
             )
             centers = (regions[:, 0] + regions[:, 1]) // 2
             self.centers = centers
@@ -503,7 +503,7 @@ class ReferenceWidget(InputWidget):
         self.inputs.layout().addRow("Diameter:", self.diameter)
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
-        self.inputs.layout().addRow("Molar ratio:", self.massfraction)
+        self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
         self.efficiency = ValidColorLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))

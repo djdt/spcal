@@ -9,6 +9,9 @@ from nanopart import calc, io
 from typing import List, Tuple
 
 
+# TODO rewrite
+
+
 def parse_argv(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     # Acquisiton file
@@ -69,7 +72,7 @@ def parse_argv(argv: List[str]) -> argparse.Namespace:
         help="Molecular weight of particle material.",
     )
     param.add_argument(
-        "--molarratio",
+        "--massfraction",
         type=float,
         help="Molar ratio between unit cell and analyte.",
         default=1.0,
@@ -168,7 +171,7 @@ if __name__ == "__main__":
     if limits is None:
         raise ValueError("Unable to calculate limits.")
 
-    detections, regions = nanopart.accumulate_detections(y, limits[2], limits[3])
+    detections, labels, regions = nanopart.accumulate_detections(y, limits[2], limits[3])
     # Calculate background mean of non-detections
     ndub = np.mean(y[regions == 0])
 
@@ -206,9 +209,9 @@ if __name__ == "__main__":
     ionic = ndub / response  # kg/L
 
     # Calculate number of atoms if molarmass provided
-    if args.molarmass:
-        molarmass = args.molarmass * 1e-3  # g/mol -> kg/mol
-        atoms = nanopart.particle_number_atoms(masses, molarmass=molarmass)
+    # if args.molarmass:
+    #     molarmass = args.molarmass * 1e-3  # g/mol -> kg/mol
+    #     atoms = nanopart.particle_(masses, molarmass=molarmass)
 
     # Background equivalent calculations
     bemass = nanopart.particle_mass(
@@ -234,8 +237,8 @@ if __name__ == "__main__":
         density,
     )
     # Calculate BE atoms if molarmass provided
-    if args.molarmass:
-        beatoms = nanopart.particle_number_atoms(bemass, molarmass)
+    # if args.molarmass:
+    #     beatoms = nanopart.particle_number_atoms(bemass, molarmass)
 
     # Convert required from printing
     # conc = conc * 1e18 * 1e-3  # kg/L -> fg/ml

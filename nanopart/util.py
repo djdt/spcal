@@ -5,12 +5,9 @@ from typing import Tuple, Union
 
 def accumulate_detections(
     y: np.ndarray,
-    limit_accumulation: np.ndarray,
-    limit_detection: np.ndarray,
-    return_regions: bool = False,
-) -> Union[
-    Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-]:
+    limit_accumulation: Union[float, np.ndarray],
+    limit_detection: Union[float, np.ndarray],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above `limit_accumulation` that contain at least one value above
@@ -18,12 +15,13 @@ def accumulate_detections(
 
     Args:
         y: array
-        limit_detection: value for detection of region
-        limit_accumulation: minimum accumulation value
+        limit_detection: value(s) for detection of region
+        limit_accumulation: minimum accumulation value(s)
 
     Returns:
         summed detection regions
         labels of regions
+        regions [starts, ends]
     """
     if np.any(limit_detection < limit_accumulation):
         raise ValueError("limit_detection must be greater than limit_accumulation.")
@@ -57,14 +55,13 @@ def accumulate_detections(
     # Cumsum to label
     labels = np.cumsum(labels)
 
-    if return_regions:
-        return sums, labels, regions
-    else:
-        return sums, labels
+    return sums, labels, regions
 
 
 def poisson_limits(
-    ub: np.ndarray, epsilon: float = 0.5, force_epsilon: bool = False,
+    ub: np.ndarray,
+    epsilon: float = 0.5,
+    force_epsilon: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calulate Yc and Yd for mean `ub`.
 
@@ -115,22 +112,6 @@ def atoms_per_particle(
     return masses * Na / molarmass
 
 
-# def particle_concentration(
-#     signal: np.ndarray,
-#     molarmass: float,
-#     response_factor: float,
-# ) -> np.ndarray:
-#     """Intra-cellular concentrations in mol/L.
-#     # Assumes a spherical cell shape.
-
-#     Args:
-#         signal: array of signals
-#         molarmass: molecular weight (kg/mol)
-#         response_factor: ICP-MS response (counts / kg/L)
-#     """
-#     return signal / (response_factor * molarmass)
-
-
 def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flowrate: float, time: float
 ) -> float:
@@ -148,13 +129,13 @@ def nebulisation_efficiency_from_concentration(
 
 
 def nebulisation_efficiency_from_mass(
-    signal: np.ndarray,
+    signal: Union[float, np.ndarray],
     dwell: float,
     mass: float,
     flowrate: float,
     response_factor: float,
-    molar_ratio: float = 1.0,
-) -> np.ndarray:
+    mass_fraction: float = 1.0,
+) -> float:
     """Calculates efficiency for signals given a defined mass.
 
     Args:
@@ -163,19 +144,20 @@ def nebulisation_efficiency_from_mass(
         mass: of reference particle (kg)
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        molar_ratio: molar mass analyte / molar mass particle
+        mass_fraction: molar mass analyte / molar mass particle
     """
-    return (mass * response_factor) / (signal * (dwell * flowrate * molar_ratio))
+    signal = np.mean(signal)
+    return (mass * response_factor) / (signal * (dwell * flowrate * mass_fraction))
 
 
 def particle_mass(
-    signal: np.ndarray,
+    signal: Union[float, np.ndarray],
     dwell: float,
     efficiency: float,
     flowrate: float,
     response_factor: float,
-    molar_ratio: float = 1.0,
-) -> np.ndarray:
+    mass_fraction: float = 1.0,
+) -> Union[float, np.ndarray]:
     """Array of particle masses given their integrated responses (kg).
 
     Args:
@@ -184,9 +166,9 @@ def particle_mass(
         efficiency: nebulisation efficiency
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        molar_ratio:  molar mass analyte / molar mass particle
+        mass_fraction:  molar mass analyte / molar mass particle
     """
-    return signal * (dwell * flowrate * efficiency / (response_factor * molar_ratio))
+    return signal * (dwell * flowrate * efficiency / (response_factor * mass_fraction))
 
 
 def particle_number_concentration(
@@ -203,7 +185,9 @@ def particle_number_concentration(
     return count / (efficiency * flowrate * time)
 
 
-def particle_size(masses: np.ndarray, density: float) -> np.ndarray:
+def particle_size(
+    masses: Union[float, np.ndarray], density: float
+) -> Union[float, np.ndarray]:
     """Array of particle sizes in m.
 
     Args:
@@ -214,7 +198,7 @@ def particle_size(masses: np.ndarray, density: float) -> np.ndarray:
 
 
 def particle_total_concentration(
-    masses: np.ndarray, efficiency: float, flowrate: float, time: float
+    masses: Union[float, np.ndarray], efficiency: float, flowrate: float, time: float
 ) -> float:
     """Concentration of material in kg/L.
 

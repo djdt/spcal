@@ -395,7 +395,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
                 dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.density.baseValue()
-                molarratio = float(self.sample.molarratio.text())
+                massfraction = float(self.sample.massfraction.text())
                 time = self.sample.timeAsSeconds()
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
@@ -408,7 +408,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         density=density,
                         dwelltime=dwelltime,
                         efficiency=efficiency,
-                        molarratio=molarratio,
+                        massfraction=massfraction,
                         uptake=uptake,
                         response=response,
                         time=time,
@@ -416,7 +416,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 )
             elif method == "Mass Response (None)":
                 density = self.sample.density.baseValue()
-                molarratio = float(self.sample.molarratio.text())
+                massfraction = float(self.sample.massfraction.text())
                 massresponse = self.reference.massresponse.baseValue()
 
                 self.result.update(
@@ -425,7 +425,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         self.result["background"],
                         self.result["lod"],
                         density=density,
-                        molarratio=molarratio,
+                        massfraction=massfraction,
                         massresponse=massresponse,
                     )
                 )

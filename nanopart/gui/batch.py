@@ -53,7 +53,7 @@ def process_file_detections(
         raise ValueError("Limit calculations failed for '{file.name}'.")
 
     detections, labels, regions = nanopart.accumulate_detections(
-        responses, limits[2], limits[3], return_regions=True
+        responses, limits[2], limits[3]
     )
     background = np.nanmean(responses[labels == 0])
     background_std = np.nanstd(responses[labels == 0])
@@ -364,7 +364,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "density": self.sample.density.baseValue(),
                 "dwelltime": self.options.dwelltime.baseValue(),
                 "efficiency": efficiency,
-                "molarratio": float(self.sample.molarratio.text()),
+                "massfraction": float(self.sample.massfraction.text()),
                 "time": self.sample.timeAsSeconds(),
                 "uptake": self.options.uptake.baseValue(),
                 "response": self.options.response.baseValue(),
@@ -376,7 +376,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             method_kws = {
                 "density": self.sample.density.baseValue(),
                 "dwelltime": self.options.dwelltime.baseValue(),
-                "molarratio": float(self.sample.molarratio.text()),
+                "massfraction": float(self.sample.massfraction.text()),
                 "massresponse": self.reference.massresponse.baseValue(),
             }
 
