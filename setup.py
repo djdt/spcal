@@ -5,9 +5,12 @@ with open("README.md") as fp:
     long_description = fp.read()
 
 with Path("nanopart", "__init__.py").open() as fp:
+    version = None
     for line in fp:
         if line.startswith("__version__"):
             version = line.split("=")[1].strip().strip('"')
+    if version is None:
+        raise ValueError("Could not read version from __init__.py")
 
 setup(
     name="nanopart",
@@ -23,6 +26,6 @@ setup(
     },
     packages=find_packages(include=["nanopart", "nanpart.*"]),
     install_requires=["numpy", "PySide2", "bottleneck"],
+    extras_require=["pytest"],  # for testing
     entry_points={"console_scripts": ["nanopart=nanopart.__main__:main"]},
-    tests_require=["pytest"],
 )
