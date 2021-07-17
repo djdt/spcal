@@ -116,6 +116,7 @@ def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flowrate: float, time: float
 ) -> float:
     """The nebulistaion efficiency.
+    (mass * count) / (concentration * flowrate * time)
 
     Args:
         count: number of detected particles
