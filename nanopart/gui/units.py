@@ -3,10 +3,7 @@ import numpy as np
 
 from nanopart.gui.widgets import ValidColorLineEdit
 
-from typing import Dict, Tuple, Union
-
-
-# class ErrorUnitsWidget(UnitsWidget):
+from typing import Dict, Optional, Tuple, Union
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -77,12 +74,12 @@ class UnitsWidget(QtWidgets.QWidget):
         # Error should never be able to be set, use readonly
         self.setError(None)
 
-    def value(self) -> float:
+    def value(self) -> Optional[float]:
         if self._base_value is None:
             return None
         return self._base_value / self._units[self.combo.currentText()]
 
-    def setValue(self, value: Union[float, str]) -> None:
+    def setValue(self, value: Union[float, str, None]) -> None:
         if isinstance(value, str):
             if value == "":
                 self.setBaseValue(None)
@@ -94,19 +91,19 @@ class UnitsWidget(QtWidgets.QWidget):
             else:
                 self.setBaseValue(value * self._units[self.combo.currentText()])
 
-    def baseValue(self) -> float:
+    def baseValue(self) -> Optional[float]:
         return self._base_value
 
-    def setBaseValue(self, base: float) -> None:
+    def setBaseValue(self, base: Union[float, None]) -> None:
         self._base_value = base
         self.valueChanged.emit()
 
-    def error(self) -> float:
+    def error(self) -> Optional[float]:
         if self._base_error is None:
             return None
         return self._base_error / self._units[self.combo.currentText()]
 
-    def setError(self, error: Union[float, str]) -> None:
+    def setError(self, error: Union[float, str, None]) -> None:
         if isinstance(error, str):
             if error == "":
                 self.setBaseError(None)
@@ -118,10 +115,10 @@ class UnitsWidget(QtWidgets.QWidget):
             else:
                 self.setBaseError(error * self._units[self.combo.currentText()])
 
-    def baseError(self) -> float:
+    def baseError(self) -> Optional[float]:
         return self._base_error
 
-    def setBaseError(self, error: float) -> None:
+    def setBaseError(self, error: Union[float, None]) -> None:
         self._base_error = error
         self.valueChanged.emit()
 
