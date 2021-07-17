@@ -15,17 +15,17 @@ from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
 from nanopart.gui.inputs import SampleWidget, ReferenceWidget
 from nanopart.gui.options import OptionsWidget
 
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 def process_file_detections(
     file: Path,
-    trim: Tuple[int, int],
+    trim: Tuple[Optional[int], Optional[int]],
     limit_method: str,
     limit_sigma: float,
     limit_epsilon: float,
     limit_force_epsilon: bool,
-    limit_window: int,
+    limit_window: int = None,
     cps_dwelltime: float = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
@@ -86,12 +86,12 @@ class ProcessThread(QtCore.QThread):
         outfiles: List[Path],
         method: Callable,
         method_kws: Dict[str, float],
-        trim: Tuple[int, int] = (None, None),
+        trim: Tuple[Optional[int], Optional[int]] = (None, None),
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
         limit_force_epsilon: bool = False,
-        limit_window: int = 0,
+        limit_window: int = None,
         cps_dwelltime: float = None,
         parent: QtCore.QObject = None,
     ):
@@ -273,7 +273,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         return True
 
     def dialogLoadFiles(self) -> None:
-        files, filter = QtWidgets.QFileDialog.getOpenFileNames(
+        files, _ = QtWidgets.QFileDialog.getOpenFileNames(
             self,
             "Batch Process Files",
             "",
@@ -345,11 +345,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
             else None
         )
 
-        trim = [None, None]
+        tleft, tright = None, None
         if self.trim_left.isChecked():
-            trim[0] = self.sample.slider.left()
+            tleft = self.sample.slider.left()
         if self.trim_right.isChecked():
-            trim[1] = self.sample.slider.right()
+            tright = self.sample.slider.right()
 
         method = self.options.efficiency_method.currentText()
 
@@ -358,6 +358,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 efficiency = float(self.options.efficiency.text())
             elif method == "Reference Particle":
                 efficiency = float(self.reference.efficiency.text())
+            else:
+                raise ValueError("Unknown method")
 
             method = results_from_nebulisation_efficiency
             method_kws = {
@@ -379,13 +381,15 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "massfraction": float(self.sample.massfraction.text()),
                 "massresponse": self.reference.massresponse.baseValue(),
             }
+        else:
+            raise ValueError("Unknown method")
 
         self.thread = ProcessThread(
             infiles,
             outfiles,
             method,
             method_kws,
-            trim=trim,
+            trim=(tleft, tright),
             limit_method=limit_method,
             limit_sigma=sigma,
             limit_epsilon=epsilon,

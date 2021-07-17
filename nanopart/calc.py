@@ -70,7 +70,7 @@ def calculate_limits(
     Tuple[str, float], Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
 ]:
     if responses is None or responses.size == 0:
-        return
+        raise ValueError("Responses invalid.")
 
     if "Median" in method:
         ub = np.median(responses)

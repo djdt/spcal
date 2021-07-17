@@ -1,4 +1,3 @@
-from typing_extensions import TypeGuard
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
@@ -21,7 +20,7 @@ from nanopart.gui.widgets import (
     ValidColorLineEdit,
 )
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 
 class InputWidget(QtWidgets.QWidget):
@@ -52,7 +51,14 @@ class InputWidget(QtWidgets.QWidget):
         self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
         self.detections_std = 0.0
-        self.limits: Optional[Tuple[Tuple[str, float], float, float, float]] = None
+        self.limits: Optional[
+            Tuple[
+                Tuple[str, float],
+                Union[float, np.ndarray],
+                Union[float, np.ndarray],
+                Union[float, np.ndarray],
+            ]
+        ] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -173,7 +179,7 @@ class InputWidget(QtWidgets.QWidget):
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
-    def responseAsCounts(self, trim: Tuple[int, int] = None) -> np.ndarray:
+    def responseAsCounts(self, trim: Tuple[int, int] = None) -> Optional[np.ndarray]:
         if trim is None:
             trim = (self.slider.left(), self.slider.right())
 
@@ -187,14 +193,14 @@ class InputWidget(QtWidgets.QWidget):
         else:
             return None
 
-    def timeAsSeconds(self) -> float:
+    def timeAsSeconds(self) -> Optional[float]:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
             return None
         return (self.slider.right() - self.slider.left()) * dwell
 
     def dialogLoadFile(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getOpenFileName(
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             "Open",
             "",
@@ -294,14 +300,21 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        self.limits = calculate_limits(
-            responses,
-            method,
-            sigma,
-            epsilon,
-            force_epsilon=self.options.check_force_epsilon.isChecked(),
-            window=window_size,
-        )
+        if responses is not None:
+            try:
+                self.limits = calculate_limits(
+                    responses,
+                    method,
+                    sigma,
+                    epsilon,
+                    force_epsilon=self.options.check_force_epsilon.isChecked(),
+                    window=window_size,
+                )
+            except ValueError:
+                self.limits = None
+        else:
+            self.limits = None
+
         self.limitsChanged.emit()
 
     def redrawChart(self) -> None:
@@ -557,7 +570,7 @@ class ReferenceWidget(InputWidget):
         concentration = self.concentration.baseValue()
         uptake = self.options.uptake.baseValue()
         time = self.timeAsSeconds()
-        if concentration is not None and uptake is not None:
+        if concentration is not None and uptake is not None and time is not None:
             efficiency = nanopart.nebulisation_efficiency_from_concentration(
                 self.detections.size,
                 concentration=concentration,
