@@ -103,6 +103,7 @@ def atoms_per_particle(
     molarmass: float,
 ) -> Union[float, np.ndarray]:
     """Number of atoms per particle.
+    N = m (kg) * N_A (/mol) / M (kg/mol)
 
     Args:
         masses: array of particle signals (kg)
@@ -115,8 +116,8 @@ def atoms_per_particle(
 def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flowrate: float, time: float
 ) -> float:
-    """The nebulistaion efficiency.
-    (mass * count) / (concentration * flowrate * time)
+    """The nebulistaion efficiency given a defined concentration.
+    η = (m (kg) * N) / (c (kg/L) * V (L/s) * t (s))
 
     Args:
         count: number of detected particles
@@ -138,6 +139,7 @@ def nebulisation_efficiency_from_mass(
     mass_fraction: float = 1.0,
 ) -> float:
     """Calculates efficiency for signals given a defined mass.
+    η = (m (kg) * s (L/kg)) / (I * f * t (s) * V (L/s))
 
     Args:
         signal: array of reference particle signals
@@ -159,7 +161,8 @@ def particle_mass(
     response_factor: float,
     mass_fraction: float = 1.0,
 ) -> Union[float, np.ndarray]:
-    """Array of particle masses given their integrated responses (kg).
+    """Array of particle masses given their integrated responses.
+    m (kg) = (η * t (s) * I * V (L/s)) / (s (L/kg) * f)
 
     Args:
         signal: array of particle signals
@@ -175,7 +178,8 @@ def particle_mass(
 def particle_number_concentration(
     count: int, efficiency: float, flowrate: float, time: float
 ) -> float:
-    """Concentration of particles per L.
+    """Number concentration of particles.
+    PNC (/L) = N / (η * V (L/s) * T (s))
 
     Args:
         count: number of detected particles
@@ -189,7 +193,8 @@ def particle_number_concentration(
 def particle_size(
     masses: Union[float, np.ndarray], density: float
 ) -> Union[float, np.ndarray]:
-    """Array of particle sizes in m.
+    """Array of particle diameters.
+    d (m) = cbrt((6.0 * m (kg)) / (π * ρ (kg/m3)))
 
     Args:
         masses: array of particle signals (kg)
@@ -201,7 +206,8 @@ def particle_size(
 def particle_total_concentration(
     masses: Union[float, np.ndarray], efficiency: float, flowrate: float, time: float
 ) -> float:
-    """Concentration of material in kg/L.
+    """Concentration of material.
+    C (kg/L) = sum(m (kg)) / (η * V (L/s) * T (s))
 
     Args:
         masses: array of particle signals (kg)
@@ -214,8 +220,8 @@ def particle_total_concentration(
 
 
 def reference_particle_mass(density: float, diameter: float) -> float:
-    """Calculates particle mass in kg.
-    Assusmes a spherical particle.
+    """Calculates particle mass assusming a spherical particle.
+    m (kg) = 4.0 / (3.0 * pi) * (d (m) / 2) ^ 3 * ρ (kg/m3)
 
     Args:
         density: reference density (kg/m3)
