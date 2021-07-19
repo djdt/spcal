@@ -32,7 +32,7 @@ def accumulate_detections(
     # Stack into pairs of start, end. If no final end position set it as end of array.
     end_point_added = False
     if starts.size != ends.size:
-        ends = np.concatenate((ends, [diff.size - 1]))
+        ends = np.concatenate((ends, [diff.size - 1]))  # -1 for reduceat
         end_point_added = True
     regions = np.stack((starts, ends), axis=1)
 
@@ -99,9 +99,9 @@ def poisson_limits(
 
 
 def atoms_per_particle(
-    masses: np.ndarray,
+    masses: Union[float, np.ndarray],
     molarmass: float,
-) -> float:
+) -> Union[float, np.ndarray]:
     """Number of atoms per particle.
 
     Args:

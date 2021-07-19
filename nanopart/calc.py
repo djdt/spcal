@@ -67,10 +67,18 @@ def calculate_limits(
     force_epsilon: bool = False,
     window: int = None,
 ) -> Tuple[
-    Tuple[str, float], Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
+    Tuple[str, float],
+    Union[float, np.ndarray],
+    Union[float, np.ndarray],
+    Union[float, np.ndarray],
 ]:
     if responses is None or responses.size == 0:
         raise ValueError("Responses invalid.")
+
+    if method not in ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]:
+        raise ValueError(
+            'method must be one of "Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"'
+        )
 
     if "Median" in method:
         ub = np.median(responses)
@@ -80,7 +88,12 @@ def calculate_limits(
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
     elif method == "Highest":
-        lpoisson = ub + nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[1]
+        lpoisson = (
+            ub
+            + nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[
+                1
+            ]
+        )
         lgaussian = ub + sigma * np.std(responses)
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
@@ -90,7 +103,9 @@ def calculate_limits(
             ld = ub + sigma * std
             return ((method, sigma), ub, ld, ld)
         else:
-            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)
+            yc, yd = nanopart.poisson_limits(
+                ub, epsilon=epsilon, force_epsilon=force_epsilon
+            )
             return ((method, epsilon), ub, ub + yc, ub + yd)
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
@@ -104,7 +119,9 @@ def calculate_limits(
             ld = ub + sigma * std
             return ((method, sigma), ub, ld, ld)
         else:
-            yc, yd = nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)
+            yc, yd = nanopart.poisson_limits(
+                ub, epsilon=epsilon, force_epsilon=force_epsilon
+            )
             return ((method, epsilon), ub, ub + yc, ub + yd)
 
 
