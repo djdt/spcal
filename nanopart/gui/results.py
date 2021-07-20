@@ -17,7 +17,7 @@ from nanopart.gui.options import OptionsWidget
 from nanopart.gui.tables import ResultsTable
 from nanopart.gui.units import UnitsWidget
 
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -57,7 +57,7 @@ class ResultsWidget(QtWidgets.QWidget):
         }
 
         self.nbins = "auto"
-        self.result = {}
+        self.result: Dict[str, Any] = {}
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
@@ -181,20 +181,22 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def dialogExportResults(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
 
     def dialogExportImage(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export Image", "", "PNG Images (*.png)"
         )
         if file != "":
             self.chartview.saveToFile(file)
 
-    def asBestUnit(self, data: np.ndarray, current_unit: str = "") -> Tuple[float, str]:
+    def asBestUnit(
+        self, data: np.ndarray, current_unit: str = ""
+    ) -> Tuple[np.ndarray, float, str]:
         units = {
             "z": 1e-21,
             "a": 1e-18,
@@ -244,6 +246,8 @@ class ResultsWidget(QtWidgets.QWidget):
             data, mult, unit = self.asBestUnit(self.result["sizes"])
             lod = self.result["lod_size"] / mult
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
+        else:
+            raise ValueError(f"Unknown mode '{mode}'.")
 
         # Crush the LOD for chart
         if isinstance(lod, np.ndarray):
@@ -278,12 +282,11 @@ class ResultsWidget(QtWidgets.QWidget):
         hist = hist / binwidth / size
 
         if method == "Normal":
-            fit, err, opts = fit_normal(bins[1:], hist)
+            fit = fit_normal(bins[1:], hist)[0]
         elif method == "Lognormal":
-            fit, err, opts = fit_lognormal(bins[1:], hist)
+            fit = fit_lognormal(bins[1:], hist)[0]
         else:
-            raise ValueError("Unknown fit type")
-
+            raise ValueError(f"Unknown fit type '{method}'.")
 
         # Convert from density
         fit = fit * binwidth * size
@@ -305,7 +308,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["detections"]),
                 np.median(self.result["detections"]),
-                np.mean(self.result.get("lod", None)),
+                np.mean(self.result["lod"]),
                 np.std(self.result["detections"]),
             )
         elif mode == "Mass (kg)":
@@ -313,7 +316,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["masses"]),
                 np.median(self.result["masses"]),
-                np.mean(self.result.get("lod_mass", None)),
+                np.mean(self.result["lod_mass"]),
                 np.std(self.result["masses"]),
             )
         else:
@@ -321,7 +324,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["sizes"]),
                 np.median(self.result["sizes"]),
-                np.mean(self.result.get("lod_size", None)),
+                np.mean(self.result["lod_size"]),
                 np.std(self.result["sizes"]),
             )
 
@@ -342,7 +345,9 @@ class ResultsWidget(QtWidgets.QWidget):
             f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}"
         )
         self.number.setBaseValue(self.result.get("number_concentration", None))
-        self.number.setBaseError(self.result.get("number_concentration", 0.0) * perc_error)
+        self.number.setBaseError(
+            self.result.get("number_concentration", 0.0) * perc_error
+        )
         self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
         self.conc.setBaseError(self.result.get("concentration", 0.0) * perc_error)
@@ -362,6 +367,8 @@ class ResultsWidget(QtWidgets.QWidget):
             data = self.result["detections"]
         elif mode == "Size (m)":
             data = self.result["sizes"]
+        else:
+            raise ValueError(f"Unknown mode '{mode}'.")
         self.table.model().beginResetModel()
         self.table.model().array = data[:, None]
         self.table.model().endResetModel()

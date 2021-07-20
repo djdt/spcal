@@ -11,7 +11,7 @@ except ImportError:
 
 import nanopart
 
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -132,7 +132,7 @@ def results_from_mass_response(
     density: float,
     massfraction: float,
     massresponse: float,
-) -> dict:
+) -> Dict[str, Union[np.ndarray, float]]:
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
@@ -167,7 +167,7 @@ def results_from_nebulisation_efficiency(
     uptake: float,
     response: float,
     time: float,
-) -> dict:
+) -> Dict[str, Union[np.ndarray, float]]:
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
