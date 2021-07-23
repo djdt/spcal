@@ -4,20 +4,20 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 from pathlib import Path
 
-from nanopart.calc import (
+from spcal.calc import (
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from nanopart.fit import fit_normal, fit_lognormal
-from nanopart.io import export_nanoparticle_results
+from spcal.fit import fit_normal, fit_lognormal
+from spcal.io import export_spcalicle_results
 
-from nanopart.gui.charts import ParticleHistogram, ParticleChartView
-from nanopart.gui.inputs import SampleWidget, ReferenceWidget
-from nanopart.gui.options import OptionsWidget
-from nanopart.gui.tables import ResultsTable
-from nanopart.gui.units import UnitsWidget
+from spcal.gui.charts import ParticleHistogram, ParticleChartView
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.options import OptionsWidget
+from spcal.gui.tables import ResultsTable
+from spcal.gui.units import UnitsWidget
 
-from typing import Tuple
+from typing import Any, Dict, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -57,7 +57,7 @@ class ResultsWidget(QtWidgets.QWidget):
         }
 
         self.nbins = "auto"
-        self.result = {}
+        self.result: Dict[str, Any] = {}
 
         self.chart = ParticleHistogram()
         self.chart.drawVerticalLines(
@@ -129,10 +129,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.median.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("Particles:", self.count)
-        layout_outputs_left.addRow("Number Conc.:", self.number)
+        layout_outputs_left.addRow("No. Detections:", self.count)
+        layout_outputs_left.addRow("No. Concentration:", self.number)
         layout_outputs_left.addRow("Concentration:", self.conc)
-        layout_outputs_left.addRow("Ionic:", self.background)
+        layout_outputs_left.addRow("Ionic Background:", self.background)
 
         layout_outputs_right = QtWidgets.QFormLayout()
         layout_outputs_right.addRow("Mean:", self.mean)
@@ -181,20 +181,22 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def dialogExportResults(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
-            export_nanoparticle_results(Path(file), self.result)
+            export_spcalicle_results(Path(file), self.result)
 
     def dialogExportImage(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getSaveFileName(
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export Image", "", "PNG Images (*.png)"
         )
         if file != "":
             self.chartview.saveToFile(file)
 
-    def asBestUnit(self, data: np.ndarray, current_unit: str = "") -> Tuple[float, str]:
+    def asBestUnit(
+        self, data: np.ndarray, current_unit: str = ""
+    ) -> Tuple[np.ndarray, float, str]:
         units = {
             "z": 1e-21,
             "a": 1e-18,
@@ -226,7 +228,7 @@ class ResultsWidget(QtWidgets.QWidget):
             return False
 
         method = self.options.efficiency_method.currentText()
-        if method != "Manual" and not self.reference.isComplete():
+        if method != "Manual Input" and not self.reference.isComplete():
             return False
         return True
 
@@ -244,6 +246,8 @@ class ResultsWidget(QtWidgets.QWidget):
             data, mult, unit = self.asBestUnit(self.result["sizes"])
             lod = self.result["lod_size"] / mult
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
+        else:
+            raise ValueError(f"Unknown mode '{mode}'.")
 
         # Crush the LOD for chart
         if isinstance(lod, np.ndarray):
@@ -278,9 +282,11 @@ class ResultsWidget(QtWidgets.QWidget):
         hist = hist / binwidth / size
 
         if method == "Normal":
-            fit, err, opts = fit_normal(bins[1:], hist)
+            fit = fit_normal(bins[1:], hist)[0]
         elif method == "Lognormal":
-            fit, err, opts = fit_lognormal(bins[1:], hist)
+            fit = fit_lognormal(bins[1:], hist)[0]
+        else:
+            raise ValueError(f"Unknown fit type '{method}'.")
 
         # Convert from density
         fit = fit * binwidth * size
@@ -290,8 +296,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
+        symbol = "ε" if self.result["limit_method"][0] == "Poisson" else "σ"
         self.label_file.setText(
-            Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
+            Path(self.result["file"]).name
+            + f" ({self.result['limit_method'][0]}, {symbol}={self.result['limit_method'][1]:.2g})"
         )
 
         mode = self.mode.currentText()
@@ -300,7 +308,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["detections"]),
                 np.median(self.result["detections"]),
-                np.mean(self.result.get("lod", None)),
+                np.mean(self.result["lod"]),
                 np.std(self.result["detections"]),
             )
         elif mode == "Mass (kg)":
@@ -308,7 +316,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["masses"]),
                 np.median(self.result["masses"]),
-                np.mean(self.result.get("lod_mass", None)),
+                np.mean(self.result["lod_mass"]),
                 np.std(self.result["masses"]),
             )
         else:
@@ -316,7 +324,7 @@ class ResultsWidget(QtWidgets.QWidget):
             mean, median, lod, std = (
                 np.mean(self.result["sizes"]),
                 np.median(self.result["sizes"]),
-                np.mean(self.result.get("lod_size", None)),
+                np.mean(self.result["lod_size"]),
                 np.std(self.result["sizes"]),
             )
 
@@ -332,12 +340,17 @@ class ResultsWidget(QtWidgets.QWidget):
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
 
+        perc_error = self.sample.detections_std / self.sample.detections.size
         self.count.setText(
             f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}"
         )
         self.number.setBaseValue(self.result.get("number_concentration", None))
+        self.number.setBaseError(
+            self.result.get("number_concentration", 0.0) * perc_error
+        )
         self.number.setBestUnit()
         self.conc.setBaseValue(self.result.get("concentration", None))
+        self.conc.setBaseError(self.result.get("concentration", 0.0) * perc_error)
         unit = self.conc.setBestUnit()
         self.background.setBaseValue(self.result.get("background_concentration", None))
         ionic_error = self.result.get("background_concentration", None)
@@ -354,6 +367,8 @@ class ResultsWidget(QtWidgets.QWidget):
             data = self.result["detections"]
         elif mode == "Size (m)":
             data = self.result["sizes"]
+        else:
+            raise ValueError(f"Unknown mode '{mode}'.")
         self.table.model().beginResetModel()
         self.table.model().array = data[:, None]
         self.table.model().endResetModel()
@@ -379,15 +394,15 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             self.mode.setEnabled(True)
 
-            if method in ["Manual", "Reference"]:
-                if method == "Manual":
+            if method in ["Manual Input", "Reference Particle"]:
+                if method == "Manual Input":
                     efficiency = float(self.options.efficiency.text())
-                elif method == "Reference":
+                elif method == "Reference Particle":
                     efficiency = float(self.reference.efficiency.text())
 
                 dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.density.baseValue()
-                molarratio = float(self.sample.molarratio.text())
+                massfraction = float(self.sample.massfraction.text())
                 time = self.sample.timeAsSeconds()
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
@@ -400,7 +415,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         density=density,
                         dwelltime=dwelltime,
                         efficiency=efficiency,
-                        molarratio=molarratio,
+                        massfraction=massfraction,
                         uptake=uptake,
                         response=response,
                         time=time,
@@ -408,7 +423,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 )
             elif method == "Mass Response (None)":
                 density = self.sample.density.baseValue()
-                molarratio = float(self.sample.molarratio.text())
+                massfraction = float(self.sample.massfraction.text())
                 massresponse = self.reference.massresponse.baseValue()
 
                 self.result.update(
@@ -417,7 +432,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         self.result["background"],
                         self.result["lod"],
                         density=density,
-                        molarratio=molarratio,
+                        massfraction=massfraction,
                         massresponse=massresponse,
                     )
                 )

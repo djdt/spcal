@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
-from nanopart.gui.util import array_to_polygonf
+from spcal.gui.util import array_to_polygonf
 
 from typing import List, Union
 
@@ -38,6 +38,8 @@ class ParticleChartView(QtCharts.QChartView):
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.button() == QtCore.Qt.MiddleButton:
             self.last_pos = event.pos()
+        elif event.button() == QtCore.Qt.RightButton:
+            event.ignore()
         else:
             super().mousePressEvent(event)
 
@@ -52,7 +54,10 @@ class ParticleChartView(QtCharts.QChartView):
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
         self.last_pos = None
-        super().mouseReleaseEvent(event)
+        if event.button() == QtCore.Qt.RightButton:
+            event.ignore()
+        else:
+            super().mouseReleaseEvent(event)
 
     def copyToClipboard(self) -> None:
         QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
@@ -115,7 +120,7 @@ class ParticleChart(QtCharts.QChart):
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
         self.yaxis.setLabelFormat("%.2g")
-        self.yaxis.setTitleText("Response")
+        self.yaxis.setTitleText("Counts")
 
         self.addAxis(self.xaxis, QtCore.Qt.AlignBottom)
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
@@ -213,7 +218,7 @@ class ParticleChart(QtCharts.QChart):
     ) -> None:
         self.clearVerticalLines()
 
-        for i, value in enumerate(values):
+        for i, _ in enumerate(values):
             line = QtCharts.QLineSeries()
             if pens is not None:
                 line.setPen(pens[i])
@@ -265,7 +270,7 @@ class ParticleHistogram(QtCharts.QChart):
 
         self.yaxis = QtCharts.QValueAxis()
         self.yaxis.setGridLineVisible(False)
-        self.yaxis.setTitleText("Count")
+        self.yaxis.setTitleText("No. Detections")
         self.yaxis.setLabelFormat("%d")
 
         self.addAxis(self._xaxis, QtCore.Qt.AlignBottom)

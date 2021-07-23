@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
-from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import ValidColorLineEdit
+from spcal.gui.units import UnitsWidget
+from spcal.gui.widgets import ValidColorLineEdit
 
 
 class OptionsWidget(QtWidgets.QWidget):
@@ -47,15 +47,15 @@ class OptionsWidget(QtWidgets.QWidget):
         self.uptake.setToolTip("ICP-MS sample flowrate.")
         self.response.setToolTip("ICP-MS response for ionic standard.")
         self.efficiency.setToolTip(
-            "Nebulisation efficiency. Can be calculated using a reference particle."
+            "Transport efficiency. Can be calculated using a reference particle."
         )
 
         self.efficiency_method = QtWidgets.QComboBox()
-        self.efficiency_method.addItems(["Manual", "Reference", "Mass Response (None)"])
+        self.efficiency_method.addItems(["Manual Input", "Reference Particle", "Mass Response (None)"])
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
         self.efficiency_method.setItemData(
             0,
-            "Manually enter the nebulisation efficiency.",
+            "Manually enter the transport efficiency.",
             QtCore.Qt.ToolTipRole,
         )
         self.efficiency_method.setItemData(
@@ -80,7 +80,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Uptake:", self.uptake)
         self.inputs.layout().addRow("Dwell time:", self.dwelltime)
         self.inputs.layout().addRow("Response:", self.response)
-        self.inputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
         self.window_size = ValidColorLineEdit("999")
@@ -126,24 +126,33 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.epsilon = QtWidgets.QLineEdit("0.5")
-        self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
+        self.epsilon.setPlaceholderText("0.5")
+        self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
         self.epsilon.setToolTip(
             "Correction factor for low background counts. "
             "Default of 0.5 maintains 0.05 alpha / beta."
         )
+        self.check_force_epsilon = QtWidgets.QCheckBox("Force")
+        self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
 
         self.sigma = QtWidgets.QLineEdit("3.0")
-        self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e2, 2))
+        self.sigma.setPlaceholderText("3.0")
+        self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
         self.sigma.setToolTip("LOD in number of standard deviations from mean.")
 
         self.epsilon.textChanged.connect(self.limitOptionsChanged)
         self.sigma.textChanged.connect(self.limitOptionsChanged)
+        self.check_force_epsilon.toggled.connect(self.limitOptionsChanged)
+
+        layout_epsilon = QtWidgets.QHBoxLayout()
+        layout_epsilon.addWidget(self.epsilon, 1)
+        layout_epsilon.addWidget(self.check_force_epsilon, 0)
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("LOD method:", self.method)
-        self.limit_inputs.layout().addRow("Epsilon:", self.epsilon)
+        self.limit_inputs.layout().addRow("Epsilon:", layout_epsilon)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
 
         self.diameter = UnitsWidget(
@@ -170,11 +179,11 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def efficiencyMethodChanged(self, method: str) -> None:
-        if method == "Manual":
+        if method == "Manual Input":
             self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(True)
-        elif method == "Reference":
+        elif method == "Reference Particle":
             self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
@@ -190,7 +199,7 @@ class OptionsWidget(QtWidgets.QWidget):
             return False
 
         method = self.efficiency_method.currentText()
-        if method == "Manual":
+        if method == "Manual Input":
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
@@ -199,7 +208,7 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.efficiency.hasAcceptableInput(),
                 ]
             )
-        elif method == "Reference":
+        elif method == "Reference Particle":
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
@@ -213,6 +222,8 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.dwelltime.hasAcceptableInput(),
                 ]
             )
+        else:
+            raise ValueError(f"Unknown method {method}.")
 
     def resetInputs(self) -> None:
         self.blockSignals(True)

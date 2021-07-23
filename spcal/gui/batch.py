@@ -3,31 +3,32 @@ from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 from pathlib import Path
 
-import nanopart
+import spcal
 
-from nanopart.calc import (
+from spcal.calc import (
     calculate_limits,
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
+from spcal.io import read_spcalicle_file, export_spcalicle_results
 
-from nanopart.gui.inputs import SampleWidget, ReferenceWidget
-from nanopart.gui.options import OptionsWidget
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.options import OptionsWidget
 
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 
 def process_file_detections(
     file: Path,
-    trim: Tuple[int, int],
+    trim: Tuple[Optional[int], Optional[int]],
     limit_method: str,
     limit_sigma: float,
     limit_epsilon: float,
-    limit_window: int,
+    limit_force_epsilon: bool,
+    limit_window: int = None,
     cps_dwelltime: float = None,
 ) -> dict:
-    responses, _ = read_nanoparticle_file(file, delimiter=",")
+    responses, _ = read_spcalicle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
 
     # Convert to counts if required
@@ -40,14 +41,19 @@ def process_file_detections(
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
     limits = calculate_limits(
-        responses, limit_method, limit_sigma, limit_epsilon, window=limit_window
+        responses,
+        limit_method,
+        limit_sigma,
+        limit_epsilon,
+        force_epsilon=limit_force_epsilon,
+        window=limit_window,
     )
 
     if limits is None:
         raise ValueError("Limit calculations failed for '{file.name}'.")
 
-    detections, labels, regions = nanopart.accumulate_detections(
-        responses, limits[2], limits[3], return_regions=True
+    detections, labels, regions = spcal.accumulate_detections(
+        responses, limits[2], limits[3]
     )
     background = np.nanmean(responses[labels == 0])
     background_std = np.nanstd(responses[labels == 0])
@@ -80,11 +86,12 @@ class ProcessThread(QtCore.QThread):
         outfiles: List[Path],
         method: Callable,
         method_kws: Dict[str, float],
-        trim: Tuple[int, int] = (None, None),
+        trim: Tuple[Optional[int], Optional[int]] = (None, None),
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
-        limit_window: int = 0,
+        limit_force_epsilon: bool = False,
+        limit_window: int = None,
         cps_dwelltime: float = None,
         parent: QtCore.QObject = None,
     ):
@@ -100,6 +107,7 @@ class ProcessThread(QtCore.QThread):
 
         self.limit_method = limit_method
         self.limit_epsilon = limit_epsilon
+        self.limit_force_epsilon = limit_force_epsilon
         self.limit_sigma = limit_sigma
         self.limit_window = limit_window
         self.cps_dwelltime = cps_dwelltime
@@ -115,6 +123,7 @@ class ProcessThread(QtCore.QThread):
                     self.limit_method,
                     self.limit_sigma,
                     self.limit_epsilon,
+                    limit_force_epsilon=self.limit_force_epsilon,
                     limit_window=self.limit_window,
                     cps_dwelltime=self.cps_dwelltime,
                 )
@@ -137,7 +146,7 @@ class ProcessThread(QtCore.QThread):
                 continue
 
             try:
-                export_nanoparticle_results(outfile, result)
+                export_spcalicle_results(outfile, result)
             except ValueError:
                 self.processFailed.emit(infile.name)
                 continue
@@ -264,7 +273,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         return True
 
     def dialogLoadFiles(self) -> None:
-        files, filter = QtWidgets.QFileDialog.getOpenFileNames(
+        files, _ = QtWidgets.QFileDialog.getOpenFileNames(
             self,
             "Batch Process Files",
             "",
@@ -324,6 +333,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         limit_method = self.options.method.currentText()
         sigma = float(self.options.sigma.text())
         epsilon = float(self.options.epsilon.text())
+        force_epsilon = self.options.check_force_epsilon.isChecked()
         if self.sample.table_units.currentText() == "CPS":
             cps_dwelltime = self.options.dwelltime.baseValue()
         else:
@@ -335,26 +345,28 @@ class BatchProcessDialog(QtWidgets.QDialog):
             else None
         )
 
-        trim = [None, None]
+        tleft, tright = None, None
         if self.trim_left.isChecked():
-            trim[0] = self.sample.slider.left()
+            tleft = self.sample.slider.left()
         if self.trim_right.isChecked():
-            trim[1] = self.sample.slider.right()
+            tright = self.sample.slider.right()
 
         method = self.options.efficiency_method.currentText()
 
-        if method in ["Manual", "Reference"]:
-            if method == "Manual":
+        if method in ["Manual Input", "Reference Particle"]:
+            if method == "Manual Input":
                 efficiency = float(self.options.efficiency.text())
-            elif method == "Reference":
+            elif method == "Reference Particle":
                 efficiency = float(self.reference.efficiency.text())
+            else:
+                raise ValueError("Unknown method")
 
             method = results_from_nebulisation_efficiency
             method_kws = {
                 "density": self.sample.density.baseValue(),
                 "dwelltime": self.options.dwelltime.baseValue(),
                 "efficiency": efficiency,
-                "molarratio": float(self.sample.molarratio.text()),
+                "massfraction": float(self.sample.massfraction.text()),
                 "time": self.sample.timeAsSeconds(),
                 "uptake": self.options.uptake.baseValue(),
                 "response": self.options.response.baseValue(),
@@ -366,19 +378,22 @@ class BatchProcessDialog(QtWidgets.QDialog):
             method_kws = {
                 "density": self.sample.density.baseValue(),
                 "dwelltime": self.options.dwelltime.baseValue(),
-                "molarratio": float(self.sample.molarratio.text()),
+                "massfraction": float(self.sample.massfraction.text()),
                 "massresponse": self.reference.massresponse.baseValue(),
             }
+        else:
+            raise ValueError("Unknown method")
 
         self.thread = ProcessThread(
             infiles,
             outfiles,
             method,
             method_kws,
-            trim=trim,
+            trim=(tleft, tright),
             limit_method=limit_method,
             limit_sigma=sigma,
             limit_epsilon=epsilon,
+            limit_force_epsilon=force_epsilon,
             limit_window=window,
             cps_dwelltime=cps_dwelltime,
             parent=self,

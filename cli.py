@@ -3,10 +3,13 @@ import argparse
 import numpy as np
 from pathlib import Path
 
-import nanopart
-from nanopart import calc, io
+import spcal
+from spcal import calc, io
 
 from typing import List, Tuple
+
+
+# TODO rewrite
 
 
 def parse_argv(argv: List[str]) -> argparse.Namespace:
@@ -69,7 +72,7 @@ def parse_argv(argv: List[str]) -> argparse.Namespace:
         help="Molecular weight of particle material.",
     )
     param.add_argument(
-        "--molarratio",
+        "--massfraction",
         type=float,
         help="Molar ratio between unit cell and analyte.",
         default=1.0,
@@ -146,7 +149,7 @@ if __name__ == "__main__":
     # x, y = np.genfromtxt(
     #     args.aquisition, delimiter=",", skip_header=4, skip_footer=4, unpack=True
     # )
-    y, params = io.read_nanoparticle_file(args.aquisition, delimiter=",")
+    y, params = io.read_spcalicle_file(args.aquisition, delimiter=",")
 
     if not args.dwelltime and "dwelltime" in params:
         args.dwelltime = params["dwelltime"]
@@ -168,7 +171,7 @@ if __name__ == "__main__":
     if limits is None:
         raise ValueError("Unable to calculate limits.")
 
-    detections, regions = nanopart.accumulate_detections(y, limits[2], limits[3])
+    detections, labels, regions = spcal.accumulate_detections(y, limits[2], limits[3])
     # Calculate background mean of non-detections
     ndub = np.mean(y[regions == 0])
 
@@ -188,7 +191,7 @@ if __name__ == "__main__":
     #     assert 0.0 <= args.efficiency <= 1.0
 
     # Particle calculations
-    masses = nanopart.particle_mass(
+    masses = spcal.particle_mass(
         detections,
         dwell=args.dwelltime,
         efficiency=args.efficiency,
@@ -196,22 +199,22 @@ if __name__ == "__main__":
         response_factor=response,
         mass_fraction=args.massfraction,
     )
-    sizes = nanopart.particle_size(masses, density=density)
-    number = nanopart.particle_number_concentration(
+    sizes = spcal.particle_size(masses, density=density)
+    number = spcal.particle_number_concentration(
         detections.size, efficiency=args.efficiency, flowrate=flowrate, time=time
     )
-    conc = nanopart.particle_total_concentration(
+    conc = spcal.particle_total_concentration(
         masses, efficiency=args.efficiency, flowrate=flowrate, time=time
     )
     ionic = ndub / response  # kg/L
 
     # Calculate number of atoms if molarmass provided
-    if args.molarmass:
-        molarmass = args.molarmass * 1e-3  # g/mol -> kg/mol
-        atoms = nanopart.particle_number_atoms(masses, molarmass=molarmass)
+    # if args.molarmass:
+    #     molarmass = args.molarmass * 1e-3  # g/mol -> kg/mol
+    #     atoms = spcal.particle_(masses, molarmass=molarmass)
 
     # Background equivalent calculations
-    bemass = nanopart.particle_mass(
+    bemass = spcal.particle_mass(
         ndub,
         dwell=args.dwelltime,
         efficiency=args.efficiency,
@@ -222,8 +225,8 @@ if __name__ == "__main__":
     # belc = particle_mass(
     #     lc, args.dwelltime, args.efficiency, flowrate, response, args.massfraction
     # )
-    beld_size = nanopart.particle_size(
-        nanopart.particle_mass(
+    beld_size = spcal.particle_size(
+        spcal.particle_mass(
             limits[3],
             args.dwelltime,
             args.efficiency,
@@ -234,8 +237,8 @@ if __name__ == "__main__":
         density,
     )
     # Calculate BE atoms if molarmass provided
-    if args.molarmass:
-        beatoms = nanopart.particle_number_atoms(bemass, molarmass)
+    # if args.molarmass:
+    #     beatoms = spcal.particle_number_atoms(bemass, molarmass)
 
     # Convert required from printing
     # conc = conc * 1e18 * 1e-3  # kg/L -> fg/ml

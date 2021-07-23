@@ -3,14 +3,14 @@ import argparse
 from pathlib import Path
 import sys
 
-from nanopart.gui.main import NanoPartWindow
+from spcal.gui.main import NanoPartWindow
 
 from typing import List
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="nanopart",
+        prog="spcal",
         description="spICP-MS toolkit and visulistion.",
     )
 

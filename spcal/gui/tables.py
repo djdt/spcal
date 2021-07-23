@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from nanopart.gui.util import NumpyArrayTableModel
+from spcal.gui.util import NumpyArrayTableModel
 
 from typing import List
 
@@ -58,7 +58,7 @@ class NamedColumnModel(NumpyArrayTableModel):
 class ParticleTable(QtWidgets.QTableView):
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
-        model = NamedColumnModel(["Response"])
+        model = NamedColumnModel(["Intensity"])
         self.setModel(model)
 
         self.setItemDelegate(DoubleSignificantFiguresDelegate(4))

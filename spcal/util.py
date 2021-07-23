@@ -5,12 +5,9 @@ from typing import Tuple, Union
 
 def accumulate_detections(
     y: np.ndarray,
-    limit_accumulation: np.ndarray,
-    limit_detection: np.ndarray,
-    return_regions: bool = False,
-) -> Union[
-    Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-]:
+    limit_accumulation: Union[float, np.ndarray],
+    limit_detection: Union[float, np.ndarray],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above `limit_accumulation` that contain at least one value above
@@ -18,12 +15,13 @@ def accumulate_detections(
 
     Args:
         y: array
-        limit_detection: value for detection of region
-        limit_accumulation: minimum accumulation value
+        limit_detection: value(s) for detection of region
+        limit_accumulation: minimum accumulation value(s)
 
     Returns:
         summed detection regions
         labels of regions
+        regions [starts, ends]
     """
     if np.any(limit_detection < limit_accumulation):
         raise ValueError("limit_detection must be greater than limit_accumulation.")
@@ -34,7 +32,7 @@ def accumulate_detections(
     # Stack into pairs of start, end. If no final end position set it as end of array.
     end_point_added = False
     if starts.size != ends.size:
-        ends = np.concatenate((ends, [diff.size - 1]))
+        ends = np.concatenate((ends, [diff.size - 1]))  # -1 for reduceat
         end_point_added = True
     regions = np.stack((starts, ends), axis=1)
 
@@ -57,14 +55,13 @@ def accumulate_detections(
     # Cumsum to label
     labels = np.cumsum(labels)
 
-    if return_regions:
-        return sums, labels, regions
-    else:
-        return sums, labels
+    return sums, labels, regions
 
 
 def poisson_limits(
-    ub: np.ndarray, epsilon: float = 0.5
+    ub: np.ndarray,
+    epsilon: float = 0.5,
+    force_epsilon: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calulate Yc and Yd for mean `ub`.
 
@@ -74,6 +71,7 @@ def poisson_limits(
     Args:
         ub: mean of background
         epsilon: low `ub` correct factor
+        force_epsilon: always use `epsilon`
 
     Returns:
         Yc, gross count critical value
@@ -89,7 +87,10 @@ def poisson_limits(
             https://doi.org/10.1007/s10967-008-0501-5
     """
     # 5 counts limit to maintain 0.05 alpha / beta (Currie 2008)
-    ub = np.where(ub < 5.0, ub + epsilon, ub)
+    if force_epsilon:
+        ub = ub + epsilon
+    else:
+        ub = np.where(ub < 5.0, ub + epsilon, ub)
     # Yc and Yd for paired distribution (Currie 1969)
     return 2.33 * np.sqrt(ub), 2.71 + 4.65 * np.sqrt(ub)
 
@@ -98,10 +99,11 @@ def poisson_limits(
 
 
 def atoms_per_particle(
-    masses: np.ndarray,
+    masses: Union[float, np.ndarray],
     molarmass: float,
-) -> float:
+) -> Union[float, np.ndarray]:
     """Number of atoms per particle.
+    N = m (kg) * N_A (/mol) / M (kg/mol)
 
     Args:
         masses: array of particle signals (kg)
@@ -111,26 +113,11 @@ def atoms_per_particle(
     return masses * Na / molarmass
 
 
-# def particle_concentration(
-#     signal: np.ndarray,
-#     molarmass: float,
-#     response_factor: float,
-# ) -> np.ndarray:
-#     """Intra-cellular concentrations in mol/L.
-#     # Assumes a spherical cell shape.
-
-#     Args:
-#         signal: array of signals
-#         molarmass: molecular weight (kg/mol)
-#         response_factor: ICP-MS response (counts / kg/L)
-#     """
-#     return signal / (response_factor * molarmass)
-
-
 def nebulisation_efficiency_from_concentration(
     count: int, concentration: float, mass: float, flowrate: float, time: float
 ) -> float:
-    """The nebulistaion efficiency.
+    """The nebulistaion efficiency given a defined concentration.
+    η = (m (kg) * N) / (c (kg/L) * V (L/s) * t (s))
 
     Args:
         count: number of detected particles
@@ -144,14 +131,15 @@ def nebulisation_efficiency_from_concentration(
 
 
 def nebulisation_efficiency_from_mass(
-    signal: np.ndarray,
+    signal: Union[float, np.ndarray],
     dwell: float,
     mass: float,
     flowrate: float,
     response_factor: float,
-    molar_ratio: float = 1.0,
-) -> np.ndarray:
+    mass_fraction: float = 1.0,
+) -> float:
     """Calculates efficiency for signals given a defined mass.
+    η = (m (kg) * s (L/kg)) / (I * f * t (s) * V (L/s))
 
     Args:
         signal: array of reference particle signals
@@ -159,20 +147,22 @@ def nebulisation_efficiency_from_mass(
         mass: of reference particle (kg)
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        molar_ratio: molar mass analyte / molar mass particle
+        mass_fraction: molar mass analyte / molar mass particle
     """
-    return (mass * response_factor) / (signal * (dwell * flowrate * molar_ratio))
+    signal = np.mean(signal)
+    return (mass * response_factor) / (signal * (dwell * flowrate * mass_fraction))
 
 
 def particle_mass(
-    signal: np.ndarray,
+    signal: Union[float, np.ndarray],
     dwell: float,
     efficiency: float,
     flowrate: float,
     response_factor: float,
-    molar_ratio: float = 1.0,
-) -> np.ndarray:
-    """Array of particle masses given their integrated responses (kg).
+    mass_fraction: float = 1.0,
+) -> Union[float, np.ndarray]:
+    """Array of particle masses given their integrated responses.
+    m (kg) = (η * t (s) * I * V (L/s)) / (s (L/kg) * f)
 
     Args:
         signal: array of particle signals
@@ -180,15 +170,16 @@ def particle_mass(
         efficiency: nebulisation efficiency
         flowrate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
-        molar_ratio:  molar mass analyte / molar mass particle
+        mass_fraction:  molar mass analyte / molar mass particle
     """
-    return signal * (dwell * flowrate * efficiency / (response_factor * molar_ratio))
+    return signal * (dwell * flowrate * efficiency / (response_factor * mass_fraction))
 
 
 def particle_number_concentration(
     count: int, efficiency: float, flowrate: float, time: float
 ) -> float:
-    """Concentration of particles per L.
+    """Number concentration of particles.
+    PNC (/L) = N / (η * V (L/s) * T (s))
 
     Args:
         count: number of detected particles
@@ -199,8 +190,11 @@ def particle_number_concentration(
     return count / (efficiency * flowrate * time)
 
 
-def particle_size(masses: np.ndarray, density: float) -> np.ndarray:
-    """Array of particle sizes in m.
+def particle_size(
+    masses: Union[float, np.ndarray], density: float
+) -> Union[float, np.ndarray]:
+    """Array of particle diameters.
+    d (m) = cbrt((6.0 * m (kg)) / (π * ρ (kg/m3)))
 
     Args:
         masses: array of particle signals (kg)
@@ -210,9 +204,10 @@ def particle_size(masses: np.ndarray, density: float) -> np.ndarray:
 
 
 def particle_total_concentration(
-    masses: np.ndarray, efficiency: float, flowrate: float, time: float
+    masses: Union[float, np.ndarray], efficiency: float, flowrate: float, time: float
 ) -> float:
-    """Concentration of material in kg/L.
+    """Concentration of material.
+    C (kg/L) = sum(m (kg)) / (η * V (L/s) * T (s))
 
     Args:
         masses: array of particle signals (kg)
@@ -225,8 +220,8 @@ def particle_total_concentration(
 
 
 def reference_particle_mass(density: float, diameter: float) -> float:
-    """Calculates particle mass in kg.
-    Assusmes a spherical particle.
+    """Calculates particle mass assusming a spherical particle.
+    m (kg) = 4.0 / (3.0 * pi) * (d (m) / 2) ^ 3 * ρ (kg/m3)
 
     Args:
         density: reference density (kg/m3)

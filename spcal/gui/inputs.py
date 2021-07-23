@@ -4,26 +4,23 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 from pathlib import Path
 
-import nanopart
-from nanopart import npdata
+import spcal
+from spcal import npdata
 
-from nanopart.calc import calculate_limits
-from nanopart.io import read_nanoparticle_file
+from spcal.calc import calculate_limits
+from spcal.io import read_spcalicle_file
 
-from nanopart.gui.charts import ParticleChart, ParticleChartView
-from nanopart.gui.options import OptionsWidget
-from nanopart.gui.tables import ParticleTable
-from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import (
+from spcal.gui.charts import ParticleChart, ParticleChartView
+from spcal.gui.options import OptionsWidget
+from spcal.gui.tables import ParticleTable
+from spcal.gui.units import UnitsWidget
+from spcal.gui.widgets import (
     ElidedLabel,
     RangeSlider,
     ValidColorLineEdit,
 )
 
-from typing import Tuple
-
-
-# todo changing values in table doesnt update linits
+from typing import Optional, Tuple, Union
 
 
 class InputWidget(QtWidgets.QWidget):
@@ -48,12 +45,20 @@ class InputWidget(QtWidgets.QWidget):
         self.options.check_use_window.toggled.connect(self.updateLimits)
         self.options.epsilon.editingFinished.connect(self.updateLimits)
         self.options.sigma.editingFinished.connect(self.updateLimits)
+        self.options.check_force_epsilon.toggled.connect(self.updateLimits)
 
         self.background = 0.0
         self.background_std = 0.0
         self.detections = np.array([], dtype=np.float64)
         self.detections_std = 0.0
-        self.limits: Tuple[str, float, float, float] = None
+        self.limits: Optional[
+            Tuple[
+                Tuple[str, float],
+                Union[float, np.ndarray],
+                Union[float, np.ndarray],
+                Union[float, np.ndarray],
+            ]
+        ] = None
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -106,7 +111,7 @@ class InputWidget(QtWidgets.QWidget):
 
         layout_table_units = QtWidgets.QHBoxLayout()
         layout_table_units.addStretch(1)
-        layout_table_units.addWidget(QtWidgets.QLabel("Response:"), 0)
+        layout_table_units.addWidget(QtWidgets.QLabel("Intensity:"), 0)
         layout_table_units.addWidget(self.table_units, 0)
 
         layout_table = QtWidgets.QVBoxLayout()
@@ -174,7 +179,7 @@ class InputWidget(QtWidgets.QWidget):
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
-    def responseAsCounts(self, trim: Tuple[int, int] = None) -> np.ndarray:
+    def responseAsCounts(self, trim: Tuple[int, int] = None) -> Optional[np.ndarray]:
         if trim is None:
             trim = (self.slider.left(), self.slider.right())
 
@@ -188,14 +193,14 @@ class InputWidget(QtWidgets.QWidget):
         else:
             return None
 
-    def timeAsSeconds(self) -> float:
+    def timeAsSeconds(self) -> Optional[float]:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
             return None
         return (self.slider.right() - self.slider.left()) * dwell
 
     def dialogLoadFile(self) -> None:
-        file, _filter = QtWidgets.QFileDialog.getOpenFileName(
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             "Open",
             "",
@@ -206,7 +211,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def loadFile(self, file: str) -> None:
         try:
-            responses, parameters = read_nanoparticle_file(file, delimiter=",")
+            responses, parameters = read_spcalicle_file(file, delimiter=",")
         except ValueError:
             return
 
@@ -250,8 +255,8 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            detections, labels, regions = nanopart.accumulate_detections(
-                responses, self.limits[2], self.limits[3], return_regions=True
+            detections, labels, regions = spcal.accumulate_detections(
+                responses, self.limits[2], self.limits[3]
             )
             centers = (regions[:, 0] + regions[:, 1]) // 2
             self.centers = centers
@@ -268,7 +273,10 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText(
                 f"{self.background:.4g} ± {self.background_std:.4g}"
             )
-            self.lod_count.setText(f"{lod:.4g} ({self.limits[0]})")
+            symbol = "ε" if self.limits[0][0] == "Poisson" else "σ"
+            self.lod_count.setText(
+                f"{lod:.4g} ({self.limits[0][0]}, {symbol}={self.limits[0][1]:.2g})"
+            )
 
         self.detectionsChanged.emit(self.detections.size)
 
@@ -278,12 +286,12 @@ class InputWidget(QtWidgets.QWidget):
         sigma = (
             float(self.options.sigma.text())
             if self.options.sigma.hasAcceptableInput()
-            else None
+            else 3.0
         )
         epsilon = (
             float(self.options.epsilon.text())
             if self.options.epsilon.hasAcceptableInput()
-            else None
+            else 0.5
         )
         window_size = (
             int(self.options.window_size.text())
@@ -292,9 +300,21 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        self.limits = calculate_limits(
-            responses, method, sigma, epsilon, window=window_size
-        )
+        if responses is not None:
+            try:
+                self.limits = calculate_limits(
+                    responses,
+                    method,
+                    sigma,
+                    epsilon,
+                    force_epsilon=self.options.check_force_epsilon.isChecked(),
+                    window=window_size,
+                )
+            except ValueError:
+                self.limits = None
+        else:
+            self.limits = None
+
         self.limitsChanged.emit()
 
     def redrawChart(self) -> None:
@@ -327,7 +347,7 @@ class InputWidget(QtWidgets.QWidget):
         xs = np.arange(self.slider.left(), self.slider.right())
 
         self.chart.setBackground(xs, self.limits[1])
-        if self.limits[0] == "Poisson":
+        if self.limits[0][0] == "Poisson":
             self.chart.setLimitCritical(xs, self.limits[2])
         else:
             self.chart.lc.clear()
@@ -385,30 +405,32 @@ class SampleWidget(InputWidget):
             default_unit="g/mol",
             invalid_color=QtGui.QColor(255, 255, 172),
         )
-        self.molarratio = ValidColorLineEdit("1.0")
-        self.molarratio.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+        self.massfraction = ValidColorLineEdit("1.0")
+        self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
-        self.element.setToolTip("Input formula for density and molarratio.")
+        self.element.setToolTip("Input formula for density and massfraction.")
         self.density.setToolTip("Sample particle density.")
         self.molarmass.setToolTip(
             "Molecular weight, used to calcullate # atoms per particle."
         )
-        self.molarratio.setToolTip("Ratio of the mass of the particle to the analyte.")
+        self.massfraction.setToolTip(
+            "Ratio of the mass of the particle to the analyte."
+        )
 
         self.density.valueChanged.connect(self.optionsChanged)
         self.molarmass.valueChanged.connect(self.optionsChanged)
-        self.molarratio.textChanged.connect(self.optionsChanged)
+        self.massfraction.textChanged.connect(self.optionsChanged)
 
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
-        self.inputs.layout().addRow("Molar ratio:", self.molarratio)
+        self.inputs.layout().addRow("Molar ratio:", self.massfraction)
 
     def isComplete(self) -> bool:
         return (
             self.detections is not None
             and self.detections.size > 0
-            and self.molarratio.hasAcceptableInput()
+            and self.massfraction.hasAcceptableInput()
             and self.density.hasAcceptableInput()
         )
 
@@ -422,20 +444,20 @@ class SampleWidget(InputWidget):
             self.molarmass.setValue(mw)
             self.molarmass.setUnit("g/mol")
             self.molarmass.setEnabled(False)
-            self.molarratio.setText(str(mr))
-            self.molarratio.setEnabled(False)
+            self.massfraction.setText(str(mr))
+            self.massfraction.setEnabled(False)
         else:
             self.element.setValid(False)
             self.density.setEnabled(True)
             self.molarmass.setEnabled(True)
-            self.molarratio.setEnabled(True)
+            self.massfraction.setEnabled(True)
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
         self.element.setText("")
         self.density.setValue(None)
         self.molarmass.setValue(None)
-        self.molarratio.setText("1.0")
+        self.massfraction.setText("1.0")
         self.blockSignals(False)
         super().resetInputs()
 
@@ -472,29 +494,31 @@ class ReferenceWidget(InputWidget):
             {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
             default_unit="nm",
         )
-        self.molarratio = ValidColorLineEdit(
+        self.massfraction = ValidColorLineEdit(
             "1.0", color_bad=QtGui.QColor(255, 255, 172)
         )
-        self.molarratio.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+        self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
-        self.element.setToolTip("Input formula for density and molarratio.")
+        self.element.setToolTip("Input formula for density and massfraction.")
         self.concentration.setToolTip("Reference particle concentration.")
         self.density.setToolTip("Reference particle density.")
         self.diameter.setToolTip("Reference particle diameter.")
-        self.molarratio.setToolTip("Ratio of the mass of the particle to the analyte.")
+        self.massfraction.setToolTip(
+            "Ratio of the mass of the particle to the analyte."
+        )
 
         self.concentration.valueChanged.connect(self.optionsChanged)
         self.density.valueChanged.connect(self.optionsChanged)
         self.diameter.valueChanged.connect(self.optionsChanged)
-        self.molarratio.textChanged.connect(self.optionsChanged)
+        self.massfraction.textChanged.connect(self.optionsChanged)
 
         self.inputs.layout().addRow("Concentration:", self.concentration)
         self.inputs.layout().addRow("Diameter:", self.diameter)
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
-        self.inputs.layout().addRow("Molar ratio:", self.molarratio)
+        self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.efficiency = ValidColorLineEdit()
+        self.efficiency = QtWidgets.QLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
         self.efficiency.setReadOnly(True)
 
@@ -513,7 +537,7 @@ class ReferenceWidget(InputWidget):
         )
         self.massresponse.setReadOnly(True)
 
-        self.outputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
         self.options.dwelltime.valueChanged.connect(self.recalculate)
@@ -528,24 +552,26 @@ class ReferenceWidget(InputWidget):
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
-        if self.detections.size == 0 or any(x is None for x in [density, diameter]):
+        if self.detections.size == 0 or density is None or diameter is None:
             return
 
-        mass = nanopart.reference_particle_mass(density, diameter)
-        molarratio = (
-            float(self.molarratio.text())
-            if self.molarratio.hasAcceptableInput()
+        mass = spcal.reference_particle_mass(density, diameter)
+        massfraction = (
+            float(self.massfraction.text())
+            if self.massfraction.hasAcceptableInput()
             else None
         )
-        if molarratio is not None:
-            self.massresponse.setBaseValue(mass * molarratio / np.mean(self.detections))
+        if massfraction is not None:
+            self.massresponse.setBaseValue(
+                mass * massfraction / np.mean(self.detections)
+            )
 
         # If concentration defined use conc method
         concentration = self.concentration.baseValue()
         uptake = self.options.uptake.baseValue()
         time = self.timeAsSeconds()
-        if all(o is not None for o in [concentration, uptake, time]):
-            efficiency = nanopart.nebulisation_efficiency_from_concentration(
+        if concentration is not None and uptake is not None and time is not None:
+            efficiency = spcal.nebulisation_efficiency_from_concentration(
                 self.detections.size,
                 concentration=concentration,
                 mass=mass,
@@ -558,38 +584,42 @@ class ReferenceWidget(InputWidget):
         # Else use the other method
         dwell = self.options.dwelltime.baseValue()
         response = self.options.response.baseValue()
-        if all(o is not None for o in [dwell, response, molarratio, uptake]):
-            efficiencies = nanopart.nebulisation_efficiency_from_mass(
+        if (
+            dwell is not None
+            and response is not None
+            and uptake is not None
+            and massfraction is not None
+        ):
+            efficiency = spcal.nebulisation_efficiency_from_mass(
                 self.detections,
                 dwell=dwell,
                 mass=mass,
                 flowrate=uptake,
                 response_factor=response,
-                molar_ratio=molarratio,
+                mass_fraction=massfraction,
             )
-            efficiency = np.mean(efficiencies)
             self.efficiency.setText(f"{efficiency:.4g}")
 
     def elementChanged(self, text: str) -> None:
         if text in npdata.data:
-            density, mw, mr = npdata.data[text]
+            density, _, mr = npdata.data[text]
             self.element.setValid(True)
             self.density.setValue(density)
             self.density.setUnit("g/cm³")
             self.density.setEnabled(False)
-            self.molarratio.setText(str(mr))
-            self.molarratio.setEnabled(False)
+            self.massfraction.setText(str(mr))
+            self.massfraction.setEnabled(False)
         else:
             self.element.setValid(False)
             self.density.setEnabled(True)
-            self.molarratio.setEnabled(True)
+            self.massfraction.setEnabled(True)
 
     def isComplete(self) -> bool:
         return (
             self.detections is not None
             and self.detections.size > 0
             and self.diameter.hasAcceptableInput()
-            and self.molarratio.hasAcceptableInput()
+            and self.massfraction.hasAcceptableInput()
             and self.density.hasAcceptableInput()
         )
 
@@ -598,7 +628,7 @@ class ReferenceWidget(InputWidget):
         self.element.setText("")
         self.diameter.setValue(None)
         self.density.setValue(None)
-        self.molarratio.setText("1.0")
+        self.massfraction.setText("1.0")
         self.concentration.setValue(None)
 
         self.efficiency.setText("")
