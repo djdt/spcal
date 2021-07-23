@@ -1,4 +1,5 @@
 import numpy as np
+from pathlib import Path
 import pytest
 import spcal
 
@@ -117,3 +118,40 @@ def test_equations():
     assert np.isclose(
         spcal.reference_particle_mass(diameter=0.2, density=750.0 / np.pi), 1.0
     )
+
+
+def test_determined_sizes():
+    data = np.load(Path(__file__).parent.joinpath("data/agilent_au_data.npz"))
+
+    uptake = 1.567e-6
+    dwelltime = 1e-4
+    response = 16.08e9
+    efficiency = 0.062
+    density = 19.32e3
+
+    for x, expected in [
+        (data["au15nm"], 15.0),
+        (data["au50nm"], 50.0),
+    ]:
+        ub = np.mean(x)
+        # 15 nm
+        yc, yd = spcal.poisson_limits(ub, epsilon=0.5)
+        detections, _, _ = spcal.accumulate_detections(x, yc + ub, yd + ub)
+
+        masses = spcal.particle_mass(
+            detections,
+            dwell=dwelltime,
+            efficiency=efficiency,
+            flowrate=uptake,
+            response_factor=response,
+            mass_fraction=1.0,
+        )
+
+        sizes = spcal.particle_size(masses, density=density)
+
+        assert np.isclose(
+            np.mean(sizes) * 1e9, expected, rtol=0.01, atol=0
+        )  # within 1%
+        assert np.isclose(
+            np.median(sizes) * 1e9, expected, rtol=0, atol=0.5
+        )  # within 0.5 nm
