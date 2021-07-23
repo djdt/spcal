@@ -137,8 +137,8 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_force_epsilon = QtWidgets.QCheckBox("Force")
         self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
 
-        self.sigma = QtWidgets.QLineEdit("3.0")
-        self.sigma.setPlaceholderText("3.0")
+        self.sigma = QtWidgets.QLineEdit("5.0")
+        self.sigma.setPlaceholderText("5.0")
         self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
         self.sigma.setToolTip("LOD in number of standard deviations from mean.")
 
