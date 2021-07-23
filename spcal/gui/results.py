@@ -9,7 +9,8 @@ from spcal.calc import (
     results_from_nebulisation_efficiency,
 )
 from spcal.fit import fit_normal, fit_lognormal
-from spcal.io import export_spcalicle_results
+from spcal.io import export_nanoparticle_results
+from spcal.util import particle_volume
 
 from spcal.gui.charts import ParticleHistogram, ParticleChartView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
@@ -32,6 +33,7 @@ class ResultsWidget(QtWidgets.QWidget):
         "g": 1e-3,
         "kg": 1.0,
     }
+    conc_units = {k + "/L": v for k, v in mass_units.items()}
 
     def __init__(
         self,
@@ -84,7 +86,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChart)
 
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)"])
+        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (kg/L)"])
         self.mode.setCurrentText("Size (m)")
         self.mode.currentIndexChanged.connect(self.updateTexts)
         self.mode.currentIndexChanged.connect(self.updateTable)
@@ -185,7 +187,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
-            export_spcalicle_results(Path(file), self.result)
+            export_nanoparticle_results(Path(file), self.result)
 
     def dialogExportImage(self) -> None:
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -246,6 +248,14 @@ class ResultsWidget(QtWidgets.QWidget):
             data, mult, unit = self.asBestUnit(self.result["sizes"])
             lod = self.result["lod_size"] / mult
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
+        elif mode == "Conc. (kg/L)":
+            diameter = self.options.celldiameter.baseValue()
+            if diameter is None:
+                raise ValueError("Expected diameter is required for concentration.")
+            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
+            data, mult, unit = self.asBestUnit(self.result["masses"] / volume, "k")
+            lod = self.result["lod_mass"] / mult / volume
+            self.chart.xaxis.setTitleText(f"Conc. ({unit}g/L)")
         else:
             raise ValueError(f"Unknown mode '{mode}'.")
 
@@ -319,7 +329,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.mean(self.result["lod_mass"]),
                 np.std(self.result["masses"]),
             )
-        else:
+        elif mode == "Size (m)":
             units = self.size_units
             mean, median, lod, std = (
                 np.mean(self.result["sizes"]),
@@ -327,6 +337,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.mean(self.result["lod_size"]),
                 np.std(self.result["sizes"]),
             )
+        elif mode == "Conc. (kg/L)":
+            diameter = self.options.celldiameter.baseValue()
+            if diameter is None:
+                raise ValueError("Expected diameter is required for concentration.")
+            units = self.conc_units
+            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
+            mean, median, lod, std = (
+                np.mean(self.result["masses"]) / volume,
+                np.median(self.result["masses"]) / volume,
+                np.mean(self.result["lod_mass"]) / volume,
+                np.std(self.result["masses"]) / volume,
+            )
+        else:
+            raise ValueError(f"Unknown mode {mode}.")
 
         for te in [self.mean, self.median, self.lod]:
             te.setUnits(units)
@@ -367,6 +391,12 @@ class ResultsWidget(QtWidgets.QWidget):
             data = self.result["detections"]
         elif mode == "Size (m)":
             data = self.result["sizes"]
+        elif mode == "Conc. (kg/L)":
+            diameter = self.options.celldiameter.baseValue()
+            if diameter is None:
+                raise ValueError("Expected diameter is required for concentration.")
+            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
+            data = self.result["masses"] / volume
         else:
             raise ValueError(f"Unknown mode '{mode}'.")
         self.table.model().beginResetModel()
@@ -393,6 +423,11 @@ class ResultsWidget(QtWidgets.QWidget):
             self.mode.setEnabled(False)
         else:
             self.mode.setEnabled(True)
+            concenabled = self.options.celldiameter.baseValue() is not None
+            concindex = self.mode.findText("Conc. (kg/L)")
+            self.mode.model().item(concindex).setEnabled(concenabled)
+            if not concenabled and self.mode.currentIndex() == concindex:
+                self.mode.setCurrentText("Signal")
 
             if method in ["Manual Input", "Reference Particle"]:
                 if method == "Manual Input":
@@ -437,9 +472,9 @@ class ResultsWidget(QtWidgets.QWidget):
                     )
                 )
 
-            if self.options.diameter.hasAcceptableInput():
-                self.result["sizes"] /= np.mean(self.result["sizes"])
-                self.result["sizes"] *= self.options.diameter.baseValue()
+            # if self.options.diameter.hasAcceptableInput():
+            #     self.result["sizes"] /= np.mean(self.result["sizes"])
+            #     self.result["sizes"] *= self.options.diameter.baseValue()
 
         self.updateTexts()
         self.updateTable()

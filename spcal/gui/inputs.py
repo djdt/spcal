@@ -8,7 +8,7 @@ import spcal
 from spcal import npdata
 
 from spcal.calc import calculate_limits
-from spcal.io import read_spcalicle_file
+from spcal.io import read_nanoparticle_file
 
 from spcal.gui.charts import ParticleChart, ParticleChartView
 from spcal.gui.options import OptionsWidget
@@ -211,7 +211,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def loadFile(self, file: str) -> None:
         try:
-            responses, parameters = read_spcalicle_file(file, delimiter=",")
+            responses, parameters = read_nanoparticle_file(file, delimiter=",")
         except ValueError:
             return
 

@@ -219,15 +219,22 @@ def particle_total_concentration(
     return np.sum(masses) / (efficiency * flowrate * time)
 
 
+def particle_volume(diameter: float) -> float:
+    """Calculate the volume of a particle.
+    V (m^3) = 4.0 / 3.0 * pi * (d (m) / 2) ^ 3
+    """
+    return 4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3
+
+
 def reference_particle_mass(density: float, diameter: float) -> float:
     """Calculates particle mass assusming a spherical particle.
-    m (kg) = 4.0 / (3.0 * pi) * (d (m) / 2) ^ 3 * ρ (kg/m3)
+    m (kg) = 4 / 3 * pi * (d (m) / 2) ^ 3 * ρ (kg/m3)
 
     Args:
         density: reference density (kg/m3)
         diameter: reference diameter (m)
     """
-    return 4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3 * density
+    return particle_volume(diameter) * density
 
 
 # def reference_particle_size(mass_std: float, density_std: float) -> float:

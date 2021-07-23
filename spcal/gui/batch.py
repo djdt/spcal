@@ -10,7 +10,7 @@ from spcal.calc import (
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from spcal.io import read_spcalicle_file, export_spcalicle_results
+from spcal.io import read_nanoparticle_file, export_nanoparticle_results
 
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
@@ -28,7 +28,7 @@ def process_file_detections(
     limit_window: int = None,
     cps_dwelltime: float = None,
 ) -> dict:
-    responses, _ = read_spcalicle_file(file, delimiter=",")
+    responses, _ = read_nanoparticle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
 
     # Convert to counts if required
@@ -146,7 +146,7 @@ class ProcessThread(QtCore.QThread):
                 continue
 
             try:
-                export_spcalicle_results(outfile, result)
+                export_nanoparticle_results(outfile, result)
             except ValueError:
                 self.processFailed.emit(infile.name)
                 continue

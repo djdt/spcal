@@ -155,18 +155,18 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.layout().addRow("Epsilon:", layout_epsilon)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
 
-        self.diameter = UnitsWidget(
+        self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
             default_unit="μm",
             invalid_color=QtGui.QColor(255, 255, 172),
         )
-        self.diameter.setToolTip(
-            "Sets the mean particle size to the hypothesised diameter."
+        self.celldiameter.setToolTip(
+            "Calculate intracellular concentrations using the hypothesised diameter."
         )
 
-        self.misc_inputs = QtWidgets.QGroupBox("Particle Options")
+        self.misc_inputs = QtWidgets.QGroupBox("Cell Options")
         self.misc_inputs.setLayout(QtWidgets.QFormLayout())
-        self.misc_inputs.layout().addRow("Force diamter:", self.diameter)
+        self.misc_inputs.layout().addRow("Cell diameter:", self.celldiameter)
 
         layout_left = QtWidgets.QVBoxLayout()
         layout_left.addWidget(self.limit_inputs)
@@ -231,6 +231,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.dwelltime.setValue(None)
         self.response.setValue(None)
         self.efficiency.setText("")
-        self.diameter.setValue(None)
+        self.celldiameter.setValue(None)
         self.blockSignals(False)
         self.optionsChanged.emit()
