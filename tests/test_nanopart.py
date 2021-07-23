@@ -62,7 +62,7 @@ def test_equations():
         ),
         1.0,
     )
-    # η = (m (kg) * s (L/kg)) / (I * f * t (s) * V (L/s))
+    # η = (m (kg) * s (L/kg) * f) / (I * t (s) * V (L/s))
     assert np.all(
         np.isclose(  # sensitive to mean value
             spcal.nebulisation_efficiency_from_mass(
@@ -73,7 +73,7 @@ def test_equations():
                 dwell=10.0,
                 flowrate=2.0,
             ),
-            1.0,
+            0.25,
         ),
     )
     # m (kg) = (η * t (s) * I * V (L/s)) / (s (L/kg) * f)
@@ -117,6 +117,17 @@ def test_equations():
     # m (kg) = 4.0 / (3.0 * pi) * (d (m) / 2) ^ 3 * ρ (kg/m3)
     assert np.isclose(
         spcal.reference_particle_mass(diameter=0.2, density=750.0 / np.pi), 1.0
+    )
+
+    # Test that particle mass is recoverable from same reference mass
+    kws = dict(
+        signal=4.3, response_factor=7.8, mass_fraction=0.91, dwell=0.87, flowrate=0.65
+    )
+    assert np.isclose(
+        spcal.particle_mass(
+            efficiency=spcal.nebulisation_efficiency_from_mass(mass=5.6, **kws), **kws
+        ),
+        5.6,
     )
 
 
