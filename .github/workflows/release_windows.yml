@@ -20,7 +20,7 @@ jobs:
     - name: Build exec
       id: build-exec
       run: |
-        pyinstaller --clean --noupx -y nanopart.spec
+        pyinstaller --clean --noupx -y spcal.spec
         echo "::set-output name=version::$(python setup.py --version)"
     - name: Upload binary
       id: upload-release-asset
@@ -29,6 +29,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./dist/nanopart_${{ steps.build-exec.outputs.version }}.exe
-        asset_name: nanopart_${{ steps.build-exec.outputs.version }}.exe
+        asset_path: ./dist/spcal_${{ steps.build-exec.outputs.version }}.exe
+        asset_name: spcal_${{ steps.build-exec.outputs.version }}.exe
         asset_content_type: application/octet-stream
