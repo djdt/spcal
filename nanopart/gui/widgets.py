@@ -271,6 +271,10 @@ class ValidColorLineEdit(QtWidgets.QLineEdit):
         self.active = active
         self.revalidate()
 
+    def setEnabled(self, enabled: bool) -> None:
+        super().setEnabled(enabled)
+        self.revalidate()
+
     def setValidator(self, validator: QtGui.QValidator) -> None:
         super().setValidator(validator)
         self.revalidate()

@@ -174,4 +174,3 @@ class UnitsWidget(QtWidgets.QWidget):
     def setEnabled(self, enabled: bool) -> None:
         self.lineedit.setEnabled(enabled)
         self.combo.setEnabled(enabled)
-        self.lineedit.revalidate()
