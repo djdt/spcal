@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from nanopart.gui.util import NumpyArrayTableModel
+from spcal.gui.util import NumpyArrayTableModel
 
 from typing import List
 

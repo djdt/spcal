@@ -3,10 +3,10 @@ from pathlib import Path
 
 from typing import Dict, Tuple, Union
 
-from nanopart import __version__
+from spcal import __version__
 
 
-def read_nanoparticle_file(
+def read_spcalicle_file(
     path: Union[Path, str], delimiter: str = ","
 ) -> Tuple[np.ndarray, Dict]:
     def delimited_columns(path: Path, delimiter: str = ",", columns: int = 2):
@@ -44,7 +44,7 @@ def read_nanoparticle_file(
     return response, parameters
 
 
-def export_nanoparticle_results(path: Path, result: dict) -> None:
+def export_spcalicle_results(path: Path, result: dict) -> None:
     with path.open("w") as fp:
         fp.write(f"# NanoPart Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")

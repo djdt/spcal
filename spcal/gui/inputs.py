@@ -4,17 +4,17 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 from pathlib import Path
 
-import nanopart
-from nanopart import npdata
+import spcal
+from spcal import npdata
 
-from nanopart.calc import calculate_limits
-from nanopart.io import read_nanoparticle_file
+from spcal.calc import calculate_limits
+from spcal.io import read_spcalicle_file
 
-from nanopart.gui.charts import ParticleChart, ParticleChartView
-from nanopart.gui.options import OptionsWidget
-from nanopart.gui.tables import ParticleTable
-from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import (
+from spcal.gui.charts import ParticleChart, ParticleChartView
+from spcal.gui.options import OptionsWidget
+from spcal.gui.tables import ParticleTable
+from spcal.gui.units import UnitsWidget
+from spcal.gui.widgets import (
     ElidedLabel,
     RangeSlider,
     ValidColorLineEdit,
@@ -211,7 +211,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def loadFile(self, file: str) -> None:
         try:
-            responses, parameters = read_nanoparticle_file(file, delimiter=",")
+            responses, parameters = read_spcalicle_file(file, delimiter=",")
         except ValueError:
             return
 
@@ -255,7 +255,7 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            detections, labels, regions = nanopart.accumulate_detections(
+            detections, labels, regions = spcal.accumulate_detections(
                 responses, self.limits[2], self.limits[3]
             )
             centers = (regions[:, 0] + regions[:, 1]) // 2
@@ -555,7 +555,7 @@ class ReferenceWidget(InputWidget):
         if self.detections.size == 0 or density is None or diameter is None:
             return
 
-        mass = nanopart.reference_particle_mass(density, diameter)
+        mass = spcal.reference_particle_mass(density, diameter)
         massfraction = (
             float(self.massfraction.text())
             if self.massfraction.hasAcceptableInput()
@@ -571,7 +571,7 @@ class ReferenceWidget(InputWidget):
         uptake = self.options.uptake.baseValue()
         time = self.timeAsSeconds()
         if concentration is not None and uptake is not None and time is not None:
-            efficiency = nanopart.nebulisation_efficiency_from_concentration(
+            efficiency = spcal.nebulisation_efficiency_from_concentration(
                 self.detections.size,
                 concentration=concentration,
                 mass=mass,
@@ -590,7 +590,7 @@ class ReferenceWidget(InputWidget):
             and uptake is not None
             and massfraction is not None
         ):
-            efficiency = nanopart.nebulisation_efficiency_from_mass(
+            efficiency = spcal.nebulisation_efficiency_from_mass(
                 self.detections,
                 dwell=dwell,
                 mass=mass,

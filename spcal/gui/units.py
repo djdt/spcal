@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from nanopart.gui.widgets import ValidColorLineEdit
+from spcal.gui.widgets import ValidColorLineEdit
 
 from typing import Dict, Optional, Tuple, Union
 

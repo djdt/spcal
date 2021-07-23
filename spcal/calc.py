@@ -9,7 +9,7 @@ except ImportError:
     bottleneck_found = False
 
 
-import nanopart
+import spcal
 
 from typing import Dict, Tuple, Union
 
@@ -90,7 +90,7 @@ def calculate_limits(
     elif method == "Highest":
         lpoisson = (
             ub
-            + nanopart.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[
+            + spcal.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[
                 1
             ]
         )
@@ -103,7 +103,7 @@ def calculate_limits(
             ld = ub + sigma * std
             return ((method, sigma), ub, ld, ld)
         else:
-            yc, yd = nanopart.poisson_limits(
+            yc, yd = spcal.poisson_limits(
                 ub, epsilon=epsilon, force_epsilon=force_epsilon
             )
             return ((method, epsilon), ub, ub + yc, ub + yd)
@@ -119,7 +119,7 @@ def calculate_limits(
             ld = ub + sigma * std
             return ((method, sigma), ub, ld, ld)
         else:
-            yc, yd = nanopart.poisson_limits(
+            yc, yd = spcal.poisson_limits(
                 ub, epsilon=epsilon, force_epsilon=force_epsilon
             )
             return ((method, epsilon), ub, ub + yc, ub + yd)
@@ -138,13 +138,13 @@ def results_from_mass_response(
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
     masses = detections * (massresponse / massfraction)
-    sizes = nanopart.particle_size(masses, density=density)
+    sizes = spcal.particle_size(masses, density=density)
 
-    bed = nanopart.particle_size(
+    bed = spcal.particle_size(
         background * (massresponse / massfraction), density=density
     )
     lod_mass = lod * (massresponse / massfraction)
-    lod_size = nanopart.particle_size(lod_mass, density=density)
+    lod_size = spcal.particle_size(lod_mass, density=density)
 
     return {
         "masses": masses,
@@ -172,7 +172,7 @@ def results_from_nebulisation_efficiency(
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
-    masses = nanopart.particle_mass(
+    masses = spcal.particle_mass(
         detections,
         dwell=dwelltime,
         efficiency=efficiency,
@@ -180,17 +180,17 @@ def results_from_nebulisation_efficiency(
         response_factor=response,
         mass_fraction=massfraction,
     )
-    sizes = nanopart.particle_size(masses, density=density)
+    sizes = spcal.particle_size(masses, density=density)
 
     number_concentration = np.around(
-        nanopart.particle_number_concentration(
+        spcal.particle_number_concentration(
             detections.size,
             efficiency=efficiency,
             flowrate=uptake,
             time=time,
         )
     )
-    concentration = nanopart.particle_total_concentration(
+    concentration = spcal.particle_total_concentration(
         masses,
         efficiency=efficiency,
         flowrate=uptake,
@@ -198,8 +198,8 @@ def results_from_nebulisation_efficiency(
     )
 
     ionic = background / response
-    bed = nanopart.particle_size(
-        nanopart.particle_mass(
+    bed = spcal.particle_size(
+        spcal.particle_mass(
             background,
             dwell=dwelltime,
             efficiency=efficiency,
@@ -209,7 +209,7 @@ def results_from_nebulisation_efficiency(
         ),
         density=density,
     )
-    lod_mass = nanopart.particle_mass(
+    lod_mass = spcal.particle_mass(
         lod,
         dwell=dwelltime,
         efficiency=efficiency,
@@ -217,7 +217,7 @@ def results_from_nebulisation_efficiency(
         response_factor=response,
         mass_fraction=massfraction,
     )
-    lod_size = nanopart.particle_size(lod_mass, density=density)
+    lod_size = spcal.particle_size(lod_mass, density=density)
 
     return {
         "masses": masses,

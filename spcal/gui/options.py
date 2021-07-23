@@ -1,7 +1,7 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 
-from nanopart.gui.units import UnitsWidget
-from nanopart.gui.widgets import ValidColorLineEdit
+from spcal.gui.units import UnitsWidget
+from spcal.gui.widgets import ValidColorLineEdit
 
 
 class OptionsWidget(QtWidgets.QWidget):

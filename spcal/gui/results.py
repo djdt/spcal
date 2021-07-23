@@ -4,18 +4,18 @@ from PySide2.QtCharts import QtCharts
 import numpy as np
 from pathlib import Path
 
-from nanopart.calc import (
+from spcal.calc import (
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from nanopart.fit import fit_normal, fit_lognormal
-from nanopart.io import export_nanoparticle_results
+from spcal.fit import fit_normal, fit_lognormal
+from spcal.io import export_spcalicle_results
 
-from nanopart.gui.charts import ParticleHistogram, ParticleChartView
-from nanopart.gui.inputs import SampleWidget, ReferenceWidget
-from nanopart.gui.options import OptionsWidget
-from nanopart.gui.tables import ResultsTable
-from nanopart.gui.units import UnitsWidget
+from spcal.gui.charts import ParticleHistogram, ParticleChartView
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.options import OptionsWidget
+from spcal.gui.tables import ResultsTable
+from spcal.gui.units import UnitsWidget
 
 from typing import Any, Dict, Tuple
 
@@ -185,7 +185,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
-            export_nanoparticle_results(Path(file), self.result)
+            export_spcalicle_results(Path(file), self.result)
 
     def dialogExportImage(self) -> None:
         file, _ = QtWidgets.QFileDialog.getSaveFileName(

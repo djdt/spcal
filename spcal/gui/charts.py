@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
-from nanopart.gui.util import array_to_polygonf
+from spcal.gui.util import array_to_polygonf
 
 from typing import List, Union
 

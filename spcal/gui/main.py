@@ -1,11 +1,11 @@
 from PySide2 import QtWidgets
 
-from nanopart import __version__
+from spcal import __version__
 
-from nanopart.gui.batch import BatchProcessDialog
-from nanopart.gui.options import OptionsWidget
-from nanopart.gui.inputs import SampleWidget, ReferenceWidget
-from nanopart.gui.results import ResultsWidget
+from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.options import OptionsWidget
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.results import ResultsWidget
 
 
 class NanoPartWindow(QtWidgets.QMainWindow):
@@ -81,12 +81,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
     def about(self) -> QtWidgets.QDialog:
         dlg = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
-            "About nanopart",
+            "About spcal",
             (
                 "sp/scICP-MS processing.\n"
                 f"Version {__version__}\n"
                 "Developed by the Atomic Medicine Initiative.\n"
-                "https://github.com/djdt/nanopart"
+                "https://github.com/djdt/spcal"
             ),
             parent=self,
         )

@@ -3,17 +3,17 @@ from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 from pathlib import Path
 
-import nanopart
+import spcal
 
-from nanopart.calc import (
+from spcal.calc import (
     calculate_limits,
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from nanopart.io import read_nanoparticle_file, export_nanoparticle_results
+from spcal.io import read_spcalicle_file, export_spcalicle_results
 
-from nanopart.gui.inputs import SampleWidget, ReferenceWidget
-from nanopart.gui.options import OptionsWidget
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.options import OptionsWidget
 
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -28,7 +28,7 @@ def process_file_detections(
     limit_window: int = None,
     cps_dwelltime: float = None,
 ) -> dict:
-    responses, _ = read_nanoparticle_file(file, delimiter=",")
+    responses, _ = read_spcalicle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
 
     # Convert to counts if required
@@ -52,7 +52,7 @@ def process_file_detections(
     if limits is None:
         raise ValueError("Limit calculations failed for '{file.name}'.")
 
-    detections, labels, regions = nanopart.accumulate_detections(
+    detections, labels, regions = spcal.accumulate_detections(
         responses, limits[2], limits[3]
     )
     background = np.nanmean(responses[labels == 0])
@@ -146,7 +146,7 @@ class ProcessThread(QtCore.QThread):
                 continue
 
             try:
-                export_nanoparticle_results(outfile, result)
+                export_spcalicle_results(outfile, result)
             except ValueError:
                 self.processFailed.emit(infile.name)
                 continue

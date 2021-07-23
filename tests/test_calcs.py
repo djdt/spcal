@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.lib import stride_tricks
-from nanopart import calc
+from spcal import calc
 
 # Force using custom
 calc.bottleneck_found = False
