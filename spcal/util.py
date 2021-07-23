@@ -117,7 +117,7 @@ def cell_concentration(
     masses: Union[float, np.ndarray], diameter: float, molarmass: float
 ) -> Union[float, np.ndarray]:
     """Calculates intracellular concentrations.
-    c (mol/L) = m (kg) / V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3) / M (kg/mol)
+    c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3)) / M (kg/mol)
 
     Args:
         masses: array of material masses (kg)
