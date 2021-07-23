@@ -106,11 +106,25 @@ def atoms_per_particle(
     N = m (kg) * N_A (/mol) / M (kg/mol)
 
     Args:
-        masses: array of particle signals (kg)
+        masses: array of particle masses (kg)
         molarmass: molecular weight (kg/mol)
     """
     Na = 6.02214076e23
     return masses * Na / molarmass
+
+
+def cell_concentration(
+    masses: Union[float, np.ndarray], diameter: float, molarmass: float
+) -> Union[float, np.ndarray]:
+    """Calculates intracellular concentrations.
+    c (mol/L) = m (kg) / V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3) / M (kg/mol)
+
+    Args:
+        masses: array of material masses (kg)
+        diameter: cell diameter (m)
+        molarmass: molecular weight (kg/mol)
+    """
+    return masses / ((4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3) * 1000.0 * molarmass)
 
 
 def nebulisation_efficiency_from_concentration(
@@ -219,13 +233,6 @@ def particle_total_concentration(
     return np.sum(masses) / (efficiency * flowrate * time)
 
 
-def particle_volume(diameter: float) -> float:
-    """Calculate the volume of a particle.
-    V (m^3) = 4.0 / 3.0 * pi * (d (m) / 2) ^ 3
-    """
-    return 4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3
-
-
 def reference_particle_mass(density: float, diameter: float) -> float:
     """Calculates particle mass assusming a spherical particle.
     m (kg) = 4 / 3 * pi * (d (m) / 2) ^ 3 * ρ (kg/m3)
@@ -234,7 +241,7 @@ def reference_particle_mass(density: float, diameter: float) -> float:
         density: reference density (kg/m3)
         diameter: reference diameter (m)
     """
-    return particle_volume(diameter) * density
+    return 4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3 * density
 
 
 # def reference_particle_size(mass_std: float, density_std: float) -> float:

@@ -85,7 +85,8 @@ class ProcessThread(QtCore.QThread):
         infiles: List[Path],
         outfiles: List[Path],
         method: Callable,
-        method_kws: Dict[str, float],
+        method_kws: Dict[str, Optional[float]],
+        cell_kws: Dict[str, Optional[float]],
         trim: Tuple[Optional[int], Optional[int]] = (None, None),
         limit_method: str = "Automatic",
         limit_epsilon: float = 0.5,
@@ -102,6 +103,7 @@ class ProcessThread(QtCore.QThread):
 
         self.method = method
         self.method_kws = method_kws
+        self.cell_kws = cell_kws
 
         self.trim = trim
 
@@ -140,6 +142,21 @@ class ProcessThread(QtCore.QThread):
                         **self.method_kws,
                     )
                 )
+
+                if (
+                    self.cell_kws["celldiameter"] is not None
+                    and self.cell_kws["molarmass"] is not None
+                ):
+                    result["cell_concentrations"] = spcal.cell_concentration(
+                        result["masses"],
+                        diameter=self.cell_kws["celldiameter"],
+                        molarmass=self.cell_kws["molarmass"],
+                    )
+                    result["lod_cell_concentration"] = spcal.cell_concentration(
+                        result["lod_mass"],
+                        diameter=self.cell_kws["celldiameter"],
+                        molarmass=self.cell_kws["molarmass"],
+                    )
 
             except ValueError:
                 self.processFailed.emit(infile.name)
@@ -384,11 +401,17 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             raise ValueError("Unknown method")
 
+        cell_kws = {
+            "celldiameter": self.options.celldiameter.baseValue(),
+            "molarmass": self.sample.molarmass.baseValue(),
+        }
+
         self.thread = ProcessThread(
             infiles,
             outfiles,
             method,
             method_kws,
+            cell_kws=cell_kws,
             trim=(tleft, tright),
             limit_method=limit_method,
             limit_sigma=sigma,

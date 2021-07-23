@@ -46,7 +46,7 @@ def read_nanoparticle_file(
 
 def export_nanoparticle_results(path: Path, result: dict) -> None:
     with path.open("w") as fp:
-        fp.write(f"# NanoPart Export {__version__}\n")
+        fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
         fp.write(f"# Detected particles,{result['detections'].size}\n")
@@ -69,16 +69,13 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
             fp.write(f"#,{','.join(str(s) for s in (result['lod']))},counts\n")
         else:
             fp.write(f"# Limit of detection,{result['lod']},counts\n")
-        if "lod_mass" in result:
-            if isinstance(result["lod_mass"], np.ndarray):
-                fp.write(f"#,{','.join(str(s) for s in (result['lod_mass']))},kg\n")
-            else:
-                fp.write(f"#,{result['lod_mass']},kg\n")
-        if "lod_size" in result:
-            if isinstance(result["lod_size"], np.ndarray):
-                fp.write(f"#,{','.join(str(s) for s in (result['lod_size']))},m\n")
-            else:
-                fp.write(f"#,{result['lod_size']},m\n")
+
+        for key, unit in [("lod_mass", "kg"), ("lod_size", "m"), ("lod_cell_concentration", "mol/L")]:
+            if key in result:
+                if isinstance(result[key], np.ndarray):
+                    fp.write(f"#,{','.join(str(s) for s in (result[key]))},{unit}\n")
+                else:
+                    fp.write(f"#,{result[key]},{unit}\n")
 
         # Concentrations
         if "number_concentration" in result:
@@ -86,14 +83,27 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         if "concentration" in result:
             fp.write(f"# Concentration,{result['concentration']},kg/L\n")
 
-        # Mean sizes
-        fp.write(f"# Mean size,{np.mean(result['sizes'])},m\n")
-        fp.write(f"# Median size,{np.median(result['sizes'])},m\n")
+        # Mean values
+        fp.write(f"# Mean,{np.mean(result['detections'])},counts\n")
+        for key, unit in [("masses", "kg"), ("sizes", "m"), ("cell_concentrations", "mol/L")]:
+            if key in result:
+                fp.write(f"#,{np.mean(result[key])},{unit}\n")
+        # Median values
+        fp.write(f"# Median,{np.median(result['detections'])},counts\n")
+        for key, unit in [("masses", "kg"), ("sizes", "m"), ("cell_concentrations", "mol/L")]:
+            if key in result:
+                fp.write(f"#,{np.median(result[key])},{unit}\n")
 
         # Output data
-        fp.write("Signal (counts),Mass (kg),Size (m)\n")
+        header = "Signal (counts)"
+        data = [result['detections']]
+        for key, label in [("masses", "Mass (kg)"), ("sizes", "Size (m)"), ("cell_concentrations", "Conc. (mol/L)")]:
+            if key in result:
+                header += "," + label
+                data.append(result[key])
+        fp.write(header + "\n")
         np.savetxt(
             fp,
-            np.stack((result["detections"], result["masses"], result["sizes"]), axis=1),
+            np.stack(data, axis=1),
             delimiter=",",
         )

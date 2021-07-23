@@ -408,13 +408,13 @@ class SampleWidget(InputWidget):
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
-        self.element.setToolTip("Input formula for density and massfraction.")
+        self.element.setToolTip("Input formula for density, molarmass and massfraction.")
         self.density.setToolTip("Sample particle density.")
         self.molarmass.setToolTip(
-            "Molecular weight, used to calcullate # atoms per particle."
+            "Molecular weight, required to calculate intracellular concentrations."
         )
         self.massfraction.setToolTip(
-            "Ratio of the mass of the particle to the analyte."
+            "Ratio of the mass of the analyte over the mass of the particle."
         )
 
         self.density.valueChanged.connect(self.optionsChanged)

@@ -10,7 +10,7 @@ from spcal.calc import (
 )
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
-from spcal.util import particle_volume
+from spcal.util import cell_concentration
 
 from spcal.gui.charts import ParticleHistogram, ParticleChartView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
@@ -33,7 +33,15 @@ class ResultsWidget(QtWidgets.QWidget):
         "g": 1e-3,
         "kg": 1.0,
     }
-    conc_units = {k + "/L": v for k, v in mass_units.items()}
+    conc_units = {
+        "amol/L": 1e-18,
+        "fmol/L": 1e-15,
+        "pmol/L": 1e-12,
+        "nmol/L": 1e-9,
+        "μmol/L": 1e-6,
+        "mmol/L": 1e-3,
+        "mol/L": 1,
+    }
 
     def __init__(
         self,
@@ -86,7 +94,27 @@ class ResultsWidget(QtWidgets.QWidget):
         self.fitmethod.currentIndexChanged.connect(self.updateChart)
 
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (kg/L)"])
+        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
+        self.mode.setItemData(
+            0,
+            "Accumulated detection singal.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.mode.setItemData(
+            1,
+            "Particle mass, requires calibration.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.mode.setItemData(
+            2,
+            "Particle size, requires calibration.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.mode.setItemData(
+            3,
+            "Intracellular concentration, requires cell diameter and analyte molarmass.",
+            QtCore.Qt.ToolTipRole,
+        )
         self.mode.setCurrentText("Size (m)")
         self.mode.currentIndexChanged.connect(self.updateTexts)
         self.mode.currentIndexChanged.connect(self.updateTable)
@@ -248,14 +276,10 @@ class ResultsWidget(QtWidgets.QWidget):
             data, mult, unit = self.asBestUnit(self.result["sizes"])
             lod = self.result["lod_size"] / mult
             self.chart.xaxis.setTitleText(f"Size ({unit}m)")
-        elif mode == "Conc. (kg/L)":
-            diameter = self.options.celldiameter.baseValue()
-            if diameter is None:
-                raise ValueError("Expected diameter is required for concentration.")
-            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
-            data, mult, unit = self.asBestUnit(self.result["masses"] / volume, "k")
-            lod = self.result["lod_mass"] / mult / volume
-            self.chart.xaxis.setTitleText(f"Conc. ({unit}g/L)")
+        elif mode == "Conc. (mol/L)":
+            data, mult, unit = self.asBestUnit(self.result["cell_concentrations"], "")
+            lod = self.result["lod_cell_concentration"] / mult
+            self.chart.xaxis.setTitleText(f"Conc. ({unit}mol/L)")
         else:
             raise ValueError(f"Unknown mode '{mode}'.")
 
@@ -276,6 +300,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.chart.setData(hist, bins, xmin=0.0)
 
+        print(np.mean(data), lod_max)
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
 
         self.updateChartFit(hist, bins, data.size)
@@ -337,17 +362,13 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.mean(self.result["lod_size"]),
                 np.std(self.result["sizes"]),
             )
-        elif mode == "Conc. (kg/L)":
-            diameter = self.options.celldiameter.baseValue()
-            if diameter is None:
-                raise ValueError("Expected diameter is required for concentration.")
+        elif mode == "Conc. (mol/L)":
             units = self.conc_units
-            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
             mean, median, lod, std = (
-                np.mean(self.result["masses"]) / volume,
-                np.median(self.result["masses"]) / volume,
-                np.mean(self.result["lod_mass"]) / volume,
-                np.std(self.result["masses"]) / volume,
+                np.mean(self.result["cell_concentrations"]),
+                np.median(self.result["cell_concentrations"]),
+                np.mean(self.result["lod_cell_concentration"]),
+                np.std(self.result["cell_concentrations"]),
             )
         else:
             raise ValueError(f"Unknown mode {mode}.")
@@ -391,16 +412,12 @@ class ResultsWidget(QtWidgets.QWidget):
             data = self.result["detections"]
         elif mode == "Size (m)":
             data = self.result["sizes"]
-        elif mode == "Conc. (kg/L)":
-            diameter = self.options.celldiameter.baseValue()
-            if diameter is None:
-                raise ValueError("Expected diameter is required for concentration.")
-            volume = particle_volume(diameter) / 1000.0  # convert m3 to liters
-            data = self.result["masses"] / volume
+        elif mode == "Conc. (mol/L)":
+            data = self.result["cell_concentrations"]
         else:
             raise ValueError(f"Unknown mode '{mode}'.")
         self.table.model().beginResetModel()
-        self.table.model().array = data[:, None]
+        self.table.model().array = data[:, None]  # type: ignore
         self.table.model().endResetModel()
 
     def updateResults(self) -> None:
@@ -423,11 +440,6 @@ class ResultsWidget(QtWidgets.QWidget):
             self.mode.setEnabled(False)
         else:
             self.mode.setEnabled(True)
-            concenabled = self.options.celldiameter.baseValue() is not None
-            concindex = self.mode.findText("Conc. (kg/L)")
-            self.mode.model().item(concindex).setEnabled(concenabled)
-            if not concenabled and self.mode.currentIndex() == concindex:
-                self.mode.setCurrentText("Signal")
 
             if method in ["Manual Input", "Reference Particle"]:
                 if method == "Manual Input":
@@ -472,10 +484,34 @@ class ResultsWidget(QtWidgets.QWidget):
                     )
                 )
 
-            if self.options.celldiameter.hasAcceptableInput():
-                self.result["sizes"] /= np.mean(self.result["sizes"])
-                self.result["sizes"] *= self.options.celldiameter.baseValue()
-                self.result["lod_size"] *= self.options.celldiameter.baseValue()
+            # Cell inputs
+            concindex = self.mode.findText("Conc. (mol/L)")
+            celldiameter = self.options.celldiameter.baseValue()
+            molarmass = self.sample.molarmass.baseValue()
+            if celldiameter is not None:  # Scale sizes to hypothesised
+                scale = celldiameter / np.mean(self.result["sizes"])
+                self.result["sizes"] *= scale
+                self.result["lod_size"] *= scale
+
+            if (
+                celldiameter is not None and molarmass is not None
+            ):  # Calculate the intracellular concetrations
+                self.mode.model().item(concindex).setEnabled(True)
+
+                self.result["cell_concentrations"] = cell_concentration(
+                    self.result["masses"],
+                    diameter=celldiameter,
+                    molarmass=molarmass,
+                )
+                self.result["lod_cell_concentration"] = cell_concentration(
+                    self.result["lod_mass"],
+                    diameter=celldiameter,
+                    molarmass=molarmass,
+                )
+            else:
+                self.mode.model().item(concindex).setEnabled(False)
+                if self.mode.currentIndex() == concindex:
+                    self.mode.setCurrentText("Signal")
 
         self.updateTexts()
         self.updateTable()
