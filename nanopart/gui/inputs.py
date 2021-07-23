@@ -518,7 +518,7 @@ class ReferenceWidget(InputWidget):
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.efficiency = ValidColorLineEdit()
+        self.efficiency = QtWidgets.QLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
         self.efficiency.setReadOnly(True)
 
@@ -537,7 +537,7 @@ class ReferenceWidget(InputWidget):
         )
         self.massresponse.setReadOnly(True)
 
-        self.outputs.layout().addRow("Neb. Efficiency:", self.efficiency)
+        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
         self.options.dwelltime.valueChanged.connect(self.recalculate)
