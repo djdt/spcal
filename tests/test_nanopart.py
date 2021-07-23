@@ -131,9 +131,12 @@ def test_equations():
     )
 
 
-def test_determined_sizes():
+def test_standard_sizes():
     data = np.load(Path(__file__).parent.joinpath("data/agilent_au_data.npz"))
+    # Data for 15 and 50 nm standards, 
+    # Reported error is approx. +- 10 %, test is 1% and 0.5 nm from mean and median
 
+    # Determined experimentally
     uptake = 1.567e-6
     dwelltime = 1e-4
     response = 16.08e9
