@@ -51,7 +51,9 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.efficiency_method = QtWidgets.QComboBox()
-        self.efficiency_method.addItems(["Manual Input", "Reference Particle", "Mass Response (None)"])
+        self.efficiency_method.addItems(
+            ["Manual Input", "Reference Particle", "Mass Response (None)"]
+        )
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
         self.efficiency_method.setItemData(
             0,
@@ -161,7 +163,7 @@ class OptionsWidget(QtWidgets.QWidget):
             invalid_color=QtGui.QColor(255, 255, 172),
         )
         self.celldiameter.setToolTip(
-            "Calculate intracellular concentrations using the hypothesised diameter."
+            "Sets the mean particle size and calculates intracellular concentrations."
         )
 
         self.misc_inputs = QtWidgets.QGroupBox("Cell Options")

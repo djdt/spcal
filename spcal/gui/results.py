@@ -472,9 +472,10 @@ class ResultsWidget(QtWidgets.QWidget):
                     )
                 )
 
-            # if self.options.diameter.hasAcceptableInput():
-            #     self.result["sizes"] /= np.mean(self.result["sizes"])
-            #     self.result["sizes"] *= self.options.diameter.baseValue()
+            if self.options.celldiameter.hasAcceptableInput():
+                self.result["sizes"] /= np.mean(self.result["sizes"])
+                self.result["sizes"] *= self.options.celldiameter.baseValue()
+                self.result["lod_size"] *= self.options.celldiameter.baseValue()
 
         self.updateTexts()
         self.updateTable()
