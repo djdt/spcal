@@ -141,7 +141,7 @@ def nebulisation_efficiency_from_concentration(
         time: total aquisition time (s)
     """
 
-    return (mass * (count * flowrate * time)) / concentration
+    return (mass * count) / (flowrate * time * concentration)
 
 
 def nebulisation_efficiency_from_mass(

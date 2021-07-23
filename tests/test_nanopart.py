@@ -41,10 +41,17 @@ def test_equations():
     # N = m (kg) * N_A (/mol) / M (kg/mol)
     assert np.all(
         np.isclose(
-            spcal.atoms_per_particle(
-                masses=np.array([1.0, 2.0]), molarmass=6.0221e23
-            ),
+            spcal.atoms_per_particle(masses=np.array([1.0, 2.0]), molarmass=6.0221e23),
             [1.0, 2.0],
+        )
+    )
+    # c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3)) / M (kg/mol)
+    assert np.all(
+        np.isclose(
+            spcal.cell_concentration(
+                np.array([2.0 * np.pi, 4.0 * np.pi]), diameter=2e-3, molarmass=1e4
+            ),
+            [150.0, 300.0],
         )
     )
     # η = (m (kg) * N) / (c (kg/L) * V (L/s) * t (s))
@@ -107,4 +114,6 @@ def test_equations():
     )
 
     # m (kg) = 4.0 / (3.0 * pi) * (d (m) / 2) ^ 3 * ρ (kg/m3)
-    assert np.isclose(spcal.reference_particle_mass(diameter=0.2, density=750.0 / np.pi), 1.0)
+    assert np.isclose(
+        spcal.reference_particle_mass(diameter=0.2, density=750.0 / np.pi), 1.0
+    )
