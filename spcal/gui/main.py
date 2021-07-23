@@ -11,7 +11,7 @@ from spcal.gui.results import ResultsWidget
 class NanoPartWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("NanoPart")
+        self.setWindowTitle("SPCal")
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
@@ -81,7 +81,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
     def about(self) -> QtWidgets.QDialog:
         dlg = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
-            "About spcal",
+            "About SPCal",
             (
                 "sp/scICP-MS processing.\n"
                 f"Version {__version__}\n"
