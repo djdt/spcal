@@ -222,6 +222,8 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.dwelltime.hasAcceptableInput(),
                 ]
             )
+        else:
+            raise ValueError(f"Unknown method {method}.")
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
