@@ -22,7 +22,7 @@ from typing import Any, Dict, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
-    signal_units = {"cnt": 1.0}
+    signal_units = {"counts": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
     mass_units = {
         "ag": 1e-21,
@@ -300,7 +300,6 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.chart.setData(hist, bins, xmin=0.0)
 
-        print(np.mean(data), lod_max)
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
 
         self.updateChartFit(hist, bins, data.size)
