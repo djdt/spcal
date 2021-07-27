@@ -30,13 +30,9 @@ def test_moving_std():
     assert np.all(np.isclose(np.std(v, axis=1), calc.moving_std(x, 10)))
 
 
-def test_calculate_limits():
-    x = np.random.poisson(size=100, lam=3.0)
-
-    limits = calc.calculate_limits(x, method="Automatic", sigma=5.0, epsilon=0.5)
-    assert limits[0][0] == "Poisson"
-
-    x = np.random.poisson(size=100, lam=60.0)
-
-    limits = calc.calculate_limits(x, method="Automatic", sigma=5.0, epsilon=0.5)
-    assert limits[0][0] == "Gaussian"
+def test_calculate_limits_automatic():
+    np.random.seed(872389)
+    for lam in np.linspace(1.0, 100.0, 25):
+        x = np.random.poisson(size=100, lam=lam)
+        limits = calc.calculate_limits(x, method="Automatic", sigma=5.0, epsilon=0.5)
+        assert limits[0][0] == "Poisson" if lam < 10.0 else "Gaussian"
