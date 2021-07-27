@@ -389,7 +389,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "response": self.options.response.baseValue(),
             }
 
-        elif method == "Mass Response (None)":
+        elif method == "Mass Response":
 
             method = results_from_mass_response
             method_kws = {

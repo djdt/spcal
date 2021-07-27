@@ -468,7 +468,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         time=time,
                     )
                 )
-            elif method == "Mass Response (None)":
+            elif method == "Mass Response":
                 density = self.sample.density.baseValue()
                 massfraction = float(self.sample.massfraction.text())
                 massresponse = self.reference.massresponse.baseValue()

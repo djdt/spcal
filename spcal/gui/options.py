@@ -52,7 +52,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.efficiency_method = QtWidgets.QComboBox()
         self.efficiency_method.addItems(
-            ["Manual Input", "Reference Particle", "Mass Response (None)"]
+            ["Manual Input", "Reference Particle", "Mass Response"]
         )
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
         self.efficiency_method.setItemData(
@@ -153,7 +153,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
-        self.limit_inputs.layout().addRow("LOD method:", self.method)
+        self.limit_inputs.layout().addRow("Filter method:", self.method)
         self.limit_inputs.layout().addRow("Epsilon:", layout_epsilon)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
 
@@ -189,7 +189,7 @@ class OptionsWidget(QtWidgets.QWidget):
             self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
-        elif method == "Mass Response (None)":
+        elif method == "Mass Response":
             self.response.setEnabled(False)
             self.uptake.setEnabled(False)
             self.efficiency.setEnabled(False)
@@ -218,7 +218,7 @@ class OptionsWidget(QtWidgets.QWidget):
                     self.uptake.hasAcceptableInput(),
                 ]
             )
-        elif method == "Mass Response (None)":
+        elif method == "Mass Response":
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
