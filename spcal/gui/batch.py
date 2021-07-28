@@ -55,8 +55,8 @@ def process_file_detections(
     detections, labels, regions = spcal.accumulate_detections(
         responses, limits[2], limits[3]
     )
-    background = np.nanmean(responses[labels == 0])
-    background_std = np.nanstd(responses[labels == 0])
+    background = np.mean(responses[labels == 0])
+    background_std = np.std(responses[labels == 0])
 
     centers = (regions[:, 0] + regions[:, 1]) // 2
     values = np.linspace(0, responses.size, 3 + 1)

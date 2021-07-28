@@ -265,8 +265,8 @@ class InputWidget(QtWidgets.QWidget):
 
             self.detections = detections
             self.detections_std = np.std(np.diff(indicies))
-            self.background = np.nanmean(responses[labels == 0])
-            self.background_std = np.nanstd(responses[labels == 0])
+            self.background = np.mean(responses[labels == 0])
+            self.background_std = np.std(responses[labels == 0])
             lod = np.mean(self.limits[3])  # + self.background
 
             self.count.setText(f"{detections.size} ± {self.detections_std:.1f}")
