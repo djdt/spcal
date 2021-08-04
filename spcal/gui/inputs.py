@@ -255,11 +255,11 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            detections, labels, _ = spcal.accumulate_detections(
+            detections, labels, regions = spcal.accumulate_detections(
                 responses, self.limits[2], self.limits[3]
             )
-            # centers = (regions[:, 0] + regions[:, 1]) // 2
-            # self.centers = centers
+            centers = (regions[:, 0] + regions[:, 1]) // 2
+            self.centers = centers
             # values = np.linspace(0, responses.size, 3 + 1)
             # indicies = np.searchsorted(self.centers, values, side="left")
 
