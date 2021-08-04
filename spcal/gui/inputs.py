@@ -264,7 +264,7 @@ class InputWidget(QtWidgets.QWidget):
             # indicies = np.searchsorted(self.centers, values, side="left")
 
             self.detections = detections
-            self.detections_std = np.sqrt(detections)  # poisson approximation
+            self.detections_std = np.sqrt(detections.size)  # poisson approximation
             # self.detections_std = np.std(np.diff(indicies)) * 3
             self.background = np.mean(responses[labels == 0])
             self.background_std = np.std(responses[labels == 0])
