@@ -3,12 +3,13 @@ import argparse
 from pathlib import Path
 import sys
 
+from spcal import __version__
 from spcal.gui.main import NanoPartWindow
 
 from typing import List
 
 
-def parse_args(argv: List[str]) -> argparse.Namespace:
+def parse_args(argv: List[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="spcal",
         description="spICP-MS toolkit and visulistion.",
@@ -33,10 +34,13 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return args
 
 
-def main(argv: List[str] = []) -> int:
+def main(argv: List[str] = None) -> int:
     args = parse_args(argv)
 
     app = QtWidgets.QApplication(args.qtargs)
+    app.setApplicationName("SPCal")
+    app.setApplicationVersion(__version__)
+
     win = NanoPartWindow()
     win.show()
 

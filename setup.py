@@ -24,7 +24,7 @@ setup(
     project_urls={
         "Source": "https://gtihub.com/djdt/spcal",
     },
-    packages=find_packages(include=["spcal", "nanpart.*"]),
+    packages=find_packages(include=["spcal", "spcal.*"]),
     install_requires=["numpy", "PySide2", "bottleneck"],
     extras_require={"tests": ["pytest"]},
     entry_points={"console_scripts": ["spcal=spcal.__main__:main"]},
