@@ -284,6 +284,7 @@ class ParticleHistogram(QtCharts.QChart):
         self.series.attachAxis(self.yaxis)
 
         self.set = QtCharts.QBarSet("sizes")
+        self.set.binwidth = 0.0
         self.set.setColor(QtCore.Qt.black)
         self.set.hovered.connect(self.barHovered)
         self.series.append(self.set)
@@ -338,7 +339,7 @@ class ParticleHistogram(QtCharts.QChart):
     ) -> None:
         self.clearVerticalLines()
 
-        for i, value in enumerate(values):
+        for i, _ in enumerate(values):
             line = QtCharts.QLineSeries()
             if pens is not None:
                 line.setPen(pens[i])
@@ -370,6 +371,7 @@ class ParticleHistogram(QtCharts.QChart):
             xmax = bins[-1]
 
         binwidth = bins[1] - bins[0]
+        self.set.binwidth = binwidth
 
         # Pad histogram with zeros to fit xmin, xmax
         _xpad = (int((bins[0] - xmin) / binwidth), int((xmax - bins[-1]) / binwidth))
@@ -401,11 +403,7 @@ class ParticleHistogram(QtCharts.QChart):
     def barHovered(self, state: bool, index: int) -> None:
         self.label_hovered.setVisible(state)
         if state:
-            x = np.round(
-                index * ((self.xaxis.max() - self.xaxis.min()) / self.set.count())
-                + self.xaxis.min(),
-                2,
-            )
+            x = index * self.set.binwidth
             y = self.set.at(index)
             text = f"{x:.4g}, {y:.4g}"
             self.label_hovered.setPlainText(text)
