@@ -14,8 +14,9 @@ def read_nanoparticle_file(
             for line in fp:
                 count = line.count(delimiter)
                 if count < columns:
-                    line += delimiter * (columns - count - 1)
-                yield line
+                    yield delimiter * (columns - count - 1) + line
+                else:
+                    yield line
 
     def read_header_params(path: Path, size: int = 1024) -> Dict:
         with path.open("r") as fp:
@@ -28,14 +29,15 @@ def read_nanoparticle_file(
         path = Path(path)
 
     data = np.genfromtxt(
-        delimited_columns(path, delimiter, 2), delimiter=delimiter, dtype=np.float64
+        delimited_columns(path, delimiter, 2),
+        delimiter=delimiter,
+        usecols=(0, 1),
+        dtype=np.float64,
     )
     parameters = read_header_params(path)
 
-    if np.all(np.isnan(data[:, 1])):  # only one column exists
-        response = data[:, 0]
-    else:  # assume time and response
-        response = data[:, 1]
+    response = data[:, 1]
+    if not np.all(np.isnan(data[:, 0])):  # time and response
         times = data[:, 0][~np.isnan(data[:, 0])]
         parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
 
@@ -70,7 +72,11 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         else:
             fp.write(f"# Limit of detection,{result['lod']},counts\n")
 
-        for key, unit in [("lod_mass", "kg"), ("lod_size", "m"), ("lod_cell_concentration", "mol/L")]:
+        for key, unit in [
+            ("lod_mass", "kg"),
+            ("lod_size", "m"),
+            ("lod_cell_concentration", "mol/L"),
+        ]:
             if key in result:
                 if isinstance(result[key], np.ndarray):
                     fp.write(f"#,{','.join(str(s) for s in (result[key]))},{unit}\n")
@@ -85,19 +91,31 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
 
         # Mean values
         fp.write(f"# Mean,{np.mean(result['detections'])},counts\n")
-        for key, unit in [("masses", "kg"), ("sizes", "m"), ("cell_concentrations", "mol/L")]:
+        for key, unit in [
+            ("masses", "kg"),
+            ("sizes", "m"),
+            ("cell_concentrations", "mol/L"),
+        ]:
             if key in result:
                 fp.write(f"#,{np.mean(result[key])},{unit}\n")
         # Median values
         fp.write(f"# Median,{np.median(result['detections'])},counts\n")
-        for key, unit in [("masses", "kg"), ("sizes", "m"), ("cell_concentrations", "mol/L")]:
+        for key, unit in [
+            ("masses", "kg"),
+            ("sizes", "m"),
+            ("cell_concentrations", "mol/L"),
+        ]:
             if key in result:
                 fp.write(f"#,{np.median(result[key])},{unit}\n")
 
         # Output data
         header = "Signal (counts)"
-        data = [result['detections']]
-        for key, label in [("masses", "Mass (kg)"), ("sizes", "Size (m)"), ("cell_concentrations", "Conc. (mol/L)")]:
+        data = [result["detections"]]
+        for key, label in [
+            ("masses", "Mass (kg)"),
+            ("sizes", "Size (m)"),
+            ("cell_concentrations", "Conc. (mol/L)"),
+        ]:
             if key in result:
                 header += "," + label
                 data.append(result[key])
