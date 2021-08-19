@@ -86,7 +86,7 @@ def calculate_limits(
         ub = np.mean(responses)
 
     if method == "Automatic":
-        method = "Poisson" if ub < 10.0 else "Gaussian"
+        method = "Poisson" if ub < 50.0 else "Gaussian"
     elif method == "Highest":
         lpoisson = (
             ub
