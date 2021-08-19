@@ -212,7 +212,8 @@ class InputWidget(QtWidgets.QWidget):
     def loadFile(self, file: str) -> None:
         try:
             responses, parameters = read_nanoparticle_file(file, delimiter=",")
-        except ValueError:
+        except ValueError as e:
+            QtWidgets.QMessageBox.critical(self, f"Import Failed!", str(e))
             return
 
         self.label_file.setText(Path(file).name)
