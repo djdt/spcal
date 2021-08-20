@@ -15,6 +15,14 @@ from typing import Dict, Tuple, Union
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
+    """Calcultes the rolling mean.
+
+    Uses bottleneck.move_mean if available otherwise np.cumsum.
+
+    Args:
+        x: array
+        n: window size
+    """
     if bottleneck_found:
         return bn.move_mean(x, n)[n - 1 :]
     r = np.cumsum(x)
@@ -23,6 +31,14 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_median(x: np.ndarray, n: int) -> np.ndarray:
+    """Calcultes the rolling median.
+
+    Uses bottleneck.move_median if available otherwise bisect and insort.
+
+    Args:
+        x: array
+        n: window size
+    """
     if bottleneck_found:
         return bn.move_median(x, n)[n - 1 :]
 
@@ -42,6 +58,14 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
+    """Calcultes the rolling standard deviation.
+
+    Uses bottleneck.move_std if available otherwise np.cumsum.
+
+    Args:
+        x: array
+        n: window size
+    """
     if bottleneck_found:
         return bn.move_std(x, n)[n - 1 :]
 
@@ -72,6 +96,26 @@ def calculate_limits(
     Union[float, np.ndarray],
     Union[float, np.ndarray],
 ]:
+    """Calculates limit(s) of detections for input.
+    If `window` is given then rolling filters are used to create limits. The returned values are
+    then arrays the same size as `responses`.
+
+    `method` 'Automatic' will return 'Gaussian' if mean(responses) > 50.0, otherwise 'Poisson'.
+    `method` 'Highest' will return the maximum of 'Gaussian' and 'Poisson'.
+    'Gaussian' is calculated as mean(responses) + `sigma` * std(responses).
+    'Poisson' uses `:func:spcal.poisson_limits`.
+
+    Args:
+        responses: array of signals
+        method: method to use {'Automatic', 'Highest', 'Gaussian', 'Gaussian Median', 'Poisson'}
+        sigma: threshold term for 'Gaussian'
+        epsilon: threshold term for 'Poisson'
+        force_epsilon: always use `epsilon`
+        window: rolling limits
+
+    Returns:
+        (method, threshold), mean signal, limit of criticality, limit of detection
+    """
     if responses is None or responses.size == 0:
         raise ValueError("Responses invalid.")
 
@@ -90,9 +134,7 @@ def calculate_limits(
     elif method == "Highest":
         lpoisson = (
             ub
-            + spcal.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[
-                1
-            ]
+            + spcal.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[1]
         )
         lgaussian = ub + sigma * np.std(responses)
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
@@ -133,6 +175,7 @@ def results_from_mass_response(
     massfraction: float,
     massresponse: float,
 ) -> Dict[str, Union[np.ndarray, float]]:
+    """Calculates the masses, sizes and lods from mass response."""
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
@@ -168,6 +211,7 @@ def results_from_nebulisation_efficiency(
     response: float,
     time: float,
 ) -> Dict[str, Union[np.ndarray, float]]:
+    """Calculates the masses, sizes, background and lods from nebulistation efficiency."""
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
