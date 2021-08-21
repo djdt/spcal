@@ -34,4 +34,4 @@ def test_calculate_limits_automatic():
     for lam in np.linspace(1.0, 100.0, 25):
         x = np.random.poisson(size=1000, lam=lam)
         limits = calc.calculate_limits(x, method="Automatic", sigma=5.0, epsilon=0.5)
-        assert limits[0][0] == ("Poisson" if lam < 10.0 else "Gaussian")
+        assert limits[0][0] == ("Poisson" if lam < 50.0 else "Gaussian")
