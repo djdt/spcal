@@ -9,7 +9,26 @@ from spcal import __version__
 def read_nanoparticle_file(
     path: Union[Path, str], delimiter: str = ","
 ) -> Tuple[np.ndarray, Dict]:
+    """Imports data and parameters from a NP export.
+
+    Data is expected to be a text or csv in a single column of responses, or twos columns:
+    1) aquisition times, 2) responses. If two columns are found then the parameter 'dwelltime'
+    will be set as the mean difference of the first coulmn. If 'cps' is read in the file header
+    then the parameter 'cps' will be set to True.
+
+    Tested with Agilent exports.
+
+    Args:
+        path: path to the file
+        delimiter: text delimiter, default to comma
+
+    Returns:
+        signal
+        dict of any parameters
+    """
+
     def delimited_columns(path: Path, delimiter: str = ",", columns: int = 2):
+        """Ensures at least `columns` columns in data by prepending `delimiter`."""
         with path.open("r") as fp:
             for line in fp:
                 count = line.count(delimiter)
@@ -37,16 +56,41 @@ def read_nanoparticle_file(
     parameters = read_header_params(path)
 
     response = data[:, 1]
+    # Check if data in two column format
     if not np.all(np.isnan(data[:, 0])):  # time and response
         times = data[:, 0][~np.isnan(data[:, 0])]
         parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
 
+    # Remove any invalid rows, e.g. headers
     response = response[~np.isnan(response)]
 
     return response, parameters
 
 
 def export_nanoparticle_results(path: Path, result: dict) -> None:
+    """Writes data from a results dict.
+
+    Valid keys are:
+        'file': original file path
+        'events': the number of aquisition events
+        'detections': array of NP detections
+        'detections_std': stddev of detection count
+        'limit_method': method used to calculate LOD, (str, float)
+        'limit_window': window size used for thresholding
+        'background': mean background (counts)
+        'background_size': background equivilent diameter (m)
+        'background_concentration': iconic background (kg/L)
+        'background_std': stddev of background (counts)
+        'lod': value or array of {min, max, mean, median} limits of detection (counts)
+        'lod_mass': lod in (kg)
+        'lod_size': lod in (m)
+        'lod_cell_concentration': lod in (mol/L)
+        'number_concentration': NP concentration (#/L)
+        'concentration': NP concentration (kg/L)
+        'masses': NP mass array (kg)
+        'sizes': NP size array (m)
+        'cell_concentrations': intracellular concentrations (mol/L)
+        """
     with path.open("w") as fp:
         fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
