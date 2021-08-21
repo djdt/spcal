@@ -15,9 +15,9 @@ from typing import Dict, Tuple, Union
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
-    """Calcultes the rolling mean.
+    """Calculates the rolling mean.
 
-    Uses bottleneck.move_mean if available otherwise np.cumsum.
+    Uses bottleneck.move_mean if available otherwise np.cumsum based algorithm.
 
     Args:
         x: array
@@ -31,9 +31,9 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_median(x: np.ndarray, n: int) -> np.ndarray:
-    """Calcultes the rolling median.
+    """Calculates the rolling median.
 
-    Uses bottleneck.move_median if available otherwise bisect and insort.
+    Uses bottleneck.move_median if available otherwise sort based algorithm.
 
     Args:
         x: array
@@ -58,9 +58,9 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def moving_std(x: np.ndarray, n: int) -> np.ndarray:
-    """Calcultes the rolling standard deviation.
+    """Calculates the rolling standard deviation.
 
-    Uses bottleneck.move_std if available otherwise np.cumsum.
+    Uses bottleneck.move_std if available otherwise np.cumsum based algorithm.
 
     Args:
         x: array
@@ -97,6 +97,7 @@ def calculate_limits(
     Union[float, np.ndarray],
 ]:
     """Calculates limit(s) of detections for input.
+
     If `window` is given then rolling filters are used to create limits. The returned values are
     then arrays the same size as `responses`.
 
@@ -175,7 +176,22 @@ def results_from_mass_response(
     massfraction: float,
     massresponse: float,
 ) -> Dict[str, Union[np.ndarray, float]]:
-    """Calculates the masses, sizes and lods from mass response."""
+    """Calculates the masses, sizes and lods from mass response.
+
+    All values are in SI units.
+    The `lod` should be calculated by `:func:spcal.calculate_limits`.
+
+    Args:
+        detections: array of summed signals
+        background: background mean
+        lod: limit of detection(s)
+        density: of NP (kg/m3)
+        massfraction: of NP
+        massresponse: of a reference material (kg/count)
+
+    Returns:
+        dict of results
+    """
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
@@ -211,7 +227,26 @@ def results_from_nebulisation_efficiency(
     response: float,
     time: float,
 ) -> Dict[str, Union[np.ndarray, float]]:
-    """Calculates the masses, sizes, background and lods from nebulistation efficiency."""
+    """Calculates the masses, sizes, background and lods from transport efficiency.
+
+    All values are in SI units.
+    The `lod` should be calculated by `:func:spcal.calculate_limits`.
+
+    Args:
+        detections: array of summed signals
+        background: background mean
+        lod: limit of detection(s)
+        density: of NP (kg/m3)
+        dwelltime: quadrupole dwell time (s)
+        efficiency: transport efficiency
+        massfraction: of NP
+        uptake: sample flow rate (L/s)
+        response: of an ionic standard (count/(kg/L))
+        time: total aquisition time (s)
+
+    Returns:
+        dict of results
+    """
 
     if isinstance(lod, np.ndarray):
         lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
