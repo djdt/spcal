@@ -259,8 +259,17 @@ class InputWidget(QtWidgets.QWidget):
             detections, labels, regions = spcal.accumulate_detections(
                 responses, self.limits[2], self.limits[3]
             )
-            centers = (regions[:, 0] + regions[:, 1]) // 2
-            self.centers = centers
+            # Calculate the maximum point in peak
+            widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+            # peak indicies for max width
+            indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+            indicies = np.clip(indicies, 0, responses.size - 1)  # limit to arrays size
+            # limit to peak width
+            indicies = np.where(
+                indicies - regions[:, 0] < widths, indicies, regions[:, 1]
+            )
+            self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
+
             # values = np.linspace(0, responses.size, 3 + 1)
             # indicies = np.searchsorted(self.centers, values, side="left")
 
@@ -410,7 +419,9 @@ class SampleWidget(InputWidget):
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
-        self.element.setToolTip("Input formula for density, molarmass and massfraction.")
+        self.element.setToolTip(
+            "Input formula for density, molarmass and massfraction."
+        )
         self.density.setToolTip("Sample particle density.")
         self.molarmass.setToolTip(
             "Molecular weight, required to calculate intracellular concentrations."
