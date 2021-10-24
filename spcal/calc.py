@@ -151,7 +151,7 @@ def calculate_limits(
             )
             return ((method, epsilon), ub, ub + yc, ub + yd)
     else:
-        pad = np.pad(responses, [window // 2, window // 2], mode="edge")
+        pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
         if "Median" in method:
             ub = moving_median(pad, window)[: responses.size]
         else:
