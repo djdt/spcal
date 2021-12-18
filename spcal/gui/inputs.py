@@ -259,25 +259,25 @@ class InputWidget(QtWidgets.QWidget):
             detections, labels, regions = spcal.accumulate_detections(
                 responses, self.limits[2], self.limits[3]
             )
-            # Calculate the maximum point in peak
-            widths = regions[:, 1] - regions[:, 0]  # Width of each peak
-            # peak indicies for max width
-            indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
-            indicies = np.clip(indicies, 0, responses.size - 1)  # limit to arrays size
-            # limit to peak width
-            indicies = np.where(
-                indicies - regions[:, 0] < widths, indicies, regions[:, 1]
-            )
-            self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
-
-            # values = np.linspace(0, responses.size, 3 + 1)
-            # indicies = np.searchsorted(self.centers, values, side="left")
+            if detections.size == 0:  # No detections = no centers
+                self.centers = np.array([], dtype=int)
+            else:
+                # Calculate the maximum point in peak
+                widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+                # peak indicies for max width
+                indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+                indicies = np.clip(indicies, 0, responses.size - 1)  # limit to arrays size
+                # limit to peak width
+                indicies = np.where(
+                    indicies - regions[:, 0] < widths, indicies, regions[:, 1]
+                )
+                self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
 
             self.detections = detections
             self.detections_std = np.sqrt(detections.size)  # poisson approximation
-            # self.detections_std = np.std(np.diff(indicies)) * 3
             self.background = np.mean(responses[labels == 0])
             self.background_std = np.std(responses[labels == 0])
+
             lod = np.mean(self.limits[3])  # + self.background
 
             self.count.setText(f"{detections.size} ± {self.detections_std:.1f}")
