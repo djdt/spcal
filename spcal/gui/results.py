@@ -289,14 +289,17 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             lod_min, lod_max = lod, lod
 
-        bins = np.histogram_bin_edges(data, bins=self.nbins)
+        # TODO option for choosing percentile
+        hist_data = data[data < np.percentile(data, 98)]
+
+        bins = np.histogram_bin_edges(hist_data, bins=self.nbins)
         if len(bins) - 1 < 16:
-            bins = np.histogram_bin_edges(data, bins=16)
+            bins = np.histogram_bin_edges(hist_data, bins=16)
         elif len(bins) - 1 > 128:
-            bins = np.histogram_bin_edges(data, bins=128)
+            bins = np.histogram_bin_edges(hist_data, bins=128)
 
         hist, _ = np.histogram(
-            data, bins=bins, range=(data.min(), np.percentile(data, 99.9))
+            hist_data, bins=bins
         )
         self.chart.setData(hist, bins, xmin=0.0)
 
