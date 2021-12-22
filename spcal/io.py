@@ -73,9 +73,10 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
     Valid keys are:
         'file': original file path
         'events': the number of aquisition events
+        'inputs': dictionary of inputs in SI units
         'detections': array of NP detections
         'detections_std': stddev of detection count
-        'limit_method': method used to calculate LOD, (str, float)
+        'limit_method': method used to calculate LOD and epsilon/sigma, (str, float)
         'limit_window': window size used for thresholding
         'background': mean background (counts)
         'background_size': background equivilent diameter (m)
@@ -95,6 +96,11 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
+
+        fp.write(f"# Options and inputs\n")
+        for k, v in result["inputs"].items():
+            fp.write(f'#,{k.replace("_", " ").capitalize()},{v}\n')
+
         fp.write(f"# Detected particles,{result['detections'].size}\n")
         fp.write(f"# Detection stddev,{result['detections_std']}\n")
         fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")

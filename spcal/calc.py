@@ -11,7 +11,7 @@ except ImportError:
 
 import spcal
 
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -175,7 +175,7 @@ def results_from_mass_response(
     density: float,
     massfraction: float,
     massresponse: float,
-) -> Dict[str, Union[np.ndarray, float]]:
+) -> dict:
     """Calculates the masses, sizes and lods from mass response.
 
     All values are in SI units.
@@ -226,7 +226,7 @@ def results_from_nebulisation_efficiency(
     uptake: float,
     response: float,
     time: float,
-) -> Dict[str, Union[np.ndarray, float]]:
+) -> dict:
     """Calculates the masses, sizes, background and lods from transport efficiency.
 
     All values are in SI units.
