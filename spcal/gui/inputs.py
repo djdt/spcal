@@ -312,17 +312,24 @@ class InputWidget(QtWidgets.QWidget):
         )
 
         if responses is not None:
-            try:
-                self.limits = calculate_limits(
-                    responses,
-                    method,
-                    sigma,
-                    epsilon,
-                    force_epsilon=self.options.check_force_epsilon.isChecked(),
-                    window=window_size,
-                )
-            except ValueError:
-                self.limits = None
+            if method == "Manual Input":
+                try:
+                    limit = float(self.options.manual.text())
+                    self.limits = ("Manual Input", limit), np.mean(responses), limit, limit
+                except ValueError:
+                    self.limits = None
+            else:
+                try:
+                    self.limits = calculate_limits(
+                        responses,
+                        method,
+                        sigma,
+                        epsilon,
+                        force_epsilon=self.options.check_force_epsilon.isChecked(),
+                        window=window_size,
+                    )
+                except ValueError:
+                    self.limits = None
         else:
             self.limits = None
 
