@@ -39,13 +39,6 @@ class InputWidget(QtWidgets.QWidget):
         self.limitsChanged.connect(self.requestRedraw)
 
         self.options = options
-        self.options.dwelltime.valueChanged.connect(self.updateLimits)
-        self.options.method.currentTextChanged.connect(self.updateLimits)
-        self.options.window_size.editingFinished.connect(self.updateLimits)
-        self.options.check_use_window.toggled.connect(self.updateLimits)
-        self.options.epsilon.editingFinished.connect(self.updateLimits)
-        self.options.sigma.editingFinished.connect(self.updateLimits)
-        self.options.check_force_epsilon.toggled.connect(self.updateLimits)
 
         self.background = 0.0
         self.background_std = 0.0
@@ -284,7 +277,12 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText(
                 f"{self.background:.4g} ± {self.background_std:.4g}"
             )
-            symbol = "ε" if self.limits[0][0] == "Poisson" else "σ"
+            if self.limits[0][0] == "Poisson":
+                symbol = "ε"
+            elif self.limits[0][0] == "Manual Input":
+                symbol = "t"
+            else:
+                symbol = "σ"
             self.lod_count.setText(
                 f"{lod:.4g} ({self.limits[0][0]}, {symbol}={self.limits[0][1]:.2g})"
             )

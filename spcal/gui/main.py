@@ -27,6 +27,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.reference.optionsChanged.connect(self.onInputsChanged)
         self.reference.detectionsChanged.connect(self.onInputsChanged)
 
+        self.options.limitOptionsChanged.connect(self.sample.updateLimits)
+        self.options.limitOptionsChanged.connect(self.reference.updateLimits)
+
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")

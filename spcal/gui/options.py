@@ -130,8 +130,6 @@ class OptionsWidget(QtWidgets.QWidget):
             "Use a manually defined limit for filtering.",
             QtCore.Qt.ToolTipRole,
         )
-        self.method.currentTextChanged.connect(self.limitMethodChanged)
-        self.method.currentTextChanged.connect(self.limitOptionsChanged)
 
         self.epsilon = QtWidgets.QLineEdit("0.5")
         self.epsilon.setPlaceholderText("0.5")
@@ -152,6 +150,14 @@ class OptionsWidget(QtWidgets.QWidget):
         self.manual.setEnabled(False)
         self.manual.setValidator(QtGui.QDoubleValidator(1e-9, 1e9, 2))
         self.manual.setToolTip("Limit used when method is 'Manual Input'.")
+
+        # These options will change the limits
+        self.dwelltime.valueChanged.connect(self.limitOptionsChanged)  # if sample in CPS
+        self.method.currentTextChanged.connect(self.limitMethodChanged)
+        self.method.currentTextChanged.connect(self.limitOptionsChanged)
+
+        self.window_size.editingFinished.connect(self.limitOptionsChanged)
+        self.check_use_window.toggled.connect(self.limitOptionsChanged)
 
         self.epsilon.textChanged.connect(self.limitOptionsChanged)
         self.sigma.textChanged.connect(self.limitOptionsChanged)
