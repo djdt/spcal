@@ -154,6 +154,7 @@ class ProcessThread(QtCore.QThread):
                         **self.method_kws,
                     )
                 )
+                result["inputs"] = {k: v for k, v in self.method_kws.items()}
 
                 if (
                     self.cell_kws["celldiameter"] is not None
@@ -169,6 +170,7 @@ class ProcessThread(QtCore.QThread):
                         diameter=self.cell_kws["celldiameter"],
                         molarmass=self.cell_kws["molarmass"],
                     )
+                    result["inputs"].update(self.cell_kws)
 
             except ValueError:
                 self.processFailed.emit(infile.name)
