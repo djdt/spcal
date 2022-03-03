@@ -127,6 +127,13 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
 
+        self.poisson_k = QtWidgets.QLineEdit("4.65")
+        self.poisson_k.setPlaceholderText("4.65")
+        self.poisson_k.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
+        self.poisson_k.setToolTip(
+            "Z?. "
+            "Default of 0.5 maintains 0.05 alpha / beta."
+        )
         self.epsilon = QtWidgets.QLineEdit("0.5")
         self.epsilon.setPlaceholderText("0.5")
         self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))

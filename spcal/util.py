@@ -1,4 +1,5 @@
 import numpy as np
+from statistics import NormalDist
 
 from typing import Tuple, Union
 
@@ -59,17 +60,22 @@ def accumulate_detections(
 
 
 def poisson_limits(
-    ub: np.ndarray,
+    ub: Union[float, np.ndarray],
+    alpha: float = 0.05,
+    beta: float = 0.05,
     epsilon: float = 0.5,
     force_epsilon: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calulate Yc and Yd for mean `ub`.
 
+    Uses a false positive / negative rate of 'alpha' and 'beta'.
     If `ub` if lower than 5.0, the correction factor `epsilon` is added to `ub`.
     Lc and Ld can be calculated by adding `ub` to `Yc` and `Yd`.
 
     Args:
         ub: mean of background
+        alpha: false positive rate
+        beta: false negative rate
         epsilon: low `ub` correct factor
         force_epsilon: always use `epsilon`
 
@@ -86,13 +92,18 @@ def poisson_limits(
             J Radioanal Nucl Chem 276, 285–297 (2008).
             https://doi.org/10.1007/s10967-008-0501-5
     """
+    z_a = NormalDist().inv_cdf((1.0 - alpha))
+    z_b = NormalDist().inv_cdf((1.0 - beta))
+
     # 5 counts limit to maintain 0.05 alpha / beta (Currie 2008)
     if force_epsilon:
         ub = ub + epsilon
     else:
         ub = np.where(ub < 5.0, ub + epsilon, ub)
+
     # Yc and Yd for paired distribution (Currie 1969)
-    return 2.33 * np.sqrt(ub), 2.71 + 4.65 * np.sqrt(ub)
+    Yc = z_a * np.sqrt(2.0 * ub)
+    return Yc, np.square(z_b) + 2.0 * Yc
 
 
 # Particle functions
