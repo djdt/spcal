@@ -53,9 +53,9 @@ def formula_a(
 ) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
     """Calculates Sc and Sd for net background 'Nb'.
 
-    Uses the equations from the MARLAP manual, 20.54, 20.74.
+    Uses the equations from the MARLAP manual, 20.48, 20.73.
     Reccomended for mean backgrounds > 100.
-    Sc equivilent to currie() if t_sample = t_blank.
+    Sc equivilent to 'currie(ub=Nb)' if t_sample = t_blank.
 
     Args:
         nb: mean of background
@@ -67,10 +67,6 @@ def formula_a(
         Sd, minimum detection net value
 
     References:
-        Currie, L.A. On the detection of rare, and moderately rare, nuclear events.
-            J Radioanal Nucl Chem 276, 285–297 (2008).
-            https://doi.org/10.1007/s10967-008-0501-5
-
         United States Environmental Protection Agency,
             MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
     """
@@ -80,6 +76,43 @@ def formula_a(
     tr = t_sample / t_blank
 
     Sc = z_a * np.sqrt(Nb * tr * (1.0 + tr))
+    Sd = Sc + z_b**2 / 2.0 + z_b * np.sqrt((z_b**2 / 4.0) + Sc + Nb * (1.0 + tr))
+
+    return Sc, Sd
+
+
+def formula_c(
+    Nb: Union[float, np.ndarray],
+    alpha: float = 0.05,
+    beta: float = 0.05,
+    t_sample: float = 1.0,
+    t_blank: float = 1.0,
+) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+    """Calculates Sc and Sd for net background 'Nb'.
+
+    Uses the equations from the MARLAP manual, 20.52, 20.73.
+    Reccomended for low mean backgrounds.
+    Sc equivilent to 'decision threshold' of ISO 11929-1.
+
+    Args:
+        nb: mean of background
+        alpha: false positive rate
+        beta: false negative rate
+
+    Returns:
+        Sc, net critical value
+        Sd, minimum detection net value
+
+    References:
+        United States Environmental Protection Agency,
+            MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
+    """
+    z_a = NormalDist().inv_cdf((1.0 - alpha))
+    z_b = NormalDist().inv_cdf((1.0 - beta))
+
+    tr = t_sample / t_blank
+
+    Sc = z_a**2 / 2.0 * tr + z_a * np.sqrt(z_a**2 /4.0 * tr + Nb * tr * (1.0 + tr))
     Sd = Sc + z_b**2 / 2.0 + z_b * np.sqrt((z_b**2 / 4.0) + Sc + Nb * (1.0 + tr))
 
     return Sc, Sd
@@ -107,10 +140,6 @@ def stapleton_approximation(
         Sd, minimum detection net value
 
     References:
-        Currie, L.A. On the detection of rare, and moderately rare, nuclear events.
-            J Radioanal Nucl Chem 276, 285–297 (2008).
-            https://doi.org/10.1007/s10967-008-0501-5
-
         United States Environmental Protection Agency,
             MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
     """
