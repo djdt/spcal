@@ -23,10 +23,9 @@ def process_file_detections(
     trim: Tuple[Optional[int], Optional[int]],
     limit_method: str,
     limit_sigma: float,
-    limit_epsilon: float,
-    limit_force_epsilon: bool,
-    limit_window: int = None,
-    cps_dwelltime: float = None,
+    limit_error_rates: Tuple[float, float],
+    limit_window: Optional[int] = None,
+    cps_dwelltime: Optional[float] = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
@@ -40,21 +39,18 @@ def process_file_detections(
     if responses is None or size == 0:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
-    limits = calculate_limits(
+    method, method_dict, (ub, lc, ld) = calculate_limits(
         responses,
         limit_method,
         limit_sigma,
-        limit_epsilon,
-        force_epsilon=limit_force_epsilon,
+        limit_error_rates,
         window=limit_window,
     )
 
-    if limits is None:
-        raise ValueError("Limit calculations failed for '{file.name}'.")
+    # if limits is None:
+    #     raise ValueError("Limit calculations failed for '{file.name}'.")
 
-    detections, labels, regions = spcal.accumulate_detections(
-        responses, limits[2], limits[3]
-    )
+    detections, labels, regions = spcal.accumulate_detections(responses, lc, ld)
     background = np.mean(responses[labels == 0])
     background_std = np.std(responses[labels == 0])
 
@@ -70,9 +66,9 @@ def process_file_detections(
         "detections_std": detections_std,
         "events": size,
         "file": str(file),
-        "limit_method": limits[0],
+        "limit_method": f"{method},{','.join(f'{k}={v}' for k,v in method_dict.items())}",
         "limit_window": limit_window,
-        "lod": limits[3],
+        "lod": ld,
     }
 
 
@@ -89,11 +85,10 @@ class ProcessThread(QtCore.QThread):
         cell_kws: Dict[str, Optional[float]],
         trim: Tuple[Optional[int], Optional[int]] = (None, None),
         limit_method: str = "Automatic",
-        limit_epsilon: float = 0.5,
         limit_sigma: float = 3.0,
-        limit_force_epsilon: bool = False,
-        limit_window: int = None,
-        cps_dwelltime: float = None,
+        limit_error_rates: Tuple[float, float] = (0.05, 0.05),
+        limit_window: Optional[int] = None,
+        cps_dwelltime: Optional[float] = None,
         parent: QtCore.QObject = None,
     ):
         super().__init__(parent)
@@ -108,8 +103,7 @@ class ProcessThread(QtCore.QThread):
         self.trim = trim
 
         self.limit_method = limit_method
-        self.limit_epsilon = limit_epsilon
-        self.limit_force_epsilon = limit_force_epsilon
+        self.limit_error_rates = limit_error_rates
         self.limit_sigma = limit_sigma
         self.limit_window = limit_window
         self.cps_dwelltime = cps_dwelltime
@@ -124,8 +118,7 @@ class ProcessThread(QtCore.QThread):
                     self.trim,
                     self.limit_method,
                     self.limit_sigma,
-                    self.limit_epsilon,
-                    limit_force_epsilon=self.limit_force_epsilon,
+                    self.limit_error_rates,
                     limit_window=self.limit_window,
                     cps_dwelltime=self.cps_dwelltime,
                 )
@@ -349,8 +342,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         limit_method = self.options.method.currentText()
         sigma = float(self.options.sigma.text())
-        epsilon = float(self.options.epsilon.text())
-        force_epsilon = self.options.check_force_epsilon.isChecked()
+        alpha = float(self.options.error_rate_alpha.text())
+        beta = float(self.options.error_rate_alpha.text())
         if self.sample.table_units.currentText() == "CPS":
             cps_dwelltime = self.options.dwelltime.baseValue()
         else:
@@ -415,8 +408,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             trim=(tleft, tright),
             limit_method=limit_method,
             limit_sigma=sigma,
-            limit_epsilon=epsilon,
-            limit_force_epsilon=force_epsilon,
+            limit_error_rates=(alpha, beta),
             limit_window=window,
             cps_dwelltime=cps_dwelltime,
             parent=self,

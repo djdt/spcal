@@ -428,9 +428,9 @@ class ResultsWidget(QtWidgets.QWidget):
             "detections_std": self.sample.detections_std,
             "events": self.sample.numberOfEvents(),
             "file": self.sample.label_file.text(),
-            "limit_method": self.sample.limits[0],
+            "limit_method": f"{self.sample.limits[0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[1].items())}",
             "limit_window": int(self.options.window_size.text()),
-            "lod": self.sample.limits[3],
+            "lod": self.sample.limit_ld,
         }
 
         method = self.options.efficiency_method.currentText()

@@ -10,8 +10,9 @@ except ImportError:
 
 
 import spcal
+from spcal.poisson import formula_c as poisson_limits
 
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -26,7 +27,7 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:
         return bn.move_mean(x, n)[n - 1 :]
     r = np.cumsum(x)
-    r[n:] = r[n:] - r[:-n]
+    r[n:] = r[n:] - r[:-n]  # type: ignore
     return r[n - 1 :] / n
 
 
@@ -87,14 +88,12 @@ def calculate_limits(
     responses: np.ndarray,
     method: str,
     sigma: float = 3.0,
-    epsilon: float = 0.5,
-    force_epsilon: bool = False,
-    window: int = None,
+    error_rates: Tuple[float, float] = (0.05, 0.05),
+    window: Optional[int] = None,
 ) -> Tuple[
-    Tuple[str, float],
-    Union[float, np.ndarray],
-    Union[float, np.ndarray],
-    Union[float, np.ndarray],
+    str,
+    Dict[str, float],
+    Tuple[Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]],
 ]:
     """Calculates limit(s) of detections for input.
 
@@ -104,18 +103,17 @@ def calculate_limits(
     `method` 'Automatic' will return 'Gaussian' if mean(responses) > 50.0, otherwise 'Poisson'.
     `method` 'Highest' will return the maximum of 'Gaussian' and 'Poisson'.
     'Gaussian' is calculated as mean(responses) + `sigma` * std(responses).
-    'Poisson' uses `:func:spcal.poisson_limits`.
+    'Poisson' uses `:func:spcal.poisson.formula_c`.
 
     Args:
         responses: array of signals
         method: method to use {'Automatic', 'Highest', 'Gaussian', 'Gaussian Median', 'Poisson'}
         sigma: threshold term for 'Gaussian'
-        epsilon: threshold term for 'Poisson'
-        force_epsilon: always use `epsilon`
+        error_rates: α and β rates for 'Poisson'
         window: rolling limits
 
     Returns:
-        (method, threshold), mean signal, limit of criticality, limit of detection
+        method, {symbol: value, ...}, (mean signal, limit of criticality, limit of detection)
     """
     if responses is None or responses.size == 0:
         raise ValueError("Responses invalid.")
@@ -130,13 +128,12 @@ def calculate_limits(
     else:
         ub = np.mean(responses)
 
+    assert isinstance(ub, float)
+
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
     elif method == "Highest":
-        lpoisson = (
-            ub
-            + spcal.poisson_limits(ub, epsilon=epsilon, force_epsilon=force_epsilon)[1]
-        )
+        lpoisson = ub + poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])[1]
         lgaussian = ub + sigma * np.std(responses)
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
@@ -144,12 +141,10 @@ def calculate_limits(
         if "Gaussian" in method:
             std = np.std(responses)
             ld = ub + sigma * std
-            return ((method, sigma), ub, ld, ld)
+            return method, {"σ": sigma}, (ub, ld, ld)
         else:
-            yc, yd = spcal.poisson_limits(
-                ub, epsilon=epsilon, force_epsilon=force_epsilon
-            )
-            return ((method, epsilon), ub, ub + yc, ub + yd)
+            sc, sd = poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])
+            return method, {"α": error_rates[0], "β": error_rates[1]}, (ub, ub + sc, ub + sd)
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="edge")
         if "Median" in method:
@@ -160,12 +155,10 @@ def calculate_limits(
         if "Gaussian" in method:
             std = moving_std(pad, window)[: responses.size]
             ld = ub + sigma * std
-            return ((method, sigma), ub, ld, ld)
+            return method, {"σ": sigma}, (ub, ld, ld)
         else:
-            yc, yd = spcal.poisson_limits(
-                ub, epsilon=epsilon, force_epsilon=force_epsilon
-            )
-            return ((method, epsilon), ub, ub + yc, ub + yd)
+            sc, sd = poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])
+            return method, {"α": error_rates[0], "β": error_rates[1]}, (ub, ub + sc, ub + sd)
 
 
 def results_from_mass_response(
@@ -205,7 +198,7 @@ def results_from_mass_response(
     lod_mass = lod * (massresponse / massfraction)
     lod_size = spcal.particle_size(lod_mass, density=density)
 
-    return {
+    return {  # type: ignore
         "masses": masses,
         "sizes": sizes,
         "background_size": bed,

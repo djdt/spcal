@@ -127,41 +127,53 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
 
-        self.poisson_k = QtWidgets.QLineEdit("4.65")
-        self.poisson_k.setPlaceholderText("4.65")
-        self.poisson_k.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
-        self.poisson_k.setToolTip(
-            "Z?. "
-            "Default of 0.5 maintains 0.05 alpha / beta."
-        )
-        self.epsilon = QtWidgets.QLineEdit("0.5")
-        self.epsilon.setPlaceholderText("0.5")
-        self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
-        self.epsilon.setToolTip(
-            "Correction factor for low background counts. "
-            "Default of 0.5 maintains 0.05 alpha / beta."
-        )
-        self.check_force_epsilon = QtWidgets.QCheckBox("Force")
-        self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
+        # self.poisson_k = QtWidgets.QLineEdit("4.65")
+        # self.poisson_k.setPlaceholderText("4.65")
+        # self.poisson_k.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
+        # self.poisson_k.setToolTip(
+        #     "Z?. "
+        #     "Default of 0.5 maintains 0.05 alpha / beta."
+        # )
+        # self.epsilon = QtWidgets.QLineEdit("0.5")
+        # self.epsilon.setPlaceholderText("0.5")
+        # self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
+        # self.epsilon.setToolTip(
+        #     "Correction factor for low background counts. "
+        #     "Default of 0.5 maintains 0.05 alpha / beta."
+        # )
+        # self.check_force_epsilon = QtWidgets.QCheckBox("Force")
+        # self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
+        self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
+        self.error_rate_alpha.setPlaceholderText("0.05")
+        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.999, 3))
+        self.error_rate_alpha.setToolTip("Type I (false positive) error rate for Poisson filter.")
+
+        self.error_rate_beta = QtWidgets.QLineEdit("0.05")
+        self.error_rate_beta.setPlaceholderText("0.05")
+        self.error_rate_beta.setValidator(QtGui.QDoubleValidator(0.001, 0.999, 3))
+        self.error_rate_beta.setToolTip("Type II (false negative) error rate for Poisson filter.")
 
         self.sigma = QtWidgets.QLineEdit("5.0")
         self.sigma.setPlaceholderText("5.0")
         self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
         self.sigma.setToolTip("LOD in number of standard deviations from mean.")
 
-        self.epsilon.textChanged.connect(self.limitOptionsChanged)
+        # self.epsilon.textChanged.connect(self.limitOptionsChanged)
         self.sigma.textChanged.connect(self.limitOptionsChanged)
-        self.check_force_epsilon.toggled.connect(self.limitOptionsChanged)
+        self.error_rate_alpha.textChanged.connect(self.limitOptionsChanged)
+        self.error_rate_beta.textChanged.connect(self.limitOptionsChanged)
+        # self.check_force_epsilon.toggled.connect(self.limitOptionsChanged)
 
-        layout_epsilon = QtWidgets.QHBoxLayout()
-        layout_epsilon.addWidget(self.epsilon, 1)
-        layout_epsilon.addWidget(self.check_force_epsilon, 0)
+        layout_error_rate = QtWidgets.QHBoxLayout()
+        layout_error_rate.addWidget(self.error_rate_alpha, 1)
+        layout_error_rate.addWidget(QtWidgets.QLabel(","), 0)
+        layout_error_rate.addWidget(self.error_rate_beta, 1)
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Filter method:", self.method)
-        self.limit_inputs.layout().addRow("Epsilon:", layout_epsilon)
+        self.limit_inputs.layout().addRow("α, β:", layout_error_rate)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
 
         self.celldiameter = UnitsWidget(

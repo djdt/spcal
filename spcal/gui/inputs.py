@@ -20,7 +20,7 @@ from spcal.gui.widgets import (
     ValidColorLineEdit,
 )
 
-from typing import Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 
 class InputWidget(QtWidgets.QWidget):
@@ -43,9 +43,11 @@ class InputWidget(QtWidgets.QWidget):
         self.options.method.currentTextChanged.connect(self.updateLimits)
         self.options.window_size.editingFinished.connect(self.updateLimits)
         self.options.check_use_window.toggled.connect(self.updateLimits)
-        self.options.epsilon.editingFinished.connect(self.updateLimits)
+        # self.options.epsilon.editingFinished.connect(self.updateLimits)
         self.options.sigma.editingFinished.connect(self.updateLimits)
-        self.options.check_force_epsilon.toggled.connect(self.updateLimits)
+        self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
+        self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
+        # self.options.check_force_epsilon.toggled.connect(self.updateLimits)
 
         self.background = 0.0
         self.background_std = 0.0
@@ -53,10 +55,13 @@ class InputWidget(QtWidgets.QWidget):
         self.detections_std = 0.0
         self.limits: Optional[
             Tuple[
-                Tuple[str, float],
-                Union[float, np.ndarray],
-                Union[float, np.ndarray],
-                Union[float, np.ndarray],
+                str,
+                Dict[str, float],
+                Tuple[
+                    Union[float, np.ndarray],
+                    Union[float, np.ndarray],
+                    Union[float, np.ndarray],
+                ],
             ]
         ] = None
 
@@ -138,6 +143,18 @@ class InputWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    @property
+    def limit_ub(self) -> Union[float, np.ndarray]:
+        return self.limits[2][0]
+
+    @property
+    def limit_lc(self) -> Union[float, np.ndarray]:
+        return self.limits[2][1]
+
+    @property
+    def limit_ld(self) -> Union[float, np.ndarray]:
+        return self.limits[2][2]
+
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if (
             event.mimeData().hasHtml()
@@ -179,7 +196,9 @@ class InputWidget(QtWidgets.QWidget):
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
-    def responseAsCounts(self, trim: Tuple[int, int] = None) -> Optional[np.ndarray]:
+    def responseAsCounts(
+        self, trim: Optional[Tuple[int, int]] = None
+    ) -> Optional[np.ndarray]:
         if trim is None:
             trim = (self.slider.left(), self.slider.right())
 
@@ -257,7 +276,7 @@ class InputWidget(QtWidgets.QWidget):
             self.lod_count.setText("")
         else:
             detections, labels, regions = spcal.accumulate_detections(
-                responses, self.limits[2], self.limits[3]
+                responses, self.limit_lc, self.limit_ld
             )
             # Calculate the maximum point in peak
             widths = regions[:, 1] - regions[:, 0]  # Width of each peak
@@ -278,15 +297,14 @@ class InputWidget(QtWidgets.QWidget):
             # self.detections_std = np.std(np.diff(indicies)) * 3
             self.background = np.mean(responses[labels == 0])
             self.background_std = np.std(responses[labels == 0])
-            lod = np.mean(self.limits[3])  # + self.background
+            lod = np.mean(self.limit_ld)  # + self.background
 
             self.count.setText(f"{detections.size} ± {self.detections_std:.1f}")
             self.background_count.setText(
                 f"{self.background:.4g} ± {self.background_std:.4g}"
             )
-            symbol = "ε" if self.limits[0][0] == "Poisson" else "σ"
             self.lod_count.setText(
-                f"{lod:.4g} ({self.limits[0][0]}, {symbol}={self.limits[0][1]:.2g})"
+                f"{lod:.4g} ({self.limits[0]}, {','.join(f'{k}={v}' for k,v in self.limits[1].items())})"
             )
 
         self.detectionsChanged.emit(self.detections.size)
@@ -299,10 +317,15 @@ class InputWidget(QtWidgets.QWidget):
             if self.options.sigma.hasAcceptableInput()
             else 3.0
         )
-        epsilon = (
-            float(self.options.epsilon.text())
-            if self.options.epsilon.hasAcceptableInput()
-            else 0.5
+        alpha = (
+            float(self.options.error_rate_alpha.text())
+            if self.options.error_rate_alpha.hasAcceptableInput()
+            else 0.05
+        )
+        beta = (
+            float(self.options.error_rate_beta.text())
+            if self.options.error_rate_beta.hasAcceptableInput()
+            else 0.05
         )
         window_size = (
             int(self.options.window_size.text())
@@ -317,8 +340,7 @@ class InputWidget(QtWidgets.QWidget):
                     responses,
                     method,
                     sigma,
-                    epsilon,
-                    force_epsilon=self.options.check_force_epsilon.isChecked(),
+                    (alpha, beta),
                     window=window_size,
                 )
             except ValueError:
@@ -357,12 +379,12 @@ class InputWidget(QtWidgets.QWidget):
 
         xs = np.arange(self.slider.left(), self.slider.right())
 
-        self.chart.setBackground(xs, self.limits[1])
-        if self.limits[0][0] == "Poisson":
-            self.chart.setLimitCritical(xs, self.limits[2])
+        self.chart.setBackground(xs, self.limit_ub)
+        if self.limits[0] == "Poisson":
+            self.chart.setLimitCritical(xs, self.limit_lc)
         else:
             self.chart.lc.clear()
-        self.chart.setLimitDetection(xs, self.limits[3])
+        self.chart.setLimitDetection(xs, self.limit_ld)
         self.chart.updateGeometry()
 
     def requestRedraw(self) -> None:
