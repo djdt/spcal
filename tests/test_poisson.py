@@ -27,6 +27,21 @@ estimated_sd_values = [
 ]
 
 
+
+def test_poisson_currie():
+    # Table II Currie 1968
+    sc, sd = spcal.poisson.currie(0.0, alpha=0.05, beta=0.05, epsilon=0.0, eta=2.0)
+    assert np.isclose(sc, 0.0)
+    assert np.isclose(sd, 2.71, atol=1e-2)
+    # Table II Currie 1968
+    sc, sd = spcal.poisson.currie(1.0, alpha=0.05, beta=0.05, epsilon=0.0, eta=2.0)
+    assert np.isclose(sc, 2.33, atol=1e-2)
+    assert np.isclose(sd, 2.71 + 4.65, atol=1e-2)
+    # Example p. 592
+    sc, sd = spcal.poisson.currie(308.0, alpha=0.05, beta=0.05, epsilon=0.0, eta=2.0)
+    assert np.isclose(sc, 40.8, atol=1e-1)
+    assert np.isclose(sd, 73.8, atol=1e-1)
+
 def test_poisson_sc_formula_a():
     # Example 20.10
     sc, _ = spcal.poisson.formula_a(4, alpha=0.05, beta=0.05)
