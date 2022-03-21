@@ -145,12 +145,12 @@ class OptionsWidget(QtWidgets.QWidget):
         # self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
         self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
         self.error_rate_alpha.setPlaceholderText("0.05")
-        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.999, 3))
+        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
         self.error_rate_alpha.setToolTip("Type I (false positive) error rate for Poisson filter.")
 
         self.error_rate_beta = QtWidgets.QLineEdit("0.05")
         self.error_rate_beta.setPlaceholderText("0.05")
-        self.error_rate_beta.setValidator(QtGui.QDoubleValidator(0.001, 0.999, 3))
+        self.error_rate_beta.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
         self.error_rate_beta.setToolTip("Type II (false negative) error rate for Poisson filter.")
 
         self.sigma = QtWidgets.QLineEdit("5.0")
