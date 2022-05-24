@@ -146,7 +146,7 @@ def calculate_limits(
             sc, sd = poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])
             return method, {"α": error_rates[0], "β": error_rates[1]}, (ub, ub + sc, ub + sd)
     else:
-        pad = np.pad(responses, [window // 2, window // 2], mode="edge")
+        pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
         if "Median" in method:
             ub = moving_median(pad, window)[: responses.size]
         else:
@@ -168,7 +168,7 @@ def results_from_mass_response(
     density: float,
     massfraction: float,
     massresponse: float,
-) -> Dict[str, Union[np.ndarray, float]]:
+) -> dict:
     """Calculates the masses, sizes and lods from mass response.
 
     All values are in SI units.
@@ -219,7 +219,7 @@ def results_from_nebulisation_efficiency(
     uptake: float,
     response: float,
     time: float,
-) -> Dict[str, Union[np.ndarray, float]]:
+) -> dict:
     """Calculates the masses, sizes, background and lods from transport efficiency.
 
     All values are in SI units.

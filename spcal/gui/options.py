@@ -7,7 +7,6 @@ from spcal.gui.widgets import ValidColorLineEdit
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
-    limitOptionsChanged = QtCore.Signal()
 
     def __init__(self, parent: QtWidgets.QWidget = None):
         super().__init__(parent)
@@ -98,9 +97,8 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.method = QtWidgets.QComboBox()
         self.method.addItems(
-            ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]
+            ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson", "Manual Input"]
         )
-        self.method.currentTextChanged.connect(self.limitOptionsChanged)
         self.method.setItemData(
             0,
             "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
@@ -126,6 +124,11 @@ class OptionsWidget(QtWidgets.QWidget):
             "Regions of Lc with at least one value above Ld.",
             QtCore.Qt.ToolTipRole,
         )
+        self.method.setItemData(
+            5,
+            "Use a manually defined limit for filtering.",
+            QtCore.Qt.ToolTipRole,
+        )
 
         # self.poisson_k = QtWidgets.QLineEdit("4.65")
         # self.poisson_k.setPlaceholderText("4.65")
@@ -134,15 +137,6 @@ class OptionsWidget(QtWidgets.QWidget):
         #     "Z?. "
         #     "Default of 0.5 maintains 0.05 alpha / beta."
         # )
-        # self.epsilon = QtWidgets.QLineEdit("0.5")
-        # self.epsilon.setPlaceholderText("0.5")
-        # self.epsilon.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
-        # self.epsilon.setToolTip(
-        #     "Correction factor for low background counts. "
-        #     "Default of 0.5 maintains 0.05 alpha / beta."
-        # )
-        # self.check_force_epsilon = QtWidgets.QCheckBox("Force")
-        # self.check_force_epsilon.setToolTip("Force use of ε, regardless of background.")
         self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
         self.error_rate_alpha.setPlaceholderText("0.05")
         self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
@@ -157,12 +151,12 @@ class OptionsWidget(QtWidgets.QWidget):
         self.sigma.setPlaceholderText("5.0")
         self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
         self.sigma.setToolTip("LOD in number of standard deviations from mean.")
+        self.manual = QtWidgets.QLineEdit("10.0")
+        self.manual.setEnabled(False)
+        self.manual.setValidator(QtGui.QDoubleValidator(1e-9, 1e9, 2))
+        self.manual.setToolTip("Limit used when method is 'Manual Input'.")
 
-        # self.epsilon.textChanged.connect(self.limitOptionsChanged)
-        self.sigma.textChanged.connect(self.limitOptionsChanged)
-        self.error_rate_alpha.textChanged.connect(self.limitOptionsChanged)
-        self.error_rate_beta.textChanged.connect(self.limitOptionsChanged)
-        # self.check_force_epsilon.toggled.connect(self.limitOptionsChanged)
+        self.method.currentTextChanged.connect(self.limitMethodChanged)
 
         layout_error_rate = QtWidgets.QHBoxLayout()
         layout_error_rate.addWidget(self.error_rate_alpha, 1)
@@ -175,6 +169,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.layout().addRow("Filter method:", self.method)
         self.limit_inputs.layout().addRow("α, β:", layout_error_rate)
         self.limit_inputs.layout().addRow("Sigma:", self.sigma)
+        self.limit_inputs.layout().addRow("Manual limit:", self.manual)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -214,6 +209,12 @@ class OptionsWidget(QtWidgets.QWidget):
             self.efficiency.setEnabled(False)
 
         self.optionsChanged.emit()
+
+    def limitMethodChanged(self, method: str) -> None:
+        if method == "Manual Input":
+            self.manual.setEnabled(True)
+        else:
+            self.manual.setEnabled(False)
 
     def isComplete(self) -> bool:
         if self.window_size.isEnabled() and not self.window_size.hasAcceptableInput():

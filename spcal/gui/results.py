@@ -289,15 +289,16 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             lod_min, lod_max = lod, lod
 
-        bins = np.histogram_bin_edges(data, bins=self.nbins)
-        if len(bins) - 1 < 16:
-            bins = np.histogram_bin_edges(data, bins=16)
-        elif len(bins) - 1 > 128:
-            bins = np.histogram_bin_edges(data, bins=128)
+        # TODO option for choosing percentile
+        hist_data = data[data < np.percentile(data, 98)]
 
-        hist, _ = np.histogram(
-            data, bins=bins, range=(data.min(), np.percentile(data, 99.9))
-        )
+        bins = np.histogram_bin_edges(hist_data, bins=self.nbins)
+        if len(bins) - 1 < 16:
+            bins = np.histogram_bin_edges(hist_data, bins=16)
+        elif len(bins) - 1 > 128:
+            bins = np.histogram_bin_edges(hist_data, bins=128)
+
+        hist, _ = np.histogram(hist_data, bins=bins)
         self.chart.setData(hist, bins, xmin=0.0)
 
         self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
@@ -330,7 +331,12 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
-        symbol = "ε" if self.result["limit_method"][0] == "Poisson" else "σ"
+        if self.result["limit_method"][0] == "Poisson":
+            symbol = "ε"
+        elif self.result["limit_method"][0] == "Manual Input":
+            symbol = "t"
+        else:
+            symbol = "σ"
         self.label_file.setText(
             Path(self.result["file"]).name
             + f" ({self.result['limit_method'][0]}, {symbol}={self.result['limit_method'][1]:.2g})"
@@ -445,6 +451,8 @@ class ResultsWidget(QtWidgets.QWidget):
                     efficiency = float(self.options.efficiency.text())
                 elif method == "Reference Particle":
                     efficiency = float(self.reference.efficiency.text())
+                else:
+                    raise ValueError(f"Unknown method {method}.")
 
                 dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.density.baseValue()
@@ -458,15 +466,24 @@ class ResultsWidget(QtWidgets.QWidget):
                         self.result["detections"],
                         self.result["background"],
                         self.result["lod"],
-                        density=density,
-                        dwelltime=dwelltime,
+                        density=density,  # type: ignore
+                        dwelltime=dwelltime,  # type: ignore
                         efficiency=efficiency,
                         massfraction=massfraction,
-                        uptake=uptake,
-                        response=response,
-                        time=time,
+                        uptake=uptake,  # type: ignore
+                        response=response,  # type: ignore
+                        time=time,  # type: ignore
                     )
                 )
+                self.result["inputs"] = {
+                    "density": density,
+                    "dwelltime": dwelltime,
+                    "transport_efficiency": efficiency,
+                    "mass_fraction": massfraction,
+                    "uptake": uptake,
+                    "response": response,
+                    "time": time,
+                }
             elif method == "Mass Response":
                 density = self.sample.density.baseValue()
                 massfraction = float(self.sample.massfraction.text())
@@ -477,11 +494,16 @@ class ResultsWidget(QtWidgets.QWidget):
                         self.result["detections"],
                         self.result["background"],
                         self.result["lod"],
-                        density=density,
+                        density=density,  # type: ignore
                         massfraction=massfraction,
-                        massresponse=massresponse,
+                        massresponse=massresponse,  # type: ignore
                     )
                 )
+                self.result["inputs"] = {
+                    "density": density,
+                    "mass_fraction": massfraction,
+                    "mass_response": massresponse,
+                }
 
             # Cell inputs
             concindex = self.mode.findText("Conc. (mol/L)")
@@ -491,6 +513,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 scale = celldiameter / np.mean(self.result["sizes"])
                 self.result["sizes"] *= scale
                 self.result["lod_size"] *= scale
+                self.result["inputs"].update({"cell_diameter": celldiameter})
 
             if (
                 celldiameter is not None and molarmass is not None
@@ -507,6 +530,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     diameter=celldiameter,
                     molarmass=molarmass,
                 )
+                self.result["inputs"].update({"molarmass": molarmass})
             else:
                 self.mode.model().item(concindex).setEnabled(False)
                 if self.mode.currentIndex() == concindex:

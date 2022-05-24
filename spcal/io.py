@@ -7,7 +7,7 @@ from spcal import __version__
 
 
 def read_nanoparticle_file(
-    path: Union[Path, str], delimiter: str = ","
+    path: Union[Path, str], delimiter: str = ",", decimal: str = "."
 ) -> Tuple[np.ndarray, Dict]:
     """Imports data and parameters from a NP export.
 
@@ -16,7 +16,7 @@ def read_nanoparticle_file(
     will be set as the mean difference of the first coulmn. If 'cps' is read in the file header
     then the parameter 'cps' will be set to True.
 
-    Tested with Agilent exports.
+    Tested with Agilent and thermo exports.
 
     Args:
         path: path to the file
@@ -27,10 +27,14 @@ def read_nanoparticle_file(
         dict of any parameters
     """
 
-    def delimited_columns(path: Path, delimiter: str = ",", columns: int = 2):
-        """Ensures at least `columns` columns in data by prepending `delimiter`."""
+    def delimited_translated_columns(path: Path, columns: int = 3):
+        """Translates inputs with ';' to have ',' as delimiter and '.' as decimal.
+        Ensures at least `columns` columns in data by prepending ','."""
+        map = str.maketrans({";": ",", ",": "."})
         with path.open("r") as fp:
             for line in fp:
+                if ";" in line:
+                    line = line.translate(map)
                 count = line.count(delimiter)
                 if count < columns:
                     yield delimiter * (columns - count - 1) + line
@@ -48,21 +52,26 @@ def read_nanoparticle_file(
         path = Path(path)
 
     data = np.genfromtxt(
-        delimited_columns(path, delimiter, 2),
-        delimiter=delimiter,
-        usecols=(0, 1),
+        delimited_translated_columns(path, 3),
+        delimiter=",",
+        usecols=(0, 1, 2),
         dtype=np.float64,
     )
     parameters = read_header_params(path)
 
-    response = data[:, 1]
-    # Check if data in two column format
-    if not np.all(np.isnan(data[:, 0])):  # time and response
-        times = data[:, 0][~np.isnan(data[:, 0])]
-        parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
-
+    response = data[:, 2]
     # Remove any invalid rows, e.g. headers
-    response = response[~np.isnan(response)]
+    valid_response = ~np.isnan(response)
+    response = response[valid_response]
+
+    if not np.all(np.isnan(data[:, 1])):
+        #        3 columns of data, thermo export of [Number, Time, Signal]
+        if not np.all(np.isnan(data[:, 0])):
+            pass
+        else:  # 2 columns of data, agilent export of [Time, Signal]
+            pass
+        times = data[:, 1][valid_response]
+        parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
 
     return response, parameters
 
@@ -73,9 +82,10 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
     Valid keys are:
         'file': original file path
         'events': the number of aquisition events
+        'inputs': dictionary of inputs in SI units
         'detections': array of NP detections
         'detections_std': stddev of detection count
-        'limit_method': method used to calculate LOD, (str, float)
+        'limit_method': method used to calculate LOD and epsilon/sigma, (str, float)
         'limit_window': window size used for thresholding
         'background': mean background (counts)
         'background_size': background equivilent diameter (m)
@@ -90,11 +100,16 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         'masses': NP mass array (kg)
         'sizes': NP size array (m)
         'cell_concentrations': intracellular concentrations (mol/L)
-        """
+    """
     with path.open("w") as fp:
         fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
+
+        fp.write(f"# Options and inputs\n")
+        for k, v in result["inputs"].items():
+            fp.write(f'#,{k.replace("_", " ").capitalize()},{v}\n')
+
         fp.write(f"# Detected particles,{result['detections'].size}\n")
         fp.write(f"# Detection stddev,{result['detections_std']}\n")
         fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")

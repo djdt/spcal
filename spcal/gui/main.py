@@ -55,7 +55,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.action_batch_process.triggered.connect(self.dialogBatchProcess)
         self.action_batch_process.setEnabled(False)
 
-        action_clear = QtWidgets.QAction("Reset", self)
+        action_clear = QtWidgets.QAction("Reset Inputs", self)
         action_clear.triggered.connect(self.resetInputs)
 
         action_close = QtWidgets.QAction("Quit", self)

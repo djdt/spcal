@@ -24,8 +24,9 @@ def process_file_detections(
     limit_method: str,
     limit_sigma: float,
     limit_error_rates: Tuple[float, float],
-    limit_window: Optional[int] = None,
-    cps_dwelltime: Optional[float] = None,
+    limit_manual: float,
+    limit_window: int = None,
+    cps_dwelltime: float = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
@@ -39,13 +40,18 @@ def process_file_detections(
     if responses is None or size == 0:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
-    method, method_dict, (ub, lc, ld) = calculate_limits(
-        responses,
-        limit_method,
-        limit_sigma,
-        limit_error_rates,
-        window=limit_window,
-    )
+    if limit_method == "Manual Input":
+        method = "Manual Input"
+        method_dict = {}
+        lc = ld = limit_manual
+    else:
+        method, method_dict, (_, lc, ld) = calculate_limits(
+            responses,
+            limit_method,
+            limit_sigma,
+            limit_error_rates,
+            window=limit_window,
+        )
 
     # if limits is None:
     #     raise ValueError("Limit calculations failed for '{file.name}'.")
@@ -87,8 +93,9 @@ class ProcessThread(QtCore.QThread):
         limit_method: str = "Automatic",
         limit_sigma: float = 3.0,
         limit_error_rates: Tuple[float, float] = (0.05, 0.05),
-        limit_window: Optional[int] = None,
-        cps_dwelltime: Optional[float] = None,
+        limit_manual: float = 0.0,
+        limit_window: int = None,
+        cps_dwelltime: float = None,
         parent: QtCore.QObject = None,
     ):
         super().__init__(parent)
@@ -105,6 +112,7 @@ class ProcessThread(QtCore.QThread):
         self.limit_method = limit_method
         self.limit_error_rates = limit_error_rates
         self.limit_sigma = limit_sigma
+        self.limit_manual = limit_manual
         self.limit_window = limit_window
         self.cps_dwelltime = cps_dwelltime
 
@@ -119,6 +127,7 @@ class ProcessThread(QtCore.QThread):
                     self.limit_method,
                     self.limit_sigma,
                     self.limit_error_rates,
+                    limit_manual=self.limit_manual,
                     limit_window=self.limit_window,
                     cps_dwelltime=self.cps_dwelltime,
                 )
@@ -135,6 +144,7 @@ class ProcessThread(QtCore.QThread):
                         **self.method_kws,
                     )
                 )
+                result["inputs"] = {k: v for k, v in self.method_kws.items()}
 
                 if (
                     self.cell_kws["celldiameter"] is not None
@@ -150,6 +160,7 @@ class ProcessThread(QtCore.QThread):
                         diameter=self.cell_kws["celldiameter"],
                         molarmass=self.cell_kws["molarmass"],
                     )
+                    result["inputs"].update(self.cell_kws)
 
             except ValueError:
                 self.processFailed.emit(infile.name)
@@ -344,6 +355,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         sigma = float(self.options.sigma.text())
         alpha = float(self.options.error_rate_alpha.text())
         beta = float(self.options.error_rate_alpha.text())
+        manual = float(self.options.manual.text() or 0.0)
         if self.sample.table_units.currentText() == "CPS":
             cps_dwelltime = self.options.dwelltime.baseValue()
         else:
@@ -409,6 +421,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             limit_method=limit_method,
             limit_sigma=sigma,
             limit_error_rates=(alpha, beta),
+            limit_manual=manual,
             limit_window=window,
             cps_dwelltime=cps_dwelltime,
             parent=self,
