@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 import pytest
 import spcal
+import spcal.poisson
 
 
 def test_accumulate_detections():
@@ -149,7 +150,7 @@ def test_standard_sizes():
     ]:
         ub = np.mean(x)
         # 15 nm
-        yc, yd = spcal.poisson_limits(ub, epsilon=0.5)
+        yc, yd = spcal.poisson.formula_c(ub)
         detections, _, _ = spcal.accumulate_detections(x, yc + ub, yd + ub)
 
         masses = spcal.particle_mass(
@@ -167,5 +168,5 @@ def test_standard_sizes():
             np.mean(sizes) * 1e9, expected, rtol=0.01, atol=0
         )  # within 1%
         assert np.isclose(
-            np.median(sizes) * 1e9, expected, rtol=0, atol=0.5
-        )  # within 0.5 nm
+            np.median(sizes) * 1e9, expected, rtol=0, atol=1.0
+        )  # within 1.0 nm
