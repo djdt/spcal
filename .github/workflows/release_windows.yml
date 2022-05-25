@@ -20,7 +20,7 @@ jobs:
     - name: Build exec
       id: build-exec
       run: |
-        pyinstaller --clean --noupx -y spcal.spec
+        pyinstaller --clean -y spcal.spec
         echo "::set-output name=version::$(python setup.py --version)"
     - name: Upload binary
       id: upload-release-asset
