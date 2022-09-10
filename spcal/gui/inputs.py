@@ -33,8 +33,8 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.redraw_charts_requested = False
+        self.draw_detections_only = False
 
-        # self.detectionsChanged.connect(self.redrawChart)
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.requestRedraw)
 
@@ -155,6 +155,10 @@ class InputWidget(QtWidgets.QWidget):
     @property
     def limit_ld(self) -> Union[float, np.ndarray]:
         return self.limits[2][2]
+
+    def setDrawDetectionsOnly(self, detections_only: bool) -> None:
+        self.draw_detections_only = detections_only
+        self.redrawChart()
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if (
@@ -367,7 +371,19 @@ class InputWidget(QtWidgets.QWidget):
 
         centers = self.centers + self.slider.left()
 
-        self.chart.setData(np.nan_to_num(responses))
+        if self.draw_detections_only:
+            xs = np.stack([centers, centers, centers], axis=1).ravel()
+            ys = np.stack(
+                [np.zeros(centers.size), responses[centers], np.zeros(centers.size)],
+                axis=1,
+            ).ravel()
+            xs = np.concatenate([[0], xs, [responses.size - 1]])
+            ys = np.concatenate([[0.0], ys, [0.0]])
+        else:
+            xs, ys = np.arange(responses.size), np.nan_to_num(responses)
+            diff = np.diff(ys) != 0
+            xs, ys = xs[:-1][diff], ys[:-1][diff]
+        self.chart.setData(ys, xs=xs)
         self.chart.setScatter(centers, responses[centers])
 
         self.chart.drawVerticalLines(

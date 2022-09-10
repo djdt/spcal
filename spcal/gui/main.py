@@ -64,6 +64,13 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_about = QtWidgets.QAction("About", self)
         action_about.triggered.connect(self.about)
 
+        action_draw_detections_only = QtWidgets.QAction("Draw Dectections Only", self)
+        action_draw_detections_only.setCheckable(True)
+        action_draw_detections_only.setChecked(False)
+        action_draw_detections_only.setToolTip("Speed up drawing by only drawing detections.")
+        action_draw_detections_only.toggled.connect(self.sample.setDrawDetectionsOnly)
+        action_draw_detections_only.toggled.connect(self.reference.setDrawDetectionsOnly)
+
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(action_open_sample)
         menufile.addAction(action_open_reference)
@@ -74,6 +81,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
         menuedit = self.menuBar().addMenu("&Edit")
         menuedit.addAction(action_clear)
+
+        menuview = self.menuBar().addMenu("&View")
+        menuview.addAction(action_draw_detections_only)
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(action_about)
