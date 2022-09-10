@@ -331,15 +331,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
-        if self.result["limit_method"][0] == "Poisson":
-            symbol = "ε"
-        elif self.result["limit_method"][0] == "Manual Input":
-            symbol = "t"
-        else:
-            symbol = "σ"
         self.label_file.setText(
-            Path(self.result["file"]).name
-            + f" ({self.result['limit_method'][0]}, {symbol}={self.result['limit_method'][1]:.2g})"
+            Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
         )
 
         mode = self.mode.currentText()
