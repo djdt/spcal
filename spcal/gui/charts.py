@@ -6,7 +6,7 @@ from PySide2.QtCharts import QtCharts
 
 from spcal.gui.util import array_to_polygonf
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 
 class ParticleChartView(QtCharts.QChartView):
@@ -166,15 +166,16 @@ class ParticleChart(QtCharts.QChart):
         self.legend().markers(self.scatter_series)[0].setVisible(False)
 
     def zoomReset(self) -> None:
-        self.xaxis.setRange(0, self.series.count())
+        self.xaxis.setRange(0, self.series.at(self.series.count() - 1).x())
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
             self.removeSeries(line)
         self.vlines.clear()
 
-    def setData(self, ys: np.ndarray) -> None:
-        xs = np.arange(ys.size)
+    def setData(self, ys: np.ndarray, xs: Optional[np.ndarray] = None) -> None:
+        if xs is None:
+            xs = np.arange(ys.size)
         self.yvalues = ys
         data = np.stack((xs, ys), axis=1)
         poly = array_to_polygonf(data)
@@ -187,25 +188,25 @@ class ParticleChart(QtCharts.QChart):
 
     def setBackground(self, xs: np.ndarray, ub: Union[float, np.ndarray]) -> None:
         if isinstance(ub, float):
-            ub = np.full(xs.size, ub)
-
-        data = np.stack((xs, ub), axis=1)
+            data = np.array([[xs[0], ub], [xs[-1], ub]])
+        else:
+            data = np.stack((xs, ub), axis=1)
         poly = array_to_polygonf(data)
         self.ub.replace(poly)
 
     def setLimitCritical(self, xs: np.ndarray, lc: Union[float, np.ndarray]) -> None:
         if isinstance(lc, float):
-            lc = np.full(xs.size, lc)
-
-        data = np.stack((xs, lc), axis=1)
+            data = np.array([[xs[0], lc], [xs[-1], lc]])
+        else:
+            data = np.stack((xs, lc), axis=1)
         poly = array_to_polygonf(data)
         self.lc.replace(poly)
 
     def setLimitDetection(self, xs: np.ndarray, ld: Union[float, np.ndarray]) -> None:
         if isinstance(ld, float):
-            ld = np.full(xs.size, ld)
-
-        data = np.stack((xs, ld), axis=1)
+            data = np.array([[xs[0], ld], [xs[-1], ld]])
+        else:
+            data = np.stack((xs, ld), axis=1)
         poly = array_to_polygonf(data)
         self.ld.replace(poly)
 
@@ -250,9 +251,12 @@ class ParticleChart(QtCharts.QChart):
             xmax = self.xaxis.max()
 
         xmin = max(xmin, 0)
-        xmax = min(xmax, self.series.count())
+        xmax = min(xmax, self.series.at(self.series.count() - 1).x())
 
-        ymax = np.nanmax(self.yvalues[int(xmin) : int(xmax)])
+        try:
+            ymax = np.nanmax(self.yvalues[int(xmin) : int(xmax)])
+        except ValueError:
+            ymax = 100.0
         self.yaxis.setRange(0.0, ymax)
 
 
