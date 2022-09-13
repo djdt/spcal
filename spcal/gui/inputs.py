@@ -3,6 +3,7 @@ from PySide2.QtCharts import QtCharts
 
 import numpy as np
 from pathlib import Path
+import logging
 
 import spcal
 from spcal import npdata
@@ -22,6 +23,7 @@ from spcal.gui.widgets import (
 
 from typing import Dict, Optional, Tuple, Union
 
+logger = logging.getLogger(__name__)
 
 class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
@@ -234,13 +236,9 @@ class InputWidget(QtWidgets.QWidget):
             self.loadFile(file)
 
     def loadFile(self, file: str) -> None:
-        try:
-            responses, parameters = read_nanoparticle_file(file, delimiter=",")
-        except ValueError as e:
-            QtWidgets.QMessageBox.critical(self, f"Import Failed!", str(e))
-            return
-
-        self.label_file.setText(Path(file).name)
+        path = Path(file)
+        responses, parameters = read_nanoparticle_file(path, delimiter=",")
+        self.label_file.setText(path.name)
 
         self.table_units.blockSignals(True)
         self.table_units.setCurrentText("CPS" if parameters["cps"] else "Counts")

@@ -1,17 +1,27 @@
+import sys
+import logging
+
 from PySide2 import QtWidgets
 
 from spcal import __version__
 
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.options import OptionsWidget
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.log import LoggingDialog
+from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 
+from types import TracebackType
+
+logger = logging.getLogger(__name__)
 
 class NanoPartWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("SPCal")
+
+        self.log = LoggingDialog()
+        self.log.setWindowTitle("SPCal Log")
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
@@ -61,6 +71,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_close = QtWidgets.QAction("Quit", self)
         action_close.triggered.connect(self.close)
 
+        action_log = QtWidgets.QAction("&Show Log", self)
+        action_log.setToolTip("Show the SPCal event and error log.")
+        action_log.triggered.connect(self.log.open)
+
         action_about = QtWidgets.QAction("About", self)
         action_about.triggered.connect(self.about)
 
@@ -86,6 +100,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menuview.addAction(action_draw_detections_only)
 
         menuhelp = self.menuBar().addMenu("&Help")
+        menuhelp.addAction(action_log)
         menuhelp.addAction(action_about)
 
     def about(self) -> QtWidgets.QDialog:
@@ -136,3 +151,13 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.options.resetInputs()
         self.sample.resetInputs()
         self.reference.resetInputs()
+
+    def exceptHook(
+        self, etype: type, value: BaseException, tb: TracebackType
+    ) -> None:  # pragma: no cover
+        """Redirect errors to the log."""
+        if etype == KeyboardInterrupt:
+            logger.info("Keyboard interrupt, exiting.")
+            sys.exit(1)
+        logger.exception("Uncaught exception", exc_info=(etype, value, tb))
+        QtWidgets.QMessageBox.critical(self, "Uncaught Exception", str(value))

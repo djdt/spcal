@@ -2,11 +2,16 @@ from PySide2 import QtCore, QtWidgets
 import argparse
 from pathlib import Path
 import sys
+import logging
 
 from spcal import __version__
 from spcal.gui.main import NanoPartWindow
 
 from typing import List, Optional
+
+logging.captureWarnings(True)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
@@ -35,19 +40,24 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    args = parse_args(argv[1:])
+    args = parse_args(argv)
 
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
     app.setApplicationVersion(__version__)
 
-    win = NanoPartWindow()
-    win.show()
+    window = NanoPartWindow()
+
+    sys.excepthook = window.exceptHook
+    logger.addHandler(window.log.handler)
+    logger.info(f"SPCal {__version__} started.")
+
+    window.show()
 
     if args.sample:
-        win.sample.loadFile(args.sample)
+        window.sample.loadFile(args.sample)
     if args.reference:
-        win.reference.loadFile(args.reference)
+        window.reference.loadFile(args.reference)
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()
@@ -58,4 +68,4 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(sys.argv[1:])

@@ -1,9 +1,12 @@
 import numpy as np
 from pathlib import Path
+import logging
 
 from typing import Dict, Tuple, Union
 
 from spcal import __version__
+
+logger = logging.getLogger(__name__)
 
 
 def read_nanoparticle_file(
@@ -73,6 +76,7 @@ def read_nanoparticle_file(
         times = data[:, 1][valid_response]
         parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
 
+    logger.info(f"Imported {response.size} points from {path.name}.")
     return response, parameters
 
 
@@ -184,3 +188,4 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
             np.stack(data, axis=1),
             delimiter=",",
         )
+        logger.info(f"Exported results for {result['detections'].size} detections to {path.name}.")

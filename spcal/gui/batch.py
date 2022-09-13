@@ -2,6 +2,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 
 import numpy as np
 from pathlib import Path
+import logging
 
 import spcal
 
@@ -17,6 +18,8 @@ from spcal.gui.options import OptionsWidget
 
 from typing import Callable, Dict, List, Optional, Tuple
 
+logger = logging.getLogger(__name__)
+
 
 def process_file_detections(
     file: Path,
@@ -25,8 +28,8 @@ def process_file_detections(
     limit_sigma: float,
     limit_error_rates: Tuple[float, float],
     limit_manual: float,
-    limit_window: int = None,
-    cps_dwelltime: float = None,
+    limit_window: Optional[int] = None,
+    cps_dwelltime: Optional[float] = None,
 ) -> dict:
     responses, _ = read_nanoparticle_file(file, delimiter=",")
     responses = responses[trim[0] : trim[1]]
@@ -94,8 +97,8 @@ class ProcessThread(QtCore.QThread):
         limit_sigma: float = 3.0,
         limit_error_rates: Tuple[float, float] = (0.05, 0.05),
         limit_manual: float = 0.0,
-        limit_window: int = None,
-        cps_dwelltime: float = None,
+        limit_window: Optional[int] = None,
+        cps_dwelltime: Optional[float] = None,
         parent: QtCore.QObject = None,
     ):
         super().__init__(parent)
@@ -131,7 +134,8 @@ class ProcessThread(QtCore.QThread):
                     limit_window=self.limit_window,
                     cps_dwelltime=self.cps_dwelltime,
                 )
-            except ValueError:
+            except ValueError as e:
+                logger.exception(e)
                 self.processFailed.emit(infile.name)
                 continue
 
@@ -162,13 +166,15 @@ class ProcessThread(QtCore.QThread):
                     )
                     result["inputs"].update(self.cell_kws)
 
-            except ValueError:
+            except ValueError as e:
+                logger.exception(e)
                 self.processFailed.emit(infile.name)
                 continue
 
             try:
                 export_nanoparticle_results(outfile, result)
-            except ValueError:
+            except ValueError as e:
+                logger.exception(e)
                 self.processFailed.emit(infile.name)
                 continue
 
