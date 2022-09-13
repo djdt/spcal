@@ -101,7 +101,7 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         'sizes': NP size array (m)
         'cell_concentrations': intracellular concentrations (mol/L)
     """
-    with path.open("w") as fp:
+    with path.open("w", encoding="utf-8") as fp:
         fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{result['file']}'\n")
         fp.write(f"# Acquisition events,{result['events']}\n")
