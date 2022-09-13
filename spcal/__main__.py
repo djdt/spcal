@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets
+from PySide2 import QtCore, QtWidgets
 import argparse
 from pathlib import Path
 import sys
@@ -6,10 +6,10 @@ import sys
 from spcal import __version__
 from spcal.gui.main import NanoPartWindow
 
-from typing import List
+from typing import List, Optional
 
 
-def parse_args(argv: List[str] = None) -> argparse.Namespace:
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="spcal",
         description="spICP-MS toolkit and visulistion.",
@@ -34,8 +34,8 @@ def parse_args(argv: List[str] = None) -> argparse.Namespace:
     return args
 
 
-def main(argv: List[str] = None) -> int:
-    args = parse_args(argv)
+def main(argv: Optional[List[str]] = None) -> int:
+    args = parse_args(argv[1:])
 
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
@@ -49,8 +49,13 @@ def main(argv: List[str] = None) -> int:
     if args.reference:
         win.reference.loadFile(args.reference)
 
+    # Keep event loop active with timer
+    timer = QtCore.QTimer()
+    timer.timeout.connect(lambda: None)
+    timer.start(100)
+
     return app.exec_()
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv)
