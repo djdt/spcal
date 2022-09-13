@@ -436,6 +436,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if not self.readyForResults():
             self.mode.setCurrentText("Signal")
             self.mode.setEnabled(False)
+            self.result["inputs"] = {}
         else:
             self.mode.setEnabled(True)
 
