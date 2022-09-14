@@ -78,12 +78,29 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_about = QtWidgets.QAction("About", self)
         action_about.triggered.connect(self.about)
 
-        action_draw_detections_only = QtWidgets.QAction("Draw Dectections Only", self)
-        action_draw_detections_only.setCheckable(True)
-        action_draw_detections_only.setChecked(False)
-        action_draw_detections_only.setToolTip("Speed up drawing by only drawing detections.")
-        action_draw_detections_only.toggled.connect(self.sample.setDrawDetectionsOnly)
-        action_draw_detections_only.toggled.connect(self.reference.setDrawDetectionsOnly)
+        action_draw_all= QtWidgets.QAction("Draw All", self)
+        action_draw_all.setToolTip("Draw all data points.")
+        action_draw_all.toggled.connect(lambda: self.sample.setDrawMode("all"))
+        action_draw_all.toggled.connect(lambda: self.reference.setDrawMode("all"))
+
+        action_draw_background= QtWidgets.QAction("Draw Above Background", self)
+        action_draw_background.setToolTip("Only draw points above the background threshold.")
+        action_draw_background.toggled.connect(lambda: self.sample.setDrawMode("background"))
+        action_draw_background.toggled.connect(lambda: self.reference.setDrawMode("background"))
+
+        action_draw_detections= QtWidgets.QAction("Draw Dectections", self)
+        action_draw_detections.setToolTip("Only draw detections, greatly speeds up drawing.")
+        action_draw_detections.toggled.connect(lambda: self.sample.setDrawMode("detections"))
+        action_draw_detections.toggled.connect(lambda: self.reference.setDrawMode("detections"))
+        
+        action_group_draw_mode = QtWidgets.QActionGroup(self)
+        action_group_draw_mode.addAction(action_draw_all)
+        action_group_draw_mode.addAction(action_draw_background)
+        action_group_draw_mode.addAction(action_draw_detections)
+
+        for action in action_group_draw_mode.actions():
+            action.setCheckable(True)
+        action_draw_all.setChecked(True)
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(action_open_sample)
@@ -97,7 +114,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menuedit.addAction(action_clear)
 
         menuview = self.menuBar().addMenu("&View")
-        menuview.addAction(action_draw_detections_only)
+        menuview.addActions(action_group_draw_mode.actions())
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(action_log)

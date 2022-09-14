@@ -158,7 +158,7 @@ class InputWidget(QtWidgets.QWidget):
     def limit_ld(self) -> Union[float, np.ndarray]:
         return self.limits[2][2]
 
-    def setDrawDetectionsOnly(self, mode: str) -> None:
+    def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
         self.redrawChart()
 
@@ -369,18 +369,19 @@ class InputWidget(QtWidgets.QWidget):
 
         centers = self.centers + self.slider.left()
 
-        if self.mode == "all":
+        if self.draw_mode == "all":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
             diff = np.diff(ys) != 0  # optimise by removing duplicate points
             xs, ys = xs[:-1][diff], ys[:-1][diff]
         elif self.draw_mode == "detections":
+            ub = self.limit_ub
             xs = np.stack([centers, centers, centers], axis=1).ravel()
             ys = np.stack(
-                [np.zeros(centers.size), responses[centers], np.zeros(centers.size)],
+                [np.full(centers.size, ub), responses[centers], np.full(centers.size, ub)],
                 axis=1,
             ).ravel()
             xs = np.concatenate([[0], xs, [responses.size - 1]])
-            ys = np.concatenate([[0.0], ys, [0.0]])
+            ys = np.concatenate([[ub], ys, [ub]])
         elif self.draw_mode == "background":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
             above = ys > self.limit_ub
