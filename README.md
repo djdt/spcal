@@ -11,7 +11,7 @@ Windows executables are available for each [release](https://github.com/djdt/spc
 To install via pip first clone the repository then install as a local package.
 
 ```bash
-git clone https://github.com/djdt/nanopart
+git clone https://github.com/djdt/spcal
 cd spcal
 pip install -e .
 ```
