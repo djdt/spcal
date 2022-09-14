@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
-from spcal.gui.util import array_to_polygonf
+from spcal.gui.util import array_to_polygonf, polygonf_to_array
 
 from typing import List, Optional, Union
 
@@ -125,7 +125,7 @@ class ParticleChart(QtCharts.QChart):
         self.addAxis(self.xaxis, QtCore.Qt.AlignBottom)
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
 
-        self.yvalues: np.ndarray = None
+        self.series_data: np.ndarray = np.array([])
 
         self.series = QtCharts.QLineSeries()
         self.series.setPen(QtGui.QPen(QtCore.Qt.black, 1.0))
@@ -176,9 +176,8 @@ class ParticleChart(QtCharts.QChart):
     def setData(self, ys: np.ndarray, xs: Optional[np.ndarray] = None) -> None:
         if xs is None:
             xs = np.arange(ys.size)
-        self.yvalues = ys
-        data = np.stack((xs, ys), axis=1)
-        poly = array_to_polygonf(data)
+        self.series_data = np.stack((xs, ys), axis=1)
+        poly = array_to_polygonf(self.series_data)
         self.series.replace(poly)
 
     def setScatter(self, xs: np.ndarray, ys: np.ndarray) -> None:
@@ -242,19 +241,25 @@ class ParticleChart(QtCharts.QChart):
             line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 
-    def updateYRange(self, xmin: float = None, xmax: float = None) -> None:
-        if self.yvalues is None:
+    def updateYRange(self, xmin: Optional[float] = None, xmax: Optional[float] = None) -> None:
+        if self.series_data.size == 0:
             return
+
         if xmin is None:
             xmin = self.xaxis.min()
         if xmax is None:
             xmax = self.xaxis.max()
 
+        xmin = np.argmax(self.series_data[:, 0] > xmin)
+        xmax = self.series_data.shape[0] - np.argmax(self.series_data[::-1, 0] < xmax)
+
         xmin = max(xmin, 0)
-        xmax = min(xmax, self.series.at(self.series.count() - 1).x())
+        xmax = min(xmax, self.series_data.shape[0] - 1)
+
+        print("bounds", xmin, xmax)
 
         try:
-            ymax = np.nanmax(self.yvalues[int(xmin) : int(xmax)])
+            ymax = np.nanmax(self.series_data[int(xmin) : int(xmax), 1])
         except ValueError:
             ymax = 100.0
         self.yaxis.setRange(0.0, ymax)

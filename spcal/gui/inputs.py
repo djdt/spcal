@@ -35,7 +35,7 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.redraw_charts_requested = False
-        self.draw_detections_only = False
+        self.draw_mode = "All"
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.requestRedraw)
@@ -158,8 +158,8 @@ class InputWidget(QtWidgets.QWidget):
     def limit_ld(self) -> Union[float, np.ndarray]:
         return self.limits[2][2]
 
-    def setDrawDetectionsOnly(self, detections_only: bool) -> None:
-        self.draw_detections_only = detections_only
+    def setDrawDetectionsOnly(self, mode: str) -> None:
+        self.draw_mode = mode
         self.redrawChart()
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
@@ -369,7 +369,11 @@ class InputWidget(QtWidgets.QWidget):
 
         centers = self.centers + self.slider.left()
 
-        if self.draw_detections_only:
+        if self.mode == "all":
+            xs, ys = np.arange(responses.size), np.nan_to_num(responses)
+            diff = np.diff(ys) != 0  # optimise by removing duplicate points
+            xs, ys = xs[:-1][diff], ys[:-1][diff]
+        elif self.draw_mode == "detections":
             xs = np.stack([centers, centers, centers], axis=1).ravel()
             ys = np.stack(
                 [np.zeros(centers.size), responses[centers], np.zeros(centers.size)],
@@ -377,10 +381,13 @@ class InputWidget(QtWidgets.QWidget):
             ).ravel()
             xs = np.concatenate([[0], xs, [responses.size - 1]])
             ys = np.concatenate([[0.0], ys, [0.0]])
-        else:
+        elif self.draw_mode == "background":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
-            diff = np.diff(ys) != 0
-            xs, ys = xs[:-1][diff], ys[:-1][diff]
+            above = ys > self.limit_ub
+            xs, ys = xs[above], ys[above]
+        else:
+            raise ValueError("Invalid draw_mode, must be 'all', 'detections' or 'background'.")
+
         self.chart.setData(ys, xs=xs)
         self.chart.setScatter(centers, responses[centers])
 

@@ -22,6 +22,14 @@ def array_to_polygonf(array: np.ndarray) -> QtGui.QPolygonF:
     return polygon
 
 
+def polygonf_to_array(polygon: QtGui.QPolygonF) -> np.ndarray:
+    """Converts a Qt polygon to a numpy array of shape (n, 2)."""
+    buf = (ctypes.c_double * 2 * polygon.length()).from_address(
+        shiboken2.getCppPointer(polygon.data())[0]  # type: ignore
+    )
+    return np.frombuffer(buf, dtype=np.float64).reshape(-1, 2)
+
+
 class NumpyArrayTableModel(QtCore.QAbstractTableModel):
     def __init__(
         self,
