@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def read_nanoparticle_file(
-    path: Union[Path, str], delimiter: str = ",", decimal: str = "."
+    path: Union[Path, str],
 ) -> Tuple[np.ndarray, Dict]:
     """Imports data and parameters from a NP export.
 
@@ -38,9 +38,9 @@ def read_nanoparticle_file(
             for line in fp:
                 if ";" in line:
                     line = line.translate(map)
-                count = line.count(delimiter)
+                count = line.count(",")
                 if count < columns:
-                    yield delimiter * (columns - count - 1) + line
+                    yield "," * (columns - count - 1) + line
                 else:
                     yield line
 
@@ -188,4 +188,6 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
             np.stack(data, axis=1),
             delimiter=",",
         )
-        logger.info(f"Exported results for {result['detections'].size} detections to {path.name}.")
+        logger.info(
+            f"Exported results for {result['detections'].size} detections to {path.name}."
+        )
