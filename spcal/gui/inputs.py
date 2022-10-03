@@ -2,14 +2,12 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2.QtCharts import QtCharts
 
 import numpy as np
-from pathlib import Path
 import logging
 
 import spcal
 from spcal import npdata
 
 from spcal.calc import calculate_limits
-from spcal.io import read_nanoparticle_file
 
 from spcal.gui.charts import ParticleChart, ParticleChartView
 from spcal.gui.dialogs import ImportDialog
@@ -22,7 +20,7 @@ from spcal.gui.widgets import (
     ValidColorLineEdit,
 )
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -174,21 +172,6 @@ class InputWidget(QtWidgets.QWidget):
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
-    def responseAsCounts(self, trim: Optional[Tuple[int, int]] = None) -> np.ndarray:
-        if trim is None:
-            trim = (self.slider.left(), self.slider.right())
-
-        responses = self.data[trim[0] : trim[1]]
-
-        if self.response_units.currentText() == "CPS":
-            dwell = self.options.dwelltime.baseValue()
-            responses = responses.copy()
-            if dwell is None:
-                raise ValueError("responseAsCounts: dwelltime not defined!")
-            for name in responses.dtype.names:
-                responses[name] *= dwell
-        return responses
-
     def timeAsSeconds(self) -> float:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
@@ -245,7 +228,7 @@ class InputWidget(QtWidgets.QWidget):
         self.updateLimits()
 
     def updateDetections(self) -> None:
-        responses = self.responseAsCounts()
+        responses = self.data[self.slider.left() : self.slider.right()]
 
         self.detections.clear()
         self.labels.clear()
@@ -332,7 +315,7 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            responses = self.responseAsCounts()[name]
+            responses = self.responses[name][self.slider.left() : self.slider.right()]
             self.background = np.mean(responses[self.labels[name] == 0])
             self.background_std = np.std(responses[self.labels[name] == 0])
             lod = np.mean(self.limits[name][2]["ld"])  # + self.background
@@ -348,48 +331,42 @@ class InputWidget(QtWidgets.QWidget):
             )
 
     def detectionMaxima(self, name: str) -> np.ndarray:
-
-            # Calculate the maximum point in peak
-            widths = regions[:, 1] - regions[:, 0]  # Width of each peak
-            # peak indicies for max width
-            indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
-            indicies = np.clip(
-                indicies, 0, responses.size - 1
-            )  # limit to arrays size
-            # limit to peak width
-            indicies = np.where(
-                indicies - regions[:, 0] < widths, indicies, regions[:, 1]
-            )
-            return np.argmax(responses[indicies], axis=0) + regions[:, 0]
+        responses = self.data[self.slider.left() : self.slider.right()]
+        regions = self.regions[name]
+        # Calculate the maximum point in peak
+        widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+        # peak indicies for max width
+        indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+        indicies = np.clip(indicies, 0, responses.size - 1)  # limit to arrays size
+        # limit to peak width
+        indicies = np.where(indicies - regions[:, 0] < widths, indicies, regions[:, 1])
+        return np.argmax(responses[indicies], axis=0) + regions[:, 0]
 
     def redrawChart(self) -> None:
         name = self.combo_name.currentText()
-        responses = self.responseAsCounts(trim=(0, self.table.model().rowCount()))[name]
+        responses = self.responses[name]
         if responses is None or responses.size == 0:
             return
 
-        centers = self.centers + self.slider.left()
+        maxima = self.detectionMaxima(name)
 
         if self.draw_mode == "all":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
             diff = np.diff(ys) != 0  # optimise by removing duplicate points
             xs, ys = xs[:-1][diff], ys[:-1][diff]
         elif self.draw_mode == "detections":
-            ub = self.limit_ub
-            xs = np.stack([centers, centers, centers], axis=1).ravel()
+            ub = self.limits[name][2]["mean"]
+            # Draw vertical lines up and down at each detection
+            xs = np.stack([maxima, maxima, maxima], axis=1).ravel()
             ys = np.stack(
-                [
-                    np.full(centers.size, ub),
-                    responses[centers],
-                    np.full(centers.size, ub),
-                ],
+                [np.full(maxima.size, ub), responses[maxima], np.full(maxima.size, ub)],
                 axis=1,
             ).ravel()
             xs = np.concatenate([[0], xs, [responses.size - 1]])
             ys = np.concatenate([[ub], ys, [ub]])
         elif self.draw_mode == "background":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
-            above = ys > self.limit_ub
+            above = ys > self.limits[name][2]["mean"]
             xs, ys = xs[above], ys[above]
         else:
             raise ValueError(
@@ -397,7 +374,7 @@ class InputWidget(QtWidgets.QWidget):
             )
 
         self.chart.setData(ys, xs=xs)
-        self.chart.setScatter(centers, responses[centers])
+        self.chart.setScatter(maxima, responses[maxima])
 
         self.chart.drawVerticalLines(
             [self.slider.left(), self.slider.right()],
@@ -445,16 +422,11 @@ class InputWidget(QtWidgets.QWidget):
         self.background_count.setText("")
         self.lod_count.setText("")
 
-        self.background = 0.0
-        self.background_std = 0.0
-        self.detections = np.array([], dtype=("", np.float64))
-        self.labels = np.array([], dtype=("", np.int64))
-        self.detections_std = 0.0
-        self.limits = None
+        self.responses = np.array([])
+        self.detections.clear()
+        self.labels.clear()
+        self.limits.clear()
 
-        self.table.model().beginResetModel()
-        self.table.model().array = np.empty((0, 1), dtype=float)
-        self.table.model().endResetModel()
         self.blockSignals(False)
 
         self.optionsChanged.emit()
