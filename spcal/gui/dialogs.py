@@ -2,11 +2,15 @@ from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
 from pathlib import Path
 
+from spcal.gui.units import UnitsWidget
+
 from typing import List, Optional
 
 
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray)
+    dwelltimeImported = QtCore.Signal(float)
+    completeChanged = QtCore.Signal()
 
     def __init__(self, file: str, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
@@ -36,6 +40,11 @@ class ImportDialog(QtWidgets.QDialog):
         self.table.setRowCount(header_row_count)
         self.table.setFont(QtGui.QFont("Courier"))
 
+        self.dwelltime = UnitsWidget(
+            {"ms": 1e-3, "s": 1.0}, default_unit="ms", validator=(0.0, 10.0, 10)
+        )
+        self.dwelltime.valueChanged.connect(self.completeChanged)
+
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
         if any("cps" in line.lower() for line in self.file_header):
@@ -60,6 +69,7 @@ class ImportDialog(QtWidgets.QDialog):
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -72,6 +82,7 @@ class ImportDialog(QtWidgets.QDialog):
         import_box.setLayout(import_form)
 
         data_form = QtWidgets.QFormLayout()
+        data_form.addRow("Dwell Time:", self.dwelltime)
         data_form.addRow("Intensity Units:", self.combo_intensity_units)
 
         data_box = QtWidgets.QGroupBox("Data Options")
@@ -89,6 +100,13 @@ class ImportDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
+    def isComplete(self) -> bool:
+        return self.dwelltime.hasAcceptableInput()
+
+    def completeChanged(self) -> None:
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+
     def delimiter(self) -> str:
         delimiter = self.combo_delimiter.currentText()
         if delimiter == "Space":
@@ -102,20 +120,45 @@ class ImportDialog(QtWidgets.QDialog):
 
     def fillTable(self) -> None:
         lines = [line.split(self.delimiter()) for line in self.file_header]
+        header_row = self.spinbox_first_line.value() - 1
         self.table.setColumnCount(max(len(line) for line in lines))
+
         for row, line in enumerate(lines):
             for col, text in enumerate(line):
                 item = QtWidgets.QTableWidgetItem(text.strip())
-                if row != self.spinbox_first_line.value() - 1:
+                if row != header_row:
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
-                if (
-                    row < self.spinbox_first_line.value() - 1
-                    or col in self.ignoreColumns()
-                ):
+                if row < header_row or col in self.ignoreColumns():
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEnabled)
 
                 self.table.setItem(row, col, item)
         self.table.resizeColumnsToContents()
+
+        if self.dwelltime.value() is None:
+            self.readDwelltimeFromTable()
+
+    def readDwelltimeFromTable(self) -> None:
+        header_row = self.spinbox_first_line.value() - 1
+        for col in range(self.table.columnCount()):
+            text = self.table.item(header_row, col).text().lower()
+            if "time" in text:
+                try:
+                    times = [
+                        float(self.table.item(row, col).text().replace(",", "."))
+                        for row in range(header_row + 1, self.table.rowCount())
+                    ]
+                except ValueError:
+                    continue
+                if "ms" in text:
+                    factor = 1e-3
+                elif "us" in text or "μs" in text:
+                    factor = 1e-6
+                else:  # assume that value is in seconds
+                    factor = 1.0
+                self.dwelltime.setBaseValue(
+                    np.round(np.mean(np.diff(times)), 6) * factor  # type: ignore
+                )
+                break
 
     def accept(self) -> None:
         ignores = self.ignoreColumns()
@@ -132,5 +175,12 @@ class ImportDialog(QtWidgets.QDialog):
             converters={0: lambda s: float(s.replace(",", "."))},
             invalid_raise=False,
         )
+        dwell = self.dwelltime.baseValue()
+
+        if self.combo_intensity_units.currentText() == "CPS":
+            for name in data.dtype.names:
+                data[name] *= dwell  # type: ignore
+
         self.dataImported.emit(data)
+        self.dwelltimeImported.emit(dwell)
         super().accept()

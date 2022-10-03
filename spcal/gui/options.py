@@ -3,12 +3,14 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
 
+from typing import Optional
+
 
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
 
-    def __init__(self, parent: QtWidgets.QWidget = None):
+    def __init__(self, parent: Optional[ QtWidgets.QWidget ] = None):
         super().__init__(parent)
 
         # density_units = {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0}
@@ -29,6 +31,8 @@ class OptionsWidget(QtWidgets.QWidget):
         self.dwelltime = UnitsWidget(
             {"ms": 1e-3, "s": 1.0}, default_unit="ms", validator=(0.0, 10.0, 10)
         )
+        self.dwelltime.setReadOnly(True)
+
         self.uptake = UnitsWidget(
             uptake_units,
             default_unit="ml/min",
@@ -71,7 +75,7 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         # Complete Changed
-        self.dwelltime.valueChanged.connect(self.optionsChanged)
+        # self.dwelltime.valueChanged.connect(self.optionsChanged)
         self.uptake.valueChanged.connect(self.optionsChanged)
         self.response.valueChanged.connect(self.optionsChanged)
         self.efficiency.textChanged.connect(self.optionsChanged)
