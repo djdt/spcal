@@ -1,5 +1,6 @@
 from PySide2 import QtCore, QtGui, QtWidgets
 import numpy as np
+from pathlib import Path
 
 from typing import List, Optional
 
@@ -9,16 +10,14 @@ class ImportDialog(QtWidgets.QDialog):
 
     def __init__(self, file: str, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
-        self.resize(800, 800)
-        self.setWindowTitle("SPCal File Import")
 
         header_row_count = 10
 
-        # self.file_data = self.delimited_translated_columns(file)
-        self.file_pointer = open(file, "r")
+        self.file_path = Path(file)
         self.file_header = [
-            x for _, x in zip(range(header_row_count), self.file_pointer)
+            x for _, x in zip(range(header_row_count), self.file_path.open("r"))
         ]
+        self.setWindowTitle(f"SPCal File Import: {self.file_path.name}")
 
         first_data_line = 0
         for line in self.file_header:
@@ -32,6 +31,7 @@ class ImportDialog(QtWidgets.QDialog):
         column_count = max([line.count(",") for line in self.file_header]) + 1
 
         self.table = QtWidgets.QTableWidget()
+        self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
         self.table.setRowCount(header_row_count)
         self.table.setFont(QtGui.QFont("Courier"))
@@ -63,15 +63,28 @@ class ImportDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        controls = QtWidgets.QFormLayout()
-        controls.addRow("Delimiter:", self.combo_delimiter)
-        controls.addRow("Import From Row:", self.spinbox_first_line)
-        controls.addRow("Ignore Columns:", self.le_ignore_columns)
+        import_form = QtWidgets.QFormLayout()
+        import_form.addRow("Delimiter:", self.combo_delimiter)
+        import_form.addRow("Import From Row:", self.spinbox_first_line)
+        import_form.addRow("Ignore Columns:", self.le_ignore_columns)
+
+        import_box = QtWidgets.QGroupBox("Import Options")
+        import_box.setLayout(import_form)
+
+        data_form = QtWidgets.QFormLayout()
+        data_form.addRow("Intensity Units:", self.combo_intensity_units)
+
+        data_box = QtWidgets.QGroupBox("Data Options")
+        data_box.setLayout(data_form)
+
+        box_layout = QtWidgets.QHBoxLayout()
+        box_layout.addWidget(import_box, 1)
+        box_layout.addWidget(data_box, 1)
 
         self.fillTable()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(controls)
+        layout.addLayout(box_layout)
         layout.addWidget(self.table)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
@@ -105,15 +118,13 @@ class ImportDialog(QtWidgets.QDialog):
         self.table.resizeColumnsToContents()
 
     def accept(self) -> None:
-        self.file_pointer.seek(0)
-
         ignores = self.ignoreColumns()
         cols = [col for col in range(self.table.columnCount()) if col not in ignores]
         header_row = self.spinbox_first_line.value() - 1
         headers = [self.table.item(header_row, col).text() for col in cols]
 
         data = np.genfromtxt(
-            self.file_pointer,
+            self.file_path,
             delimiter=self.delimiter(),
             usecols=cols,
             names=headers,
