@@ -78,10 +78,6 @@ class InputWidget(QtWidgets.QWidget):
         self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         self.chartview.setAcceptDrops(False)
 
-        self.table_units = QtWidgets.QComboBox()
-        self.table_units.addItems(["Counts", "CPS"])
-        self.table_units.currentTextChanged.connect(self.updateLimits)
-
         self.table = ParticleTable()
         self.table.model().dataChanged.connect(self.updateLimits)
 
@@ -215,8 +211,8 @@ class InputWidget(QtWidgets.QWidget):
                 "",
                 "CSV Documents(*.csv *.txt *.text);;All files(*)",
             )
-            if file == "":
-                return
+        if file == "" or file is None:
+            return
         dlg = ImportDialog(file, self)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
@@ -226,10 +222,6 @@ class InputWidget(QtWidgets.QWidget):
         path = Path(file)
         responses, parameters = read_nanoparticle_file(path, delimiter=",")
         self.label_file.setText(path.name)
-
-        self.table_units.blockSignals(True)
-        self.table_units.setCurrentText("CPS" if parameters["cps"] else "Counts")
-        self.table_units.blockSignals(False)
 
         # Update dwell time
         if "dwelltime" in parameters:
@@ -303,7 +295,6 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateLimits(self) -> None:
         method = self.options.method.currentText()
-        responses = self.responseAsCounts()
         sigma = (
             float(self.options.sigma.text())
             if self.options.sigma.hasAcceptableInput()
@@ -326,27 +317,22 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        if responses is not None:
-            try:
-                if method == "Manual Input":
-                    limit = float(self.options.manual.text())
-                    self.limits = (
-                        "Manual Input",
-                        {},
-                        (np.mean(responses), limit, limit),
-                    )
-                else:
-                    self.limits = calculate_limits(
-                        responses,
-                        method,
-                        sigma,
-                        (alpha, beta),
-                        window=window_size,
-                    )
-            except ValueError:
-                self.limits = None
-        else:
-            self.limits = None
+        self.limits = {}
+        for name in self.data.dtype.names:
+            if method == "Manual Input":
+                limit = float(self.options.manual.text())
+                self.limits[name] = (
+                    method,
+                    {},
+                    np.array(
+                        [(np.mean(self.data[name]), limit, limit)],
+                        dtype=calculate_limits.dtype,
+                    ),
+                )
+            else:
+                self.limits[name] = calculate_limits(
+                    self.data[name], method, sigma, (alpha, beta), window=window_size
+                )
 
         self.limitsChanged.emit()
 

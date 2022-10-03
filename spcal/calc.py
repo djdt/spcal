@@ -126,9 +126,6 @@ def calculate_limits(
 
     assert isinstance(ub, float)
 
-    limit_dtype = np.dtype(
-        {"names": ["mean", "lc", "ld"], "formats": [np.float64, np.float64, np.float64]}
-    )
     limit_params = {}
 
     if method == "Automatic":
@@ -139,12 +136,12 @@ def calculate_limits(
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
     if window is None or window < 2:
-        limits = np.array([(ub, 0.0, 0.0)], dtype=limit_dtype)
+        limits = np.array([(ub, 0.0, 0.0)], dtype=calculate_limits.dtype)
         if "Gaussian" in method:
             std = np.std(responses)
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
-        limits = np.empty(responses.size, dtype=limit_dtype)
+        limits = np.empty(responses.size, dtype=calculate_limits.dtype)
 
         if "Median" in method:
             limits["mean"] = moving_median(pad, window)[: responses.size]
@@ -169,6 +166,11 @@ def calculate_limits(
         limit_params["β"] = error_rates[1]
 
     return method, limit_params, limits
+
+
+calculate_limits.dtype = np.dtype(
+    {"names": ["mean", "lc", "ld"], "formats": [np.float64, np.float64, np.float64]}
+)
 
 
 def results_from_mass_response(
