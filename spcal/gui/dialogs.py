@@ -36,6 +36,11 @@ class ImportDialog(QtWidgets.QDialog):
         self.table.setRowCount(header_row_count)
         self.table.setFont(QtGui.QFont("Courier"))
 
+        self.combo_intensity_units = QtWidgets.QComboBox()
+        self.combo_intensity_units.addItems(["Counts", "CPS"])
+        if any("cps" in line.lower() for line in self.file_header):
+            self.combo_intensity_units.setCurrentText("CPS")
+
         self.combo_delimiter = QtWidgets.QComboBox()
         self.combo_delimiter.addItems([",", ";", "Space", "Tab"])
         self.combo_delimiter.currentIndexChanged.connect(self.fillTable)

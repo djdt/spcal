@@ -12,6 +12,7 @@ from spcal.calc import calculate_limits
 from spcal.io import read_nanoparticle_file
 
 from spcal.gui.charts import ParticleChart, ParticleChartView
+from spcal.gui.dialogs import ImportDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.tables import ParticleTable
 from spcal.gui.units import UnitsWidget
@@ -30,7 +31,7 @@ class InputWidget(QtWidgets.QWidget):
     detectionsChanged = QtCore.Signal(int)
     limitsChanged = QtCore.Signal()
 
-    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
+    def __init__(self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
@@ -45,12 +46,10 @@ class InputWidget(QtWidgets.QWidget):
         self.options.method.currentTextChanged.connect(self.updateLimits)
         self.options.window_size.editingFinished.connect(self.updateLimits)
         self.options.check_use_window.toggled.connect(self.updateLimits)
-        # self.options.epsilon.editingFinished.connect(self.updateLimits)
         self.options.sigma.editingFinished.connect(self.updateLimits)
         self.options.manual.editingFinished.connect(self.updateLimits)
         self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
         self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
-        # self.options.check_force_epsilon.toggled.connect(self.updateLimits)
 
         self.background = 0.0
         self.background_std = 0.0
@@ -115,16 +114,10 @@ class InputWidget(QtWidgets.QWidget):
 
         layout_table_file = QtWidgets.QHBoxLayout()
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
-        layout_table_file.addWidget(self.label_file, 1)
+        layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
 
-        layout_table_units = QtWidgets.QHBoxLayout()
-        layout_table_units.addStretch(1)
-        layout_table_units.addWidget(QtWidgets.QLabel("Intensity:"), 0)
-        layout_table_units.addWidget(self.table_units, 0)
-
-        layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addLayout(layout_table_units, 0)
-        layout_table.addWidget(self.table, 1)
+        layout_table_file.addWidget(QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight)
+        layout_table_file.addWidget(self.table_units, 0, QtCore.Qt.AlignRight)
 
         layout_slider = QtWidgets.QHBoxLayout()
         layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
@@ -141,7 +134,6 @@ class InputWidget(QtWidgets.QWidget):
         layout_chart.addLayout(layout_slider)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(layout_table, 0)
         layout.addLayout(layout_chart, 1)
 
         self.setLayout(layout)
@@ -177,16 +169,6 @@ class InputWidget(QtWidgets.QWidget):
             for url in event.mimeData().urls():
                 self.loadFile(url.toLocalFile())
                 break
-            event.acceptProposedAction()
-        elif event.mimeData().hasText():
-            text = event.mimeData().text()
-            data = np.genfromtxt(text.split("\n"), usecols=0, dtype=np.float64)
-            data = data[~np.isnan(data)]
-            if data.size == 0:
-                event.ignore()
-                return
-
-            self.loadData(data)
             event.acceptProposedAction()
         elif event.mimeData().hasHtml():
             pass
@@ -225,17 +207,22 @@ class InputWidget(QtWidgets.QWidget):
             return None
         return (self.slider.right() - self.slider.left()) * dwell
 
-    def dialogLoadFile(self) -> None:
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            "Open",
-            "",
-            "CSV Documents(*.csv *.txt *.text);;All files(*)",
-        )
-        if file != "":
-            self.loadFile(file)
+    def dialogLoadFile(self, file: Optional[str] = None) -> None:
+        if file is None:
+            file, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self,
+                "Open",
+                "",
+                "CSV Documents(*.csv *.txt *.text);;All files(*)",
+            )
+            if file == "":
+                return
+        dlg = ImportDialog(file, self)
+        dlg.dataImported.connect(self.loadData)
+        dlg.open()
 
     def loadFile(self, file: str) -> None:
+        dlg = ImportDialog(file, self)
         path = Path(file)
         responses, parameters = read_nanoparticle_file(path, delimiter=",")
         self.label_file.setText(path.name)
@@ -251,13 +238,14 @@ class InputWidget(QtWidgets.QWidget):
         self.loadData(responses)
 
     def loadData(self, data: np.ndarray) -> None:
-        self.table.model().beginResetModel()
-        self.table.model().array = data[:, None]
-        self.table.model().endResetModel()
+        self.data = data
+        # self.table.model().beginResetModel()
+        # self.table.model().array = data[:, None]
+        # self.table.model().endResetModel()
 
         # Update Chart and slider
         offset = self.slider.maximum() - self.slider.right()
-        self.slider.setRange(0, self.table.model().rowCount())
+        self.slider.setRange(0, self.data.shape[1])
 
         right = max(self.slider.maximum() - offset, 1)
         left = min(self.slider.left(), right - 1)
