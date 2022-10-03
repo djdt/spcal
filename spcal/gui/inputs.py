@@ -44,6 +44,8 @@ class InputWidget(QtWidgets.QWidget):
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.requestRedraw)
 
+        self.detectionsChanged.connect(self.updateTexts)
+
         self.options = options
         self.options.dwelltime.valueChanged.connect(self.updateLimits)
         self.options.method.currentTextChanged.connect(self.updateLimits)
@@ -54,16 +56,19 @@ class InputWidget(QtWidgets.QWidget):
         self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
         self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
 
-        self.data = np.array([], dtype=("", np.float64))
-        self.detections = np.array([], dtype=("", np.float64))
-        self.labels = np.array([], dtype=("", np.int32))  # enough for 71 minutes
-        self.regions = np.array([], dtype=("", np.int32))
+        self.responses = np.array([])
+        self.detections: Dict[str, np.ndarray] = {}
+        self.labels: Dict[str, np.ndarray] = {}
+        self.regions: Dict[str, np.ndarray] = {}
         self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
         # self.background = 0.0
         # self.background_std = 0.0
         # self.detections = np.array([], dtype=("", np.float64))
         # self.detections_std = 0.0
+
+        self.combo_name = QtWidgets.QComboBox()
+        self.combo_name.currentTextChanged.connect(self.updateTexts)
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -110,10 +115,10 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
         layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
 
-        layout_table_file.addWidget(
-            QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight
-        )
-        layout_table_file.addWidget(self.table_units, 0, QtCore.Qt.AlignRight)
+        # layout_table_file.addWidget(
+        #     QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight
+        # )
+        # layout_table_file.addWidget(self.table_units, 0, QtCore.Qt.AlignRight)
 
         layout_slider = QtWidgets.QHBoxLayout()
         layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
@@ -133,18 +138,6 @@ class InputWidget(QtWidgets.QWidget):
         layout.addLayout(layout_chart, 1)
 
         self.setLayout(layout)
-
-    @property
-    def limit_ub(self) -> Union[float, np.ndarray]:
-        return self.limits[2][0]
-
-    @property
-    def limit_lc(self) -> Union[float, np.ndarray]:
-        return self.limits[2][1]
-
-    @property
-    def limit_ld(self) -> Union[float, np.ndarray]:
-        return self.limits[2][2]
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
@@ -181,26 +174,25 @@ class InputWidget(QtWidgets.QWidget):
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
 
-    def responseAsCounts(
-        self, trim: Optional[Tuple[int, int]] = None
-    ) -> Optional[np.ndarray]:
+    def responseAsCounts(self, trim: Optional[Tuple[int, int]] = None) -> np.ndarray:
         if trim is None:
             trim = (self.slider.left(), self.slider.right())
 
-        dwelltime = self.options.dwelltime.baseValue()
-        response = self.table.model().array[trim[0] : trim[1], 0]
+        responses = self.data[trim[0] : trim[1]]
 
-        if self.table_units.currentText() == "Counts":
-            return response
-        elif dwelltime is not None:
-            return response * dwelltime
-        else:
-            return None
+        if self.response_units.currentText() == "CPS":
+            dwell = self.options.dwelltime.baseValue()
+            responses = responses.copy()
+            if dwell is None:
+                raise ValueError("responseAsCounts: dwelltime not defined!")
+            for name in responses.dtype.names:
+                responses[name] *= dwell
+        return responses
 
-    def timeAsSeconds(self) -> Optional[float]:
+    def timeAsSeconds(self) -> float:
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
-            return None
+            raise ValueError("timeAsSeconds: dwelltime not defined!")
         return (self.slider.right() - self.slider.left()) * dwell
 
     def dialogLoadFile(self, file: Optional[str] = None) -> None:
@@ -213,31 +205,37 @@ class InputWidget(QtWidgets.QWidget):
             )
         if file == "" or file is None:
             return
+
         dlg = ImportDialog(file, self)
         dlg.dataImported.connect(self.loadData)
+        dlg.dwelltimeImported.connect(self.options.dwelltime.setBaseValue)
+        dlg.accepted.connect(lambda: self.label_file.setText(dlg.file_path.name))
         dlg.open()
 
-    def loadFile(self, file: str) -> None:
-        dlg = ImportDialog(file, self)
-        path = Path(file)
-        responses, parameters = read_nanoparticle_file(path, delimiter=",")
-        self.label_file.setText(path.name)
+    # def loadFile(self, file: str) -> None:
+    #     dlg = ImportDialog(file, self)
+    #     path = Path(file)
+    #     responses, parameters = read_nanoparticle_file(path, delimiter=",")
+    #     self.label_file.setText(path.name)
 
-        # Update dwell time
-        if "dwelltime" in parameters:
-            self.options.dwelltime.setBaseValue(parameters["dwelltime"])
+    #     # Update dwell time
+    #     if "dwelltime" in parameters:
+    #         self.options.dwelltime.setBaseValue(parameters["dwelltime"])
 
-        self.loadData(responses)
+    #     self.loadData(responses)
 
     def loadData(self, data: np.ndarray) -> None:
-        self.data = data
-        # self.table.model().beginResetModel()
-        # self.table.model().array = data[:, None]
-        # self.table.model().endResetModel()
+        self.responses = data
+
+        self.combo_name.blockSignals(True)
+        self.combo_name.clear()
+        self.combo_name.addItems([name for name in self.responses.dtype.names])
+        self.combo_name.adjustSize()
+        self.combo_name.blockSignals(False)
 
         # Update Chart and slider
         offset = self.slider.maximum() - self.slider.right()
-        self.slider.setRange(0, self.data.shape[1])
+        self.slider.setRange(0, self.responses.shape[1])
 
         right = max(self.slider.maximum() - offset, 1)
         left = min(self.slider.left(), right - 1)
@@ -249,49 +247,35 @@ class InputWidget(QtWidgets.QWidget):
     def updateDetections(self) -> None:
         responses = self.responseAsCounts()
 
-        if self.limits is None or responses is None or responses.size == 0:
-            self.detections = np.array([])
-            self.background_std = 0.0
-            self.detections_std = 0.0
+        self.detections.clear()
+        self.labels.clear()
+        self.regions.clear()
 
-            self.count.setText("")
-            self.background_count.setText("")
-            self.lod_count.setText("")
-        else:
-            detections, labels, regions = spcal.accumulate_detections(
-                responses, self.limit_lc, self.limit_ld
-            )
-            if detections.size == 0:  # No detections = no centers
-                self.centers = np.array([], dtype=int)
-            else:
-                # Calculate the maximum point in peak
-                widths = regions[:, 1] - regions[:, 0]  # Width of each peak
-                # peak indicies for max width
-                indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
-                indicies = np.clip(
-                    indicies, 0, responses.size - 1
-                )  # limit to arrays size
-                # limit to peak width
-                indicies = np.where(
-                    indicies - regions[:, 0] < widths, indicies, regions[:, 1]
-                )
-                self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
+        if responses.size > 0 and len(self.limits) > 0:
+            for name in responses.dtype.names:
+                limits = self.limits[name][2]
+                (
+                    self.detections[name],
+                    self.labels[name],
+                    self.regions[name],
+                ) = spcal.accumulate_detections(responses, limits["lc"], limits["ld"])
+        # if detections.size == 0:  # No detections = no centers
+        #     self.centers = np.array([], dtype=int)
+        # else:
+        #     # Calculate the maximum point in peak
+        #     widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+        #     # peak indicies for max width
+        #     indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+        #     indicies = np.clip(
+        #         indicies, 0, responses.size - 1
+        #     )  # limit to arrays size
+        #     # limit to peak width
+        #     indicies = np.where(
+        #         indicies - regions[:, 0] < widths, indicies, regions[:, 1]
+        #     )
+        #     self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
 
-            self.detections = detections
-            self.detections_std = np.sqrt(detections.size)  # poisson approximation
-            self.background = np.mean(responses[labels == 0])
-            self.background_std = np.std(responses[labels == 0])
-            lod = np.mean(self.limit_ld)  # + self.background
-
-            self.count.setText(f"{detections.size} ± {self.detections_std:.1f}")
-            self.background_count.setText(
-                f"{self.background:.4g} ± {self.background_std:.4g}"
-            )
-            self.lod_count.setText(
-                f"{lod:.4g} ({self.limits[0]}, {','.join(f'{k}={v}' for k,v in self.limits[1].items())})"
-            )
-
-        self.detectionsChanged.emit(self.detections.size)
+        self.detectionsChanged.emit(len(self.detections))
 
     def updateLimits(self) -> None:
         method = self.options.method.currentText()
@@ -318,26 +302,69 @@ class InputWidget(QtWidgets.QWidget):
         )
 
         self.limits = {}
-        for name in self.data.dtype.names:
+        for name in self.responses.dtype.names:
             if method == "Manual Input":
                 limit = float(self.options.manual.text())
                 self.limits[name] = (
                     method,
                     {},
                     np.array(
-                        [(np.mean(self.data[name]), limit, limit)],
+                        [(np.mean(self.responses[name]), limit, limit)],
                         dtype=calculate_limits.dtype,
                     ),
                 )
             else:
                 self.limits[name] = calculate_limits(
-                    self.data[name], method, sigma, (alpha, beta), window=window_size
+                    self.responses[name],
+                    method,
+                    sigma,
+                    (alpha, beta),
+                    window=window_size,
                 )
 
         self.limitsChanged.emit()
 
+    def updateTexts(self) -> None:
+        name = self.combo_name.currentText()
+
+        if name not in self.detections:
+            self.count.setText("")
+            self.background_count.setText("")
+            self.lod_count.setText("")
+        else:
+            responses = self.responseAsCounts()[name]
+            self.background = np.mean(responses[self.labels[name] == 0])
+            self.background_std = np.std(responses[self.labels[name] == 0])
+            lod = np.mean(self.limits[name][2]["ld"])  # + self.background
+
+            self.count.setText(
+                f"{self.detections[name].size} ± {np.sqrt(self.detections[name].size):.1f}"
+            )
+            self.background_count.setText(
+                f"{self.background:.4g} ± {self.background_std:.4g}"
+            )
+            self.lod_count.setText(
+                f"{lod:.4g} ({self.limits[name][0]}, {','.join(f'{k}={v}' for k,v in self.limits[name][1].items())})"
+            )
+
+    def detectionMaxima(self, name: str) -> np.ndarray:
+
+            # Calculate the maximum point in peak
+            widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+            # peak indicies for max width
+            indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+            indicies = np.clip(
+                indicies, 0, responses.size - 1
+            )  # limit to arrays size
+            # limit to peak width
+            indicies = np.where(
+                indicies - regions[:, 0] < widths, indicies, regions[:, 1]
+            )
+            return np.argmax(responses[indicies], axis=0) + regions[:, 0]
+
     def redrawChart(self) -> None:
-        responses = self.responseAsCounts(trim=(0, self.table.model().rowCount()))
+        name = self.combo_name.currentText()
+        responses = self.responseAsCounts(trim=(0, self.table.model().rowCount()))[name]
         if responses is None or responses.size == 0:
             return
 
