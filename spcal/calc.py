@@ -90,11 +90,7 @@ def calculate_limits(
     sigma: float = 3.0,
     error_rates: Tuple[float, float] = (0.05, 0.05),
     window: Optional[int] = None,
-) -> Tuple[
-    str,
-    Dict[str, float],
-    Tuple[Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]],
-]:
+) -> Tuple[str, Dict[str, float], np.ndarray]:
     """Calculates limit(s) of detections for input.
 
     If `window` is given then rolling filters are used to create limits. The returned values are
@@ -113,7 +109,7 @@ def calculate_limits(
         window: rolling limits
 
     Returns:
-        method, {symbol: value, ...}, (mean signal, limit of criticality, limit of detection)
+        method, {symbol: value, ...}, array[('mean', 'lc', 'ld')]
     """
     if responses is None or responses.size == 0:
         raise ValueError("Responses invalid.")
@@ -130,6 +126,11 @@ def calculate_limits(
 
     assert isinstance(ub, float)
 
+    limit_dtype = np.dtype(
+        {"names": ["mean", "lc", "ld"], "formats": [np.float64, np.float64, np.float64]}
+    )
+    limit_params = {}
+
     if method == "Automatic":
         method = "Poisson" if ub < 50.0 else "Gaussian"
     elif method == "Highest":
@@ -138,27 +139,36 @@ def calculate_limits(
         method = "Gaussian" if lgaussian > lpoisson else "Poisson"
 
     if window is None or window < 2:
+        limits = np.array([(ub, 0.0, 0.0)], dtype=limit_dtype)
         if "Gaussian" in method:
             std = np.std(responses)
-            ld = ub + sigma * std
-            return method, {"σ": sigma}, (ub, ld, ld)
-        else:
-            sc, sd = poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])
-            return method, {"α": error_rates[0], "β": error_rates[1]}, (ub, ub + sc, ub + sd)
     else:
         pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
+        limits = np.empty(responses.size, dtype=limit_dtype)
+
         if "Median" in method:
-            ub = moving_median(pad, window)[: responses.size]
+            limits["mean"] = moving_median(pad, window)[: responses.size]
         else:
-            ub = moving_mean(pad, window)[: responses.size]
+            limits["mean"] = moving_mean(pad, window)[: responses.size]
 
         if "Gaussian" in method:
             std = moving_std(pad, window)[: responses.size]
-            ld = ub + sigma * std
-            return method, {"σ": sigma}, (ub, ld, ld)
-        else:
-            sc, sd = poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])
-            return method, {"α": error_rates[0], "β": error_rates[1]}, (ub, ub + sc, ub + sd)
+
+    if "Gaussian" in method:
+        std = np.std(responses)
+        limits["ld"] = limits["mean"] + sigma * std
+        limits["lc"] = limits["ld"]
+        limit_params["σ"] = sigma
+    else:
+        sc, sd = poisson_limits(
+            limits["mean"], alpha=error_rates[0], beta=error_rates[1]
+        )
+        limits["lc"] = limits["mean"] = sc
+        limits["ld"] = limits["mean"] = sd
+        limit_params["α"] = error_rates[0]
+        limit_params["β"] = error_rates[1]
+
+    return method, limit_params, limits
 
 
 def results_from_mass_response(

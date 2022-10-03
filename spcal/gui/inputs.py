@@ -26,12 +26,15 @@ from typing import Dict, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
+
 class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     detectionsChanged = QtCore.Signal(int)
     limitsChanged = QtCore.Signal()
 
-    def __init__(self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(
+        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+    ):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
@@ -51,21 +54,16 @@ class InputWidget(QtWidgets.QWidget):
         self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
         self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
 
-        self.background = 0.0
-        self.background_std = 0.0
-        self.detections = np.array([], dtype=np.float64)
-        self.detections_std = 0.0
-        self.limits: Optional[
-            Tuple[
-                str,
-                Dict[str, float],
-                Tuple[
-                    Union[float, np.ndarray],
-                    Union[float, np.ndarray],
-                    Union[float, np.ndarray],
-                ],
-            ]
-        ] = None
+        self.data = np.array([], dtype=("", np.float64))
+        self.detections = np.array([], dtype=("", np.float64))
+        self.labels = np.array([], dtype=("", np.int32))  # enough for 71 minutes
+        self.regions = np.array([], dtype=("", np.int32))
+        self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
+
+        # self.background = 0.0
+        # self.background_std = 0.0
+        # self.detections = np.array([], dtype=("", np.float64))
+        # self.detections_std = 0.0
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -116,7 +114,9 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
         layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
 
-        layout_table_file.addWidget(QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight)
+        layout_table_file.addWidget(
+            QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight
+        )
         layout_table_file.addWidget(self.table_units, 0, QtCore.Qt.AlignRight)
 
         layout_slider = QtWidgets.QHBoxLayout()
@@ -365,7 +365,11 @@ class InputWidget(QtWidgets.QWidget):
             ub = self.limit_ub
             xs = np.stack([centers, centers, centers], axis=1).ravel()
             ys = np.stack(
-                [np.full(centers.size, ub), responses[centers], np.full(centers.size, ub)],
+                [
+                    np.full(centers.size, ub),
+                    responses[centers],
+                    np.full(centers.size, ub),
+                ],
                 axis=1,
             ).ravel()
             xs = np.concatenate([[0], xs, [responses.size - 1]])
@@ -375,7 +379,9 @@ class InputWidget(QtWidgets.QWidget):
             above = ys > self.limit_ub
             xs, ys = xs[above], ys[above]
         else:
-            raise ValueError("Invalid draw_mode, must be 'all', 'detections' or 'background'.")
+            raise ValueError(
+                "Invalid draw_mode, must be 'all', 'detections' or 'background'."
+            )
 
         self.chart.setData(ys, xs=xs)
         self.chart.setScatter(centers, responses[centers])
@@ -428,7 +434,8 @@ class InputWidget(QtWidgets.QWidget):
 
         self.background = 0.0
         self.background_std = 0.0
-        self.detections = np.array([], dtype=np.float64)
+        self.detections = np.array([], dtype=("", np.float64))
+        self.labels = np.array([], dtype=("", np.int64))
         self.detections_std = 0.0
         self.limits = None
 
