@@ -6,7 +6,7 @@ from PySide2.QtCharts import QtCharts
 
 from spcal.gui.util import array_to_polygonf, polygonf_to_array
 
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 
 class ParticleChartView(QtCharts.QChartView):
@@ -60,7 +60,7 @@ class ParticleChartView(QtCharts.QChartView):
             super().mouseReleaseEvent(event)
 
     def copyToClipboard(self) -> None:
-        QtWidgets.QApplication.clipboard().setPixmap(self.grab(self.viewport().rect()))
+        QtWidgets.QApplication.clipboard(self).setPixmap(self.grab(self.viewport().rect()))
 
     def saveToFile(self, path: Union[str, Path]) -> None:
         if isinstance(path, str):
@@ -78,7 +78,7 @@ class ParticleChartView(QtCharts.QChartView):
 class NiceValueAxis(QtCharts.QValueAxis):
     nicenums = [1.0, 1.5, 2.0, 2.5, 3.0, 5.0, 7.5]
 
-    def __init__(self, nticks: int = 6, parent: QtCore.QObject = None):
+    def __init__(self, nticks: int = 6, parent: Optional[QtCore.QObject] = None):
         super().__init__(parent)
         self.nticks = nticks
 
@@ -99,7 +99,7 @@ class NiceValueAxis(QtCharts.QValueAxis):
         interval = interval / pwr
 
         idx = np.searchsorted(NiceValueAxis.nicenums, interval)
-        idx = min(idx, len(NiceValueAxis.nicenums) - 1)
+        idx = min(idx, len(NiceValueAxis.nicenums) - 1)  # type: ignore
 
         interval = NiceValueAxis.nicenums[idx] * pwr
         anchor = int(amin / interval) * interval
@@ -109,7 +109,7 @@ class NiceValueAxis(QtCharts.QValueAxis):
 
 
 class ParticleChart(QtCharts.QChart):
-    def __init__(self, parent: QtWidgets.QGraphicsItem = None):
+    def __init__(self, parent: Optional[QtWidgets.QGraphicsItem] = None):
         super().__init__(parent)
         self.setMinimumSize(640, 320)
 
@@ -125,22 +125,27 @@ class ParticleChart(QtCharts.QChart):
         self.addAxis(self.xaxis, QtCore.Qt.AlignBottom)
         self.addAxis(self.yaxis, QtCore.Qt.AlignLeft)
 
-        self.series_data: np.ndarray = np.array([])
+        # self.series_data: np.ndarray = np.array([])
 
-        self.series = QtCharts.QLineSeries()
-        self.series.setPen(QtGui.QPen(QtCore.Qt.black, 1.0))
-        self.series.setUseOpenGL(True)  # Speed for many line?
-        self.addSeries(self.series)
-        self.series.attachAxis(self.xaxis)
-        self.series.attachAxis(self.yaxis)
+        self.series: Dict[str, QtCharts.QLineSeries] = {}
+        self.scatters: Dict[str, QtCharts.QLineSeries] = {}
 
-        self.scatter_series = QtCharts.QScatterSeries()
-        self.scatter_series.setMarkerSize(5)
-        self.scatter_series.setColor(QtCore.Qt.red)
-        self.scatter_series.setUseOpenGL(True)
-        self.addSeries(self.scatter_series)
-        self.scatter_series.attachAxis(self.xaxis)
-        self.scatter_series.attachAxis(self.yaxis)
+        self.colors = [QtCore.Qt.black, QtCore.Qt.red, QtCore.Qt.green, QtCore.Qt.blue]
+
+        # self.series = QtCharts.QLineSeries()
+        # self.series.setPen(QtGui.QPen(QtCore.Qt.black, 1.0))
+        # self.series.setUseOpenGL(True)  # Speed for many line?
+        # self.addSeries(self.series)
+        # self.series.attachAxis(self.xaxis)
+        # self.series.attachAxis(self.yaxis)
+
+        # self.scatter_series = QtCharts.QScatterSeries()
+        # self.scatter_series.setMarkerSize(5)
+        # self.scatter_series.setColor(QtCore.Qt.red)
+        # self.scatter_series.setUseOpenGL(True)
+        # self.addSeries(self.scatter_series)
+        # self.scatter_series.attachAxis(self.xaxis)
+        # self.scatter_series.attachAxis(self.yaxis)
 
         self.ub = QtCharts.QLineSeries()
         self.lc = QtCharts.QLineSeries()
@@ -162,28 +167,52 @@ class ParticleChart(QtCharts.QChart):
 
         # Clean legend
         self.legend().setMarkerShape(QtCharts.QLegend.MarkerShapeFromSeries)
-        self.legend().markers(self.series)[0].setVisible(False)
-        self.legend().markers(self.scatter_series)[0].setVisible(False)
+
+    def colorForName(self, name: str) -> QtGui.QColor:
+        try:
+            idx = list(self.series.keys()).index(name)
+        except ValueError:
+            idx = 0
+        return self.colors[idx % len(self.colors)]  # prevent overrun
+
+    def setNameSeries(self, name: str, ys: np.ndarray, xs: np.ndarray, ) -> None:
+        if name not in self.series:
+            self.series[name] = QtCharts.QLineSeries()
+            self.series[name].setPen(QtGui.QPen(self.colorForName(name), 1.0))
+            self.series[name].setUseOpenGL(True)  # Speed for many line?
+            self.addSeries(self.series[name])
+            self.series[name].attachAxis(self.xaxis)
+            self.series[name].attachAxis(self.yaxis)
+            self.legend().markers(self.series[name])[0].setVisible(False)
+
+        data = np.stack((xs, ys), axis=1)
+        poly = array_to_polygonf(data)
+        self.series[name].replace(poly)
+
+    def setNameScatter(self, name: str, ys: np.ndarray, xs: np.ndarray, ) -> None:
+        if name not in self.scatters:
+            self.scatters[name] = QtCharts.QScatterSeries()
+            self.scatters[name].setMarkerSize(5)
+            self.scatters[name].setColor(self.colorForName(name))
+            self.scatters[name].setUseOpenGL(True)  # Speed for many line?
+            self.addSeries(self.scatters[name])
+            self.scatters[name].attachAxis(self.xaxis)
+            self.scatters[name].attachAxis(self.yaxis)
+            self.legend().markers(self.scatters[name])[0].setVisible(False)
+
+        data = np.stack((xs, ys), axis=1)
+        poly = array_to_polygonf(data)
+        self.series[name].replace(poly)
+
 
     def zoomReset(self) -> None:
-        self.xaxis.setRange(0, self.series.at(self.series.count() - 1).x())
+        amax = max(self.series[name].at(self.series[name].count() - 1).x() for name in self.series)
+        self.xaxis.setRange(0, amax)
 
     def clearVerticalLines(self) -> None:
         for line in self.vlines:
             self.removeSeries(line)
         self.vlines.clear()
-
-    def setData(self, ys: np.ndarray, xs: Optional[np.ndarray] = None) -> None:
-        if xs is None:
-            xs = np.arange(ys.size)
-        self.series_data = np.stack((xs, ys), axis=1)
-        poly = array_to_polygonf(self.series_data)
-        self.series.replace(poly)
-
-    def setScatter(self, xs: np.ndarray, ys: np.ndarray) -> None:
-        data = np.stack((xs, ys), axis=1)
-        poly = array_to_polygonf(data)
-        self.scatter_series.replace(poly)
 
     def setBackground(self, xs: np.ndarray, ub: Union[float, np.ndarray]) -> None:
         if isinstance(ub, float):
@@ -241,7 +270,9 @@ class ParticleChart(QtCharts.QChart):
             line.replace([QtCore.QPointF(value, ymin), QtCore.QPointF(value, ymax)])
         self.update()
 
-    def updateYRange(self, xmin: Optional[float] = None, xmax: Optional[float] = None) -> None:
+    def updateYRange(
+        self, xmin: Optional[float] = None, xmax: Optional[float] = None
+    ) -> None:
         if self.series_data.size == 0:
             return
 

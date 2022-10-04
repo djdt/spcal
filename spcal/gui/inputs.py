@@ -60,11 +60,6 @@ class InputWidget(QtWidgets.QWidget):
         self.regions: Dict[str, np.ndarray] = {}
         self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
-        # self.background = 0.0
-        # self.background_std = 0.0
-        # self.detections = np.array([], dtype=("", np.float64))
-        # self.detections_std = 0.0
-
         self.combo_name = QtWidgets.QComboBox()
         self.combo_name.currentTextChanged.connect(self.updateTexts)
 
@@ -110,13 +105,8 @@ class InputWidget(QtWidgets.QWidget):
         self.outputs.layout().addRow("LOD count:", self.lod_count)
 
         layout_table_file = QtWidgets.QHBoxLayout()
+        layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignRight)
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
-        layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
-
-        # layout_table_file.addWidget(
-        #     QtWidgets.QLabel("Intensity unit:"), 0, QtCore.Qt.AlignRight
-        # )
-        # layout_table_file.addWidget(self.table_units, 0, QtCore.Qt.AlignRight)
 
         layout_slider = QtWidgets.QHBoxLayout()
         layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
@@ -242,21 +232,6 @@ class InputWidget(QtWidgets.QWidget):
                     self.labels[name],
                     self.regions[name],
                 ) = spcal.accumulate_detections(responses, limits["lc"], limits["ld"])
-        # if detections.size == 0:  # No detections = no centers
-        #     self.centers = np.array([], dtype=int)
-        # else:
-        #     # Calculate the maximum point in peak
-        #     widths = regions[:, 1] - regions[:, 0]  # Width of each peak
-        #     # peak indicies for max width
-        #     indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
-        #     indicies = np.clip(
-        #         indicies, 0, responses.size - 1
-        #     )  # limit to arrays size
-        #     # limit to peak width
-        #     indicies = np.where(
-        #         indicies - regions[:, 0] < widths, indicies, regions[:, 1]
-        #     )
-        #     self.centers = np.argmax(responses[indicies], axis=0) + regions[:, 0]
 
         self.detectionsChanged.emit(len(self.detections))
 
@@ -331,16 +306,27 @@ class InputWidget(QtWidgets.QWidget):
             )
 
     def detectionMaxima(self, name: str) -> np.ndarray:
-        responses = self.data[self.slider.left() : self.slider.right()]
+        responses = self.data[name][self.slider.left() : self.slider.right()]
         regions = self.regions[name]
         # Calculate the maximum point in peak
-        widths = regions[:, 1] - regions[:, 0]  # Width of each peak
+        # The width of each detection region
+        widths = regions[:, 1] - regions[:, 0]  # type: ignore
         # peak indicies for max width
         indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
         indicies = np.clip(indicies, 0, responses.size - 1)  # limit to arrays size
         # limit to peak width
         indicies = np.where(indicies - regions[:, 0] < widths, indicies, regions[:, 1])
+        # return indcies that is at maxima
         return np.argmax(responses[indicies], axis=0) + regions[:, 0]
+
+    def drawChart(self, name: Optional[str] = None) -> None:
+        if name is None:
+            name = self.combo_name.currentText()
+        responses = self.responses[name]
+        if responses is None or responses.size == 0:
+            return
+
+        maxima = self.detectionMaxima(name)
 
     def redrawChart(self) -> None:
         name = self.combo_name.currentText()
@@ -362,8 +348,8 @@ class InputWidget(QtWidgets.QWidget):
                 [np.full(maxima.size, ub), responses[maxima], np.full(maxima.size, ub)],
                 axis=1,
             ).ravel()
-            xs = np.concatenate([[0], xs, [responses.size - 1]])
-            ys = np.concatenate([[ub], ys, [ub]])
+            xs = np.concatenate([[0], xs, [responses.size - 1]])  # type: ignore
+            ys = np.concatenate([[ub], ys, [ub]])  # type: ignore
         elif self.draw_mode == "background":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
             above = ys > self.limits[name][2]["mean"]
@@ -405,8 +391,8 @@ class InputWidget(QtWidgets.QWidget):
 
     def requestRedraw(self) -> None:
         if self.isVisible():
-            self.redrawChart()
-            self.redrawLimits()
+            self.drawChart()
+            self.drawLimits()
         else:
             self.redraw_charts_requested = True
 
