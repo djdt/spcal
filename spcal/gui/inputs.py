@@ -341,15 +341,9 @@ class InputWidget(QtWidgets.QWidget):
             diff = np.diff(ys) != 0  # optimise by removing duplicate points
             xs, ys = xs[:-1][diff], ys[:-1][diff]
         elif self.draw_mode == "detections":
-            ub = self.limits[name][2]["mean"]
-            # Draw vertical lines up and down at each detection
-            xs = np.stack([maxima, maxima, maxima], axis=1).ravel()
-            ys = np.stack(
-                [np.full(maxima.size, ub), responses[maxima], np.full(maxima.size, ub)],
-                axis=1,
-            ).ravel()
-            xs = np.concatenate([[0], xs, [responses.size - 1]])  # type: ignore
-            ys = np.concatenate([[ub], ys, [ub]])  # type: ignore
+            regions = self.regions[name]
+            xs = np.stack([regions[:, 0], maxima, regions[:, 1]], axis=1).ravel()
+            ys = responses[xs]
         elif self.draw_mode == "background":
             xs, ys = np.arange(responses.size), np.nan_to_num(responses)
             above = ys > self.limits[name][2]["mean"]
