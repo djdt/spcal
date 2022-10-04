@@ -173,3 +173,27 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
             return None
 
         return str(section)
+
+
+if __name__ == "__main__":
+    from PySide2 import QtWidgets
+    from PySide2 import QtCharts 
+    import time
+    a = np.random.random(1000000)
+    b = np.arange(1000000)
+    a = a + b
+
+    c = np.stack((a, b), axis=1)
+
+    p = array_to_polygonf(c)
+
+    s = QtCharts.QtCharts.QLineSeries()
+    s.setUseOpenGL(True)
+    s.replace(p)
+
+
+    t0 = time.time()
+    x = s.points()
+    t1 = time.time()
+    print(t1-t0)
+    print(type(x))
