@@ -1,5 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtCharts import QtCharts
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import numpy as np
 import logging
@@ -9,8 +8,9 @@ from spcal import npdata
 
 from spcal.calc import calculate_limits
 
-from spcal.gui.charts import ParticleChart, ParticleChartView
+# from spcal.gui.charts import ParticleChart, ParticleChartView
 from spcal.gui.dialogs import ImportDialog
+from spcal.gui.graphs import ParticleView
 from spcal.gui.options import OptionsWidget
 from spcal.gui.tables import ParticleTable
 from spcal.gui.units import UnitsWidget
@@ -36,7 +36,9 @@ class InputWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
-        self.redraw_charts_requested = False
+        self.graph = ParticleView()
+
+        self.redraw_graph_requested = False
         self.draw_mode = "All"
 
         self.limitsChanged.connect(self.updateDetections)
@@ -71,10 +73,6 @@ class InputWidget(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
         )
 
-        self.chart = ParticleChart()
-        self.chartview = ParticleChartView(self.chart)
-        self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
-        self.chartview.setAcceptDrops(False)
 
         self.table = ParticleTable()
         self.table.model().dataChanged.connect(self.updateLimits)
@@ -119,7 +117,7 @@ class InputWidget(QtWidgets.QWidget):
         layout_chart = QtWidgets.QVBoxLayout()
         layout_chart.addLayout(layout_table_file, 0)
         layout_chart.addLayout(layout_io)
-        layout_chart.addWidget(self.chartview, 1)
+        layout_chart.addWidget(self.graph, 1)
         layout_chart.addLayout(layout_slider)
 
         layout = QtWidgets.QHBoxLayout()
@@ -154,10 +152,10 @@ class InputWidget(QtWidgets.QWidget):
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:
         super().showEvent(event)
-        if self.redraw_charts_requested:
-            self.redrawChart()
+        if self.redraw_graph_requested:
+            self.redrawGraph()
             self.redrawLimits()
-            self.redraw_charts_requested = False
+            self.redraw_graph_requested = False
 
     def numberOfEvents(self) -> int:
         return self.slider.right() - self.slider.left()
@@ -388,7 +386,7 @@ class InputWidget(QtWidgets.QWidget):
             self.drawChart()
             self.drawLimits()
         else:
-            self.redraw_charts_requested = True
+            self.redraw_graph_requested = True
 
     def updateTrim(self) -> None:
         values = [self.slider.left(), self.slider.right()]

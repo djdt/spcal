@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 
-from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtCharts import QtCharts
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCharts import QtCharts
 
 from spcal.gui.util import array_to_polygonf, polygonf_to_array
 
@@ -16,7 +16,7 @@ class ParticleChartView(QtCharts.QChartView):
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         event.accept()
-        action_copy_to_clipboard = QtWidgets.QAction(
+        action_copy_to_clipboard = QtGui.QAction(
             QtGui.QIcon.fromTheme("insert-image"), "Copy to Clipboard"
         )
         action_copy_to_clipboard.setToolTip(
@@ -24,7 +24,7 @@ class ParticleChartView(QtCharts.QChartView):
         )
         action_copy_to_clipboard.triggered.connect(self.copyToClipboard)
 
-        action_zoom_reset = QtWidgets.QAction(
+        action_zoom_reset = QtGui.QAction(
             QtGui.QIcon.fromTheme("zoom-original"), "Reset View"
         )
         action_zoom_reset.setToolTip("Reset the charts view.")

@@ -1,7 +1,7 @@
 import sys
 import logging
 
-from PySide2 import QtWidgets
+from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
 
@@ -55,45 +55,45 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
     def createMenuBar(self) -> None:
-        action_open_sample = QtWidgets.QAction("Open Sample", self)
+        action_open_sample = QtGui.QAction("Open Sample", self)
         action_open_sample.triggered.connect(self.sample.dialogLoadFile)
 
-        action_open_reference = QtWidgets.QAction("Open Reference", self)
+        action_open_reference = QtGui.QAction("Open Reference", self)
         action_open_reference.triggered.connect(self.reference.dialogLoadFile)
 
-        self.action_batch_process = QtWidgets.QAction("Batch Dialog", self)
+        self.action_batch_process = QtGui.QAction("Batch Dialog", self)
         self.action_batch_process.triggered.connect(self.dialogBatchProcess)
         self.action_batch_process.setEnabled(False)
 
-        action_clear = QtWidgets.QAction("Reset Inputs", self)
+        action_clear = QtGui.QAction("Reset Inputs", self)
         action_clear.triggered.connect(self.resetInputs)
 
-        action_close = QtWidgets.QAction("Quit", self)
+        action_close = QtGui.QAction("Quit", self)
         action_close.triggered.connect(self.close)
 
-        action_log = QtWidgets.QAction("&Show Log", self)
+        action_log = QtGui.QAction("&Show Log", self)
         action_log.setToolTip("Show the SPCal event and error log.")
         action_log.triggered.connect(self.log.open)
 
-        action_about = QtWidgets.QAction("About", self)
+        action_about = QtGui.QAction("About", self)
         action_about.triggered.connect(self.about)
 
-        action_draw_all= QtWidgets.QAction("Draw All", self)
+        action_draw_all= QtGui.QAction("Draw All", self)
         action_draw_all.setToolTip("Draw all data points.")
         action_draw_all.toggled.connect(lambda: self.sample.setDrawMode("all"))
         action_draw_all.toggled.connect(lambda: self.reference.setDrawMode("all"))
 
-        action_draw_background= QtWidgets.QAction("Draw Above Background", self)
+        action_draw_background= QtGui.QAction("Draw Above Background", self)
         action_draw_background.setToolTip("Only draw points above the background threshold.")
         action_draw_background.toggled.connect(lambda: self.sample.setDrawMode("background"))
         action_draw_background.toggled.connect(lambda: self.reference.setDrawMode("background"))
 
-        action_draw_detections= QtWidgets.QAction("Draw Dectections", self)
+        action_draw_detections= QtGui.QAction("Draw Dectections", self)
         action_draw_detections.setToolTip("Only draw detections, greatly speeds up drawing.")
         action_draw_detections.toggled.connect(lambda: self.sample.setDrawMode("detections"))
         action_draw_detections.toggled.connect(lambda: self.reference.setDrawMode("detections"))
         
-        action_group_draw_mode = QtWidgets.QActionGroup(self)
+        action_group_draw_mode = QtGui.QActionGroup(self)
         action_group_draw_mode.addAction(action_draw_all)
         action_group_draw_mode.addAction(action_draw_background)
         action_group_draw_mode.addAction(action_draw_detections)

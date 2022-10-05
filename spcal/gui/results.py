@@ -1,5 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
-from PySide2.QtCharts import QtCharts
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import numpy as np
 from pathlib import Path
@@ -12,7 +11,7 @@ from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
-from spcal.gui.charts import ParticleHistogram, ParticleChartView
+# from spcal.gui.charts import ParticleHistogram, ParticleChartView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.tables import ResultsTable
@@ -69,21 +68,21 @@ class ResultsWidget(QtWidgets.QWidget):
         self.nbins = "auto"
         self.result: Dict[str, Any] = {}
 
-        self.chart = ParticleHistogram()
-        self.chart.drawVerticalLines(
-            [0, 0, 0, 0],
-            names=["mean", "median", "lod", ""],
-            pens=[
-                QtGui.QPen(QtGui.QColor(255, 0, 0), 1.5, QtCore.Qt.DashLine),
-                QtGui.QPen(QtGui.QColor(0, 0, 255), 1.5, QtCore.Qt.DashLine),
-                QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
-                QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
-            ],
-            visible_in_legend=[True, True, True, False],
-        )
-        self.chartview = ParticleChartView(self.chart)
-        self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
-        self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
+        # self.chart = ParticleHistogram()
+        # self.chart.drawVerticalLines(
+        #     [0, 0, 0, 0],
+        #     names=["mean", "median", "lod", ""],
+        #     pens=[
+        #         QtGui.QPen(QtGui.QColor(255, 0, 0), 1.5, QtCore.Qt.DashLine),
+        #         QtGui.QPen(QtGui.QColor(0, 0, 255), 1.5, QtCore.Qt.DashLine),
+        #         QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
+        #         QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
+        #     ],
+        #     visible_in_legend=[True, True, True, False],
+        # )
+        # self.chartview = ParticleChartView(self.chart)
+        # self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
+        # self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
         self.table = ResultsTable()
 
@@ -193,17 +192,17 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
         layout_filename.addWidget(self.label_file, 1)
 
-        layout_chart_options = QtWidgets.QHBoxLayout()
-        layout_chart_options.addWidget(self.button_export_image)
-        layout_chart_options.addStretch(1)
-        layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
-        layout_chart_options.addWidget(self.fitmethod)
+        # layout_chart_options = QtWidgets.QHBoxLayout()
+        # layout_chart_options.addWidget(self.button_export_image)
+        # layout_chart_options.addStretch(1)
+        # layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
+        # layout_chart_options.addWidget(self.fitmethod)
 
         layout_outputs = QtWidgets.QVBoxLayout()
         layout_outputs.addLayout(layout_filename)
         layout_outputs.addWidget(self.outputs)
-        layout_outputs.addWidget(self.chartview)
-        layout_outputs.addLayout(layout_chart_options)
+        # layout_outputs.addWidget(self.chartview)
+        # layout_outputs.addLayout(layout_chart_options)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_table, 0)

@@ -1,5 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
-# @Todo move to PySide6 as drawing is 20-50% faster
+from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 

@@ -1,6 +1,6 @@
 import logging
 
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from typing import List, Optional
 

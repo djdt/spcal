@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 
 from spcal.gui.util import NumpyArrayTableModel
@@ -69,11 +69,11 @@ class ParticleTable(QtWidgets.QTableView):
     # def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
     #     menu = QtWidgets.QMenu(self)
     # #     cut_action.triggered.connect(self._cut)
-    # #     copy_action = QtWidgets.QAction(
+    # #     copy_action = QtGui.QAction(
     # #         QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
     # #     )
     # #     copy_action.triggered.connect(self._copy)
-    #     paste_action = QtWidgets.QAction(
+    #     paste_action = QtGui.QAction(
     #         QtGui.QIcon.fromTheme("edit-paste"), "Paste", self
     #     )
     #     paste_action.triggered.connect(self._paste)
@@ -131,7 +131,7 @@ class ResultsTable(QtWidgets.QTableView):
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         event.accept()
         menu = QtWidgets.QMenu(self)
-        copy_action = QtWidgets.QAction(
+        copy_action = QtGui.QAction(
             QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
         )
         copy_action.triggered.connect(self._copy)
