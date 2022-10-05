@@ -1,31 +1,76 @@
-# @Todo pyqtgraph is much faster than QtCharts for many points, redo plotting in that 
-from PySide2 import QtWidgets
+from PySide2 import QtCore, QtGui, QtWidgets
+# @Todo move to PySide6 as drawing is 20-50% faster
 import numpy as np
 import pyqtgraph
 
-from spcal.gui.dialogs import ImportDialog
-
-app = QtWidgets.QApplication()
-
-view  = pyqtgraph.GraphicsView(background="white")
-layout = pyqtgraph.GraphicsLayout()
-view.setCentralWidget(layout)
+from typing import Optional
 
 
-def plot(x):
-    print(x)
-    for name in x.dtype.names:
-        p = layout.addPlot(title=name)
-        layout.nextRow()
-        p.plot(x[name])
-        p.plot(x[name])
-    view.show()
+class ParticleView(pyqtgraph.GraphicsView):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        super().__init__(parent=parent, background=QtGui.QColor(255, 255, 255))
 
+        self.layout = pyqtgraph.GraphicsLayout()
+        self.setCentralWidget(self.layout)
+        self.plots = {}
 
+    def createParticleAxis(self, orientation: str):
+        axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+        axis_pen.setCosmetic(True)
+        axis = pyqtgraph.AxisItem(
+            orientation,
+            pen=axis_pen,
+            textPen=axis_pen,
+            tick_pen=axis_pen,
+        )
+        if orientation == "bottom":
+            axis.setLabel("Time", units="s")
+        elif orientation == "left":
+            axis.setLabel("Intensity", units="Count")
+        else:
+            raise ValueError("createParticleAxis: use 'bottom' or 'left'")
 
-dlg = ImportDialog("/home/tom/Downloads/AuAg.csv")
+        axis.enableAutoSIPrefix(False)
+        return axis
 
-dlg.dataImported.connect(plot)
-dlg.open()
+    def addParticlePlot(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
+        plot = self.layout.addPlot(
+            title=name,
+            axisItems={
+                "bottom": self.createParticleAxis("bottom"),
+                "left": self.createParticleAxis("left"),
+            },
+            enableMenu=False,
+        )
+        pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+        pen.setCosmetic(True)
 
-app.exec_()
+        plot.plot(y=y, x=np.arange(y.size) * 1e-3, pen=pen, skipFiniteCheck=True)
+        plot.setLimits(xMin=x[0], xMax=x[-1], yMin=0, yMax=np.amax(y))
+        plot.setMouseEnabled(y=False)
+        plot.setAutoVisible(y=True)
+        plot.enableAutoRange(y=True)
+        plot.hideButtons()
+
+        try:  # link view to the first plot
+            plot.setXLink(next(iter(self.plots.values())))
+        except StopIteration:
+            pass
+
+        self.plots[name] = plot
+        self.layout.nextRow()
+
+    def addParticleMaxima(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
+        plot = self.plots[name]
+
+        scatter = pyqtgraph.ScatterPlotItem(
+            parent=plot,
+            x=x,
+            y=y,
+            size=5,
+            symbol="t1",
+            pen=None,
+            brush=QtGui.QBrush(QtCore.Qt.red),
+        )
+
+        plot.addItem(scatter)
