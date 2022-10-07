@@ -181,6 +181,6 @@ class ImportDialog(QtWidgets.QDialog):
             for name in data.dtype.names:
                 data[name] *= dwell  # type: ignore
 
-        self.dataImported.emit(data)
         self.dwelltimeImported.emit(dwell)
+        self.dataImported.emit(data)
         super().accept()
