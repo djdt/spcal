@@ -1,5 +1,4 @@
 import numpy as np
-from statistics import NormalDist
 
 from typing import Tuple, Union
 
@@ -57,6 +56,29 @@ def accumulate_detections(
     labels = np.cumsum(labels)
 
     return sums, labels, regions
+
+
+def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
+    """Calculates the maxima of each region.
+
+    Args:
+        y: array
+        regions: regions from `accumulate_detections`
+
+    Returns:
+        idx of maxima
+    """
+    # The width of each detection region
+    widths = regions[:, 1] - regions[:, 0]  # type: ignore
+    # peak indicies for max width
+    indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
+    indicies = np.clip(
+        indicies, regions[0, 0], regions[-1, 1] - 1
+    )  # limit to first to last region
+    # limit to peak width
+    indicies = np.where(indicies - regions[:, 0] < widths, indicies, regions[:, 1])
+    # return indcies that is at maxima
+    return np.argmax(y[indicies], axis=0) + regions[:, 0]
 
 
 # Particle functions

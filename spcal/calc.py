@@ -160,8 +160,8 @@ def calculate_limits(
         sc, sd = poisson_limits(
             limits["mean"], alpha=error_rates[0], beta=error_rates[1]
         )
-        limits["lc"] = limits["mean"] = sc
-        limits["ld"] = limits["mean"] = sd
+        limits["lc"] = limits["mean"] + sc
+        limits["ld"] = limits["mean"] + sd
         limit_params["α"] = error_rates[0]
         limit_params["β"] = error_rates[1]
 
