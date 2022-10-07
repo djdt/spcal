@@ -160,7 +160,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.results.updateResults()
 
     def readyForResults(self) -> bool:
-        return self.sample.detections.size > 0
+        return len(self.sample.detections) > 0
 
     def resetInputs(self) -> None:
         self.tabs.setCurrentIndex(0)
