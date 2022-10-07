@@ -6,15 +6,39 @@ from typing import Optional
 
 
 class ParticleView(pyqtgraph.GraphicsView):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(parent=parent, background=QtGui.QColor(255, 255, 255))
-
+    def __init__(
+        self, minimum_plot_height: int = 150, parent: Optional[QtWidgets.QWidget] = None
+    ):
+        self.minimum_plot_height = minimum_plot_height
         self.layout = pyqtgraph.GraphicsLayout()
+
+        super().__init__(parent=parent, background=QtGui.QColor(255, 255, 255))
         self.setCentralWidget(self.layout)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         self.plots = {}
 
-        self.setSizeAdjustPolicy(QtWidgets.QScrollArea.AdjustIgnored)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+    # Taken from pyqtgraph.widgets.MultiPlotWidget
+    def setRange(self, *args, **kwds):
+        pyqtgraph.GraphicsView.setRange(self, *args, **kwds)
+        if self.centralWidget is not None:
+            r = self.range
+            minHeight = len(self.layout.rows) * self.minimum_plot_height
+            if r.height() < minHeight:
+                r.setHeight(minHeight)
+                r.setWidth(r.width() - self.verticalScrollBar().width())
+            self.centralWidget.setGeometry(r)
+
+    # Taken from pyqtgraph.widgets.MultiPlotWidget
+    def resizeEvent(self, event: QtGui.QResizeEvent):
+        if self.closed:
+            return
+        if self.autoPixelRange:
+            self.range = QtCore.QRectF(0, 0, self.size().width(), self.size().height())
+        ParticleView.setRange(
+            self, self.range, padding=0, disableAutoPixel=False
+        )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
+        self.updateMatrix()
 
     def createParticleAxis(self, orientation: str):
         axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -65,10 +89,9 @@ class ParticleView(pyqtgraph.GraphicsView):
         except StopIteration:
             pass
 
-        plot.setMinimumHeight(200)
-
         self.plots[name] = plot
         self.layout.nextRow()
+        self.resizeEvent(None)
 
     def addParticleMaxima(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
         plot = self.plots[name]
