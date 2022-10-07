@@ -13,6 +13,9 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.setCentralWidget(self.layout)
         self.plots = {}
 
+        self.setSizeAdjustPolicy(QtWidgets.QScrollArea.AdjustIgnored)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+
     def createParticleAxis(self, orientation: str):
         axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         axis_pen.setCosmetic(True)
@@ -44,7 +47,13 @@ class ParticleView(pyqtgraph.GraphicsView):
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
 
-        plot.plot(y=y, x=np.arange(y.size) * 1e-3, pen=pen, skipFiniteCheck=True)
+        plot.plot(
+            x=x,
+            y=y,
+            pen=pen,
+            connect="all",
+        )
+        plot.setDownsampling(auto=True)
         plot.setLimits(xMin=x[0], xMax=x[-1], yMin=0, yMax=np.amax(y))
         plot.setMouseEnabled(y=False)
         plot.setAutoVisible(y=True)
@@ -55,6 +64,8 @@ class ParticleView(pyqtgraph.GraphicsView):
             plot.setXLink(next(iter(self.plots.values())))
         except StopIteration:
             pass
+
+        plot.setMinimumHeight(200)
 
         self.plots[name] = plot
         self.layout.nextRow()
@@ -73,3 +84,18 @@ class ParticleView(pyqtgraph.GraphicsView):
         )
 
         plot.addItem(scatter)
+
+    def addParticleLimits(self, name: str, limits: np.ndarray) -> None:
+        colors = {"mean": QtCore.Qt.red, "lc": QtCore.Qt.green, "ld": QtCore.Qt.blue}
+        plot = self.plots[name]
+        for name in limits.dtype.names:
+            pen = QtGui.QPen(colors[name], 1.0, QtCore.Qt.DashLine)
+            pen.setCosmetic(True)
+            if limits[name].size == 1:
+                plot.addLine(y=limits[name][0], name=name, pen=pen)
+            else:
+                plot.addPlot()
+
+    def clear(self) -> None:
+        self.layout.clear()
+        self.plots = {}
