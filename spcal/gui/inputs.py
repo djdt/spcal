@@ -322,21 +322,28 @@ class InputWidget(QtWidgets.QWidget):
         xs = np.arange(self.responses.size) * dwell
 
         for name in self.responses.dtype.names:
+            assert name is not None
             ys = self.responses[name]
-            # optimise by removing points with 0 change in gradient
-            diffs = np.diff(ys, n=2, append=0, prepend=0) != 0
 
-            self.graph.addParticlePlot(name, xs[diffs], ys[diffs])
+            self.graph.addParticlePlot(name)
+            self.graph.drawParticleSignal(name, xs, ys)
 
             if name in self.regions and self.regions[name].size > 0:
                 maxima = detection_maxima(ys, self.regions[name])
-                self.graph.addParticleMaxima(name, xs[maxima], ys[maxima])
+                self.graph.drawParticleMaxima(name, xs[maxima], ys[maxima])
 
     def drawGraphLimits(self, name: Optional[str] = None) -> None:
         if len(self.responses) == 0 or len(self.limits) == 0:
             return
+
+        dwell = self.options.dwelltime.baseValue()
+        if dwell is None:
+            raise ValueError("dwell is None")
+        xs = np.arange(self.responses.size) * dwell
+
         for name in self.responses.dtype.names:
-            self.graph.addParticleLimits(name, self.limits[name][2])
+            assert name is not None
+            self.graph.drawParticleLimits(name, xs, self.limits[name][2])
 
     # def redrawLimits(self) -> None:
     #     if self.limits is None:

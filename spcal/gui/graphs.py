@@ -17,6 +17,11 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         self.plots = {}
+        self.limit_colors = {
+            "mean": QtCore.Qt.red,
+            "lc": QtCore.Qt.green,
+            "ld": QtCore.Qt.blue,
+        }
 
     # Taken from pyqtgraph.widgets.MultiPlotWidget
     def setRange(self, *args, **kwds):
@@ -59,8 +64,10 @@ class ParticleView(pyqtgraph.GraphicsView):
         axis.enableAutoSIPrefix(False)
         return axis
 
-    def addParticlePlot(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
-        plot = self.layout.addPlot(
+    def addParticlePlot(self, name: str) -> None:
+        axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+        axis_pen.setCosmetic(True)
+        self.plots[name] = self.layout.addPlot(
             title=name,
             axisItems={
                 "bottom": self.createParticleAxis("bottom"),
@@ -68,32 +75,34 @@ class ParticleView(pyqtgraph.GraphicsView):
             },
             enableMenu=False,
         )
+        self.plots[name].setMouseEnabled(y=False)
+        self.plots[name].setAutoVisible(y=True)
+        self.plots[name].enableAutoRange(y=True)
+        self.plots[name].hideButtons()
+        self.plots[name].addLegend(offset=(5, 0))
+        try:  # link view to the first plot
+            self.plots[name].setXLink(next(iter(self.plots.values())))
+        except StopIteration:
+            pass
+        self.layout.nextRow()
+        self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+
+    def drawParticleSignal(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
+        plot = self.plots[name]
+
+        # optimise by removing points with 0 change in gradient
+        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
 
-        plot.plot(
-            x=x,
-            y=y,
-            pen=pen,
-            connect="all",
-        )
-        plot.setDownsampling(auto=True)
+        item = pyqtgraph.PlotDataItem(x=x[diffs], y=y[diffs], pen=pen, connect="all")
+        item.setDownsampling(auto=True)
+
+        plot.addItem(item)
         plot.setLimits(xMin=x[0], xMax=x[-1], yMin=0, yMax=np.amax(y))
-        plot.setMouseEnabled(y=False)
-        plot.setAutoVisible(y=True)
-        plot.enableAutoRange(y=True)
-        plot.hideButtons()
 
-        try:  # link view to the first plot
-            plot.setXLink(next(iter(self.plots.values())))
-        except StopIteration:
-            pass
-
-        self.plots[name] = plot
-        self.layout.nextRow()
-        self.resizeEvent(None)
-
-    def addParticleMaxima(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
+    def drawParticleMaxima(self, name: str, x: np.ndarray, y: np.ndarray) -> None:
         plot = self.plots[name]
 
         scatter = pyqtgraph.ScatterPlotItem(
@@ -108,16 +117,24 @@ class ParticleView(pyqtgraph.GraphicsView):
 
         plot.addItem(scatter)
 
-    def addParticleLimits(self, name: str, limits: np.ndarray) -> None:
-        colors = {"mean": QtCore.Qt.red, "lc": QtCore.Qt.green, "ld": QtCore.Qt.blue}
+    def drawParticleLimits(self, name: str, x: np.ndarray, limits: np.ndarray) -> None:
         plot = self.plots[name]
+        skip_lc = np.all(limits["lc"] == limits["ld"])
         for name in limits.dtype.names:
-            pen = QtGui.QPen(colors[name], 1.0, QtCore.Qt.DashLine)
+            if name == "lc" and skip_lc:
+                continue
+
+            pen = QtGui.QPen(self.limit_colors[name], 1.0, QtCore.Qt.DashLine)
             pen.setCosmetic(True)
             if limits[name].size == 1:
-                plot.addLine(y=limits[name][0], name=name, pen=pen)
+                plot.addLine(y=limits[name][0], label=name, name=name, pen=pen)
             else:
-                plot.addPlot()
+                diffs = np.diff(limits[name], n=2, append=0, prepend=0) != 0
+                item = pyqtgraph.PlotDataItem(
+                    x=x[diffs], y=limits[name][diffs], name=name, pen=pen, connect="all"
+                )
+                item.setDownsampling(auto=True)
+                plot.addItem(item)
 
     def clear(self) -> None:
         self.layout.clear()
