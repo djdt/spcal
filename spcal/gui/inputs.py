@@ -9,7 +9,6 @@ from spcal import npdata
 from spcal.calc import calculate_limits
 from spcal.util import detection_maxima
 
-# from spcal.gui.charts import ParticleChart, ParticleChartView
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.graphs import ParticleView
 from spcal.gui.options import OptionsWidget
@@ -17,7 +16,7 @@ from spcal.gui.tables import ParticleTable
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import (
     ElidedLabel,
-    RangeSlider,
+    # RangeSlider,
     ValidColorLineEdit,
 )
 
@@ -153,9 +152,7 @@ class InputWidget(QtWidgets.QWidget):
     def showEvent(self, event: QtGui.QShowEvent) -> None:
         super().showEvent(event)
         if self.redraw_graph_requested:
-            self.drawGraph()
-            self.drawGraphLimits()
-            self.redraw_graph_requested = False
+            self.requestRedraw()
 
     # def numberOfEvents(self) -> int:
     #     return self.slider.right() - self.slider.left()
@@ -182,18 +179,6 @@ class InputWidget(QtWidgets.QWidget):
         dlg.dwelltimeImported.connect(self.options.dwelltime.setBaseValue)
         dlg.accepted.connect(lambda: self.label_file.setText(dlg.file_path.name))
         dlg.open()
-
-    # def loadFile(self, file: str) -> None:
-    #     dlg = ImportDialog(file, self)
-    #     path = Path(file)
-    #     responses, parameters = read_nanoparticle_file(path, delimiter=",")
-    #     self.label_file.setText(path.name)
-
-    #     # Update dwell time
-    #     if "dwelltime" in parameters:
-    #         self.options.dwelltime.setBaseValue(parameters["dwelltime"])
-
-    #     self.loadData(responses)
 
     def loadData(self, data: np.ndarray) -> None:
         self.responses = data
@@ -321,63 +306,47 @@ class InputWidget(QtWidgets.QWidget):
 
         xs = np.arange(self.responses.size) * dwell
 
-        for name in self.responses.dtype.names:
-            assert name is not None
-            ys = self.responses[name]
+        if self.draw_mode == "stacked":
+            for name in self.responses.dtype.names:
+                assert name is not None
+                ys = self.responses[name]
 
-            self.graph.addParticlePlot(name)
-            self.graph.drawParticleSignal(name, xs, ys)
+                self.graph.addParticlePlot(name)
+                self.graph.drawParticleSignal(name, xs, ys)
 
-            if name in self.regions and self.regions[name].size > 0:
-                maxima = detection_maxima(ys, self.regions[name])
-                self.graph.drawParticleMaxima(name, xs[maxima], ys[maxima])
+                if name in self.regions and self.regions[name].size > 0:
+                    maxima = detection_maxima(ys, self.regions[name])
+                    self.graph.drawParticleMaxima(name, xs[maxima], ys[maxima])
 
-    def drawGraphLimits(self, name: Optional[str] = None) -> None:
-        if len(self.responses) == 0 or len(self.limits) == 0:
-            return
+                if name in self.limits:
+                    self.graph.drawParticleLimits(name, xs, self.limits[name][2])
+        else:
+            self.graph.addParticlePlot("overlay")
+            for name, color in zip(self.responses.dtype.names, self.graph.plot_colors):
+                assert name is not None
+                ys = self.responses[name]
 
-        dwell = self.options.dwelltime.baseValue()
-        if dwell is None:
-            raise ValueError("dwell is None")
-        xs = np.arange(self.responses.size) * dwell
+                pen = QtGui.QPen(color, 1.0)
+                pen.setCosmetic(True)
+                brush = QtGui.QBrush(color)
 
-        for name in self.responses.dtype.names:
-            assert name is not None
-            self.graph.drawParticleLimits(name, xs, self.limits[name][2])
+                self.graph.drawParticleSignal("overlay", xs, ys, label=name, pen=pen)
 
-    # def redrawLimits(self) -> None:
-    #     if self.limits is None:
-    #         self.chart.ub.clear()
-    #         self.chart.lc.clear()
-    #         self.chart.ld.clear()
-    #         return
-
-    #     xs = np.arange(self.slider.left(), self.slider.right())
-
-    #     self.chart.setBackground(xs, self.limit_ub)
-    #     if self.limits[0] == "Poisson":
-    #         self.chart.setLimitCritical(xs, self.limit_lc)
-    #     else:
-    #         self.chart.lc.clear()
-    #     self.chart.setLimitDetection(xs, self.limit_ld)
-    #     self.chart.updateGeometry()
+                if name in self.regions and self.regions[name].size > 0:
+                    maxima = detection_maxima(ys, self.regions[name])
+                    self.graph.drawParticleMaxima(
+                        "overlay", xs[maxima], ys[maxima], brush=brush
+                    )
 
     def requestRedraw(self) -> None:
         if self.isVisible():
             self.drawGraph()
-            self.drawGraphLimits()
             self.redraw_graph_requested = False
         else:
             self.redraw_graph_requested = True
 
-    # def updateTrim(self) -> None:
-    #     values = [self.slider.left(), self.slider.right()]
-    #     self.chart.setVerticalLines(values)  # type: ignore
-
     def resetInputs(self) -> None:
         self.blockSignals(True)
-        # self.slider.setRange(0, 100)
-        # self.slider.setValues(0, 100)
         self.count.setText("0")
         self.background_count.setText("")
         self.lod_count.setText("")
