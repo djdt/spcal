@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import Optional, Tuple
+from typing import List, Optional
 
 
 # class ResultsView(pyqtgraph.GraphicsView):
@@ -41,6 +41,162 @@ from typing import Optional, Tuple
 # a, b = np.histogram(y, bins="auto")
 # p.plot(b, a, stepMode="center", fillLevel=0, fillOutline=True, brush=(255, 0, 0, 128))
 # pyqtgraph.exec()
+class ParticlePlotItem(pyqtgraph.PlotItem):
+    limit_colors = {"mean": QtCore.Qt.red, "lc": QtCore.Qt.green, "ld": QtCore.Qt.blue}
+
+    def __init__(
+        self,
+        name: str,
+        xscale: float = 1.0,
+        pen: Optional[QtGui.QPen] = None,
+        parent: Optional[pyqtgraph.GraphicsWidget] = None,
+    ):
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        self.xaxis = pyqtgraph.AxisItem(
+            "bottom", pen=pen, textPen=pen, tick_pen=pen, text="Time", units="s"
+        )
+        self.xaxis.setScale(xscale)
+        self.xaxis.enableAutoSIPrefix(False)
+
+        self.yaxis = pyqtgraph.AxisItem(
+            "left", pen=pen, textPen=pen, tick_pen=pen, text="Intensity", units="count"
+        )
+
+        super().__init__(
+            title=name,
+            name=name,
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            enableMenu=False,
+            parent=parent,
+        )
+        self.setMouseEnabled(y=False)
+        self.setAutoVisible(y=True)
+        self.enableAutoRange(y=True)
+        self.hideButtons()
+        self.addLegend(
+            offset=(-5, 5), verSpacing=-5, colCount=3, labelTextColor="black"
+        )
+
+        self.signals: List[pyqtgraph.PlotCurveItem] = []
+        self.scatters: List[pyqtgraph.ScatterPlotItem] = []
+        self.limits: List[pyqtgraph.PlotCurveItem] = []
+
+        region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
+        region_pen.setCosmetic(True)
+        self.region = pyqtgraph.LinearRegionItem(
+            pen="grey",
+            hoverPen="red",
+            brush=QtGui.QBrush(QtCore.Qt.NoBrush),
+            hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
+            swapMode="block",
+        )
+        self.addItem(self.region)
+
+    def clearSignal(self) -> None:
+        for signal in self.signals:
+            self.removeItem(signal)
+        self.signals.clear()
+
+    def clearScatters(self) -> None:
+        for scatter in self.scatters:
+            self.removeItem(scatter)
+        self.scatters.clear()
+
+    def clearLimits(self) -> None:
+        for limit in self.limits:
+            self.removeItem(limit)
+        self.limits.clear()
+
+    def drawSignal(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: Optional[QtGui.QPen] = None,
+        label: Optional[str] = None,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        # optimise by removing points with 0 change in gradient
+        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        curve = pyqtgraph.PlotCurveItem(
+            x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
+        )
+        if label is not None:
+            curve.opts["name"] = label
+
+        self.signals.append(curve)
+        self.addItem(curve)
+
+        self.setLimits(xMin=x[0], xMax=x[-1])
+        self.enableAutoRange(y=True)  # rescale to max bounds
+
+        self.region.setRegion((x[0], x[-1]))
+
+    # def updateRegion(self) -> None:
+    #     # assume all signals have same limits
+    #     x0, x1 = self.signals[0].xData[0], self.signals[0].xData[-1]
+    #     for signal in self.signals:
+
+    def drawMaxima(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        brush: Optional[QtGui.QBrush] = None,
+    ) -> None:
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.red)
+
+        scatter = pyqtgraph.ScatterPlotItem(
+            x=x, y=y, size=6, symbol="t", pen=None, brush=brush
+        )
+        self.scatters.append(scatter)
+        self.addItem(scatter)
+
+    def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
+        skip_lc = np.all(limits["lc"] == limits["ld"])
+        for name in ["mean", "lc", "ld"]:
+            if name == "lc" and skip_lcm:
+                continue
+
+            pen = QtGui.QPen(self.limit_colors[name], 1.0, QtCore.Qt.DashLine)
+            pen.setCosmetic(True)
+
+            if limits[name].size == 1:
+                x, y = [x[0], x[-1]], [limits[name][0], limits[name][0]]
+            else:
+                diffs = np.diff(limits[name], n=2, append=0, prepend=0) != 0
+                x, y = x[diffs], limits[name][diffs]
+
+            curve = pyqtgraph.PlotCurveItem(
+                x=x, y=y, name=name, pen=pen, connect="all", skipFiniteCheck=True
+            )
+            self.limits.append(curve)
+            self.addItem(curve)
+
+    # def drawAnalyticalLimits(self, name: str, x0: float, x1: float) -> None:
+    #     plot = self.plots[name]
+    #     for x in [x0, x1]:
+    #         line = pyqtgraph.InfiniteLine(
+    #             x, angle=90, movable=False, label="limit", name="limit"
+    #         )
+    #         # line.sigPositionChangeFinished.connect(
+    #         #     lambda: self.analyticalLimitsChanged.emit(name)
+    #         # )
+    #         plot.addItem(line)
+
+    # def analyticalLimits(self, name: str) -> Tuple[float, float]:
+    #     limits = [
+    #         item
+    #         for item in self.plots[name].items
+    #         if isinstance(item, pyqtgraph.InfiniteLine) and item._name == "limit"
+    #     ]
+    #     limits = sorted(item.value() for item in limits)
+    #     return (limits[0], limits[1])
 
 
 class ParticleView(pyqtgraph.GraphicsView):
@@ -56,7 +212,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.minimum_plot_height = minimum_plot_height
         self.layout = pyqtgraph.GraphicsLayout()
 
-        super().__init__(parent=parent, background=QtCore.Qt.white)
+        super().__init__(parent=parent, background="white")
         self.setCentralWidget(self.layout)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
@@ -80,11 +236,6 @@ class ParticleView(pyqtgraph.GraphicsView):
             QtGui.QColor(138, 56, 0),
             QtGui.QColor(165, 110, 255),
         ]
-        self.limit_colors = {
-            "mean": QtCore.Qt.red,
-            "lc": QtCore.Qt.green,
-            "ld": QtCore.Qt.blue,
-        }
 
     # Taken from pyqtgraph.widgets.MultiPlotWidget
     def setRange(self, *args, **kwds):
@@ -108,47 +259,17 @@ class ParticleView(pyqtgraph.GraphicsView):
         )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
 
-    def createParticleAxis(self, orientation: str, scale: float = 1.0) -> pyqtgraph.AxisItem:
-        axis = pyqtgraph.AxisItem(
-            orientation,
-            pen=self.black_pen,
-            textPen=self.black_pen,
-            tick_pen=self.black_pen,
-        )
-        if orientation == "bottom":
-            axis.setLabel("Time", units="s")
-        elif orientation == "left":
-            axis.setLabel("Intensity", units="Count")
-        else:
-            raise ValueError("createParticleAxis: use 'bottom' or 'left'")
-
-        axis.enableAutoSIPrefix(False)
-        axis.setScale(scale)
-        return axis
-
-    def addParticlePlot(self, name: str, xscale: float = 1.0) -> None:
-        axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-        axis_pen.setCosmetic(True)
-        self.plots[name] = self.layout.addPlot(
-            title=name,
-            axisItems={
-                "bottom": self.createParticleAxis("bottom", scale=xscale),
-                "left": self.createParticleAxis("left"),
-            },
-            enableMenu=False,
-            name=name,
-        )
-        self.plots[name].setMouseEnabled(y=False)
-        self.plots[name].setAutoVisible(y=True)
-        self.plots[name].enableAutoRange(y=True)
-        self.plots[name].hideButtons()
-        self.plots[name].addLegend(
-            offset=(-5, 5), verSpacing=-5, colCount=3, labelTextColor="black"
-        )
+    def addParticlePlot(self, name: str, xscale: float = 1.0) -> ParticlePlotItem:
+        self.plots[name] = ParticlePlotItem(name=name, xscale=xscale)
         self.plots[name].setDownsampling(ds=self.downsample, mode="peak", auto=True)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
+
+        self.layout.addItem(self.plots[name])
+
         self.layout.nextRow()
         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+
+        return self.plots[name]
 
     # def setLinkedYAxis(self, linked: bool = True) -> None:
     #     plots = list(self.plots.values())
@@ -163,102 +284,6 @@ class ParticleView(pyqtgraph.GraphicsView):
     #             plot.setYLink(None)
     #     for plot in self.plots.values():
     #         plot.vb.updateViewRange()  # rescale to max bounds
-
-    def drawParticleSignal(
-        self,
-        name: str,
-        x: np.ndarray,
-        y: np.ndarray,
-        pen: Optional[QtGui.QPen] = None,
-        label: Optional[str] = None,
-    ) -> None:
-        plot = self.plots[name]
-
-        if pen is None:
-            pen = self.black_pen
-
-        # optimise by removing points with 0 change in gradient
-        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
-        item = pyqtgraph.PlotCurveItem(
-            x=x[diffs],
-            y=y[diffs],
-            pen=pen,
-            connect="all",
-            skipFiniteCheck=True,
-        )
-        if label is not None:
-            item.opts["name"] = label
-        plot.addItem(item)
-        plot.setLimits(xMin=x[0], xMax=x[-1])
-        plot.enableAutoRange()  # rescale to max bounds
-
-    def drawParticleMaxima(
-        self,
-        name: str,
-        x: np.ndarray,
-        y: np.ndarray,
-        brush: Optional[QtGui.QBrush] = None,
-    ) -> None:
-        plot = self.plots[name]
-
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.red)
-
-        scatter = pyqtgraph.ScatterPlotItem(
-            parent=plot,
-            x=x,
-            y=y,
-            size=6,
-            symbol="t",
-            pen=None,
-            brush=brush,
-        )
-
-        plot.addItem(scatter)
-
-    def drawParticleLimits(self, name: str, x: np.ndarray, limits: np.ndarray) -> None:
-        plot = self.plots[name]
-        skip_lc = np.all(limits["lc"] == limits["ld"])
-        for name in limits.dtype.names:
-            if name == "lc" and skip_lc:
-                continue
-
-            pen = QtGui.QPen(self.limit_colors[name], 1.0, QtCore.Qt.DashLine)
-            pen.setCosmetic(True)
-            if limits[name].size == 1:
-                x, y = [x[0], x[-1]], [limits[name][0], limits[name][0]]
-            else:
-                diffs = np.diff(limits[name], n=2, append=0, prepend=0) != 0
-                x, y = x[diffs], y[diffs]
-            item = pyqtgraph.PlotCurveItem(
-                x=x,
-                y=y,
-                name=name,
-                pen=pen,
-                connect="all",
-                skipFiniteCheck=True,
-            )
-            plot.addItem(item)
-
-    def drawAnalyticalLimits(self, name: str, x0: float, x1: float) -> None:
-        plot = self.plots[name]
-        for x in [x0, x1]:
-            line = pyqtgraph.InfiniteLine(
-                x, angle=90, movable=False, label="limit", name="limit"
-            )
-            # line.sigPositionChangeFinished.connect(
-            #     lambda: self.analyticalLimitsChanged.emit(name)
-            # )
-            plot.addItem(line)
-
-    def analyticalLimits(self, name: str) -> Tuple[float, float]:
-        limits = [
-            item
-            for item in self.plots[name].items
-            if isinstance(item, pyqtgraph.InfiniteLine) and item._name == "limit"
-        ]
-        limits = sorted(item.value() for item in limits)
-        return (limits[0], limits[1])
 
     def clear(self) -> None:
         self.layout.clear()

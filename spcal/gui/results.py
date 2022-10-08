@@ -12,7 +12,7 @@ from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
 # from spcal.gui.charts import ParticleHistogram, ParticleChartView
-from spcal.gui.graphs import ResultsView
+# from spcal.gui.graphs import ResultsView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.tables import ResultsTable

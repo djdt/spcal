@@ -37,7 +37,7 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.graph = ParticleView()
-        self.graph.analyticalLimitsChanged.connect(self.drawGraph)
+        # self.graph.analyticalLimitsChanged.connect(self.drawGraph)
 
         self.redraw_graph_requested = False
         self.draw_mode = "All"
@@ -299,24 +299,24 @@ class InputWidget(QtWidgets.QWidget):
 
         xs = np.arange(self.responses.size)
 
-        if self.draw_mode == "stacked":
+        if self.draw_mode != "stacked":
             for name in self.responses.dtype.names:
                 ys = self.responses[name]
 
-                self.graph.addParticlePlot(name, xscale=dwell)
-                self.graph.drawParticleSignal(name, xs, ys)
+                plot = self.graph.addParticlePlot(name, xscale=dwell)
+                plot.drawSignal(xs, ys)
 
                 if name in self.regions and self.regions[name].size > 0:
                     maxima = detection_maxima(
                         ys, self.regions[name] + self.slider.left()
                     )
-                    self.graph.drawParticleMaxima(name, xs[maxima], ys[maxima])
+                    plot.drawMaxima(xs[maxima], ys[maxima])
 
-                if name in self.limits:
-                    self.graph.drawParticleLimits(name, xs, self.limits[name][2])
-                self.graph.drawAnalyticalLimits(
-                    name, self.slider.left(), self.slider.right()
-                )
+                # if name in self.limits:
+                #     self.graph.drawParticleLimits(name, xs, self.limits[name][2])
+                # self.graph.drawAnalyticalLimits(
+                #     name, self.slider.left(), self.slider.right()
+                # )
         else:
             self.graph.addParticlePlot("overlay", xscale=dwell)
             for name, color in zip(self.responses.dtype.names, self.graph.plot_colors):
