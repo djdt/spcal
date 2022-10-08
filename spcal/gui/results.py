@@ -12,12 +12,13 @@ from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
 # from spcal.gui.charts import ParticleHistogram, ParticleChartView
+from spcal.gui.graphs import ResultsView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.tables import ResultsTable
 from spcal.gui.units import UnitsWidget
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -32,14 +33,23 @@ class ResultsWidget(QtWidgets.QWidget):
         "g": 1e-3,
         "kg": 1.0,
     }
-    conc_units = {
+    molar_concentration_units = {
         "amol/L": 1e-18,
         "fmol/L": 1e-15,
         "pmol/L": 1e-12,
         "nmol/L": 1e-9,
         "μmol/L": 1e-6,
         "mmol/L": 1e-3,
-        "mol/L": 1,
+        "mol/L": 1.0,
+    }
+    concentration_units = {
+        "fg/L": 1e-18,
+        "pg/L": 1e-15,
+        "ng/L": 1e-12,
+        "μg/L": 1e-9,
+        "mg/L": 1e-6,
+        "g/L": 1e-3,
+        "kg/L": 1.0,
     }
 
     def __init__(
@@ -47,23 +57,13 @@ class ResultsWidget(QtWidgets.QWidget):
         options: OptionsWidget,
         sample: SampleWidget,
         reference: ReferenceWidget,
-        parent: QtWidgets.QWidget = None,
+        parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
 
         self.options = options
         self.sample = sample
         self.reference = reference
-
-        concentration_units = {
-            "fg/L": 1e-18,
-            "pg/L": 1e-15,
-            "ng/L": 1e-12,
-            "μg/L": 1e-9,
-            "mg/L": 1e-6,
-            "g/L": 1e-3,
-            "kg/L": 1.0,
-        }
 
         self.nbins = "auto"
         self.result: Dict[str, Any] = {}
@@ -131,12 +131,12 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
-            concentration_units,
+            self.concentration_units,
             default_unit="ng/L",
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
-            concentration_units,
+            self.concentration_units,
             default_unit="ng/L",
         )
         self.background.setReadOnly(True)
@@ -220,8 +220,8 @@ class ResultsWidget(QtWidgets.QWidget):
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export Image", "", "PNG Images (*.png)"
         )
-        if file != "":
-            self.chartview.saveToFile(file)
+        # if file != "":
+        #     self.chartview.saveToFile(file)
 
     def asBestUnit(
         self, data: np.ndarray, current_unit: str = ""
@@ -360,7 +360,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 np.std(self.result["sizes"]),
             )
         elif mode == "Conc. (mol/L)":
-            units = self.conc_units
+            units = self.molar_concentration_units
             mean, median, lod, std = (
                 np.mean(self.result["cell_concentrations"]),
                 np.median(self.result["cell_concentrations"]),

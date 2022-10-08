@@ -2,7 +2,45 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
+
+
+# class ResultsView(pyqtgraph.GraphicsView):
+#     def __init__(
+#         self, minimum_plot_height: int = 150, parent: Optional[QtWidgets.QWidget] = None
+#     ):
+#         self.minimum_plot_height = minimum_plot_height
+#         self.layout = pyqtgraph.GraphicsLayout()
+#         super().__init__(parent=parent, background=QtCore.Qt.white)
+#         self.setCentralWidget(self.layout)
+#         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+#         self.black_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+#         self.black_pen.setCosmetic(True)
+
+#     def createHistogramAxis(self, orientation: str) -> pyqtgraph.AxisItem:
+#         axis = pyqtgraph.AxisItem(
+#             orientation,
+#             pen=self.black_pen,
+#             textPen=self.black_pen,
+#             tick_pen=self.black_pen,
+#         )
+#         if orientation == "bottom":
+#             axis.setLabel("Time", units="s")
+#         elif orientation == "left":
+#             axis.setLabel("Intensity", units="Count")
+#         else:
+#             raise ValueError("createParticleAxis: use 'bottom' or 'left'")
+
+#         axis.enableAutoSIPrefix(True)
+#         return axis
+
+# a, b = np.histogram(x, bins="auto")
+# p = pyqtgraph.plot(b, a, stepMode="center", fillLevel=0, fillOutline=True, brush=(0, 0, 255, 128))
+# p.setBackground("white")
+# a, b = np.histogram(y, bins="auto")
+# p.plot(b, a, stepMode="center", fillLevel=0, fillOutline=True, brush=(255, 0, 0, 128))
+# pyqtgraph.exec()
 
 
 class ParticleView(pyqtgraph.GraphicsView):
@@ -18,7 +56,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.minimum_plot_height = minimum_plot_height
         self.layout = pyqtgraph.GraphicsLayout()
 
-        super().__init__(parent=parent, background=QtGui.QColor(255, 255, 255))
+        super().__init__(parent=parent, background=QtCore.Qt.white)
         self.setCentralWidget(self.layout)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
@@ -70,7 +108,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
 
-    def createParticleAxis(self, orientation: str, scale: float = 1.0):
+    def createParticleAxis(self, orientation: str, scale: float = 1.0) -> pyqtgraph.AxisItem:
         axis = pyqtgraph.AxisItem(
             orientation,
             pen=self.black_pen,
