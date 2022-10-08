@@ -2,10 +2,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 
 class ParticleView(pyqtgraph.GraphicsView):
+    analyticalLimitsChanged = QtCore.Signal(str)
+
     def __init__(
         self,
         downsample: int = 1,
@@ -68,7 +70,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
 
-    def createParticleAxis(self, orientation: str):
+    def createParticleAxis(self, orientation: str, scale: float = 1.0):
         axis = pyqtgraph.AxisItem(
             orientation,
             pen=self.black_pen,
@@ -83,15 +85,16 @@ class ParticleView(pyqtgraph.GraphicsView):
             raise ValueError("createParticleAxis: use 'bottom' or 'left'")
 
         axis.enableAutoSIPrefix(False)
+        axis.setScale(scale)
         return axis
 
-    def addParticlePlot(self, name: str) -> None:
+    def addParticlePlot(self, name: str, xscale: float = 1.0) -> None:
         axis_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         axis_pen.setCosmetic(True)
         self.plots[name] = self.layout.addPlot(
             title=name,
             axisItems={
-                "bottom": self.createParticleAxis("bottom"),
+                "bottom": self.createParticleAxis("bottom", scale=xscale),
                 "left": self.createParticleAxis("left"),
             },
             enableMenu=False,
@@ -198,6 +201,26 @@ class ParticleView(pyqtgraph.GraphicsView):
                 skipFiniteCheck=True,
             )
             plot.addItem(item)
+
+    def drawAnalyticalLimits(self, name: str, x0: float, x1: float) -> None:
+        plot = self.plots[name]
+        for x in [x0, x1]:
+            line = pyqtgraph.InfiniteLine(
+                x, angle=90, movable=False, label="limit", name="limit"
+            )
+            # line.sigPositionChangeFinished.connect(
+            #     lambda: self.analyticalLimitsChanged.emit(name)
+            # )
+            plot.addItem(line)
+
+    def analyticalLimits(self, name: str) -> Tuple[float, float]:
+        limits = [
+            item
+            for item in self.plots[name].items
+            if isinstance(item, pyqtgraph.InfiniteLine) and item._name == "limit"
+        ]
+        limits = sorted(item.value() for item in limits)
+        return (limits[0], limits[1])
 
     def clear(self) -> None:
         self.layout.clear()

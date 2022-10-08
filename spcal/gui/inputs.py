@@ -16,11 +16,11 @@ from spcal.gui.tables import ParticleTable
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import (
     ElidedLabel,
-    # RangeSlider,
+    RangeSlider,
     ValidColorLineEdit,
 )
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,7 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.graph = ParticleView()
+        self.graph.analyticalLimitsChanged.connect(self.drawGraph)
 
         self.redraw_graph_requested = False
         self.draw_mode = "All"
@@ -73,15 +74,12 @@ class InputWidget(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
         )
 
-        self.table = ParticleTable()
-        self.table.model().dataChanged.connect(self.updateLimits)
-
-        # self.slider = RangeSlider()
-        # self.slider.setRange(0, 1)
-        # self.slider.setValues(0, 1)
+        self.slider = RangeSlider()
+        self.slider.setRange(0, 1)
+        self.slider.setValues(0, 1)
         # self.slider.valueChanged.connect(self.updateTrim)
         # self.slider.value2Changed.connect(self.updateTrim)
-        # self.slider.sliderReleased.connect(self.updateLimits)
+        self.slider.sliderReleased.connect(self.updateLimits)
 
         # Sample options
 
@@ -105,9 +103,9 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignRight)
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
 
-        # layout_slider = QtWidgets.QHBoxLayout()
-        # layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
-        # layout_slider.addWidget(self.slider, QtCore.Qt.AlignRight)
+        layout_slider = QtWidgets.QHBoxLayout()
+        layout_slider.addWidget(QtWidgets.QLabel("Trim:"))
+        layout_slider.addWidget(self.slider, QtCore.Qt.AlignRight)
 
         layout_io = QtWidgets.QHBoxLayout()
         layout_io.addWidget(self.inputs)
@@ -117,7 +115,7 @@ class InputWidget(QtWidgets.QWidget):
         layout_chart.addLayout(layout_table_file, 0)
         layout_chart.addLayout(layout_io)
         layout_chart.addWidget(self.graph, 1)
-        # layout_chart.addLayout(layout_slider)
+        layout_chart.addLayout(layout_slider)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_chart, 1)
@@ -190,19 +188,18 @@ class InputWidget(QtWidgets.QWidget):
         self.combo_name.blockSignals(False)
 
         # # Update Chart and slider
-        # offset = self.slider.maximum() - self.slider.right()
-        # self.slider.setRange(0, self.responses.shape[0])
+        offset = self.slider.maximum() - self.slider.right()
+        self.slider.setRange(0, self.responses.shape[0])
 
-        # right = max(self.slider.maximum() - offset, 1)
-        # left = min(self.slider.left(), right - 1)
-        # self.slider.setValues(left, right)
-        # self.chart.xaxis.setRange(self.slider.minimum(), self.slider.maximum())
+        right = max(self.slider.maximum() - offset, 1)
+        left = min(self.slider.left(), right - 1)
+        self.slider.setValues(left, right)
 
         self.updateLimits()
 
     def updateDetections(self) -> None:
-        responses = self.responses
-        # [self.slider.left() : self.slider.right()]
+        print(self.slider.left(), self.slider.right())
+        responses = self.responses[self.slider.left() : self.slider.right()]
 
         self.detections.clear()
         self.labels.clear()
@@ -219,6 +216,7 @@ class InputWidget(QtWidgets.QWidget):
                     responses[name], limits["lc"], limits["ld"]
                 )
 
+        print(self.detections)
         self.detectionsChanged.emit(len(self.detections))
 
     def updateLimits(self) -> None:
@@ -247,8 +245,10 @@ class InputWidget(QtWidgets.QWidget):
 
         self.limits = {}
 
-        if len(self.responses) == 0:
+        responses = self.responses[self.slider.left() : self.slider.right()]
+        if responses.size == 0:
             return
+
         for name in self.responses.dtype.names:
             if method == "Manual Input":
                 limit = float(self.options.manual.text())
@@ -256,17 +256,13 @@ class InputWidget(QtWidgets.QWidget):
                     method,
                     {},
                     np.array(
-                        [(np.mean(self.responses[name]), limit, limit)],
+                        [(np.mean(responses[name]), limit, limit)],
                         dtype=calculate_limits.dtype,
                     ),
                 )
             else:
                 self.limits[name] = calculate_limits(
-                    self.responses[name],
-                    method,
-                    sigma,
-                    (alpha, beta),
-                    window=window_size,
+                    responses[name], method, sigma, (alpha, beta), window=window_size
                 )
 
         self.limitsChanged.emit()
@@ -279,23 +275,20 @@ class InputWidget(QtWidgets.QWidget):
             self.background_count.setText("")
             self.lod_count.setText("")
         else:
-            responses = self.responses[name]
-            # [self.slider.left() : self.slider.right()]
-            self.background = np.mean(responses[self.labels[name] == 0])
-            self.background_std = np.std(responses[self.labels[name] == 0])
+            responses = self.responses[name][self.slider.left() : self.slider.right()]
+            background = np.mean(responses[self.labels[name] == 0])
+            background_std = np.std(responses[self.labels[name] == 0])
             lod = np.mean(self.limits[name][2]["ld"])  # + self.background
 
             self.count.setText(
                 f"{self.detections[name].size} ± {np.sqrt(self.detections[name].size):.1f}"
             )
-            self.background_count.setText(
-                f"{self.background:.4g} ± {self.background_std:.4g}"
-            )
+            self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
             self.lod_count.setText(
                 f"{lod:.4g} ({self.limits[name][0]}, {','.join(f'{k}={v}' for k,v in self.limits[name][1].items())})"
             )
 
-    def drawGraph(self, name: Optional[str] = None) -> None:
+    def drawGraph(self) -> None:
         self.graph.clear()
         if len(self.responses) == 0:
             return
@@ -304,26 +297,29 @@ class InputWidget(QtWidgets.QWidget):
         if dwell is None:
             raise ValueError("dwell is None")
 
-        xs = np.arange(self.responses.size) * dwell
+        xs = np.arange(self.responses.size)
 
         if self.draw_mode == "stacked":
             for name in self.responses.dtype.names:
-                assert name is not None
                 ys = self.responses[name]
 
-                self.graph.addParticlePlot(name)
+                self.graph.addParticlePlot(name, xscale=dwell)
                 self.graph.drawParticleSignal(name, xs, ys)
 
                 if name in self.regions and self.regions[name].size > 0:
-                    maxima = detection_maxima(ys, self.regions[name])
+                    maxima = detection_maxima(
+                        ys, self.regions[name] + self.slider.left()
+                    )
                     self.graph.drawParticleMaxima(name, xs[maxima], ys[maxima])
 
                 if name in self.limits:
                     self.graph.drawParticleLimits(name, xs, self.limits[name][2])
+                self.graph.drawAnalyticalLimits(
+                    name, self.slider.left(), self.slider.right()
+                )
         else:
-            self.graph.addParticlePlot("overlay")
+            self.graph.addParticlePlot("overlay", xscale=dwell)
             for name, color in zip(self.responses.dtype.names, self.graph.plot_colors):
-                assert name is not None
                 ys = self.responses[name]
 
                 pen = QtGui.QPen(color, 1.0)
@@ -333,10 +329,23 @@ class InputWidget(QtWidgets.QWidget):
                 self.graph.drawParticleSignal("overlay", xs, ys, label=name, pen=pen)
 
                 if name in self.regions and self.regions[name].size > 0:
-                    maxima = detection_maxima(ys, self.regions[name])
+                    maxima = detection_maxima(
+                        ys, self.regions[name] + self.slider.left()
+                    )
                     self.graph.drawParticleMaxima(
                         "overlay", xs[maxima], ys[maxima], brush=brush
                     )
+            self.graph.drawAnalyticalLimits(
+                "overlay", self.slider.left(), self.slider.right()
+            )
+
+    # def drawDetections(self, names: Optional[Union[str, List[str]]] = None) -> None:
+    #     if names is None:
+    #         names = self.responses.dtype.names
+    #     elif isinstance(names, str):
+    #         names = [names]
+
+    #     for name in names:
 
     def requestRedraw(self) -> None:
         if self.isVisible():
