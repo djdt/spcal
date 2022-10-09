@@ -78,29 +78,23 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_about = QtGui.QAction("About", self)
         action_about.triggered.connect(self.about)
 
-        action_draw_all= QtGui.QAction("Draw All", self)
-        action_draw_all.setToolTip("Draw all data points.")
-        action_draw_all.toggled.connect(lambda: self.sample.setDrawMode("all"))
-        action_draw_all.toggled.connect(lambda: self.reference.setDrawMode("all"))
+        action_draw_stacked= QtGui.QAction("Stack Plots", self)
+        action_draw_stacked.setToolTip("Stack each element plots.")
+        action_draw_stacked.toggled.connect(lambda: self.sample.setDrawMode("Stacked"))
+        action_draw_stacked.toggled.connect(lambda: self.reference.setDrawMode("Stacked"))
 
-        action_draw_background= QtGui.QAction("Draw Above Background", self)
-        action_draw_background.setToolTip("Only draw points above the background threshold.")
-        action_draw_background.toggled.connect(lambda: self.sample.setDrawMode("background"))
-        action_draw_background.toggled.connect(lambda: self.reference.setDrawMode("background"))
-
-        action_draw_detections= QtGui.QAction("Draw Dectections", self)
-        action_draw_detections.setToolTip("Only draw detections, greatly speeds up drawing.")
-        action_draw_detections.toggled.connect(lambda: self.sample.setDrawMode("detections"))
-        action_draw_detections.toggled.connect(lambda: self.reference.setDrawMode("detections"))
+        action_draw_overlay= QtGui.QAction("Overlay Plots", self)
+        action_draw_overlay.setToolTip("Overlay element plots.")
+        action_draw_overlay.toggled.connect(lambda: self.sample.setDrawMode("Overlay"))
+        action_draw_overlay.toggled.connect(lambda: self.reference.setDrawMode("Overlay"))
         
         action_group_draw_mode = QtGui.QActionGroup(self)
-        action_group_draw_mode.addAction(action_draw_all)
-        action_group_draw_mode.addAction(action_draw_background)
-        action_group_draw_mode.addAction(action_draw_detections)
+        action_group_draw_mode.addAction(action_draw_stacked)
+        action_group_draw_mode.addAction(action_draw_overlay)
 
         for action in action_group_draw_mode.actions():
             action.setCheckable(True)
-        action_draw_all.setChecked(True)
+        action_draw_overlay.setChecked(True)
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(action_open_sample)
