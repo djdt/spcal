@@ -32,7 +32,8 @@ def accumulate_detections(
     # Stack into pairs of start, end. If no final end position set it as end of array.
     end_point_added = False
     if starts.size != ends.size:
-        ends = np.concatenate((ends, [diff.size - 1]))  # -1 for reduceat
+        # -1 for reduceat
+        ends = np.concatenate((ends, [diff.size - 1]))  # type: ignore
         end_point_added = True
     regions = np.stack((starts, ends), axis=1)
 
@@ -79,6 +80,22 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     indicies = np.where(indicies - regions[:, 0] < widths, indicies, regions[:, 1])
     # return indcies that is at maxima
     return np.argmax(y[indicies], axis=0) + regions[:, 0]
+
+
+def detection_element_fractions(
+    sums: np.ndarray, labels: np.ndarray, regions: np.ndarray
+) -> np.ndarray:
+    if any(x.dtype.names is None for x in [sums, labels, regions]):
+        raise ValueError(
+            "detection_element_fractions: sums, labels and regions must be recarrays!"
+        )
+    if (
+        sums.dtype.names != labels.dtype.names
+        or sums.dtype.names != regions.dtype.names
+    ):
+        raise ValueError(
+            "detection_element_fractions: sums, labels and regions must have the same names."
+        )
 
 
 # Particle functions
@@ -238,3 +255,17 @@ def reference_particle_mass(density: float, diameter: float) -> float:
 #         density: reference density (kg/m3)
 #     """
 #     return np.cbrt(6.0 / np.pi * mass_std / density_std)
+
+x = np.genfromtxt(
+    "/home/tom/Downloads/AuAg.csv",
+    delimiter=",",
+    usecols=(1,2,3),
+    names=True,
+    skip_header=0,
+    converters={0: lambda s: float(s.replace(",", "."))},
+    invalid_raise=False,
+)
+
+for name in x.dtype.names:
+    d, l ,r = accumulate_detections(x[name], 0.5, 1)
+    print(d.size)
