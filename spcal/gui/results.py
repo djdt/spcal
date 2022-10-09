@@ -11,11 +11,9 @@ from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
-# from spcal.gui.charts import ParticleHistogram, ParticleChartView
-# from spcal.gui.graphs import ResultsView
+from spcal.gui.graphs import ResultsView
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
-from spcal.gui.tables import ResultsTable
 from spcal.gui.units import UnitsWidget
 
 from typing import Any, Dict, Optional, Tuple
@@ -66,8 +64,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.nbins = "auto"
-        self.result: Dict[str, Any] = {}
+        self.result: Dict[str, dict] = {}
 
+        self.graph = ResultsView()
         # self.chart = ParticleHistogram()
         # self.chart.drawVerticalLines(
         #     [0, 0, 0, 0],
@@ -84,13 +83,11 @@ class ResultsWidget(QtWidgets.QWidget):
         # self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         # self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        self.table = ResultsTable()
-
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
         self.fitmethod.setCurrentText("Lognormal")
 
-        self.fitmethod.currentIndexChanged.connect(self.updateChart)
+        self.fitmethod.currentIndexChanged.connect(self.drawGraph)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
@@ -116,8 +113,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.mode.setCurrentText("Size (m)")
         self.mode.currentIndexChanged.connect(self.updateTexts)
-        self.mode.currentIndexChanged.connect(self.updateTable)
-        self.mode.currentIndexChanged.connect(self.updateChart)
+        self.mode.currentIndexChanged.connect(self.drawGraph)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
@@ -186,23 +182,22 @@ class ResultsWidget(QtWidgets.QWidget):
 
         layout_table = QtWidgets.QVBoxLayout()
         layout_table.addLayout(layout_table_options)
-        layout_table.addWidget(self.table, 1)
 
         layout_filename = QtWidgets.QHBoxLayout()
         layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
         layout_filename.addWidget(self.label_file, 1)
 
-        # layout_chart_options = QtWidgets.QHBoxLayout()
-        # layout_chart_options.addWidget(self.button_export_image)
-        # layout_chart_options.addStretch(1)
-        # layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
-        # layout_chart_options.addWidget(self.fitmethod)
+        layout_chart_options = QtWidgets.QHBoxLayout()
+        layout_chart_options.addWidget(self.button_export_image)
+        layout_chart_options.addStretch(1)
+        layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
+        layout_chart_options.addWidget(self.fitmethod)
 
         layout_outputs = QtWidgets.QVBoxLayout()
         layout_outputs.addLayout(layout_filename)
         layout_outputs.addWidget(self.outputs)
-        # layout_outputs.addWidget(self.chartview)
-        # layout_outputs.addLayout(layout_chart_options)
+        layout_outputs.addWidget(self.graph)
+        layout_outputs.addLayout(layout_chart_options)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_table, 0)
@@ -260,6 +255,10 @@ class ResultsWidget(QtWidgets.QWidget):
         if method != "Manual Input" and not self.reference.isComplete():
             return False
         return True
+
+    def drawGraph(self) -> None:
+        for name in self.results:
+            self.graph.drawData(name, self.results[name])
 
     def updateChart(self) -> None:
         mode = self.mode.currentText()
@@ -330,6 +329,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.chart.label_fit.setVisible(True)
 
     def updateTexts(self) -> None:
+        return
         self.label_file.setText(
             Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
         )
@@ -401,56 +401,49 @@ class ResultsWidget(QtWidgets.QWidget):
         self.background.setBaseError(ionic_error)
         self.background.setUnit(unit)
 
-    def updateTable(self) -> None:
-        mode = self.mode.currentText()
-        if mode == "Mass (kg)":
-            data = self.result["masses"]
-        elif mode == "Signal":
-            data = self.result["detections"]
-        elif mode == "Size (m)":
-            data = self.result["sizes"]
-        elif mode == "Conc. (mol/L)":
-            data = self.result["cell_concentrations"]
-        else:
-            raise ValueError(f"Unknown mode '{mode}'.")
-        self.table.model().beginResetModel()
-        self.table.model().array = data[:, None]  # type: ignore
-        self.table.model().endResetModel()
-
     def updateResults(self) -> None:
-
-        self.result = {
-            "background": self.sample.background,
-            "background_std": self.sample.background_std,
-            "detections": self.sample.detections,
-            "detections_std": self.sample.detections_std,
-            "events": self.sample.numberOfEvents(),
-            "file": self.sample.label_file.text(),
-            "limit_method": f"{self.sample.limits[0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[1].items())}",
-            "limit_window": int(self.options.window_size.text()),
-            "lod": self.sample.limit_ld,
-        }
-
         method = self.options.efficiency_method.currentText()
-        if not self.readyForResults():
-            self.mode.setCurrentText("Signal")
-            self.mode.setEnabled(False)
-            self.result["inputs"] = {}
-        else:
-            self.mode.setEnabled(True)
+
+        for name in self.sample.detections:
+            trim = self.sample.trimRegion(name)
+            response = self.sample.responses[name][trim[0]:trim[1]]
+            sample_io = self.sample.getIOForName(name)
+            reference_io = self.reference.getIOForName(name)
+
+            result = {
+                "background": np.mean(response[self.sample.labels[name] == 0]),
+                "background_std": np.std(response[self.sample.labels[name] == 0]),
+                "detections": self.sample.detections[name],
+                "detections_std": np.sqrt(self.sample.detections[name].size),
+                "events": response.size,
+                "file": self.sample.label_file.text(),
+                "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
+                "limit_window": int(self.options.window_size.text()),
+                "lod": self.sample.limits[name][2]["ld"],
+                }
+
+            # if not self.readyForResults(name):
+            #     continue
+
+            # if not self.readyForResults():
+                # self.mode.setCurrentText("Signal")
+                # self.mode.setEnabled(False)
+                # self.result[name]["inputs"] = {}
+            # else:
+                # self.mode.setEnabled(True)
 
             if method in ["Manual Input", "Reference Particle"]:
                 if method == "Manual Input":
                     efficiency = float(self.options.efficiency.text())
                 elif method == "Reference Particle":
-                    efficiency = float(self.reference.efficiency.text())
+                    efficiency = float(reference_io.efficiency.text())
                 else:
                     raise ValueError(f"Unknown method {method}.")
 
                 dwelltime = self.options.dwelltime.baseValue()
-                density = self.sample.density.baseValue()
-                massfraction = float(self.sample.massfraction.text())
-                time = self.sample.timeAsSeconds()
+                density = sample_io.density.baseValue()
+                massfraction = float(sample_io.massfraction.text())
+                time = result["events"] * dwelltime
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
 
@@ -478,9 +471,9 @@ class ResultsWidget(QtWidgets.QWidget):
                     "time": time,
                 }
             elif method == "Mass Response":
-                density = self.sample.density.baseValue()
-                massfraction = float(self.sample.massfraction.text())
-                massresponse = self.reference.massresponse.baseValue()
+                density = sample_io.density.baseValue()
+                massfraction = float(sample_io.massfraction.text())
+                massresponse = reference_io.massresponse.baseValue()
 
                 self.result.update(
                     results_from_mass_response(
@@ -501,7 +494,7 @@ class ResultsWidget(QtWidgets.QWidget):
             # Cell inputs
             concindex = self.mode.findText("Conc. (mol/L)")
             celldiameter = self.options.celldiameter.baseValue()
-            molarmass = self.sample.molarmass.baseValue()
+            molarmass = sample_io.molarmass.baseValue()
             if celldiameter is not None:  # Scale sizes to hypothesised
                 scale = celldiameter / np.mean(self.result["sizes"])
                 self.result["sizes"] *= scale
@@ -530,5 +523,4 @@ class ResultsWidget(QtWidgets.QWidget):
                     self.mode.setCurrentText("Signal")
 
         self.updateTexts()
-        self.updateTable()
-        self.updateChart()
+        self.drawGraph()
