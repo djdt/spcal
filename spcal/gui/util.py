@@ -4,14 +4,15 @@ import ctypes
 from PySide6 import QtCore, QtGui
 import shiboken6
 
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 
 def array_to_polygonf(array: np.ndarray) -> QtGui.QPolygonF:
     assert array.ndim == 2
     assert array.shape[1] == 2
 
-    polygon = QtGui.QPolygonF(array.shape[0])
+    polygon = QtGui.QPolygonF()
+    polygon.resize(array.shape[0])
 
     buf = (ctypes.c_double * array.size).from_address(
         shiboken6.getCppPointer(polygon.data())[0]
@@ -36,7 +37,7 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
         array: np.ndarray,
         axes: Tuple[int, int] = (0, 1),
         fill_value: float = 0.0,
-        parent: QtCore.QObject = None,
+        parent: Optional[QtCore.QObject] = None,
     ):
         array = np.atleast_2d(array)
         assert array.ndim == 2
@@ -47,10 +48,10 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
         self.fill_value = fill_value
 
     # Rows and Columns
-    def columnCount(self, parent: QtCore.QModelIndex = None) -> int:
+    def columnCount(self, parent: Optional[QtCore.QModelIndex] = None) -> int:
         return self.array.shape[self.axes[1]]
 
-    def rowCount(self, parent: QtCore.QModelIndex = None) -> int:
+    def rowCount(self, parent: Optional[QtCore.QModelIndex] = None) -> int:
         return self.array.shape[self.axes[0]]
 
     def insertRows(
@@ -126,7 +127,9 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
             self.removeRows(rows, current_rows - rows)
 
     # Data
-    def data(self, index: QtCore.QModelIndex, role: int = QtCore.Qt.DisplayRole) -> str:
+    def data(
+        self, index: QtCore.QModelIndex, role: int = QtCore.Qt.DisplayRole
+    ) -> Optional[str]:
         if not index.isValid():
             return None
 
@@ -168,32 +171,8 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
         section: int,
         orientation: QtCore.Qt.Orientation,
         role: QtCore.Qt.ItemDataRole,
-    ) -> str:
+    ) -> Optional[str]:
         if role != QtCore.Qt.DisplayRole:  # pragma: no cover
             return None
 
         return str(section)
-
-
-if __name__ == "__main__":
-    from PySide6 import QtWidgets
-    from PySide6 import QtCharts 
-    import time
-    a = np.random.random(1000000)
-    b = np.arange(1000000)
-    a = a + b
-
-    c = np.stack((a, b), axis=1)
-
-    p = array_to_polygonf(c)
-
-    s = QtCharts.QtCharts.QLineSeries()
-    s.setUseOpenGL(True)
-    s.replace(p)
-
-
-    t0 = time.time()
-    x = s.points()
-    t1 = time.time()
-    print(t1-t0)
-    print(type(x))
