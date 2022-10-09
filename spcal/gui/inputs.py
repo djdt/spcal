@@ -15,7 +15,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ElidedLabel, ValidColorLineEdit
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +241,7 @@ class SampleIOStack(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def nameChanged(self) -> None:
+        pass
 
 
     def repopulate(self, names: List[str]) -> None:

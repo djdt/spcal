@@ -106,8 +106,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
         region_pen.setCosmetic(True)
 
-        # Todo: Mouse interaction is bad, reimplement as 2 InfiniteLines
-        # self.regions = [pyqtgraph.InfiniteLine(), pyqtgraph.InfiniteLine]
         self.region = pyqtgraph.LinearRegionItem(
             pen="grey",
             hoverPen="red",
@@ -115,17 +113,18 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
             swapMode="block",
         )
+        self.region.movable = False  # prevent moving of region, but not lines
         self.region.lines[0].addMarker("|>", 0.9)
         self.region.lines[1].addMarker("<|", 0.9)
         self.addItem(self.region)
 
     @property
     def region_start(self) -> int:
-        return int(self.region.lines[0].value())
+        return int(self.region.lines[0].value())  # type: ignore
 
     @property
     def region_end(self) -> int:
-        return int(self.region.lines[1].value())
+        return int(self.region.lines[1].value())  # type: ignore
 
     def clearSignal(self) -> None:
         for signal in self.signals:
