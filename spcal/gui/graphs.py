@@ -2,45 +2,64 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 
-# class ResultsView(pyqtgraph.GraphicsView):
-#     def __init__(
-#         self, minimum_plot_height: int = 150, parent: Optional[QtWidgets.QWidget] = None
-#     ):
-#         self.minimum_plot_height = minimum_plot_height
-#         self.layout = pyqtgraph.GraphicsLayout()
-#         super().__init__(parent=parent, background=QtCore.Qt.white)
-#         self.setCentralWidget(self.layout)
-#         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+class ResultsView(pyqtgraph.GraphicsView):
+    def __init__(
+        self,
+        pen: Optional[QtGui.QPen] = None,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super().__init__(parent=parent, background="white")
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
 
-#         self.black_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-#         self.black_pen.setCosmetic(True)
+        self.xaxis = pyqtgraph.AxisItem(
+            "bottom",
+            pen=pen,
+            textPen=pen,
+            tick_pen=pen,
+            text="Intensity",
+            units="count",
+        )
 
-#     def createHistogramAxis(self, orientation: str) -> pyqtgraph.AxisItem:
-#         axis = pyqtgraph.AxisItem(
-#             orientation,
-#             pen=self.black_pen,
-#             textPen=self.black_pen,
-#             tick_pen=self.black_pen,
-#         )
-#         if orientation == "bottom":
-#             axis.setLabel("Time", units="s")
-#         elif orientation == "left":
-#             axis.setLabel("Intensity", units="Count")
-#         else:
-#             raise ValueError("createParticleAxis: use 'bottom' or 'left'")
+        self.yaxis = pyqtgraph.AxisItem(
+            "left", pen=pen, textPen=pen, tick_pen=pen, text="Count", units=""
+        )
+        self.yaxis.enableAutoSIPrefix(False)
 
-#         axis.enableAutoSIPrefix(True)
-#         return axis
+        self.plot = pyqtgraph.PlotItem(
+            title="Results",
+            name="hist",
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            enableMenu=False,
+            parent=parent,
+        )
+        self.setCentralWidget(self.plot)
 
-# a, b = np.histogram(x, bins="auto")
-# p = pyqtgraph.plot(b, a, stepMode="center", fillLevel=0, fillOutline=True, brush=(0, 0, 255, 128))
-# p.setBackground("white")
-# a, b = np.histogram(y, bins="auto")
-# p.plot(b, a, stepMode="center", fillLevel=0, fillOutline=True, brush=(255, 0, 0, 128))
-# pyqtgraph.exec()
+    def drawData(
+        self,
+        name: str,
+        x: np.ndarray,
+        bins: Union[str, np.ndarray] = "auto",
+        brush: Optional[QtGui.QBrush] = None,
+    ) -> None:
+        hist, edges = np.histogram(x, bins)
+        curve = pyqtgraph.PlotCurveItem(
+            x=edges,
+            y=hist,
+            stepMode="center",
+            fillLevel=0,
+            fillOutline=True,
+            brush=brush,
+            skipFiniteCheck=True,
+            name=name,
+        )
+        self.plot.addItem(curve)
+
+
 class ParticlePlotItem(pyqtgraph.PlotItem):
     limit_colors = {"mean": QtCore.Qt.red, "lc": QtCore.Qt.green, "ld": QtCore.Qt.blue}
 
@@ -86,6 +105,9 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
         region_pen.setCosmetic(True)
+
+        # Todo: Mouse interaction is bad, reimplement as 2 InfiniteLines
+        # self.regions = [pyqtgraph.InfiniteLine(), pyqtgraph.InfiniteLine]
         self.region = pyqtgraph.LinearRegionItem(
             pen="grey",
             hoverPen="red",
@@ -93,7 +115,17 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
             swapMode="block",
         )
+        self.region.lines[0].addMarker("|>", 0.9)
+        self.region.lines[1].addMarker("<|", 0.9)
         self.addItem(self.region)
+
+    @property
+    def region_start(self) -> int:
+        return int(self.region.lines[0].value())
+
+    @property
+    def region_end(self) -> int:
+        return int(self.region.lines[1].value())
 
     def clearSignal(self) -> None:
         for signal in self.signals:
@@ -137,11 +169,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
         self.region.setRegion((x[0], x[-1]))
 
-    # def updateRegion(self) -> None:
-    #     # assume all signals have same limits
-    #     x0, x1 = self.signals[0].xData[0], self.signals[0].xData[-1]
-    #     for signal in self.signals:
-
     def drawMaxima(
         self,
         x: np.ndarray,
@@ -160,7 +187,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
     def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
         skip_lc = np.all(limits["lc"] == limits["ld"])
         for name in ["mean", "lc", "ld"]:
-            if name == "lc" and skip_lcm:
+            if name == "lc" and skip_lc:
                 continue
 
             pen = QtGui.QPen(self.limit_colors[name], 1.0, QtCore.Qt.DashLine)
@@ -178,29 +205,9 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             self.limits.append(curve)
             self.addItem(curve)
 
-    # def drawAnalyticalLimits(self, name: str, x0: float, x1: float) -> None:
-    #     plot = self.plots[name]
-    #     for x in [x0, x1]:
-    #         line = pyqtgraph.InfiniteLine(
-    #             x, angle=90, movable=False, label="limit", name="limit"
-    #         )
-    #         # line.sigPositionChangeFinished.connect(
-    #         #     lambda: self.analyticalLimitsChanged.emit(name)
-    #         # )
-    #         plot.addItem(line)
-
-    # def analyticalLimits(self, name: str) -> Tuple[float, float]:
-    #     limits = [
-    #         item
-    #         for item in self.plots[name].items
-    #         if isinstance(item, pyqtgraph.InfiniteLine) and item._name == "limit"
-    #     ]
-    #     limits = sorted(item.value() for item in limits)
-    #     return (limits[0], limits[1])
-
 
 class ParticleView(pyqtgraph.GraphicsView):
-    analyticalLimitsChanged = QtCore.Signal(str)
+    regionChanged = QtCore.Signal(str)
 
     def __init__(
         self,
@@ -219,7 +226,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.black_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         self.black_pen.setCosmetic(True)
 
-        self.plots = {}
+        self.plots: Dict[str, ParticlePlotItem] = {}
         self.plot_colors = [
             QtGui.QColor(105, 41, 196),
             QtGui.QColor(17, 146, 232),
@@ -263,6 +270,10 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.plots[name] = ParticlePlotItem(name=name, xscale=xscale)
         self.plots[name].setDownsampling(ds=self.downsample, mode="peak", auto=True)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
+
+        self.plots[name].region.sigRegionChangeFinished.connect(
+            lambda: self.regionChanged.emit(name)
+        )
 
         self.layout.addItem(self.plots[name])
 
