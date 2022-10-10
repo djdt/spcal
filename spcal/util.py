@@ -1,6 +1,6 @@
 import numpy as np
 
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 
 
 def accumulate_detections(
@@ -83,19 +83,64 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
 
 
 def detection_element_fractions(
-    sums: np.ndarray, labels: np.ndarray, regions: np.ndarray
+    sums: Dict[str, np.ndarray],
+    labels: Dict[str, np.ndarray],
+    regions: Dict[str, np.ndarray],
 ) -> np.ndarray:
-    if any(x.dtype.names is None for x in [sums, labels, regions]):
+    """Computes the relative fraction of each element in each detection.
+    Recalculates the start and end point of each peak from *all* element data.
+    Regions that overlap will be combined into a single region. Fractions are calculated
+    as the sum of all regions contained within each of the reclaculated regions.
+    Each argument must have the same dictionaty keys.
+
+    Args:
+        sums: dict of detection counts, sizes, mass, ...
+        labels: dict of labels from `accumulate_detections`
+        regions: dict of regions from `accumulate_detections`
+
+    Returns:
+        dict of sum fraction per peak
+
+    """
+    if sums.keys() != labels.keys() or sums.keys() != regions.keys():
         raise ValueError(
-            "detection_element_fractions: sums, labels and regions must be recarrays!"
+            "detection_element_fractions: sums, labels and regions must have the same keys."
         )
-    if (
-        sums.dtype.names != labels.dtype.names
-        or sums.dtype.names != regions.dtype.names
-    ):
-        raise ValueError(
-            "detection_element_fractions: sums, labels and regions must have the same names."
+    names = list(sums.keys())
+
+    # Get regions from all elements
+    # Some regions may overlap, these will be combined
+    any_label = np.zeros(labels[names[0]].size, dtype=np.int8)
+    for name in names:
+        any_label[labels[name] > 0] = 1
+
+    # Caclulate start and end points of each region
+    diff = np.diff(any_label, prepend=0)
+    starts = np.flatnonzero(diff == 1)
+    ends = np.flatnonzero(diff == -1)
+
+    # Stack into pairs of start, end. If no final end position set it as end of array.
+    if starts.size != ends.size:
+        ends = np.concatenate((ends, [diff.size - 1]))  # type: ignore
+    all_regions = np.stack((starts, ends), axis=1)
+
+    # Init empty
+    fractions = np.empty(starts.size, dtype=[(n, np.float64) for n in names])
+    total = np.zeros(starts.size, dtype=float)
+    for name in names:
+        # Positions in name's region that corresponds to the combined regions
+        idx = (regions[name][:, 0] >= all_regions[:, 0, None]) & (
+            regions[name][:, 1] <= all_regions[:, 1, None]
         )
+        # Compute the total signal in the region
+        fractions[name] = np.sum(np.where(idx, sums[name], 0), axis=1)
+        total += fractions[name]
+
+    # Caclulate element fraction of each peak
+    for name in names:
+        fractions[name] /= total
+
+    return fractions
 
 
 # Particle functions
@@ -195,7 +240,7 @@ def particle_mass(
 def particle_number_concentration(
     count: int, efficiency: float, flowrate: float, time: float
 ) -> float:
-    """Number concentration of particles.
+    """Number concentratioe total volume of the industrial chemical introduced in a registration year bythe person does not excn of particles.
     PNC (/L) = N / (η * V (L/s) * T (s))
 
     Args:
@@ -255,17 +300,3 @@ def reference_particle_mass(density: float, diameter: float) -> float:
 #         density: reference density (kg/m3)
 #     """
 #     return np.cbrt(6.0 / np.pi * mass_std / density_std)
-
-x = np.genfromtxt(
-    "/home/tom/Downloads/AuAg.csv",
-    delimiter=",",
-    usecols=(1,2,3),
-    names=True,
-    skip_header=0,
-    converters={0: lambda s: float(s.replace(",", "."))},
-    invalid_raise=False,
-)
-
-for name in x.dtype.names:
-    d, l ,r = accumulate_detections(x[name], 0.5, 1)
-    print(d.size)
