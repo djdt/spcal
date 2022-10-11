@@ -1,6 +1,6 @@
 import numpy as np
 
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 
 def accumulate_detections(
@@ -141,6 +141,39 @@ def detection_element_fractions(
         fractions[name] /= total
 
     return fractions
+
+
+def fraction_components(
+    fractions: np.ndarray, bins: Optional[np.ndarray] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Binned ratios for element fractions.
+    Calculates the mean value and count of peaks with a combination of elements separated by `bins`.
+    This can be used to find the different elemental composition of NPs in a sample.
+
+    Args:
+        fractions: ratios returned by `detection_element_fractions`
+        bins: bins for each element fraction, defaults to [0.0, 0.1, ... 1.0]
+
+    Returns:
+        mean of each combination
+        count of each combination"""
+    if bins is None:
+        bins = np.linspace(0, 0.9, 10)
+
+    # Generate indicies from histogram of each element
+    hist = np.stack(
+        [np.digitize(fractions[name], bins=bins) for name in fractions.dtype.names],
+        axis=1,
+    )
+    # Unique combinations across all histogram indicies
+    _, idx, counts = np.unique(hist, axis=0, return_inverse=True, return_counts=True)
+
+    # Calculate the mean value for each unique combination
+    compositions = np.empty(counts.size, dtype=fractions.dtype)
+    for name in fractions.dtype.names:
+        compositions[name] = np.bincount(idx, fractions[name]) / counts
+
+    return compositions, counts
 
 
 # Particle functions
