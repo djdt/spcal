@@ -10,18 +10,18 @@ from spcal.calc import calculate_limits
 from spcal.util import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
-from spcal.gui.graphs import ParticleView
+from spcal.gui.graphs import ParticleView, graph_colors
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ElidedLabel, ValidColorLineEdit
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 logger = logging.getLogger(__name__)
 
 
 class SampleIOWidget(QtWidgets.QWidget):
-    optionsChanged = QtCore.Signal()
+    optionsChanged = QtCore.Signal(str)
 
     def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
@@ -58,9 +58,11 @@ class SampleIOWidget(QtWidgets.QWidget):
             "Ratio of the mass of the analyte over the mass of the particle."
         )
 
-        self.density.valueChanged.connect(self.optionsChanged)
-        self.molarmass.valueChanged.connect(self.optionsChanged)
-        self.massfraction.textChanged.connect(self.optionsChanged)
+        self.density.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.molarmass.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.massfraction.textChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
 
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
@@ -112,6 +114,32 @@ class SampleIOWidget(QtWidgets.QWidget):
         self.massfraction.setText("1.0")
         self.blockSignals(False)
 
+    def clearOutputs(self) -> None:
+        self.count.setText("")
+        self.background_count.setText("")
+        self.lod_count.setText("")
+
+    def updateOutputs(
+        self,
+        responses: np.ndarray,
+        detections: np.ndarray,
+        labels: np.ndarray,
+        limits: Tuple[str, Dict[str, float], np.ndarray],
+    ) -> None:
+        background = np.mean(responses[labels == 0])
+        background_std = np.std(responses[labels == 0])
+        lod = np.mean(limits[2]["ld"])  # + self.background
+
+        self.count.setText(f"{detections.size} ± {np.sqrt(detections.size):.1f}")
+        self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
+        self.lod_count.setText(
+            f"{lod:.4g} ({limits[0]}, {','.join(f'{k}={v}' for k,v in limits[1].items())})"
+        )
+
+    def isComplete(self) -> bool:
+        return (
+            self.density.hasAcceptableInput() and self.massfraction.hasAcceptableInput()
+        )
 
 
 class ReferenceIOWidget(SampleIOWidget):
@@ -140,8 +168,10 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
 
-        self.concentration.valueChanged.connect(self.optionsChanged)
-        self.diameter.valueChanged.connect(self.optionsChanged)
+        self.concentration.valueChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
+        self.diameter.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
 
         self.inputs.layout().removeRow(self.molarmass)
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
@@ -179,7 +209,7 @@ class ReferenceIOWidget(SampleIOWidget):
 
         super().resetInputs()
 
-    def recalculate(
+    def updateEfficiency(
         self,
         detections: np.ndarray,
         dwell: float,
@@ -226,9 +256,21 @@ class ReferenceIOWidget(SampleIOWidget):
             )
             self.efficiency.setText(f"{efficiency:.4g}")
 
-class SampleIOStack(QtWidgets.QWidget):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def isComplete(self) -> bool:
+        return super().isComplete() and self.diameter.hasAcceptableInput()
+
+
+class IOStack(QtWidgets.QWidget):
+    optionsChanged = QtCore.Signal(str)
+
+    def __init__(
+        self,
+        widget_type: Type[SampleIOWidget],
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
         super().__init__(parent)
+
+        self.widget_type = widget_type
 
         self.combo_name = QtWidgets.QComboBox()
         self.stack = QtWidgets.QStackedWidget()
@@ -240,18 +282,28 @@ class SampleIOStack(QtWidgets.QWidget):
         layout.addWidget(self.stack, 1)
         self.setLayout(layout)
 
-    def nameChanged(self) -> None:
-        pass
+    def __getitem__(self, name: str) -> SampleIOWidget:
+        return self.stack.widget(self.combo_name.findText(name))  # type: ignore
 
+    def widgets(self) -> List[SampleIOWidget]:
+        return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
     def repopulate(self, names: List[str]) -> None:
+        self.blockSignals(True)
         self.combo_name.clear()
-        for i in range(self.stack.count()):
-            self.stack.removeWidget(self.stack.widget(i))
+        while self.stack.count() > 0:
+            self.stack.removeWidget(self.stack.widget(0))
 
         for name in names:
-            self.combo_name.addText(name)
-            self.stack.addWidget(SampleIOWidget(name))
+            self.combo_name.addItem(name)
+            widget = self.widget_type(name)
+            widget.optionsChanged.connect(self.optionsChanged)
+            self.stack.addWidget(widget)
+        self.blockSignals(False)
+
+    def resetInputs(self) -> None:
+        for widget in self.widgets():
+            widget.resetInputs()
 
 
 class InputWidget(QtWidgets.QWidget):
@@ -260,7 +312,10 @@ class InputWidget(QtWidgets.QWidget):
     limitsChanged = QtCore.Signal(str)
 
     def __init__(
-        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+        self,
+        io_widget: Type[SampleIOWidget],
+        options: OptionsWidget,
+        parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -268,13 +323,15 @@ class InputWidget(QtWidgets.QWidget):
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.updateLimits)
 
+        self.io = IOStack(io_widget)
+
         self.redraw_graph_requested = False
         self.draw_mode = "Overlay"
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
 
-        self.detectionsChanged.connect(self.updateTexts)
+        self.detectionsChanged.connect(self.updateOutputs)
         self.detectionsChanged.connect(self.drawDetections)
 
         self.options = options
@@ -300,7 +357,6 @@ class InputWidget(QtWidgets.QWidget):
         self.regions: Dict[str, np.ndarray] = {}
         self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
-
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
 
@@ -313,27 +369,15 @@ class InputWidget(QtWidgets.QWidget):
         layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignRight)
         layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
 
-        self.combo_name = QtWidgets.QComboBox()
-        self.combo_name.currentTextChanged.connect(self.updateTexts)
-
-        self.io_stack = QtWidgets.QStackedWidget()
-
-        layout_io = QtWidgets.QVBoxLayout()
-        layout_io.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
-        layout_io.addWidget(self.io_stack, 1)
-
         layout_chart = QtWidgets.QVBoxLayout()
         layout_chart.addLayout(layout_table_file, 0)
-        layout_chart.addLayout(layout_io)
+        layout_chart.addWidget(self.io)
         layout_chart.addWidget(self.graph, 1)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_chart, 1)
 
         self.setLayout(layout)
-
-    def getIOForName(self, name: str) -> ReferenceIOWidget:
-        return self.io_stack.widget(self.combo_name.findText(name))
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
@@ -381,25 +425,10 @@ class InputWidget(QtWidgets.QWidget):
         self.responses = data
         self.events = np.arange(data.size)
 
-        self.combo_name.blockSignals(True)
-        self.combo_name.clear()
-        self.combo_name.addItems([name for name in self.responses.dtype.names])
-        self.combo_name.adjustSize()
-        self.combo_name.blockSignals(False)
-
-        self.addIOWidgets()
-
+        self.io.repopulate(data.dtype.names)
         # Update graph, limits and detections
         self.drawGraph()
         self.updateLimits()
-
-    def addIOWidgets(self):
-        for i in range(self.io_stack.count()):
-            self.io_stack.removeWidget(self.io_stack.widget(i))
-        for name in self.responses.dtype.names:
-            io = SampleIOWidget(name)
-            io.optionsChanged.connect(self.optionsChanged)
-            self.io_stack.addWidget(io)
 
     def trimRegion(self, name: str) -> Tuple[int, int]:
         if self.draw_mode == "Overlay":
@@ -408,30 +437,30 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots[name]
         return plot.region_start, plot.region_end
 
-    def updateDetections(self, name: Optional[str] = None) -> None:
-        if name is None or name == "Overlay":
+    def updateDetections(self, _name: Optional[str] = None) -> None:
+        if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
         else:
-            names = [name]
+            names = [_name]
 
-        for n in names:
-            trim = self.trimRegion(n)
-            responses = self.responses[n][trim[0] : trim[1]]
-            if responses.size > 0 and n in self.limits:
-                limits = self.limits[n][2]
+        for name in names:
+            trim = self.trimRegion(name)
+            responses = self.responses[name][trim[0] : trim[1]]
+            if responses.size > 0 and name in self.limits:
+                limits = self.limits[name][2]
                 (
-                    self.detections[n],
-                    self.labels[n],
-                    self.regions[n],
+                    self.detections[name],
+                    self.labels[name],
+                    self.regions[name],
                 ) = spcal.accumulate_detections(responses, limits["lc"], limits["ld"])
             else:
-                self.detections.pop(n)
-                self.labels.pop(n)
-                self.regions.pop(n)
+                self.detections.pop(name)
+                self.labels.pop(name)
+                self.regions.pop(name)
 
-            self.detectionsChanged.emit(n)
+            self.detectionsChanged.emit(name)
 
-    def updateLimits(self, name: Optional[str] = None) -> None:
+    def updateLimits(self, _name: Optional[str] = None) -> None:
         if self.responses.size == 0:
             return
 
@@ -458,21 +487,21 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        if name is None or name == "Overlay":
+        if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
         else:
-            names = [name]
+            names = [_name]
 
-        for n in names:
-            trim = self.trimRegion(n)
-            response = self.responses[n][trim[0] : trim[1]]
+        for name in names:
+            trim = self.trimRegion(name)
+            response = self.responses[name][trim[0] : trim[1]]
             if response.size == 0:
-                self.limits.pop(n)
+                self.limits.pop(name)
                 continue
 
             if method == "Manual Input":
                 limit = float(self.options.manual.text())
-                self.limits[n] = (
+                self.limits[name] = (
                     method,
                     {},
                     np.array(
@@ -481,33 +510,29 @@ class InputWidget(QtWidgets.QWidget):
                     ),
                 )
             else:
-                self.limits[n] = calculate_limits(
+                self.limits[name] = calculate_limits(
                     response, method, sigma, (alpha, beta), window=window_size
                 )
-            self.limitsChanged.emit(n)
+            self.limitsChanged.emit(name)
 
-    def updateTexts(self) -> None:
-        name = self.combo_name.currentText()
-        widget = self.getIOForName(name)
-
-        if name not in self.detections:
-            widget.count.setText("")
-            widget.background_count.setText("")
-            widget.lod_count.setText("")
+    def updateOutputs(self, _name: Optional[str] = None) -> None:
+        if _name is None or _name == "Overlay":
+            names = self.responses.dtype.names
         else:
-            trim = self.trimRegion(name)
-            responses = self.responses[name][trim[0] : trim[1]]
-            background = np.mean(responses[self.labels[name] == 0])
-            background_std = np.std(responses[self.labels[name] == 0])
-            lod = np.mean(self.limits[name][2]["ld"])  # + self.background
+            names = [_name]
 
-            widget.count.setText(
-                f"{self.detections[name].size} ± {np.sqrt(self.detections[name].size):.1f}"
-            )
-            widget.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
-            widget.lod_count.setText(
-                f"{lod:.4g} ({self.limits[name][0]}, {','.join(f'{k}={v}' for k,v in self.limits[name][1].items())})"
-            )
+        for name in names:
+            io = self.io[name]
+            if name not in self.detections:
+                io.clearOutputs()
+            else:
+                trim = self.trimRegion(name)
+                io.updateOutputs(
+                    self.responses[name][trim[0] : trim[1]],
+                    self.detections[name],
+                    self.labels[name],
+                    self.limits[name],
+                )
 
     def drawGraph(self) -> None:
         self.graph.clear()
@@ -527,7 +552,7 @@ class InputWidget(QtWidgets.QWidget):
                 plot.drawSignal(self.events, self.responses[name])
         elif self.draw_mode == "Overlay":
             plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
-            for name, color in zip(self.responses.dtype.names, self.graph.plot_colors):
+            for name, color in zip(self.responses.dtype.names, graph_colors):
                 ys = self.responses[name]
 
                 pen = QtGui.QPen(color, 1.0)
@@ -540,7 +565,7 @@ class InputWidget(QtWidgets.QWidget):
         if self.draw_mode == "Overlay":
             plot = self.graph.plots["Overlay"]
             name_idx = list(self.responses.dtype.names).index(name)
-            color = self.graph.plot_colors[name_idx]
+            color = graph_colors[name_idx]
             if name_idx == 0:
                 plot.clearScatters()
         else:
@@ -573,8 +598,6 @@ class InputWidget(QtWidgets.QWidget):
             self.io_stack.widget(i).resetInputs()
         self.blockSignals(False)
 
-        self.optionsChanged.emit()
-
     def isComplete(self) -> bool:
         return len(self.detections) > 0 and any(
             self.detections[name].size > 0 for name in self.detections
@@ -582,72 +605,31 @@ class InputWidget(QtWidgets.QWidget):
 
 
 class SampleWidget(InputWidget):
-    pass
-
-    # def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget = None):
-    #     super().__init__(options, parent=parent)
-
-    # def isComplete(self) -> bool:
-    #     return (
-    #         len(self.detections) > 0
-    #         and any(self.detections[name].size > 0 for name in self.detections)
-    #         and self.massfraction.hasAcceptableInput()
-    #         and self.density.hasAcceptableInput()
-    #     )
-
-
-#     def elementChanged(self, text: str) -> None:
-#         if text in npdata.data:
-#             density, mw, mr = npdata.data[text]
-#             self.element.setValid(True)
-#             self.density.setValue(density)
-#             self.density.setUnit("g/cm³")
-#             self.density.setEnabled(False)
-#             self.molarmass.setValue(mw)
-#             self.molarmass.setUnit("g/mol")
-#             self.molarmass.setEnabled(False)
-#             self.massfraction.setText(str(mr))
-#             self.massfraction.setEnabled(False)
-#         else:
-#             self.element.setValid(False)
-#             self.density.setEnabled(True)
-#             self.molarmass.setEnabled(True)
-#             self.massfraction.setEnabled(True)
-
-#     def resetInputs(self) -> None:
-#         self.blockSignals(True)
-#         self.element.setText("")
-#         self.density.setValue(None)
-#         self.molarmass.setValue(None)
-#         self.massfraction.setText("1.0")
-#         self.blockSignals(False)
-#         super().resetInputs()
+    def __init__(
+        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+    ):
+        super().__init__(SampleIOWidget, options, parent=parent)
 
 
 class ReferenceWidget(InputWidget):
-    def __init__(self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(options, parent=parent)
+    def __init__(
+        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+    ):
+        super().__init__(ReferenceIOWidget, options, parent=parent)
 
-        self.options.dwelltime.valueChanged.connect(self.recalculate)
-        self.options.response.valueChanged.connect(self.recalculate)
-        self.options.uptake.valueChanged.connect(self.recalculate)
-        self.optionsChanged.connect(self.recalculate)
-        self.detectionsChanged.connect(self.recalculate)
+        # dwelltime covered by detectionsChanged
+        self.options.response.valueChanged.connect(lambda: self.updateEfficiency(None))
+        self.options.uptake.valueChanged.connect(lambda: self.updateEfficiency(None))
+        self.io.optionsChanged.connect(self.updateEfficiency)
+        self.detectionsChanged.connect(self.updateEfficiency)
 
-    def addIOWidgets(self):
-        for i in range(self.io_stack.count()):
-            self.io_stack.removeWidget(self.io_stack.widget(i))
-        for name in self.responses.dtype.names:
-            io = ReferenceIOWidget(name)
-            io.optionsChanged.connect(self.optionsChanged)
-            self.io_stack.addWidget(io)
-
-    def recalculate(self) -> None:
-        name = self.combo_name.currentText()
-        io = self.getIOForName(name)
-
-        if io is None:
+    def updateEfficiency(self, _name: Optional[str] = None) -> None:
+        if self.responses.size == 0:
             return
+        if _name is None or _name == "Overlay":
+            names = self.responses.dtype.names
+        else:
+            names = [_name]
 
         dwell = self.options.dwelltime.baseValue()
         assert dwell is not None
@@ -655,4 +637,7 @@ class ReferenceWidget(InputWidget):
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
 
-        io.recalculate(self.detections[name], dwell, response, time, uptake)
+        for name in names:
+            self.io[name].updateEfficiency(
+                self.detections[name], dwell, response, time, uptake
+            )

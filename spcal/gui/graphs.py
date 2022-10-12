@@ -4,6 +4,23 @@ import pyqtgraph
 
 from typing import Dict, List, Optional, Union
 
+graph_colors = [
+    QtGui.QColor(105, 41, 196),
+    QtGui.QColor(17, 146, 232),
+    QtGui.QColor(0, 93, 93),
+    QtGui.QColor(159, 24, 83),
+    QtGui.QColor(250, 77, 86),
+    QtGui.QColor(87, 4, 8),
+    QtGui.QColor(25, 128, 56),
+    QtGui.QColor(0, 45, 156),
+    QtGui.QColor(238, 83, 139),
+    QtGui.QColor(178, 134, 0),
+    QtGui.QColor(0, 157, 154),
+    QtGui.QColor(1, 39, 73),
+    QtGui.QColor(138, 56, 0),
+    QtGui.QColor(165, 110, 255),
+]
+
 
 class ResultsView(pyqtgraph.GraphicsView):
     def __init__(
@@ -44,8 +61,15 @@ class ResultsView(pyqtgraph.GraphicsView):
         name: str,
         x: np.ndarray,
         bins: Union[str, np.ndarray] = "auto",
+        pen : Optional[QtGui.QPen] = None,
         brush: Optional[QtGui.QBrush] = None,
     ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.black)
+
         hist, edges = np.histogram(x, bins)
         curve = pyqtgraph.PlotCurveItem(
             x=edges,
@@ -53,11 +77,15 @@ class ResultsView(pyqtgraph.GraphicsView):
             stepMode="center",
             fillLevel=0,
             fillOutline=True,
+            pen=pen,
             brush=brush,
             skipFiniteCheck=True,
             name=name,
         )
         self.plot.addItem(curve)
+
+    def clear(self) -> None:
+        self.plot.clear()
 
 
 class ParticlePlotItem(pyqtgraph.PlotItem):
@@ -211,7 +239,7 @@ class ParticleView(pyqtgraph.GraphicsView):
     def __init__(
         self,
         downsample: int = 1,
-        minimum_plot_height: int = 150,
+        minimum_plot_height: int = 120,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         self.downsample = downsample
@@ -226,29 +254,13 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.black_pen.setCosmetic(True)
 
         self.plots: Dict[str, ParticlePlotItem] = {}
-        self.plot_colors = [
-            QtGui.QColor(105, 41, 196),
-            QtGui.QColor(17, 146, 232),
-            QtGui.QColor(0, 93, 93),
-            QtGui.QColor(159, 24, 83),
-            QtGui.QColor(250, 77, 86),
-            QtGui.QColor(87, 4, 8),
-            QtGui.QColor(25, 128, 56),
-            QtGui.QColor(0, 45, 156),
-            QtGui.QColor(238, 83, 139),
-            QtGui.QColor(178, 134, 0),
-            QtGui.QColor(0, 157, 154),
-            QtGui.QColor(1, 39, 73),
-            QtGui.QColor(138, 56, 0),
-            QtGui.QColor(165, 110, 255),
-        ]
 
     # Taken from pyqtgraph.widgets.MultiPlotWidget
     def setRange(self, *args, **kwds):
         pyqtgraph.GraphicsView.setRange(self, *args, **kwds)
         if self.centralWidget is not None:
             r = self.range
-            minHeight = len(self.layout.rows) * self.minimum_plot_height
+            minHeight = self.layout.currentRow * self.minimum_plot_height
             if r.height() < minHeight:
                 r.setHeight(minHeight)
                 r.setWidth(r.width() - self.verticalScrollBar().width())
