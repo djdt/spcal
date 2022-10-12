@@ -11,12 +11,204 @@ from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
-from spcal.gui.graphs import ResultsView
+from spcal.gui.graphs import ResultsView, graph_colors
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, List, Tuple
+
+
+class ResultIOWidget(QtWidgets.QWidget):
+    signal_units = {"counts": 1.0}
+    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+    mass_units = {
+        "ag": 1e-21,
+        "fg": 1e-18,
+        "pg": 1e-15,
+        "ng": 1e-12,
+        "μg": 1e-9,
+        "g": 1e-3,
+        "kg": 1.0,
+    }
+    molar_concentration_units = {
+        "amol/L": 1e-18,
+        "fmol/L": 1e-15,
+        "pmol/L": 1e-12,
+        "nmol/L": 1e-9,
+        "μmol/L": 1e-6,
+        "mmol/L": 1e-3,
+        "mol/L": 1.0,
+    }
+    concentration_units = {
+        "fg/L": 1e-18,
+        "pg/L": 1e-15,
+        "ng/L": 1e-12,
+        "μg/L": 1e-9,
+        "mg/L": 1e-6,
+        "g/L": 1e-3,
+        "kg/L": 1.0,
+    }
+
+    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+        super().__init__(parent)
+        self.name = name
+
+        self.outputs = QtWidgets.QGroupBox("Outputs")
+        self.outputs.setLayout(QtWidgets.QHBoxLayout())
+
+        self.count = QtWidgets.QLineEdit()
+        self.count.setReadOnly(True)
+        self.number = UnitsWidget(
+            {"#/L": 1.0, "#/ml": 1e3},
+            default_unit="#/L",
+            formatter=".0f",
+        )
+        self.number.setReadOnly(True)
+        self.conc = UnitsWidget(
+            self.concentration_units,
+            default_unit="ng/L",
+        )
+        self.conc.setReadOnly(True)
+        self.background = UnitsWidget(
+            self.concentration_units,
+            default_unit="ng/L",
+        )
+        self.background.setReadOnly(True)
+
+        self.lod = UnitsWidget(
+            self.size_units,
+            default_unit="nm",
+        )
+        self.lod.setReadOnly(True)
+        self.mean = UnitsWidget(
+            self.size_units,
+            default_unit="nm",
+        )
+        self.mean.setReadOnly(True)
+        self.median = UnitsWidget(
+            self.size_units,
+            default_unit="nm",
+        )
+        self.median.setReadOnly(True)
+
+        layout_outputs_left = QtWidgets.QFormLayout()
+        layout_outputs_left.addRow("No. Detections:", self.count)
+        layout_outputs_left.addRow("No. Concentration:", self.number)
+        layout_outputs_left.addRow("Concentration:", self.conc)
+        layout_outputs_left.addRow("Ionic Background:", self.background)
+
+        layout_outputs_right = QtWidgets.QFormLayout()
+        layout_outputs_right.addRow("Mean:", self.mean)
+        layout_outputs_right.addRow("Median:", self.median)
+        layout_outputs_right.addRow("LOD:", self.lod)
+
+        self.outputs.layout().addLayout(layout_outputs_left)
+        self.outputs.layout().addLayout(layout_outputs_right)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.outputs)
+
+        self.setLayout(layout)
+
+    def clearOutputs(self) -> None:
+        self.mean.setBaseValue(None)
+        self.mean.setBaseError(None)
+        self.median.setBaseValue(None)
+        self.lod.setBaseValue(None)
+
+        self.count.setText("")
+        self.number.setBaseValue(None)
+        self.number.setBaseError(None)
+        self.conc.setBaseValue(None)
+        self.conc.setBaseError(None)
+        self.background.setBaseValue(None)
+        self.background.setBaseError(None)
+
+    def updateOutputs(
+        self,
+        values: np.ndarray,
+        units: Dict[str, float],
+        lod: np.ndarray,
+        count: float,
+        count_error: float,
+        conc: Optional[float] = None,
+        number_conc: Optional[float] = None,
+        background_conc: Optional[float] = None,
+        background_error: Optional[float] = None,
+    ) -> None:
+
+        mean = np.mean(values)
+        median = np.mean(values)
+        std = np.mean(values)
+        mean_lod = np.mean(lod)
+
+        for te in [self.mean, self.median, self.lod]:
+            te.setUnits(units)
+
+        self.mean.setBaseValue(mean)
+        self.mean.setBaseError(std)
+        self.median.setBaseValue(median)
+        self.lod.setBaseValue(mean_lod)
+
+        unit = self.mean.setBestUnit()
+        self.median.setUnit(unit)
+        self.lod.setUnit(unit)
+
+        relative_error = count / count_error
+        self.count.setText(f"{count} ± {count_error:.1f}")
+        self.number.setBaseValue(number_conc)
+        if number_conc is not None:
+            self.number.setBaseError(number_conc * relative_error)
+        else:
+            self.number.setBaseError(None)
+        self.number.setBestUnit()
+
+        self.conc.setBaseValue(conc)
+        if conc is not None:
+            self.conc.setBaseError(conc * relative_error)
+        else:
+            self.conc.setBaseError(None)
+        unit = self.conc.setBestUnit()
+
+        self.background.setBaseValue(background_conc)
+        if background_conc is not None and background_error is not None:
+            self.background.setBaseError(background_conc * background_error)
+        else:
+            self.background.setBaseError(None)
+        self.background.setUnit(unit)
+
+
+class ResultIOStack(QtWidgets.QWidget):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        super().__init__(parent)
+
+        self.combo_name = QtWidgets.QComboBox()
+        self.stack = QtWidgets.QStackedWidget()
+
+        self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
+        layout.addWidget(self.stack, 1)
+        self.setLayout(layout)
+
+    def __getitem__(self, name: str) -> ResultIOWidget:
+        return self.stack.widget(self.combo_name.findText(name))  # type: ignore
+
+    def widgets(self) -> List[ResultIOWidget]:
+        return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
+
+    def repopulate(self, names: List[str]) -> None:
+        self.blockSignals(True)
+        self.combo_name.clear()
+        while self.stack.count() > 0:
+            self.stack.removeWidget(self.stack.widget(0))
+
+        for name in names:
+            self.combo_name.addItem(name)
+            self.stack.addWidget(ResultIOWidget(name))
+        self.blockSignals(False)
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -83,6 +275,8 @@ class ResultsWidget(QtWidgets.QWidget):
         # self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
         # self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
+        self.io = ResultIOStack()
+
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
         self.fitmethod.setCurrentText("Lognormal")
@@ -93,7 +287,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
         self.mode.setItemData(
             0,
-            "Accumulated detection singal.",
+            "Accumulated detection signal.",
             QtCore.Qt.ToolTipRole,
         )
         self.mode.setItemData(
@@ -112,60 +306,8 @@ class ResultsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
         self.mode.setCurrentText("Size (m)")
-        self.mode.currentIndexChanged.connect(self.updateTexts)
+        self.mode.currentIndexChanged.connect(lambda: self.updateOutputs(None))
         self.mode.currentIndexChanged.connect(self.drawGraph)
-
-        self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QHBoxLayout())
-
-        self.count = QtWidgets.QLineEdit()
-        self.count.setReadOnly(True)
-        self.number = UnitsWidget(
-            {"#/L": 1.0, "#/ml": 1e3},
-            default_unit="#/L",
-            formatter=".0f",
-        )
-        self.number.setReadOnly(True)
-        self.conc = UnitsWidget(
-            self.concentration_units,
-            default_unit="ng/L",
-        )
-        self.conc.setReadOnly(True)
-        self.background = UnitsWidget(
-            self.concentration_units,
-            default_unit="ng/L",
-        )
-        self.background.setReadOnly(True)
-
-        self.lod = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.lod.setReadOnly(True)
-        self.mean = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.mean.setReadOnly(True)
-        self.median = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.median.setReadOnly(True)
-
-        layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("No. Detections:", self.count)
-        layout_outputs_left.addRow("No. Concentration:", self.number)
-        layout_outputs_left.addRow("Concentration:", self.conc)
-        layout_outputs_left.addRow("Ionic Background:", self.background)
-
-        layout_outputs_right = QtWidgets.QFormLayout()
-        layout_outputs_right.addRow("Mean:", self.mean)
-        layout_outputs_right.addRow("Median:", self.median)
-        layout_outputs_right.addRow("LOD:", self.lod)
-
-        self.outputs.layout().addLayout(layout_outputs_left)
-        self.outputs.layout().addLayout(layout_outputs_right)
 
         self.label_file = QtWidgets.QLabel()
 
@@ -194,10 +336,9 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_chart_options.addWidget(self.fitmethod)
 
         layout_outputs = QtWidgets.QVBoxLayout()
-        layout_outputs.addLayout(layout_filename)
-        layout_outputs.addWidget(self.outputs)
+        # layout_outputs.addLayout(layout_filename)
         layout_outputs.addWidget(self.graph)
-        layout_outputs.addLayout(layout_chart_options)
+        layout_outputs.addWidget(self.io)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_table, 0)
@@ -257,270 +398,259 @@ class ResultsWidget(QtWidgets.QWidget):
         return True
 
     def drawGraph(self) -> None:
-        for name in self.results:
-            self.graph.drawData(name, self.results[name])
-
-    def updateChart(self) -> None:
+        self.graph.clear()
         mode = self.mode.currentText()
-        if mode == "Mass (kg)":
-            data, mult, unit = self.asBestUnit(self.result["masses"], "k")
-            lod = self.result["lod_mass"] / mult
-            self.chart.xaxis.setTitleText(f"Mass ({unit}g)")
-        elif mode == "Signal":
-            data = self.result["detections"]  # counts
-            lod = self.result["lod"]
-            self.chart.xaxis.setTitleText("Signal (counts)")
-        elif mode == "Size (m)":
-            data, mult, unit = self.asBestUnit(self.result["sizes"])
-            lod = self.result["lod_size"] / mult
-            self.chart.xaxis.setTitleText(f"Size ({unit}m)")
-        elif mode == "Conc. (mol/L)":
-            data, mult, unit = self.asBestUnit(self.result["cell_concentrations"], "")
-            lod = self.result["lod_cell_concentration"] / mult
-            self.chart.xaxis.setTitleText(f"Conc. ({unit}mol/L)")
-        else:
-            raise ValueError(f"Unknown mode '{mode}'.")
 
-        # Crush the LOD for chart
-        if isinstance(lod, np.ndarray):
-            lod_min, lod_max = lod[0], lod[1]
-        else:
-            lod_min, lod_max = lod, lod
+        for name, color in zip(self.result, graph_colors):
+            if mode == "Signal":
+                units = self.signal_units
+                values = self.result[name]["detections"]
+                lod = self.result[name]["lod"]
+            elif mode == "Mass (kg)" and "masses" in self.result[name]:
+                units = self.mass_units
+                values = self.result[name]["masses"]
+                lod = self.result[name]["lod_mass"]
+            elif mode == "Size (m)" and "sizes" in self.result[name]:
+                units = self.size_units
+                values = self.result[name]["sizes"]
+                lod = self.result[name]["lod_size"]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
+                units = self.molar_concentration_units
+                values = self.result[name]["cell_concentrations"]
+                lod = self.result[name]["lod_cell_concentration"]
+            else:
+                continue
 
-        # TODO option for choosing percentile
-        hist_data = data[data < np.percentile(data, 98)]
+            color = QtGui.QColor(color)
+            color.setAlpha(128)
+            self.graph.drawData(name, values, brush=QtGui.QBrush(color))
 
-        bins = np.histogram_bin_edges(hist_data, bins=self.nbins)
-        if len(bins) - 1 < 16:
-            bins = np.histogram_bin_edges(hist_data, bins=16)
-        elif len(bins) - 1 > 128:
-            bins = np.histogram_bin_edges(hist_data, bins=128)
+    # def updateChart(self) -> None:
+    #     mode = self.mode.currentText()
+    #     print(mode)
+    #     if mode == "Mass (kg)":
+    #         data, mult, unit = self.asBestUnit(self.result["masses"], "k")
+    #         lod = self.result["lod_mass"] / mult
+    #         self.chart.xaxis.setTitleText(f"Mass ({unit}g)")
+    #     elif mode == "Signal":
+    #         data = self.result["detections"]  # counts
+    #         lod = self.result["lod"]
+    #         self.chart.xaxis.setTitleText("Signal (counts)")
+    #     elif mode == "Size (m)":
+    #         data, mult, unit = self.asBestUnit(self.result["sizes"])
+    #         lod = self.result["lod_size"] / mult
+    #         self.chart.xaxis.setTitleText(f"Size ({unit}m)")
+    #     elif mode == "Conc. (mol/L)":
+    #         data, mult, unit = self.asBestUnit(self.result["cell_concentrations"], "")
+    #         lod = self.result["lod_cell_concentration"] / mult
+    #         self.chart.xaxis.setTitleText(f"Conc. ({unit}mol/L)")
+    #     else:
+    #         raise ValueError(f"Unknown mode '{mode}'.")
 
-        hist, _ = np.histogram(hist_data, bins=bins)
-        self.chart.setData(hist, bins, xmin=0.0)
+    #     # Crush the LOD for chart
+    #     if isinstance(lod, np.ndarray):
+    #         lod_min, lod_max = lod[0], lod[1]
+    #     else:
+    #         lod_min, lod_max = lod, lod
 
-        self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
+    #     # TODO option for choosing percentile
+    #     hist_data = data[data < np.percentile(data, 98)]
 
-        self.updateChartFit(hist, bins, data.size)
+    #     bins = np.histogram_bin_edges(hist_data, bins=self.nbins)
+    #     if len(bins) - 1 < 16:
+    #         bins = np.histogram_bin_edges(hist_data, bins=16)
+    #     elif len(bins) - 1 > 128:
+    #         bins = np.histogram_bin_edges(hist_data, bins=128)
 
-    def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
-        method = self.fitmethod.currentText()
-        if method == "None":
-            self.chart.fit.clear()
-            self.chart.label_fit.setVisible(False)
-            return
+    #     hist, _ = np.histogram(hist_data, bins=bins)
+    #     self.chart.setData(hist, bins, xmin=0.0)
 
-        # Convert to density
-        binwidth = bins[1] - bins[0]
-        hist = hist / binwidth / size
+    #     self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
 
-        if method == "Normal":
-            fit = fit_normal(bins[1:], hist)[0]
-        elif method == "Lognormal":
-            fit = fit_lognormal(bins[1:], hist)[0]
-        else:
-            raise ValueError(f"Unknown fit type '{method}'.")
+    #     self.updateChartFit(hist, bins, data.size)
 
-        # Convert from density
-        fit = fit * binwidth * size
+    # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
+    #     method = self.fitmethod.currentText()
+    #     if method == "None":
+    #         self.chart.fit.clear()
+    #         self.chart.label_fit.setVisible(False)
+    #         return
 
-        self.chart.setFit(bins[1:], fit)
-        self.chart.fit.setName(method)
-        self.chart.label_fit.setVisible(True)
+    #     # Convert to density
+    #     binwidth = bins[1] - bins[0]
+    #     hist = hist / binwidth / size
 
-    def updateTexts(self) -> None:
-        return
-        self.label_file.setText(
-            Path(self.result["file"]).name + " (" + self.result["limit_method"] + ")"
-        )
+    #     if method == "Normal":
+    #         fit = fit_normal(bins[1:], hist)[0]
+    #     elif method == "Lognormal":
+    #         fit = fit_lognormal(bins[1:], hist)[0]
+    #     else:
+    #         raise ValueError(f"Unknown fit type '{method}'.")
 
+    #     # Convert from density
+    #     fit = fit * binwidth * size
+
+    #     self.chart.setFit(bins[1:], fit)
+    #     self.chart.fit.setName(method)
+    #     self.chart.label_fit.setVisible(True)
+
+    def updateOutputs(self, _name: Optional[str] = None) -> None:
         mode = self.mode.currentText()
-        if mode == "Signal":
-            units = self.signal_units
-            mean, median, lod, std = (
-                np.mean(self.result["detections"]),
-                np.median(self.result["detections"]),
-                np.mean(self.result["lod"]),
-                np.std(self.result["detections"]),
-            )
-        elif mode == "Mass (kg)":
-            units = self.mass_units
-            mean, median, lod, std = (
-                np.mean(self.result["masses"]),
-                np.median(self.result["masses"]),
-                np.mean(self.result["lod_mass"]),
-                np.std(self.result["masses"]),
-            )
-        elif mode == "Size (m)":
-            units = self.size_units
-            mean, median, lod, std = (
-                np.mean(self.result["sizes"]),
-                np.median(self.result["sizes"]),
-                np.mean(self.result["lod_size"]),
-                np.std(self.result["sizes"]),
-            )
-        elif mode == "Conc. (mol/L)":
-            units = self.molar_concentration_units
-            mean, median, lod, std = (
-                np.mean(self.result["cell_concentrations"]),
-                np.median(self.result["cell_concentrations"]),
-                np.mean(self.result["lod_cell_concentration"]),
-                np.std(self.result["cell_concentrations"]),
-            )
+        if _name is None or _name == "Overlay":
+            names = list(self.sample.detections.keys())
         else:
-            raise ValueError(f"Unknown mode {mode}.")
+            names = [_name]
 
-        for te in [self.mean, self.median, self.lod]:
-            te.setUnits(units)
+        for name in names:
+            if mode == "Signal":
+                units = self.signal_units
+                values = self.result[name]["detections"]
+                lod = self.result[name]["lod"]
+            elif mode == "Mass (kg)" and "masses" in self.result[name]:
+                units = self.mass_units
+                values = self.result[name]["masses"]
+                lod = self.result[name]["lod_mass"]
+            elif mode == "Size (m)" and "sizes" in self.result[name]:
+                units = self.size_units
+                values = self.result[name]["sizes"]
+                lod = self.result[name]["lod_size"]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
+                units = self.molar_concentration_units
+                values = self.result[name]["cell_concentrations"]
+                lod = self.result[name]["lod_cell_concentration"]
+            else:
+                self.io[name].clearOutputs()
+                continue
 
-        self.mean.setBaseValue(mean)
-        self.mean.setBaseError(std)
-        self.median.setBaseValue(median)
-        self.lod.setBaseValue(lod)
+            self.io[name].updateOutputs(
+                values,
+                units,
+                lod,
+                count=self.result[name]["detections"].size,
+                count_error=self.result[name]["detections_std"],
+                conc=self.result[name].get("concentration", None),
+                number_conc=self.result[name].get("number_concentration", None),
+                background_conc=self.result[name].get("background_concentration", None),
+                background_error=self.result[name]["background_std"]
+                / self.result[name]["background"],
+            )
 
-        unit = self.mean.setBestUnit()
-        self.median.setUnit(unit)
-        self.lod.setUnit(unit)
-
-        perc_error = self.sample.detections_std / self.sample.detections.size
-        self.count.setText(
-            f"{self.sample.detections.size} ± {self.sample.detections_std:.1f}"
-        )
-        self.number.setBaseValue(self.result.get("number_concentration", None))
-        self.number.setBaseError(
-            self.result.get("number_concentration", 0.0) * perc_error
-        )
-        self.number.setBestUnit()
-        self.conc.setBaseValue(self.result.get("concentration", None))
-        self.conc.setBaseError(self.result.get("concentration", 0.0) * perc_error)
-        unit = self.conc.setBestUnit()
-        self.background.setBaseValue(self.result.get("background_concentration", None))
-        ionic_error = self.result.get("background_concentration", None)
-        if ionic_error is not None:
-            ionic_error *= self.result["background_std"] / self.result["background"]
-        self.background.setBaseError(ionic_error)
-        self.background.setUnit(unit)
-
-    def updateResults(self) -> None:
+    def updateResults(self, _name: Optional[str] = None) -> None:
         method = self.options.efficiency_method.currentText()
 
-        for name in self.sample.detections:
+        if _name is None or _name == "Overlay":
+            names = list(self.sample.detections.keys())
+        else:
+            names = [_name]
+
+        for name in names:
             trim = self.sample.trimRegion(name)
-            response = self.sample.responses[name][trim[0]:trim[1]]
-            sample_io = self.sample.getIOForName(name)
-            reference_io = self.reference.getIOForName(name)
+            responses = self.sample.responses[name][trim[0] : trim[1]]
 
             result = {
-                "background": np.mean(response[self.sample.labels[name] == 0]),
-                "background_std": np.std(response[self.sample.labels[name] == 0]),
+                "background": np.mean(responses[self.sample.labels[name] == 0]),
+                "background_std": np.std(responses[self.sample.labels[name] == 0]),
                 "detections": self.sample.detections[name],
                 "detections_std": np.sqrt(self.sample.detections[name].size),
-                "events": response.size,
+                "events": responses.size,
                 "file": self.sample.label_file.text(),
                 "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
                 "limit_window": int(self.options.window_size.text()),
                 "lod": self.sample.limits[name][2]["ld"],
-                }
-
-            # if not self.readyForResults(name):
-            #     continue
-
-            # if not self.readyForResults():
-                # self.mode.setCurrentText("Signal")
-                # self.mode.setEnabled(False)
-                # self.result[name]["inputs"] = {}
-            # else:
-                # self.mode.setEnabled(True)
+            }
 
             if method in ["Manual Input", "Reference Particle"]:
-                if method == "Manual Input":
-                    efficiency = float(self.options.efficiency.text())
-                elif method == "Reference Particle":
-                    efficiency = float(reference_io.efficiency.text())
-                else:
-                    raise ValueError(f"Unknown method {method}.")
+                try:
+                    if method == "Manual Input":
+                        efficiency = float(self.options.efficiency.text())
+                    elif method == "Reference Particle":
+                        efficiency = float(self.reference.io[name].efficiency.text())
+                    else:
+                        raise KeyError(f"Unknown method {method}.")
+                except ValueError:
+                    efficiency = None
 
                 dwelltime = self.options.dwelltime.baseValue()
-                density = sample_io.density.baseValue()
-                massfraction = float(sample_io.massfraction.text())
+                density = self.sample.io[name].density.baseValue()
+                massfraction = float(self.sample.io[name].massfraction.text())
                 time = result["events"] * dwelltime
                 uptake = self.options.uptake.baseValue()
                 response = self.options.response.baseValue()
 
-                self.result.update(
-                    results_from_nebulisation_efficiency(
-                        self.result["detections"],
-                        self.result["background"],
-                        self.result["lod"],
-                        density=density,  # type: ignore
-                        dwelltime=dwelltime,  # type: ignore
-                        efficiency=efficiency,
-                        massfraction=massfraction,
-                        uptake=uptake,  # type: ignore
-                        response=response,  # type: ignore
-                        time=time,  # type: ignore
+                if all(
+                    x is not None
+                    for x in [efficiency, density, dwelltime, uptake, response]
+                ):
+                    result.update(
+                        results_from_nebulisation_efficiency(
+                            result["detections"],
+                            result["background"],
+                            result["lod"],
+                            density=density,
+                            dwelltime=dwelltime,
+                            efficiency=efficiency,
+                            massfraction=massfraction,
+                            uptake=uptake,
+                            response=response,
+                            time=time,
+                        )
                     )
-                )
-                self.result["inputs"] = {
-                    "density": density,
-                    "dwelltime": dwelltime,
-                    "transport_efficiency": efficiency,
-                    "mass_fraction": massfraction,
-                    "uptake": uptake,
-                    "response": response,
-                    "time": time,
-                }
+                    result["inputs"] = {
+                        "density": density,
+                        "dwelltime": dwelltime,
+                        "transport_efficiency": efficiency,
+                        "mass_fraction": massfraction,
+                        "uptake": uptake,
+                        "response": response,
+                        "time": time,
+                    }
             elif method == "Mass Response":
-                density = sample_io.density.baseValue()
-                massfraction = float(sample_io.massfraction.text())
-                massresponse = reference_io.massresponse.baseValue()
+                density = self.sample.io[name].density.baseValue()
+                massfraction = float(self.sample.io[name].massfraction.text())
+                massresponse = self.reference.io[name].massresponse.baseValue()
 
-                self.result.update(
-                    results_from_mass_response(
-                        self.result["detections"],
-                        self.result["background"],
-                        self.result["lod"],
-                        density=density,  # type: ignore
-                        massfraction=massfraction,
-                        massresponse=massresponse,  # type: ignore
+                if density is not None:
+                    self.result.update(
+                        results_from_mass_response(
+                            result["detections"],
+                            result["background"],
+                            result["lod"],
+                            density=density,
+                            massfraction=massfraction,
+                            massresponse=massresponse,
+                        )
                     )
-                )
-                self.result["inputs"] = {
-                    "density": density,
-                    "mass_fraction": massfraction,
-                    "mass_response": massresponse,
-                }
+                    result["inputs"] = {
+                        "density": density,
+                        "mass_fraction": massfraction,
+                        "mass_response": massresponse,
+                    }
 
             # Cell inputs
-            concindex = self.mode.findText("Conc. (mol/L)")
             celldiameter = self.options.celldiameter.baseValue()
-            molarmass = sample_io.molarmass.baseValue()
+            molarmass = self.sample.io[name].molarmass.baseValue()
             if celldiameter is not None:  # Scale sizes to hypothesised
-                scale = celldiameter / np.mean(self.result["sizes"])
-                self.result["sizes"] *= scale
-                self.result["lod_size"] *= scale
-                self.result["inputs"].update({"cell_diameter": celldiameter})
+                scale = celldiameter / np.mean(result["sizes"])
+                result["sizes"] *= scale
+                result["lod_size"] *= scale
+                result["inputs"].update({"cell_diameter": celldiameter})
 
             if (
                 celldiameter is not None and molarmass is not None
             ):  # Calculate the intracellular concetrations
-                self.mode.model().item(concindex).setEnabled(True)
-
-                self.result["cell_concentrations"] = cell_concentration(
-                    self.result["masses"],
+                result["cell_concentrations"] = cell_concentration(
+                    result["masses"],
                     diameter=celldiameter,
                     molarmass=molarmass,
                 )
-                self.result["lod_cell_concentration"] = cell_concentration(
-                    self.result["lod_mass"],
+                result["lod_cell_concentration"] = cell_concentration(
+                    result["lod_mass"],
                     diameter=celldiameter,
                     molarmass=molarmass,
                 )
-                self.result["inputs"].update({"molarmass": molarmass})
-            else:
-                self.mode.model().item(concindex).setEnabled(False)
-                if self.mode.currentIndex() == concindex:
-                    self.mode.setCurrentText("Signal")
+                result["inputs"].update({"molarmass": molarmass})
 
-        self.updateTexts()
+            self.result[name] = result
+            self.updateOutputs(name)
+        # end for name in names
         self.drawGraph()

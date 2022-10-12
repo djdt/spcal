@@ -151,10 +151,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            self.results.updateResults()
+            names = list(self.sample.detections.keys())
+            self.results.io.repopulate(names)
+            self.results.updateResults(None)
 
     def readyForResults(self) -> bool:
-        return len(self.sample.detections) > 0
+        return self.sample.isComplete()
 
     def resetInputs(self) -> None:
         self.tabs.setCurrentIndex(0)
