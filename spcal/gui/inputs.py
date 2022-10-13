@@ -318,6 +318,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
+        io_stack_widget: IOStack,
         options: OptionsWidget,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
@@ -327,7 +328,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.updateLimits)
 
-        self.io = IOStack[type(io_widget)](io_widget)
+        self.io = io_stack_widget
 
         self.redraw_graph_requested = False
         self.draw_mode = "Overlay"
@@ -607,14 +608,14 @@ class SampleWidget(InputWidget):
     def __init__(
         self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
     ):
-        super().__init__(SampleIOWidget, options, parent=parent)
+        super().__init__(SampleIOStack, options, parent=parent)
 
 
 class ReferenceWidget(InputWidget):
     def __init__(
         self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
     ):
-        super().__init__(ReferenceIOWidget, options, parent=parent)
+        super().__init__(ReferenceIOStack, options, parent=parent)
 
         # dwelltime covered by detectionsChanged
         self.options.response.valueChanged.connect(lambda: self.updateEfficiency(None))

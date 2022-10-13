@@ -489,11 +489,11 @@ class SampleIOStack(IOStack[SampleIOWidget]):
         super().__init__(SampleIOWidget, parent=parent)
 
 
-class ReferenceIOWidget(IOStack[ReferenceIOWidget]):
+class ReferenceIOStack(IOStack[ReferenceIOWidget]):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(ReferenceIOWidget, parent=parent)
 
 
-class ResultIOWidget(IOStack[ResultIOWidget]):
+class ResultIOStack(IOStack[ResultIOWidget]):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(ResultIOWidget, parent=parent)
