@@ -20,11 +20,12 @@ class DragDropRedirectFilter(QtCore.QObject):  # pragma: no cover
         return bool(super().eventFilter(obj, event))
 
 
-class ElidedLabel(QtWidgets.QFrame):
+class ElidedLabel(QtWidgets.QWidget):
     def __init__(self, text: str = "", parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self._text = text
         self._elide = QtCore.Qt.ElideLeft
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
 
     def elide(self) -> QtCore.Qt.TextElideMode:
         return self._elide
@@ -37,12 +38,18 @@ class ElidedLabel(QtWidgets.QFrame):
 
     def setText(self, text: str) -> None:
         self._text = text
+        self.updateGeometry()
+
+    def sizeHint(self) -> QtCore.QSize:
+        fm = self.fontMetrics()
+        return fm.boundingRect(self._text).size()
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
         fm = painter.fontMetrics()
 
-        elided = fm.elidedText(self._text, self._elide, self.width())
+        # width + 1 to prevent elide when text width = widget width
+        elided = fm.elidedText(self._text, self._elide, self.width() + 1)
         painter.drawText(
             self.contentsRect(),
             QtCore.Qt.AlignVCenter
