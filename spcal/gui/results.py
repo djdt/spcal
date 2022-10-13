@@ -139,8 +139,8 @@ class ResultIOWidget(QtWidgets.QWidget):
     ) -> None:
 
         mean = np.mean(values)
-        median = np.mean(values)
-        std = np.mean(values)
+        median = np.median(values)
+        std = np.std(values)
         mean_lod = np.mean(lod)
 
         for te in [self.mean, self.median, self.lod]:
@@ -401,23 +401,38 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph.clear()
         mode = self.mode.currentText()
 
+        enable_si_prefix = True
+        if mode == "Signal":
+            label, unit = "Intensity", "count"
+            enable_si_prefix = False
+        elif mode == "Mass (kg)":
+            label, unit = "Mass", "g"
+        elif mode == "Size (m)":
+            label, unit = "Size", "m"
+        elif mode == "Conc. (mol/L)":
+            label, unit = "Concentration", "mol/L"
+        else:
+            raise ValueError("drawGraph: unknown mode.")
+        
+        self.graph.setXaxisUnit(label, unit, enable_si_prefix)
+
         for name, color in zip(self.result, graph_colors):
             if mode == "Signal":
-                units = self.signal_units
+                # units = self.signal_units
                 values = self.result[name]["detections"]
-                lod = self.result[name]["lod"]
+                # lod = self.result[name]["lod"]
             elif mode == "Mass (kg)" and "masses" in self.result[name]:
-                units = self.mass_units
-                values = self.result[name]["masses"]
-                lod = self.result[name]["lod_mass"]
+                # units = self.mass_units
+                values = self.result[name]["masses"] * 1000.0  # convert to gram
+                # lod = self.result[name]["lod_mass"]
             elif mode == "Size (m)" and "sizes" in self.result[name]:
-                units = self.size_units
+                # units = self.size_units
                 values = self.result[name]["sizes"]
-                lod = self.result[name]["lod_size"]
+                # lod = self.result[name]["lod_size"]
             elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
-                units = self.molar_concentration_units
+                # units = self.molar_concentration_units
                 values = self.result[name]["cell_concentrations"]
-                lod = self.result[name]["lod_cell_concentration"]
+                # lod = self.result[name]["lod_cell_concentration"]
             else:
                 continue
 
