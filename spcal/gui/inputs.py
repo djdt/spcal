@@ -10,12 +10,13 @@ from spcal.calc import calculate_limits
 from spcal.util import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
+from spcal.gui.iowidgets import SampleIOStack, ReferenceIOStack
 from spcal.gui.graphs import ParticleView, graph_colors
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ElidedLabel, ValidColorLineEdit
 
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -259,13 +260,14 @@ class ReferenceIOWidget(SampleIOWidget):
     def isComplete(self) -> bool:
         return super().isComplete() and self.diameter.hasAcceptableInput()
 
+IOWidget = TypeVar('IOWidget', bound=type)
 
-class IOStack(QtWidgets.QWidget):
+class IOStack(QtWidgets.QWidget, Generic[IOWidget]):
     optionsChanged = QtCore.Signal(str)
 
     def __init__(
         self,
-        widget_type: Type[SampleIOWidget],
+        widget_type: IOWidget,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
@@ -285,10 +287,10 @@ class IOStack(QtWidgets.QWidget):
         layout.addWidget(self.stack, 1)
         self.setLayout(layout)
 
-    def __getitem__(self, name: str) -> SampleIOWidget:
+    def __getitem__(self, name: str) -> IOWidget:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore
 
-    def widgets(self) -> List[SampleIOWidget]:
+    def widgets(self) -> List[IOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
     def repopulate(self, names: List[str]) -> None:
@@ -316,7 +318,6 @@ class InputWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        io_widget: Type[SampleIOWidget],
         options: OptionsWidget,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
@@ -326,7 +327,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.updateLimits)
 
-        self.io = IOStack(io_widget)
+        self.io = IOStack[type(io_widget)](io_widget)
 
         self.redraw_graph_requested = False
         self.draw_mode = "Overlay"

@@ -12,7 +12,8 @@ from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
 from spcal.gui.graphs import ResultsView, graph_colors
-from spcal.gui.inputs import SampleWidget, ReferenceWidget, IOStack
+from spcal.gui.iowidgets import ResultIOStack
+from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 
@@ -230,7 +231,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph = ResultsView()
 
-        self.io = IOStack(ResultIOWidget)
+        self.io = ResultIOStack()
 
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
@@ -240,20 +241,12 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
+        self.mode.setItemData(0, "Accumulated detection signal.", QtCore.Qt.ToolTipRole)
         self.mode.setItemData(
-            0,
-            "Accumulated detection signal.",
-            QtCore.Qt.ToolTipRole,
+            1, "Particle mass, requires calibration.", QtCore.Qt.ToolTipRole
         )
         self.mode.setItemData(
-            1,
-            "Particle mass, requires calibration.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.mode.setItemData(
-            2,
-            "Particle size, requires calibration.",
-            QtCore.Qt.ToolTipRole,
+            2, "Particle size, requires calibration.", QtCore.Qt.ToolTipRole
         )
         self.mode.setItemData(
             3,
@@ -272,7 +265,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export_image = QtWidgets.QPushButton("Save Image")
         self.button_export_image.pressed.connect(self.dialogExportImage)
 
-        self.io.layout_top.insertWidget(0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertWidget(
+            0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignLeft
+        )
         self.io.layout_top.insertWidget(1, self.mode, 0, QtCore.Qt.AlignLeft)
         self.io.layout_top.insertStretch(2, 1)
 
@@ -396,50 +391,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
             )
 
-    # def updateChart(self) -> None:
-    #     mode = self.mode.currentText()
-    #     print(mode)
-    #     if mode == "Mass (kg)":
-    #         data, mult, unit = self.asBestUnit(self.result["masses"], "k")
-    #         lod = self.result["lod_mass"] / mult
-    #         self.chart.xaxis.setTitleText(f"Mass ({unit}g)")
-    #     elif mode == "Signal":
-    #         data = self.result["detections"]  # counts
-    #         lod = self.result["lod"]
-    #         self.chart.xaxis.setTitleText("Signal (counts)")
-    #     elif mode == "Size (m)":
-    #         data, mult, unit = self.asBestUnit(self.result["sizes"])
-    #         lod = self.result["lod_size"] / mult
-    #         self.chart.xaxis.setTitleText(f"Size ({unit}m)")
-    #     elif mode == "Conc. (mol/L)":
-    #         data, mult, unit = self.asBestUnit(self.result["cell_concentrations"], "")
-    #         lod = self.result["lod_cell_concentration"] / mult
-    #         self.chart.xaxis.setTitleText(f"Conc. ({unit}mol/L)")
-    #     else:
-    #         raise ValueError(f"Unknown mode '{mode}'.")
-
-    #     # Crush the LOD for chart
-    #     if isinstance(lod, np.ndarray):
-    #         lod_min, lod_max = lod[0], lod[1]
-    #     else:
-    #         lod_min, lod_max = lod, lod
-
-    #     # TODO option for choosing percentile
-    #     hist_data = data[data < np.percentile(data, 98)]
-
-    #     bins = np.histogram_bin_edges(hist_data, bins=self.nbins)
-    #     if len(bins) - 1 < 16:
-    #         bins = np.histogram_bin_edges(hist_data, bins=16)
-    #     elif len(bins) - 1 > 128:
-    #         bins = np.histogram_bin_edges(hist_data, bins=128)
-
-    #     hist, _ = np.histogram(hist_data, bins=bins)
-    #     self.chart.setData(hist, bins, xmin=0.0)
-
-    #     self.chart.setVerticalLines([np.mean(data), np.median(data), lod_min, lod_max])
-
-    #     self.updateChartFit(hist, bins, data.size)
-
     # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
     #     method = self.fitmethod.currentText()
     #     if method == "None":
@@ -558,11 +509,11 @@ class ResultsWidget(QtWidgets.QWidget):
                             result["background"],
                             result["lod"],
                             density=density,
-                            dwelltime=dwelltime,
-                            efficiency=efficiency,
+                            dwelltime=dwelltime,  # type: ignore
+                            efficiency=efficiency,  # type: ignore
                             massfraction=massfraction,
-                            uptake=uptake,
-                            response=response,
+                            uptake=uptake,  # type: ignore
+                            response=response,  # type: ignore
                             time=time,
                         )
                     )
