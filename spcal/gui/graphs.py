@@ -56,10 +56,6 @@ class ResultsView(pyqtgraph.GraphicsView):
         )
         self.setCentralWidget(self.plot)
 
-    def setXaxisUnit(self, label: str, unit: str, enable_si_prefix: bool = True) -> None:
-        self.xaxis.enableAutoSIPrefix(enable_si_prefix)
-        self.xaxis.setLabel(label, unit)
-
     def drawData(
         self,
         name: str,

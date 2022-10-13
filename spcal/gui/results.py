@@ -12,7 +12,7 @@ from spcal.io import export_nanoparticle_results
 from spcal.util import cell_concentration
 
 from spcal.gui.graphs import ResultsView, graph_colors
-from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.inputs import SampleWidget, ReferenceWidget, IOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import UnitsWidget
 
@@ -20,6 +20,8 @@ from typing import Dict, Optional, List, Tuple
 
 
 class ResultIOWidget(QtWidgets.QWidget):
+    optionsChanged = QtCore.Signal(str)
+
     signal_units = {"counts": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
     mass_units = {
@@ -179,38 +181,6 @@ class ResultIOWidget(QtWidgets.QWidget):
         self.background.setUnit(unit)
 
 
-class ResultIOStack(QtWidgets.QWidget):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(parent)
-
-        self.combo_name = QtWidgets.QComboBox()
-        self.stack = QtWidgets.QStackedWidget()
-
-        self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
-        layout.addWidget(self.stack, 1)
-        self.setLayout(layout)
-
-    def __getitem__(self, name: str) -> ResultIOWidget:
-        return self.stack.widget(self.combo_name.findText(name))  # type: ignore
-
-    def widgets(self) -> List[ResultIOWidget]:
-        return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
-
-    def repopulate(self, names: List[str]) -> None:
-        self.blockSignals(True)
-        self.combo_name.clear()
-        while self.stack.count() > 0:
-            self.stack.removeWidget(self.stack.widget(0))
-
-        for name in names:
-            self.combo_name.addItem(name)
-            self.stack.addWidget(ResultIOWidget(name))
-        self.blockSignals(False)
-
-
 class ResultsWidget(QtWidgets.QWidget):
     signal_units = {"counts": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
@@ -259,23 +229,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.result: Dict[str, dict] = {}
 
         self.graph = ResultsView()
-        # self.chart = ParticleHistogram()
-        # self.chart.drawVerticalLines(
-        #     [0, 0, 0, 0],
-        #     names=["mean", "median", "lod", ""],
-        #     pens=[
-        #         QtGui.QPen(QtGui.QColor(255, 0, 0), 1.5, QtCore.Qt.DashLine),
-        #         QtGui.QPen(QtGui.QColor(0, 0, 255), 1.5, QtCore.Qt.DashLine),
-        #         QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
-        #         QtGui.QPen(QtGui.QColor(0, 172, 0), 1.5, QtCore.Qt.DashLine),
-        #     ],
-        #     visible_in_legend=[True, True, True, False],
-        # )
-        # self.chartview = ParticleChartView(self.chart)
-        # self.chartview.setRubberBand(QtCharts.QChartView.HorizontalRubberBand)
-        # self.chartview.setRenderHint(QtGui.QPainter.Antialiasing)
 
-        self.io = ResultIOStack()
+        self.io = IOStack(ResultIOWidget)
 
         self.fitmethod = QtWidgets.QComboBox()
         self.fitmethod.addItems(["None", "Normal", "Lognormal"])
@@ -305,7 +260,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Intracellular concentration, requires cell diameter and analyte molarmass.",
             QtCore.Qt.ToolTipRole,
         )
-        self.mode.setCurrentText("Size (m)")
+        self.mode.setCurrentText("Signal")
         self.mode.currentIndexChanged.connect(lambda: self.updateOutputs(None))
         self.mode.currentIndexChanged.connect(self.drawGraph)
 
@@ -317,13 +272,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export_image = QtWidgets.QPushButton("Save Image")
         self.button_export_image.pressed.connect(self.dialogExportImage)
 
-        layout_table_options = QtWidgets.QHBoxLayout()
-        layout_table_options.addStretch(1)
-        layout_table_options.addWidget(QtWidgets.QLabel("Mode:"), 0)
-        layout_table_options.addWidget(self.mode)
-
-        layout_table = QtWidgets.QVBoxLayout()
-        layout_table.addLayout(layout_table_options)
+        self.io.layout_top.insertWidget(0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertWidget(1, self.mode, 0, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertStretch(2, 1)
 
         layout_filename = QtWidgets.QHBoxLayout()
         layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
@@ -335,14 +286,13 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
         layout_chart_options.addWidget(self.fitmethod)
 
-        layout_outputs = QtWidgets.QVBoxLayout()
+        layout_main = QtWidgets.QVBoxLayout()
         # layout_outputs.addLayout(layout_filename)
-        layout_outputs.addWidget(self.graph)
-        layout_outputs.addWidget(self.io)
+        layout_main.addWidget(self.io)
+        layout_main.addWidget(self.graph)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(layout_table, 0)
-        layout.addLayout(layout_outputs, 1)
+        layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
     def dialogExportResults(self) -> None:
@@ -401,10 +351,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph.clear()
         mode = self.mode.currentText()
 
-        enable_si_prefix = True
         if mode == "Signal":
-            label, unit = "Intensity", "count"
-            enable_si_prefix = False
+            label, unit = "Intensity", None
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
         elif mode == "Size (m)":
@@ -413,32 +361,40 @@ class ResultsWidget(QtWidgets.QWidget):
             label, unit = "Concentration", "mol/L"
         else:
             raise ValueError("drawGraph: unknown mode.")
-        
-        self.graph.setXaxisUnit(label, unit, enable_si_prefix)
 
-        for name, color in zip(self.result, graph_colors):
+        self.graph.xaxis.setLabel(label, unit)
+
+        graph_data = {}
+        for name in self.result:
             if mode == "Signal":
-                # units = self.signal_units
-                values = self.result[name]["detections"]
-                # lod = self.result[name]["lod"]
+                graph_data[name] = self.result[name]["detections"]
             elif mode == "Mass (kg)" and "masses" in self.result[name]:
-                # units = self.mass_units
-                values = self.result[name]["masses"] * 1000.0  # convert to gram
-                # lod = self.result[name]["lod_mass"]
+                graph_data[name] = self.result[name]["masses"] * 1000  # convert to gram
             elif mode == "Size (m)" and "sizes" in self.result[name]:
-                # units = self.size_units
-                values = self.result[name]["sizes"]
-                # lod = self.result[name]["lod_size"]
+                graph_data[name] = self.result[name]["sizes"]
             elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
-                # units = self.molar_concentration_units
-                values = self.result[name]["cell_concentrations"]
-                # lod = self.result[name]["lod_cell_concentration"]
+                graph_data[name] = self.result[name]["cell_concentrations"]
             else:
                 continue
 
+        # median 'sturges' bin width
+        bin_width = np.median(
+            [
+                np.ptp(graph_data[name]) / (np.log2(graph_data[name].size) + 1)
+                for name in graph_data
+            ]
+        )
+
+        for name, color in zip(graph_data, graph_colors):
+            bins = np.arange(
+                graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
+            )
+            bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(color)
             color.setAlpha(128)
-            self.graph.drawData(name, values, brush=QtGui.QBrush(color))
+            self.graph.drawData(
+                name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
+            )
 
     # def updateChart(self) -> None:
     #     mode = self.mode.currentText()
