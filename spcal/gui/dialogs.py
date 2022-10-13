@@ -10,7 +10,6 @@ from typing import List, Optional
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray)
     dwelltimeImported = QtCore.Signal(float)
-    completeChanged = QtCore.Signal()
 
     def __init__(self, file: str, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
