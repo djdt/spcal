@@ -277,8 +277,11 @@ class IOStack(QtWidgets.QWidget):
 
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
 
+        self.layout_top = QtWidgets.QHBoxLayout()
+        self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
+
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
+        layout.addLayout(self.layout_top)
         layout.addWidget(self.stack, 1)
         self.setLayout(layout)
 
@@ -360,17 +363,12 @@ class InputWidget(QtWidgets.QWidget):
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
 
-        self.label_file = ElidedLabel()
-        self.label_file.setSizePolicy(
-            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
-        )
+        self.label_file = ElidedLabel("text")
 
-        layout_table_file = QtWidgets.QHBoxLayout()
-        layout_table_file.addWidget(self.label_file, 1, QtCore.Qt.AlignRight)
-        layout_table_file.addWidget(self.button_file, 0, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignLeft)
 
         layout_chart = QtWidgets.QVBoxLayout()
-        layout_chart.addLayout(layout_table_file, 0)
         layout_chart.addWidget(self.io)
         layout_chart.addWidget(self.graph, 1)
 
