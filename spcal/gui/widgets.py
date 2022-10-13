@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from typing import Tuple
+from typing import Optional, Tuple
 
 
 class DragDropRedirectFilter(QtCore.QObject):  # pragma: no cover
@@ -21,7 +21,7 @@ class DragDropRedirectFilter(QtCore.QObject):  # pragma: no cover
 
 
 class ElidedLabel(QtWidgets.QFrame):
-    def __init__(self, text: str = "", parent: QtWidgets.QWidget = None):
+    def __init__(self, text: str = "", parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self._text = text
         self._elide = QtCore.Qt.ElideLeft
@@ -55,7 +55,7 @@ class ElidedLabel(QtWidgets.QFrame):
 class RangeSlider(QtWidgets.QSlider):
     value2Changed = QtCore.Signal(int)
 
-    def __init__(self, parent: QtWidgets.QWidget = None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
         self.setOrientation(QtCore.Qt.Horizontal)
 
@@ -253,9 +253,9 @@ class ValidColorLineEdit(QtWidgets.QLineEdit):
     def __init__(
         self,
         text: str = "",
-        color_good: QtGui.QColor = None,
-        color_bad: QtGui.QColor = None,
-        parent: QtWidgets.QWidget = None,
+        color_good: Optional[QtGui.QColor] = None,
+        color_bad: Optional[QtGui.QColor] = None,
+        parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(text, parent)
         self.active = True
