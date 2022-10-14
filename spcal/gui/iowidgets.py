@@ -9,7 +9,7 @@ from spcal import npdata
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
 
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -270,7 +270,7 @@ class ReferenceIOWidget(SampleIOWidget):
         return super().isComplete() and self.diameter.hasAcceptableInput()
 
 
-class ResultIOWidget(QtWidgets.QWidget):
+class ResultIOWidget(IOWidget):
     optionsChanged = QtCore.Signal(str)
 
     signal_units = {"counts": 1.0}
@@ -440,7 +440,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
     def __init__(
         self,
-        io_widget_type: IOWidget,
+        io_widget_type: Type[IOType],
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)

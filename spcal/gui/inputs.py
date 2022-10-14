@@ -10,305 +10,14 @@ from spcal.calc import calculate_limits
 from spcal.util import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
-from spcal.gui.iowidgets import SampleIOStack, ReferenceIOStack
+from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
 from spcal.gui.graphs import ParticleView, graph_colors
 from spcal.gui.options import OptionsWidget
-from spcal.gui.units import UnitsWidget
-from spcal.gui.widgets import ElidedLabel, ValidColorLineEdit
+from spcal.gui.widgets import ElidedLabel
 
-from typing import Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Dict, Optional, Tuple, Type
 
 logger = logging.getLogger(__name__)
-
-
-class SampleIOWidget(QtWidgets.QWidget):
-    optionsChanged = QtCore.Signal(str)
-
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(parent)
-        self.name = name
-
-        self.inputs = QtWidgets.QGroupBox("Inputs")
-        self.inputs.setLayout(QtWidgets.QFormLayout())
-
-        self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
-        self.element.setValid(False)
-        self.element.setCompleter(QtWidgets.QCompleter(list(npdata.data.keys())))
-        self.element.textChanged.connect(self.elementChanged)
-
-        self.density = UnitsWidget(
-            {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
-            default_unit="g/cm³",
-        )
-        self.molarmass = UnitsWidget(
-            {"g/mol": 1e-3, "kg/mol": 1.0},
-            default_unit="g/mol",
-            invalid_color=QtGui.QColor(255, 255, 172),
-        )
-        self.massfraction = ValidColorLineEdit("1.0")
-        self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
-
-        self.element.setToolTip(
-            "Input formula for density, molarmass and massfraction."
-        )
-        self.density.setToolTip("Sample particle density.")
-        self.molarmass.setToolTip(
-            "Molecular weight, required to calculate intracellular concentrations."
-        )
-        self.massfraction.setToolTip(
-            "Ratio of the mass of the analyte over the mass of the particle."
-        )
-
-        self.density.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-        self.molarmass.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-        self.massfraction.textChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-
-        self.inputs.layout().addRow("Formula:", self.element)
-        self.inputs.layout().addRow("Density:", self.density)
-        self.inputs.layout().addRow("Molar mass:", self.molarmass)
-        self.inputs.layout().addRow("Molar ratio:", self.massfraction)
-
-        self.count = QtWidgets.QLineEdit("0")
-        self.count.setReadOnly(True)
-        self.background_count = QtWidgets.QLineEdit()
-        self.background_count.setReadOnly(True)
-        self.lod_count = QtWidgets.QLineEdit()
-        self.lod_count.setReadOnly(True)
-
-        self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QFormLayout())
-        self.outputs.layout().addRow("Particle count:", self.count)
-        self.outputs.layout().addRow("Background count:", self.background_count)
-        self.outputs.layout().addRow("LOD count:", self.lod_count)
-
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.inputs)
-        layout.addWidget(self.outputs)
-
-        self.setLayout(layout)
-
-    def elementChanged(self, text: str) -> None:
-        if text in npdata.data:
-            density, mw, mr = npdata.data[text]
-            self.element.setValid(True)
-            self.density.setValue(density)
-            self.density.setUnit("g/cm³")
-            self.density.setEnabled(False)
-            self.molarmass.setValue(mw)
-            self.molarmass.setUnit("g/mol")
-            self.molarmass.setEnabled(False)
-            self.massfraction.setText(str(mr))
-            self.massfraction.setEnabled(False)
-        else:
-            self.element.setValid(False)
-            self.density.setEnabled(True)
-            self.molarmass.setEnabled(True)
-            self.massfraction.setEnabled(True)
-
-    def resetInputs(self) -> None:
-        self.blockSignals(True)
-        self.element.setText("")
-        self.density.setValue(None)
-        self.molarmass.setValue(None)
-        self.massfraction.setText("1.0")
-        self.blockSignals(False)
-
-    def clearOutputs(self) -> None:
-        self.count.setText("")
-        self.background_count.setText("")
-        self.lod_count.setText("")
-
-    def updateOutputs(
-        self,
-        responses: np.ndarray,
-        detections: np.ndarray,
-        labels: np.ndarray,
-        limits: Tuple[str, Dict[str, float], np.ndarray],
-    ) -> None:
-        background = np.mean(responses[labels == 0])
-        background_std = np.std(responses[labels == 0])
-        lod = np.mean(limits[2]["ld"])  # + self.background
-
-        self.count.setText(f"{detections.size} ± {np.sqrt(detections.size):.1f}")
-        self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
-        self.lod_count.setText(
-            f"{lod:.4g} ({limits[0]}, {','.join(f'{k}={v}' for k,v in limits[1].items())})"
-        )
-
-    def isComplete(self) -> bool:
-        return (
-            self.density.hasAcceptableInput() and self.massfraction.hasAcceptableInput()
-        )
-
-
-class ReferenceIOWidget(SampleIOWidget):
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(name, parent=parent)
-
-        concentration_units = {
-            "fg/L": 1e-18,
-            "pg/L": 1e-15,
-            "ng/L": 1e-12,
-            "μg/L": 1e-9,
-            "mg/L": 1e-6,
-            "g/L": 1e-3,
-            "kg/L": 1.0,
-        }
-        self.concentration = UnitsWidget(
-            units=concentration_units,
-            default_unit="ng/L",
-            invalid_color=QtGui.QColor(255, 255, 172),
-        )
-        self.diameter = UnitsWidget(
-            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
-            default_unit="nm",
-        )
-
-        self.concentration.setToolTip("Reference particle concentration.")
-        self.diameter.setToolTip("Reference particle diameter.")
-
-        self.concentration.valueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-        self.diameter.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-
-        self.inputs.layout().removeRow(self.molarmass)
-        self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
-        self.inputs.layout().insertRow(1, "Diameter:", self.diameter)
-
-        self.efficiency = QtWidgets.QLineEdit()
-        self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
-        self.efficiency.setReadOnly(True)
-
-        self.massresponse = UnitsWidget(
-            {
-                "ag/count": 1e-21,
-                "fg/count": 1e-18,
-                "pg/count": 1e-15,
-                "ng/count": 1e-12,
-                "μg/count": 1e-9,
-                "mg/count": 1e-6,
-                "g/count": 1e-3,
-                "kg/count": 1.0,
-            },
-            default_unit="ag/count",
-        )
-        self.massresponse.setReadOnly(True)
-
-        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency)
-        self.outputs.layout().addRow("Mass Response:", self.massresponse)
-
-    def resetInputs(self) -> None:
-        self.blockSignals(True)
-        self.diameter.setValue(None)
-        self.concentration.setValue(None)
-        self.efficiency.setText("")
-        self.massresponse.setValue(None)
-        self.blockSignals(False)
-
-        super().resetInputs()
-
-    def updateEfficiency(
-        self,
-        detections: np.ndarray,
-        dwell: float,
-        response: Optional[float],
-        time: float,
-        uptake: Optional[float],
-    ) -> None:
-        self.efficiency.setText("")
-        self.massresponse.setValue("")
-
-        density = self.density.baseValue()
-        diameter = self.diameter.baseValue()
-        if density is None or diameter is None:
-            return
-
-        mass = spcal.reference_particle_mass(density, diameter)
-        massfraction = (
-            float(self.massfraction.text())
-            if self.massfraction.hasAcceptableInput()
-            else None
-        )
-        if massfraction is not None:
-            self.massresponse.setBaseValue(mass * massfraction / np.mean(detections))
-
-        # If concentration defined use conc method
-        concentration = self.concentration.baseValue()
-        if concentration is not None and uptake is not None:
-            efficiency = spcal.nebulisation_efficiency_from_concentration(
-                detections.size,
-                concentration=concentration,
-                mass=mass,
-                flowrate=uptake,
-                time=time,
-            )
-            self.efficiency.setText(f"{efficiency:.4g}")
-        elif massfraction is not None and uptake is not None and response is not None:
-            efficiency = spcal.nebulisation_efficiency_from_mass(
-                detections,
-                dwell=dwell,
-                mass=mass,
-                flowrate=uptake,
-                response_factor=response,
-                mass_fraction=massfraction,
-            )
-            self.efficiency.setText(f"{efficiency:.4g}")
-
-    def isComplete(self) -> bool:
-        return super().isComplete() and self.diameter.hasAcceptableInput()
-
-IOWidget = TypeVar('IOWidget', bound=type)
-
-class IOStack(QtWidgets.QWidget, Generic[IOWidget]):
-    optionsChanged = QtCore.Signal(str)
-
-    def __init__(
-        self,
-        widget_type: IOWidget,
-        parent: Optional[QtWidgets.QWidget] = None,
-    ):
-        super().__init__(parent)
-
-        self.widget_type = widget_type
-
-        self.combo_name = QtWidgets.QComboBox()
-        self.stack = QtWidgets.QStackedWidget()
-
-        self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
-
-        self.layout_top = QtWidgets.QHBoxLayout()
-        self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(self.layout_top)
-        layout.addWidget(self.stack, 1)
-        self.setLayout(layout)
-
-    def __getitem__(self, name: str) -> IOWidget:
-        return self.stack.widget(self.combo_name.findText(name))  # type: ignore
-
-    def widgets(self) -> List[IOWidget]:
-        return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
-
-    def repopulate(self, names: List[str]) -> None:
-        self.blockSignals(True)
-        self.combo_name.clear()
-        while self.stack.count() > 0:
-            self.stack.removeWidget(self.stack.widget(0))
-
-        for name in names:
-            self.combo_name.addItem(name)
-            widget = self.widget_type(name)
-            widget.optionsChanged.connect(self.optionsChanged)
-            self.stack.addWidget(widget)
-        self.blockSignals(False)
-
-    def resetInputs(self) -> None:
-        for widget in self.widgets():
-            widget.resetInputs()
 
 
 class InputWidget(QtWidgets.QWidget):
@@ -318,7 +27,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        io_stack_widget: IOStack,
+        io_stack: IOStack,
         options: OptionsWidget,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
@@ -328,7 +37,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.updateLimits)
 
-        self.io = io_stack_widget
+        self.io = io_stack
 
         self.redraw_graph_requested = False
         self.draw_mode = "Overlay"
@@ -594,8 +303,8 @@ class InputWidget(QtWidgets.QWidget):
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
-        for i in range(self.io_stack.count()):
-            self.io_stack.widget(i).resetInputs()
+        for i in range(self.io.stack.count()):
+            self.io.stack.widget(i).clearInputs()
         self.blockSignals(False)
 
     def isComplete(self) -> bool:
@@ -608,14 +317,15 @@ class SampleWidget(InputWidget):
     def __init__(
         self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
     ):
-        super().__init__(SampleIOStack, options, parent=parent)
+        super().__init__(SampleIOStack(), options, parent=parent)
+        assert isinstance(self.io, SampleIOStack)
 
 
 class ReferenceWidget(InputWidget):
     def __init__(
         self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
     ):
-        super().__init__(ReferenceIOStack, options, parent=parent)
+        super().__init__(ReferenceIOStack(), options, parent=parent)
 
         # dwelltime covered by detectionsChanged
         self.options.response.valueChanged.connect(lambda: self.updateEfficiency(None))
