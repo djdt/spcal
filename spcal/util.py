@@ -144,7 +144,9 @@ def detection_element_fractions(
 
 
 def fraction_components(
-    fractions: np.ndarray, bins: Optional[np.ndarray] = None
+    fractions: np.ndarray,
+    bins: Optional[np.ndarray] = None,
+    combine_similar: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Binned ratios for element fractions.
     Calculates the mean value and count of peaks with a combination of elements separated by `bins`.
@@ -153,6 +155,7 @@ def fraction_components(
     Args:
         fractions: ratios returned by `detection_element_fractions`
         bins: bins for each element fraction, defaults to [0.0, 0.1, ... 1.0]
+        combine_similar: compositions with a difference less than 3 * stdev are combined
 
     Returns:
         mean of each combination
@@ -165,13 +168,40 @@ def fraction_components(
         [np.digitize(fractions[name], bins=bins) for name in fractions.dtype.names],
         axis=1,
     )
+
     # Unique combinations across all histogram indicies
     _, idx, counts = np.unique(hist, axis=0, return_inverse=True, return_counts=True)
 
     # Calculate the mean value for each unique combination
     compositions = np.empty(counts.size, dtype=fractions.dtype)
+    stds = np.empty(counts.size, dtype=fractions.dtype)
     for name in fractions.dtype.names:
         compositions[name] = np.bincount(idx, fractions[name]) / counts
+        stds[name] = np.sqrt(
+            np.bincount(idx, (fractions[name] - compositions[name][idx]) ** 2) / counts
+        )
+
+    idx = np.argsort(counts)[::-1]
+    compositions = compositions[idx]
+    stds = stds[idx]
+    counts = counts[idx]
+
+    if combine_similar:
+        i = 0
+        while i < compositions.size:
+            similar = np.all(
+                [
+                    np.abs(compositions[name][i] - compositions[name]) < stds[name][i] * 3.0
+                    for name in compositions.dtype.names
+                ],
+                axis=0,
+            )
+            idx = np.flatnonzero(similar)[1:]
+            compositions = np.delete(compositions, idx)
+            stds = np.delete(stds, idx)
+            counts[i] = np.sum(counts[similar])
+            counts = np.delete(counts, idx)
+            i += 1
 
     return compositions, counts
 
