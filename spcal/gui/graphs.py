@@ -22,7 +22,72 @@ graph_colors = [
 ]
 
 
-class ResultsView(pyqtgraph.GraphicsView):
+class ResultsFractionView(pyqtgraph.GraphicsView):
+    def __init__(
+        self,
+        pen: Optional[QtGui.QPen] = None,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super().__init__(parent=parent, background="white")
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        self.xaxis = pyqtgraph.AxisItem(
+            "bottom",
+            pen=pen,
+            textPen=pen,
+            tick_pen=pen,
+            # text="",
+            # units="",
+        )
+
+        self.yaxis = pyqtgraph.AxisItem(
+            "left", pen=pen, textPen=pen, tick_pen=pen, text="% Composition", units=""
+        )
+
+        self.plot = pyqtgraph.PlotItem(
+            title="Elemental Compositions",
+            name="hist",
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            enableMenu=False,
+            parent=parent,
+        )
+        self.setCentralWidget(self.plot)
+
+    def drawData(
+        self,
+        compositions: np.ndarray,
+        counts: np.ndarray,
+        min_count_to_show: int = 0,
+        pen: Optional[QtGui.QPen] = None,
+        brushes: Optional[List[QtGui.QBrush]] = None,
+    ) -> None:
+
+
+        x = np.arange(counts.size)
+        y0 = np.zeros(counts.size)
+
+        if brushes is None:
+            brushes = [QtGui.QBrush() for _ in compositions.dtype.names]
+        assert len(brushes) >= len(compositions.dtype.names)
+
+        for name, brush in zip(compositions.dtype.names, brushes):
+            y = compositions[name]
+            bars = pyqtgraph.BarGraphItem(
+                x=x, height=y, width=0.5, y0=y0, pen=pen, brush=brush, name=name
+            )
+            self.plot.addItem(bars)
+            y0 += y
+
+        ticks = [(i, str(count)) for i, count in enumerate(counts)]
+        self.xaxis.setTicks([ticks, []])
+
+    def clear(self) -> None:
+        self.plot.clear()
+
+
+class ResultsHistView(pyqtgraph.GraphicsView):
     def __init__(
         self,
         pen: Optional[QtGui.QPen] = None,
@@ -48,7 +113,7 @@ class ResultsView(pyqtgraph.GraphicsView):
         self.yaxis.enableAutoSIPrefix(False)
 
         self.plot = pyqtgraph.PlotItem(
-            title="Results",
+            title="Results Histogram",
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             enableMenu=False,
@@ -61,7 +126,7 @@ class ResultsView(pyqtgraph.GraphicsView):
         name: str,
         x: np.ndarray,
         bins: Union[str, np.ndarray] = "auto",
-        pen : Optional[QtGui.QPen] = None,
+        pen: Optional[QtGui.QPen] = None,
         brush: Optional[QtGui.QBrush] = None,
     ) -> None:
         if pen is None:

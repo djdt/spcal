@@ -9,177 +9,15 @@ from spcal.calc import (
 )
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
-from spcal.util import cell_concentration
+from spcal.util import cell_concentration, detection_element_fractions, fraction_components
 
-from spcal.gui.graphs import ResultsView, graph_colors
+from spcal.gui.graphs import ResultsFractionView, ResultsHistView, graph_colors
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
-from spcal.gui.units import UnitsWidget
+from spcal.gui.util import create_action
 
-from typing import Dict, Optional, List, Tuple
-
-
-class ResultIOWidget(QtWidgets.QWidget):
-    optionsChanged = QtCore.Signal(str)
-
-    signal_units = {"counts": 1.0}
-    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-    mass_units = {
-        "ag": 1e-21,
-        "fg": 1e-18,
-        "pg": 1e-15,
-        "ng": 1e-12,
-        "μg": 1e-9,
-        "g": 1e-3,
-        "kg": 1.0,
-    }
-    molar_concentration_units = {
-        "amol/L": 1e-18,
-        "fmol/L": 1e-15,
-        "pmol/L": 1e-12,
-        "nmol/L": 1e-9,
-        "μmol/L": 1e-6,
-        "mmol/L": 1e-3,
-        "mol/L": 1.0,
-    }
-    concentration_units = {
-        "fg/L": 1e-18,
-        "pg/L": 1e-15,
-        "ng/L": 1e-12,
-        "μg/L": 1e-9,
-        "mg/L": 1e-6,
-        "g/L": 1e-3,
-        "kg/L": 1.0,
-    }
-
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(parent)
-        self.name = name
-
-        self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QHBoxLayout())
-
-        self.count = QtWidgets.QLineEdit()
-        self.count.setReadOnly(True)
-        self.number = UnitsWidget(
-            {"#/L": 1.0, "#/ml": 1e3},
-            default_unit="#/L",
-            formatter=".0f",
-        )
-        self.number.setReadOnly(True)
-        self.conc = UnitsWidget(
-            self.concentration_units,
-            default_unit="ng/L",
-        )
-        self.conc.setReadOnly(True)
-        self.background = UnitsWidget(
-            self.concentration_units,
-            default_unit="ng/L",
-        )
-        self.background.setReadOnly(True)
-
-        self.lod = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.lod.setReadOnly(True)
-        self.mean = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.mean.setReadOnly(True)
-        self.median = UnitsWidget(
-            self.size_units,
-            default_unit="nm",
-        )
-        self.median.setReadOnly(True)
-
-        layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("No. Detections:", self.count)
-        layout_outputs_left.addRow("No. Concentration:", self.number)
-        layout_outputs_left.addRow("Concentration:", self.conc)
-        layout_outputs_left.addRow("Ionic Background:", self.background)
-
-        layout_outputs_right = QtWidgets.QFormLayout()
-        layout_outputs_right.addRow("Mean:", self.mean)
-        layout_outputs_right.addRow("Median:", self.median)
-        layout_outputs_right.addRow("LOD:", self.lod)
-
-        self.outputs.layout().addLayout(layout_outputs_left)
-        self.outputs.layout().addLayout(layout_outputs_right)
-
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.outputs)
-
-        self.setLayout(layout)
-
-    def clearOutputs(self) -> None:
-        self.mean.setBaseValue(None)
-        self.mean.setBaseError(None)
-        self.median.setBaseValue(None)
-        self.lod.setBaseValue(None)
-
-        self.count.setText("")
-        self.number.setBaseValue(None)
-        self.number.setBaseError(None)
-        self.conc.setBaseValue(None)
-        self.conc.setBaseError(None)
-        self.background.setBaseValue(None)
-        self.background.setBaseError(None)
-
-    def updateOutputs(
-        self,
-        values: np.ndarray,
-        units: Dict[str, float],
-        lod: np.ndarray,
-        count: float,
-        count_error: float,
-        conc: Optional[float] = None,
-        number_conc: Optional[float] = None,
-        background_conc: Optional[float] = None,
-        background_error: Optional[float] = None,
-    ) -> None:
-
-        mean = np.mean(values)
-        median = np.median(values)
-        std = np.std(values)
-        mean_lod = np.mean(lod)
-
-        for te in [self.mean, self.median, self.lod]:
-            te.setUnits(units)
-
-        self.mean.setBaseValue(mean)
-        self.mean.setBaseError(std)
-        self.median.setBaseValue(median)
-        self.lod.setBaseValue(mean_lod)
-
-        unit = self.mean.setBestUnit()
-        self.median.setUnit(unit)
-        self.lod.setUnit(unit)
-
-        relative_error = count / count_error
-        self.count.setText(f"{count} ± {count_error:.1f}")
-        self.number.setBaseValue(number_conc)
-        if number_conc is not None:
-            self.number.setBaseError(number_conc * relative_error)
-        else:
-            self.number.setBaseError(None)
-        self.number.setBestUnit()
-
-        self.conc.setBaseValue(conc)
-        if conc is not None:
-            self.conc.setBaseError(conc * relative_error)
-        else:
-            self.conc.setBaseError(None)
-        unit = self.conc.setBestUnit()
-
-        self.background.setBaseValue(background_conc)
-        if background_conc is not None and background_error is not None:
-            self.background.setBaseError(background_conc * background_error)
-        else:
-            self.background.setBaseError(None)
-        self.background.setUnit(unit)
+from typing import Dict, Optional, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -229,7 +67,16 @@ class ResultsWidget(QtWidgets.QWidget):
         self.nbins = "auto"
         self.result: Dict[str, dict] = {}
 
-        self.graph = ResultsView()
+        self.graph_toolbar = QtWidgets.QToolBar()
+        self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
+        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+
+        self.graph_hist = ResultsHistView()
+        self.graph_frac = ResultsFractionView()
+
+        self.graph_stack = QtWidgets.QStackedWidget()
+        self.graph_stack.addWidget(self.graph_hist)
+        self.graph_stack.addWidget(self.graph_frac)
 
         self.io = ResultIOStack()
 
@@ -265,6 +112,30 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export_image = QtWidgets.QPushButton("Save Image")
         self.button_export_image.pressed.connect(self.dialogExportImage)
 
+        # Actions
+
+        self.action_graph_histogram = create_action(
+            "view-object-histogram-linear",
+            "Histogram",
+            "Switch to the histogram view.",
+            lambda: self.graph_stack.setCurrentWidget(self.graph_hist),
+            checkable=True,
+        )
+        self.action_graph_histogram.setChecked(True)
+        self.action_graph_fractions = create_action(
+            "office-chart-bar-stacked",
+            "Histogram",
+            "Switch to the histogram view.",
+            lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
+            checkable=True,
+        )
+        action_group_graph_view = QtGui.QActionGroup(self)
+        action_group_graph_view.addAction(self.action_graph_histogram)
+        action_group_graph_view.addAction(self.action_graph_fractions)
+        self.graph_toolbar.addActions(action_group_graph_view.actions())
+
+        # Layouts
+
         self.io.layout_top.insertWidget(
             0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignLeft
         )
@@ -275,16 +146,20 @@ class ResultsWidget(QtWidgets.QWidget):
         layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
         layout_filename.addWidget(self.label_file, 1)
 
-        layout_chart_options = QtWidgets.QHBoxLayout()
-        layout_chart_options.addWidget(self.button_export_image)
-        layout_chart_options.addStretch(1)
-        layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
-        layout_chart_options.addWidget(self.fitmethod)
+        # layout_chart_options = QtWidgets.QHBoxLayout()
+        # layout_chart_options.addWidget(self.button_export_image)
+        # layout_chart_options.addStretch(1)
+        # layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
+        # layout_chart_options.addWidget(self.fitmethod)
+
+        layout_graph = QtWidgets.QHBoxLayout()
+        layout_graph.addWidget(self.graph_toolbar, 0)
+        layout_graph.addWidget(self.graph_stack, 1)
 
         layout_main = QtWidgets.QVBoxLayout()
         # layout_outputs.addLayout(layout_filename)
-        layout_main.addWidget(self.io)
-        layout_main.addWidget(self.graph)
+        layout_main.addWidget(self.io, 0)
+        layout_main.addLayout(layout_graph, 1)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_main, 1)
@@ -343,7 +218,11 @@ class ResultsWidget(QtWidgets.QWidget):
         return True
 
     def drawGraph(self) -> None:
-        self.graph.clear()
+        self.drawGraphHist()
+        self.drawGraphFrac()
+
+    def drawGraphHist(self) -> None:
+        self.graph_hist.clear()
         mode = self.mode.currentText()
 
         if mode == "Signal":
@@ -357,7 +236,7 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
 
-        self.graph.xaxis.setLabel(label, unit)
+        self.graph_hist.xaxis.setLabel(label, unit)
 
         graph_data = {}
         for name in self.result:
@@ -387,9 +266,53 @@ class ResultsWidget(QtWidgets.QWidget):
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(color)
             color.setAlpha(128)
-            self.graph.drawData(
+            self.graph_hist.drawData(
                 name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
             )
+        
+    def drawGraphFrac(self) -> None:
+        # Fraction view
+        self.graph_frac.clear()
+        mode = self.mode.currentText()
+
+        if mode == "Signal":
+            label = "Intensity"
+        elif mode == "Mass (kg)":
+            label = "Mass"
+        elif mode == "Size (m)":
+            label = "Size"
+        elif mode == "Conc. (mol/L)":
+            label = "Concentration"
+        else:
+            raise ValueError("drawGraph: unknown mode.")
+        
+        self.graph_frac.yaxis.setLabel(f"{label} Peak Composition")
+
+        graph_data = {}
+        for name in self.result:
+            if mode == "Signal":
+                graph_data[name] = self.result[name]["detections"]
+            elif mode == "Mass (kg)" and "masses" in self.result[name]:
+                graph_data[name] = self.result[name]["masses"] * 1000  # convert to gram
+            elif mode == "Size (m)" and "sizes" in self.result[name]:
+                graph_data[name] = self.result[name]["sizes"]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
+                graph_data[name] = self.result[name]["cell_concentrations"]
+            else:
+                continue
+
+        fractions = detection_element_fractions(graph_data, self.sample.labels, self.sample.regions)
+        compositions, counts = fraction_components(fractions, combine_similar=True)
+
+        mask = counts > fractions.size * 0.05
+        compositions = compositions[mask]
+        counts = counts[mask]
+
+        if counts.size == 0:
+            return
+
+        self.graph_frac.drawData(compositions, counts, brushes=[QtGui.QBrush(color) for color in graph_colors])
+
 
     # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
     #     method = self.fitmethod.currentText()
