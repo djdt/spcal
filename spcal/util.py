@@ -102,9 +102,9 @@ def detection_element_fractions(
         dict of sum fraction per peak
 
     """
-    if sums.keys() != labels.keys() or sums.keys() != regions.keys():
+    if not all([k in labels.keys() and k in regions.keys() for k in sums.keys()]):
         raise ValueError(
-            "detection_element_fractions: sums, labels and regions must have the same keys."
+            "detection_element_fractions: labels and regions must have all of sums keys."
         )
     names = list(sums.keys())
 
@@ -155,7 +155,7 @@ def fraction_components(
     Args:
         fractions: ratios returned by `detection_element_fractions`
         bins: bins for each element fraction, defaults to [0.0, 0.1, ... 1.0]
-        combine_similar: compositions with a difference less than 3 * stdev are combined
+        combine_similar: compositions with a difference less than the bin width
 
     Returns:
         mean of each combination
@@ -174,32 +174,26 @@ def fraction_components(
 
     # Calculate the mean value for each unique combination
     means = np.empty(counts.size, dtype=fractions.dtype)
-    stds = np.empty(counts.size, dtype=fractions.dtype)
     for name in fractions.dtype.names:
         means[name] = np.bincount(idx, fractions[name]) / counts
-        stds[name] = np.sqrt(
-            np.bincount(idx, (fractions[name] - means[name][idx]) ** 2) / counts
-        )
 
     idx = np.argsort(counts)[::-1]
     means = means[idx]
-    stds = stds[idx]
     counts = counts[idx]
 
+    def rec_similar(rec: np.ndarray, x: np.ndarray, diff: float) -> np.ndarray:
+        return np.all(
+            [np.abs(rec[name] - x[name]) < diff for name in x.dtype.names],
+            axis=0,
+        )
+
     if combine_similar:
+        diff = bins[1] - bins[0]
         i = 0
-        while i < means.size:
-            similar = np.all(
-                [
-                    np.abs(means[name][i] - means[name]) < stds[name][i] * 3.0
-                    for name in means.dtype.names
-                ],
-                axis=0,
-            )
-            idx = np.flatnonzero(similar)[1:]
+        while i < means.size - 1:
+            idx = np.flatnonzero(rec_similar(means, means[i], diff))[1:]
             means = np.delete(means, idx)
-            stds = np.delete(stds, idx)
-            counts[i] = np.sum(counts[similar])
+            counts[i] += np.sum(counts[idx])
             counts = np.delete(counts, idx)
             i += 1
 
