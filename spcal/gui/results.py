@@ -286,7 +286,7 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
         
-        self.graph_frac.yaxis.setLabel(f"{label} Peak Composition")
+        self.graph_frac.plot.setTitle(f"{label} Composition")
 
         graph_data = {}
         for name in self.result:
@@ -300,6 +300,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph_data[name] = self.result[name]["cell_concentrations"]
             else:
                 continue
+
+        if not all(name in graph_data for name in self.sample.detections):
+            return
 
         fractions = detection_element_fractions(graph_data, self.sample.labels, self.sample.regions)
         compositions, counts = fraction_components(fractions, combine_similar=True)

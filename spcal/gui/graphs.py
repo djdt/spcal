@@ -40,14 +40,15 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             tick_pen=pen,
             # text="",
             # units="",
+            showValues=False,
         )
 
         self.yaxis = pyqtgraph.AxisItem(
-            "left", pen=pen, textPen=pen, tick_pen=pen, text="% Composition", units=""
+            "left", pen=pen, textPen=pen, tick_pen=pen, text="Detection Count", units=""
         )
 
         self.plot = pyqtgraph.PlotItem(
-            title="Elemental Compositions",
+            title="Detection Compositions",
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             enableMenu=False,
@@ -59,7 +60,6 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         self,
         compositions: np.ndarray,
         counts: np.ndarray,
-        min_count_to_show: int = 0,
         pen: Optional[QtGui.QPen] = None,
         brushes: Optional[List[QtGui.QBrush]] = None,
     ) -> None:
@@ -73,15 +73,12 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         assert len(brushes) >= len(compositions.dtype.names)
 
         for name, brush in zip(compositions.dtype.names, brushes):
-            y = compositions[name]
+            y = compositions[name] * counts
             bars = pyqtgraph.BarGraphItem(
                 x=x, height=y, width=0.5, y0=y0, pen=pen, brush=brush, name=name
             )
             self.plot.addItem(bars)
             y0 += y
-
-        ticks = [(i, str(count)) for i, count in enumerate(counts)]
-        self.xaxis.setTicks([ticks, []])
 
     def clear(self) -> None:
         self.plot.clear()
