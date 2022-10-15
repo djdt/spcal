@@ -4,7 +4,16 @@ import ctypes
 from PySide6 import QtCore, QtGui
 import shiboken6
 
-from typing import Any, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
+
+
+def create_action(icon: str, label: str, status: str, func: Callable, checkable: bool = False) -> QtGui.QAction:
+    action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label)
+    action.setStatusTip(status)
+    action.setToolTip(status)
+    action.triggered.connect(func)
+    action.setCheckable(checkable)
+    return action
 
 
 def array_to_polygonf(array: np.ndarray) -> QtGui.QPolygonF:
