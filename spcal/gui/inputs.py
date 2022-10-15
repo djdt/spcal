@@ -15,7 +15,7 @@ from spcal.gui.graphs import ParticleView, graph_colors
 from spcal.gui.options import OptionsWidget
 from spcal.gui.widgets import ElidedLabel
 
-from typing import Dict, Optional, Tuple, Type
+from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +33,10 @@ class InputWidget(QtWidgets.QWidget):
     ):
         super().__init__(parent)
         self.setAcceptDrops(True)
+
+        self.graph_toolbar = QtWidgets.QToolBar()
+        self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
+        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.updateLimits)
@@ -79,12 +83,13 @@ class InputWidget(QtWidgets.QWidget):
         self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignLeft)
         self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignLeft)
 
-        layout_chart = QtWidgets.QVBoxLayout()
-        layout_chart.addWidget(self.io)
-        layout_chart.addWidget(self.graph, 1)
+        layout_graph = QtWidgets.QHBoxLayout()
+        layout_graph.addWidget(self.graph_toolbar, 0)
+        layout_graph.addWidget(self.graph, 1)
 
-        layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(layout_chart, 1)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.io, 0)
+        layout.addLayout(layout_graph, 1)
 
         self.setLayout(layout)
 
