@@ -173,37 +173,37 @@ def fraction_components(
     _, idx, counts = np.unique(hist, axis=0, return_inverse=True, return_counts=True)
 
     # Calculate the mean value for each unique combination
-    compositions = np.empty(counts.size, dtype=fractions.dtype)
+    means = np.empty(counts.size, dtype=fractions.dtype)
     stds = np.empty(counts.size, dtype=fractions.dtype)
     for name in fractions.dtype.names:
-        compositions[name] = np.bincount(idx, fractions[name]) / counts
+        means[name] = np.bincount(idx, fractions[name]) / counts
         stds[name] = np.sqrt(
-            np.bincount(idx, (fractions[name] - compositions[name][idx]) ** 2) / counts
+            np.bincount(idx, (fractions[name] - means[name][idx]) ** 2) / counts
         )
 
     idx = np.argsort(counts)[::-1]
-    compositions = compositions[idx]
+    means = means[idx]
     stds = stds[idx]
     counts = counts[idx]
 
     if combine_similar:
         i = 0
-        while i < compositions.size:
+        while i < means.size:
             similar = np.all(
                 [
-                    np.abs(compositions[name][i] - compositions[name]) < stds[name][i] * 3.0
-                    for name in compositions.dtype.names
+                    np.abs(means[name][i] - means[name]) < stds[name][i] * 3.0
+                    for name in means.dtype.names
                 ],
                 axis=0,
             )
             idx = np.flatnonzero(similar)[1:]
-            compositions = np.delete(compositions, idx)
+            means = np.delete(means, idx)
             stds = np.delete(stds, idx)
             counts[i] = np.sum(counts[similar])
             counts = np.delete(counts, idx)
             i += 1
 
-    return compositions, counts
+    return means, counts
 
 
 # Particle functions
