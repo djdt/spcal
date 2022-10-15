@@ -314,7 +314,13 @@ class ResultsWidget(QtWidgets.QWidget):
         if counts.size == 0:
             return
 
-        self.graph_frac.drawData(compositions, counts, brushes=[QtGui.QBrush(color) for color in graph_colors])
+        brushes = []
+        for gc in graph_colors:
+            color = QtGui.QColor(gc)
+            color.setAlpha(128)
+            brushes.append(QtGui.QBrush(color))
+
+        self.graph_frac.drawData(compositions, counts, brushes=brushes)
 
 
     # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:

@@ -54,6 +54,7 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             enableMenu=False,
             parent=parent,
         )
+        self.plot.hideButtons()
         self.setCentralWidget(self.plot)
 
     def drawData(
@@ -64,10 +65,12 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         brushes: Optional[List[QtGui.QBrush]] = None,
     ) -> None:
 
-
         x = np.arange(counts.size)
         y0 = np.zeros(counts.size)
 
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
         if brushes is None:
             brushes = [QtGui.QBrush() for _ in compositions.dtype.names]
         assert len(brushes) >= len(compositions.dtype.names)
@@ -79,6 +82,11 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             )
             self.plot.addItem(bars)
             y0 += y
+
+        y_range = np.amax(y0)
+        self.plot.setLimits(
+            yMin=0, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
+        )
 
     def clear(self) -> None:
         self.plot.clear()
