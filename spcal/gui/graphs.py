@@ -38,8 +38,6 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             pen=pen,
             textPen=pen,
             tick_pen=pen,
-            # text="",
-            # units="",
             showValues=False,
         )
 
@@ -55,6 +53,10 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             parent=parent,
         )
         self.plot.hideButtons()
+        self.plot.setMouseEnabled(x=False, y=False)
+        self.plot.addLegend(
+            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
+        )
         self.setCentralWidget(self.plot)
 
     def drawData(
@@ -78,18 +80,21 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         for name, brush in zip(compositions.dtype.names, brushes):
             y = compositions[name] * counts
             bars = pyqtgraph.BarGraphItem(
-                x=x, height=y, width=0.5, y0=y0, pen=pen, brush=brush, name=name
+                x=x, height=y, width=0.5, y0=y0, pen=pen, brush=brush
             )
+            self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
             self.plot.addItem(bars)
             y0 += y
 
         y_range = np.amax(y0)
-        self.plot.setLimits(
-            yMin=0, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
-        )
+        self.plot.setLimits(yMin=0, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size)
 
     def clear(self) -> None:
         self.plot.clear()
+        self.plot.legend.clear()
+
+    def zoomReset(self) -> None:
+        self.plot.autoRange()
 
 
 class ResultsHistView(pyqtgraph.GraphicsView):
@@ -124,6 +129,10 @@ class ResultsHistView(pyqtgraph.GraphicsView):
             enableMenu=False,
             parent=parent,
         )
+        self.plot.hideButtons()
+        self.plot.addLegend(
+            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
+        )
         self.setCentralWidget(self.plot)
 
     def drawData(
@@ -150,12 +159,16 @@ class ResultsHistView(pyqtgraph.GraphicsView):
             pen=pen,
             brush=brush,
             skipFiniteCheck=True,
-            name=name,
         )
+        self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
         self.plot.addItem(curve)
 
     def clear(self) -> None:
         self.plot.clear()
+        self.plot.legend.clear()
+
+    def zoomReset(self) -> None:
+        self.plot.autoRange()
 
 
 class ParticlePlotItem(pyqtgraph.PlotItem):
@@ -380,3 +393,7 @@ class ParticleView(pyqtgraph.GraphicsView):
     def clear(self) -> None:
         self.layout.clear()
         self.plots = {}
+
+    def zoomReset(self) -> None:
+        for plot in self.plots.values():
+            plot.autoRange()
