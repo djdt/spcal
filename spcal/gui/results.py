@@ -129,10 +129,20 @@ class ResultsWidget(QtWidgets.QWidget):
             lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
             checkable=True,
         )
+        self.action_graph_zoomout = create_action(
+            "zoom-original",
+            "Zoom Out",
+            "Reset the plot view.",
+            self.graph_hist.zoomReset,
+        )
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_histogram)
         action_group_graph_view.addAction(self.action_graph_fractions)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        self.graph_toolbar.addWidget(spacer)
+        self.graph_toolbar.addAction(self.action_graph_zoomout)
 
         # Layouts
 

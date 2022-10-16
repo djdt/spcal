@@ -4,7 +4,6 @@ import numpy as np
 import logging
 
 import spcal
-from spcal import npdata
 
 from spcal.calc import calculate_limits
 from spcal.util import detection_maxima
@@ -13,6 +12,7 @@ from spcal.gui.dialogs import ImportDialog
 from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
 from spcal.gui.graphs import ParticleView, graph_colors
 from spcal.gui.options import OptionsWidget
+from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 
 from typing import Dict, Optional, Tuple
@@ -78,7 +78,41 @@ class InputWidget(QtWidgets.QWidget):
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
 
-        self.label_file = ElidedLabel("text")
+        self.label_file = ElidedLabel()
+
+        # Actions
+
+        self.action_graph_overlay = create_action(
+            "user-desktop",
+            "Histogram",
+            "Overlay all signals.",
+            lambda: self.setDrawMode("Overlay"),
+            checkable=True,
+        )
+        self.action_graph_overlay.setChecked(True)
+        self.action_graph_stacked = create_action(
+            "object-rows",
+            "Stacked",
+            "Draw element signals in separate plots.",
+            lambda: self.setDrawMode("Stacked"),
+            checkable=True,
+        )
+        self.action_graph_zoomout = create_action(
+            "zoom-original",
+            "Zoom Out",
+            "Reset the plot view.",
+            self.graph.zoomReset,
+        )
+        action_group_graph_view = QtGui.QActionGroup(self)
+        action_group_graph_view.addAction(self.action_graph_overlay)
+        action_group_graph_view.addAction(self.action_graph_stacked)
+        self.graph_toolbar.addActions(action_group_graph_view.actions())
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        self.graph_toolbar.addWidget(spacer)
+        self.graph_toolbar.addAction(self.action_graph_zoomout)
+
+        # Layouts
 
         self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignLeft)
         self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignLeft)
