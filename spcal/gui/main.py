@@ -79,27 +79,27 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_about = QtGui.QAction("About", self)
         action_about.triggered.connect(self.about)
 
-        action_draw_stacked = QtGui.QAction("Stack Plots", self)
-        action_draw_stacked.setToolTip("Stack each element plots.")
-        action_draw_stacked.toggled.connect(lambda: self.sample.setDrawMode("Stacked"))
-        action_draw_stacked.toggled.connect(
-            lambda: self.reference.setDrawMode("Stacked")
-        )
+        # action_draw_stacked = QtGui.QAction("Stack Plots", self)
+        # action_draw_stacked.setToolTip("Stack each element plots.")
+        # action_draw_stacked.toggled.connect(lambda: self.sample.setDrawMode("Stacked"))
+        # action_draw_stacked.toggled.connect(
+        #     lambda: self.reference.setDrawMode("Stacked")
+        # )
 
-        action_draw_overlay = QtGui.QAction("Overlay Plots", self)
-        action_draw_overlay.setToolTip("Overlay element plots.")
-        action_draw_overlay.toggled.connect(lambda: self.sample.setDrawMode("Overlay"))
-        action_draw_overlay.toggled.connect(
-            lambda: self.reference.setDrawMode("Overlay")
-        )
+        # action_draw_overlay = QtGui.QAction("Overlay Plots", self)
+        # action_draw_overlay.setToolTip("Overlay element plots.")
+        # action_draw_overlay.toggled.connect(lambda: self.sample.setDrawMode("Overlay"))
+        # action_draw_overlay.toggled.connect(
+        #     lambda: self.reference.setDrawMode("Overlay")
+        # )
 
-        action_group_draw_mode = QtGui.QActionGroup(self)
-        action_group_draw_mode.addAction(action_draw_stacked)
-        action_group_draw_mode.addAction(action_draw_overlay)
+        # action_group_draw_mode = QtGui.QActionGroup(self)
+        # action_group_draw_mode.addAction(action_draw_stacked)
+        # action_group_draw_mode.addAction(action_draw_overlay)
 
-        for action in action_group_draw_mode.actions():
-            action.setCheckable(True)
-        action_draw_overlay.setChecked(True)
+        # for action in action_group_draw_mode.actions():
+        #     action.setCheckable(True)
+        # action_draw_overlay.setChecked(True)
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(action_open_sample)
@@ -113,7 +113,10 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menuedit.addAction(action_clear)
 
         menuview = self.menuBar().addMenu("&View")
-        menuview.addActions(action_group_draw_mode.actions())
+        # Todo: colorscheme
+        # Todo: results binwidth
+        # menuview.addAction(self.sample.action_graph_overlay)
+        # menuview.addActions(action_group_draw_mode.actions())
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(action_log)
