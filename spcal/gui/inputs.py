@@ -67,6 +67,7 @@ class InputWidget(QtWidgets.QWidget):
         self.options.error_rate_beta.editingFinished.connect(
             lambda: self.updateLimits(None)
         )
+        self.options.efficiency_method.currentTextChanged.connect(self.onEfficiencyMethodChanged)
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -346,6 +347,10 @@ class InputWidget(QtWidgets.QWidget):
             self.io.stack.widget(i).clearInputs()
         self.blockSignals(False)
 
+    def onEfficiencyMethodChanged(self, method: str) -> None:
+        for io in self.io.widgets():
+            io.response.setEnabled(method != "Mass Response")
+
     def isComplete(self) -> bool:
         return len(self.detections) > 0 and any(
             self.detections[name].size > 0 for name in self.detections
@@ -367,7 +372,6 @@ class ReferenceWidget(InputWidget):
         super().__init__(ReferenceIOStack(), options, parent=parent)
 
         # dwelltime covered by detectionsChanged
-        self.options.response.valueChanged.connect(lambda: self.updateEfficiency(None))
         self.options.uptake.valueChanged.connect(lambda: self.updateEfficiency(None))
         self.io.optionsChanged.connect(self.updateEfficiency)
         self.detectionsChanged.connect(self.updateEfficiency)
@@ -382,11 +386,10 @@ class ReferenceWidget(InputWidget):
 
         dwell = self.options.dwelltime.baseValue()
         assert dwell is not None
-        response = self.options.response.baseValue()
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
 
         for name in names:
             self.io[name].updateEfficiency(
-                self.detections[name], dwell, response, time, uptake
+                self.detections[name], dwell, time, uptake
             )

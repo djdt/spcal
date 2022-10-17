@@ -9,7 +9,7 @@ from spcal import npdata
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
 
-from typing import Dict, Generic, List, Optional, Tuple, Type, TypeVar
+from typing import Dict, Iterator, Generic, List, Optional, Tuple, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,15 @@ class SampleIOWidget(IOWidget):
             default_unit="g/mol",
             invalid_color=QtGui.QColor(255, 255, 172),
         )
+        self.response = UnitsWidget(
+            {
+                "counts/(pg/L)": 1e15,
+                "counts/(ng/L)": 1e12,
+                "counts/(μg/L)": 1e9,
+                "counts/(mg/L)": 1e6,
+            },
+            default_unit="counts/(μg/L)",
+        )
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
 
@@ -65,12 +74,16 @@ class SampleIOWidget(IOWidget):
         self.molarmass.setToolTip(
             "Molecular weight, required to calculate intracellular concentrations."
         )
+        self.response.setToolTip(
+            "ICP-MS response for an ionic standard of this element."
+        )
         self.massfraction.setToolTip(
             "Ratio of the mass of the analyte over the mass of the particle."
         )
 
         self.density.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
         self.molarmass.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.response.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
         self.massfraction.textChanged.connect(
             lambda: self.optionsChanged.emit(self.name)
         )
@@ -78,6 +91,7 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
+        self.inputs.layout().addRow("Ionic response:", self.response)
         self.inputs.layout().addRow("Molar ratio:", self.massfraction)
 
         self.count = QtWidgets.QLineEdit("0")
@@ -122,6 +136,7 @@ class SampleIOWidget(IOWidget):
         self.element.setText("")
         self.density.setValue(None)
         self.molarmass.setValue(None)
+        self.response.setValue(None)
         self.massfraction.setText("1.0")
         self.blockSignals(False)
 
@@ -149,7 +164,9 @@ class SampleIOWidget(IOWidget):
 
     def isComplete(self) -> bool:
         return (
-            self.density.hasAcceptableInput() and self.massfraction.hasAcceptableInput()
+            self.density.hasAcceptableInput()
+            and (self.response.hasAcceptableInput() or not self.response.isEnabled())
+            and self.massfraction.hasAcceptableInput()
         )
 
 
@@ -223,7 +240,6 @@ class ReferenceIOWidget(SampleIOWidget):
         self,
         detections: np.ndarray,
         dwell: float,
-        response: Optional[float],
         time: float,
         uptake: Optional[float],
     ) -> None:
@@ -232,7 +248,8 @@ class ReferenceIOWidget(SampleIOWidget):
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
-        if density is None or diameter is None:
+        response = self.response.baseValue()
+        if density is None or diameter is None or response is None:
             return
 
         mass = spcal.reference_particle_mass(density, diameter)
@@ -459,6 +476,9 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
         layout.addLayout(self.layout_top)
         layout.addWidget(self.stack, 1)
         self.setLayout(layout)
+    
+    def __contains__(self, name: str) -> bool:
+        return self.combo_name.findText(name) != -1
 
     def __getitem__(self, name: str) -> IOType:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore

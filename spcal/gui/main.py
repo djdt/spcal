@@ -156,7 +156,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.results.updateResults(None)
 
     def readyForResults(self) -> bool:
-        return self.sample.isComplete()
+        return self.sample.isComplete() and self.reference.isComplete()
 
     def resetInputs(self) -> None:
         self.tabs.setCurrentIndex(0)

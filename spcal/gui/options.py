@@ -14,12 +14,6 @@ class OptionsWidget(QtWidgets.QWidget):
         super().__init__(parent)
 
         # density_units = {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0}
-        response_units = {
-            "counts/(pg/L)": 1e15,
-            "counts/(ng/L)": 1e12,
-            "counts/(μg/L)": 1e9,
-            "counts/(mg/L)": 1e6,
-        }
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
             "ml/s": 1e-3,
@@ -37,10 +31,10 @@ class OptionsWidget(QtWidgets.QWidget):
             uptake_units,
             default_unit="ml/min",
         )
-        self.response = UnitsWidget(
-            response_units,
-            default_unit="counts/(μg/L)",
-        )
+        # self.response = UnitsWidget(
+        #     response_units,
+        #     default_unit="counts/(μg/L)",
+        # )
         self.efficiency = ValidColorLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
 
@@ -48,7 +42,6 @@ class OptionsWidget(QtWidgets.QWidget):
             "ICP-MS dwell-time, updated from imported files if time column exists."
         )
         self.uptake.setToolTip("ICP-MS sample flowrate.")
-        self.response.setToolTip("ICP-MS response for ionic standard.")
         self.efficiency.setToolTip(
             "Transport efficiency. Can be calculated using a reference particle."
         )
@@ -75,16 +68,13 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         # Complete Changed
-        # self.dwelltime.valueChanged.connect(self.optionsChanged)
         self.uptake.valueChanged.connect(self.optionsChanged)
-        self.response.valueChanged.connect(self.optionsChanged)
         self.efficiency.textChanged.connect(self.optionsChanged)
 
         self.inputs = QtWidgets.QGroupBox("Instrument Options")
         self.inputs.setLayout(QtWidgets.QFormLayout())
         self.inputs.layout().addRow("Uptake:", self.uptake)
         self.inputs.layout().addRow("Dwell time:", self.dwelltime)
-        self.inputs.layout().addRow("Response:", self.response)
         self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
@@ -200,15 +190,15 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
-            self.response.setEnabled(True)
+            # self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(True)
         elif method == "Reference Particle":
-            self.response.setEnabled(True)
+            # self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
         elif method == "Mass Response":
-            self.response.setEnabled(False)
+            # self.response.setEnabled(False)
             self.uptake.setEnabled(False)
             self.efficiency.setEnabled(False)
 

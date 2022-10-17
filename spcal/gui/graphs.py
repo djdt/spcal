@@ -41,9 +41,8 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             showValues=False,
         )
 
-        self.yaxis = pyqtgraph.AxisItem(
-            "left", pen=pen, textPen=pen, tick_pen=pen, text="Detection Count", units=""
-        )
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel("No. Events")
 
         self.plot = pyqtgraph.PlotItem(
             title="Detection Compositions",
@@ -108,18 +107,10 @@ class ResultsHistView(pyqtgraph.GraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
 
-        self.xaxis = pyqtgraph.AxisItem(
-            "bottom",
-            pen=pen,
-            textPen=pen,
-            tick_pen=pen,
-            text="Intensity",
-            units="count",
-        )
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
 
-        self.yaxis = pyqtgraph.AxisItem(
-            "left", pen=pen, textPen=pen, tick_pen=pen, text="Count", units=""
-        )
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel("No. Events")
         self.yaxis.enableAutoSIPrefix(False)
 
         self.plot = pyqtgraph.PlotItem(
@@ -185,15 +176,13 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
 
-        self.xaxis = pyqtgraph.AxisItem(
-            "bottom", pen=pen, textPen=pen, tick_pen=pen, text="Time", units="s"
-        )
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel(text="Time", units="s")
         self.xaxis.setScale(xscale)
         self.xaxis.enableAutoSIPrefix(False)
 
-        self.yaxis = pyqtgraph.AxisItem(
-            "left", pen=pen, textPen=pen, tick_pen=pen, text="Intensity", units="count"
-        )
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel(text="Intensity", units="counts")
 
         super().__init__(
             title=name,

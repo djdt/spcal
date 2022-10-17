@@ -9,7 +9,11 @@ from spcal.calc import (
 )
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
-from spcal.util import cell_concentration, detection_element_fractions, fraction_components
+from spcal.util import (
+    cell_concentration,
+    detection_element_fractions,
+    fraction_components,
+)
 
 from spcal.gui.graphs import ResultsFractionView, ResultsHistView, graph_colors
 from spcal.gui.iowidgets import ResultIOStack
@@ -140,7 +144,9 @@ class ResultsWidget(QtWidgets.QWidget):
         action_group_graph_view.addAction(self.action_graph_fractions)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
         spacer = QtWidgets.QWidget()
-        spacer.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
+        )
         self.graph_toolbar.addWidget(spacer)
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
@@ -236,7 +242,7 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         if mode == "Signal":
-            label, unit = "Intensity", None
+            label, unit = "Intensity (counts)", None
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
         elif mode == "Size (m)":
@@ -279,7 +285,8 @@ class ResultsWidget(QtWidgets.QWidget):
             self.graph_hist.drawData(
                 name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
             )
-        
+        self.graph_hist.zoomReset()
+
     def drawGraphFrac(self) -> None:
         # Fraction view
         self.graph_frac.clear()
@@ -295,7 +302,7 @@ class ResultsWidget(QtWidgets.QWidget):
             label = "Concentration"
         else:
             raise ValueError("drawGraph: unknown mode.")
-        
+
         self.graph_frac.plot.setTitle(f"{label} Composition")
 
         graph_data = {}
@@ -314,7 +321,9 @@ class ResultsWidget(QtWidgets.QWidget):
         if not all(name in graph_data for name in self.sample.detections):
             return
 
-        fractions = detection_element_fractions(graph_data, self.sample.labels, self.sample.regions)
+        fractions = detection_element_fractions(
+            graph_data, self.sample.labels, self.sample.regions
+        )
         compositions, counts = fraction_components(fractions, combine_similar=True)
 
         mask = counts > fractions.size * 0.05
@@ -331,7 +340,6 @@ class ResultsWidget(QtWidgets.QWidget):
             brushes.append(QtGui.QBrush(color))
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
-
 
     # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
     #     method = self.fitmethod.currentText()
@@ -427,23 +435,29 @@ class ResultsWidget(QtWidgets.QWidget):
                 try:
                     if method == "Manual Input":
                         efficiency = float(self.options.efficiency.text())
-                    elif method == "Reference Particle":
+                    elif method == "Reference Particle" and name in self.reference.io:
                         efficiency = float(self.reference.io[name].efficiency.text())
                     else:
-                        raise KeyError(f"Unknown method {method}.")
+                        continue
                 except ValueError:
-                    efficiency = None
+                    continue
 
                 dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.io[name].density.baseValue()
-                massfraction = float(self.sample.io[name].massfraction.text())
+                response = self.sample.io[name].response.baseValue()
                 time = result["events"] * dwelltime
                 uptake = self.options.uptake.baseValue()
-                response = self.options.response.baseValue()
 
-                if all(
-                    x is not None
-                    for x in [efficiency, density, dwelltime, uptake, response]
+                try:
+                    massfraction = float(self.sample.io[name].massfraction.text())
+                except ValueError:
+                    continue
+
+                if (
+                    dwelltime is not None
+                    and density is not None
+                    and response is not None
+                    and uptake is not None
                 ):
                     result.update(
                         results_from_nebulisation_efficiency(
@@ -451,11 +465,11 @@ class ResultsWidget(QtWidgets.QWidget):
                             result["background"],
                             result["lod"],
                             density=density,
-                            dwelltime=dwelltime,  # type: ignore
-                            efficiency=efficiency,  # type: ignore
+                            dwelltime=dwelltime,
+                            efficiency=efficiency,
                             massfraction=massfraction,
-                            uptake=uptake,  # type: ignore
-                            response=response,  # type: ignore
+                            uptake=uptake,
+                            response=response,
                             time=time,
                         )
                     )
@@ -469,11 +483,17 @@ class ResultsWidget(QtWidgets.QWidget):
                         "time": time,
                     }
             elif method == "Mass Response":
+                if name not in self.reference.io:
+                    continue
+                try:
+                    massfraction = float(self.sample.io[name].massfraction.text())
+                except ValueError:
+                    continue
+
                 density = self.sample.io[name].density.baseValue()
-                massfraction = float(self.sample.io[name].massfraction.text())
                 massresponse = self.reference.io[name].massresponse.baseValue()
 
-                if density is not None:
+                if density is not None and massresponse is not None:
                     self.result.update(
                         results_from_mass_response(
                             result["detections"],
@@ -493,6 +513,7 @@ class ResultsWidget(QtWidgets.QWidget):
             # Cell inputs
             celldiameter = self.options.celldiameter.baseValue()
             molarmass = self.sample.io[name].molarmass.baseValue()
+
             if celldiameter is not None:  # Scale sizes to hypothesised
                 scale = celldiameter / np.mean(result["sizes"])
                 result["sizes"] *= scale
