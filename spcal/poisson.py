@@ -1,10 +1,13 @@
+"""Poission limits of detection.
+
+See:
+https://www.epa.gov/radiation/marlap-manual-and-supporting-documents
+https://academic.oup.com/biomet/article/28/3-4/437/220104
+"""
 import numpy as np
 from statistics import NormalDist
 
 from typing import Tuple, Union
-
-# https://www.epa.gov/radiation/marlap-manual-and-supporting-documents
-# https://academic.oup.com/biomet/article/28/3-4/437/220104
 
 
 def currie(
@@ -112,7 +115,7 @@ def formula_c(
 
     tr = t_sample / t_blank
 
-    Sc = z_a**2 / 2.0 * tr + z_a * np.sqrt(z_a**2 /4.0 * tr + Nb * tr * (1.0 + tr))
+    Sc = z_a**2 / 2.0 * tr + z_a * np.sqrt(z_a**2 / 4.0 * tr + Nb * tr * (1.0 + tr))
     Sd = Sc + z_b**2 / 2.0 + z_b * np.sqrt((z_b**2 / 4.0) + Sc + Nb * (1.0 + tr))
 
     return Sc, Sd

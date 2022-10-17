@@ -1,3 +1,4 @@
+"""Misc and helper calculation functions."""
 from bisect import bisect_left, insort
 import numpy as np
 
