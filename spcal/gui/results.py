@@ -137,7 +137,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "zoom-original",
             "Zoom Out",
             "Reset the plot view.",
-            self.graph_hist.zoomReset,
+            self.graphZoomReset,
         )
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_histogram)
@@ -341,6 +341,10 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
 
+    def graphZoomReset(self) -> None:
+        self.graph_frac.zoomReset()
+        self.graph_hist.zoomReset()
+
     # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
     #     method = self.fitmethod.currentText()
     #     if method == "None":
@@ -438,9 +442,9 @@ class ResultsWidget(QtWidgets.QWidget):
                     elif method == "Reference Particle" and name in self.reference.io:
                         efficiency = float(self.reference.io[name].efficiency.text())
                     else:
-                        continue
+                        efficiency = None
                 except ValueError:
-                    continue
+                    efficiency = None
 
                 dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.io[name].density.baseValue()
@@ -451,11 +455,13 @@ class ResultsWidget(QtWidgets.QWidget):
                 try:
                     massfraction = float(self.sample.io[name].massfraction.text())
                 except ValueError:
-                    continue
+                    massfraction = None
 
                 if (
                     dwelltime is not None
                     and density is not None
+                    and efficiency is not None
+                    and massfraction is not None
                     and response is not None
                     and uptake is not None
                 ):
@@ -482,18 +488,20 @@ class ResultsWidget(QtWidgets.QWidget):
                         "response": response,
                         "time": time,
                     }
-            elif method == "Mass Response":
-                if name not in self.reference.io:
-                    continue
+            elif method == "Mass Response" and name in self.reference.io:
                 try:
                     massfraction = float(self.sample.io[name].massfraction.text())
                 except ValueError:
-                    continue
+                    massfraction = None
 
                 density = self.sample.io[name].density.baseValue()
                 massresponse = self.reference.io[name].massresponse.baseValue()
 
-                if density is not None and massresponse is not None:
+                if (
+                    density is not None
+                    and massfraction is not None
+                    and massresponse is not None
+                ):
                     self.result.update(
                         results_from_mass_response(
                             result["detections"],

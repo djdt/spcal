@@ -52,7 +52,7 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             parent=parent,
         )
         self.plot.hideButtons()
-        self.plot.setMouseEnabled(x=False, y=False)
+        self.plot.setMouseEnabled(x=False)
         self.plot.addLegend(
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )

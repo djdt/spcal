@@ -15,6 +15,7 @@ from types import TracebackType
 
 logger = logging.getLogger(__name__)
 
+
 class NanoPartWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,16 +79,20 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         action_about = QtGui.QAction("About", self)
         action_about.triggered.connect(self.about)
 
-        action_draw_stacked= QtGui.QAction("Stack Plots", self)
+        action_draw_stacked = QtGui.QAction("Stack Plots", self)
         action_draw_stacked.setToolTip("Stack each element plots.")
         action_draw_stacked.toggled.connect(lambda: self.sample.setDrawMode("Stacked"))
-        action_draw_stacked.toggled.connect(lambda: self.reference.setDrawMode("Stacked"))
+        action_draw_stacked.toggled.connect(
+            lambda: self.reference.setDrawMode("Stacked")
+        )
 
-        action_draw_overlay= QtGui.QAction("Overlay Plots", self)
+        action_draw_overlay = QtGui.QAction("Overlay Plots", self)
         action_draw_overlay.setToolTip("Overlay element plots.")
         action_draw_overlay.toggled.connect(lambda: self.sample.setDrawMode("Overlay"))
-        action_draw_overlay.toggled.connect(lambda: self.reference.setDrawMode("Overlay"))
-        
+        action_draw_overlay.toggled.connect(
+            lambda: self.reference.setDrawMode("Overlay")
+        )
+
         action_group_draw_mode = QtGui.QActionGroup(self)
         action_group_draw_mode.addAction(action_draw_stacked)
         action_group_draw_mode.addAction(action_draw_overlay)
@@ -156,7 +161,11 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.results.updateResults(None)
 
     def readyForResults(self) -> bool:
-        return self.sample.isComplete() and self.reference.isComplete()
+        return self.sample.isComplete() and (
+            self.options.efficiency_method.currentText()
+            in ["Manual Input"]
+            or self.reference.isComplete()
+        )
 
     def resetInputs(self) -> None:
         self.tabs.setCurrentIndex(0)
