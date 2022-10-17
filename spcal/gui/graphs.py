@@ -86,14 +86,20 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             y0 += y
 
         y_range = np.amax(y0)
-        self.plot.setLimits(yMin=0, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size)
+        self.plot.setLimits(
+            yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
+        )
 
     def clear(self) -> None:
         self.plot.clear()
         self.plot.legend.clear()
 
     def zoomReset(self) -> None:
-        self.plot.autoRange()
+        self.plot.setRange(
+            xRange=self.plot.vb.state["limits"]["xLimits"],
+            yRange=self.plot.vb.state["limits"]["yLimits"],
+            disableAutoRange=False,
+        )
 
 
 class ResultsHistView(pyqtgraph.GraphicsView):
