@@ -6,7 +6,7 @@ import logging
 import spcal
 
 from spcal.calc import calculate_limits
-from spcal.util import detection_maxima
+from spcal.detection import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack

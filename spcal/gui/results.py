@@ -9,11 +9,11 @@ from spcal.calc import (
 )
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
-from spcal.util import (
-    cell_concentration,
+from spcal.detection import (
     detection_element_fractions,
     fraction_components,
 )
+from spcal.particle import cell_concentration
 
 from spcal.gui.graphs import ResultsFractionView, ResultsHistView, graph_colors
 from spcal.gui.iowidgets import ResultIOStack
