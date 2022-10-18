@@ -4,13 +4,16 @@ from pathlib import Path
 import sys
 import logging
 
+import numpy
+import pyqtgraph
+
 from spcal import __version__
 from spcal.gui.main import NanoPartWindow
 
 from typing import List, Optional
 
 logging.captureWarnings(True)
-logger = logging.getLogger()
+logger = logging.getLogger("spcal")
 logger.setLevel(logging.INFO)
 
 
@@ -57,6 +60,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     logger.addHandler(window.log.handler)
     logger.info(f"SPCal {__version__} started.")
+    logger.info(f"using numpy {numpy.version.version}.")
+    logger.info(f"using pyqtgraph {pyqtgraph.__version__}.")
 
     window.show()
 
