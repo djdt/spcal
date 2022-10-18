@@ -159,8 +159,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.io.layout_top.insertStretch(2, 1)
 
         layout_filename = QtWidgets.QHBoxLayout()
-        layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignLeft)
-        layout_filename.addWidget(self.label_file, 1)
+        layout_filename.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
+        layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
 
         # layout_chart_options = QtWidgets.QHBoxLayout()
         # layout_chart_options.addWidget(self.button_export_image)
@@ -176,6 +176,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # layout_outputs.addLayout(layout_filename)
         layout_main.addWidget(self.io, 0)
         layout_main.addLayout(layout_graph, 1)
+        layout_main.addLayout(layout_filename)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_main, 1)
@@ -413,6 +414,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateResults(self, _name: Optional[str] = None) -> None:
         method = self.options.efficiency_method.currentText()
+
+        self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
         if _name is None or _name == "Overlay":
             names = list(self.sample.detections.keys())

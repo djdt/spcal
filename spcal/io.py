@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 import logging
 
-from typing import Dict, Tuple, Union
+from typing import Any, Dict, TextIO, List, Tuple, Union
 
 from spcal import __version__
 
@@ -80,9 +80,10 @@ def read_nanoparticle_file(
     return response, parameters
 
 
-def export_nanoparticle_results(path: Path, result: dict) -> None:
+def export_nanoparticle_results(path: Path, results: dict) -> None:
     """Writes data from a results dict.
 
+    Structure is Dict[<name>, Dict[<key>, <value>]]
     Valid keys are:
         'file': original file path
         'events': the number of aquisition events
@@ -105,89 +106,155 @@ def export_nanoparticle_results(path: Path, result: dict) -> None:
         'sizes': NP size array (m)
         'cell_concentrations': intracellular concentrations (mol/L)
     """
+
+    def get_key_or_default(results: dict, name: str, key: str, default: Any) -> Any:
+        return (
+            results[name][key] if name in results and key in results[name] else default
+        )
+
+    def write_if_key_exists(
+        fp: TextIO, results: dict, key: str, prefix: str, postfix: str = ""
+    ) -> None:
+        if any(key in results[name] for name in results.keys()):
+            line = ",".join(
+                str(get_key_or_default(results, name, key, ""))
+                for name in results.keys()
+            )
+            fp.write(f"{prefix}{line}{postfix}\n")
+
+    names = list(results.keys())
     with path.open("w", encoding="utf-8") as fp:
         fp.write(f"# SPCal Export {__version__}\n")
-        fp.write(f"# File,'{result['file']}'\n")
-        fp.write(f"# Acquisition events,{result['events']}\n")
+        fp.write(f"# File,'{results[names[0]]['file']}'\n")
+        fp.write(f"# Acquisition events,{results[names[0]]['events']}\n")
 
-        fp.write(f"# Options and inputs\n")
-        for k, v in result["inputs"].items():
-            fp.write(f'#,{k.replace("_", " ").capitalize()},{v}\n')
+        # fp.write(f"# Options and inputs\n")
+        # for k, v in result["inputs"].items():
+        #     fp.write(f'#,{k.replace("_", " ").capitalize()},{v}\n')
 
-        fp.write(f"# Detected particles,{result['detections'].size}\n")
-        fp.write(f"# Detection stddev,{result['detections_std']}\n")
-        fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")
-        if result["limit_window"] is not None and result["limit_window"] > 1:
-            fp.write(f"# Limit window,{result['limit_window']}\n")
+        # fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")
+        # if result["limit_window"] is not None and result["limit_window"] > 1:
+        #     fp.write(f"# Limit window,{result['limit_window']}\n")
+
+        detections = [str(results[name]["detections"].size) for name in names]
+        stds = [str(results[name]["detections_std"]) for name in names]
+        backgrounds = [str(results[name]["background"]) for name in names]
+        background_stds = [str(results[name]["background_std"]) for name in names]
+
+        fp.write(f",{','.join(names)}\n")
+        fp.write(f"# Detected particles,{','.join(detections)}\n")
+        fp.write(f"# Detection stddev,{','.join(stds)}\n")
 
         # Background
-        fp.write(f"# Background,{result['background']},counts\n")
-        if "background_size" in result:
-            fp.write(f"#,{result['background_size']},m\n")
-        if "background_concentration" in result:
-            fp.write(f"# Ionic background,{result['background_concentration']},kg/L\n")
-        fp.write(f"# Background stddev,{result['background_std']},counts\n")
+        fp.write(f"# Background,{','.join(backgrounds)},counts\n")
+        write_if_key_exists(fp, results, "background_size", prefix="#,", postfix=",m")
+        write_if_key_exists(
+            fp,
+            results,
+            "background_concentration",
+            prefix="# Ionic background,",
+            postfix=",kg/L",
+        )
+        fp.write(f"# Background stddev,{','.join(background_stds)},counts\n")
 
         # LODs
-        if isinstance(result["lod"], np.ndarray):
-            fp.write("# Limit of detection,Min,Max,Mean,Median\n")
-            fp.write(f"#,{','.join(str(s) for s in (result['lod']))},counts\n")
-        else:
-            fp.write(f"# Limit of detection,{result['lod']},counts\n")
+        # if isinstance(result["lod"], np.ndarray):
+        #     fp.write("# Limit of detection,Min,Max,Mean,Median\n")
+        #     fp.write(f"#,{','.join(str(s) for s in (result['lod']))},counts\n")
+        # else:
+        #     fp.write(f"# Limit of detection,{result['lod']},counts\n")
 
-        for key, unit in [
-            ("lod_mass", "kg"),
-            ("lod_size", "m"),
-            ("lod_cell_concentration", "mol/L"),
-        ]:
-            if key in result:
-                if isinstance(result[key], np.ndarray):
-                    fp.write(f"#,{','.join(str(s) for s in (result[key]))},{unit}\n")
-                else:
-                    fp.write(f"#,{result[key]},{unit}\n")
+        # for key, unit in [
+        #     ("lod_mass", "kg"),
+        #     ("lod_size", "m"),
+        #     ("lod_cell_concentration", "mol/L"),
+        # ]:
+        #     if key in result:
+        #         if isinstance(result[key], np.ndarray):
+        #             fp.write(f"#,{','.join(str(s) for s in (result[key]))},{unit}\n")
+        #         else:
+        #             fp.write(f"#,{result[key]},{unit}\n")
 
         # Concentrations
-        if "number_concentration" in result:
-            fp.write(f"# Number concentration,{result['number_concentration']},#/L\n")
-        if "concentration" in result:
-            fp.write(f"# Concentration,{result['concentration']},kg/L\n")
+        write_if_key_exists(
+            fp,
+            results,
+            "number_concentration",
+            prefix="# Number concentration,",
+            postfix=",#/L",
+        )
+        write_if_key_exists(
+            fp, results, "concentration", prefix="# Concentration,", postfix=",kg/L"
+        )
+
+        means = [np.mean(results[name]["detections"]) for name in names]
+        mass_means = np.array(
+            [
+                np.mean(get_key_or_default(results, name, "masses", 0.0))
+                for name in names
+            ]
+        )
+        size_means = np.array(
+            [np.mean(get_key_or_default(results, name, "sizes", 0.0)) for name in names]
+        )
+        conc_means = np.array(
+            [
+                np.mean(get_key_or_default(results, name, "cell_concentrations", 0.0))
+                for name in names
+            ]
+        )
 
         # Mean values
-        fp.write(f"# Mean,{np.mean(result['detections'])},counts\n")
-        for key, unit in [
-            ("masses", "kg"),
-            ("sizes", "m"),
-            ("cell_concentrations", "mol/L"),
-        ]:
-            if key in result:
-                fp.write(f"#,{np.mean(result[key])},{unit}\n")
-        # Median values
-        fp.write(f"# Median,{np.median(result['detections'])},counts\n")
-        for key, unit in [
-            ("masses", "kg"),
-            ("sizes", "m"),
-            ("cell_concentrations", "mol/L"),
-        ]:
-            if key in result:
-                fp.write(f"#,{np.median(result[key])},{unit}\n")
+        fp.write(f"# Mean,{','.join(str(x) for x in means)},counts\n")
+        if np.any(mass_means > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in mass_means)},kg\n")
+        if np.any(size_means > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in size_means)},m\n")
+        if np.any(conc_means > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in conc_means)},mol/L\n")
+
+        medians = [np.median(results[name]["detections"]) for name in names]
+        mass_medians = np.array(
+            [
+                np.median(get_key_or_default(results, name, "masses", 0.0))
+                for name in names
+            ]
+        )
+        size_medians = np.array(
+            [
+                np.median(get_key_or_default(results, name, "sizes", 0.0))
+                for name in names
+            ]
+        )
+        conc_medians = np.array(
+            [
+                np.median(get_key_or_default(results, name, "cell_concentrations", 0.0))
+                for name in names
+            ]
+        )
+        fp.write(f"# Median,{','.join(str(x) for x in medians)},counts\n")
+        if np.any(mass_medians > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in mass_medians)},kg\n")
+        if np.any(size_medians > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in size_medians)},m\n")
+        if np.any(conc_medians > 0.0):
+            fp.write(f"#,{','.join(str(x) for x in conc_medians)},mol/L\n")
 
         # Output data
-        header = "Signal (counts)"
-        data = [result["detections"]]
-        for key, label in [
-            ("masses", "Mass (kg)"),
-            ("sizes", "Size (m)"),
-            ("cell_concentrations", "Conc. (mol/L)"),
-        ]:
-            if key in result:
-                header += "," + label
-                data.append(result[key])
-        fp.write(header + "\n")
-        np.savetxt(
-            fp,
-            np.stack(data, axis=1),
-            delimiter=",",
-        )
-        logger.info(
-            f"Exported results for {result['detections'].size} detections to {path.name}."
-        )
+        # header = "Signal (counts)"
+        # data = [result["detections"]]
+        # for key, label in [
+        #     ("masses", "Mass (kg)"),
+        #     ("sizes", "Size (m)"),
+        #     ("cell_concentrations", "Conc. (mol/L)"),
+        # ]:
+        #     if key in result:
+        #         header += "," + label
+        #         data.append(result[key])
+        # fp.write(header + "\n")
+        # np.savetxt(
+        #     fp,
+        #     np.stack(data, axis=1),
+        #     delimiter=",",
+        # )
+        logger.info(f"Exported results for to {path.name}.")
