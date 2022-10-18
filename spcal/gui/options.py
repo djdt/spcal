@@ -14,7 +14,6 @@ class OptionsWidget(QtWidgets.QWidget):
     def __init__(self, parent: Optional[ QtWidgets.QWidget ] = None):
         super().__init__(parent)
 
-        # density_units = {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0}
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
             "ml/s": 1e-3,
@@ -32,10 +31,6 @@ class OptionsWidget(QtWidgets.QWidget):
             uptake_units,
             default_unit="ml/min",
         )
-        # self.response = UnitsWidget(
-        #     response_units,
-        #     default_unit="counts/(μg/L)",
-        # )
         self.efficiency = ValidColorLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
 
@@ -125,13 +120,6 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
 
-        # self.poisson_k = QtWidgets.QLineEdit("4.65")
-        # self.poisson_k.setPlaceholderText("4.65")
-        # self.poisson_k.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
-        # self.poisson_k.setToolTip(
-        #     "Z?. "
-        #     "Default of 0.5 maintains 0.05 alpha / beta."
-        # )
         self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
         self.error_rate_alpha.setPlaceholderText("0.05")
         self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
@@ -191,15 +179,12 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
-            # self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(True)
         elif method == "Reference Particle":
-            # self.response.setEnabled(True)
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
         elif method == "Mass Response":
-            # self.response.setEnabled(False)
             self.uptake.setEnabled(False)
             self.efficiency.setEnabled(False)
 
