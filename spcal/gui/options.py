@@ -5,6 +5,7 @@ from spcal.gui.widgets import ValidColorLineEdit
 
 from typing import Optional
 
+# Todo: add a tool to load an ionic standard and get mean / median signal
 
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
