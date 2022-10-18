@@ -177,7 +177,7 @@ calculate_limits.dtype = np.dtype(
 def results_from_mass_response(
     detections: np.ndarray,
     background: float,
-    lod: Union[float, np.ndarray],
+    lod: np.ndarray,
     density: float,
     massfraction: float,
     massresponse: float,
@@ -199,8 +199,8 @@ def results_from_mass_response(
         dict of results
     """
 
-    if isinstance(lod, np.ndarray):
-        lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
+    # if isinstance(lod, np.ndarray):
+    #     lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
     masses = detections * (massresponse / massfraction)
     sizes = spcal.particle_size(masses, density=density)
@@ -224,7 +224,7 @@ def results_from_mass_response(
 def results_from_nebulisation_efficiency(
     detections: np.ndarray,
     background: float,
-    lod: Union[float, np.ndarray],
+    lod: np.ndarray,
     density: float,
     dwelltime: float,
     efficiency: float,
@@ -254,8 +254,8 @@ def results_from_nebulisation_efficiency(
         dict of results
     """
 
-    if isinstance(lod, np.ndarray):
-        lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
+    # if isinstance(lod, np.ndarray):
+    #     lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
     masses = spcal.particle_mass(
         detections,

@@ -96,7 +96,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         'background_size': background equivilent diameter (m)
         'background_concentration': iconic background (kg/L)
         'background_std': stddev of background (counts)
-        'lod': value or array of {min, max, mean, median} limits of detection (counts)
+        'lod': value or array of limits of detection (counts)
         'lod_mass': lod in (kg)
         'lod_size': lod in (m)
         'lod_cell_concentration': lod in (mol/L)
@@ -115,7 +115,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
     def write_if_key_exists(
         fp: TextIO, results: dict, key: str, prefix: str, postfix: str = ""
     ) -> None:
-        if any(key in results[name] for name in results.keys()):
+        if any(key in results[name] for name in results):
             line = ",".join(
                 str(get_key_or_default(results, name, key, ""))
                 for name in results.keys()
@@ -128,54 +128,28 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         fp.write(f"# File,'{results[names[0]]['file']}'\n")
         fp.write(f"# Acquisition events,{results[names[0]]['events']}\n")
 
-        # fp.write(f"# Options and inputs\n")
-        # for k, v in result["inputs"].items():
-        #     fp.write(f'#,{k.replace("_", " ").capitalize()},{v}\n')
+        fp.write(f"#\n# Options and inputs\n")
+        inputs = set()
+        for name in names:
+            inputs.update(results[name]["inputs"].keys())
+        inputs = sorted(list(inputs))
+        for input in inputs:
+            values = [str(results[name]["inputs"].get(input, "")) for name in names]
+            fp.write(
+                f"# {str(input).replace('_', ' ').capitalize()},{','.join(values)}\n"
+            )
 
-        # fp.write(f"# Limit method,{str(result['limit_method']).replace(',', ';')}\n")
-        # if result["limit_window"] is not None and result["limit_window"] > 1:
-        #     fp.write(f"# Limit window,{result['limit_window']}\n")
+        fp.write(
+            f"# Limit method,{','.join(results[name]['limit_method'].replace(',', ';') for name in names)}\n"
+        )
+        write_if_key_exists(fp, results, "limit_window", "# Limit window,")
+
+        fp.write("#\n# Detection results\n")
+        fp.write(f"#,{','.join(names)}\n")
 
         detections = [str(results[name]["detections"].size) for name in names]
-        stds = [str(results[name]["detections_std"]) for name in names]
-        backgrounds = [str(results[name]["background"]) for name in names]
-        background_stds = [str(results[name]["background_std"]) for name in names]
-
-        fp.write(f",{','.join(names)}\n")
         fp.write(f"# Detected particles,{','.join(detections)}\n")
-        fp.write(f"# Detection stddev,{','.join(stds)}\n")
-
-        # Background
-        fp.write(f"# Background,{','.join(backgrounds)},counts\n")
-        write_if_key_exists(fp, results, "background_size", prefix="#,", postfix=",m")
-        write_if_key_exists(
-            fp,
-            results,
-            "background_concentration",
-            prefix="# Ionic background,",
-            postfix=",kg/L",
-        )
-        fp.write(f"# Background stddev,{','.join(background_stds)},counts\n")
-
-        # LODs
-        # if isinstance(result["lod"], np.ndarray):
-        #     fp.write("# Limit of detection,Min,Max,Mean,Median\n")
-        #     fp.write(f"#,{','.join(str(s) for s in (result['lod']))},counts\n")
-        # else:
-        #     fp.write(f"# Limit of detection,{result['lod']},counts\n")
-
-        # for key, unit in [
-        #     ("lod_mass", "kg"),
-        #     ("lod_size", "m"),
-        #     ("lod_cell_concentration", "mol/L"),
-        # ]:
-        #     if key in result:
-        #         if isinstance(result[key], np.ndarray):
-        #             fp.write(f"#,{','.join(str(s) for s in (result[key]))},{unit}\n")
-        #         else:
-        #             fp.write(f"#,{result[key]},{unit}\n")
-
-        # Concentrations
+        write_if_key_exists(fp, results, "detections_std", prefix="# Detection stddev,")
         write_if_key_exists(
             fp,
             results,
@@ -186,6 +160,58 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         write_if_key_exists(
             fp, results, "concentration", prefix="# Concentration,", postfix=",kg/L"
         )
+
+        # Background
+        write_if_key_exists(
+            fp, results, "background", prefix="# Background,", postfix=",counts"
+        )
+        write_if_key_exists(fp, results, "background_size", prefix="#,", postfix=",m")
+        write_if_key_exists(
+            fp,
+            results,
+            "background_std",
+            prefix="# Background stddev,",
+            postfix=",counts",
+        )
+        write_if_key_exists(
+            fp,
+            results,
+            "background_concentration",
+            prefix="# Ionic background,",
+            postfix=",kg/L",
+        )
+
+        # LODs
+        def limit_or_range(x: np.ndarray) -> str:
+            if np.all(x == 0.0):
+                return ""
+            return f"{x.min()} - {x.max()}" if x.size > 1 else str(x[0])
+
+        lods = [results[name]["lod"] for name in names]
+        lods_mass = [
+            get_key_or_default(results, name, "lod_mass", np.array([0.0]))
+            for name in names
+        ]
+        lods_size = [
+            get_key_or_default(results, name, "lod_size", np.array([0.0]))
+            for name in names
+        ]
+        lods_conc = [
+            get_key_or_default(results, name, "lod_cell_concentration", np.array([0.0]))
+            for name in names
+        ]
+
+        fp.write(
+            f"# Limits of detection,{','.join(limit_or_range(x) for x in lods)},counts\n"
+        )
+        if any(np.any(x > 0.0) for x in lods_mass):
+            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_mass)},kg\n")
+        if any(np.any(x > 0.0) for x in lods_size):
+            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_size)},m\n")
+        if any(np.any(x > 0.0) for x in lods_conc):
+            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_conc)},mol/L\n")
+
+        # Concentrations
 
         means = [np.mean(results[name]["detections"]) for name in names]
         mass_means = np.array(
@@ -205,13 +231,13 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         )
 
         # Mean values
-        fp.write(f"# Mean,{','.join(str(x) for x in means)},counts\n")
+        fp.write(f"# Mean,{','.join(str(x or '') for x in means)},counts\n")
         if np.any(mass_means > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in mass_means)},kg\n")
+            fp.write(f"#,{','.join(str(x or '') for x in mass_means)},kg\n")
         if np.any(size_means > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in size_means)},m\n")
+            fp.write(f"#,{','.join(str(x or '') for x in size_means)},m\n")
         if np.any(conc_means > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in conc_means)},mol/L\n")
+            fp.write(f"#,{','.join(str(x or '') for x in conc_means)},mol/L\n")
 
         medians = [np.median(results[name]["detections"]) for name in names]
         mass_medians = np.array(
@@ -234,11 +260,11 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         )
         fp.write(f"# Median,{','.join(str(x) for x in medians)},counts\n")
         if np.any(mass_medians > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in mass_medians)},kg\n")
+            fp.write(f"#,{','.join(str(x or '') for x in mass_medians)},kg\n")
         if np.any(size_medians > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in size_medians)},m\n")
+            fp.write(f"#,{','.join(str(x or '') for x in size_medians)},m\n")
         if np.any(conc_medians > 0.0):
-            fp.write(f"#,{','.join(str(x) for x in conc_medians)},mol/L\n")
+            fp.write(f"#,{','.join(str(x or '') for x in conc_medians)},mol/L\n")
 
         # Output data
         # header = "Signal (counts)"

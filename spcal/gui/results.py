@@ -422,6 +422,9 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             names = [_name]
 
+        dwelltime = self.options.dwelltime.baseValue()
+        uptake = self.options.uptake.baseValue()
+
         for name in names:
             trim = self.sample.trimRegion(name)
             responses = self.sample.responses[name][trim[0] : trim[1]]
@@ -434,9 +437,11 @@ class ResultsWidget(QtWidgets.QWidget):
                 "events": responses.size,
                 "file": self.sample.label_file.text(),
                 "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
-                "limit_window": int(self.options.window_size.text()),
                 "lod": self.sample.limits[name][2]["ld"],
+                "inputs": {"dwelltime": dwelltime},
             }
+            if self.options.check_use_window.isChecked():
+                result["limit_window"] = int(self.options.window_size.text())
 
             if method in ["Manual Input", "Reference Particle"]:
                 try:
@@ -449,11 +454,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 except ValueError:
                     efficiency = None
 
-                dwelltime = self.options.dwelltime.baseValue()
                 density = self.sample.io[name].density.baseValue()
                 response = self.sample.io[name].response.baseValue()
                 time = result["events"] * dwelltime
-                uptake = self.options.uptake.baseValue()
 
                 try:
                     massfraction = float(self.sample.io[name].massfraction.text())
@@ -482,15 +485,16 @@ class ResultsWidget(QtWidgets.QWidget):
                             time=time,
                         )
                     )
-                    result["inputs"] = {
-                        "density": density,
-                        "dwelltime": dwelltime,
-                        "transport_efficiency": efficiency,
-                        "mass_fraction": massfraction,
-                        "uptake": uptake,
-                        "response": response,
-                        "time": time,
-                    }
+                    result["inputs"].update(
+                        {
+                            "density": density,
+                            "transport_efficiency": efficiency,
+                            "mass_fraction": massfraction,
+                            "uptake": uptake,
+                            "response": response,
+                            "time": time,
+                        }
+                    )
             elif method == "Mass Response" and name in self.reference.io:
                 try:
                     massfraction = float(self.sample.io[name].massfraction.text())
@@ -515,11 +519,13 @@ class ResultsWidget(QtWidgets.QWidget):
                             massresponse=massresponse,
                         )
                     )
-                    result["inputs"] = {
-                        "density": density,
-                        "mass_fraction": massfraction,
-                        "mass_response": massresponse,
-                    }
+                    result["inputs"].update(
+                        {
+                            "density": density,
+                            "mass_fraction": massfraction,
+                            "mass_response": massresponse,
+                        }
+                    )
 
             # Cell inputs
             celldiameter = self.options.celldiameter.baseValue()
