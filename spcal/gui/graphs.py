@@ -148,8 +148,8 @@ class ResultsHistView(pyqtgraph.GraphicsView):
 
         hist, edges = np.histogram(x, bins)
         curve = pyqtgraph.PlotCurveItem(
-            x=edges,
-            y=hist,
+            x=np.concatenate([edges, [edges[0]]]),  # draw bottom
+            y=np.concatenate([hist, [0.0]]),
             stepMode="center",
             fillLevel=0,
             fillOutline=True,
