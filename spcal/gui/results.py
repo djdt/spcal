@@ -550,7 +550,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     diameter=celldiameter,
                     molarmass=molarmass,
                 )
-                result["inputs"].update({"molarmass": molarmass})
+                result["inputs"].update({"molar_mass": molarmass})
 
             self.result[name] = result
             self.updateOutputs(name)

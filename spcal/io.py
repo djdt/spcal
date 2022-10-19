@@ -122,13 +122,24 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             )
             fp.write(f"{prefix}{line}{postfix}\n")
 
+    input_units = {
+        "density": "kg/m3",
+        "dwelltime": "s",
+        "molar_mass": "kg/mol",
+        "reponse": "counts/(kg/L)",
+        "time": "s",
+        "uptake": "L/s",
+    }
+
     names = list(results.keys())
     with path.open("w", encoding="utf-8") as fp:
         fp.write(f"# SPCal Export {__version__}\n")
         fp.write(f"# File,'{results[names[0]]['file']}'\n")
         fp.write(f"# Acquisition events,{results[names[0]]['events']}\n")
 
+        # === Options and inputs ===
         fp.write(f"#\n# Options and inputs\n")
+        fp.write(f"#,{','.join(names)}\n")
         inputs = set()
         for name in names:
             inputs.update(results[name]["inputs"].keys())
@@ -136,19 +147,21 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         for input in inputs:
             values = [str(results[name]["inputs"].get(input, "")) for name in names]
             fp.write(
-                f"# {str(input).replace('_', ' ').capitalize()},{','.join(values)}\n"
+                f"# {str(input).replace('_', ' ').capitalize()},{','.join(values)},{input_units.get(input, '')}\n"
             )
 
+        # === Limit method and params ===
         fp.write(
             f"# Limit method,{','.join(results[name]['limit_method'].replace(',', ';') for name in names)}\n"
         )
         write_if_key_exists(fp, results, "limit_window", "# Limit window,")
 
+        # === Detection counts ===
         fp.write("#\n# Detection results\n")
         fp.write(f"#,{','.join(names)}\n")
 
-        detections = [str(results[name]["detections"].size) for name in names]
-        fp.write(f"# Detected particles,{','.join(detections)}\n")
+        detections = [results[name]["detections"].size for name in names]
+        fp.write(f"# Detected particles,{','.join(str(x) for x in detections)}\n")
         write_if_key_exists(fp, results, "detections_std", prefix="# Detection stddev,")
         write_if_key_exists(
             fp,
@@ -161,7 +174,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             fp, results, "concentration", prefix="# Concentration,", postfix=",kg/L"
         )
 
-        # Background
+        # === Background ===
         write_if_key_exists(
             fp, results, "background", prefix="# Background,", postfix=",counts"
         )
@@ -181,7 +194,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             postfix=",kg/L",
         )
 
-        # LODs
+        # === LODs ===
         def limit_or_range(x: np.ndarray) -> str:
             if np.all(x == 0.0):
                 return ""
@@ -211,8 +224,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         if any(np.any(x > 0.0) for x in lods_conc):
             fp.write(f"#,{','.join(limit_or_range(x) for x in lods_conc)},mol/L\n")
 
-        # Concentrations
-
+        # === Mean values ===
         means = [np.mean(results[name]["detections"]) for name in names]
         mass_means = np.array(
             [
@@ -230,7 +242,6 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             ]
         )
 
-        # Mean values
         fp.write(f"# Mean,{','.join(str(x or '') for x in means)},counts\n")
         if np.any(mass_means > 0.0):
             fp.write(f"#,{','.join(str(x or '') for x in mass_means)},kg\n")
@@ -239,6 +250,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         if np.any(conc_means > 0.0):
             fp.write(f"#,{','.join(str(x or '') for x in conc_means)},mol/L\n")
 
+        # === Median values ===
         medians = [np.median(results[name]["detections"]) for name in names]
         mass_medians = np.array(
             [
@@ -266,21 +278,35 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         if np.any(conc_medians > 0.0):
             fp.write(f"#,{','.join(str(x or '') for x in conc_medians)},mol/L\n")
 
+        fp.write("#\n# Raw detection data\n")
         # Output data
-        # header = "Signal (counts)"
-        # data = [result["detections"]]
-        # for key, label in [
-        #     ("masses", "Mass (kg)"),
-        #     ("sizes", "Size (m)"),
-        #     ("cell_concentrations", "Conc. (mol/L)"),
-        # ]:
-        #     if key in result:
-        #         header += "," + label
-        #         data.append(result[key])
-        # fp.write(header + "\n")
-        # np.savetxt(
-        #     fp,
-        #     np.stack(data, axis=1),
-        #     delimiter=",",
-        # )
+        max_len = np.amax(detections)
+        data = []
+        header_name = ""
+        header_unit = ""
+
+        for name in names:
+            header_name += f",{name}"
+            header_unit += ",counts"
+            x = results[name]["detections"]
+            data.append(np.pad(x, (0, max_len - x.size), constant_values=np.nan))
+            for key, unit in [
+                ("masses", "kg"),
+                ("sizes", "m"),
+                ("cell_concentrations", "mol/L"),
+            ]:
+                if key in results[name]:
+                    header_name += f",{name}"
+                    header_unit += f",{unit}"
+                    x = results[name][key]
+                    data.append(
+                        np.pad(x, (0, max_len - x.size), constant_values=np.nan)
+                    )
+        data = np.stack(data, axis=1)
+
+        fp.write(header_name[1:] + "\n")
+        fp.write(header_unit[1:] + "\n")
+        for line in data:
+            fp.write(",".join("" if np.isnan(x) else str(x) for x in line) + "\n")
+
         logger.info(f"Exported results for to {path.name}.")
