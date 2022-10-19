@@ -179,8 +179,8 @@ def results_from_mass_response(
     background: float,
     lod: np.ndarray,
     density: float,
-    massfraction: float,
-    massresponse: float,
+    mass_fraction: float,
+    mass_response: float,
 ) -> dict:
     """Calculates the masses, sizes and lods from mass response.
 
@@ -202,13 +202,13 @@ def results_from_mass_response(
     # if isinstance(lod, np.ndarray):
     #     lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
 
-    masses = detections * (massresponse / massfraction)
+    masses = detections * (mass_response / mass_fraction)
     sizes = spcal.particle_size(masses, density=density)
 
     bed = spcal.particle_size(
-        background * (massresponse / massfraction), density=density
+        background * (mass_response / mass_fraction), density=density
     )
-    lod_mass = lod * (massresponse / massfraction)
+    lod_mass = lod * (mass_response / mass_fraction)
     lod_size = spcal.particle_size(lod_mass, density=density)
 
     return {  # type: ignore
@@ -228,7 +228,7 @@ def results_from_nebulisation_efficiency(
     density: float,
     dwelltime: float,
     efficiency: float,
-    massfraction: float,
+    mass_fraction: float,
     uptake: float,
     response: float,
     time: float,
@@ -263,7 +263,7 @@ def results_from_nebulisation_efficiency(
         efficiency=efficiency,
         flowrate=uptake,
         response_factor=response,
-        mass_fraction=massfraction,
+        mass_fraction=mass_fraction,
     )
     sizes = spcal.particle_size(masses, density=density)
 
@@ -290,7 +290,7 @@ def results_from_nebulisation_efficiency(
             efficiency=efficiency,
             flowrate=uptake,
             response_factor=response,
-            mass_fraction=massfraction,
+            mass_fraction=mass_fraction,
         ),
         density=density,
     )
@@ -300,7 +300,7 @@ def results_from_nebulisation_efficiency(
         efficiency=efficiency,
         flowrate=uptake,
         response_factor=response,
-        mass_fraction=massfraction,
+        mass_fraction=mass_fraction,
     )
     lod_size = spcal.particle_size(lod_mass, density=density)
 
