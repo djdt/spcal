@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 import logging
 
-from typing import Any, Dict, TextIO, List, Tuple, Union
+from typing import Any, Dict, TextIO, Tuple, Union
 
 from spcal import __version__
 
