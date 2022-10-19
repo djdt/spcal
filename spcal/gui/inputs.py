@@ -69,6 +69,8 @@ class InputWidget(QtWidgets.QWidget):
         )
         self.options.efficiency_method.currentTextChanged.connect(self.onEfficiencyMethodChanged)
 
+        self.import_options = {}
+
         self.responses = np.array([])
         self.events = np.array([])
         self.detections: Dict[str, np.ndarray] = {}
@@ -166,11 +168,14 @@ class InputWidget(QtWidgets.QWidget):
 
         dlg = ImportDialog(file, self)
         dlg.dataImported.connect(self.loadData)
-        dlg.dwelltimeImported.connect(self.options.dwelltime.setBaseValue)
-        dlg.accepted.connect(lambda: self.label_file.setText(dlg.file_path.name))
         dlg.open()
 
-    def loadData(self, data: np.ndarray) -> None:
+    def loadData(self, data: np.ndarray, options: dict) -> None:
+        # Load any values that need to be set from the import dialog inputs
+        self.import_options = options
+        self.options.dwelltime.setBaseValue(options["dwelltime"])
+        self.label_file.setText(str(options["path"]))
+
         self.responses = data
         self.events = np.arange(data.size)
 

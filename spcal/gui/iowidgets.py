@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 class IOWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal(str)
 
+    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+        super().__init__(parent)
+        self.name = name
+
     def clearInputs(self) -> None:
         raise NotImplementedError
 
@@ -35,8 +39,7 @@ class IOWidget(QtWidgets.QWidget):
 
 class SampleIOWidget(IOWidget):
     def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
-        super().__init__(parent)
-        self.name = name
+        super().__init__(name, parent)
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
@@ -482,6 +485,9 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
     def __getitem__(self, name: str) -> IOType:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore
+
+    def names(self) -> List[str]:
+        return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
 
     def widgets(self) -> List[IOType]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore

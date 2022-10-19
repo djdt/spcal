@@ -19,7 +19,7 @@ def atoms_per_particle(
 
 
 def cell_concentration(
-    masses: Union[float, np.ndarray], diameter: float, molarmass: float
+    masses: Union[float, np.ndarray], diameter: float, molar_mass: float
 ) -> Union[float, np.ndarray]:
     """Calculates intracellular concentrations.
     c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3)) / M (kg/mol)

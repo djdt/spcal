@@ -459,15 +459,15 @@ class ResultsWidget(QtWidgets.QWidget):
                 time = result["events"] * dwelltime
 
                 try:
-                    massfraction = float(self.sample.io[name].massfraction.text())
+                    mass_fraction = float(self.sample.io[name].massfraction.text())
                 except ValueError:
-                    massfraction = None
+                    mass_fraction = None
 
                 if (
                     dwelltime is not None
                     and density is not None
                     and efficiency is not None
-                    and massfraction is not None
+                    and mass_fraction is not None
                     and response is not None
                     and uptake is not None
                 ):
@@ -479,7 +479,7 @@ class ResultsWidget(QtWidgets.QWidget):
                             density=density,
                             dwelltime=dwelltime,
                             efficiency=efficiency,
-                            massfraction=massfraction,
+                            mass_fraction=mass_fraction,
                             uptake=uptake,
                             response=response,
                             time=time,
@@ -489,7 +489,7 @@ class ResultsWidget(QtWidgets.QWidget):
                         {
                             "density": density,
                             "transport_efficiency": efficiency,
-                            "mass_fraction": massfraction,
+                            "mass_fraction": mass_fraction,
                             "uptake": uptake,
                             "response": response,
                             "time": time,
@@ -497,17 +497,17 @@ class ResultsWidget(QtWidgets.QWidget):
                     )
             elif method == "Mass Response" and name in self.reference.io:
                 try:
-                    massfraction = float(self.sample.io[name].massfraction.text())
+                    mass_fraction = float(self.sample.io[name].massfraction.text())
                 except ValueError:
-                    massfraction = None
+                    mass_fraction = None
 
                 density = self.sample.io[name].density.baseValue()
-                massresponse = self.reference.io[name].massresponse.baseValue()
+                mass_response = self.reference.io[name].massresponse.baseValue()
 
                 if (
                     density is not None
-                    and massfraction is not None
-                    and massresponse is not None
+                    and mass_fraction is not None
+                    and mass_response is not None
                 ):
                     self.result.update(
                         results_from_mass_response(
@@ -515,42 +515,42 @@ class ResultsWidget(QtWidgets.QWidget):
                             result["background"],
                             result["lod"],
                             density=density,
-                            massfraction=massfraction,
-                            massresponse=massresponse,
+                            mass_fraction=mass_fraction,
+                            mass_response=mass_response,
                         )
                     )
                     result["inputs"].update(
                         {
                             "density": density,
-                            "mass_fraction": massfraction,
-                            "mass_response": massresponse,
+                            "mass_fraction": mass_fraction,
+                            "mass_response": mass_response,
                         }
                     )
 
             # Cell inputs
-            celldiameter = self.options.celldiameter.baseValue()
-            molarmass = self.sample.io[name].molarmass.baseValue()
+            cell_diameter = self.options.celldiameter.baseValue()
+            molar_mass = self.sample.io[name].molarmass.baseValue()
 
-            if celldiameter is not None:  # Scale sizes to hypothesised
-                scale = celldiameter / np.mean(result["sizes"])
+            if cell_diameter is not None:  # Scale sizes to hypothesised
+                scale = cell_diameter / np.mean(result["sizes"])
                 result["sizes"] *= scale
                 result["lod_size"] *= scale
-                result["inputs"].update({"cell_diameter": celldiameter})
+                result["inputs"].update({"cell_diameter": cell_diameter})
 
             if (
-                celldiameter is not None and molarmass is not None
+                cell_diameter is not None and molar_mass is not None
             ):  # Calculate the intracellular concetrations
                 result["cell_concentrations"] = cell_concentration(
                     result["masses"],
-                    diameter=celldiameter,
-                    molarmass=molarmass,
+                    diameter=cell_diameter,
+                    molar_mass=molar_mass,
                 )
                 result["lod_cell_concentration"] = cell_concentration(
                     result["lod_mass"],
-                    diameter=celldiameter,
-                    molarmass=molarmass,
+                    diameter=cell_diameter,
+                    molar_mass=molar_mass,
                 )
-                result["inputs"].update({"molar_mass": molarmass})
+                result["inputs"].update({"molar_mass": molar_mass})
 
             self.result[name] = result
             self.updateOutputs(name)

@@ -8,8 +8,7 @@ from typing import List, Optional
 
 
 class ImportDialog(QtWidgets.QDialog):
-    dataImported = QtCore.Signal(np.ndarray)
-    dwelltimeImported = QtCore.Signal(float)
+    dataImported = QtCore.Signal(np.ndarray, dict)
 
     def __init__(self, file: str, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
@@ -159,27 +158,42 @@ class ImportDialog(QtWidgets.QDialog):
                 )
                 break
 
-    def accept(self) -> None:
+    def importOptions(self) -> dict:
         ignores = self.ignoreColumns()
-        cols = [col for col in range(self.table.columnCount()) if col not in ignores]
+        columns = [c for c in range(self.table.columnCount()) if c not in ignores]
         header_row = self.spinbox_first_line.value() - 1
-        headers = [self.table.item(header_row, col).text() for col in cols]
+        headers = [self.table.item(header_row, c).text() for c in columns]
+        return {
+            "path": self.file_path,
+            "dwelltime": self.dwelltime.baseValue(),
+            "delimiter":  self.delimiter(),
+            "ignores": ignores,
+            "columns": columns,
+            "header row": header_row,
+            "headers": headers,
+            "cps": self.combo_intensity_units.currentText() == "CPS",
+        }
+
+    # def setImportOptions(self, options: dict) -> None:
+    #     pass
+
+    def accept(self) -> None:
+        options = self.importOptions()
 
         data = np.genfromtxt(
-            self.file_path,
-            delimiter=self.delimiter(),
-            usecols=cols,
-            names=headers,
-            skip_header=header_row + 1,
+            options["path"],
+            delimiter=options["delimiter"],
+            usecols=options["columns"],
+            names=options["headers"],
+            skip_header=options["header row"] + 1,
             converters={0: lambda s: float(s.replace(",", "."))},
             invalid_raise=False,
         )
-        dwell = self.dwelltime.baseValue()
 
-        if self.combo_intensity_units.currentText() == "CPS":
+        if options["cps"]:
+            dwell = options["dwelltime"]
             for name in data.dtype.names:
                 data[name] *= dwell  # type: ignore
 
-        self.dwelltimeImported.emit(dwell)
-        self.dataImported.emit(data)
+        self.dataImported.emit(data, options)
         super().accept()
