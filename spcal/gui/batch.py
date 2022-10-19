@@ -21,6 +21,10 @@ from typing import Callable, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
+# Todo: show the import options in the dialog
+# Todo: warn if files have different elements
+
+
 def process_file_detections(
     file: Path,
     options: dict,
@@ -169,7 +173,7 @@ class ProcessThread(QtCore.QThread):
                             )
                         )
                         results[name]["inputs"] = {
-                            k: v for k, v in self.method_kws.items()
+                            k: v for k, v in self.method_kws[name].items() if v is not None
                         }
 
                     if self.cell_kws[name]["cell_diameter"] is not None:
@@ -192,7 +196,7 @@ class ProcessThread(QtCore.QThread):
                                 diameter=self.cell_kws[name]["cell_diameter"],
                                 molar_mass=self.cell_kws[name]["molar_mass"],
                             )
-                            results[name]["inputs"].update(self.cell_kws)
+                            results[name]["inputs"].update(self.cell_kws[name])
 
             except ValueError as e:
                 logger.exception(e)
