@@ -123,6 +123,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             fp.write(f"{prefix}{line}{postfix}\n")
 
     input_units = {
+        "cell_diameter": "m",
         "density": "kg/m3",
         "dwelltime": "s",
         "molar_mass": "kg/mol",
