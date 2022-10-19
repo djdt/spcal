@@ -25,7 +25,6 @@ class ElidedLabel(QtWidgets.QWidget):
         super().__init__(parent)
         self._text = text
         self._elide = QtCore.Qt.ElideLeft
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Maximum)
 
     def elide(self) -> QtCore.Qt.TextElideMode:
         return self._elide
