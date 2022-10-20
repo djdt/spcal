@@ -67,7 +67,9 @@ class InputWidget(QtWidgets.QWidget):
         self.options.error_rate_beta.editingFinished.connect(
             lambda: self.updateLimits(None)
         )
-        self.options.efficiency_method.currentTextChanged.connect(self.onEfficiencyMethodChanged)
+        self.options.efficiency_method.currentTextChanged.connect(
+            self.onEfficiencyMethodChanged
+        )
 
         self.import_options = {}
 
@@ -111,7 +113,9 @@ class InputWidget(QtWidgets.QWidget):
         action_group_graph_view.addAction(self.action_graph_stacked)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
         spacer = QtWidgets.QWidget()
-        spacer.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
+        )
         self.graph_toolbar.addWidget(spacer)
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
@@ -395,6 +399,4 @@ class ReferenceWidget(InputWidget):
         uptake = self.options.uptake.baseValue()
 
         for name in names:
-            self.io[name].updateEfficiency(
-                self.detections[name], dwell, time, uptake
-            )
+            self.io[name].updateEfficiency(self.detections[name], dwell, time, uptake)
