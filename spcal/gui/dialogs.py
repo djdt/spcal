@@ -161,15 +161,15 @@ class ImportDialog(QtWidgets.QDialog):
     def importOptions(self) -> dict:
         ignores = self.ignoreColumns()
         columns = [c for c in range(self.table.columnCount()) if c not in ignores]
-        header_row = self.spinbox_first_line.value() - 1
-        headers = [self.table.item(header_row, c).text() for c in columns]
+        first_line = self.spinbox_first_line.value()
+        headers = [self.table.item(first_line - 1, c).text() for c in columns]
         return {
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
-            "delimiter":  self.delimiter(),
+            "delimiter": self.delimiter(),
             "ignores": ignores,
             "columns": columns,
-            "header row": header_row,
+            "first line": first_line,
             "headers": headers,
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
@@ -185,7 +185,7 @@ class ImportDialog(QtWidgets.QDialog):
             delimiter=options["delimiter"],
             usecols=options["columns"],
             names=options["headers"],
-            skip_header=options["header row"] + 1,
+            skip_header=options["first line"],
             converters={0: lambda s: float(s.replace(",", "."))},
             invalid_raise=False,
         )

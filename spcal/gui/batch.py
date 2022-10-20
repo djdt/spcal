@@ -21,7 +21,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
-# Todo: show the import options in the dialog
 # Todo: warn if files have different elements
 
 
@@ -40,7 +39,7 @@ def process_file_detections(
         delimiter=options["delimiter"],
         usecols=options["columns"],
         names=options["headers"],
-        skip_header=options["header row"] + 1,
+        skip_header=options["first line"],
         converters={0: lambda s: float(s.replace(",", "."))},
         invalid_raise=False,
     )
@@ -157,7 +156,6 @@ class ProcessThread(QtCore.QThread):
                     self.method_kws[name]["time"] = (
                         results[name]["events"] * self.method_kws[name]["dwelltime"]
                     )
-                    print(self.method_kws[name])
                     if any(x is None for x in self.method_kws[name].values()):
                         logger.warning(
                             f"{infile}:{name}, missing inputs for calibrated results."
@@ -293,13 +291,47 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
 
+        self.import_options = QtWidgets.QGroupBox("Import Options")
+        self.import_options.setLayout(QtWidgets.QFormLayout())
+
+        le_delimiter = QtWidgets.QLineEdit(self.sample.import_options["delimiter"])
+        le_delimiter.setReadOnly(True)
+        sb_first_line = QtWidgets.QSpinBox()
+        sb_first_line.setValue(self.sample.import_options["first line"])
+        sb_first_line.setReadOnly(True)
+        te_columns = QtWidgets.QTextEdit()
+        te_columns.setPlainText(
+            "\n".join(
+                f"{c} :: {n}"
+                for c, n in zip(
+                    self.sample.import_options["columns"],
+                    self.sample.import_options["headers"],
+                )
+            )
+        )
+        te_columns.setReadOnly(True)
+        le_units = QtWidgets.QLineEdit(
+            "CPS" if self.sample.import_options["cps"] else "Counts"
+        )
+        le_units.setReadOnly(True)
+
+        self.import_options.layout().addRow("Delimiter:", le_delimiter)
+
+        self.import_options.layout().addRow("Import from row:", sb_first_line)
+        self.import_options.layout().addRow("Use Columns:", te_columns)
+        self.import_options.layout().addRow("Intensity Units:", le_units)
+
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
         layout_list.addWidget(self.files, 1)
 
+        layout_right = QtWidgets.QVBoxLayout()
+        layout_right.addWidget(self.inputs, 0)
+        layout_right.addWidget(self.import_options, 0)
+
         layout_horz = QtWidgets.QHBoxLayout()
         layout_horz.addLayout(layout_list)
-        layout_horz.addWidget(self.inputs, 0)
+        layout_horz.addLayout(layout_right, 0)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_horz)
@@ -480,7 +512,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.thread = ProcessThread(
             infiles,
             outfiles,
-            dict(self.sample.import_options),
+            self.sample.import_options,
             method_fn,
             method_kws,
             cell_kws=cell_kws,
