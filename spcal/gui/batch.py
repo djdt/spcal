@@ -44,7 +44,6 @@ def process_file_detections(
         converters={0: lambda s: float(s.replace(",", "."))},
         invalid_raise=False,
     )
-    # responses = responses[trim[0] : trim[1]]
     if responses.size == 0 or responses.dtype.names is None:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
@@ -259,9 +258,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         ):
             self.combo_trim.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
 
-        self.trim_left = QtWidgets.QCheckBox("Use sample left trim.")
+        self.trim_left = QtWidgets.QCheckBox("Use sample left trims.")
         self.trim_left.setChecked(True)
-        self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
+        self.trim_right = QtWidgets.QCheckBox("Use sample right trims.")
         self.trim_right.setChecked(True)
 
         self.progress = QtWidgets.QProgressBar()
@@ -290,7 +289,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow("Output Name:", self.output_name)
         self.inputs.layout().addRow("Output Directory:", self.output_dir)
         self.inputs.layout().addWidget(self.button_output)
-        self.inputs.layout().addRow("Trim:", self.trim)
+        self.inputs.layout().addRow("Trim:", self.combo_trim)
+        self.inputs.layout().addRow(self.trim_left)
+        self.inputs.layout().addRow(self.trim_right)
 
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
@@ -403,8 +404,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.progress.setMaximum(len(infiles))
         self.progress.setValue(1)
 
-        # Todo trim
-
         method = self.options.efficiency_method.currentText()
 
         if method in ["Manual Input", "Reference Particle"]:
@@ -414,15 +413,36 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             raise ValueError("Unknown method")
 
+        trims = np.array(
+            [self.sample.trimRegion(name) for name in self.sample.detections]
+        )
+        trim_average = np.mean(trims[:, 0]), self.sample.responses.size - np.mean(
+            trims[:, 1]
+        )
+        trim_max = np.amax(trims[:, 0]), self.sample.responses.size - np.amin(
+            trims[:, 1]
+        )
+
         trims = {}
         method_kws = {}
         cell_kws = {}
-        for name in self.sample.responses.names():
+        for name in self.sample.detections:
+            # trims converted to left, -right
             if self.combo_trim.currentText() == "None":
                 trims[name] = 0, 0
             elif self.combo_trim.currentText() == "As Sample":
-                raise Exception
-            # TODO
+                trim = self.sample.trimRegion(name)
+                trims[name] = trim[0], self.sample.responses.size - trim[1]
+            elif self.combo_trim.currentText() == "Average":
+                trims[name] = trim_average
+            elif self.combo_trim.currentText() == "Maximum":
+                trims[name] = trim_max
+
+            if not self.trim_left.isChecked():
+                trims[name] = 0, trims[name][1]
+            if not self.trim_right.isChecked():
+                trims[name] = trims[name][0], 0
+
             if method in ["Manual Input", "Reference Particle"]:
                 try:
                     if method == "Manual Input":
@@ -439,7 +459,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "dwelltime": self.options.dwelltime.baseValue(),
                     "efficiency": efficiency,
                     "mass_fraction": float(self.sample.io[name].massfraction.text()),
-                    # "time": 0.0,
                     "uptake": self.options.uptake.baseValue(),
                     "response": self.sample.io[name].response.baseValue(),
                 }
@@ -465,7 +484,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             method_fn,
             method_kws,
             cell_kws=cell_kws,
-            trims=trim,
+            trims=trims,
             limit_method=self.options.method.currentText(),
             limit_sigma=float(self.options.sigma.text()),
             limit_error_rates=(
