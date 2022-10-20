@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 def process_file_detections(
     file: Path,
     options: dict,
-    trim: Tuple[Optional[int], Optional[int]],
+    trims: Dict[str, Tuple[int, int]],
     limit_method: str,
     limit_sigma: float,
     limit_error_rates: Tuple[float, float],
@@ -44,7 +44,7 @@ def process_file_detections(
         converters={0: lambda s: float(s.replace(",", "."))},
         invalid_raise=False,
     )
-    responses = responses[trim[0] : trim[1]]
+    # responses = responses[trim[0] : trim[1]]
     if responses.size == 0 or responses.dtype.names is None:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
@@ -53,40 +53,40 @@ def process_file_detections(
         for name in responses.dtype.names:
             responses[name] *= dwell  # type: ignore
 
-    limits = {}
+    results = {}
     for name in responses.dtype.names:
+        data = responses[name][trims[name][0] : responses.size - trims[name][1]]
+
         if limit_method == "Manual Input":
-            limits[name] = (
+            limits = (
                 limit_method,
                 {},
                 np.array(
-                    [(np.mean(responses[name]), limit_manual, limit_manual)],
+                    [(np.mean(data), limit_manual, limit_manual)],
                     dtype=calculate_limits.dtype,
                 ),
             )
         else:
-            limits[name] = calculate_limits(
-                responses[name],
+            limits = calculate_limits(
+                data,
                 limit_method,
                 limit_sigma,
                 limit_error_rates,
                 window=limit_window,
             )
 
-    results = {}
-    for name in responses.dtype.names:
         detections, labels, _ = spcal.accumulate_detections(
-            responses[name], limits[name][2]["lc"], limits[name][2]["ld"]
+            data, limits[2]["lc"], limits[2]["ld"]
         )
         results[name] = {
             "detections": detections,
             "detections_std": np.sqrt(detections.size),
-            "background": np.mean(responses[name][labels == 0]),
-            "background_std": np.std(responses[name][labels == 0]),
-            "events": responses.size,
+            "background": np.mean(data[labels == 0]),
+            "background_std": np.std(data[labels == 0]),
+            "events": data.size,
             "file": str(file),
-            "limit_method": f"{limits[name][0]},{','.join(f'{k}={v}' for k,v in limits[name][1].items())}",
-            "lod": limits[name][2]["ld"],
+            "limit_method": f"{limits[0]},{','.join(f'{k}={v}' for k,v in limits[1].items())}",
+            "lod": limits[2]["ld"],
             "inputs": {"dwelltime": options["dwelltime"]},
         }
 
@@ -105,7 +105,7 @@ class ProcessThread(QtCore.QThread):
         method: Callable,
         method_kws: Dict[str, Dict[str, Optional[float]]],
         cell_kws: Dict[str, Dict[str, Optional[float]]],
-        trim: Tuple[Optional[int], Optional[int]] = (None, None),
+        trims: Dict[str, Tuple[int, int]],
         limit_method: str = "Automatic",
         limit_sigma: float = 3.0,
         limit_error_rates: Tuple[float, float] = (0.05, 0.05),
@@ -124,7 +124,7 @@ class ProcessThread(QtCore.QThread):
         self.method_kws = method_kws
         self.cell_kws = cell_kws
 
-        self.trim = trim
+        self.trims = trims
 
         self.limit_method = limit_method
         self.limit_error_rates = limit_error_rates
@@ -141,7 +141,7 @@ class ProcessThread(QtCore.QThread):
                 results = process_file_detections(
                     infile,
                     self.import_options,
-                    self.trim,
+                    self.trims,
                     self.limit_method,
                     self.limit_sigma,
                     self.limit_error_rates,
@@ -173,7 +173,9 @@ class ProcessThread(QtCore.QThread):
                             )
                         )
                         results[name]["inputs"] = {
-                            k: v for k, v in self.method_kws[name].items() if v is not None
+                            k: v
+                            for k, v in self.method_kws[name].items()
+                            if v is not None
                         }
 
                     if self.cell_kws[name]["cell_diameter"] is not None:
@@ -244,6 +246,19 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_process.setEnabled(len(files) > 0)
         self.button_process.pressed.connect(self.buttonProcess)
 
+        self.combo_trim = QtWidgets.QComboBox()
+        self.combo_trim.addItems(["None", "As Sample", "Average", "Maximum"])
+        self.combo_trim.setCurrentText("As Sample")
+        for i, tooltip in enumerate(
+            [
+                "Ignore sample trim and do not trim any data.",
+                "Use per element trim from currently loaded sample",
+                "Use average of all sample element trims.",
+                "Use maximum of all sample element trims.",
+            ]
+        ):
+            self.combo_trim.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+
         self.trim_left = QtWidgets.QCheckBox("Use sample left trim.")
         self.trim_left.setChecked(True)
         self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
@@ -275,8 +290,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow("Output Name:", self.output_name)
         self.inputs.layout().addRow("Output Directory:", self.output_dir)
         self.inputs.layout().addWidget(self.button_output)
-        self.inputs.layout().addRow(self.trim_left)
-        self.inputs.layout().addRow(self.trim_right)
+        self.inputs.layout().addRow("Trim:", self.trim)
 
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
@@ -390,12 +404,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.progress.setValue(1)
 
         # Todo trim
-        trim = None, None
-        # tleft, tright = None, None
-        # if self.trim_left.isChecked():
-        #     tleft = self.sample.slider.left()
-        # if self.trim_right.isChecked():
-        #     tright = self.sample.slider.right()
 
         method = self.options.efficiency_method.currentText()
 
@@ -406,9 +414,15 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             raise ValueError("Unknown method")
 
+        trims = {}
         method_kws = {}
         cell_kws = {}
-        for name in self.sample.io.names():
+        for name in self.sample.responses.names():
+            if self.combo_trim.currentText() == "None":
+                trims[name] = 0, 0
+            elif self.combo_trim.currentText() == "As Sample":
+                raise Exception
+            # TODO
             if method in ["Manual Input", "Reference Particle"]:
                 try:
                     if method == "Manual Input":
@@ -451,7 +465,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             method_fn,
             method_kws,
             cell_kws=cell_kws,
-            trim=trim,
+            trims=trim,
             limit_method=self.options.method.currentText(),
             limit_sigma=float(self.options.sigma.text()),
             limit_error_rates=(
