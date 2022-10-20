@@ -468,9 +468,12 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
         self.io_widget_type = io_widget_type
 
         self.combo_name = QtWidgets.QComboBox()
-        self.stack = QtWidgets.QStackedWidget()
+        self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
+        self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
+
+        self.repopulate(["<element>"])
 
         self.layout_top = QtWidgets.QHBoxLayout()
         self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
@@ -479,7 +482,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
         layout.addLayout(self.layout_top)
         layout.addWidget(self.stack, 1)
         self.setLayout(layout)
-    
+
     def __contains__(self, name: str) -> bool:
         return self.combo_name.findText(name) != -1
 
