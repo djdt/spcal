@@ -236,7 +236,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.blockSignals(True)
         self.uptake.setValue(None)
         self.dwelltime.setValue(None)
-        self.response.setValue(None)
         self.efficiency.setText("")
         self.celldiameter.setValue(None)
         self.blockSignals(False)
