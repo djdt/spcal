@@ -7,11 +7,12 @@ from typing import Optional
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
 
+
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
 
-    def __init__(self, parent: Optional[ QtWidgets.QWidget ] = None):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super().__init__(parent)
 
         uptake_units = {
@@ -47,21 +48,14 @@ class OptionsWidget(QtWidgets.QWidget):
             ["Manual Input", "Reference Particle", "Mass Response"]
         )
         self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
-        self.efficiency_method.setItemData(
-            0,
-            "Manually enter the transport efficiency.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.efficiency_method.setItemData(
-            1,
-            "Calculate the efficiency using a reference particle.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.efficiency_method.setItemData(
-            2,
-            "Use the mass response of a reference particle.",
-            QtCore.Qt.ToolTipRole,
-        )
+        for i, tooltip in enumerate(
+            [
+                "Manually enter the transport efficiency.",
+                "Calculate the efficiency using a reference particle.",
+                "Use the mass response of a reference particle.",
+            ]
+        ):
+            self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
 
         # Complete Changed
         self.uptake.valueChanged.connect(self.optionsChanged)
@@ -87,7 +81,14 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.method = QtWidgets.QComboBox()
         self.method.addItems(
-            ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson", "Manual Input"]
+            [
+                "Automatic",
+                "Highest",
+                "Gaussian",
+                "Gaussian Median",
+                "Poisson",
+                "Manual Input",
+            ]
         )
         self.method.setItemData(
             0,
@@ -123,12 +124,16 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
         self.error_rate_alpha.setPlaceholderText("0.05")
         self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
-        self.error_rate_alpha.setToolTip("Type I (false positive) error rate for Poisson filter.")
+        self.error_rate_alpha.setToolTip(
+            "Type I (false positive) error rate for Poisson filter."
+        )
 
         self.error_rate_beta = QtWidgets.QLineEdit("0.05")
         self.error_rate_beta.setPlaceholderText("0.05")
         self.error_rate_beta.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
-        self.error_rate_beta.setToolTip("Type II (false negative) error rate for Poisson filter.")
+        self.error_rate_beta.setToolTip(
+            "Type II (false negative) error rate for Poisson filter."
+        )
 
         self.sigma = QtWidgets.QLineEdit("5.0")
         self.sigma.setPlaceholderText("5.0")
