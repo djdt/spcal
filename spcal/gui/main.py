@@ -10,6 +10,7 @@ from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
+from spcal.gui.util import create_action
 
 from types import TracebackType
 
@@ -20,6 +21,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("SPCal")
+        self.resize(1000, 800)
 
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
@@ -56,28 +58,45 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
     def createMenuBar(self) -> None:
-        action_open_sample = QtGui.QAction("Open Sample", self)
-        action_open_sample.triggered.connect(self.sample.dialogLoadFile)
+        self.action_open_sample = create_action(
+            "document-open",
+            "&Open Sample File",
+            "Import SP data from a CSV file.",
+            lambda: self.sample.dialogLoadFile(),
+        )
+        self.action_open_reference = create_action(
+            "document-open",
+            "Open &Reference File",
+            "Import reference SP data from a CSV file.",
+            lambda: self.reference.dialogLoadFile(),
+        )
 
-        action_open_reference = QtGui.QAction("Open Reference", self)
-        action_open_reference.triggered.connect(self.reference.dialogLoadFile)
+        self.action_open_batch = create_action(
+            "document-multiple",
+            "&Batch Processing",
+            "Process multiple files using the current sample and reference settings.",
+            self.dialogBatchProcess,
+        )
+        self.action_open_batch.setEnabled(False)
 
-        self.action_batch_process = QtGui.QAction("Batch Dialog", self)
-        self.action_batch_process.triggered.connect(self.dialogBatchProcess)
-        self.action_batch_process.setEnabled(False)
+        self.action_clear = create_action(
+            "edit-reset",
+            "Reset Inputs",
+            "Resets all the option, sample and reference inputs.",
+            self.resetInputs,
+        )
 
-        action_clear = QtGui.QAction("Reset Inputs", self)
-        action_clear.triggered.connect(self.resetInputs)
+        self.action_close = create_action(
+            "window-close", "Quit", "Exit SPCal.", self.close
+        )
 
-        action_close = QtGui.QAction("Quit", self)
-        action_close.triggered.connect(self.close)
+        self.action_log = create_action(
+            "dialog-information", "Show &Log", "Show the error and information log.", self.log.open
+        )
 
-        action_log = QtGui.QAction("&Show Log", self)
-        action_log.setToolTip("Show the SPCal event and error log.")
-        action_log.triggered.connect(self.log.open)
-
-        action_about = QtGui.QAction("About", self)
-        action_about.triggered.connect(self.about)
+        self.action_about = create_action(
+            "help-about", "About", "About SPCal.", self.about
+        )
 
         # action_draw_stacked = QtGui.QAction("Stack Plots", self)
         # action_draw_stacked.setToolTip("Stack each element plots.")
@@ -102,15 +121,15 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         # action_draw_overlay.setChecked(True)
 
         menufile = self.menuBar().addMenu("&File")
-        menufile.addAction(action_open_sample)
-        menufile.addAction(action_open_reference)
+        menufile.addAction(self.action_open_sample)
+        menufile.addAction(self.action_open_reference)
         menufile.addSeparator()
-        menufile.addAction(self.action_batch_process)
+        menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
-        menufile.addAction(action_close)
+        menufile.addAction(self.action_close)
 
         menuedit = self.menuBar().addMenu("&Edit")
-        menuedit.addAction(action_clear)
+        menuedit.addAction(self.action_clear)
 
         menuview = self.menuBar().addMenu("&View")
         # Todo: colorscheme
@@ -119,8 +138,8 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         # menuview.addActions(action_group_draw_mode.actions())
 
         menuhelp = self.menuBar().addMenu("&Help")
-        menuhelp.addAction(action_log)
-        menuhelp.addAction(action_about)
+        menuhelp.addAction(self.action_log)
+        menuhelp.addAction(self.action_about)
 
     def about(self) -> QtWidgets.QDialog:
         dlg = QtWidgets.QMessageBox(
@@ -155,7 +174,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.tabs.indexOf(self.results),
             self.readyForResults(),
         )
-        self.action_batch_process.setEnabled(self.readyForResults())
+        self.action_open_batch.setEnabled(self.readyForResults())
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
@@ -165,8 +184,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
     def readyForResults(self) -> bool:
         return self.sample.isComplete() and (
-            self.options.efficiency_method.currentText()
-            in ["Manual Input"]
+            self.options.efficiency_method.currentText() in ["Manual Input"]
             or self.reference.isComplete()
         )
 
