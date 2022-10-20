@@ -269,7 +269,13 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.signals.append(curve)
         self.addItem(curve)
 
-        self.setLimits(xMin=x[0], xMax=x[-1])
+        self.setLimits(
+            xMin=x[0],
+            xMax=x[-1],
+            yMin=0,
+            minXRange=(x[-1] - x[0]) * 0.001,
+            minYRange=np.ptp(y[diffs]) * 0.01,
+        )
         self.enableAutoRange(y=True)  # rescale to max bounds
 
         self.region.setRegion((x[0], x[-1]))
