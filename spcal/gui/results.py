@@ -15,7 +15,7 @@ from spcal.detection import (
 )
 from spcal.particle import cell_concentration
 
-from spcal.gui.graphs import ResultsFractionView, ResultsHistView, graph_colors
+from spcal.gui.graphs import ResultsFractionView, ResultsHistView, color_schemes
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
@@ -60,9 +60,12 @@ class ResultsWidget(QtWidgets.QWidget):
         options: OptionsWidget,
         sample: SampleWidget,
         reference: ReferenceWidget,
+        color_scheme: str = "IBM Carbon",
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
+
+        self.color_scheme = color_scheme
 
         self.options = options
         self.sample = sample
@@ -182,6 +185,10 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
+    def setColorScheme(self, scheme: str) -> None:
+        self.color_scheme = scheme
+        self.drawGraph()
+
     def dialogExportResults(self) -> None:
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Export", "", "CSV Documents (*.csv)"
@@ -276,12 +283,13 @@ class ResultsWidget(QtWidgets.QWidget):
             ]
         )
 
-        for name, color in zip(graph_data, graph_colors):
+        scheme = color_schemes[self.color_scheme]
+        for i, name in enumerate(graph_data):
             bins = np.arange(
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
             )
             bins -= bins[0] % bin_width  # align bins
-            color = QtGui.QColor(color)
+            color = QtGui.QColor(scheme[i % len(scheme)])
             color.setAlpha(128)
             self.graph_hist.drawData(
                 name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
@@ -335,11 +343,13 @@ class ResultsWidget(QtWidgets.QWidget):
             return
 
         brushes = []
-        for gc in graph_colors:
-            color = QtGui.QColor(gc)
+        scheme = color_schemes[self.color_scheme]
+        for i in range(len(compositions)):
+            color = QtGui.QColor(scheme[i % len(scheme)])
             color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
 
+        print(len(compositions), len(brushes))
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
 
     def graphZoomReset(self) -> None:

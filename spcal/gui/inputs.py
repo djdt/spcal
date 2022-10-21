@@ -10,7 +10,7 @@ from spcal.detection import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
-from spcal.gui.graphs import ParticleView, graph_colors
+from spcal.gui.graphs import ParticleView, color_schemes
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
@@ -29,10 +29,13 @@ class InputWidget(QtWidgets.QWidget):
         self,
         io_stack: IOStack,
         options: OptionsWidget,
+        color_scheme: str = "IBM Carbon",
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
         self.setAcceptDrops(True)
+
+        self.color_scheme = color_scheme
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -136,6 +139,10 @@ class InputWidget(QtWidgets.QWidget):
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
+        self.drawGraph()
+
+    def setColorScheme(self, scheme: str) -> None:
+        self.color_scheme = scheme
         self.drawGraph()
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
@@ -310,20 +317,22 @@ class InputWidget(QtWidgets.QWidget):
                 plot.drawSignal(self.events, self.responses[name])
         elif self.draw_mode == "Overlay":
             plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
-            for name, color in zip(self.responses.dtype.names, graph_colors):
+            scheme = color_schemes[self.color_scheme]
+            for i, name in enumerate(self.responses.dtype.names):
                 ys = self.responses[name]
 
-                pen = QtGui.QPen(color, 1.0)
+                pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
                 pen.setCosmetic(True)
                 plot.drawSignal(self.events, ys, label=name, pen=pen)
         else:
             raise ValueError("drawGraph: draw_mode must be 'Stacked', 'Overlay'.")
 
     def drawDetections(self, name: str) -> None:
+        scheme = color_schemes[self.color_scheme]
         if self.draw_mode == "Overlay":
             plot = self.graph.plots["Overlay"]
             name_idx = list(self.responses.dtype.names).index(name)
-            color = graph_colors[name_idx]
+            color = scheme[name_idx % len(scheme)]
             if name_idx == 0:
                 plot.clearScatters()
         else:

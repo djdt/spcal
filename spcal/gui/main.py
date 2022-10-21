@@ -58,6 +58,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
 
     def createMenuBar(self) -> None:
+        # File
         self.action_open_sample = create_action(
             "document-open",
             "&Open Sample File",
@@ -79,6 +80,11 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         )
         self.action_open_batch.setEnabled(False)
 
+        self.action_close = create_action(
+            "window-close", "Quit", "Exit SPCal.", self.close
+        )
+
+        # Edit
         self.action_clear = create_action(
             "edit-reset",
             "Reset Inputs",
@@ -86,39 +92,25 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.resetInputs,
         )
 
-        self.action_close = create_action(
-            "window-close", "Quit", "Exit SPCal.", self.close
-        )
+        # View
+        self.action_color_scheme = QtGui.QActionGroup(self)
+        for scheme in ["IBM Carbon", "Tableau 10"]:
+            action = self.action_color_scheme.addAction(scheme)
+            action.setCheckable(True)
+        self.action_color_scheme.actions()[0].setChecked(True)
+        self.action_color_scheme.triggered.connect(self.setColorScheme)
 
+        # Help
         self.action_log = create_action(
-            "dialog-information", "Show &Log", "Show the error and information log.", self.log.open
+            "dialog-information",
+            "Show &Log",
+            "Show the error and information log.",
+            self.log.open,
         )
 
         self.action_about = create_action(
             "help-about", "About", "About SPCal.", self.about
         )
-
-        # action_draw_stacked = QtGui.QAction("Stack Plots", self)
-        # action_draw_stacked.setToolTip("Stack each element plots.")
-        # action_draw_stacked.toggled.connect(lambda: self.sample.setDrawMode("Stacked"))
-        # action_draw_stacked.toggled.connect(
-        #     lambda: self.reference.setDrawMode("Stacked")
-        # )
-
-        # action_draw_overlay = QtGui.QAction("Overlay Plots", self)
-        # action_draw_overlay.setToolTip("Overlay element plots.")
-        # action_draw_overlay.toggled.connect(lambda: self.sample.setDrawMode("Overlay"))
-        # action_draw_overlay.toggled.connect(
-        #     lambda: self.reference.setDrawMode("Overlay")
-        # )
-
-        # action_group_draw_mode = QtGui.QActionGroup(self)
-        # action_group_draw_mode.addAction(action_draw_stacked)
-        # action_group_draw_mode.addAction(action_draw_overlay)
-
-        # for action in action_group_draw_mode.actions():
-        #     action.setCheckable(True)
-        # action_draw_overlay.setChecked(True)
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(self.action_open_sample)
@@ -132,10 +124,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         menuedit.addAction(self.action_clear)
 
         menuview = self.menuBar().addMenu("&View")
-        # Todo: colorscheme
-        # Todo: results binwidth
-        # menuview.addAction(self.sample.action_graph_overlay)
-        # menuview.addActions(action_group_draw_mode.actions())
+
+        menu_cs = menuview.addMenu("Color Scheme")
+        menu_cs.setIcon(QtGui.QIcon.fromTheme("color-management"))
+        menu_cs.setStatusTip("Change the colorscheme of the input and result graphs.")
+        menu_cs.setToolTip("Change the colorscheme of the input and result graphs.")
+        menu_cs.addActions(self.action_color_scheme.actions())
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
@@ -194,6 +188,12 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.options.resetInputs()
         self.sample.resetInputs()
         self.reference.resetInputs()
+
+    def setColorScheme(self, action: QtGui.QAction) -> None:
+        scheme = action.text()
+        self.sample.setColorScheme(scheme)
+        self.reference.setColorScheme(scheme)
+        self.results.setColorScheme(scheme)
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType

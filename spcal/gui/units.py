@@ -13,12 +13,12 @@ class UnitsWidget(QtWidgets.QWidget):
     def __init__(
         self,
         units: Dict[str, float],
-        default_unit: str = None,
-        value: float = None,
+        default_unit: Optional[str] = None,
+        value: Optional[float] = None,
         validator: Tuple[float, float, int] = (0.0, 1e99, 10),
         formatter: str = ".6g",
-        invalid_color: QtGui.QColor = None,
-        parent: QtWidgets.QWidget = None,
+        invalid_color: Optional[QtGui.QColor] = None,
+        parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
         self._base_value = None

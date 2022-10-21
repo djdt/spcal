@@ -4,22 +4,36 @@ import pyqtgraph
 
 from typing import Dict, List, Optional, Union
 
-graph_colors = [
-    QtGui.QColor(105, 41, 196),
-    QtGui.QColor(17, 146, 232),
-    QtGui.QColor(0, 93, 93),
-    QtGui.QColor(159, 24, 83),
-    QtGui.QColor(250, 77, 86),
-    QtGui.QColor(87, 4, 8),
-    QtGui.QColor(25, 128, 56),
-    QtGui.QColor(0, 45, 156),
-    QtGui.QColor(238, 83, 139),
-    QtGui.QColor(178, 134, 0),
-    QtGui.QColor(0, 157, 154),
-    QtGui.QColor(1, 39, 73),
-    QtGui.QColor(138, 56, 0),
-    QtGui.QColor(165, 110, 255),
-]
+color_schemes = {
+    "IBM Carbon": [
+        QtGui.QColor(105, 41, 196),
+        QtGui.QColor(17, 146, 232),
+        QtGui.QColor(0, 93, 93),
+        QtGui.QColor(159, 24, 83),
+        QtGui.QColor(250, 77, 86),
+        QtGui.QColor(87, 4, 8),
+        QtGui.QColor(25, 128, 56),
+        QtGui.QColor(0, 45, 156),
+        QtGui.QColor(238, 83, 139),
+        QtGui.QColor(178, 134, 0),
+        QtGui.QColor(0, 157, 154),
+        QtGui.QColor(1, 39, 73),
+        QtGui.QColor(138, 56, 0),
+        QtGui.QColor(165, 110, 255),
+    ],
+    "Tableau 10": [
+        QtGui.QColor(31, 119, 180),
+        QtGui.QColor(255, 127, 14),
+        QtGui.QColor(44, 160, 44),
+        QtGui.QColor(214, 39, 40),
+        QtGui.QColor(148, 103, 189),
+        QtGui.QColor(140, 86, 75),
+        QtGui.QColor(227, 119, 194),
+        QtGui.QColor(127, 127, 127),
+        QtGui.QColor(188, 189, 34),
+        QtGui.QColor(23, 190, 207),
+    ],
+}
 
 
 class ResultsFractionView(pyqtgraph.GraphicsView):
@@ -73,8 +87,8 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
         if brushes is None:
-            brushes = [QtGui.QBrush() for _ in compositions.dtype.names]
-        assert len(brushes) >= len(compositions.dtype.names)
+            brushes = [QtGui.QBrush() for _ in range(len(compositions))]
+        assert len(brushes) >= len(compositions)
 
         for name, brush in zip(compositions.dtype.names, brushes):
             y = compositions[name] * counts
@@ -273,7 +287,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             xMin=x[0],
             xMax=x[-1],
             yMin=0,
-            minXRange=(x[-1] - x[0]) * 0.001,
+            minXRange=(x[-1] - x[0]) * 1e-5,
             minYRange=np.ptp(y[diffs]) * 0.01,
         )
         self.enableAutoRange(y=True)  # rescale to max bounds

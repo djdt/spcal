@@ -7,6 +7,47 @@ from spcal.gui.units import UnitsWidget
 from typing import List, Optional
 
 
+# class BinWidthDialog(QtWidgets.QDialog):
+#     widthChanged = QtCore.Signal(float)
+
+#     def __init__(
+#         self,
+#         width_signal: Optional[int],
+#         width_mass: Optional[float],
+#         width_size: Optional[float],
+#         width_conc: Optional[float],
+#         parent: Optional[QtWidgets.QWidget] = None,
+#     ):
+#         super().__init__(parent)
+
+#         size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+#         mass_units = {
+#             "ag": 1e-21,
+#             "fg": 1e-18,
+#             "pg": 1e-15,
+#             "ng": 1e-12,
+#             "μg": 1e-9,
+#             "g": 1e-3,
+#             "kg": 1.0,
+#         }
+#         molar_concentration_units = {
+#             "amol/L": 1e-18,
+#             "fmol/L": 1e-15,
+#             "pmol/L": 1e-12,
+#             "nmol/L": 1e-9,
+#             "μmol/L": 1e-6,
+#             "mmol/L": 1e-3,
+#             "mol/L": 1.0,
+#         }
+
+#         self.width_signal = QtWidgets.QLineEdit(str(width_signal) or "")
+#         self.width_signal.setPlaceholderText("Auto")
+#         self.width_signal.setValidator(QtGui.QIntValidator(0, 1000000))
+
+#         self.width_mass = UnitsWidget(mass_units, value=width_mass)
+#         # self.width_mass.
+
+
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray, dict)
 
