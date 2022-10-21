@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 color_schemes = {
     "IBM Carbon": [
@@ -65,33 +65,6 @@ color_schemes = {
         QtGui.QColor(204, 121, 167),
     ],
 }
-
-
-def _test_colors():
-    app = QtWidgets.QApplication()
-    scene = QtWidgets.QGraphicsScene(
-        -50,
-        -50,
-        200 + 100 * max(len(v) for v in color_schemes.values()),
-        100 + 100 * len(color_schemes),
-    )
-    view = QtWidgets.QGraphicsView(scene)
-
-    y = 0
-    for name, colors in color_schemes.items():
-        label = QtWidgets.QGraphicsTextItem(name)
-        label.setPos(0, y)
-        view.scene().addItem(label)
-        x = 0
-        for color in colors:
-            x += 100
-            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
-            rect.setBrush(QtGui.QBrush(color))
-            view.scene().addItem(rect)
-        y += 100
-
-    view.show()
-    app.exec()
 
 
 class ResultsFractionView(pyqtgraph.GraphicsView):
@@ -174,35 +147,37 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         )
 
 
-class ResultsHistView(pyqtgraph.GraphicsView):
+class HistogramPlotItem(pyqtgraph.PlotItem):
     def __init__(
         self,
+        name: str,
+        xlabel: str,
+        xunit: str,
         pen: Optional[QtGui.QPen] = None,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
-        super().__init__(parent=parent, background="white")
+        self.name = name
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
-
+        self.xaxis.setLabel(label=xlabel, units=xunit)
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
         self.yaxis.setLabel("No. Events")
         self.yaxis.enableAutoSIPrefix(False)
 
-        self.plot = pyqtgraph.PlotItem(
+        super().__init__(
             title="Results Histogram",
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             enableMenu=False,
             parent=parent,
         )
-        self.plot.hideButtons()
-        self.plot.addLegend(
+        self.hideButtons()
+        self.addLegend(
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )
-        self.setCentralWidget(self.plot)
 
     def drawData(
         self,
@@ -229,15 +204,82 @@ class ResultsHistView(pyqtgraph.GraphicsView):
             brush=brush,
             skipFiniteCheck=True,
         )
-        self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
-        self.plot.addItem(curve)
+        self.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
+        self.addItem(curve)
+
+
+class ResultsHistogramView(pyqtgraph.GraphicsView):
+    def __init__(
+        self,
+        minimum_plot_height: int = 120,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        self.minimum_plot_height = minimum_plot_height
+        self.layout = pyqtgraph.GraphicsLayout()
+
+        super().__init__(parent=parent, background="white")
+        self.setCentralWidget(self.layout)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        self.plots: Dict[str, HistogramPlotItem] = {}
+
+    # Taken from pyqtgraph.widgets.MultiPlotWidget
+    def setRange(self, *args, **kwds):
+        pyqtgraph.GraphicsView.setRange(self, *args, **kwds)
+        if self.centralWidget is not None:
+            r = self.range
+            minHeight = self.layout.currentRow * self.minimum_plot_height
+            if r.height() < minHeight:
+                r.setHeight(minHeight)
+                r.setWidth(r.width() - self.verticalScrollBar().width())
+            self.centralWidget.setGeometry(r)
+
+    # Taken from pyqtgraph.widgets.MultiPlotWidget
+    def resizeEvent(self, event: QtGui.QResizeEvent):
+        if self.closed:
+            return
+        if self.autoPixelRange:
+            self.range = QtCore.QRectF(0, 0, self.size().width(), self.size().height())
+        ParticleView.setRange(
+            self, self.range, padding=0, disableAutoPixel=False
+        )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
+        self.updateMatrix()
+
+    def addHistogramPlot(self, name: str, xlabel: str, xunit: str) -> HistogramPlotItem:
+        self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
+        self.plots[name].setXLink(self.layout.getItem(0, 0))
+        self.plots[name].setYLink(self.layout.getItem(0, 0))
+
+        self.layout.addItem(self.plots[name])
+        self.layout.nextRow()
+
+        self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+
+        return self.plots[name]
 
     def clear(self) -> None:
-        self.plot.clear()
-        self.plot.legend.clear()
+        self.layout.clear()
+        self.plots = {}
+
+    def bounds(self) -> Tuple[float, float, float, float]:
+        xmin, xmax, ymin, ymax = np.inf, 0.0, np.inf, 0.0
+        for plot in self.plots.values():
+            (x0, x1), (y0, y1) = plot.vb.childrenBounds()
+            xmin, xmax = min(xmin, x0), max(xmax, x1)
+            ymin, ymax = min(ymin, y0), max(ymax, y1)
+        return xmin, xmax, ymin, ymax
 
     def zoomReset(self) -> None:
-        self.plot.autoRange()
+        xmin, xmax, ymin, ymax = self.bounds()
+
+        for plot in self.plots.values():
+            plot.setLimits(xMin=xmin, xMax=xmax, yMin=ymin, yMax=ymax)
+
+        self.layout.getItem(0, 0).setRange(
+            xRange=(xmin, xmax),
+            yRange=(ymin, ymax),
+            disableAutoRange=True,
+        )
 
 
 class ParticlePlotItem(pyqtgraph.PlotItem):
@@ -406,9 +448,6 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.setCentralWidget(self.layout)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
-        self.black_pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-        self.black_pen.setCosmetic(True)
-
         self.plots: Dict[str, ParticlePlotItem] = {}
 
     # Taken from pyqtgraph.widgets.MultiPlotWidget
@@ -452,7 +491,6 @@ class ParticleView(pyqtgraph.GraphicsView):
     # def setLinkedYAxis(self, linked: bool = True) -> None:
     #     plots = list(self.plots.values())
     #     ymax = np.argmax([plot.vb.state["limits"]["yLimits"][1] for plot in plots])
-    #     print(ymax)
 
     #     for plot in self.plots.values():
     #         if linked:
@@ -470,3 +508,30 @@ class ParticleView(pyqtgraph.GraphicsView):
     def zoomReset(self) -> None:
         for plot in self.plots.values():
             plot.autoRange()
+
+
+if __name__ == "__main__":  # test colors
+    app = QtWidgets.QApplication()
+    scene = QtWidgets.QGraphicsScene(
+        -50,
+        -50,
+        200 + 100 * max(len(v) for v in color_schemes.values()),
+        100 + 100 * len(color_schemes),
+    )
+    view = QtWidgets.QGraphicsView(scene)
+
+    y = 0
+    for name, colors in color_schemes.items():
+        label = QtWidgets.QGraphicsTextItem(name)
+        label.setPos(0, y)
+        view.scene().addItem(label)
+        x = 0
+        for color in colors:
+            x += 100
+            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
+            rect.setBrush(QtGui.QBrush(color))
+            view.scene().addItem(rect)
+        y += 100
+
+    view.show()
+    app.exec()

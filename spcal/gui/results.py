@@ -15,7 +15,7 @@ from spcal.detection import (
 )
 from spcal.particle import cell_concentration
 
-from spcal.gui.graphs import ResultsFractionView, ResultsHistView, color_schemes
+from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, color_schemes
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
@@ -65,6 +65,7 @@ class ResultsWidget(QtWidgets.QWidget):
     ):
         super().__init__(parent)
 
+        self.draw_mode = "Overlay"
         self.color_scheme = color_scheme
 
         self.options = options
@@ -78,7 +79,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph_hist = ResultsHistView()
+        self.graph_hist = ResultsHistogramView()
         self.graph_frac = ResultsFractionView()
 
         self.graph_stack = QtWidgets.QStackedWidget()
@@ -250,7 +251,7 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         if mode == "Signal":
-            label, unit = "Intensity (counts)", None
+            label, unit = "Intensity (counts)", ""
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
         elif mode == "Size (m)":
@@ -260,7 +261,7 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
 
-        self.graph_hist.xaxis.setLabel(label, unit)
+        # self.graph_hist.xaxis.setLabel(label, unit)
 
         graph_data = {}
         for name in self.result:
@@ -284,6 +285,13 @@ class ResultsWidget(QtWidgets.QWidget):
         )
 
         scheme = color_schemes[self.color_scheme]
+        if self.draw_mode == "Overlay":
+            plot = self.graph_hist.addHistogramPlot("Overlay", xlabel=label, xunit=unit)
+        elif self.draw_mode == "Stacked":
+            pass
+        else:
+            raise ValueError("Invalid draw mode.")
+
         for i, name in enumerate(graph_data):
             bins = np.arange(
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
@@ -291,7 +299,9 @@ class ResultsWidget(QtWidgets.QWidget):
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(scheme[i % len(scheme)])
             color.setAlpha(128)
-            self.graph_hist.drawData(
+            if self.draw_mode == "Stacked":
+                plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
+            plot.drawData(
                 name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
             )
         self.graph_hist.zoomReset()
@@ -349,7 +359,6 @@ class ResultsWidget(QtWidgets.QWidget):
             color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
 
-        print(len(compositions), len(brushes))
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
 
     def graphZoomReset(self) -> None:
