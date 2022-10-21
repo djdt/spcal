@@ -6,42 +6,92 @@ from typing import Dict, List, Optional, Union
 
 color_schemes = {
     "IBM Carbon": [
-        QtGui.QColor(105, 41, 196),
-        QtGui.QColor(17, 146, 232),
-        QtGui.QColor(0, 93, 93),
-        QtGui.QColor(159, 24, 83),
-        QtGui.QColor(250, 77, 86),
-        QtGui.QColor(87, 4, 8),
-        QtGui.QColor(25, 128, 56),
-        QtGui.QColor(0, 45, 156),
-        QtGui.QColor(238, 83, 139),
-        QtGui.QColor(178, 134, 0),
-        QtGui.QColor(0, 157, 154),
-        QtGui.QColor(1, 39, 73),
-        QtGui.QColor(138, 56, 0),
-        QtGui.QColor(165, 110, 255),
+        QtGui.QColor("#6929c4"),  # Purple 70
+        QtGui.QColor("#1192e8"),  # Cyan 50
+        QtGui.QColor("#005d5d"),  # Teal 70
+        QtGui.QColor("#9f1853"),  # Magenta 70
+        QtGui.QColor("#fa4d56"),  # Red 50
+        QtGui.QColor("#570408"),  # Red 90
+        QtGui.QColor("#198038"),  # Green 60
+        QtGui.QColor("#002d9c"),  # Blue 80
+        QtGui.QColor("#ee538b"),  # Magenta 50
+        QtGui.QColor("#b26800"),  # Yellow 50
+        QtGui.QColor("#009d9a"),  # Teal 50
+        QtGui.QColor("#012749"),  # Cyan 90
+        QtGui.QColor("#8a3800"),  # Orange 70
+        QtGui.QColor("#a56eff"),  # Purple 50
+    ],
+    "Base16": [  # ordered for clarity
+        QtGui.QColor("#ab4642"),  # 08 red
+        QtGui.QColor("#7cafc2"),  # 0d blue
+        QtGui.QColor("#dc9656"),  # 09 orange
+        QtGui.QColor("#a1b56c"),  # 0b green
+        QtGui.QColor("#f7ca88"),  # 0a yellow
+        QtGui.QColor("#ba8baf"),  # 0e magenta
+        QtGui.QColor("#86c1b9"),  # 0c teal
+        QtGui.QColor("#a16946"),  # 0f brown
+        QtGui.QColor("#b8b8b8"),  # 03 grey
+    ],
+    "ColorBrewer Set1": [
+        QtGui.QColor("#e41a1c"),
+        QtGui.QColor("#377eb8"),
+        QtGui.QColor("#4daf4a"),
+        QtGui.QColor("#984ea3"),
+        QtGui.QColor("#ff7f00"),
+        QtGui.QColor("#ffff33"),
+        QtGui.QColor("#a65628"),
+        QtGui.QColor("#f781bf"),
     ],
     "Tableau 10": [
-        QtGui.QColor(31, 119, 180),
-        QtGui.QColor(255, 127, 14),
-        QtGui.QColor(44, 160, 44),
-        QtGui.QColor(214, 39, 40),
-        QtGui.QColor(148, 103, 189),
-        QtGui.QColor(140, 86, 75),
-        QtGui.QColor(227, 119, 194),
-        QtGui.QColor(127, 127, 127),
-        QtGui.QColor(188, 189, 34),
-        QtGui.QColor(23, 190, 207),
+        QtGui.QColor("#1f77b4"),
+        QtGui.QColor("#ff7f0e"),
+        QtGui.QColor("#2ca02c"),
+        QtGui.QColor("#d62728"),
+        QtGui.QColor("#9467bd"),
+        QtGui.QColor("#8c564b"),
+        QtGui.QColor("#e377c2"),
+        QtGui.QColor("#7f7f7f"),
+        QtGui.QColor("#bcbd22"),
+        QtGui.QColor("#17becf"),
     ],
-# base08: "ab4642"
-# base09: "dc9656"
-# base0A: "f7ca88"
-# base0B: "a1b56c"
-# base0C: "86c1b9"
-# base0D: "7cafc2"
-# base0E: "ba8baf"
-# base0F: "a16946"
+    "Okabe Ito": [  # https://jfly.uni-koeln.de/color/
+        QtGui.QColor(0, 0, 0),
+        QtGui.QColor(230, 159, 0),
+        QtGui.QColor(86, 180, 233),
+        QtGui.QColor(0, 158, 115),
+        QtGui.QColor(240, 228, 66),
+        QtGui.QColor(0, 114, 178),
+        QtGui.QColor(213, 94, 0),
+        QtGui.QColor(204, 121, 167),
+    ],
 }
+
+
+def _test_colors():
+    app = QtWidgets.QApplication()
+    scene = QtWidgets.QGraphicsScene(
+        -50,
+        -50,
+        200 + 100 * max(len(v) for v in color_schemes.values()),
+        100 + 100 * len(color_schemes),
+    )
+    view = QtWidgets.QGraphicsView(scene)
+
+    y = 0
+    for name, colors in color_schemes.items():
+        label = QtWidgets.QGraphicsTextItem(name)
+        label.setPos(0, y)
+        view.scene().addItem(label)
+        x = 0
+        for color in colors:
+            x += 100
+            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
+            rect.setBrush(QtGui.QBrush(color))
+            view.scene().addItem(rect)
+        y += 100
+
+    view.show()
+    app.exec()
 
 
 class ResultsFractionView(pyqtgraph.GraphicsView):
