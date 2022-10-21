@@ -7,6 +7,7 @@ from spcal import __version__
 
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.graphs import color_schemes
 from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
@@ -94,7 +95,7 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
         # View
         self.action_color_scheme = QtGui.QActionGroup(self)
-        for scheme in ["IBM Carbon", "Tableau 10"]:
+        for scheme in color_schemes.keys():
             action = self.action_color_scheme.addAction(scheme)
             action.setCheckable(True)
         self.action_color_scheme.actions()[0].setChecked(True)

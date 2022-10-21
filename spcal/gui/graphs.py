@@ -33,6 +33,14 @@ color_schemes = {
         QtGui.QColor(188, 189, 34),
         QtGui.QColor(23, 190, 207),
     ],
+# base08: "ab4642"
+# base09: "dc9656"
+# base0A: "f7ca88"
+# base0B: "a1b56c"
+# base0C: "86c1b9"
+# base0D: "7cafc2"
+# base0E: "ba8baf"
+# base0F: "a16946"
 }
 
 
