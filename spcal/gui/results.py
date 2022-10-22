@@ -15,6 +15,7 @@ from spcal.detection import (
 )
 from spcal.particle import cell_concentration
 
+from spcal.gui.dialogs import BinWidthDialog
 from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, color_schemes
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
@@ -66,6 +67,7 @@ class ResultsWidget(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.draw_mode = "Overlay"
+        self.bin_widths = {}
         self.color_scheme = color_scheme
 
         self.options = options
@@ -121,37 +123,67 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export_image.pressed.connect(self.dialogExportImage)
 
         # Actions
-
         self.action_graph_histogram = create_action(
             "view-object-histogram-linear",
             "Histogram",
-            "Switch to the histogram view.",
-            lambda: self.graph_stack.setCurrentWidget(self.graph_hist),
+            "Overlay of results histograms.",
+            lambda: (
+                self.setDrawMode("Overlay"),
+                self.graph_stack.setCurrentWidget(self.graph_hist),
+            ),
+            checkable=True,
+        )
+        self.action_graph_histogram.setChecked(True)
+        self.action_graph_histogram_stacked = create_action(
+            "object-rows",
+            "Stacked Histograms",
+            "Single histogram per result.",
+            lambda: (
+                self.setDrawMode("Stacked"),
+                self.graph_stack.setCurrentWidget(self.graph_hist),
+            ),
             checkable=True,
         )
         self.action_graph_histogram.setChecked(True)
         self.action_graph_fractions = create_action(
             "office-chart-bar-stacked",
-            "Histogram",
-            "Switch to the histogram view.",
+            "Composition",
+            "Show the elemental composition of peaks.",
             lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
             checkable=True,
         )
+
+        self.action_bin_width = create_action(
+            "adjustcol",
+            "Bin Width",
+            "Set the bin width for the current result histograms.",
+            self.dialogBinWidth,
+        )
+
         self.action_graph_zoomout = create_action(
             "zoom-original",
             "Zoom Out",
             "Reset the plot view.",
             self.graphZoomReset,
         )
+
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_histogram)
+        action_group_graph_view.addAction(self.action_graph_histogram_stacked)
         action_group_graph_view.addAction(self.action_graph_fractions)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
+
+        self.graph_toolbar.addSeparator()
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
         )
         self.graph_toolbar.addWidget(spacer)
+
+        self.graph_toolbar.addSeparator()
+        self.graph_toolbar.addAction(self.action_bin_width)
+
+        self.graph_toolbar.addSeparator()
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
         # Layouts
@@ -186,9 +218,22 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
+    def setBinWidths(self, widths: Dict[str, Optional[float]]) -> None:
+        self.bin_widths.update(widths)
+        self.drawGraphHist()
+
     def setColorScheme(self, scheme: str) -> None:
         self.color_scheme = scheme
         self.drawGraph()
+
+    def setDrawMode(self, mode: str) -> None:
+        self.draw_mode = mode
+        self.drawGraphHist()
+
+    def dialogBinWidth(self) -> None:
+        dlg = BinWidthDialog(self.bin_widths, parent=self)
+        dlg.binWidthsChanged.connect(self.setBinWidths)
+        dlg.open()
 
     def dialogExportResults(self) -> None:
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -252,12 +297,16 @@ class ResultsWidget(QtWidgets.QWidget):
 
         if mode == "Signal":
             label, unit = "Intensity (counts)", ""
+            bin_width = self.bin_widths.get("signal", None)
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
+            bin_width = self.bin_widths.get("mass", None)
         elif mode == "Size (m)":
             label, unit = "Size", "m"
+            bin_width = self.bin_widths.get("size", None)
         elif mode == "Conc. (mol/L)":
             label, unit = "Concentration", "mol/L"
+            bin_width = self.bin_widths.get("concentration", None)
         else:
             raise ValueError("drawGraph: unknown mode.")
 
@@ -277,12 +326,13 @@ class ResultsWidget(QtWidgets.QWidget):
                 continue
 
         # median 'sturges' bin width
-        bin_width = np.median(
-            [
-                np.ptp(graph_data[name]) / (np.log2(graph_data[name].size) + 1)
-                for name in graph_data
-            ]
-        )
+        if bin_width is None:
+            bin_width = np.median(
+                [
+                    np.ptp(graph_data[name]) / (np.log2(graph_data[name].size) + 1)
+                    for name in graph_data
+                ]
+            )
 
         scheme = color_schemes[self.color_scheme]
         if self.draw_mode == "Overlay":
@@ -301,9 +351,7 @@ class ResultsWidget(QtWidgets.QWidget):
             color.setAlpha(128)
             if self.draw_mode == "Stacked":
                 plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
-            plot.drawData(
-                name, graph_data[name], bins=bins, brush=QtGui.QBrush(color)
-            )
+            plot.drawData(name, graph_data[name], bins=bins, brush=QtGui.QBrush(color))
         self.graph_hist.zoomReset()
 
     def drawGraphFrac(self) -> None:
