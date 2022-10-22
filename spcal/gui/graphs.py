@@ -66,6 +66,21 @@ color_schemes = {
     ],
 }
 
+symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
+
+
+class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
+    def scaleBy(
+        self,
+        s: Optional[List[float]] = None,
+        center: Optional[QtCore.QPointF] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> None:
+        if center is not None:
+            center.setY(0.0)
+        super().scaleBy(s, center, x, y)
+
 
 class ResultsFractionView(pyqtgraph.GraphicsView):
     def __init__(
@@ -171,7 +186,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             title="Results Histogram",
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            enableMenu=False,
+            viewBox=ViewBoxForceScaleAtZero(enableMenu=False),
             parent=parent,
         )
         self.hideButtons()
@@ -211,7 +226,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
 class ResultsHistogramView(pyqtgraph.GraphicsView):
     def __init__(
         self,
-        minimum_plot_height: int = 120,
+        minimum_plot_height: int = 200,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         self.minimum_plot_height = minimum_plot_height
@@ -399,12 +414,13 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         x: np.ndarray,
         y: np.ndarray,
         brush: Optional[QtGui.QBrush] = None,
+        symbol: str = "t",
     ) -> None:
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.red)
 
         scatter = pyqtgraph.ScatterPlotItem(
-            x=x, y=y, size=6, symbol="t", pen=None, brush=brush
+            x=x, y=y, size=6, symbol=symbol, pen=None, brush=brush
         )
         self.scatters.append(scatter)
         self.addItem(scatter)
@@ -437,7 +453,7 @@ class ParticleView(pyqtgraph.GraphicsView):
     def __init__(
         self,
         downsample: int = 1,
-        minimum_plot_height: int = 120,
+        minimum_plot_height: int = 150,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         self.downsample = downsample
