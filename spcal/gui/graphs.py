@@ -4,6 +4,8 @@ import pyqtgraph
 
 from typing import Dict, List, Optional, Tuple, Union
 
+from spcal.gui.util import create_action
+
 color_schemes = {
     "IBM Carbon": [
         QtGui.QColor("#6929c4"),  # Purple 70
@@ -162,6 +164,25 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
         )
 
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        action_copy_image = create_action(
+            "insert-image",
+            "Copy Image to Clipboard",
+            "Copy an image of the plot to the clipboard.",
+            self.copyToClipboard,
+        )
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(action_copy_image)
+        menu.exec(event.globalPos())
+
+    def copyToClipboard(self) -> None:
+        """Copy current view to system clipboard."""
+        pixmap = QtGui.QPixmap(self.viewport().size())
+        painter = QtGui.QPainter(pixmap)
+        self.render(painter)
+        painter.end()
+        QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
+
     def clear(self) -> None:
         self.plot.clear()
         self.plot.legend.clear()
@@ -271,6 +292,25 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
             self, self.range, padding=0, disableAutoPixel=False
         )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        action_copy_image = create_action(
+            "insert-image",
+            "Copy Image to Clipboard",
+            "Copy an image of the plot to the clipboard.",
+            self.copyToClipboard,
+        )
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(action_copy_image)
+        menu.exec(event.globalPos())
+
+    def copyToClipboard(self) -> None:
+        """Copy current view to system clipboard."""
+        pixmap = QtGui.QPixmap(self.viewport().size())
+        painter = QtGui.QPainter(pixmap)
+        self.render(painter)
+        painter.end()
+        QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
     def addHistogramPlot(self, name: str, xlabel: str, xunit: str) -> HistogramPlotItem:
         self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
@@ -499,6 +539,25 @@ class ParticleView(pyqtgraph.GraphicsView):
             self, self.range, padding=0, disableAutoPixel=False
         )  ## we do this because some subclasses like to redefine setRange in an incompatible way.
         self.updateMatrix()
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        action_copy_image = create_action(
+            "insert-image",
+            "Copy Image to Clipboard",
+            "Copy an image of the plot to the clipboard.",
+            self.copyToClipboard,
+        )
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(action_copy_image)
+        menu.exec(event.globalPos())
+
+    def copyToClipboard(self) -> None:
+        """Copy current view to system clipboard."""
+        pixmap = QtGui.QPixmap(self.viewport().size())
+        painter = QtGui.QPainter(pixmap)
+        self.render(painter)
+        painter.end()
+        QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
     def addParticlePlot(self, name: str, xscale: float = 1.0) -> ParticlePlotItem:
         self.plots[name] = ParticlePlotItem(name=name, xscale=xscale)
