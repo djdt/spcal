@@ -10,7 +10,7 @@ from spcal.detection import detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
-from spcal.gui.graphs import ParticleView, color_schemes
+from spcal.gui.graphs import ParticleView, color_schemes, symbols
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
@@ -91,16 +91,16 @@ class InputWidget(QtWidgets.QWidget):
         # Actions
 
         self.action_graph_overlay = create_action(
-            "user-desktop",
-            "Histogram",
-            "Overlay all signals.",
+            "office-chart-line",
+            "Overlay Signals",
+            "Overlay all element signals in a single plot.",
             lambda: self.setDrawMode("Overlay"),
             checkable=True,
         )
         self.action_graph_overlay.setChecked(True)
         self.action_graph_stacked = create_action(
             "object-rows",
-            "Stacked",
+            "Stacked Signals",
             "Draw element signals in separate plots.",
             lambda: self.setDrawMode("Stacked"),
             checkable=True,
@@ -333,11 +333,13 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots["Overlay"]
             name_idx = list(self.responses.dtype.names).index(name)
             color = scheme[name_idx % len(scheme)]
+            symbol = symbols[name_idx % len(symbols)]
             if name_idx == 0:
                 plot.clearScatters()
         else:
             plot = self.graph.plots[name]
             color = QtCore.Qt.red
+            symbol = "t"
             plot.clearScatters()
 
         if name in self.regions and self.regions[name].size > 0:
@@ -348,6 +350,7 @@ class InputWidget(QtWidgets.QWidget):
                 self.events[maxima],
                 self.responses[name][maxima],
                 brush=QtGui.QBrush(color),
+                symbol=symbol,
             )
 
     def drawLimits(self, name: str) -> None:
