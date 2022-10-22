@@ -81,6 +81,18 @@ class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
             center.setY(0.0)
         super().scaleBy(s, center, x, y)
 
+    def translateBy(
+        self,
+        t: Optional[QtCore.QPointF] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ) -> None:
+        if t is not None:
+            t.setY(0.0)
+        if y is not None:
+            y = 0.0
+        super().translateBy(t, x, y)
+
 
 class ResultsFractionView(pyqtgraph.GraphicsView):
     def __init__(
