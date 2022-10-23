@@ -25,7 +25,7 @@ setup(
         "Source": "https://gtihub.com/djdt/spcal",
     },
     packages=find_packages(include=["spcal", "spcal.*"]),
-    install_requires=["numpy>=1.22", "PySide6", "bottleneck"],
+    install_requires=["numpy>=1.22", "PySide6", "pyqtgraph", "bottleneck"],
     extras_require={"tests": ["pytest"]},
     entry_points={"console_scripts": ["spcal=spcal.__main__:main"]},
 )
