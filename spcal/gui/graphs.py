@@ -329,14 +329,21 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
         self.plots = {}
 
     def bounds(self) -> Tuple[float, float, float, float]:
-        xmin, xmax, ymin, ymax = np.inf, 0.0, np.inf, 0.0
-        for plot in self.plots.values():
-            (x0, x1), (y0, y1) = plot.vb.childrenBounds()
-            xmin, xmax = min(xmin, x0), max(xmax, x1)
-            ymin, ymax = min(ymin, y0), max(ymax, y1)
-        return xmin, xmax, ymin, ymax
+        bounds = np.array(
+            [plot.vb.childrenBounds() for plot in self.plots.values()], dtype=float
+        )
+        if np.all(np.isnan(bounds)):
+            return 0.0, 1.0, 0.0, 1.0
+        return (
+            np.nanmin(bounds[:, 0, 0]),
+            np.nanmax(bounds[:, 0, 1]),
+            np.nanmin(bounds[:, 1, 0]),
+            np.nanmax(bounds[:, 1, 1]),
+        )
 
     def zoomReset(self) -> None:
+        if self.layout.getItem(0, 0) is None:
+            return
         xmin, xmax, ymin, ymax = self.bounds()
 
         for plot in self.plots.values():
