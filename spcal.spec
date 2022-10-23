@@ -1,6 +1,7 @@
 # vim: set ft=python:
 from pathlib import Path
 
+version = "notfound"
 with Path("spcal", "__init__.py").open() as fp:
     for line in fp:
         if line.startswith("__version__"):
@@ -30,10 +31,11 @@ exe = EXE(
     [],
     exclude_binaries=False,
     name="spcal" + "_" + version,
+    version=version,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
+    upx_exclude=["Qt*.dll", "PySide*.pyd"],
     console=False,
     # icon="app.ico",
 )
