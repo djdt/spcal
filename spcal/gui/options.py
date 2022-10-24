@@ -38,7 +38,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.dwelltime.setToolTip(
             "ICP-MS dwell-time, updated from imported files if time column exists."
         )
-        self.uptake.setToolTip("ICP-MS sample flowrate.")
+        self.uptake.setToolTip("ICP-MS sample flow rate.")
         self.efficiency.setToolTip(
             "Transport efficiency. Can be calculated using a reference particle."
         )

@@ -256,13 +256,13 @@ class ReferenceIOWidget(SampleIOWidget):
             return
 
         mass = spcal.reference_particle_mass(density, diameter)
-        massfraction = (
+        mass_fraction = (
             float(self.massfraction.text())
             if self.massfraction.hasAcceptableInput()
             else None
         )
-        if massfraction is not None:
-            self.massresponse.setBaseValue(mass * massfraction / np.mean(detections))
+        if mass_fraction is not None:
+            self.massresponse.setBaseValue(mass * mass_fraction / np.mean(detections))
 
         # If concentration defined use conc method
         concentration = self.concentration.baseValue()
@@ -271,18 +271,18 @@ class ReferenceIOWidget(SampleIOWidget):
                 detections.size,
                 concentration=concentration,
                 mass=mass,
-                flowrate=uptake,
+                flow_rate=uptake,
                 time=time,
             )
             self.efficiency.setText(f"{efficiency:.4g}")
-        elif massfraction is not None and uptake is not None and response is not None:
+        elif mass_fraction is not None and uptake is not None and response is not None:
             efficiency = spcal.nebulisation_efficiency_from_mass(
                 detections,
                 dwell=dwell,
                 mass=mass,
-                flowrate=uptake,
+                flow_rate=uptake,
                 response_factor=response,
-                mass_fraction=massfraction,
+                mass_fraction=mass_fraction,
             )
             self.efficiency.setText(f"{efficiency:.4g}")
 

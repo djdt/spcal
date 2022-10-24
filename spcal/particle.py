@@ -5,17 +5,17 @@ from typing import Union
 
 def atoms_per_particle(
     masses: Union[float, np.ndarray],
-    molarmass: float,
+    molar_mass: float,
 ) -> Union[float, np.ndarray]:
     """Number of atoms per particle.
     N = m (kg) * N_A (/mol) / M (kg/mol)
 
     Args:
         masses: array of particle masses (kg)
-        molarmass: molecular weight (kg/mol)
+        molar_mass: molecular weight (kg/mol)
     """
     Na = 6.02214076e23
-    return masses * Na / molarmass
+    return masses * Na / molar_mass
 
 
 def cell_concentration(
@@ -27,13 +27,13 @@ def cell_concentration(
     Args:
         masses: array of material masses (kg)
         diameter: cell diameter (m)
-        molarmass: molecular weight (kg/mol)
+        molar_mass: molecular weight (kg/mol)
     """
-    return masses / ((4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3) * 1000.0 * molarmass)
+    return masses / ((4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3) * 1000.0 * molar_mass)
 
 
 def nebulisation_efficiency_from_concentration(
-    count: int, concentration: float, mass: float, flowrate: float, time: float
+    count: int, concentration: float, mass: float, flow_rate: float, time: float
 ) -> float:
     """The nebulistaion efficiency given a defined concentration.
     η = (m (kg) * N) / (c (kg/L) * V (L/s) * t (s))
@@ -42,18 +42,18 @@ def nebulisation_efficiency_from_concentration(
         count: number of detected particles
         concentration: of reference material (kg/L)
         mass: of reference material (kg)
-        flowrate: sample inlet flow (L/s)
+        flow_rate: sample inlet flow (L/s)
         time: total aquisition time (s)
     """
 
-    return (mass * count) / (flowrate * time * concentration)
+    return (mass * count) / (flow_rate * time * concentration)
 
 
 def nebulisation_efficiency_from_mass(
     signal: Union[float, np.ndarray],
     dwell: float,
     mass: float,
-    flowrate: float,
+    flow_rate: float,
     response_factor: float,
     mass_fraction: float = 1.0,
 ) -> float:
@@ -64,19 +64,19 @@ def nebulisation_efficiency_from_mass(
         signal: array of reference particle signals
         dwell: dwell time (s)
         mass: of reference particle (kg)
-        flowrate: sample inlet flowrate (L/s)
+        flow_rate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
         mass_fraction: molar mass analyte / molar mass particle
     """
     signal = np.mean(signal)
-    return (mass * response_factor * mass_fraction) / (signal * (dwell * flowrate))
+    return (mass * response_factor * mass_fraction) / (signal * (dwell * flow_rate))
 
 
 def particle_mass(
     signal: Union[float, np.ndarray],
     dwell: float,
     efficiency: float,
-    flowrate: float,
+    flow_rate: float,
     response_factor: float,
     mass_fraction: float = 1.0,
 ) -> Union[float, np.ndarray]:
@@ -87,15 +87,15 @@ def particle_mass(
         signal: array of particle signals
         dwell: dwell time (s)
         efficiency: nebulisation efficiency
-        flowrate: sample inlet flowrate (L/s)
+        flow_rate: sample inlet flowrate (L/s)
         response_factor: counts / concentration (kg/L)
         mass_fraction:  molar mass analyte / molar mass particle
     """
-    return signal * (dwell * flowrate * efficiency / (response_factor * mass_fraction))
+    return signal * (dwell * flow_rate * efficiency / (response_factor * mass_fraction))
 
 
 def particle_number_concentration(
-    count: int, efficiency: float, flowrate: float, time: float
+    count: int, efficiency: float, flow_rate: float, time: float
 ) -> float:
     """Number concentratioe total volume of the industrial chemical introduced in a registration year bythe person does not excn of particles.
     PNC (/L) = N / (η * V (L/s) * T (s))
@@ -103,10 +103,10 @@ def particle_number_concentration(
     Args:
         count: number of detected particles
         efficiency: nebulisation efficiency
-        flowrate: sample inlet flowrate (L/s)
+        flow_rate: sample inlet flowrate (L/s)
         time: total aquisition time (s)
     """
-    return count / (efficiency * flowrate * time)
+    return count / (efficiency * flow_rate * time)
 
 
 def particle_size(
@@ -123,7 +123,7 @@ def particle_size(
 
 
 def particle_total_concentration(
-    masses: Union[float, np.ndarray], efficiency: float, flowrate: float, time: float
+    masses: Union[float, np.ndarray], efficiency: float, flow_rate: float, time: float
 ) -> float:
     """Concentration of material.
     C (kg/L) = sum(m (kg)) / (η * V (L/s) * T (s))
@@ -131,11 +131,11 @@ def particle_total_concentration(
     Args:
         masses: array of particle signals (kg)
         efficiency: nebulisation efficiency
-        flowrate: sample inlet flowrate (L/s)
+        flow_rate: sample inlet flowrate (L/s)
         time: total aquisition time (s)
     """
 
-    return np.sum(masses) / (efficiency * flowrate * time)
+    return np.sum(masses) / (efficiency * flow_rate * time)
 
 
 def reference_particle_mass(density: float, diameter: float) -> float:

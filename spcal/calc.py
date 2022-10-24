@@ -261,7 +261,7 @@ def results_from_nebulisation_efficiency(
         detections,
         dwell=dwelltime,
         efficiency=efficiency,
-        flowrate=uptake,
+        flow_rate=uptake,
         response_factor=response,
         mass_fraction=mass_fraction,
     )
@@ -271,14 +271,14 @@ def results_from_nebulisation_efficiency(
         spcal.particle_number_concentration(
             detections.size,
             efficiency=efficiency,
-            flowrate=uptake,
+            flow_rate=uptake,
             time=time,
         )
     )
     concentration = spcal.particle_total_concentration(
         masses,
         efficiency=efficiency,
-        flowrate=uptake,
+        flow_rate=uptake,
         time=time,
     )
 
@@ -288,7 +288,7 @@ def results_from_nebulisation_efficiency(
             background,
             dwell=dwelltime,
             efficiency=efficiency,
-            flowrate=uptake,
+            flow_rate=uptake,
             response_factor=response,
             mass_fraction=mass_fraction,
         ),
@@ -298,7 +298,7 @@ def results_from_nebulisation_efficiency(
         lod,
         dwell=dwelltime,
         efficiency=efficiency,
-        flowrate=uptake,
+        flow_rate=uptake,
         response_factor=response,
         mass_fraction=mass_fraction,
     )
