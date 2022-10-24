@@ -155,8 +155,8 @@ def fraction_components(
 
     Args:
         fractions: ratios returned by `detection_element_fractions`
-        bins: bins for each element fraction, defaults to [0.0, 0.1, ... 1.0]
-        combine_similar: compositions with a difference less than the bin width
+        bins: bins for each element fraction, defaults to [0.0, 0.1, ... 0.9]
+        combine_similar: combine compositions with a difference less than half the bin width
 
     Returns:
         mean of each combination
@@ -188,14 +188,19 @@ def fraction_components(
             axis=0,
         )
 
+    def rec_mean(rec: np.ndarray) -> np.ndarray:
+        return np.array(tuple(np.mean(rec[name]) for name in rec.dtype.names), dtype=rec.dtype)
+
     if combine_similar:
-        diff = bins[1] - bins[0]
-        i = 0
-        while i < means.size - 1:
-            idx = np.flatnonzero(rec_similar(means, means[i], diff))[1:]
+        diff = (bins[1] - bins[0]) / 2.0
+        combined_means = []
+        combined_counts = []
+        while means.size > 0:
+            idx = np.flatnonzero(rec_similar(means, means[0], diff))
+            combined_means.append(rec_mean(means[idx]))
+            combined_counts.append(np.sum(counts[idx]))
             means = np.delete(means, idx)
-            counts[i] += np.sum(counts[idx])
             counts = np.delete(counts, idx)
-            i += 1
+        means, counts = np.array(combined_means, dtype=means.dtype), np.array(combined_counts)
 
     return means, counts

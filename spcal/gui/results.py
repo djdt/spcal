@@ -402,7 +402,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         brushes = []
         scheme = color_schemes[self.color_scheme]
-        for i in range(len(compositions)):
+        for i in range(len(compositions.dtype.names)):
             color = QtGui.QColor(scheme[i % len(scheme)])
             color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
