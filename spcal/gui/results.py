@@ -598,7 +598,7 @@ class ResultsWidget(QtWidgets.QWidget):
             cell_diameter = self.options.celldiameter.baseValue()
             molar_mass = self.sample.io[name].molarmass.baseValue()
 
-            if cell_diameter is not None:  # Scale sizes to hypothesised
+            if cell_diameter is not None and "sizes" in result:  # Scale sizes to hypothesised
                 scale = cell_diameter / np.mean(result["sizes"])
                 result["sizes"] *= scale
                 result["lod_size"] *= scale
@@ -622,4 +622,10 @@ class ResultsWidget(QtWidgets.QWidget):
             self.result[name] = result
             self.updateOutputs(name)
         # end for name in names
+        for key, index in zip(["masses", "sizes", "cell_concentrations"], [1, 2, 3]):
+            enabled = any([key in self.result[name] for name in names])
+            if not enabled and self.mode.currentIndex() == index:
+                self.mode.setCurrentIndex(0)
+            self.mode.model().item(index).setEnabled(enabled)
+
         self.drawGraph()
