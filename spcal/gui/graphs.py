@@ -150,16 +150,17 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             brushes = [QtGui.QBrush() for _ in range(len(compositions))]
         assert len(brushes) >= len(compositions)
 
+        y0 = counts.astype(float)
         for name, brush in zip(compositions.dtype.names, brushes):
-            y = compositions[name] * counts
+            height = compositions[name] * counts
+            y0 -= height
             bars = pyqtgraph.BarGraphItem(
-                x=x, height=y, width=0.5, y0=y0, pen=pen, brush=brush
+                x=x, height=height, width=0.5, y0=y0, pen=pen, brush=brush
             )
-            self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
             self.plot.addItem(bars)
-            y0 += y
+            self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
 
-        y_range = np.amax(y0)
+        y_range = np.amax(counts)
         self.plot.setLimits(
             yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
         )
