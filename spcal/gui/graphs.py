@@ -107,13 +107,8 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
 
-        self.xaxis = pyqtgraph.AxisItem(
-            "bottom",
-            pen=pen,
-            textPen=pen,
-            tick_pen=pen,
-            showValues=False,
-        )
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel("Composition")
 
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
         self.yaxis.setLabel("No. Events")
@@ -155,12 +150,13 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             height = compositions[name] * counts
             y0 -= height
             bars = pyqtgraph.BarGraphItem(
-                x=x, height=height, width=0.5, y0=y0, pen=pen, brush=brush
+                x=x, height=height, width=0.75, y0=y0, pen=pen, brush=brush
             )
             self.plot.addItem(bars)
             self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
 
         y_range = np.amax(counts)
+        self.xaxis.setTicks([[(t, str(t + 1)) for t in x]])
         self.plot.setLimits(
             yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
         )
