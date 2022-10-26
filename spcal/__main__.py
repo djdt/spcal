@@ -8,6 +8,7 @@ import numpy
 import pyqtgraph
 
 from spcal import __version__
+from spcal.resources import icons
 from spcal.gui.main import NanoPartWindow
 
 from typing import List, Optional
