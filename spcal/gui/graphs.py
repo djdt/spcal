@@ -132,7 +132,7 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         compositions: np.ndarray,
         counts: np.ndarray,
         pen: QtGui.QPen | None = None,
-        brushes: [List[QtGui.QBrush]] = None,
+        brushes: List[QtGui.QBrush] | None = None,
     ) -> None:
 
         x = np.arange(counts.size)
@@ -142,8 +142,8 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
         if brushes is None:
-            brushes = [QtGui.QBrush() for _ in range(len(compositions))]
-        assert len(brushes) >= len(compositions)
+            brushes = [QtGui.QBrush() for _ in range(len(compositions.dtype.names))]
+        assert len(brushes) >= len(compositions.dtype.names)
 
         y0 = counts.astype(float)
         for name, brush in zip(compositions.dtype.names, brushes):
