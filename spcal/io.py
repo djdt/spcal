@@ -277,6 +277,10 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         if np.any(conc_medians > 0.0):
             fp.write(f"#,{','.join(str(x or '') for x in conc_medians)},mol/L\n")
 
+        if len(results) > 1:
+            # Todo
+            fp.write("#\n# Major Peak Compositions\n")
+
         fp.write("#\n# Raw detection data\n")
         # Output data
         max_len = np.amax(detections)
