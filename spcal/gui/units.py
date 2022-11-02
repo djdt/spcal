@@ -57,14 +57,14 @@ class UnitsWidget(QtWidgets.QWidget):
         self.updateValueFromText()
 
 
-    def baseValue(self) -> [float]:
+    def baseValue(self) -> float | None:
         return self._base_value
 
     def setBaseValue(self, base: float | None) -> None:
         self._base_value = base
         self.valueChanged.emit()
 
-    def value(self) -> [float]:
+    def value(self) -> float | None:
         if self._base_value is None:
             return None
         return self._base_value / self._units[self.combo.currentText()]

@@ -138,7 +138,7 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
     # Data
     def data(
         self, index: QtCore.QModelIndex, role: int = QtCore.Qt.DisplayRole
-    ) -> [str]:
+    ) -> str | None:
         if not index.isValid():
             return None
 
@@ -180,7 +180,7 @@ class NumpyArrayTableModel(QtCore.QAbstractTableModel):
         section: int,
         orientation: QtCore.Qt.Orientation,
         role: QtCore.Qt.ItemDataRole,
-    ) -> [str]:
+    ) -> str | None:
         if role != QtCore.Qt.DisplayRole:  # pragma: no cover
             return None
 

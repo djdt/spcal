@@ -74,7 +74,7 @@ symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
 class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
     def scaleBy(
         self,
-        s: [List[float]] = None,
+        s: List[float] | None = None,
         center: QtCore.QPointF | None = None,
         x: float | None = None,
         y: float | None = None,
