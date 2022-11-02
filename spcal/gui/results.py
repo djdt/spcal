@@ -311,8 +311,6 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
 
-        # self.graph_hist.xaxis.setLabel(label, unit)
-
         graph_data = {}
         for name in self.result:
             if mode == "Signal":

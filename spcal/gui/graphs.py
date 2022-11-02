@@ -207,9 +207,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             pen.setCosmetic(True)
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
-        self.xaxis.setLabel(label=xlabel, units=xunit)
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
-        self.yaxis.setLabel("No. Events")
         self.yaxis.enableAutoSIPrefix(False)
 
         super().__init__(
@@ -219,6 +217,10 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             viewBox=ViewBoxForceScaleAtZero(enableMenu=False),
             parent=parent,
         )
+        # Todo: not working
+        self.xaxis.setLabel(label=xlabel, units=xunit)
+        self.yaxis.setLabel("No. Events")
+
         self.hideButtons()
         self.addLegend(
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
