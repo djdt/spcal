@@ -3,8 +3,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
 
-from typing import Optional
-
 # Todo: add a tool to load an ionic standard and get mean / median signal
 
 
@@ -12,7 +10,7 @@ class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
 
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
         uptake_units = {

@@ -2,16 +2,14 @@ import numpy as np
 from pathlib import Path
 import logging
 
-from typing import Any, Dict, TextIO, Tuple, Union
+from typing import Any, Dict, TextIO, Tuple
 
 from spcal import __version__
 
 logger = logging.getLogger(__name__)
 
 
-def read_nanoparticle_file(
-    path: Union[Path, str],
-) -> Tuple[np.ndarray, Dict]:
+def read_nanoparticle_file(path: Path | str) -> Tuple[np.ndarray, Dict]:
     """Imports data and parameters from a NP export.
 
     Data is expected to be a text or csv in a single column of responses, or twos columns:

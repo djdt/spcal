@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 import pyqtgraph
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple
 
 from spcal.gui.util import create_action
 
@@ -74,10 +74,10 @@ symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
 class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
     def scaleBy(
         self,
-        s: Optional[List[float]] = None,
-        center: Optional[QtCore.QPointF] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
+        s: [List[float]] = None,
+        center: QtCore.QPointF | None = None,
+        x: float | None = None,
+        y: float | None = None,
     ) -> None:
         if center is not None:
             center.setY(0.0)
@@ -85,9 +85,9 @@ class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
 
     def translateBy(
         self,
-        t: Optional[QtCore.QPointF] = None,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
+        t: QtCore.QPointF | None = None,
+        x: float | None = None,
+        y: float | None = None,
     ) -> None:
         if t is not None:
             t.setY(0.0)
@@ -99,8 +99,8 @@ class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
 class ResultsFractionView(pyqtgraph.GraphicsView):
     def __init__(
         self,
-        pen: Optional[QtGui.QPen] = None,
-        parent: Optional[QtWidgets.QWidget] = None,
+        pen: QtGui.QPen | None = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent=parent, background="white")
         if pen is None:
@@ -131,8 +131,8 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
         self,
         compositions: np.ndarray,
         counts: np.ndarray,
-        pen: Optional[QtGui.QPen] = None,
-        brushes: Optional[List[QtGui.QBrush]] = None,
+        pen: QtGui.QPen | None = None,
+        brushes: [List[QtGui.QBrush]] = None,
     ) -> None:
 
         x = np.arange(counts.size)
@@ -198,8 +198,8 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         name: str,
         xlabel: str,
         xunit: str,
-        pen: Optional[QtGui.QPen] = None,
-        parent: Optional[QtWidgets.QWidget] = None,
+        pen: QtGui.QPen | None = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         self.name = name
         if pen is None:
@@ -228,9 +228,9 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self,
         name: str,
         x: np.ndarray,
-        bins: Union[str, np.ndarray] = "auto",
-        pen: Optional[QtGui.QPen] = None,
-        brush: Optional[QtGui.QBrush] = None,
+        bins: str | np.ndarray = "auto",
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -257,7 +257,7 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
     def __init__(
         self,
         minimum_plot_height: int = 200,
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         self.minimum_plot_height = minimum_plot_height
         self.layout = pyqtgraph.GraphicsLayout()
@@ -360,8 +360,8 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self,
         name: str,
         xscale: float = 1.0,
-        pen: Optional[QtGui.QPen] = None,
-        parent: Optional[pyqtgraph.GraphicsWidget] = None,
+        pen: QtGui.QPen | None = None,
+        parent: pyqtgraph.GraphicsWidget | None = None,
     ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -436,8 +436,8 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        pen: Optional[QtGui.QPen] = None,
-        label: Optional[str] = None,
+        pen: QtGui.QPen | None = None,
+        label: str | None = None,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -469,7 +469,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        brush: Optional[QtGui.QBrush] = None,
+        brush: QtGui.QBrush | None = None,
         symbol: str = "t",
     ) -> None:
         if brush is None:
@@ -510,7 +510,7 @@ class ParticleView(pyqtgraph.GraphicsView):
         self,
         downsample: int = 1,
         minimum_plot_height: int = 150,
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         self.downsample = downsample
         self.minimum_plot_height = minimum_plot_height

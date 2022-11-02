@@ -1,13 +1,13 @@
 """Functions for detecting and classifying particles."""
 import numpy as np
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple
 
 
 def accumulate_detections(
     y: np.ndarray,
-    limit_accumulation: Union[float, np.ndarray],
-    limit_detection: Union[float, np.ndarray],
+    limit_accumulation: float | np.ndarray,
+    limit_detection: float | np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
@@ -146,7 +146,7 @@ def detection_element_fractions(
 
 def fraction_components(
     fractions: np.ndarray,
-    bins: Optional[np.ndarray] = None,
+    bins: np.ndarray | None = None,
     combine_similar: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Binned ratios for element fractions.

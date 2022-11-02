@@ -7,16 +7,16 @@ https://academic.oup.com/biomet/article/28/3-4/437/220104
 import numpy as np
 from statistics import NormalDist
 
-from typing import Tuple, Union
+from typing import Tuple
 
 
 def currie(
-    ub: Union[float, np.ndarray],
+    ub: float | np.ndarray,
     alpha: float = 0.05,
     beta: float = 0.05,
     eta: float = 2.0,
     epsilon: float = 0.0,
-) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+) -> Tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for mean background 'ub'.
 
     For low backgrounds (ub < 10), 'epsilon' of 0.5 is recommended.
@@ -48,12 +48,12 @@ def currie(
 
 
 def formula_a(
-    Nb: Union[float, np.ndarray],
+    Nb: float | np.ndarray,
     alpha: float = 0.05,
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+) -> Tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.48, 20.73.
@@ -85,12 +85,12 @@ def formula_a(
 
 
 def formula_c(
-    Nb: Union[float, np.ndarray],
+    Nb: float | np.ndarray,
     alpha: float = 0.05,
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+) -> Tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.52, 20.73.
@@ -122,12 +122,12 @@ def formula_c(
 
 
 def stapleton_approximation(
-    Nb: Union[float, np.ndarray],
+    Nb: float | np.ndarray,
     alpha: float = 0.05,
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[Union[float, np.ndarray], Union[float, np.ndarray]]:
+) -> Tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.54, 20.74.

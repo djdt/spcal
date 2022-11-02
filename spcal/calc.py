@@ -13,7 +13,7 @@ except ImportError:
 import spcal
 from spcal.poisson import formula_c as poisson_limits
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -90,7 +90,7 @@ def calculate_limits(
     method: str,
     sigma: float = 3.0,
     error_rates: Tuple[float, float] = (0.05, 0.05),
-    window: Optional[int] = None,
+    window: int | None = None,
 ) -> Tuple[str, Dict[str, float], np.ndarray]:
     """Calculates limit(s) of detections for input.
 

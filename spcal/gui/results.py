@@ -22,7 +22,7 @@ from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -62,7 +62,7 @@ class ResultsWidget(QtWidgets.QWidget):
         sample: SampleWidget,
         reference: ReferenceWidget,
         color_scheme: str = "IBM Carbon",
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
 
@@ -218,7 +218,7 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
-    def setBinWidths(self, widths: Dict[str, Optional[float]]) -> None:
+    def setBinWidths(self, widths: Dict[str, float | None]) -> None:
         self.bin_widths.update(widths)
         self.drawGraphHist()
 
@@ -438,7 +438,7 @@ class ResultsWidget(QtWidgets.QWidget):
     #     self.chart.fit.setName(method)
     #     self.chart.label_fit.setVisible(True)
 
-    def updateOutputs(self, _name: Optional[str] = None) -> None:
+    def updateOutputs(self, _name: str | None = None) -> None:
         mode = self.mode.currentText()
         if _name is None or _name == "Overlay":
             names = list(self.sample.detections.keys())
@@ -479,7 +479,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 / self.result[name]["background"],
             )
 
-    def updateResults(self, _name: Optional[str] = None) -> None:
+    def updateResults(self, _name: str | None = None) -> None:
         method = self.options.efficiency_method.currentText()
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")

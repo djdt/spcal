@@ -4,7 +4,7 @@ from pathlib import Path
 
 from spcal.gui.units import UnitsWidget
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class BinWidthDialog(QtWidgets.QDialog):
@@ -12,8 +12,8 @@ class BinWidthDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        bin_widths: Dict[str, Optional[float]],
-        parent: Optional[QtWidgets.QWidget] = None,
+        bin_widths: Dict[str, float | None],
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Histogram Bin Widths")
@@ -111,7 +111,7 @@ class BinWidthDialog(QtWidgets.QDialog):
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray, dict)
 
-    def __init__(self, file: str, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, file: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
         header_row_count = 10

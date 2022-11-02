@@ -3,7 +3,7 @@ import numpy as np
 
 from spcal.gui.widgets import ValidColorLineEdit
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -13,12 +13,12 @@ class UnitsWidget(QtWidgets.QWidget):
     def __init__(
         self,
         units: Dict[str, float],
-        default_unit: Optional[str] = None,
-        value: Optional[float] = None,
+        default_unit: str | None = None,
+        value: float | None = None,
         validator: Tuple[float, float, int] = (0.0, 1e99, 10),
         formatter: str = ".6g",
-        invalid_color: Optional[QtGui.QColor] = None,
-        parent: Optional[QtWidgets.QWidget] = None,
+        invalid_color: QtGui.QColor | None = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self._base_value = None
@@ -57,19 +57,19 @@ class UnitsWidget(QtWidgets.QWidget):
         self.updateValueFromText()
 
 
-    def baseValue(self) -> Optional[float]:
+    def baseValue(self) -> [float]:
         return self._base_value
 
-    def setBaseValue(self, base: Union[float, None]) -> None:
+    def setBaseValue(self, base: float | None) -> None:
         self._base_value = base
         self.valueChanged.emit()
 
-    def value(self) -> Optional[float]:
+    def value(self) -> [float]:
         if self._base_value is None:
             return None
         return self._base_value / self._units[self.combo.currentText()]
 
-    def setValue(self, value: Union[float, str, None]) -> None:
+    def setValue(self, value: float | str | None) -> None:
         if isinstance(value, str):
             try:
                 value = float(value)
@@ -80,19 +80,19 @@ class UnitsWidget(QtWidgets.QWidget):
         else:
             self.setBaseValue(value * self._units[self.combo.currentText()])
 
-    def baseError(self) -> Optional[float]:
+    def baseError(self) -> float | None:
         return self._base_error
 
-    def setBaseError(self, error: Union[float, None]) -> None:
+    def setBaseError(self, error: float | None) -> None:
         self._base_error = error
         self.valueChanged.emit()
 
-    def error(self) -> Optional[float]:
+    def error(self) -> float | None:
         if self._base_error is None:
             return None
         return self._base_error / self._units[self.combo.currentText()]
 
-    def setError(self, error: Union[float, str, None]) -> None:
+    def setError(self, error: float | str | None) -> None:
         if isinstance(error, str):
             try:
                 error = float(error)

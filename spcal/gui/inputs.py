@@ -15,7 +15,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class InputWidget(QtWidgets.QWidget):
         io_stack: IOStack,
         options: OptionsWidget,
         color_scheme: str = "IBM Carbon",
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -166,7 +166,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(self, file: Optional[str] = None) -> None:
+    def dialogLoadFile(self, file: str | None = None) -> None:
         if file is None:
             file, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self,
@@ -202,7 +202,7 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots[name]
         return plot.region_start, plot.region_end
 
-    def updateDetections(self, _name: Optional[str] = None) -> None:
+    def updateDetections(self, _name: str | None = None) -> None:
         if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
         else:
@@ -225,7 +225,7 @@ class InputWidget(QtWidgets.QWidget):
 
             self.detectionsChanged.emit(name)
 
-    def updateLimits(self, _name: Optional[str] = None) -> None:
+    def updateLimits(self, _name: str | None = None) -> None:
         if self.responses.size == 0:
             return
 
@@ -280,7 +280,7 @@ class InputWidget(QtWidgets.QWidget):
                 )
             self.limitsChanged.emit(name)
 
-    def updateOutputs(self, _name: Optional[str] = None) -> None:
+    def updateOutputs(self, _name: str | None = None) -> None:
         if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
         else:
@@ -380,7 +380,7 @@ class InputWidget(QtWidgets.QWidget):
 
 class SampleWidget(InputWidget):
     def __init__(
-        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+        self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(SampleIOStack(), options, parent=parent)
         assert isinstance(self.io, SampleIOStack)
@@ -388,7 +388,7 @@ class SampleWidget(InputWidget):
 
 class ReferenceWidget(InputWidget):
     def __init__(
-        self, options: OptionsWidget, parent: Optional[QtWidgets.QWidget] = None
+        self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(ReferenceIOStack(), options, parent=parent)
 
@@ -397,7 +397,7 @@ class ReferenceWidget(InputWidget):
         self.io.optionsChanged.connect(self.updateEfficiency)
         self.detectionsChanged.connect(self.updateEfficiency)
 
-    def updateEfficiency(self, _name: Optional[str] = None) -> None:
+    def updateEfficiency(self, _name: str | None = None) -> None:
         if self.responses.size == 0:
             return
         if _name is None or _name == "Overlay":

@@ -1,12 +1,11 @@
 """Functions for particle calculations."""
 import numpy as np
-from typing import Union
 
 
 def atoms_per_particle(
-    masses: Union[float, np.ndarray],
+    masses: float | np.ndarray,
     molar_mass: float,
-) -> Union[float, np.ndarray]:
+) -> float | np.ndarray:
     """Number of atoms per particle.
     N = m (kg) * N_A (/mol) / M (kg/mol)
 
@@ -19,8 +18,8 @@ def atoms_per_particle(
 
 
 def cell_concentration(
-    masses: Union[float, np.ndarray], diameter: float, molar_mass: float
-) -> Union[float, np.ndarray]:
+    masses: float | np.ndarray, diameter: float, molar_mass: float
+) -> float | np.ndarray:
     """Calculates intracellular concentrations.
     c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3)) / M (kg/mol)
 
@@ -50,7 +49,7 @@ def nebulisation_efficiency_from_concentration(
 
 
 def nebulisation_efficiency_from_mass(
-    signal: Union[float, np.ndarray],
+    signal: float | np.ndarray,
     dwell: float,
     mass: float,
     flow_rate: float,
@@ -73,13 +72,13 @@ def nebulisation_efficiency_from_mass(
 
 
 def particle_mass(
-    signal: Union[float, np.ndarray],
+    signal: float | np.ndarray,
     dwell: float,
     efficiency: float,
     flow_rate: float,
     response_factor: float,
     mass_fraction: float = 1.0,
-) -> Union[float, np.ndarray]:
+) -> float | np.ndarray:
     """Array of particle masses given their integrated responses.
     m (kg) = (η * t (s) * I * V (L/s)) / (s (L/kg) * f)
 
@@ -110,8 +109,8 @@ def particle_number_concentration(
 
 
 def particle_size(
-    masses: Union[float, np.ndarray], density: float
-) -> Union[float, np.ndarray]:
+    masses: float | np.ndarray, density: float
+) -> float | np.ndarray:
     """Array of particle diameters.
     d (m) = cbrt((6.0 * m (kg)) / (π * ρ (kg/m3)))
 
@@ -123,7 +122,7 @@ def particle_size(
 
 
 def particle_total_concentration(
-    masses: Union[float, np.ndarray], efficiency: float, flow_rate: float, time: float
+    masses: float | np.ndarray, efficiency: float, flow_rate: float, time: float
 ) -> float:
     """Concentration of material.
     C (kg/L) = sum(m (kg)) / (η * V (L/s) * T (s))

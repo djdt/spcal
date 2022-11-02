@@ -16,7 +16,7 @@ from spcal.io import export_nanoparticle_results
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def process_file_detections(
     limit_sigma: float,
     limit_error_rates: Tuple[float, float],
     limit_manual: float,
-    limit_window: Optional[int] = None,
+    limit_window: int | None = None,
 ) -> dict:
     responses = np.genfromtxt(
         file,
@@ -101,16 +101,16 @@ class ProcessThread(QtCore.QThread):
         outfiles: List[Path],
         import_options: dict,
         method: Callable,
-        method_kws: Dict[str, Dict[str, Optional[float]]],
-        cell_kws: Dict[str, Dict[str, Optional[float]]],
+        method_kws: Dict[str, Dict[str, float | None]],
+        cell_kws: Dict[str, Dict[str, float | None]],
         trims: Dict[str, Tuple[int, int]],
         limit_method: str = "Automatic",
         limit_sigma: float = 3.0,
         limit_error_rates: Tuple[float, float] = (0.05, 0.05),
         limit_manual: float = 0.0,
-        limit_window: Optional[int] = None,
-        cps_dwelltime: Optional[float] = None,
-        parent: Optional[QtCore.QObject] = None,
+        limit_window: int | None = None,
+        cps_dwelltime: float | None = None,
+        parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
 
@@ -223,7 +223,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Batch Process")
@@ -262,7 +262,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.trim_right.setChecked(True)
 
         self.progress = QtWidgets.QProgressBar()
-        self.thread: Optional[QtCore.QThread] = None
+        self.thread: QtCore.QThread | None = None
 
         self.files = QtWidgets.QListWidget()
         self.files.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)

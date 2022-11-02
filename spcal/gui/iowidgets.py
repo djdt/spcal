@@ -9,7 +9,7 @@ from spcal import npdata
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
 
-from typing import Dict, Iterator, Generic, List, Optional, Tuple, Type, TypeVar
+from typing import Dict, Iterator, Generic, List, Tuple, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class IOWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal(str)
 
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.name = name
 
@@ -38,7 +38,7 @@ class IOWidget(QtWidgets.QWidget):
 
 
 class SampleIOWidget(IOWidget):
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
@@ -174,7 +174,7 @@ class SampleIOWidget(IOWidget):
 
 
 class ReferenceIOWidget(SampleIOWidget):
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
 
         concentration_units = {
@@ -244,7 +244,7 @@ class ReferenceIOWidget(SampleIOWidget):
         detections: np.ndarray,
         dwell: float,
         time: float,
-        uptake: Optional[float],
+        uptake: [float],
     ) -> None:
         self.efficiency.setText("")
         self.massresponse.setValue("")
@@ -323,7 +323,7 @@ class ResultIOWidget(IOWidget):
         "kg/L": 1.0,
     }
 
-    def __init__(self, name: str, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.name = name
 
@@ -405,10 +405,10 @@ class ResultIOWidget(IOWidget):
         lod: np.ndarray,
         count: float,
         count_error: float,
-        conc: Optional[float] = None,
-        number_conc: Optional[float] = None,
-        background_conc: Optional[float] = None,
-        background_error: Optional[float] = None,
+        conc: float | None = None,
+        number_conc: float | None = None,
+        background_conc: float | None = None,
+        background_error: float | None = None,
     ) -> None:
 
         mean = np.mean(values)
@@ -461,7 +461,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
     def __init__(
         self,
         io_widget_type: Type[IOType],
-        parent: Optional[QtWidgets.QWidget] = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
 
@@ -514,15 +514,15 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
 
 class SampleIOStack(IOStack[SampleIOWidget]):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(SampleIOWidget, parent=parent)
 
 
 class ReferenceIOStack(IOStack[ReferenceIOWidget]):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(ReferenceIOWidget, parent=parent)
 
 
 class ResultIOStack(IOStack[ResultIOWidget]):
-    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(ResultIOWidget, parent=parent)

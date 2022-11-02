@@ -11,14 +11,14 @@ from spcal import __version__
 from spcal.resources import icons
 from spcal.gui.main import NanoPartWindow
 
-from typing import List, Optional
+from typing import List
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
 logger.setLevel(logging.INFO)
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     def existing_file(file: str) -> Path:
         path = Path(file)
         if not path.exists():
@@ -47,7 +47,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return args
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: List[str] | None = None) -> int:
     args = parse_args(argv)
 
     app = QtWidgets.QApplication(args.qtargs)
