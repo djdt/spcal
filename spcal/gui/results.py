@@ -482,6 +482,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 units,
                 lod,
                 count=self.result[name]["detections"].size,
+                count_percent=self.result[name]["detections_percent"],
                 count_error=self.result[name]["detections_std"],
                 conc=self.result[name].get("concentration", None),
                 number_conc=self.result[name].get("number_concentration", None),
@@ -503,6 +504,17 @@ class ResultsWidget(QtWidgets.QWidget):
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
 
+        fractions = detection_element_fractions(
+            self.sample.detections, self.sample.labels, self.sample.regions
+        )
+        compositions, counts = fraction_components(fractions, combine_similar=True)
+        total_counts = np.sum(counts)
+
+        # mask = counts > fractions.size * 0.05
+        # compositions = compositions[mask]
+        # counts = counts[mask]
+        # print(compositions.dtype.names, counts)
+
         for name in names:
             trim = self.sample.trimRegion(name)
             responses = self.sample.responses[name][trim[0] : trim[1]]
@@ -511,6 +523,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 "background": np.mean(responses[self.sample.labels[name] == 0]),
                 "background_std": np.std(responses[self.sample.labels[name] == 0]),
                 "detections": self.sample.detections[name],
+                "detections_percent": np.sum(counts[compositions[name] > 0.0])
+                / total_counts
+                * 100.0,
                 "detections_std": np.sqrt(self.sample.detections[name].size),
                 "events": responses.size,
                 "file": self.sample.label_file.text(),

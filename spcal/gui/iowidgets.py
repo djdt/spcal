@@ -404,6 +404,7 @@ class ResultIOWidget(IOWidget):
         units: Dict[str, float],
         lod: np.ndarray,
         count: float,
+        count_percent: float,
         count_error: float,
         conc: float | None = None,
         number_conc: float | None = None,
@@ -429,7 +430,7 @@ class ResultIOWidget(IOWidget):
         self.lod.setUnit(unit)
 
         relative_error = count / count_error
-        self.count.setText(f"{count} ± {count_error:.1f}")
+        self.count.setText(f"{count} ± {count_error:.1f} ({count_percent:.1f} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)

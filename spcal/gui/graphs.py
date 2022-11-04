@@ -191,7 +191,6 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             disableAutoRange=False,
         )
 
-
 class HistogramPlotItem(pyqtgraph.PlotItem):
     def __init__(
         self,
