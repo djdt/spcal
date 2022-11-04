@@ -27,7 +27,7 @@ def parse_formula(formula: str) -> List[Tuple[str, int]]:
 
 def get_wiki_formula_and_density(link: str):
     page = BeautifulSoup(requests.get(link).text, "html.parser")
-    table = page.find(class_="infobox bordered")
+    table = page.find(class_="infobox ib-chembox")
     if not table:
         return
 
@@ -71,7 +71,8 @@ def convert_mw(text: str) -> float:
 
 
 # categories = ["Oxides", "Transition_metal_oxides"]
-categories = ["Nitrides"]
+# categories = ["Nitrides"]
+categories = ["Carbonates"]
 wiki = "https://en.wikipedia.org"
 
 links = []
@@ -104,7 +105,7 @@ with ThreadPoolExecutor() as executor:
 
 results = sorted(results, key=lambda x: x[0])
 
-with open("wikinitrides.csv", "w") as fp:
+with open("wiki.csv", "w") as fp:
     for result in results:
         formula = re.sub("\\[\\d\\]", "", result[0])
         density = convert_density(result[1])
