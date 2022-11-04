@@ -122,9 +122,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export = QtWidgets.QPushButton("Export Results")
         self.button_export.pressed.connect(self.dialogExportResults)
 
-#         self.button_export_image = QtWidgets.QPushButton("Save Image")
-#         self.button_export_image.pressed.connect(self.dialogExportImage)
-
         # Actions
         self.action_graph_histogram = create_action(
             "view-object-histogram-linear",
@@ -244,13 +241,6 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
-
-    # def dialogExportImage(self) -> None:
-    #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
-    #         self, "Export Image", "", "PNG Images (*.png)"
-    #     )
-        # if file != "":
-        #     self.chartview.saveToFile(file)
 
     def asBestUnit(
         self, data: np.ndarray, current_unit: str = ""
