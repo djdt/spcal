@@ -231,6 +231,8 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         name: str,
         x: np.ndarray,
         bins: str | np.ndarray = "auto",
+        bar_width: float = 0.5,
+        bar_offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ) -> None:
@@ -240,11 +242,25 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.black)
 
+        assert bar_width > 0.0 and bar_width <= 1.0
+        assert bar_offset >= 0.0 and bar_offset < 1.0
+
         hist, edges = np.histogram(x, bins)
+        widths = np.diff(edges)
+
+        x = np.repeat(edges, 2)
+
+        # Calculate bar start and end points for width / offset
+        x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
+        x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
+
+        y = np.zeros(hist.size * 2, dtype=hist.dtype)
+        y[1::2] = hist
+
         curve = pyqtgraph.PlotCurveItem(
-            x=np.concatenate([edges, [edges[0]]]),  # draw bottom
-            y=np.concatenate([hist, [0.0]]),
-            stepMode="center",
+            x=x,
+            y=np.concatenate([y, [0.0]]),
+            stepMode=True,
             fillLevel=0,
             fillOutline=True,
             pen=pen,

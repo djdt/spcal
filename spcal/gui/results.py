@@ -350,7 +350,19 @@ class ResultsWidget(QtWidgets.QWidget):
             color.setAlpha(128)
             if self.draw_mode == "Stacked":
                 plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
-            plot.drawData(name, graph_data[name], bins=bins, brush=QtGui.QBrush(color))
+                width = 0.5
+                offset = 0.0
+            else:
+                width = 1.0 / len(graph_data)
+                offset = i * width
+            plot.drawData(
+                name,
+                graph_data[name],
+                bins=bins,
+                bar_width=width,
+                bar_offset=offset,
+                brush=QtGui.QBrush(color),
+            )
         self.graph_hist.zoomReset()
 
     def drawGraphFrac(self) -> None:
