@@ -111,6 +111,8 @@ class BinWidthDialog(QtWidgets.QDialog):
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray, dict)
 
+    forbidden_names = ["Overlay"]
+
     def __init__(self, file: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
@@ -134,6 +136,7 @@ class ImportDialog(QtWidgets.QDialog):
         column_count = max([line.count(",") for line in self.file_header]) + 1
 
         self.table = QtWidgets.QTableWidget()
+        self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
         self.table.setRowCount(header_row_count)
@@ -200,7 +203,9 @@ class ImportDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        return self.dwelltime.hasAcceptableInput()
+        return self.dwelltime.hasAcceptableInput() and not any(
+            x in self.forbidden_names for x in self.headers()
+        )
 
     def completeChanged(self) -> None:
         complete = self.isComplete()
@@ -216,6 +221,17 @@ class ImportDialog(QtWidgets.QDialog):
 
     def ignoreColumns(self) -> List[int]:
         return [int(i or 0) - 1 for i in self.le_ignore_columns.text().split(";")]
+
+    def useColumns(self) -> List[int]:
+        return [
+            c for c in range(self.table.columnCount()) if c not in self.ignoreColumns()
+        ]
+
+    def headers(self) -> List[str]:
+        return [
+            self.table.item(self.spinbox_first_line.value() - 1, c).text()
+            for c in self.useColumns()
+        ]
 
     def fillTable(self) -> None:
         lines = [line.split(self.delimiter()) for line in self.file_header]
@@ -260,18 +276,14 @@ class ImportDialog(QtWidgets.QDialog):
                 break
 
     def importOptions(self) -> dict:
-        ignores = self.ignoreColumns()
-        columns = [c for c in range(self.table.columnCount()) if c not in ignores]
-        first_line = self.spinbox_first_line.value()
-        headers = [self.table.item(first_line - 1, c).text() for c in columns]
         return {
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "delimiter": self.delimiter(),
-            "ignores": ignores,
-            "columns": columns,
-            "first line": first_line,
-            "headers": headers,
+            "ignores": self.ignoreColumns(),
+            "columns": self.useColumns(),
+            "first line": self.spinbox_first_line.value(),
+            "headers": self.headers(),
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
 

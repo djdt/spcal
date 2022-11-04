@@ -76,6 +76,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.nbins = "auto"
         self.result: Dict[str, dict] = {}
+        # Todo: split into common and element results
+        # self.common_results: dict = {}
+        # self.element_results: Dict[str, dict] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -119,8 +122,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.button_export = QtWidgets.QPushButton("Export Results")
         self.button_export.pressed.connect(self.dialogExportResults)
 
-        self.button_export_image = QtWidgets.QPushButton("Save Image")
-        self.button_export_image.pressed.connect(self.dialogExportImage)
+#         self.button_export_image = QtWidgets.QPushButton("Save Image")
+#         self.button_export_image.pressed.connect(self.dialogExportImage)
 
         # Actions
         self.action_graph_histogram = create_action(
@@ -242,10 +245,10 @@ class ResultsWidget(QtWidgets.QWidget):
         if file != "":
             export_nanoparticle_results(Path(file), self.result)
 
-    def dialogExportImage(self) -> None:
-        file, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Export Image", "", "PNG Images (*.png)"
-        )
+    # def dialogExportImage(self) -> None:
+    #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
+    #         self, "Export Image", "", "PNG Images (*.png)"
+    #     )
         # if file != "":
         #     self.chartview.saveToFile(file)
 
@@ -602,7 +605,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     and mass_fraction is not None
                     and mass_response is not None
                 ):
-                    self.result.update(
+                    result.update(
                         results_from_mass_response(
                             result["detections"],
                             result["background"],
