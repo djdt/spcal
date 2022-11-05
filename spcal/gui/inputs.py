@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 class InputWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
-    detectionsChanged = QtCore.Signal(str)
-    limitsChanged = QtCore.Signal(str)
+    detectionsChanged = QtCore.Signal()
+    limitsChanged = QtCore.Signal()
 
     def __init__(
         self,
@@ -42,7 +42,9 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
         self.graph = ParticleView()
+        self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
+        self.last_region: Tuple[int, int] | None = None
 
         self.io = io_stack
 
@@ -56,20 +58,14 @@ class InputWidget(QtWidgets.QWidget):
         self.detectionsChanged.connect(self.drawDetections)
 
         self.options = options
-        self.options.dwelltime.valueChanged.connect(lambda: self.updateLimits(None))
-        self.options.method.currentTextChanged.connect(lambda: self.updateLimits(None))
-        self.options.window_size.editingFinished.connect(
-            lambda: self.updateLimits(None)
-        )
-        self.options.check_use_window.toggled.connect(lambda: self.updateLimits(None))
-        self.options.sigma.editingFinished.connect(lambda: self.updateLimits(None))
-        self.options.manual.editingFinished.connect(lambda: self.updateLimits(None))
-        self.options.error_rate_alpha.editingFinished.connect(
-            lambda: self.updateLimits(None)
-        )
-        self.options.error_rate_beta.editingFinished.connect(
-            lambda: self.updateLimits(None)
-        )
+        self.options.dwelltime.valueChanged.connect(self.updateLimits)
+        self.options.method.currentTextChanged.connect(self.updateLimits)
+        self.options.window_size.editingFinished.connect(self.updateLimits)
+        self.options.check_use_window.toggled.connect(self.updateLimits)
+        self.options.sigma.editingFinished.connect(self.updateLimits)
+        self.options.manual.editingFinished.connect(self.updateLimits)
+        self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
+        self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
         self.options.efficiency_method.currentTextChanged.connect(
             self.onEfficiencyMethodChanged
         )
@@ -140,10 +136,14 @@ class InputWidget(QtWidgets.QWidget):
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
         self.drawGraph()
+        self.drawDetections()
+        self.drawLimits()
 
     def setColorScheme(self, scheme: str) -> None:
         self.color_scheme = scheme
         self.drawGraph()
+        self.drawDetections()
+        self.drawLimits()
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if (
@@ -192,8 +192,13 @@ class InputWidget(QtWidgets.QWidget):
 
         self.io.repopulate(data.dtype.names)
         # Update graph, limits and detections
+        self.last_region = None
         self.drawGraph()
         self.updateLimits()
+
+    def saveTrimRegion(self) -> None:
+        plot = next(iter(self.graph.plots.values()))
+        self.last_region = plot.region_start, plot.region_end
 
     def trimRegion(self, name: str) -> Tuple[int, int]:
         if self.draw_mode == "Overlay":
@@ -202,11 +207,8 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots[name]
         return plot.region_start, plot.region_end
 
-    def updateDetections(self, _name: str | None = None) -> None:
-        if _name is None or _name == "Overlay":
-            names = self.responses.dtype.names
-        else:
-            names = [_name]
+    def updateDetections(self) -> None:
+        names = self.responses.dtype.names
 
         for name in names:
             trim = self.trimRegion(name)
@@ -223,9 +225,9 @@ class InputWidget(QtWidgets.QWidget):
                 self.labels.pop(name)
                 self.regions.pop(name)
 
-            self.detectionsChanged.emit(name)
+        self.detectionsChanged.emit()
 
-    def updateLimits(self, _name: str | None = None) -> None:
+    def updateLimits(self) -> None:
         if self.responses.size == 0:
             return
 
@@ -252,11 +254,7 @@ class InputWidget(QtWidgets.QWidget):
             else None
         )
 
-        if _name is None or _name == "Overlay":
-            names = self.responses.dtype.names
-        else:
-            names = [_name]
-
+        names = self.responses.dtype.names
         for name in names:
             trim = self.trimRegion(name)
             response = self.responses[name][trim[0] : trim[1]]
@@ -278,13 +276,10 @@ class InputWidget(QtWidgets.QWidget):
                 self.limits[name] = calculate_limits(
                     response, method, sigma, (alpha, beta), window=window_size
                 )
-            self.limitsChanged.emit(name)
+        self.limitsChanged.emit()
 
-    def updateOutputs(self, _name: str | None = None) -> None:
-        if _name is None or _name == "Overlay":
-            names = self.responses.dtype.names
-        else:
-            names = [_name]
+    def updateOutputs(self) -> None:
+        names = self.responses.dtype.names
 
         for name in names:
             io = self.io[name]
@@ -308,58 +303,67 @@ class InputWidget(QtWidgets.QWidget):
         if dwell is None:
             raise ValueError("dwell is None")
 
-        if self.draw_mode == "Stacked":
-            for name in self.responses.dtype.names:
-                ys = self.responses[name]
+        if self.draw_mode == "Overlay":
+            plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
 
+        scheme = color_schemes[self.color_scheme]
+        for i, name in enumerate(self.responses.dtype.names):
+            ys = self.responses[name]
+            if self.draw_mode == "Stacked":
                 plot = self.graph.addParticlePlot(name, xscale=dwell)
                 self.graph.layout.nextRow()
-                plot.drawSignal(self.events, self.responses[name])
-        elif self.draw_mode == "Overlay":
-            plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
-            scheme = color_schemes[self.color_scheme]
-            for i, name in enumerate(self.responses.dtype.names):
-                ys = self.responses[name]
+            elif self.draw_mode == "Overlay":
+                pass
+            else:
+                raise ValueError("drawGraph: draw_mode must be 'Stacked', 'Overlay'.")
 
-                pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
-                pen.setCosmetic(True)
-                plot.drawSignal(self.events, ys, label=name, pen=pen)
-        else:
-            raise ValueError("drawGraph: draw_mode must be 'Stacked', 'Overlay'.")
+            pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
+            pen.setCosmetic(True)
+            plot.drawSignal(self.events, ys, label=name, pen=pen)
 
-    def drawDetections(self, name: str) -> None:
+        region = (
+            (self.events[0], self.events[-1])
+            if self.last_region is None
+            else self.last_region
+        )
+        for plot in self.graph.plots.values():
+            plot.region.blockSignals(True)
+            plot.region.setRegion(region)
+            plot.region.blockSignals(False)
+        self.last_region = region
+
+    def drawDetections(self) -> None:
         scheme = color_schemes[self.color_scheme]
-        if self.draw_mode == "Overlay":
-            plot = self.graph.plots["Overlay"]
-            name_idx = list(self.responses.dtype.names).index(name)
-            color = scheme[name_idx % len(scheme)]
-            symbol = symbols[name_idx % len(symbols)]
-            if name_idx == 0:
-                plot.clearScatters()
-        else:
-            plot = self.graph.plots[name]
-            color = QtCore.Qt.red
-            symbol = "t"
+
+        for plot in self.graph.plots.values():
             plot.clearScatters()
 
-        if name in self.regions and self.regions[name].size > 0:
-            maxima = detection_maxima(
-                self.responses[name], self.regions[name] + self.trimRegion(name)[0]
-            )
-            plot.drawMaxima(
-                self.events[maxima],
-                self.responses[name][maxima],
-                brush=QtGui.QBrush(color),
-                symbol=symbol,
-            )
+        for i, name in enumerate(self.responses.dtype.names):
+            color = scheme[i % len(scheme)]
+            symbol = symbols[i % len(symbols)]
 
-    def drawLimits(self, name: str) -> None:
+            if self.draw_mode == "Overlay":
+                plot = self.graph.plots["Overlay"]
+            else:
+                plot = self.graph.plots[name]
+
+            if name in self.regions and self.regions[name].size > 0:
+                maxima = detection_maxima(
+                    self.responses[name], self.regions[name] + self.trimRegion(name)[0]
+                )
+                plot.drawMaxima(
+                    self.events[maxima],
+                    self.responses[name][maxima],
+                    brush=QtGui.QBrush(color),
+                    symbol=symbol,
+                )
+
+    def drawLimits(self) -> None:
         if self.draw_mode == "Overlay":
             return
-        plot = self.graph.plots[name]
-        plot.clearLimits()
-
-        if name in self.limits:
+        for name in self.limits:
+            plot = self.graph.plots[name]
+            plot.clearLimits()
             plot.drawLimits(self.events, self.limits[name][2])
 
     def resetInputs(self) -> None:
@@ -379,17 +383,13 @@ class InputWidget(QtWidgets.QWidget):
 
 
 class SampleWidget(InputWidget):
-    def __init__(
-        self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None
-    ):
+    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None):
         super().__init__(SampleIOStack(), options, parent=parent)
         assert isinstance(self.io, SampleIOStack)
 
 
 class ReferenceWidget(InputWidget):
-    def __init__(
-        self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None
-    ):
+    def __init__(self, options: OptionsWidget, parent: QtWidgets.QWidget | None = None):
         super().__init__(ReferenceIOStack(), options, parent=parent)
 
         # dwelltime covered by detectionsChanged

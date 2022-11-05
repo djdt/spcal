@@ -191,6 +191,7 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
             disableAutoRange=False,
         )
 
+
 class HistogramPlotItem(pyqtgraph.PlotItem):
     def __init__(
         self,
@@ -480,7 +481,9 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         )
         self.enableAutoRange(y=True)  # rescale to max bounds
 
-        self.region.setRegion((x[0], x[-1]))
+        self.region.blockSignals(True)
+        self.region.setBounds((x[0], x[-1]))
+        self.region.blockSignals(False)
 
     def drawMaxima(
         self,
@@ -521,7 +524,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
 
 class ParticleView(pyqtgraph.GraphicsView):
-    regionChanged = QtCore.Signal(str)
+    regionChanged = QtCore.Signal()
 
     def __init__(
         self,
@@ -585,9 +588,8 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.plots[name].setDownsampling(ds=self.downsample, mode="peak", auto=True)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
 
-        self.plots[name].region.sigRegionChangeFinished.connect(
-            lambda: self.regionChanged.emit(name)
-        )
+        self.plots[name].region.sigRegionChanged.connect(self.plotRegionChanged)
+        self.plots[name].region.sigRegionChangeFinished.connect(self.regionChanged)
 
         self.layout.addItem(self.plots[name])
 
@@ -595,6 +597,14 @@ class ParticleView(pyqtgraph.GraphicsView):
         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
         return self.plots[name]
+
+    def plotRegionChanged(self, region: pyqtgraph.LinearRegionItem) -> None:
+        self.blockSignals(True)
+        for plot in self.plots.values():
+            plot.region.blockSignals(True)
+            plot.region.setRegion(region.getRegion())
+            plot.region.blockSignals(False)
+        self.blockSignals(False)
 
     # def setLinkedYAxis(self, linked: bool = True) -> None:
     #     plots = list(self.plots.values())
