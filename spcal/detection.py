@@ -1,7 +1,10 @@
 """Functions for detecting and classifying particles."""
 import numpy as np
+import logging
 
 from typing import Dict, Tuple
+
+logger = logging.getLogger(__name__)
 
 
 def accumulate_detections(
@@ -60,17 +63,7 @@ def accumulate_detections(
     return sums, labels, regions
 
 
-def argmax_reduceat(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    idx = np.zeros(a.size, dtype=int)
-    idx[b[1:]] = 1
-    shift = (a.max() + 1) * np.cumsum(idx)
-    sortidx = np.argsort(a + shift)
-    return sortidx[np.append(b[1:], a.size) - 1] - b
-
-
-def detection_maxima(
-    y: np.ndarray, regions: np.ndarray
-) -> np.ndarray:
+def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     """Calculates the maxima of each region.
 
     Args:
@@ -80,52 +73,21 @@ def detection_maxima(
     Returns:
         idx of maxima
     """
+
+    def argmax_reduceat(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        idx = np.zeros(a.size, dtype=int)
+        idx[b[1:]] = 1
+        shift = (a.max() + 1) * np.cumsum(idx)
+        sortidx = np.argsort(a + shift)
+        return sortidx[np.append(b[1:], a.size) - 1] - b
     return argmax_reduceat(y, regions.ravel())[::2] + regions[:, 0]
-
-    # g = np.equal.at(y, regions.flat, maxima)[::2]
-    # np.diff()
-    # The width of each detection region
-    # widths = regions[:, 1] - regions[:, 0]  # type: ignore
-    # # peak indicies for max width
-    # indicies = regions[:, 0] + np.arange(np.amax(widths) + 1)[:, None]
-    # indicies = np.clip(
-    #     indicies, regions[0, 0], regions[-1, 1] - 1
-    # )  # limit to first to last region
-    # # limit to peak width
-    # indicies = np.where(indicies - regions[:, 0] < widths, indicies, regions[:, 1])
-    # # return indices that is at maxima
-    # maxima_idx = np.argmax(y[indicies], axis=0) + regions[:, 0]
-    # maxima = y[maxima_idx]
-    # print(indicies, y[indicies])
-    # half_width_label = y[indicies] > maxima / 2.0
-    # print(half_width_label)
-
-
-# if __name__ == "__main__":
-#     import matplotlib.pyplot as plt
-
-#     x = np.array([0, 1, 2, 1, 2, 5, 16, 70, 88, 55, 16, 14, 2, 16, 27, 16, 2, 1, 1])
-#     s, l, r = accumulate_detections(x, 4.0, 4.0)
-#     # r = np.array([[5, 10], [13, 16]])
-
-#     print(detection_maxima(x, l, r))
-
-#     plt.plot(x)
-#     plt.show()
-
-
-def half_width_region(regions: np.ndarray) -> np.ndarray:
-    qw = (regions[:, 1] - regions[:, 0]) // 4
-    return regions + [-qw, qw]
 
 
 def combine_detections(
-    y: np.ndarray,
     sums: Dict[str, np.ndarray],
     labels: Dict[str, np.ndarray],
     regions: Dict[str, np.ndarray],
-    method: str = "half width",
-) -> Tuple[Dict[str, np.ndarray], np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Computes the relative fraction of each element in each detection.
     Recalculates the start and end point of each peak from *all* element data.
     Regions that overlap will be combined into a single region. Fractions are calculated
@@ -149,17 +111,9 @@ def combine_detections(
 
     # Get regions from all elements
     # Some regions may overlap, these will be combined
-    any_label = np.zeros(y.size, dtype=np.int16)
-    if method == "full width":
-        for name in names:
-            any_label[labels[name] > 0] = 1
-    elif method == "half width":
-        for name in names:
-            maxima = detection_maxima(y[name], regions[name])
-            qw = (regions[name][:, 1] - regions[name][:, 0]) // 4
-            any_label[maxima - qw] += 1
-            any_label[maxima + qw] -= 1
-        any_label = np.where(np.cumsum(any_label), 1, 0)
+    any_label = np.zeros(labels[names[0]].size, dtype=np.int16)
+    for name in names:
+        any_label[labels[name] > 0] = 1
 
     # Caclulate start and end points of each region
     diff = np.diff(any_label, prepend=0)
@@ -174,9 +128,6 @@ def combine_detections(
         end_point_added = False
     all_regions = np.stack((starts, ends), axis=1)
 
-    if method == "half width":
-
-
     ix = np.arange(1, all_regions.shape[0] + 1)
     # Set start, end pairs to +i, -i
     any_label[all_regions[:, 0]] = ix
@@ -188,7 +139,9 @@ def combine_detections(
     any_label = np.cumsum(any_label)
 
     # Init empty
-    combined = {}
+    combined = np.empty(
+        all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
+    )
     for name in names:
         # Positions in name's region that corresponds to the combined regions
         idx = (regions[name][:, 0] >= all_regions[:, 0, None]) & (
@@ -248,6 +201,7 @@ def fraction_components(
             tuple(np.mean(rec[name]) for name in rec.dtype.names), dtype=rec.dtype
         )
 
+    _iter = 0
     if combine_similar:
         diff = bins[1] - bins[0]
         combined_means = []
@@ -258,6 +212,11 @@ def fraction_components(
             combined_counts.append(np.sum(counts[idx]))
             means = np.delete(means, idx)
             counts = np.delete(counts, idx)
+            
+            _iter += 1
+            if _iter > 100:
+                logger.warn("Maximum iter reached for combine_similar.")
+                break
         means, counts = np.array(combined_means, dtype=means.dtype), np.array(
             combined_counts
         )

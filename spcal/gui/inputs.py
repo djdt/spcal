@@ -6,7 +6,7 @@ import logging
 import spcal
 
 from spcal.calc import calculate_limits
-from spcal.detection import detection_maxima
+from spcal.detection import combine_detections, detection_maxima
 
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
@@ -74,9 +74,9 @@ class InputWidget(QtWidgets.QWidget):
 
         self.responses = np.array([])
         self.events = np.array([])
-        self.detections: Dict[str, np.ndarray] = {}
-        self.labels: Dict[str, np.ndarray] = {}
-        self.regions: Dict[str, np.ndarray] = {}
+        self.detections = np.array([])
+        self.labels = np.array([])
+        self.regions = np.array([])
         self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
         self.button_file = QtWidgets.QPushButton("Open File")
@@ -210,20 +210,23 @@ class InputWidget(QtWidgets.QWidget):
     def updateDetections(self) -> None:
         names = self.responses.dtype.names
 
+        detections = {}
+        labels = {}
+        regions = {}
         for name in names:
             trim = self.trimRegion(name)
             responses = self.responses[name][trim[0] : trim[1]]
             if responses.size > 0 and name in self.limits:
                 limits = self.limits[name][2]
                 (
-                    self.detections[name],
-                    self.labels[name],
-                    self.regions[name],
+                    detections[name],
+                    labels[name],
+                    regions[name],
                 ) = spcal.accumulate_detections(responses, limits["lc"], limits["ld"])
-            else:
-                self.detections.pop(name)
-                self.labels.pop(name)
-                self.regions.pop(name)
+
+        self.detections, self.labels, self.regions = combine_detections(
+            detections, labels, regions
+        )
 
         self.detectionsChanged.emit()
 
@@ -283,14 +286,14 @@ class InputWidget(QtWidgets.QWidget):
 
         for name in names:
             io = self.io[name]
-            if name not in self.detections:
+            if name not in self.detections.dtype.names:
                 io.clearOutputs()
             else:
                 trim = self.trimRegion(name)
                 io.updateOutputs(
                     self.responses[name][trim[0] : trim[1]],
                     self.detections[name],
-                    self.labels[name],
+                    self.labels,
                     self.limits[name],
                 )
 
@@ -338,7 +341,7 @@ class InputWidget(QtWidgets.QWidget):
         for plot in self.graph.plots.values():
             plot.clearScatters()
 
-        for i, name in enumerate(self.responses.dtype.names):
+        for i, name in enumerate(self.detections.dtype.names):
             color = scheme[i % len(scheme)]
             symbol = symbols[i % len(symbols)]
 
@@ -347,9 +350,16 @@ class InputWidget(QtWidgets.QWidget):
             else:
                 plot = self.graph.plots[name]
 
-            if name in self.regions and self.regions[name].size > 0:
-                maxima = detection_maxima(
-                    self.responses[name], self.regions[name] + self.trimRegion(name)[0]
+            detected = np.flatnonzero(self.detections[name])
+
+            if detected.size > 0:
+                trim = self.trimRegion(name)
+                maxima = (
+                    detection_maxima(
+                        self.responses[name][trim[0] : trim[1]],
+                        self.regions[detected],
+                    )
+                    + trim[0]
                 )
                 plot.drawMaxima(
                     self.events[maxima],
@@ -377,9 +387,7 @@ class InputWidget(QtWidgets.QWidget):
             io.response.setEnabled(method != "Mass Response")
 
     def isComplete(self) -> bool:
-        return len(self.detections) > 0 and any(
-            self.detections[name].size > 0 for name in self.detections
-        )
+        return len(self.detections.dtype.names) > 0 and self.detections.size > 0
 
 
 class SampleWidget(InputWidget):
