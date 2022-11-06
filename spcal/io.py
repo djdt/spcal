@@ -159,9 +159,11 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         fp.write("#\n# Detection results\n")
         fp.write(f"#,{','.join(names)}\n")
 
-        detections = [results[name]["detections"].size for name in names]
-        fp.write(f"# Detected particles,{','.join(str(x) for x in detections)}\n")
-        write_if_key_exists(fp, results, "detections_std", prefix="# Detection stddev,")
+        indicies = [results[name]["indicies"] for name in names]
+        # Todo the rest of export
+
+        fp.write(f"# Detected particles,{','.join(str(x.size) for x in indicies)}\n")
+        fp.write(f"# Detection stdev,{','.join(str(np.sqrt(x.size)) for x in indicies)}\n")
         write_if_key_exists(
             fp,
             results,
