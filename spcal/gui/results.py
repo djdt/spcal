@@ -10,12 +10,11 @@ from spcal.calc import (
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
 from spcal.detection import (
-    combine_detections,
     fraction_components,
 )
 from spcal.particle import cell_concentration
 
-from spcal.gui.dialogs import BinWidthDialog
+from spcal.gui.dialogs import BinWidthDialog, FilterDialog
 from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, color_schemes
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
@@ -75,8 +74,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.nbins = "auto"
-        self.detections: np.ndarray | None = None
-        self.filter_detections = False
+        self.filters = []
         self.results: Dict[str, dict] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
@@ -155,6 +153,13 @@ class ResultsWidget(QtWidgets.QWidget):
             checkable=True,
         )
 
+        self.action_filter_detections = create_action(
+            "view-filter",
+            "Filter Detections",
+            "Filter detections based on element compositions.",
+            self.dialogFilterDetections,
+        )
+
         self.action_bin_width = create_action(
             "adjustcol",
             "Bin Width",
@@ -183,6 +188,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.addWidget(spacer)
 
         self.graph_toolbar.addSeparator()
+        self.graph_toolbar.addAction(self.action_filter_detections)
         self.graph_toolbar.addAction(self.action_bin_width)
 
         self.graph_toolbar.addSeparator()
@@ -232,6 +238,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.draw_mode = mode
         self.drawGraphHist()
 
+    def setFilters(self, filters) -> None:
+        self.filters = filters
+        self.updateResults()
+
     def dialogBinWidth(self) -> None:
         dlg = BinWidthDialog(self.bin_widths, parent=self)
         dlg.binWidthsChanged.connect(self.setBinWidths)
@@ -250,6 +260,11 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         # if file != "":
         #     self.chartview.saveToFile(file)
+
+    def dialogFilterDetections(self) -> None:
+        dlg = FilterDialog(list(self.results.keys()), self.filters, parent=self)
+        dlg.filtersChanged.connect(self.setFilters)
+        dlg.open()
 
     def asBestUnit(
         self, data: np.ndarray, current_unit: str = ""
@@ -315,20 +330,21 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
 
+        names = list(self.results.keys())
+
         graph_data = {}
         for name, result in self.results.items():
-            idx = np.flatnonzero(result["detections"])
+            indices = self.results[name]["indicies"]
             if mode == "Signal":
-                graph_data[name] = result["detections"][idx]
+                graph_data[name] = result["detections"][indices]
             elif mode == "Mass (kg)" and "masses" in result:
-                graph_data[name] = result["masses"][idx] * 1000  # convert to gram
+                graph_data[name] = result["masses"][indices] * 1000  # convert to gram
             elif mode == "Size (m)" and "sizes" in result:
-                graph_data[name] = result["sizes"][idx]
+                graph_data[name] = result["sizes"][indices]
             elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
-                graph_data[name] = result["cell_concentrations"][idx]
+                graph_data[name] = result["cell_concentrations"][indices]
             else:
                 continue
-
 
         # median 'sturges' bin width
         if bin_width is None:
@@ -358,16 +374,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
             )
             bins -= bins[0] % bin_width  # align bins
-            color = QtGui.QColor(scheme[i % len(scheme)])
-            color.setAlpha(128)
-            if self.draw_mode == "Stacked":
+            color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
+            # color.setAlpha(128)
+            if self.draw_mode == "Overlay":
+                width = 1.0 / len(graph_data)
+                if len(graph_data) == 1:
+                    width /= 2.0
+                offset = i * width
+            elif self.draw_mode == "Stacked":
                 plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
                 width = 0.5
                 offset = 0.0
             else:
-                width = 1.0 / len(graph_data)
-                offset = i * width
-            plot.drawData(
+                raise ValueError("Invalid draw mode.")
+            plot.drawData(  # type: ignore
                 name,
                 graph_data[name],
                 bins=bins,
@@ -398,34 +418,34 @@ class ResultsWidget(QtWidgets.QWidget):
         # Save names order to preserve colors
         names = list(self.results.keys())
 
+        # Get list of any un filter detection
+        valid = np.zeros(self.results[names[0]]["detections"].size, dtype=bool)
+        for result in self.results.values():
+            valid[result["indicies"]] = True
+
         graph_data = {}
-        for name in names:
+        for name, result in self.results.items():
             if mode == "Signal":
-                graph_data[name] = self.results[name]["detections"]
-            elif mode == "Mass (kg)" and "masses" in self.results[name]:
-                graph_data[name] = (
-                    self.results[name]["masses"] * 1000
-                )  # convert to gram
-            elif mode == "Size (m)" and "sizes" in self.results[name]:
-                graph_data[name] = self.results[name]["sizes"]
-            elif (
-                mode == "Conc. (mol/L)" and "cell_concentrations" in self.results[name]
-            ):
-                graph_data[name] = self.results[name]["cell_concentrations"]
+                graph_data[name] = result["detections"][valid]
+            elif mode == "Mass (kg)" and "masses" in result:
+                graph_data[name] = result["masses"][valid] * 1000  # convert to gram
+            elif mode == "Size (m)" and "sizes" in result:
+                graph_data[name] = result["sizes"][valid]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
+                graph_data[name] = result["cell_concentrations"][valid]
             else:
                 continue
 
         if len(graph_data) == 0:
             return
 
-        totals = np.sum([self.sample.detections[name] for name in graph_data], axis=0)
+        totals = np.sum(list(graph_data.values()), axis=0)
         fractions = np.zeros(
-            self.sample.detections.size,
-            dtype=[(name, np.float64) for name in graph_data],
+            totals.size, dtype=[(name, np.float64) for name in graph_data]
         )
 
-        for name in graph_data:
-            fractions[name] = np.divide(self.sample.detections[name], totals, where=totals > 0)
+        for name, data in graph_data.items():
+            fractions[name] = np.divide(data, totals, where=totals > 0)
 
         compositions, counts = fraction_components(fractions, combine_similar=True)
 
@@ -436,11 +456,12 @@ class ResultsWidget(QtWidgets.QWidget):
         if counts.size == 0:
             return
 
-        brushes = []
         scheme = color_schemes[self.color_scheme]
+        brushes = []
+
         for name in compositions.dtype.names:
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
-            color.setAlpha(128)
+            # color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
@@ -476,77 +497,97 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
-        names = list(self.sample.detections.dtype.names)
 
-        for name in names:
+        for name, result in self.results.items():
             if mode == "Signal":
                 units = self.signal_units
-                values = self.results[name]["detections"]
-                lod = self.results[name]["lod"]
-            elif mode == "Mass (kg)" and "masses" in self.results[name]:
+                values = result["detections"]
+                lod = result["lod"]
+            elif mode == "Mass (kg)" and "masses" in result:
                 units = self.mass_units
-                values = self.results[name]["masses"]
-                lod = self.results[name]["lod_mass"]
-            elif mode == "Size (m)" and "sizes" in self.results[name]:
+                values = result["masses"]
+                lod = result["lod_mass"]
+            elif mode == "Size (m)" and "sizes" in result:
                 units = self.size_units
-                values = self.results[name]["sizes"]
-                lod = self.results[name]["lod_size"]
-            elif (
-                mode == "Conc. (mol/L)" and "cell_concentrations" in self.results[name]
-            ):
+                values = result["sizes"]
+                lod = result["lod_size"]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
                 units = self.molar_concentration_units
-                values = self.results[name]["cell_concentrations"]
-                lod = self.results[name]["lod_cell_concentration"]
+                values = result["cell_concentrations"]
+                lod = result["lod_cell_concentration"]
             else:
                 self.io[name].clearOutputs()
                 continue
 
-            idx = np.flatnonzero(values)
+            indicies = result["indicies"]
 
             self.io[name].updateOutputs(
-                values[idx],
+                values[indicies],
                 units,
                 lod,
-                count=idx.size,
-                count_percent=idx.size / self.results[name]["detections"].size * 100.0,
-                count_error=np.sqrt(idx.size),
-                conc=self.results[name].get("concentration", None),
-                number_conc=self.results[name].get("number_concentration", None),
-                background_conc=self.results[name].get(
-                    "background_concentration", None
-                ),
-                background_error=self.results[name]["background_std"]
-                / self.results[name]["background"],
+                count=indicies.size,
+                count_percent=indicies.size / values.size * 100.0,
+                count_error=np.sqrt(indicies.size),
+                conc=result.get("concentration", None),
+                number_conc=result.get("number_concentration", None),
+                background_conc=result.get("background_concentration", None),
+                background_error=result["background_std"] / result["background"],
             )
+
+    def filterResults(self) -> None:
+        condition = np.ones(self.sample.detections.size, dtype=bool)
+        for filter in self.filters:
+            boolean, name, unit, operation, value = filter
+
+            ops = {
+                ">": np.greater,
+                "<": np.less,
+                ">=": np.greater_equal,
+                "<=": np.less_equal,
+                "==": np.equal,
+            }
+            bool_ops = {"And": np.logical_and, "Or": np.logical_or}
+
+            indicies = self.results[name]["indicies"]
+            if unit == "Intensity":
+                data = self.results[name]["detections"]
+            elif unit == "Mass" and "masses" in self.results[name]:
+                data = self.results[name]["masses"]
+            elif unit == "Size" and "sizes" in self.results[name]:
+                data = self.results[name]["sizes"]
+            else:
+                continue
+
+            valid = ops[operation](data[indicies], value)
+            condition[indicies] = bool_ops[boolean](condition[indicies], valid)
+
+        valid_indicies = np.flatnonzero(condition)
+        for name in self.results:
+            indicies = self.results[name]["indicies"]
+            self.results[name]["indicies"] = indicies[np.in1d(indicies, valid_indicies)]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
-        names = list(self.sample.detections.dtype.names)
-
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
 
-        if self.filter_detections:
-            pass
-        # compositions, counts = fraction_components(fractions, combine_similar=True)
-        # total_counts = np.sum(counts)
-
-        # mask = counts > fractions.size * 0.05
-        # compositions = compositions[mask]
-        # counts = counts[mask]
-        # print(compositions.dtype.names, counts)
+        names = list(self.sample.detections.dtype.names)
 
         for name in names:
             trim = self.sample.trimRegion(name)
             responses = self.sample.responses[name][trim[0] : trim[1]]
 
+            indicies = np.flatnonzero(self.sample.detections[name])
+
             result = {
                 "background": np.mean(responses[self.sample.labels == 0]),
                 "background_std": np.std(responses[self.sample.labels == 0]),
                 "detections": self.sample.detections[name],
+                "indicies": indicies,
+                "total_detections": self.sample.detections.size,
                 "events": responses.size,
                 "file": self.sample.label_file.text(),
                 "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
@@ -639,6 +680,7 @@ class ResultsWidget(QtWidgets.QWidget):
                             "mass_response": mass_response,
                         }
                     )
+            # end if method
 
             # Cell inputs
             cell_diameter = self.options.celldiameter.baseValue()
@@ -668,6 +710,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 result["inputs"].update({"molar_mass": molar_mass})
 
             self.results[name] = result
+
+        self.filterResults()
         # end for name in names
         self.updateOutputs()
 
