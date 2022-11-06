@@ -628,6 +628,152 @@ class ParticleView(pyqtgraph.GraphicsView):
             plot.autoRange()
 
 
+class ResultsScatterView(pyqtgraph.GraphicsView):
+    def __init__(
+        self,
+        pen: QtGui.QPen | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent=parent, background="white")
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel("")
+
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel("")
+
+        self.plot = pyqtgraph.PlotItem(
+            title="Scatter",
+            name="scatter",
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            enableMenu=False,
+            parent=parent,
+        )
+        self.plot.hideButtons()
+        # self.plot.setMouseEnabled(x=False)
+        self.plot.addLegend(
+            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
+        )
+        self.setCentralWidget(self.plot)
+
+    def drawData(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        logx: bool = False,
+        logy: bool = False,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.black)
+
+        if logx:
+            x = np.log(x)
+            # self.xaxis.setLogMode(2)
+        # else:
+            # self.xaxis.setLogMode(False)
+
+        if logy:
+            y = np.log(y)
+            # self.yaxis.setLogMode(True)
+        # else:
+        # self.plot.setLogMode(logx, logy)
+
+        # optimise by removing points with 0 change in gradient
+        # diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        curve = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
+        # if label is not None:
+        #     curve.opts["name"] = label
+
+        # self.signals.append(curve)
+        self.plot.addItem(curve)
+
+        xmin, xmax = np.amin(x), np.amax(x)
+        ymin, ymax = np.amin(y), np.amax(y)
+
+        self.plot.setLimits(
+            xMin=xmin - (xmax - xmin) * 0.05,
+            xMax=xmax + (xmax - xmin) * 0.05,
+            yMin=ymin - (ymax - ymin) * 0.05,
+            yMax=ymax + (ymax - ymin) * 0.05,
+        )
+        self.plot.enableAutoRange(x=True, y=True)  # rescale to max bounds
+
+    def drawFit(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        degree: int = 1,
+        pen: QtGui.QPen | None = None,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.red, 1.0)
+            pen.setCosmetic(True)
+        poly = np.polynomial.Polynomial.fit(x, y, degree)
+
+        xmin, xmax = np.amin(x), np.amax(x)
+        sx = np.linspace(xmin, xmax, 1000)
+
+        sy = poly(sx)
+
+        curve = pyqtgraph.PlotCurveItem(
+            x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True
+        )
+        self.plot.addItem(curve)
+        # self.region.blockSignals(True)
+        # self.region.setBounds((x[0], x[-1]))
+        # self.region.blockSignals(False)
+
+    # def setLogScale(self, x: bool, y: bool) -> None:
+    #     limits = self.plot.vb.state["limits"]
+    #     xmin, xmax = limits["xLimits"]
+    #     ymin, ymax = limits["yLimits"]
+
+    #     if x and xmin <= 0.0:
+    #         self.plot.setLimits(xMin=1e-3)
+    #     if y and ymin <= 0.0:
+    #         self.plot.setLimits(yMin=1e-3)
+    #     self.xaxis.setLogMode(10)
+    #     self.yaxis.setLogMode(10)
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        action_copy_image = create_action(
+            "insert-image",
+            "Copy Image to Clipboard",
+            "Copy an image of the plot to the clipboard.",
+            self.copyToClipboard,
+        )
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(action_copy_image)
+        menu.exec(event.globalPos())
+
+    def copyToClipboard(self) -> None:
+        """Copy current view to system clipboard."""
+        pixmap = QtGui.QPixmap(self.viewport().size())
+        painter = QtGui.QPainter(pixmap)
+        self.render(painter)
+        painter.end()
+        QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
+
+    def clear(self) -> None:
+        self.plot.clear()
+        self.plot.legend.clear()
+
+    def zoomReset(self) -> None:
+        self.plot.setRange(
+            xRange=self.plot.vb.state["limits"]["xLimits"],
+            yRange=self.plot.vb.state["limits"]["yLimits"],
+            disableAutoRange=False,
+        )
+
+
 if __name__ == "__main__":  # test colors
     app = QtWidgets.QApplication()
     scene = QtWidgets.QGraphicsScene(
@@ -636,20 +782,28 @@ if __name__ == "__main__":  # test colors
         200 + 100 * max(len(v) for v in color_schemes.values()),
         100 + 100 * len(color_schemes),
     )
-    view = QtWidgets.QGraphicsView(scene)
+    # view = QtWidgets.QGraphicsView(scene)
+    view = ResultsScatterView()
 
-    y = 0
-    for name, colors in color_schemes.items():
-        label = QtWidgets.QGraphicsTextItem(name)
-        label.setPos(0, y)
-        view.scene().addItem(label)
-        x = 0
-        for color in colors:
-            x += 100
-            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
-            rect.setBrush(QtGui.QBrush(color))
-            view.scene().addItem(rect)
-        y += 100
+    x = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000) ** 2
+    y = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000)
+    view.drawData(x, y)
+    # view.setLogScale(True, False)
+    
+    # view.drawFit(x, y, 2)
+
+    # y = 0
+    # for name, colors in color_schemes.items():
+    #     label = QtWidgets.QGraphicsTextItem(name)
+    #     label.setPos(0, y)
+    #     view.scene().addItem(label)
+    #     x = 0
+    #     for color in colors:
+    #         x += 100
+    #         rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
+    #         rect.setBrush(QtGui.QBrush(color))
+    #         view.scene().addItem(rect)
+    #     y += 100
 
     view.show()
     app.exec()
