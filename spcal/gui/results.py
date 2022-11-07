@@ -15,13 +15,15 @@ from spcal.detection import (
 from spcal.particle import cell_concentration
 
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
-from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, color_schemes
+from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, ScatterWidget, color_schemes
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 
 from typing import Dict, Tuple
+
+
 
 
 class ResultsWidget(QtWidgets.QWidget):

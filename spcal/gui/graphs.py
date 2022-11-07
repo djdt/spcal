@@ -628,6 +628,37 @@ class ParticleView(pyqtgraph.GraphicsView):
             plot.autoRange()
 
 
+class ScatterWidget(QtWidgets.QWidget):
+    def __init__(self, data: np.ndarray, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+
+        self.view = ResultsScatterView()
+        self.data = data
+
+        self.combo_x = QtWidgets.QComboBox()
+        self.combo_x.addItems(data.dtype.names)
+        self.combo_y = QtWidgets.QComboBox()
+        self.combo_y.addItems(data.dtype.names)
+        self.combo_y.setCurrentIndex(1)
+
+        self.combo_x.currentIndexChanged.connect(self.onComboChanged)
+        self.combo_y.currentIndexChanged.connect(self.onComboChanged)
+
+        layout_combos = QtWidgets.QHBoxLayout()
+        layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
+        layout_combos.addWidget(self.combo_x, 1)
+        layout_combos.addWidget(QtWidgets.QLabel("y:"), 0, QtCore.Qt.AlignRight)
+        layout_combos.addWidget(self.combo_y, 1, QtCore.Qt.AlignRight)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.view, 1)
+        layout.addLayout(layout_combos, 0)
+        self.setLayout(layout)
+
+    def onComboChanged(self) -> None:
+        self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
+
+
 class ResultsScatterView(pyqtgraph.GraphicsView):
     def __init__(
         self,
@@ -727,21 +758,8 @@ class ResultsScatterView(pyqtgraph.GraphicsView):
             x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True
         )
         self.plot.addItem(curve)
-        # self.region.blockSignals(True)
-        # self.region.setBounds((x[0], x[-1]))
-        # self.region.blockSignals(False)
 
-    # def setLogScale(self, x: bool, y: bool) -> None:
-    #     limits = self.plot.vb.state["limits"]
-    #     xmin, xmax = limits["xLimits"]
-    #     ymin, ymax = limits["yLimits"]
-
-    #     if x and xmin <= 0.0:
-    #         self.plot.setLimits(xMin=1e-3)
-    #     if y and ymin <= 0.0:
-    #         self.plot.setLimits(yMin=1e-3)
-    #     self.xaxis.setLogMode(10)
-    #     self.yaxis.setLogMode(10)
+    # def drawLimits(self)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         action_copy_image = create_action(
