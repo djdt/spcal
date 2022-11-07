@@ -391,7 +391,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.xaxis.enableAutoSIPrefix(False)
 
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
-        self.yaxis.setLabel(text="Intensity", units="counts")
+        self.yaxis.setLabel(text="Intensity (counts)", units="")
 
         super().__init__(
             title=name,
@@ -626,38 +626,6 @@ class ParticleView(pyqtgraph.GraphicsView):
     def zoomReset(self) -> None:
         for plot in self.plots.values():
             plot.autoRange()
-
-
-class ScatterWidget(QtWidgets.QWidget):
-    def __init__(self, data: np.ndarray, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-
-        self.view = ResultsScatterView()
-        self.data = data
-
-        self.combo_x = QtWidgets.QComboBox()
-        self.combo_x.addItems(data.dtype.names)
-        self.combo_y = QtWidgets.QComboBox()
-        self.combo_y.addItems(data.dtype.names)
-        self.combo_y.setCurrentIndex(1)
-
-        self.combo_x.currentIndexChanged.connect(self.onComboChanged)
-        self.combo_y.currentIndexChanged.connect(self.onComboChanged)
-
-        layout_combos = QtWidgets.QHBoxLayout()
-        layout_combos.addWidget(QtWidgets.QLabel("y:"), 0)
-        layout_combos.addWidget(self.combo_y, 1)
-        layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
-        layout_combos.addWidget(self.combo_x, 1)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.view, 1)
-        layout.addLayout(layout_combos, 0)
-        self.setLayout(layout)
-
-    def onComboChanged(self) -> None:
-        self.view.clear()
-        self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
 
 
 class ResultsScatterView(pyqtgraph.GraphicsView):
