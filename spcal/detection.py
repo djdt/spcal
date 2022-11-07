@@ -80,6 +80,7 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         shift = (a.max() + 1) * np.cumsum(idx)
         sortidx = np.argsort(a + shift)
         return sortidx[np.append(b[1:], a.size) - 1] - b
+
     return argmax_reduceat(y, regions.ravel())[::2] + regions[:, 0]
 
 
@@ -206,13 +207,13 @@ def fraction_components(
         diff = bins[1] - bins[0]
         combined_means = []
         combined_counts = []
-        while means.size > 0:
+        while means.size > 0 and idx.size > 0:
             idx = np.flatnonzero(rec_similar(means, means[0], diff))
             combined_means.append(rec_mean(means[idx]))
             combined_counts.append(np.sum(counts[idx]))
             means = np.delete(means, idx)
             counts = np.delete(counts, idx)
-            
+
             _iter += 1
             if _iter > 100:
                 logger.warn("Maximum iter reached for combine_similar.")
