@@ -298,13 +298,6 @@ class FilterDialog(QtWidgets.QDialog):
         super().accept()
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    dlg = FilterDialog(["A", "B", "C"], [])
-    dlg.open()
-    app.exec()
-
-
 class ImportDialog(QtWidgets.QDialog):
     dataImported = QtCore.Signal(np.ndarray, dict)
 

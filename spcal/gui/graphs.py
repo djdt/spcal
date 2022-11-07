@@ -769,30 +769,20 @@ if __name__ == "__main__":  # test colors
         200 + 100 * max(len(v) for v in color_schemes.values()),
         100 + 100 * len(color_schemes),
     )
-    # view = QtWidgets.QGraphicsView(scene)
-    data = np.empty(1000, dtype=[("a", float), ("b", float), ("c", float)])
-    data["a"] = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000) ** 2
-    data["b"] = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000)
-    data["c"] = 100 + np.random.normal(1.0, 0.1, size=1000)
+    view = QtWidgets.QGraphicsView(scene)
 
-    view = ScatterWidget(data)
-
-    # view.setLogScale(True, False)
-    
-    # view.drawFit(x, y, 2)
-
-    # y = 0
-    # for name, colors in color_schemes.items():
-    #     label = QtWidgets.QGraphicsTextItem(name)
-    #     label.setPos(0, y)
-    #     view.scene().addItem(label)
-    #     x = 0
-    #     for color in colors:
-    #         x += 100
-    #         rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
-    #         rect.setBrush(QtGui.QBrush(color))
-    #         view.scene().addItem(rect)
-    #     y += 100
+    y = 0
+    for name, colors in color_schemes.items():
+        label = QtWidgets.QGraphicsTextItem(name)
+        label.setPos(0, y)
+        view.scene().addItem(label)
+        x = 0
+        for color in colors:
+            x += 100
+            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
+            rect.setBrush(QtGui.QBrush(color))
+            view.scene().addItem(rect)
+        y += 100
 
     view.show()
     app.exec()
