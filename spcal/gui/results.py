@@ -15,13 +15,65 @@ from spcal.detection import (
 from spcal.particle import cell_concentration
 
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
-from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, ScatterWidget, color_schemes
+from spcal.gui.graphs import (
+    ResultsFractionView,
+    ResultsHistogramView,
+    ResultsScatterView,
+    color_schemes,
+)
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 
 from typing import Dict, Tuple
+
+
+# class ScatterWidget(QtWidgets.QWidget):
+#     def __init__(self, data: np.ndarray, parent: QtWidgets.QWidget | None = None):
+#         super().__init__(parent)
+
+#         self.view = ResultsScatterView()
+#         self.data = np.array([])
+
+#         self.combo_x = QtWidgets.QComboBox()
+#         self.combo_x.addItems(data.dtype.names)
+#         self.combo_y = QtWidgets.QComboBox()
+#         self.combo_y.addItems(data.dtype.names)
+#         self.combo_x.setCurrentIndex(1)
+
+#         self.combo_x.currentIndexChanged.connect(self.onComboChanged)
+#         self.combo_y.currentIndexChanged.connect(self.onComboChanged)
+
+#         layout_combos = QtWidgets.QHBoxLayout()
+#         layout_combos.addWidget(QtWidgets.QLabel("y:"), 0)
+#         layout_combos.addWidget(self.combo_y, 1)
+#         layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
+#         layout_combos.addWidget(self.combo_x, 1)
+
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addWidget(self.view, 1)
+#         layout.addLayout(layout_combos, 0)
+#         self.setLayout(layout)
+
+#     def setData(self, data: Dict[str, np.ndarray]) -> None:
+#         if data.dtype.names != self.data.dtype.names:
+#             for combo in [self.combo_x, self.combo_y]:
+#                 current = combo.currentText()
+#                 combo.blockSignals(True)
+#                 combo.clear()
+#                 combo.addItems(data.dtype.names)
+#                 if current in data.dtype.names:
+#                     combo.setCurrentText(current)
+#                 combo.blockSignals(False)
+
+#         self.data = data
+#         self.onComboChanged()
+
+
+#     def onComboChanged(self) -> None:
+#         self.view.clear()
+#         self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -83,12 +135,29 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_hist = ResultsHistogramView()
         self.graph_frac = ResultsFractionView()
-        self.graph_scatter = ScatterWidget()
+        self.graph_scatter = ResultsScatterView()
+
+        self.combo_scatter_x = QtWidgets.QComboBox()
+        self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
+        self.combo_scatter_y = QtWidgets.QComboBox()
+        self.combo_scatter_y.currentIndexChanged.connect(self.drawGraphScatter)
+
+        # Create simple widget with graph and two combos for x / y element selection
+        scatter_layout = QtWidgets.QVBoxLayout()
+        scatter_combo_layout = QtWidgets.QHBoxLayout()
+        scatter_combo_layout.addWidget(QtWidgets.QLabel("y:"), 0)
+        scatter_combo_layout.addWidget(self.combo_scatter_y, 1)
+        scatter_combo_layout.addWidget(QtWidgets.QLabel("x:"), 0)
+        scatter_combo_layout.addWidget(self.combo_scatter_x, 1)
+        scatter_layout.addWidget(self.graph_scatter)
+        scatter_layout.addLayout(scatter_combo_layout)
+        self.scatter_widget = QtWidgets.QWidget()
+        self.scatter_widget.setLayout(scatter_layout)
 
         self.graph_stack = QtWidgets.QStackedWidget()
         self.graph_stack.addWidget(self.graph_hist)
         self.graph_stack.addWidget(self.graph_frac)
-        self.graph_stack.addWidget(self.graph_scatter)
+        self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
 
@@ -114,6 +183,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.mode.setCurrentText("Signal")
         self.mode.currentIndexChanged.connect(self.updateOutputs)
+        self.mode.currentIndexChanged.connect(self.updateScatterElements)
         self.mode.currentIndexChanged.connect(self.drawGraph)
 
         self.label_file = QtWidgets.QLabel()
@@ -154,6 +224,13 @@ class ResultsWidget(QtWidgets.QWidget):
             lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
             checkable=True,
         )
+        self.action_graph_scatter = create_action(
+            "office-chart-scatter",
+            "Scatter",
+            "Create scatter plots of elements.",
+            lambda: self.graph_stack.setCurrentWidget(self.scatter_widget),
+            checkable=True,
+        )
 
         self.action_filter_detections = create_action(
             "view-filter",
@@ -180,6 +257,7 @@ class ResultsWidget(QtWidgets.QWidget):
         action_group_graph_view.addAction(self.action_graph_histogram)
         action_group_graph_view.addAction(self.action_graph_histogram_stacked)
         action_group_graph_view.addAction(self.action_graph_fractions)
+        action_group_graph_view.addAction(self.action_graph_scatter)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
 
         self.graph_toolbar.addSeparator()
@@ -310,6 +388,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.drawGraphHist()
         if len(self.results) > 1:
             self.drawGraphFrac()
+            self.drawGraphScatter()
 
     def drawGraphHist(self) -> None:
         self.graph_hist.clear()
@@ -468,6 +547,44 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
 
+    def drawGraphScatter(self) -> None:
+        self.graph_scatter.clear()
+
+        # Set the elements
+        xname = self.combo_scatter_x.currentText()
+        yname = self.combo_scatter_y.currentText()
+        mode = self.mode.currentText()
+        if mode == "Signal":
+            label, unit = "Intensity (counts)", ""
+            x = self.results[xname]["detections"]
+            y = self.results[yname]["detections"]
+        elif mode == "Mass (kg)":
+            label, unit = "Mass", "g"
+            x = self.results[xname]["masses"] * 1000
+            y = self.results[yname]["masses"] * 1000
+        elif mode == "Size (m)":
+            label, unit = "Size", "m"
+            x = self.results[xname]["sizes"]
+            y = self.results[yname]["sizes"]
+        elif mode == "Conc. (mol/L)":
+            label, unit = "Concentration", "mol/L"
+            x = self.results[xname]["cell_concentrations"]
+            y = self.results[yname]["cell_concentrations"]
+        else:
+            raise ValueError("drawGraph: unknown mode.")
+
+        valid = np.intersect1d(
+            self.results[xname]["indicies"],
+            self.results[yname]["indicies"],
+            assume_unique=True,
+        )
+
+        self.graph_scatter.xaxis.setLabel(text=label, units=unit)
+        self.graph_scatter.yaxis.setLabel(text=label, units=unit)
+
+        self.graph_scatter.drawData(x[valid], y[valid])
+        self.graph_scatter.drawFit(x[valid], y[valid], 1)
+
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
         self.graph_hist.zoomReset()
@@ -496,6 +613,30 @@ class ResultsWidget(QtWidgets.QWidget):
     #     self.chart.setFit(bins[1:], fit)
     #     self.chart.fit.setName(method)
     #     self.chart.label_fit.setVisible(True)
+
+    def updateScatterElements(self) -> None:
+        mode = self.mode.currentText()
+        if mode == "Signal":
+            key = "detections"
+        elif mode == "Mass (kg)":
+            key = "masses"
+        elif mode == "Size (m)":
+            key = "sizes"
+        elif mode == "Conc. (mol/L)":
+            key = "cell_concentrations"
+        else:
+            raise ValueError("Unknown mode.")
+
+        elements = [name for name in self.results if key in self.results[name]]
+
+        for combo in [self.combo_scatter_x, self.combo_scatter_y]:
+            current = combo.currentText()
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(elements)
+            if current in elements:
+                combo.setCurrentText(current)
+            combo.blockSignals(False)
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
@@ -716,17 +857,23 @@ class ResultsWidget(QtWidgets.QWidget):
         self.filterResults()
         # end for name in names
         self.updateOutputs()
+        self.updateScatterElements()
+        self.updateEnabledItems()
 
+        self.drawGraph()
+
+    def updateEnabledItems(self) -> None:
         # Only enable modes that have data
         for key, index in zip(["masses", "sizes", "cell_concentrations"], [1, 2, 3]):
-            enabled = any([key in self.results[name] for name in names])
+            enabled = any([key in self.results[name] for name in self.results])
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)
-        # Only enable fraction view and stack if more than one element
-        self.action_graph_fractions.setEnabled(len(self.results) > 1)
-        self.action_graph_histogram_stacked.setEnabled(len(self.results) > 1)
-        if len(self.results) == 1:
-            self.action_graph_histogram.trigger()
 
-        self.drawGraph()
+        # Only enable fraction view and stack if more than one element
+        single_result = len(self.results) == 1
+        self.action_graph_fractions.setEnabled(not single_result)
+        self.action_graph_histogram_stacked.setEnabled(not single_result)
+        self.action_graph_scatter.setEnabled(not single_result)
+        if single_result:  # Switch to histogram
+            self.action_graph_histogram.trigger()
