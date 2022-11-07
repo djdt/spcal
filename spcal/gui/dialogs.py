@@ -1,12 +1,10 @@
-from collections.abc import Iterator
 from PySide6 import QtCore, QtGui, QtWidgets
-from ckwrap.ckwrap import Tuple
 import numpy as np
 from pathlib import Path
 
 from spcal.gui.units import UnitsWidget
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from spcal.gui.util import create_action
 
