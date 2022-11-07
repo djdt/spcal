@@ -701,8 +701,8 @@ class ResultsWidget(QtWidgets.QWidget):
             else:
                 continue
 
-            valid = ops[operation](data[indicies], value)
-            condition[indicies] = bool_ops[boolean](condition[indicies], valid)
+            valid = ops[operation](data, value)
+            condition = bool_ops[boolean](condition, valid)
 
         valid_indicies = np.flatnonzero(condition)
         for name in self.results:
