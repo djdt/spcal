@@ -645,10 +645,10 @@ class ScatterWidget(QtWidgets.QWidget):
         self.combo_y.currentIndexChanged.connect(self.onComboChanged)
 
         layout_combos = QtWidgets.QHBoxLayout()
+        layout_combos.addWidget(QtWidgets.QLabel("y:"), 0)
+        layout_combos.addWidget(self.combo_y, 1)
         layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
         layout_combos.addWidget(self.combo_x, 1)
-        layout_combos.addWidget(QtWidgets.QLabel("y:"), 0, QtCore.Qt.AlignRight)
-        layout_combos.addWidget(self.combo_y, 1, QtCore.Qt.AlignRight)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.view, 1)
@@ -656,6 +656,7 @@ class ScatterWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def onComboChanged(self) -> None:
+        self.view.clear()
         self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
 
 
@@ -801,11 +802,13 @@ if __name__ == "__main__":  # test colors
         100 + 100 * len(color_schemes),
     )
     # view = QtWidgets.QGraphicsView(scene)
-    view = ResultsScatterView()
+    data = np.empty(1000, dtype=[("a", float), ("b", float), ("c", float)])
+    data["a"] = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000) ** 2
+    data["b"] = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000)
+    data["c"] = 100 + np.random.normal(1.0, 0.1, size=1000)
 
-    x = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000) ** 2
-    y = 100 + np.random.normal(1.0, 0.1, size=1000) * np.arange(1000)
-    view.drawData(x, y)
+    view = ScatterWidget(data)
+
     # view.setLogScale(True, False)
     
     # view.drawFit(x, y, 2)

@@ -24,8 +24,6 @@ from spcal.gui.util import create_action
 from typing import Dict, Tuple
 
 
-
-
 class ResultsWidget(QtWidgets.QWidget):
     signal_units = {"counts": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
@@ -85,10 +83,12 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_hist = ResultsHistogramView()
         self.graph_frac = ResultsFractionView()
+        self.graph_scatter = ScatterWidget()
 
         self.graph_stack = QtWidgets.QStackedWidget()
         self.graph_stack.addWidget(self.graph_hist)
         self.graph_stack.addWidget(self.graph_frac)
+        self.graph_stack.addWidget(self.graph_scatter)
 
         self.io = ResultIOStack()
 
