@@ -204,6 +204,8 @@ def fraction_components(
 
     _iter = 0
     if combine_similar:
+        # diff = np.sqrt(len(fractions.dtype.names) * (bins[1] - bins[0]) ** 2)
+        # Todo Come up with better distance, not flat in all dims
         diff = bins[1] - bins[0]
         combined_means = []
         combined_counts = []
