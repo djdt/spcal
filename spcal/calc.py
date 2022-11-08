@@ -153,7 +153,6 @@ def calculate_limits(
             std = moving_std(pad, window)[: responses.size]
 
     if "Gaussian" in method:
-        std = np.std(responses)
         limits["ld"] = limits["mean"] + sigma * std
         limits["lc"] = limits["ld"]
         limit_params["σ"] = sigma
