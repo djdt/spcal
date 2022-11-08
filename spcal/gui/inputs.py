@@ -372,9 +372,10 @@ class InputWidget(QtWidgets.QWidget):
         if self.draw_mode == "Overlay":
             return
         for name in self.limits:
+            trim = self.trimRegion(name)
             plot = self.graph.plots[name]
             plot.clearLimits()
-            plot.drawLimits(self.events, self.limits[name][2])
+            plot.drawLimits(self.events[trim[0]:trim[1]], self.limits[name][2])
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
