@@ -511,13 +511,13 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             pen.setCosmetic(True)
 
             if limits[name].size == 1:
-                x, y = [x[0], x[-1]], [limits[name][0], limits[name][0]]
+                nx, y = [x[0], x[-1]], [limits[name][0], limits[name][0]]
             else:
                 diffs = np.diff(limits[name], n=2, append=0, prepend=0) != 0
-                x, y = x[diffs], limits[name][diffs]
+                nx, y = x[diffs], limits[name][diffs]
 
             curve = pyqtgraph.PlotCurveItem(
-                x=x, y=y, name=name, pen=pen, connect="all", skipFiniteCheck=True
+                x=nx, y=y, name=name, pen=pen, connect="all", skipFiniteCheck=True
             )
             self.limits.append(curve)
             self.addItem(curve)
