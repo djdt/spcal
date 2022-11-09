@@ -159,7 +159,9 @@ class SampleIOWidget(IOWidget):
         background_std = np.std(responses[labels == 0])
         lod = np.mean(limits[2]["ld"])  # + self.background
 
-        self.count.setText(f"{detections.size} ± {np.sqrt(detections.size):.1f}")
+        count = np.count_nonzero(detections)
+
+        self.count.setText(f"{count} ± {np.sqrt(count):.1f}")
         self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
         self.lod_count.setText(
             f"{lod:.4g} ({limits[0]}, {','.join(f'{k}={v}' for k,v in limits[1].items())})"

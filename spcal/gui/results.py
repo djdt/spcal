@@ -10,19 +10,70 @@ from spcal.calc import (
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
 from spcal.detection import (
-    detection_element_fractions,
     fraction_components,
 )
 from spcal.particle import cell_concentration
 
-from spcal.gui.dialogs import BinWidthDialog
-from spcal.gui.graphs import ResultsFractionView, ResultsHistogramView, color_schemes
+from spcal.gui.dialogs import BinWidthDialog, FilterDialog
+from spcal.gui.graphs import (
+    ResultsFractionView,
+    ResultsHistogramView,
+    ResultsScatterView,
+    color_schemes,
+)
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 
 from typing import Dict, Tuple
+
+
+# class ScatterWidget(QtWidgets.QWidget):
+#     def __init__(self, data: np.ndarray, parent: QtWidgets.QWidget | None = None):
+#         super().__init__(parent)
+
+#         self.view = ResultsScatterView()
+#         self.data = np.array([])
+
+#         self.combo_x = QtWidgets.QComboBox()
+#         self.combo_x.addItems(data.dtype.names)
+#         self.combo_y = QtWidgets.QComboBox()
+#         self.combo_y.addItems(data.dtype.names)
+#         self.combo_x.setCurrentIndex(1)
+
+#         self.combo_x.currentIndexChanged.connect(self.onComboChanged)
+#         self.combo_y.currentIndexChanged.connect(self.onComboChanged)
+
+#         layout_combos = QtWidgets.QHBoxLayout()
+#         layout_combos.addWidget(QtWidgets.QLabel("y:"), 0)
+#         layout_combos.addWidget(self.combo_y, 1)
+#         layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
+#         layout_combos.addWidget(self.combo_x, 1)
+
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addWidget(self.view, 1)
+#         layout.addLayout(layout_combos, 0)
+#         self.setLayout(layout)
+
+#     def setData(self, data: Dict[str, np.ndarray]) -> None:
+#         if data.dtype.names != self.data.dtype.names:
+#             for combo in [self.combo_x, self.combo_y]:
+#                 current = combo.currentText()
+#                 combo.blockSignals(True)
+#                 combo.clear()
+#                 combo.addItems(data.dtype.names)
+#                 if current in data.dtype.names:
+#                     combo.setCurrentText(current)
+#                 combo.blockSignals(False)
+
+#         self.data = data
+#         self.onComboChanged()
+
+
+#     def onComboChanged(self) -> None:
+#         self.view.clear()
+#         self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -75,10 +126,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.nbins = "auto"
-        self.result: Dict[str, dict] = {}
-        # Todo: split into common and element results
-        # self.common_results: dict = {}
-        # self.element_results: Dict[str, dict] = {}
+        self.filters = []
+        self.results: Dict[str, dict] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -86,10 +135,29 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_hist = ResultsHistogramView()
         self.graph_frac = ResultsFractionView()
+        self.graph_scatter = ResultsScatterView()
+
+        self.combo_scatter_x = QtWidgets.QComboBox()
+        self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
+        self.combo_scatter_y = QtWidgets.QComboBox()
+        self.combo_scatter_y.currentIndexChanged.connect(self.drawGraphScatter)
+
+        # Create simple widget with graph and two combos for x / y element selection
+        scatter_layout = QtWidgets.QVBoxLayout()
+        scatter_combo_layout = QtWidgets.QHBoxLayout()
+        scatter_combo_layout.addWidget(QtWidgets.QLabel("y:"), 0)
+        scatter_combo_layout.addWidget(self.combo_scatter_y, 1)
+        scatter_combo_layout.addWidget(QtWidgets.QLabel("x:"), 0)
+        scatter_combo_layout.addWidget(self.combo_scatter_x, 1)
+        scatter_layout.addWidget(self.graph_scatter)
+        scatter_layout.addLayout(scatter_combo_layout)
+        self.scatter_widget = QtWidgets.QWidget()
+        self.scatter_widget.setLayout(scatter_layout)
 
         self.graph_stack = QtWidgets.QStackedWidget()
         self.graph_stack.addWidget(self.graph_hist)
         self.graph_stack.addWidget(self.graph_frac)
+        self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
 
@@ -114,7 +182,8 @@ class ResultsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
         self.mode.setCurrentText("Signal")
-        self.mode.currentIndexChanged.connect(lambda: self.updateOutputs(None))
+        self.mode.currentIndexChanged.connect(self.updateOutputs)
+        self.mode.currentIndexChanged.connect(self.updateScatterElements)
         self.mode.currentIndexChanged.connect(self.drawGraph)
 
         self.label_file = QtWidgets.QLabel()
@@ -152,6 +221,20 @@ class ResultsWidget(QtWidgets.QWidget):
             lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
             checkable=True,
         )
+        self.action_graph_scatter = create_action(
+            "office-chart-scatter",
+            "Scatter",
+            "Create scatter plots of elements.",
+            lambda: self.graph_stack.setCurrentWidget(self.scatter_widget),
+            checkable=True,
+        )
+
+        self.action_filter_detections = create_action(
+            "view-filter",
+            "Filter Detections",
+            "Filter detections based on element compositions.",
+            self.dialogFilterDetections,
+        )
 
         self.action_bin_width = create_action(
             "adjustcol",
@@ -171,6 +254,7 @@ class ResultsWidget(QtWidgets.QWidget):
         action_group_graph_view.addAction(self.action_graph_histogram)
         action_group_graph_view.addAction(self.action_graph_histogram_stacked)
         action_group_graph_view.addAction(self.action_graph_fractions)
+        action_group_graph_view.addAction(self.action_graph_scatter)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
 
         self.graph_toolbar.addSeparator()
@@ -181,6 +265,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.addWidget(spacer)
 
         self.graph_toolbar.addSeparator()
+        self.graph_toolbar.addAction(self.action_filter_detections)
         self.graph_toolbar.addAction(self.action_bin_width)
 
         self.graph_toolbar.addSeparator()
@@ -230,6 +315,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.draw_mode = mode
         self.drawGraphHist()
 
+    def setFilters(self, filters) -> None:
+        self.filters = filters
+        self.updateResults()
+
     def dialogBinWidth(self) -> None:
         dlg = BinWidthDialog(self.bin_widths, parent=self)
         dlg.binWidthsChanged.connect(self.setBinWidths)
@@ -240,7 +329,19 @@ class ResultsWidget(QtWidgets.QWidget):
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
-            export_nanoparticle_results(Path(file), self.result)
+            export_nanoparticle_results(Path(file), self.results)
+
+    # def dialogExportImage(self) -> None:
+    #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
+    #         self, "Export Image", "", "PNG Images (*.png)"
+    #     )
+    #     # if file != "":
+    #     #     self.chartview.saveToFile(file)
+
+    def dialogFilterDetections(self) -> None:
+        dlg = FilterDialog(list(self.results.keys()), self.filters, parent=self)
+        dlg.filtersChanged.connect(self.setFilters)
+        dlg.open()
 
     def asBestUnit(
         self, data: np.ndarray, current_unit: str = ""
@@ -282,8 +383,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def drawGraph(self) -> None:
         self.drawGraphHist()
-        if len(self.result) > 1:
+        if len(self.results) > 1:
             self.drawGraphFrac()
+            self.drawGraphScatter()
 
     def drawGraphHist(self) -> None:
         self.graph_hist.clear()
@@ -295,6 +397,8 @@ class ResultsWidget(QtWidgets.QWidget):
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
             bin_width = self.bin_widths.get("mass", None)
+            if bin_width is not None:
+                bin_width *= 1000  # convert to gram
         elif mode == "Size (m)":
             label, unit = "Size", "m"
             bin_width = self.bin_widths.get("size", None)
@@ -304,16 +408,19 @@ class ResultsWidget(QtWidgets.QWidget):
         else:
             raise ValueError("drawGraph: unknown mode.")
 
+        names = list(self.results.keys())
+
         graph_data = {}
-        for name in self.result:
+        for name, result in self.results.items():
+            indices = self.results[name]["indicies"]
             if mode == "Signal":
-                graph_data[name] = self.result[name]["detections"]
-            elif mode == "Mass (kg)" and "masses" in self.result[name]:
-                graph_data[name] = self.result[name]["masses"] * 1000  # convert to gram
-            elif mode == "Size (m)" and "sizes" in self.result[name]:
-                graph_data[name] = self.result[name]["sizes"]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
-                graph_data[name] = self.result[name]["cell_concentrations"]
+                graph_data[name] = result["detections"][indices]
+            elif mode == "Mass (kg)" and "masses" in result:
+                graph_data[name] = result["masses"][indices] * 1000  # convert to gram
+            elif mode == "Size (m)" and "sizes" in result:
+                graph_data[name] = result["sizes"][indices]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
+                graph_data[name] = result["cell_concentrations"][indices]
             else:
                 continue
 
@@ -325,6 +432,12 @@ class ResultsWidget(QtWidgets.QWidget):
                     for name in graph_data
                 ]
             )
+        # Limit maximum number of bins
+        for data in graph_data.values():
+            min_bin_width = (data.max() - data.min()) / 1024
+            if bin_width < min_bin_width:
+                bin_width = min_bin_width
+                break
 
         scheme = color_schemes[self.color_scheme]
         if self.draw_mode == "Overlay":
@@ -339,16 +452,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
             )
             bins -= bins[0] % bin_width  # align bins
-            color = QtGui.QColor(scheme[i % len(scheme)])
-            color.setAlpha(128)
-            if self.draw_mode == "Stacked":
+            color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
+            # color.setAlpha(128)
+            if self.draw_mode == "Overlay":
+                width = 1.0 / len(graph_data)
+                if len(graph_data) == 1:
+                    width /= 2.0
+                offset = i * width
+            elif self.draw_mode == "Stacked":
                 plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
                 width = 0.5
                 offset = 0.0
             else:
-                width = 1.0 / len(graph_data)
-                offset = i * width
-            plot.drawData(
+                raise ValueError("Invalid draw mode.")
+            plot.drawData(  # type: ignore
                 name,
                 graph_data[name],
                 bins=bins,
@@ -376,25 +493,38 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_frac.plot.setTitle(f"{label} Composition")
 
+        # Save names order to preserve colors
+        names = list(self.results.keys())
+
+        # Get list of any un filter detection
+        valid = np.zeros(self.results[names[0]]["detections"].size, dtype=bool)
+        for result in self.results.values():
+            valid[result["indicies"]] = True
+
         graph_data = {}
-        for name in self.result:
+        for name, result in self.results.items():
             if mode == "Signal":
-                graph_data[name] = self.result[name]["detections"]
-            elif mode == "Mass (kg)" and "masses" in self.result[name]:
-                graph_data[name] = self.result[name]["masses"] * 1000  # convert to gram
-            elif mode == "Size (m)" and "sizes" in self.result[name]:
-                graph_data[name] = self.result[name]["sizes"]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
-                graph_data[name] = self.result[name]["cell_concentrations"]
+                graph_data[name] = result["detections"][valid]
+            elif mode == "Mass (kg)" and "masses" in result:
+                graph_data[name] = result["masses"][valid] * 1000  # convert to gram
+            elif mode == "Size (m)" and "sizes" in result:
+                graph_data[name] = result["sizes"][valid]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
+                graph_data[name] = result["cell_concentrations"][valid]
             else:
                 continue
 
-        if not all(name in graph_data for name in self.sample.detections):
+        if len(graph_data) == 0:
             return
 
-        fractions = detection_element_fractions(
-            graph_data, self.sample.labels, self.sample.regions
+        totals = np.sum(list(graph_data.values()), axis=0)
+        fractions = np.zeros(
+            totals.size, dtype=[(name, np.float64) for name in graph_data]
         )
+
+        for name, data in graph_data.items():
+            fractions[name] = np.divide(data, totals, where=totals > 0)
+
         compositions, counts = fraction_components(fractions, combine_similar=True)
 
         mask = counts > fractions.size * 0.05
@@ -404,14 +534,53 @@ class ResultsWidget(QtWidgets.QWidget):
         if counts.size == 0:
             return
 
-        brushes = []
         scheme = color_schemes[self.color_scheme]
-        for i in range(len(compositions.dtype.names)):
-            color = QtGui.QColor(scheme[i % len(scheme)])
-            color.setAlpha(128)
+        brushes = []
+
+        for name in compositions.dtype.names:
+            color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
+            # color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
+
+    def drawGraphScatter(self) -> None:
+        self.graph_scatter.clear()
+
+        # Set the elements
+        xname = self.combo_scatter_x.currentText()
+        yname = self.combo_scatter_y.currentText()
+        mode = self.mode.currentText()
+        if mode == "Signal":
+            label, unit = "Intensity (counts)", ""
+            x = self.results[xname]["detections"]
+            y = self.results[yname]["detections"]
+        elif mode == "Mass (kg)":
+            label, unit = "Mass", "g"
+            x = self.results[xname]["masses"] * 1000
+            y = self.results[yname]["masses"] * 1000
+        elif mode == "Size (m)":
+            label, unit = "Size", "m"
+            x = self.results[xname]["sizes"]
+            y = self.results[yname]["sizes"]
+        elif mode == "Conc. (mol/L)":
+            label, unit = "Concentration", "mol/L"
+            x = self.results[xname]["cell_concentrations"]
+            y = self.results[yname]["cell_concentrations"]
+        else:
+            raise ValueError("drawGraph: unknown mode.")
+
+        valid = np.intersect1d(
+            self.results[xname]["indicies"],
+            self.results[yname]["indicies"],
+            assume_unique=True,
+        )
+
+        self.graph_scatter.xaxis.setLabel(text=label, units=unit)
+        self.graph_scatter.yaxis.setLabel(text=label, units=unit)
+
+        self.graph_scatter.drawData(x[valid], y[valid])
+        self.graph_scatter.drawFit(x[valid], y[valid], 1)
 
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
@@ -442,84 +611,123 @@ class ResultsWidget(QtWidgets.QWidget):
     #     self.chart.fit.setName(method)
     #     self.chart.label_fit.setVisible(True)
 
-    def updateOutputs(self, _name: str | None = None) -> None:
+    def updateScatterElements(self) -> None:
         mode = self.mode.currentText()
-        if _name is None or _name == "Overlay":
-            names = list(self.sample.detections.keys())
+        if mode == "Signal":
+            key = "detections"
+        elif mode == "Mass (kg)":
+            key = "masses"
+        elif mode == "Size (m)":
+            key = "sizes"
+        elif mode == "Conc. (mol/L)":
+            key = "cell_concentrations"
         else:
-            names = [_name]
+            raise ValueError("Unknown mode.")
 
-        for name in names:
+        elements = [name for name in self.results if key in self.results[name]]
+
+        for combo in [self.combo_scatter_x, self.combo_scatter_y]:
+            current = combo.currentText()
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(elements)
+            if current in elements:
+                combo.setCurrentText(current)
+            combo.blockSignals(False)
+
+    def updateOutputs(self) -> None:
+        mode = self.mode.currentText()
+
+        for name, result in self.results.items():
             if mode == "Signal":
                 units = self.signal_units
-                values = self.result[name]["detections"]
-                lod = self.result[name]["lod"]
-            elif mode == "Mass (kg)" and "masses" in self.result[name]:
+                values = result["detections"]
+                lod = result["lod"]
+            elif mode == "Mass (kg)" and "masses" in result:
                 units = self.mass_units
-                values = self.result[name]["masses"]
-                lod = self.result[name]["lod_mass"]
-            elif mode == "Size (m)" and "sizes" in self.result[name]:
+                values = result["masses"]
+                lod = result["lod_mass"]
+            elif mode == "Size (m)" and "sizes" in result:
                 units = self.size_units
-                values = self.result[name]["sizes"]
-                lod = self.result[name]["lod_size"]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in self.result[name]:
+                values = result["sizes"]
+                lod = result["lod_size"]
+            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
                 units = self.molar_concentration_units
-                values = self.result[name]["cell_concentrations"]
-                lod = self.result[name]["lod_cell_concentration"]
+                values = result["cell_concentrations"]
+                lod = result["lod_cell_concentration"]
             else:
                 self.io[name].clearOutputs()
                 continue
 
+            indicies = result["indicies"]
+
             self.io[name].updateOutputs(
-                values,
+                values[indicies],
                 units,
                 lod,
-                count=self.result[name]["detections"].size,
-                count_percent=self.result[name]["detections_percent"],
-                count_error=self.result[name]["detections_std"],
-                conc=self.result[name].get("concentration", None),
-                number_conc=self.result[name].get("number_concentration", None),
-                background_conc=self.result[name].get("background_concentration", None),
-                background_error=self.result[name]["background_std"]
-                / self.result[name]["background"],
+                count=indicies.size,
+                count_percent=indicies.size / values.size * 100.0,
+                count_error=np.sqrt(indicies.size),
+                conc=result.get("concentration", None),
+                number_conc=result.get("number_concentration", None),
+                background_conc=result.get("background_concentration", None),
+                background_error=result["background_std"] / result["background"],
             )
 
-    def updateResults(self, _name: str | None = None) -> None:
+    def filterResults(self) -> None:
+        condition = np.ones(self.sample.detections.size, dtype=bool)
+        for filter in self.filters:
+            boolean, name, unit, operation, value = filter
+
+            ops = {
+                ">": np.greater,
+                "<": np.less,
+                ">=": np.greater_equal,
+                "<=": np.less_equal,
+                "==": np.equal,
+            }
+            bool_ops = {"And": np.logical_and, "Or": np.logical_or}
+
+            indicies = self.results[name]["indicies"]
+            if unit == "Intensity":
+                data = self.results[name]["detections"]
+            elif unit == "Mass" and "masses" in self.results[name]:
+                data = self.results[name]["masses"]
+            elif unit == "Size" and "sizes" in self.results[name]:
+                data = self.results[name]["sizes"]
+            else:
+                continue
+
+            valid = ops[operation](data, value)
+            condition = bool_ops[boolean](condition, valid)
+
+        valid_indicies = np.flatnonzero(condition)
+        for name in self.results:
+            indicies = self.results[name]["indicies"]
+            self.results[name]["indicies"] = indicies[np.in1d(indicies, valid_indicies)]
+
+    def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
-        if _name is None or _name == "Overlay":
-            names = list(self.sample.detections.keys())
-        else:
-            names = [_name]
-
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
 
-        fractions = detection_element_fractions(
-            self.sample.detections, self.sample.labels, self.sample.regions
-        )
-        compositions, counts = fraction_components(fractions, combine_similar=True)
-        total_counts = np.sum(counts)
-
-        # mask = counts > fractions.size * 0.05
-        # compositions = compositions[mask]
-        # counts = counts[mask]
-        # print(compositions.dtype.names, counts)
+        names = list(self.sample.detections.dtype.names)
 
         for name in names:
             trim = self.sample.trimRegion(name)
             responses = self.sample.responses[name][trim[0] : trim[1]]
 
+            indicies = np.flatnonzero(self.sample.detections[name])
+
             result = {
-                "background": np.mean(responses[self.sample.labels[name] == 0]),
-                "background_std": np.std(responses[self.sample.labels[name] == 0]),
+                "background": np.mean(responses[self.sample.labels == 0]),
+                "background_std": np.std(responses[self.sample.labels == 0]),
                 "detections": self.sample.detections[name],
-                "detections_percent": np.sum(counts[compositions[name] > 0.0])
-                / total_counts
-                * 100.0,
-                "detections_std": np.sqrt(self.sample.detections[name].size),
+                "indicies": indicies,
+                "total_detections": self.sample.detections.size,
                 "events": responses.size,
                 "file": self.sample.label_file.text(),
                 "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
@@ -612,6 +820,7 @@ class ResultsWidget(QtWidgets.QWidget):
                             "mass_response": mass_response,
                         }
                     )
+            # end if method
 
             # Cell inputs
             cell_diameter = self.options.celldiameter.baseValue()
@@ -640,20 +849,28 @@ class ResultsWidget(QtWidgets.QWidget):
                 )
                 result["inputs"].update({"molar_mass": molar_mass})
 
-            self.result[name] = result
-            self.updateOutputs(name)
-        # end for name in names
+            self.results[name] = result
 
+        self.filterResults()
+        # end for name in names
+        self.updateOutputs()
+        self.updateScatterElements()
+        self.updateEnabledItems()
+
+        self.drawGraph()
+
+    def updateEnabledItems(self) -> None:
         # Only enable modes that have data
         for key, index in zip(["masses", "sizes", "cell_concentrations"], [1, 2, 3]):
-            enabled = any([key in self.result[name] for name in names])
+            enabled = any([key in self.results[name] for name in self.results])
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)
-        # Only enable fraction view and stack if more than one element
-        self.action_graph_fractions.setEnabled(len(self.result) > 1)
-        self.action_graph_histogram_stacked.setEnabled(len(self.result) > 1)
-        if len(self.result) == 1:
-            self.action_graph_histogram.trigger()
 
-        self.drawGraph()
+        # Only enable fraction view and stack if more than one element
+        single_result = len(self.results) == 1
+        self.action_graph_fractions.setEnabled(not single_result)
+        self.action_graph_histogram_stacked.setEnabled(not single_result)
+        self.action_graph_scatter.setEnabled(not single_result)
+        if single_result:  # Switch to histogram
+            self.action_graph_histogram.trigger()

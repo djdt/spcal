@@ -159,9 +159,9 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         fp.write("#\n# Detection results\n")
         fp.write(f"#,{','.join(names)}\n")
 
-        detections = [results[name]["detections"].size for name in names]
-        fp.write(f"# Detected particles,{','.join(str(x) for x in detections)}\n")
-        write_if_key_exists(fp, results, "detections_std", prefix="# Detection stddev,")
+        counts = [results[name]["indicies"].size for name in names]
+        fp.write(f"# Detected particles,{','.join(str(c) for c in counts)}\n")
+        fp.write(f"# Detection stdev,{','.join(str(np.sqrt(c)) for c in counts)}\n")
         write_if_key_exists(
             fp,
             results,
@@ -223,23 +223,30 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         if any(np.any(x > 0.0) for x in lods_conc):
             fp.write(f"#,{','.join(limit_or_range(x) for x in lods_conc)},mol/L\n")
 
+        detections = [results[n]["detections"][results[n]["indicies"]] for n in names]
+        masses = [
+            results[n]["masses"][results[n]["indicies"]]
+            if "masses" in results[n]
+            else 0.0
+            for n in names
+        ]
+        sizes = [
+            results[n]["sizes"][results[n]["indicies"]]
+            if "sizes" in results[n]
+            else 0.0
+            for n in names
+        ]
+        concs = [
+            results[n]["cell_concentrations"][results[n]["indicies"]]
+            if "cell_concentrations" in results[n]
+            else 0.0
+            for n in names
+        ]
         # === Mean values ===
-        means = [np.mean(results[name]["detections"]) for name in names]
-        mass_means = np.array(
-            [
-                np.mean(get_key_or_default(results, name, "masses", 0.0))
-                for name in names
-            ]
-        )
-        size_means = np.array(
-            [np.mean(get_key_or_default(results, name, "sizes", 0.0)) for name in names]
-        )
-        conc_means = np.array(
-            [
-                np.mean(get_key_or_default(results, name, "cell_concentrations", 0.0))
-                for name in names
-            ]
-        )
+        means = np.mean(detections, axis=0)
+        mass_means = np.mean(masses, axis=0)
+        size_means = np.mean(sizes, axis=0)
+        conc_means = np.mean(concs, axis=0)
 
         fp.write(f"# Mean,{','.join(str(x or '') for x in means)},counts\n")
         if np.any(mass_means > 0.0):
@@ -250,25 +257,11 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
             fp.write(f"#,{','.join(str(x or '') for x in conc_means)},mol/L\n")
 
         # === Median values ===
-        medians = [np.median(results[name]["detections"]) for name in names]
-        mass_medians = np.array(
-            [
-                np.median(get_key_or_default(results, name, "masses", 0.0))
-                for name in names
-            ]
-        )
-        size_medians = np.array(
-            [
-                np.median(get_key_or_default(results, name, "sizes", 0.0))
-                for name in names
-            ]
-        )
-        conc_medians = np.array(
-            [
-                np.median(get_key_or_default(results, name, "cell_concentrations", 0.0))
-                for name in names
-            ]
-        )
+        medians = np.median(detections, axis=0)
+        mass_medians = np.median(masses, axis=0)
+        size_medians = np.median(sizes, axis=0)
+        conc_medians = np.median(concs, axis=0)
+
         fp.write(f"# Median,{','.join(str(x) for x in medians)},counts\n")
         if np.any(mass_medians > 0.0):
             fp.write(f"#,{','.join(str(x or '') for x in mass_medians)},kg\n")
@@ -283,7 +276,6 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
 
         fp.write("#\n# Raw detection data\n")
         # Output data
-        max_len = np.amax(detections)
         data = []
         header_name = ""
         header_unit = ""
@@ -291,8 +283,7 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
         for name in names:
             header_name += f",{name}"
             header_unit += ",counts"
-            x = results[name]["detections"]
-            data.append(np.pad(x, (0, max_len - x.size), constant_values=np.nan))
+            data.append(results[name]["detections"])
             for key, unit in [
                 ("masses", "kg"),
                 ("sizes", "m"),
@@ -301,15 +292,13 @@ def export_nanoparticle_results(path: Path, results: dict) -> None:
                 if key in results[name]:
                     header_name += f",{name}"
                     header_unit += f",{unit}"
-                    x = results[name][key]
-                    data.append(
-                        np.pad(x, (0, max_len - x.size), constant_values=np.nan)
-                    )
+                    data.append(results[name][key])
+
         data = np.stack(data, axis=1)
 
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
-            fp.write(",".join("" if np.isnan(x) else str(x) for x in line) + "\n")
+            fp.write(",".join("" if x == 0.0 else str(x) for x in line) + "\n")
 
         logger.info(f"Exported results for to {path.name}.")
