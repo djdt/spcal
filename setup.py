@@ -1,5 +1,6 @@
 from pathlib import Path
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
+import numpy
 
 with open("README.md") as fp:
     long_description = fp.read()
@@ -11,6 +12,13 @@ with Path("spcal", "__init__.py").open() as fp:
             version = line.split("=")[1].strip().strip('"')
     if version is None:
         raise ValueError("Could not read version from __init__.py")
+
+spcalext = Extension(
+    "spcal.lib.spcalext",
+    sources=["src/spcalext.c"],
+    include_dirs=[numpy.get_include()],
+    define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+)
 
 setup(
     name="spcal",
@@ -28,4 +36,5 @@ setup(
     install_requires=["numpy>=1.22", "PySide6", "pyqtgraph", "bottleneck"],
     extras_require={"tests": ["pytest"]},
     entry_points={"console_scripts": ["spcal=spcal.__main__:main"]},
+    ext_modules=[spcalext],
 )
