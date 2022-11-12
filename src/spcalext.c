@@ -2,6 +2,9 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+/* Based off of the scipy implementation
+ * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
+
 inline double sqeclidean(const double *X, int i, int j, int m) {
   double sum = 0.0;
   for (int k = 0; k < m; ++k) {
@@ -298,8 +301,6 @@ static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef spcal_methods[] = {
-    /* {"hierarchical_spcal", spcal_linkage, METH_VARARGS, */
-    /*  "Perform aglomerative hierarchical spcaling."}, */
     {"pdist_square", pdist_square, METH_VARARGS,
      "Calculate squared euclidean pairwise distance for array."},
     {"mst_linkage", mst_linkage, METH_VARARGS,
