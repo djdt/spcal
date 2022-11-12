@@ -2,11 +2,6 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-/* inline double at2d(double *X, npy_intp i, npy_intp j, npy_intp n, npy_intp m)
- */
-/* { */
-/*    X[i * n + j] */
-/* } */
 inline double sqeclidean(const double *X, npy_intp i, npy_intp j, npy_intp m) {
   double sum = 0.0;
   for (npy_intp k = 0; k < m; ++k) {
@@ -34,13 +29,11 @@ static PyObject *pdist_square(PyObject *self, PyObject *args) {
   double *D = (double *)PyArray_DATA(Darray);
 
   npy_intp i, j, k = 0;
-  NPY_BEGIN_ALLOW_THREADS;
   for (i = 0; i < n; ++i) {
     for (j = i + 1; j < n; ++j, ++k) {
       D[k] = sqeclidean(X, i, j, m);
     }
   }
-  NPY_END_ALLOW_THREADS;
   return (PyObject *)Darray;
 }
 
@@ -65,6 +58,59 @@ int argsort_cmp(const void *a, const void *b) {
     return -1;
   else
     return 0;
+}
+
+inline npy_intp find_root(npy_intp *parents, npy_intp x) {
+  npy_intp p = x;
+  while (parents[x] != x)
+    x = parents[x];
+
+  while (parents[p] != x) {
+    p = parents[p];
+    parents[p] = x;
+  }
+  return x;
+}
+
+inline npy_intp merge_roots(npy_intp *parents, npy_intp *sizes, npy_intp n,
+                            npy_intp x, npy_intp y) {
+  npy_intp size = sizes[x] + sizes[y];
+  sizes[n] = size;
+  parents[x] = n;
+  parents[y] = n;
+  return size;
+}
+
+void label(PyArrayObject *Zarray, npy_intp n) {
+  npy_intp *Z = (npy_intp *)PyArray_DATA(Zarray);
+
+  npy_intp *parents = malloc((2 * n - 1) * sizeof(npy_intp));
+  npy_intp *sizes = malloc((2 * n - 1) * sizeof(npy_intp));
+  npy_intp next = n;
+  npy_intp x, y, x_root, y_root;
+  for (npy_intp i = 0; i < 2 * n - 1; ++i) {
+    parents[i] = i;
+    sizes[i] = 1;
+  }
+
+  for (npy_intp i = 0; i < n - 1; ++i) {
+    x = Z[i * 3];
+    y = Z[i * 3 + 1];
+    x_root = find_root(parents, x);
+    y_root = find_root(parents, y);
+    if (x_root < y_root) {
+      Z[i * 3] = x_root;
+      Z[i * 3 + 1] = y_root;
+    } else {
+      Z[i * 3] = y_root;
+      Z[i * 3 + 1] = x_root;
+    }
+    Z[i * 3 + 2] = merge_roots(parents, sizes, next, x_root, y_root);
+    next += 1;
+  }
+
+  free(parents);
+  free(sizes);
 }
 
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
@@ -130,7 +176,6 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   Zarray = (PyArrayObject *)PyArray_SimpleNew(2, Zdims, NPY_LONG);
   ZDarray = (PyArrayObject *)PyArray_SimpleNew(1, ZDdims, NPY_DOUBLE);
 
-  /* const npy_intp *I = (const npy_intp *)PyArray_DATA(Iarray); */
   npy_intp *Z = (npy_intp *)PyArray_DATA(Zarray);
   double *ZD = (double *)PyArray_DATA(ZDarray);
 
@@ -143,6 +188,8 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   free(Z1);
   free(Z2);
   free(Z3);
+
+  label(Zarray, n);
 
   return PyTuple_Pack(2, Zarray, ZDarray);
 }
