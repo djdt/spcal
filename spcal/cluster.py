@@ -1,0 +1,19 @@
+import numpy as np
+
+from spcal.lib.spcalext import pdist_square, mst_linkage, cluster_by_distance
+
+
+def agglomerative_cluster(X: np.ndarray, max_dist: float):
+    dists = pdist_square(X)
+    Z, ZD = mst_linkage(dists, X.shape[0])
+    # pdist_square is sqeuclidean so we must square dist
+    T = cluster_by_distance(Z, ZD, max_dist * max_dist)
+    counts = np.bincount(T)
+
+    means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
+
+    for i in range(means.shape[1]):
+        means[:, i] = np.bincount(T, weights=X[:, i]) / counts
+
+    idx = np.argsort(counts)[::-1]
+    return means[idx], counts[idx]

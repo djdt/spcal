@@ -9,9 +9,7 @@ from spcal.calc import (
 )
 from spcal.fit import fit_normal, fit_lognormal
 from spcal.io import export_nanoparticle_results
-from spcal.detection import (
-    fraction_components,
-)
+from spcal.cluster import agglomerative_cluster
 from spcal.particle import cell_concentration
 
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
@@ -517,19 +515,23 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) == 0:
             return
 
-        totals = np.sum(list(graph_data.values()), axis=0)
-        fractions = np.zeros(
-            totals.size, dtype=[(name, np.float64) for name in graph_data]
-        )
+        fractions = np.empty((valid.size, len(graph_data)), dtype=np.float64)
+        for i, name in enumerate(graph_data):
+            fractions[:, i] = graph_data[name]
+        totals = np.sum(fractions, axis=1)
+        fractions /= totals[:, None]
 
-        for name, data in graph_data.items():
-            fractions[name] = np.divide(data, totals, where=totals > 0)
 
-        compositions, counts = fraction_components(fractions, combine_similar=True)
+        means, counts = agglomerative_cluster(fractions, 0.1)
+        # compositions, counts = fraction_components(fractions, combine_similar=True)
+        compositions = np.empty(counts.size, dtype=[(name, np.float64) for name in graph_data])
+        for i, name in enumerate(graph_data):
+            compositions[name] = means[:, i]
 
         mask = counts > fractions.size * 0.05
         compositions = compositions[mask]
         counts = counts[mask]
+
 
         if counts.size == 0:
             return
