@@ -1,9 +1,9 @@
 import numpy as np
 import time
 from scipy.spatial import distance
-from scipy.cluster.hierarchy import single
+from scipy.cluster.hierarchy import single, fcluster
 
-from spcal.lib.spcalext import pdist_square, mst_linkage
+from spcal.lib.spcalext import pdist_square, mst_linkage, cluster
 
 
 np.random.seed(1231)
@@ -11,17 +11,23 @@ a = np.random.random(10000).reshape(1000, 10)
 
 t0 = time.time()
 r1 = distance.pdist(a)
+
+Z1 = single(r1)
+T1 = fcluster(Z1, 0.7, criterion="distance")
 t1 = time.time()
 
-Z1 = single(r1);
 
-print(r1, t1 - t0)
+print(t1 - t0)
+# print(maxdists(Z1)[495:505], flush=True)
+# print(maxdists(Z1)[-10:], flush=True)
 
 t0 = time.time()
 r2 = pdist_square(a)
-# r2 = np.sqrt(r2)
+r2 = np.sqrt(r2)
 
-Z2, D = mst_linkage(r1, a.shape[0]);
+Z2, D = mst_linkage(r1, a.shape[0])
+
+T2 = cluster(Z2, D, 0.7)
 
 # print(D.shape, Z1.shape)
 
@@ -29,7 +35,13 @@ Z2, D = mst_linkage(r1, a.shape[0]);
 # print(Z1[:50, 3], Z1[-10:, 2])
 # print(Z1[:10, 2], D[:10])
 t1 = time.time()
-print(r2, t1 - t0)
+# print(t1 - t0)
 
+print(np.all(r1 == r2))
+print(np.all(Z1[:, 0] == Z2[:, 0]))
+print(np.all(Z1[:, 1] == Z2[:, 1]))
 print(np.all(Z1[:, 3] == Z2[:, 2]))
 print(np.all(Z1[:, 2] == D))
+print(np.all(T1 == T2))
+# print(T1[:20], T2[:20])
+# print(T2)

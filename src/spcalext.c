@@ -193,20 +193,108 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   return PyTuple_Pack(2, Zarray, ZDarray);
 }
 
-static PyObject *cluster(PyObject *self, PyObject *args) {
-  PyArrayObject *Zarray, *ZDarray;
-  double dist;
-  int n;
+static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
+  PyArrayObject *Zarray, *ZDarray, *Tarray;
+  double cluster_dist;
 
-  if (!PyArg_ParseTuple(args, "O!O!di:mst_linkage", &PyArray_Type, &Zarray,
-                        &PyArray_Type, &ZDarray, &dist, &n))
+  if (!PyArg_ParseTuple(args, "O!O!d:cluster", &PyArray_Type, &Zarray,
+                        &PyArray_Type, &ZDarray, &cluster_dist))
     return NULL;
   if (!PyArray_Check(Zarray))
     return NULL;
   if (!PyArray_Check(ZDarray))
     return NULL;
 
+  int n = PyArray_DIM(Zarray, 0) + 1;
+
+  int *Z = (int *)PyArray_DATA(Zarray);
+  const double *ZD = (const double *)PyArray_DATA(ZDarray);
+
   // Get the maximum distance for each cluster
+  double *MD = malloc((n - 1) * sizeof(double));
+  int *N = malloc(n * sizeof(int));            // current nodes
+  uint8_t *V = calloc(n * 2, sizeof(uint8_t)); // visted nodes
+
+  double max;
+  int root, i, j, k = 0;
+  N[0] = 2 * n - 2;
+  while (k >= 0) {
+    root = N[k] - n;
+    i = Z[root * 3];
+    j = Z[root * 3 + 1];
+
+    if (i >= n && V[i] != 1) {
+      V[i] = 1;
+      N[++k] = i;
+      continue;
+    }
+    if (j >= n && V[j] != 1) {
+      V[j] = 1;
+      N[++k] = j;
+      continue;
+    }
+
+    max = ZD[root];
+
+    if (i >= n && MD[i - n] > max)
+      max = MD[i - n];
+    if (j >= n && MD[j - n] > max)
+      max = MD[j - n];
+    MD[root] = max;
+
+    k -= 1;
+  }
+
+  // cluster nodes by distance
+  npy_intp dims[] = {n};
+  Tarray = (PyArrayObject *)PyArray_ZEROS(1, dims, NPY_INT, 0);
+  int *T = (int *)PyArray_DATA(Tarray);
+  memset(V, 0, n * 2 * sizeof(uint8_t));
+
+  int cluster_leader = -1, cluster_number = 0;
+
+  k = 0;
+  N[0] = 2 * n - 2;
+  while (k >= 0) {
+    root = N[k] - n;
+    i = Z[root * 3];
+    j = Z[root * 3 + 1];
+
+    if (cluster_leader == -1 && MD[root] <= cluster_dist) {
+      cluster_leader = root;
+      cluster_number += 1;
+    }
+
+    if (i >= n && V[i] != 1) {
+      V[i] = 1;
+      N[++k] = i;
+      continue;
+    }
+    if (j >= n && V[j] != 1) {
+      V[j] = 1;
+      N[++k] = j;
+      continue;
+    }
+    if (i < n) {
+      if (cluster_leader == -1)
+        cluster_number += 1;
+      T[i] = cluster_number;
+    }
+    if (j < n) {
+      if (cluster_leader == -1)
+        cluster_number += 1;
+      T[j] = cluster_number;
+    }
+    if (cluster_leader == root)
+      cluster_leader = -1;
+    k -= 1;
+  }
+
+  free(MD);
+  free(N);
+  free(V);
+
+  return (PyObject *)Tarray;
 }
 
 static PyMethodDef spcal_methods[] = {
@@ -216,7 +304,8 @@ static PyMethodDef spcal_methods[] = {
      "Calculate squared euclidean pairwise distance for array."},
     {"mst_linkage", mst_linkage, METH_VARARGS,
      "Return the minimum spanning tree linkage."},
-    {"cluster", cluster, METH_VARARGS, "Cluster using the MST linkage."},
+    {"cluster_by_distance", cluster_by_distance, METH_VARARGS,
+     "Cluster using the MST linkage."},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef spcal_module = {PyModuleDef_HEAD_INIT, "spcal_module",
