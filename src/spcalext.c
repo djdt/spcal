@@ -2,9 +2,9 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
-inline double sqeclidean(const double *X, npy_intp i, npy_intp j, npy_intp m) {
+inline double sqeclidean(const double *X, int i, int j, int m) {
   double sum = 0.0;
-  for (npy_intp k = 0; k < m; ++k) {
+  for (int k = 0; k < m; ++k) {
     double dist = X[i * m + k] - X[j * m + k];
     sum += dist * dist;
   }
@@ -19,8 +19,8 @@ static PyObject *pdist_square(PyObject *self, PyObject *args) {
   if (!PyArray_Check(Xarray))
     return NULL;
 
-  npy_intp n = PyArray_DIM(Xarray, 0);
-  npy_intp m = PyArray_DIM(Xarray, 1);
+  int n = PyArray_DIM(Xarray, 0);
+  int m = PyArray_DIM(Xarray, 1);
 
   npy_intp dims[] = {n * (n - 1) / 2};
   Darray = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -28,16 +28,16 @@ static PyObject *pdist_square(PyObject *self, PyObject *args) {
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
-  npy_intp i, j, k = 0;
-  for (i = 0; i < n; ++i) {
-    for (j = i + 1; j < n; ++j, ++k) {
+  int k = 0;
+  for (int i = 0; i < n; ++i) {
+    for (int j = i + 1; j < n; ++j, ++k) {
       D[k] = sqeclidean(X, i, j, m);
     }
   }
   return (PyObject *)Darray;
 }
 
-inline npy_intp condensed_index(npy_intp i, npy_intp j, npy_intp n) {
+inline int condensed_index(int i, int j, int n) {
   if (i < j)
     return n * i - (i * (i + 1) / 2) + (j - i - 1);
   else
@@ -46,7 +46,7 @@ inline npy_intp condensed_index(npy_intp i, npy_intp j, npy_intp n) {
 
 struct argsort {
   double value;
-  npy_intp index;
+  int index;
 };
 
 int argsort_cmp(const void *a, const void *b) {
@@ -60,8 +60,8 @@ int argsort_cmp(const void *a, const void *b) {
     return 0;
 }
 
-inline npy_intp find_root(npy_intp *parents, npy_intp x) {
-  npy_intp p = x;
+inline int find_root(int *parents, int x) {
+  int p = x;
   while (parents[x] != x)
     x = parents[x];
 
@@ -72,23 +72,22 @@ inline npy_intp find_root(npy_intp *parents, npy_intp x) {
   return x;
 }
 
-inline npy_intp merge_roots(npy_intp *parents, npy_intp *sizes, npy_intp n,
-                            npy_intp x, npy_intp y) {
-  npy_intp size = sizes[x] + sizes[y];
+inline int merge_roots(int *parents, int *sizes, int n, int x, npy_int y) {
+  int size = sizes[x] + sizes[y];
   sizes[n] = size;
   parents[x] = n;
   parents[y] = n;
   return size;
 }
 
-void label(PyArrayObject *Zarray, npy_intp n) {
-  npy_intp *Z = (npy_intp *)PyArray_DATA(Zarray);
+void label(PyArrayObject *Zarray, int n) {
+  int *Z = (int *)PyArray_DATA(Zarray);
 
-  npy_intp *parents = malloc((2 * n - 1) * sizeof(npy_intp));
-  npy_intp *sizes = malloc((2 * n - 1) * sizeof(npy_intp));
-  npy_intp next = n;
-  npy_intp x, y, x_root, y_root;
-  for (npy_intp i = 0; i < 2 * n - 1; ++i) {
+  int *parents = malloc((2 * n - 1) * sizeof(int));
+  int *sizes = malloc((2 * n - 1) * sizeof(int));
+  int next = n;
+  int x, y, x_root, y_root;
+  for (int i = 0; i < 2 * n - 1; ++i) {
     parents[i] = i;
     sizes[i] = 1;
   }
@@ -115,16 +114,16 @@ void label(PyArrayObject *Zarray, npy_intp n) {
 
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   PyArrayObject *PDarray;
-  npy_intp n;
+  int n;
 
-  if (!PyArg_ParseTuple(args, "O!n:mst_linkage", &PyArray_Type, &PDarray, &n))
+  if (!PyArg_ParseTuple(args, "O!i:mst_linkage", &PyArray_Type, &PDarray, &n))
     return NULL;
   if (!PyArray_Check(PDarray))
     return NULL;
 
   const double *PD = (const double *)PyArray_DATA(PDarray);
-  npy_intp *Z1 = malloc((n - 1) * sizeof(npy_intp));
-  npy_intp *Z2 = malloc((n - 1) * sizeof(npy_intp));
+  int *Z1 = malloc((n - 1) * sizeof(int));
+  int *Z2 = malloc((n - 1) * sizeof(int));
   struct argsort *Z3 = malloc((n - 1) * sizeof(struct argsort));
 
   uint8_t *M = calloc(n, sizeof(uint8_t));
@@ -138,13 +137,13 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   }
   D[n - 1] = INFINITY;
 
-  npy_intp x = 0, y = 0;
+  int x = 0, y = 0;
   double dist, min;
-  for (npy_intp i = 0; i < n - 1; ++i) {
+  for (int i = 0; i < n - 1; ++i) {
     min = INFINITY;
     M[x] = 1;
 
-    for (npy_intp j = 0; j < n; ++j) {
+    for (int j = 0; j < n; ++j) {
       if (M[j] == 1)
         continue;
 
@@ -173,13 +172,13 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   PyArrayObject *Zarray, *ZDarray;
   npy_intp Zdims[] = {n - 1, 3};
   npy_intp ZDdims[] = {n - 1};
-  Zarray = (PyArrayObject *)PyArray_SimpleNew(2, Zdims, NPY_LONG);
+  Zarray = (PyArrayObject *)PyArray_SimpleNew(2, Zdims, NPY_INT);
   ZDarray = (PyArrayObject *)PyArray_SimpleNew(1, ZDdims, NPY_DOUBLE);
 
-  npy_intp *Z = (npy_intp *)PyArray_DATA(Zarray);
+  int *Z = (int *)PyArray_DATA(Zarray);
   double *ZD = (double *)PyArray_DATA(ZDarray);
 
-  for (npy_intp i = 0; i < n - 1; ++i) {
+  for (int i = 0; i < n - 1; ++i) {
     Z[i * 3] = Z1[Z3[i].index];
     Z[i * 3 + 1] = Z2[Z3[i].index];
     ZD[i] = Z3[i].value;
@@ -194,6 +193,22 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   return PyTuple_Pack(2, Zarray, ZDarray);
 }
 
+static PyObject *cluster(PyObject *self, PyObject *args) {
+  PyArrayObject *Zarray, *ZDarray;
+  double dist;
+  int n;
+
+  if (!PyArg_ParseTuple(args, "O!O!di:mst_linkage", &PyArray_Type, &Zarray,
+                        &PyArray_Type, &ZDarray, &dist, &n))
+    return NULL;
+  if (!PyArray_Check(Zarray))
+    return NULL;
+  if (!PyArray_Check(ZDarray))
+    return NULL;
+
+  // Get the maximum distance for each cluster
+}
+
 static PyMethodDef spcal_methods[] = {
     /* {"hierarchical_spcal", spcal_linkage, METH_VARARGS, */
     /*  "Perform aglomerative hierarchical spcaling."}, */
@@ -201,6 +216,7 @@ static PyMethodDef spcal_methods[] = {
      "Calculate squared euclidean pairwise distance for array."},
     {"mst_linkage", mst_linkage, METH_VARARGS,
      "Return the minimum spanning tree linkage."},
+    {"cluster", cluster, METH_VARARGS, "Cluster using the MST linkage."},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef spcal_module = {PyModuleDef_HEAD_INIT, "spcal_module",

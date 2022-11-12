@@ -32,3 +32,4 @@ t1 = time.time()
 print(r2, t1 - t0)
 
 print(np.all(Z1[:, 3] == Z2[:, 2]))
+print(np.all(Z1[:, 2] == D))
