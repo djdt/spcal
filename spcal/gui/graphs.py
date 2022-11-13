@@ -675,24 +675,13 @@ class ResultsScatterView(pyqtgraph.GraphicsView):
             brush = QtGui.QBrush(QtCore.Qt.black)
 
         if logx:
-            x = np.log(x)
-            # self.xaxis.setLogMode(2)
-        # else:
-            # self.xaxis.setLogMode(False)
-
+            x = np.log10(x)
         if logy:
-            y = np.log(y)
-            # self.yaxis.setLogMode(True)
-        # else:
-        # self.plot.setLogMode(logx, logy)
+            y = np.log10(y)
 
-        # optimise by removing points with 0 change in gradient
-        # diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        self.plot.setLogMode(logx, logy)
+
         curve = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
-        # if label is not None:
-        #     curve.opts["name"] = label
-
-        # self.signals.append(curve)
         self.plot.addItem(curve)
 
         xmin, xmax = np.amin(x), np.amax(x)
@@ -711,6 +700,8 @@ class ResultsScatterView(pyqtgraph.GraphicsView):
         x: np.ndarray,
         y: np.ndarray,
         degree: int = 1,
+        logx: bool = False,
+        logy: bool = False,
         pen: QtGui.QPen | None = None,
     ) -> None:
         if pen is None:
@@ -722,6 +713,11 @@ class ResultsScatterView(pyqtgraph.GraphicsView):
         sx = np.linspace(xmin, xmax, 1000)
 
         sy = poly(sx)
+
+        if logx:
+            sx = np.log10(sx)
+        if logy:
+            sy = np.log10(sy)
 
         curve = pyqtgraph.PlotCurveItem(
             x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True

@@ -27,53 +27,6 @@ from spcal.gui.util import create_action
 from typing import Dict, Tuple
 
 
-# class ScatterWidget(QtWidgets.QWidget):
-#     def __init__(self, data: np.ndarray, parent: QtWidgets.QWidget | None = None):
-#         super().__init__(parent)
-
-#         self.view = ResultsScatterView()
-#         self.data = np.array([])
-
-#         self.combo_x = QtWidgets.QComboBox()
-#         self.combo_x.addItems(data.dtype.names)
-#         self.combo_y = QtWidgets.QComboBox()
-#         self.combo_y.addItems(data.dtype.names)
-#         self.combo_x.setCurrentIndex(1)
-
-#         self.combo_x.currentIndexChanged.connect(self.onComboChanged)
-#         self.combo_y.currentIndexChanged.connect(self.onComboChanged)
-
-#         layout_combos = QtWidgets.QHBoxLayout()
-#         layout_combos.addWidget(QtWidgets.QLabel("y:"), 0)
-#         layout_combos.addWidget(self.combo_y, 1)
-#         layout_combos.addWidget(QtWidgets.QLabel("x:"), 0)
-#         layout_combos.addWidget(self.combo_x, 1)
-
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addWidget(self.view, 1)
-#         layout.addLayout(layout_combos, 0)
-#         self.setLayout(layout)
-
-#     def setData(self, data: Dict[str, np.ndarray]) -> None:
-#         if data.dtype.names != self.data.dtype.names:
-#             for combo in [self.combo_x, self.combo_y]:
-#                 current = combo.currentText()
-#                 combo.blockSignals(True)
-#                 combo.clear()
-#                 combo.addItems(data.dtype.names)
-#                 if current in data.dtype.names:
-#                     combo.setCurrentText(current)
-#                 combo.blockSignals(False)
-
-#         self.data = data
-#         self.onComboChanged()
-
-
-#     def onComboChanged(self) -> None:
-#         self.view.clear()
-#         self.view.drawData(self.data[self.combo_x.currentText()], self.data[self.combo_y.currentText()])
-
-
 class ResultsWidget(QtWidgets.QWidget):
     signal_units = {"counts": 1.0}
     size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
@@ -140,13 +93,20 @@ class ResultsWidget(QtWidgets.QWidget):
         self.combo_scatter_y = QtWidgets.QComboBox()
         self.combo_scatter_y.currentIndexChanged.connect(self.drawGraphScatter)
 
+        self.check_scatter_logx = QtWidgets.QCheckBox("log")
+        self.check_scatter_logx.clicked.connect(self.drawGraphScatter)
+        self.check_scatter_logy = QtWidgets.QCheckBox("log")
+        self.check_scatter_logy.clicked.connect(self.drawGraphScatter)
+
         # Create simple widget with graph and two combos for x / y element selection
         scatter_layout = QtWidgets.QVBoxLayout()
         scatter_combo_layout = QtWidgets.QHBoxLayout()
         scatter_combo_layout.addWidget(QtWidgets.QLabel("y:"), 0)
         scatter_combo_layout.addWidget(self.combo_scatter_y, 1)
+        scatter_combo_layout.addWidget(self.check_scatter_logx, 0)
         scatter_combo_layout.addWidget(QtWidgets.QLabel("x:"), 0)
         scatter_combo_layout.addWidget(self.combo_scatter_x, 1)
+        scatter_combo_layout.addWidget(self.check_scatter_logy, 0)
         scatter_layout.addWidget(self.graph_scatter)
         scatter_layout.addLayout(scatter_combo_layout)
         self.scatter_widget = QtWidgets.QWidget()
@@ -594,9 +554,20 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_scatter.xaxis.setLabel(text=label, units=unit)
         self.graph_scatter.yaxis.setLabel(text=label, units=unit)
 
-        self.graph_scatter.drawData(x[valid], y[valid])
+        self.graph_scatter.drawData(
+            x[valid],
+            y[valid],
+            logx=self.check_scatter_logx.isChecked(),
+            logy=self.check_scatter_logy.isChecked(),
+        )
         if num_valid > 2:
-            self.graph_scatter.drawFit(x[valid], y[valid], 1)
+            self.graph_scatter.drawFit(
+                x[valid],
+                y[valid],
+                1,
+                logx=self.check_scatter_logx.isChecked(),
+                logy=self.check_scatter_logy.isChecked(),
+            )
 
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
@@ -642,17 +613,21 @@ class ResultsWidget(QtWidgets.QWidget):
 
         elements = [name for name in self.results if key in self.results[name]]
 
-        for combo in [self.combo_scatter_x, self.combo_scatter_y]:
+        for i, combo in enumerate([self.combo_scatter_x, self.combo_scatter_y]):
             current = combo.currentText()
             combo.blockSignals(True)
             combo.clear()
             combo.addItems(elements)
             if current in elements:
                 combo.setCurrentText(current)
+            else:
+                combo.setCurrentIndex(i)
             combo.blockSignals(False)
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
+
+        self.io.repopulate(list(self.results.keys()))
 
         for name, result in self.results.items():
             if mode == "Signal":
@@ -724,6 +699,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
+
+        self.results.clear()
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
