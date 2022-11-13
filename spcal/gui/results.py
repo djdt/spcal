@@ -411,6 +411,8 @@ class ResultsWidget(QtWidgets.QWidget):
         graph_data = {}
         for name, result in self.results.items():
             indices = self.results[name]["indicies"]
+            if indices.size < 2:
+                continue
             if mode == "Signal":
                 graph_data[name] = result["detections"][indices]
             elif mode == "Mass (kg)" and "masses" in result:
@@ -499,6 +501,10 @@ class ResultsWidget(QtWidgets.QWidget):
         for result in self.results.values():
             valid[result["indicies"]] = True
 
+        num_valid = np.count_nonzero(valid)
+        if num_valid == 0:
+            return
+
         graph_data = {}
         for name, result in self.results.items():
             if mode == "Signal":
@@ -515,23 +521,26 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) == 0:
             return
 
-        fractions = np.empty((valid.size, len(graph_data)), dtype=np.float64)
+        fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
         for i, name in enumerate(graph_data):
             fractions[:, i] = graph_data[name]
         totals = np.sum(fractions, axis=1)
         fractions /= totals[:, None]
 
-
-        means, counts = agglomerative_cluster(fractions, 0.1)
+        if fractions.shape[0] == 1:
+            means, counts = fractions, np.array([1])
+        else:
+            means, counts = agglomerative_cluster(fractions, 0.1)
         # compositions, counts = fraction_components(fractions, combine_similar=True)
-        compositions = np.empty(counts.size, dtype=[(name, np.float64) for name in graph_data])
+        compositions = np.empty(
+            counts.size, dtype=[(name, np.float64) for name in graph_data]
+        )
         for i, name in enumerate(graph_data):
             compositions[name] = means[:, i]
 
-        mask = counts > fractions.size * 0.05
+        mask = counts > fractions.shape[0] * 0.05
         compositions = compositions[mask]
         counts = counts[mask]
-
 
         if counts.size == 0:
             return
@@ -578,11 +587,16 @@ class ResultsWidget(QtWidgets.QWidget):
             assume_unique=True,
         )
 
+        num_valid = np.count_nonzero(valid)
+        if num_valid == 0:
+            return
+
         self.graph_scatter.xaxis.setLabel(text=label, units=unit)
         self.graph_scatter.yaxis.setLabel(text=label, units=unit)
 
         self.graph_scatter.drawData(x[valid], y[valid])
-        self.graph_scatter.drawFit(x[valid], y[valid], 1)
+        if num_valid > 2:
+            self.graph_scatter.drawFit(x[valid], y[valid], 1)
 
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
