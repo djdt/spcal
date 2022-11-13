@@ -530,8 +530,8 @@ class ResultsWidget(QtWidgets.QWidget):
         if fractions.shape[0] == 1:
             means, counts = fractions, np.array([1])
         else:
-            means, counts = agglomerative_cluster(fractions, 0.1)
-        # compositions, counts = fraction_components(fractions, combine_similar=True)
+            means, counts = agglomerative_cluster(fractions, 0.05)
+
         compositions = np.empty(
             counts.size, dtype=[(name, np.float64) for name in graph_data]
         )
