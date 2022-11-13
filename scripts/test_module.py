@@ -3,7 +3,7 @@ import time
 from scipy.spatial import distance
 from scipy.cluster.hierarchy import single, fcluster
 
-from spcal.lib.spcalext import pdist_square, mst_linkage, cluster
+from spcal.lib.spcalext import pairwise_euclidean, mst_linkage, cluster_by_distance
 
 
 np.random.seed(1231)
@@ -22,20 +22,19 @@ print(t1 - t0)
 # print(maxdists(Z1)[-10:], flush=True)
 
 t0 = time.time()
-r2 = pdist_square(a)
-r2 = np.sqrt(r2)
+r2 = pairwise_euclidean(a)
 
 Z2, D = mst_linkage(r1, a.shape[0])
 
-T2 = cluster(Z2, D, 0.7)
+T2 = cluster_by_distance(Z2, D, 0.7)
+t1 = time.time()
 
 # print(D.shape, Z1.shape)
 
 # print(D[:50], D[-10:])
 # print(Z1[:50, 3], Z1[-10:, 2])
 # print(Z1[:10, 2], D[:10])
-t1 = time.time()
-# print(t1 - t0)
+print(t1 - t0)
 
 print(np.all(r1 == r2))
 print(np.all(Z1[:, 0] == Z2[:, 0]))

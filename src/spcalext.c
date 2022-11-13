@@ -5,16 +5,16 @@
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
-inline double sqeclidean(const double *X, int i, int j, int m) {
+inline double euclidean(const double *X, int i, int j, int m) {
   double sum = 0.0;
   for (int k = 0; k < m; ++k) {
     double dist = X[i * m + k] - X[j * m + k];
     sum += dist * dist;
   }
-  return sum;
+  return sqrt(sum);
 }
 
-static PyObject *pdist_square(PyObject *self, PyObject *args) {
+static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   PyArrayObject *Xarray, *Darray;
 
   if (!PyArg_ParseTuple(args, "O!:pdist", &PyArray_Type, &Xarray))
@@ -34,7 +34,7 @@ static PyObject *pdist_square(PyObject *self, PyObject *args) {
   int k = 0;
   for (int i = 0; i < n; ++i) {
     for (int j = i + 1; j < n; ++j, ++k) {
-      D[k] = sqeclidean(X, i, j, m);
+      D[k] = euclidean(X, i, j, m);
     }
   }
   return (PyObject *)Darray;
@@ -301,8 +301,8 @@ static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef spcal_methods[] = {
-    {"pdist_square", pdist_square, METH_VARARGS,
-     "Calculate squared euclidean pairwise distance for array."},
+    {"pairwise_euclidean", pairwise_euclidean, METH_VARARGS,
+     "Calculate euclidean pairwise distance for array."},
     {"mst_linkage", mst_linkage, METH_VARARGS,
      "Return the minimum spanning tree linkage."},
     {"cluster_by_distance", cluster_by_distance, METH_VARARGS,
