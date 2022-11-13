@@ -26,8 +26,13 @@ def test_mst_linkage():
     assert np.all(Z[f][3] == [4, 5, 2])
 
 
-def test_cluster():
-    pass
-
-test_pairwise_euclidean()
-test_mst_linkage()
+def test_cluster_by_distance():
+    a = np.array([0.1, 0.2, 0.3, 0.42, 0.5, 0.61, 0.72, 0.83]).reshape(8, 1)
+    dists = pairwise_euclidean(a)
+    Z, ZD = mst_linkage(dists, 8)
+    T = cluster_by_distance(Z, ZD, 0.05)
+    assert np.unique(T).size == 8  # all single clusters
+    T = cluster_by_distance(Z, ZD, 0.1)
+    assert np.all(T == [1, 1, 1, 2, 2, 3, 4, 5])
+    T = cluster_by_distance(Z, ZD, 0.2)
+    assert np.all(T == [1, 1, 1, 1, 1, 1, 1, 1])
