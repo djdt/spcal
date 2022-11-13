@@ -375,7 +375,7 @@ class InputWidget(QtWidgets.QWidget):
             trim = self.trimRegion(name)
             plot = self.graph.plots[name]
             plot.clearLimits()
-            plot.drawLimits(self.events[trim[0]:trim[1]], self.limits[name][2])
+            plot.drawLimits(self.events[trim[0] : trim[1]], self.limits[name][2])
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
@@ -388,7 +388,11 @@ class InputWidget(QtWidgets.QWidget):
             io.response.setEnabled(method != "Mass Response")
 
     def isComplete(self) -> bool:
-        return len(self.detections.dtype.names) > 0 and self.detections.size > 0
+        return (
+            self.detections.size > 0
+            and self.detections.dtype.names is not None
+            and len(self.detections.dtype.names) > 0
+        )
 
 
 class SampleWidget(InputWidget):
