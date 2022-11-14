@@ -34,6 +34,18 @@ class InputWidget(QtWidgets.QWidget):
 
         self.color_scheme = color_scheme
 
+        self.import_options = {}
+
+        self.responses = np.array([])
+        self.events = np.array([])
+        self.detections = np.array([])
+        self.labels = np.array([])
+        self.regions = np.array([])
+        self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
+
+        self.redraw_graph_requested = False
+        self.draw_mode = "Overlay"
+
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
@@ -44,9 +56,6 @@ class InputWidget(QtWidgets.QWidget):
         self.last_region: Tuple[int, int] | None = None
 
         self.io = io_stack
-
-        self.redraw_graph_requested = False
-        self.draw_mode = "Overlay"
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
@@ -66,15 +75,6 @@ class InputWidget(QtWidgets.QWidget):
         self.options.efficiency_method.currentTextChanged.connect(
             self.onEfficiencyMethodChanged
         )
-
-        self.import_options = {}
-
-        self.responses = np.array([])
-        self.events = np.array([])
-        self.detections = np.array([])
-        self.labels = np.array([])
-        self.regions = np.array([])
-        self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
         self.button_file = QtWidgets.QPushButton("Open File")
         self.button_file.pressed.connect(self.dialogLoadFile)
@@ -338,7 +338,7 @@ class InputWidget(QtWidgets.QWidget):
         for plot in self.graph.plots.values():
             plot.clearScatters()
 
-        if self.dections.dtype.names is None or self.detections.size == 0:
+        if self.detections.dtype.names is None or self.detections.size == 0:
             return
 
         for i, name in enumerate(self.detections.dtype.names):
