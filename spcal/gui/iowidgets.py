@@ -206,7 +206,7 @@ class ReferenceIOWidget(SampleIOWidget):
         )
         self.diameter.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
 
-        self.inputs.layout().removeRow(self.molarmass)
+        self.inputs.layout().setRowVisible(self.molarmass, False)
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
         self.inputs.layout().insertRow(1, "Diameter:", self.diameter)
 
