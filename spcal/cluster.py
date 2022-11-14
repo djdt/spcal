@@ -1,12 +1,10 @@
 import numpy as np
 
-from spcal.lib.spcalext import pdist_square, mst_linkage, cluster_by_distance
+from spcal.lib.spcalext import pairwise_euclidean, mst_linkage, cluster_by_distance
 
 
 def agglomerative_cluster(X: np.ndarray, max_dist: float):
-    max_dist = max_dist * max_dist  # sqeuclidean
-
-    dists = pdist_square(X)
+    dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
     T = cluster_by_distance(Z, ZD, max_dist) - 1  # start ids at 0
 
