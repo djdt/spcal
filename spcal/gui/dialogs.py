@@ -348,14 +348,19 @@ class ImportDialog(QtWidgets.QDialog):
         self.spinbox_first_line = QtWidgets.QSpinBox()
         self.spinbox_first_line.setRange(1, header_row_count - 1)
         self.spinbox_first_line.setValue(first_data_line)
-        self.spinbox_first_line.valueChanged.connect(self.fillTable)
+        self.spinbox_first_line.valueChanged.connect(self.updateTableIgnores)
+
+        # self.combo_ignore_columns = QtWidgets.QComboBox()
+        # self.combo_ignore_columns.addItems(["Use", "Ignore"])
+        # self.combo_ignore_columns.setCurrentIndex(1)
+        # self.combo_ignore_columns.currentTextChanged.connect(self.updateLEIgnores)
 
         self.le_ignore_columns = QtWidgets.QLineEdit()
         self.le_ignore_columns.setText("1;")
         self.le_ignore_columns.setValidator(
             QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
         )
-        self.le_ignore_columns.textChanged.connect(self.fillTable)
+        self.le_ignore_columns.textChanged.connect(self.updateTableIgnores)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -424,22 +429,38 @@ class ImportDialog(QtWidgets.QDialog):
 
     def fillTable(self) -> None:
         lines = [line.split(self.delimiter()) for line in self.file_header]
-        header_row = self.spinbox_first_line.value() - 1
         self.table.setColumnCount(max(len(line) for line in lines))
 
         for row, line in enumerate(lines):
             for col, text in enumerate(line):
                 item = QtWidgets.QTableWidgetItem(text.strip())
-                if row != header_row:
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
-                if row < header_row or col in self.ignoreColumns():
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEnabled)
-
                 self.table.setItem(row, col, item)
+        
         self.table.resizeColumnsToContents()
+        self.updateTableIgnores()
 
         if self.dwelltime.value() is None:
             self.readDwelltimeFromTable()
+
+    def updateTableIgnores(self) -> None:
+        header_row = self.spinbox_first_line.value() - 1
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if row != header_row:
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+                if row < header_row or col in self.ignoreColumns():
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEnabled)
+                else:
+                    item.setFlags(item.flags() | QtCore.Qt.ItemIsEnabled)
+
+    # def updateLEIgnores(self, text: str) -> None:
+    #     if text == "Ignore":
+    #         pass
+    #     elif text == "Use":
+    #         pass
 
     def readDwelltimeFromTable(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
