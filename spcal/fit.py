@@ -1,7 +1,6 @@
-import numpy as np
-
 from typing import Callable
 
+import numpy as np
 
 # _s2 = np.sqrt(2.0)
 _s2pi = np.sqrt(2.0 * np.pi)

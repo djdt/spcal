@@ -1,8 +1,8 @@
-import numpy as np
-from pathlib import Path
 import logging
-
+from pathlib import Path
 from typing import Any, Dict, TextIO, Tuple
+
+import numpy as np
 
 from spcal import __version__
 

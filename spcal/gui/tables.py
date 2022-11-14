@@ -1,9 +1,9 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from typing import List
+
 import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import NumpyArrayTableModel
-
-from typing import List
 
 
 class DoubleSignificantFiguresDelegate(QtWidgets.QStyledItemDelegate):
@@ -89,10 +89,10 @@ class ParticleTable(QtWidgets.QTableView):
             self._advance()
         elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
             self._delete()
-    # #     elif event.matches(QtGui.QKeySequence.Copy):
-    # #         self._copy()
-    # #     elif event.matches(QtGui.QKeySequence.Cut):
-    # #         self._cut()
+        # #     elif event.matches(QtGui.QKeySequence.Copy):
+        # #         self._copy()
+        # #     elif event.matches(QtGui.QKeySequence.Cut):
+        # #         self._cut()
         # elif event.matches(QtGui.QKeySequence.Paste):
         #     self._paste()
         else:
@@ -131,9 +131,7 @@ class ResultsTable(QtWidgets.QTableView):
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         event.accept()
         menu = QtWidgets.QMenu(self)
-        copy_action = QtGui.QAction(
-            QtGui.QIcon.fromTheme("edit-copy"), "Copy", self
-        )
+        copy_action = QtGui.QAction(QtGui.QIcon.fromTheme("edit-copy"), "Copy", self)
         copy_action.triggered.connect(self._copy)
         menu.addAction(copy_action)
         menu.popup(event.globalPos())

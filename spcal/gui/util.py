@@ -1,13 +1,14 @@
-import numpy as np
 import ctypes
-
-from PySide6 import QtCore, QtGui
-import shiboken6
-
 from typing import Any, Callable, Tuple
 
+import numpy as np
+import shiboken6
+from PySide6 import QtCore, QtGui
 
-def create_action(icon: str, label: str, status: str, func: Callable, checkable: bool = False) -> QtGui.QAction:
+
+def create_action(
+    icon: str, label: str, status: str, func: Callable, checkable: bool = False
+) -> QtGui.QAction:
     action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label)
     action.setStatusTip(status)
     action.setToolTip(status)

@@ -1,17 +1,12 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 import numpy as np
-from pathlib import Path
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import (
-    results_from_mass_response,
-    results_from_nebulisation_efficiency,
-)
-from spcal.fit import fit_normal, fit_lognormal
-from spcal.io import export_nanoparticle_results
+from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from spcal.cluster import agglomerative_cluster
-from spcal.particle import cell_concentration
-
+from spcal.fit import fit_lognormal, fit_normal
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
 from spcal.gui.graphs import (
     ResultsFractionView,
@@ -19,12 +14,12 @@ from spcal.gui.graphs import (
     ResultsScatterView,
     color_schemes,
 )
+from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
-from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-
-from typing import Dict, Tuple
+from spcal.io import export_nanoparticle_results
+from spcal.particle import cell_concentration
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -69,7 +64,7 @@ class ResultsWidget(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.draw_mode = "Overlay"
-        self.bin_widths = {}
+        self.bin_widths: Dict[str, float | None] = {}
         self.color_scheme = color_scheme
 
         self.options = options
@@ -77,7 +72,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.nbins = "auto"
-        self.filters = []
+        self.filters: List[Tuple[str, str, str, str, float]] = []
         self.results: Dict[str, dict] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()

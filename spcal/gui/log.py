@@ -1,8 +1,7 @@
 import logging
+from typing import List
 
 from PySide6 import QtCore, QtGui, QtWidgets
-
-from typing import List
 
 
 class LogRecordSignaller(QtCore.QObject):

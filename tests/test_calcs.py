@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.lib import stride_tricks
+
 from spcal import calc
 
 # Force using custom
@@ -33,5 +34,7 @@ def test_moving_std():
 def test_calculate_limits_automatic():
     for lam in np.linspace(1.0, 100.0, 25):
         x = np.random.poisson(size=1000, lam=lam)
-        limits = calc.calculate_limits(x, method="Automatic", sigma=3.0, error_rates=(0.05, 0.05))
+        limits = calc.calculate_limits(
+            x, method="Automatic", sigma=3.0, error_rates=(0.05, 0.05)
+        )
         assert limits[0] == ("Poisson" if lam < 50.0 else "Gaussian")

@@ -1,11 +1,10 @@
-from PySide6 import QtCore, QtGui, QtWidgets
-import numpy as np
 from pathlib import Path
-
-from spcal.gui.units import UnitsWidget
-
 from typing import Dict, List, Tuple
 
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from spcal.gui.units import UnitsWidget
 from spcal.gui.util import create_action
 
 

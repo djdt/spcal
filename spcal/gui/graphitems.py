@@ -1,9 +1,9 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from typing import List
+
 import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs import color_schemes
-
-from typing import List
 
 
 class PieSlice(QtWidgets.QGraphicsEllipseItem):

@@ -1,21 +1,18 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+import logging
+from typing import Dict, Tuple
 
 import numpy as np
-import logging
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-
 from spcal.calc import calculate_limits
 from spcal.detection import combine_detections, detection_maxima
-
 from spcal.gui.dialogs import ImportDialog
-from spcal.gui.iowidgets import IOStack, SampleIOStack, ReferenceIOStack
 from spcal.gui.graphs import ParticleView, color_schemes, symbols
+from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
-
-from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 

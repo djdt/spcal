@@ -1,8 +1,7 @@
 import argparse
-from pathlib import Path
 import re
 import sys
-
+from pathlib import Path
 from typing import List, Set
 
 # python collect_icons.py .. --exclude 64 96

@@ -1,5 +1,6 @@
 """Misc and helper calculation functions."""
 from bisect import bisect_left, insort
+
 import numpy as np
 
 try:
@@ -10,10 +11,10 @@ except ImportError:
     bottleneck_found = False
 
 
+from typing import Dict, Tuple
+
 import spcal
 from spcal.poisson import formula_c as poisson_limits
-
-from typing import Dict, Tuple
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:

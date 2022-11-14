@@ -1,17 +1,16 @@
-from PySide6 import QtCore, QtWidgets
 import argparse
-from pathlib import Path
-import sys
 import logging
+import sys
+from pathlib import Path
+from typing import List
 
 import numpy
-import pyqtgraph
+from PySide6 import QtCore, QtWidgets  # isort:skip
+import pyqtgraph  # isort:skip
 
 from spcal import __version__
-from spcal.resources import icons
 from spcal.gui.main import NanoPartWindow
-
-from typing import List
+from spcal.resources import icons
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")

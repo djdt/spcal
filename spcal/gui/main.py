@@ -1,19 +1,17 @@
-import sys
 import logging
+import sys
+from types import TracebackType
 
 from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
-
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.inputs import SampleWidget, ReferenceWidget
 from spcal.gui.graphs import color_schemes
+from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
-
-from types import TracebackType
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Tuple
+
 import requests
 from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from typing import List, Tuple
 
 
 def parse_formula(formula: str) -> List[Tuple[str, int]]:

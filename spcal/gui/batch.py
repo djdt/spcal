@@ -1,22 +1,19 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+import logging
+from pathlib import Path
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
-from pathlib import Path
-import logging
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-
 from spcal.calc import (
     calculate_limits,
     results_from_mass_response,
     results_from_nebulisation_efficiency,
 )
-from spcal.io import export_nanoparticle_results
-
-from spcal.gui.inputs import SampleWidget, ReferenceWidget
+from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
-
-from typing import Callable, Dict, List, Tuple
+from spcal.io import export_nanoparticle_results
 
 logger = logging.getLogger(__name__)
 

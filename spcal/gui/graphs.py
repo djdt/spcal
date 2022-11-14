@@ -1,8 +1,8 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from typing import Dict, List, Tuple
+
 import numpy as np
 import pyqtgraph
-
-from typing import Dict, List, Tuple
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import create_action
 

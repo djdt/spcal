@@ -1,9 +1,9 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from typing import Dict, Tuple
+
 import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import ValidColorLineEdit
-
-from typing import Dict, Tuple
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -55,7 +55,6 @@ class UnitsWidget(QtWidgets.QWidget):
     def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
         super().focusOutEvent(event)
         self.updateValueFromText()
-
 
     def baseValue(self) -> float | None:
         return self._base_value

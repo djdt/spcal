@@ -1,8 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
-from spcal import poisson, accumulate_detections
-
-import matplotlib.pyplot as plt
+from spcal import accumulate_detections, poisson
 
 
 def otsu(x: np.ndarray, remove_nan: bool = False) -> float:
@@ -33,6 +32,7 @@ def otsu(x: np.ndarray, remove_nan: bool = False) -> float:
     i = np.argmax(w1[:-1] * w2[1:] * (u1[:-1] - u2[1:]) ** 2)
     return bin_centers[i]
 
+
 gen = np.random.default_rng()
 
 fig, ax = plt.subplots()
@@ -53,9 +53,9 @@ for signal, color in zip([20.0, 50.0, 100.0], ["C0", "C1", "C2"]):
         x[np.random.choice(x.size, size=n.size, replace=False)] = n
 
         ub = x.mean()
-        ob = x[x<otsu(x)].mean()
+        ob = x[x < otsu(x)].mean()
         lc, ld = poisson.formula_c(ub, 0.05)
-        lc2, ld2 = poisson.formula_c(x[x<otsu(x)].mean(), 0.05)
+        lc2, ld2 = poisson.formula_c(x[x < otsu(x)].mean(), 0.05)
 
         d1.append(ub)
         d2.append(ob)

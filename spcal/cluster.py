@@ -1,6 +1,6 @@
 import numpy as np
 
-from spcal.lib.spcalext import pairwise_euclidean, mst_linkage, cluster_by_distance
+from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclidean
 
 
 def agglomerative_cluster(X: np.ndarray, max_dist: float):

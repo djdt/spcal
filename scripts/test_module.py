@@ -1,10 +1,10 @@
-import numpy as np
 import time
+
+import numpy as np
+from scipy.cluster.hierarchy import fcluster, single
 from scipy.spatial import distance
-from scipy.cluster.hierarchy import single, fcluster
 
-from spcal.lib.spcalext import pairwise_euclidean, mst_linkage, cluster_by_distance
-
+from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclidean
 
 np.random.seed(1231)
 a = np.random.random(10000).reshape(1000, 10)

@@ -4,10 +4,10 @@ See:
 https://www.epa.gov/radiation/marlap-manual-and-supporting-documents
 https://academic.oup.com/biomet/article/28/3-4/437/220104
 """
-import numpy as np
 from statistics import NormalDist
-
 from typing import Tuple
+
+import numpy as np
 
 
 def currie(

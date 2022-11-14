@@ -1,9 +1,9 @@
 from typing import Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 from spcal import poisson
-
-import matplotlib.pyplot as plt
 
 gen = np.random.default_rng()
 

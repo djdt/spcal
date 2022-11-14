@@ -1,6 +1,6 @@
-from PySide6 import QtCore, QtGui, QtWidgets
-
 from typing import Tuple
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class DragDropRedirectFilter(QtCore.QObject):  # pragma: no cover

@@ -1,4 +1,5 @@
 import numpy as np
+
 import spcal.poisson
 
 estimated_sd_values = [
@@ -27,7 +28,6 @@ estimated_sd_values = [
 ]
 
 
-
 def test_poisson_currie():
     # Table II Currie 1968
     sc, sd = spcal.poisson.currie(0.0, alpha=0.05, beta=0.05, epsilon=0.0, eta=2.0)
@@ -40,6 +40,7 @@ def test_poisson_currie():
     # Example p. 592
     sc, sd = spcal.poisson.currie(308.0, alpha=0.05, beta=0.05, epsilon=0.0, eta=2.0)
     assert np.isclose(sc, 40.8, atol=1e-1)
+
 
 def test_poisson_sc_formula_a():
     # Example 20.10

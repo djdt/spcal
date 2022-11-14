@@ -108,9 +108,7 @@ def particle_number_concentration(
     return count / (efficiency * flow_rate * time)
 
 
-def particle_size(
-    masses: float | np.ndarray, density: float
-) -> float | np.ndarray:
+def particle_size(masses: float | np.ndarray, density: float) -> float | np.ndarray:
     """Array of particle diameters.
     d (m) = cbrt((6.0 * m (kg)) / (π * ρ (kg/m3)))
 

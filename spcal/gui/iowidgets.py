@@ -1,15 +1,13 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+import logging
+from typing import Dict, Generic, Iterator, List, Tuple, Type, TypeVar
 
 import numpy as np
-import logging
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
 from spcal import npdata
-
 from spcal.gui.units import UnitsWidget
 from spcal.gui.widgets import ValidColorLineEdit
-
-from typing import Dict, Iterator, Generic, List, Tuple, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 

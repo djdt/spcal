@@ -1,6 +1,7 @@
 from pathlib import Path
-from setuptools import setup, find_packages, Extension
+
 import numpy
+from setuptools import Extension, find_packages, setup
 
 with open("README.md") as fp:
     long_description = fp.read()

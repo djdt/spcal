@@ -1,4 +1,5 @@
 import numpy as np
+
 from spcal.cluster import agglomerative_cluster
 
 
