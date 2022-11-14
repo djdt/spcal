@@ -341,6 +341,9 @@ class InputWidget(QtWidgets.QWidget):
         for plot in self.graph.plots.values():
             plot.clearScatters()
 
+        if self.dections.dtype.names is None or self.detections.size == 0:
+            return
+
         for i, name in enumerate(self.detections.dtype.names):
             color = scheme[i % len(scheme)]
             symbol = symbols[i % len(symbols)]
