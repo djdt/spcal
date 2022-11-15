@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 
 import numpy as np
 
@@ -86,7 +86,7 @@ def get_simplex(mins: np.ndarray, maxs: np.ndarray) -> np.ndarray:
     return simplex
 
 
-def fit_normal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, scale: float
     ) -> float:
@@ -105,7 +105,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     return normal_pdf(x * args[2], args[0], args[1]), gradient(x, y, *args), args
 
 
-def fit_lognormal(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+def fit_lognormal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, loc: float = 0.0
     ) -> float:
