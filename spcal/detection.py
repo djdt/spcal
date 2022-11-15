@@ -4,6 +4,8 @@ from typing import Dict, Tuple
 
 import numpy as np
 
+from spcal.lib.spcalext import maxima
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,6 +67,7 @@ def accumulate_detections(
 
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     """Calculates the maxima of each region.
+    Does not work with overlapping regions.
 
     Args:
         y: array
@@ -74,14 +77,15 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         idx of maxima
     """
 
-    def argmax_reduceat(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        idx = np.zeros(a.size, dtype=int)
-        idx[b[1:]] = 1
-        shift = (a.max() + 1) * np.cumsum(idx)
-        sortidx = np.argsort(a + shift)
-        return sortidx[np.append(b[1:], a.size) - 1] - b
-
-    return argmax_reduceat(y, regions.ravel())[::2] + regions[:, 0]
+    # def argmax_reduceat(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    #     idx = np.zeros(a.size, dtype=int)
+    #     idx[b[1:]] = 1
+    #     shift = (a.max() + 1) * np.cumsum(idx)
+    #     sortidx = np.argsort(a + shift)
+    #     return sortidx[np.append(b[1:], a.size) - 1] - b
+    idx =  maxima(y, regions)
+    return idx
+    
 
 
 def combine_detections(
@@ -131,6 +135,7 @@ def combine_detections(
 
     ix = np.arange(1, all_regions.shape[0] + 1)
     # Set start, end pairs to +i, -i
+    any_label[:] = 0
     any_label[all_regions[:, 0]] = ix
     if end_point_added:
         any_label[all_regions[:-1, 1]] = -ix[:-1]
@@ -138,7 +143,6 @@ def combine_detections(
         any_label[all_regions[:, 1]] = -ix
     # Cumsum to label
     any_label = np.cumsum(any_label)
-
     # Init empty
     combined = np.empty(
         all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
