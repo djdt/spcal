@@ -15,12 +15,21 @@ inline double euclidean(const double *X, int i, int j, int m) {
 }
 
 static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
+  PyObject *in;
   PyArrayObject *Xarray, *Darray;
 
-  if (!PyArg_ParseTuple(args, "O!:pdist", &PyArray_Type, &Xarray))
+  if (!PyArg_ParseTuple(args, "O:pdist", &in))
     return NULL;
-  if (!PyArray_Check(Xarray))
+  Xarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+  if (!Xarray) {
     return NULL;
+  }
+  if (PyArray_NDIM(Xarray) != 2) {
+    PyErr_SetString(PyExc_ValueError, "array must be 2 dimensional.");
+    Py_DECREF(Xarray);
+    return NULL;
+  }
 
   int n = PyArray_DIM(Xarray, 0);
   int m = PyArray_DIM(Xarray, 1);
@@ -37,6 +46,7 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
       D[k] = euclidean(X, i, j, m);
     }
   }
+  Py_DECREF(Xarray);
   return (PyObject *)Darray;
 }
 
@@ -83,9 +93,7 @@ inline int merge_roots(int *parents, int *sizes, int n, int x, npy_int y) {
   return size;
 }
 
-void label(PyArrayObject *Zarray, int n) {
-  int *Z = (int *)PyArray_DATA(Zarray);
-
+void label(int *Z, int n) {
   int *parents = malloc((2 * n - 1) * sizeof(int));
   int *sizes = malloc((2 * n - 1) * sizeof(int));
   int next = n;
@@ -116,13 +124,18 @@ void label(PyArrayObject *Zarray, int n) {
 }
 
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
+  PyObject *in;
   PyArrayObject *PDarray;
   int n;
 
-  if (!PyArg_ParseTuple(args, "O!i:mst_linkage", &PyArray_Type, &PDarray, &n))
+  if (!PyArg_ParseTuple(args, "Oi:mst_linkage", &in, &n))
     return NULL;
-  if (!PyArray_Check(PDarray))
+
+  PDarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+  if (!PDarray) {
     return NULL;
+  }
 
   const double *PD = (const double *)PyArray_DATA(PDarray);
   int *Z1 = malloc((n - 1) * sizeof(int));
@@ -168,6 +181,7 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
 
   free(M);
   free(D);
+  Py_DECREF(PDarray);
 
   // Sort
   qsort(Z3, n - 1, sizeof(Z3[0]), argsort_cmp);
@@ -191,22 +205,34 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   free(Z2);
   free(Z3);
 
-  label(Zarray, n);
+  label(Z, n);
 
   return PyTuple_Pack(2, Zarray, ZDarray);
 }
 
 static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
+  PyObject *in[2];
   PyArrayObject *Zarray, *ZDarray, *Tarray;
   double cluster_dist;
 
-  if (!PyArg_ParseTuple(args, "O!O!d:cluster", &PyArray_Type, &Zarray,
-                        &PyArray_Type, &ZDarray, &cluster_dist))
+  if (!PyArg_ParseTuple(args, "OOd:cluster", &in[0], &in[1], &cluster_dist))
     return NULL;
-  if (!PyArray_Check(Zarray))
+  Zarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in[0], NPY_INT, NPY_ARRAY_IN_ARRAY);
+  if (!Zarray)
     return NULL;
-  if (!PyArray_Check(ZDarray))
+  if (PyArray_NDIM(Zarray) != 2 || PyArray_DIM(Zarray, 1) != 3) {
+    PyErr_SetString(PyExc_ValueError, "Z must be be of shape (n, 3).");
+    Py_DECREF(Zarray);
     return NULL;
+  }
+
+  ZDarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in[1], NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+  if (!ZDarray) {
+    Py_DECREF(Zarray);
+    return NULL;
+  }
 
   int n = PyArray_DIM(Zarray, 0) + 1;
 
@@ -297,7 +323,55 @@ static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
   free(N);
   free(V);
 
+  Py_DECREF(Zarray);
+  Py_DECREF(ZDarray);
+
   return (PyObject *)Tarray;
+}
+
+static PyObject *maxima(PyObject *self, PyObject *args) {
+  PyObject *in[2];
+  PyArrayObject *Xarray, *Iarray;
+
+  if (!PyArg_ParseTuple(args, "OO", &in[0], &in[1]))
+    return NULL;
+
+  Xarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in[0], NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+  if (!Xarray)
+    return NULL;
+  Iarray =
+      (PyArrayObject *)PyArray_FROM_OTF(in[1], NPY_INTP, NPY_ARRAY_IN_ARRAY);
+
+  if (!Iarray) {
+    Py_DECREF(Xarray);
+    return NULL;
+  }
+
+  npy_intp n = PyArray_SIZE(Iarray) / 2;
+  npy_intp dims[] = {n};
+  PyArrayObject *Rarray = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_INT);
+
+  const double *X = (const double *)PyArray_DATA(Xarray);
+  const npy_intp *I = (const npy_intp *)PyArray_DATA(Iarray);
+
+  int *R = (int *)PyArray_DATA(Rarray);
+
+  int argmax;
+  for (int i = 0; i < n; ++i) {
+    argmax = I[i * 2];
+
+    for (int j = I[i * 2]; j < I[i * 2 + 1]; ++j) {
+      if (X[j] > X[argmax]) {
+        argmax = j;
+      }
+    }
+    R[i] = argmax;
+  }
+  Py_DECREF(Xarray);
+  Py_DECREF(Iarray);
+
+  return (PyObject *)Rarray;
 }
 
 static PyMethodDef spcal_methods[] = {
@@ -307,6 +381,8 @@ static PyMethodDef spcal_methods[] = {
      "Return the minimum spanning tree linkage."},
     {"cluster_by_distance", cluster_by_distance, METH_VARARGS,
      "Cluster using the MST linkage."},
+    {"maxima", maxima, METH_VARARGS,
+     "Calculates maxima between pairs of start and end positions."},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef spcal_module = {PyModuleDef_HEAD_INIT, "spcal_module",
