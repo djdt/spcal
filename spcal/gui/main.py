@@ -197,9 +197,21 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.results.setColorScheme(scheme)
 
     def syncSampleAndReference(self) -> None:
+        # Sync response
         for io in self.sample.io.widgets():
             if io.name in self.reference.io:
-                io.syncOutput(self.reference.io[io.name], "response")
+                ref_io = self.reference.io[io.name]
+                sample_value = io.response.baseValue()
+                ref_value = ref_io.response.baseValue()
+                if sample_value is not None and ref_value is None:
+                    ref_io.response.setBaseValue(sample_value)
+                elif sample_value is None and ref_value is not None:
+                    io.response.setBaseValue(ref_value)
+                elif sample_value is not None and ref_value is not None:
+                    io.setBaseValue(None)
+                    ref_io.setBaseValue(None)
+
+                io.syncOutput(ref_io, "response")
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType
