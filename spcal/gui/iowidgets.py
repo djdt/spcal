@@ -172,6 +172,12 @@ class SampleIOWidget(IOWidget):
             and self.massfraction.hasAcceptableInput()
         )
 
+    def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
+        widget = getattr(self, output)
+        if not isinstance(widget, UnitsWidget):
+            raise ValueError("linkOutputs: output must be a UnitsWidget")
+        widget.sync(getattr(other, output))
+
 
 class ReferenceIOWidget(SampleIOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
@@ -244,7 +250,7 @@ class ReferenceIOWidget(SampleIOWidget):
         detections: np.ndarray,
         dwell: float,
         time: float,
-        uptake: [float],
+        uptake: float,
     ) -> None:
         self.efficiency.setText("")
         self.massresponse.setValue("")

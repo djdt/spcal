@@ -33,6 +33,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
 
+        self.sample.dataImported.connect(self.syncSampleAndReference)
+        self.reference.dataImported.connect(self.syncSampleAndReference)
+
         self.options.optionsChanged.connect(self.onInputsChanged)
         self.sample.optionsChanged.connect(self.onInputsChanged)
         self.sample.detectionsChanged.connect(self.onInputsChanged)
@@ -192,6 +195,11 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         self.sample.setColorScheme(scheme)
         self.reference.setColorScheme(scheme)
         self.results.setColorScheme(scheme)
+
+    def syncSampleAndReference(self) -> None:
+        for io in self.sample.io.widgets():
+            if io.name in self.reference.io:
+                io.syncOutput(self.reference.io[io.name], "response")
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType

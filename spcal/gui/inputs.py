@@ -22,6 +22,8 @@ class InputWidget(QtWidgets.QWidget):
     detectionsChanged = QtCore.Signal()
     limitsChanged = QtCore.Signal()
 
+    dataImported = QtCore.Signal()
+
     def __init__(
         self,
         io_stack: IOStack,
@@ -192,6 +194,8 @@ class InputWidget(QtWidgets.QWidget):
         self.last_region = None
         self.drawGraph()
         self.updateLimits()
+
+        self.dataImported.emit()
 
     def saveTrimRegion(self) -> None:
         plot = next(iter(self.graph.plots.values()))
