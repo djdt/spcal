@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generic, Iterator, List, Tuple, Type, TypeVar
+from typing import Dict, Generic, List, Tuple, Type, TypeVar
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -214,6 +214,13 @@ class ReferenceIOWidget(SampleIOWidget):
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
         self.inputs.layout().insertRow(1, "Diameter:", self.diameter)
 
+        self.check_use_efficiency_for_all = QtWidgets.QCheckBox(
+            "Calibrate for all elements."
+        )
+        self.check_use_efficiency_for_all.setToolTip(
+            "Use this element to calculate transport efficiency for all other elements, otherwise each element is calculated individually."
+        )
+
         self.efficiency = QtWidgets.QLineEdit()
         self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
         self.efficiency.setReadOnly(True)
@@ -234,6 +241,7 @@ class ReferenceIOWidget(SampleIOWidget):
         self.massresponse.setReadOnly(True)
 
         self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency)
+        self.outputs.layout().addRow("", self.check_use_efficiency_for_all)
         self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
     def clearInputs(self) -> None:
@@ -527,7 +535,16 @@ class SampleIOStack(IOStack[SampleIOWidget]):
 
 class ReferenceIOStack(IOStack[ReferenceIOWidget]):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
+        self.button_group_check_efficiency = QtWidgets.QButtonGroup()
         super().__init__(ReferenceIOWidget, parent=parent)
+
+    def repopulate(self, names: List[str]) -> None:
+        super().repopulate(names)
+        for name in names:
+            self.button_group_check_efficiency.addButton(
+                self[name].check_use_efficiency_for_all
+            )
+
 
 
 class ResultIOStack(IOStack[ResultIOWidget]):

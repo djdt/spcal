@@ -429,3 +429,22 @@ class ReferenceWidget(InputWidget):
 
         for name in names:
             self.io[name].updateEfficiency(self.detections[name], dwell, time, uptake)
+
+    def getEfficiency(self, name: str) -> float | None:
+        use_all = None
+        for name in self.io.names():
+            if self.io[name].check_use_efficiency_for_all.isChecked():
+                use_all = name
+                break
+
+        if use_all is not None:
+            efficiency = self.io[use_all].efficiency.text()
+        elif name in self.io:
+            efficiency = self.io[name].efficiency.text()
+        else:
+            return None
+
+        try:
+            return float(efficiency)
+        except ValueError:
+            return None

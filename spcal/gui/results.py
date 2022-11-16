@@ -337,7 +337,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraph(self) -> None:
         self.drawGraphHist()
         if len(self.results) > 1:
-            self.drawGraphFrac()
+            self.drawGraphFractions()
             self.drawGraphScatter()
 
     def drawGraphHist(self) -> None:
@@ -430,7 +430,7 @@ class ResultsWidget(QtWidgets.QWidget):
             )
         self.graph_hist.zoomReset()
 
-    def drawGraphFrac(self) -> None:
+    def drawGraphFractions(self) -> None:
         # Fraction view
         self.graph_frac.clear()
         mode = self.mode.currentText()
@@ -481,6 +481,8 @@ class ResultsWidget(QtWidgets.QWidget):
             fractions[:, i] = graph_data[name]
         totals = np.sum(fractions, axis=1)
         fractions /= totals[:, None]
+        # Todo nicer way of doing this
+        # np.divide(fractions, totals, where=totals > 0.0)
 
         if fractions.shape[0] == 1:
             means, counts = fractions, np.array([1])
@@ -615,7 +617,7 @@ class ResultsWidget(QtWidgets.QWidget):
             combo.addItems(elements)
             if current in elements:
                 combo.setCurrentText(current)
-            else:
+            elif len(elements) > 1:
                 combo.setCurrentIndex(i)
             combo.blockSignals(False)
 
@@ -729,8 +731,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 try:
                     if method == "Manual Input":
                         efficiency = float(self.options.efficiency.text())
-                    elif method == "Reference Particle" and name in self.reference.io:
-                        efficiency = float(self.reference.io[name].efficiency.text())
+                    elif method == "Reference Particle":
+                        efficiency = self.reference.getEfficiency(name)
                     else:
                         efficiency = None
                 except ValueError:
