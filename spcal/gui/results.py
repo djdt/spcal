@@ -479,14 +479,14 @@ class ResultsWidget(QtWidgets.QWidget):
         fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
         for i, name in enumerate(graph_data):
             fractions[:, i] = graph_data[name]
-        totals = np.sum(fractions, axis=1)
-        fractions /= totals[:, None]
-        # Todo nicer way of doing this
-        # np.divide(fractions, totals, where=totals > 0.0)
 
-        if fractions.shape[0] == 1:
+        if fractions.shape[0] == 1:  # single peak
             means, counts = fractions, np.array([1])
+        elif fractions.shape[1] == 1:  # single element
+            means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
+            totals = np.sum(fractions, axis=1)
+            fractions = np.divide(fractions.T, totals, where=totals > 0.0).T
             means, counts = agglomerative_cluster(fractions, 0.05)
 
         compositions = np.empty(
