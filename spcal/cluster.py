@@ -7,7 +7,7 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float):
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
     T = cluster_by_distance(Z, ZD, max_dist) - 1  # start ids at 0
-    print(T)
+    # Todo, sometimes gives values 0->, sometimes 1->
 
     counts = np.bincount(T)
     means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
