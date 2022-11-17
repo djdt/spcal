@@ -475,6 +475,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         if len(graph_data) == 0:
             return
+        
 
         fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
         for i, name in enumerate(graph_data):
@@ -486,7 +487,7 @@ class ResultsWidget(QtWidgets.QWidget):
             means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
             totals = np.sum(fractions, axis=1)
-            fractions = np.divide(fractions.T, totals, where=totals > 0.0).T
+            np.divide(fractions.T, totals, where=totals > 0.0, out=fractions.T)
             means, counts = agglomerative_cluster(fractions, 0.05)
 
         compositions = np.empty(
