@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal
 from spcal import npdata
 from spcal.gui.units import UnitsWidget
+from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
 
 logger = logging.getLogger(__name__)
@@ -36,8 +37,17 @@ class IOWidget(QtWidgets.QWidget):
 
 
 class SampleIOWidget(IOWidget):
+    requestMassFractionCalculator = QtCore.Signal()
+
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
+
+        self.action_mass_fraction = create_action(
+            "folder-calculate",
+            "Calculate Mass Fraction",
+            "Calculate the mass fraction for a given formula.",
+            self.requestMassFractionCalculator,
+        )
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
@@ -67,6 +77,7 @@ class SampleIOWidget(IOWidget):
         )
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+        self.massfraction.addAction(self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition)
 
         self.element.setToolTip(
             "Input formula for density, molarmass and massfraction."
@@ -544,7 +555,6 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
             self.button_group_check_efficiency.addButton(
                 self[name].check_use_efficiency_for_all
             )
-
 
 
 class ResultIOStack(IOStack[ResultIOWidget]):
