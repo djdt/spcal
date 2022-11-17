@@ -57,7 +57,7 @@ def nebulisation_efficiency_from_mass(
     mass_fraction: float = 1.0,
 ) -> float:
     """Calculates efficiency for signals given a defined mass.
-    η = (m (kg) * s (L/kg)) / (I * f * t (s) * V (L/s))
+    η = (m (kg) * s (L/kg) * f) / (I * t (s) * V (L/s))
 
     Args:
         signal: array of reference particle signals
