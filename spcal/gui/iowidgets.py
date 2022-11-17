@@ -6,6 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
 from spcal import npdata
+from spcal.gui.dialogs import MassFractionCalculatorDialog
 from spcal.gui.units import UnitsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
@@ -37,16 +38,14 @@ class IOWidget(QtWidgets.QWidget):
 
 
 class SampleIOWidget(IOWidget):
-    requestMassFractionCalculator = QtCore.Signal()
-
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
 
         self.action_mass_fraction = create_action(
             "folder-calculate",
-            "Calculate Mass Fraction",
-            "Calculate the mass fraction for a given formula.",
-            self.requestMassFractionCalculator,
+            "Calculate Molar Ratio",
+            "Calculate the molar ratio for a given formula.",
+            self.dialogMassFractionCalculator,
         )
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
@@ -77,7 +76,9 @@ class SampleIOWidget(IOWidget):
         )
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
-        self.massfraction.addAction(self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition)
+        self.massfraction.addAction(
+            self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
+        )
 
         self.element.setToolTip(
             "Input formula for density, molarmass and massfraction."
@@ -125,6 +126,30 @@ class SampleIOWidget(IOWidget):
 
         self.setLayout(layout)
 
+    def clearInputs(self) -> None:
+        self.blockSignals(True)
+        self.element.setText("")
+        self.density.setValue(None)
+        self.molarmass.setValue(None)
+        self.response.setValue(None)
+        self.massfraction.setText("1.0")
+        self.blockSignals(False)
+
+    def clearOutputs(self) -> None:
+        self.count.setText("")
+        self.background_count.setText("")
+        self.lod_count.setText("")
+
+    def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
+        def set_mass_fraction(ratios: Dict[str, float]):
+            first = next(iter(ratios.values()))
+            self.massfraction.setText(f"{first:.4f}")
+
+        dlg = MassFractionCalculatorDialog(parent=self)
+        dlg.ratiosSelected.connect(set_mass_fraction)
+        dlg.open()
+        return dlg
+
     def elementChanged(self, text: str) -> None:
         if text in npdata.data:
             density, mw, mr = npdata.data[text]
@@ -143,19 +168,12 @@ class SampleIOWidget(IOWidget):
             self.molarmass.setEnabled(True)
             self.massfraction.setEnabled(True)
 
-    def clearInputs(self) -> None:
-        self.blockSignals(True)
-        self.element.setText("")
-        self.density.setValue(None)
-        self.molarmass.setValue(None)
-        self.response.setValue(None)
-        self.massfraction.setText("1.0")
-        self.blockSignals(False)
-
-    def clearOutputs(self) -> None:
-        self.count.setText("")
-        self.background_count.setText("")
-        self.lod_count.setText("")
+    def isComplete(self) -> bool:
+        return (
+            self.density.hasAcceptableInput()
+            and (self.response.hasAcceptableInput() or not self.response.isEnabled())
+            and self.massfraction.hasAcceptableInput()
+        )
 
     def updateOutputs(
         self,
@@ -174,13 +192,6 @@ class SampleIOWidget(IOWidget):
         self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
         self.lod_count.setText(
             f"{lod:.4g} ({limits[0]}, {','.join(f'{k}={v}' for k,v in limits[1].items())})"
-        )
-
-    def isComplete(self) -> bool:
-        return (
-            self.density.hasAcceptableInput()
-            and (self.response.hasAcceptableInput() or not self.response.isEnabled())
-            and self.massfraction.hasAcceptableInput()
         )
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:

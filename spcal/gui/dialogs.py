@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Generator, List, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.units import UnitsWidget
 from spcal.gui.util import create_action
+from spcal.gui.widgets import ValidColorLineEdit
+from spcal.npdata import elements as edata
 
 
 class BinWidthDialog(QtWidgets.QDialog):
@@ -249,6 +251,7 @@ class FilterDialog(QtWidgets.QDialog):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
+        self.setWindowTitle("Compositional Filters")
         self.setMinimumSize(600, 480)
 
         self.elements = elements
@@ -435,7 +438,7 @@ class ImportDialog(QtWidgets.QDialog):
             for col, text in enumerate(line):
                 item = QtWidgets.QTableWidgetItem(text.strip())
                 self.table.setItem(row, col, item)
-        
+
         self.table.resizeColumnsToContents()
         self.updateTableIgnores()
 
@@ -520,3 +523,141 @@ class ImportDialog(QtWidgets.QDialog):
 
         self.dataImported.emit(data, options)
         super().accept()
+
+
+class FormulaValidator(QtGui.QValidator):
+    def __init__(
+        self, regex: QtCore.QRegularExpression, parent: QtCore.QObject | None = None
+    ):
+        super().__init__(parent)
+        self.regex = regex
+
+    def validate(self, input: str, _: int) -> QtGui.QValidator.State:
+        iter = self.regex.globalMatch(input)
+        if len(input) == 0:
+            return QtGui.QValidator.Acceptable
+        if not str.isalnum(input.replace(".", "")):
+            return QtGui.QValidator.Invalid
+        if not iter.hasNext():  # no match
+            return QtGui.QValidator.Intermediate
+        while iter.hasNext():
+            match = iter.next()
+            if match.captured(1) not in edata:
+                return QtGui.QValidator.Intermediate
+        return QtGui.QValidator.Acceptable
+
+
+class MassFractionCalculatorDialog(QtWidgets.QDialog):
+    ratiosChanged = QtCore.Signal()
+    ratiosSelected = QtCore.Signal(dict)
+
+    def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Molar Ratio Calculator")
+        self.resize(300, 120)
+
+        self.regex = QtCore.QRegularExpression("([A-Z][a-z]?)([0-9\\.]*)")
+        self.ratios: Dict[str, float] = {}
+
+        self.lineedit_formula = ValidColorLineEdit(formula)
+        self.lineedit_formula.setValidator(FormulaValidator(self.regex))
+        self.lineedit_formula.textChanged.connect(self.recalculate)
+
+        self.ratiosChanged.connect(self.updateLabels)
+        self.ratiosChanged.connect(self.completeChanged)
+
+        self.label_first = QtWidgets.QLabel()
+        self.textedit_ratios = QtWidgets.QTextEdit()
+        self.textedit_ratios.setReadOnly(True)
+        self.textedit_ratios.setFont(QtGui.QFont("Courier"))
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Formula"), 0)
+        layout.addWidget(self.lineedit_formula, 0)
+        layout.addWidget(self.textedit_ratios, 1)
+        layout.addWidget(self.button_box, 0)
+
+        self.setLayout(layout)
+        self.completeChanged()
+
+    def accept(self) -> None:
+        self.ratiosSelected.emit(self.ratios)
+        super().accept()
+
+    def completeChanged(self) -> None:
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+
+    def isComplete(self) -> bool:
+        return len(self.ratios) > 0
+
+    def recalculate(self) -> None:
+        """Calculates the molar ratio of each valid element in the formula."""
+        self.ratios = {}
+        for element, number in self.searchFormula():
+            if element in edata:
+                ratio = edata[element][1] * float(number or 1.0)
+                self.ratios[element] = self.ratios.get(element, 0.0) + ratio
+        mw = sum(self.ratios.values())
+        for element in self.ratios:
+            self.ratios[element] = self.ratios[element] / mw
+        self.ratiosChanged.emit()
+
+    def searchFormula(self) -> Generator[Tuple[str, float], None, None]:
+        iter = self.regex.globalMatch(self.lineedit_formula.text())
+        while iter.hasNext():
+            match = iter.next()
+            yield match.captured(1), float(match.captured(2) or 1.0)
+
+    def updateLabels(self) -> None:
+        self.textedit_ratios.setPlainText("")
+        if len(self.ratios) == 0:
+            return
+        text = "<html>"
+        for i, (element, ratio) in enumerate(self.ratios.items()):
+            if i == 0:
+                text += "<b>"
+            text += f"{element:<2}&nbsp;{ratio:.4f}&nbsp;&nbsp;"
+            if i == 0:
+                text += "</b>"
+            if i % 3 == 2:
+                text += "<br>"
+        text += "</html>"
+        self.textedit_ratios.setText(text)
+
+
+class ParticleDatabaseDialog(QtWidgets.QDialog):
+    def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+
+        self.lineedit_formula = QtWidgets.QLineEdit(formula)
+        self.lineedit_formula.textChanged.connect(self.searchDatabase)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Formula"), 0)
+        layout.addWidget(self.lineedit_formula, 0)
+        # layout.addWidget(self.textedit_ratios, 1)
+        layout.addWidget(self.button_box, 0)
+
+        self.setLayout(layout)
+
+        def searchDatabase(self, string: str) -> None:
+            pass
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+    dlg = MassFractionCalculatorDialog("")
+    dlg.show()
+    app.exec()
