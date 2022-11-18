@@ -6,6 +6,7 @@ from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.dialogs import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.log import LoggingDialog
@@ -93,6 +94,18 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             "Resets all the option, sample and reference inputs.",
             self.resetInputs,
         )
+        self.action_mass_fraction_calculator = create_action(
+            "folder-calculate",
+            "Molar Ratio Calculator",
+            "Calculate the molar ratios of elements in a compound.",
+            self.dialogMassFractionCalculator,
+        )
+        self.action_particle_database = create_action(
+            "folder-calculate",
+            "Molar Ratio Calculator",
+            "Calculate the molar ratios of elements in a compound.",
+            self.dialogParticleDatabase,
+        )
 
         # View
         self.action_color_scheme = QtGui.QActionGroup(self)
@@ -124,6 +137,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
 
         menuedit = self.menuBar().addMenu("&Edit")
         menuedit.addAction(self.action_clear)
+        menuedit.addSeparator()
+        menuedit.addAction(self.action_mass_fraction_calculator)
+        menuedit.addAction(self.action_particle_database)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -156,6 +172,16 @@ class NanoPartWindow(QtWidgets.QMainWindow):
         dlg = BatchProcessDialog(
             [], self.sample, self.reference, self.options, parent=self
         )
+        dlg.open()
+        return dlg
+
+    def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
+        dlg = MassFractionCalculatorDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogParticleDatabase(self) -> ParticleDatabaseDialog:
+        dlg = ParticleDatabaseDialog(parent=self)
         dlg.open()
         return dlg
 
