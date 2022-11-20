@@ -4,10 +4,11 @@ from typing import Dict, Generator, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.units import UnitsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
-from spcal.npdata import elements as edata
+from spcal.npdb import db
 
 
 class BinWidthDialog(QtWidgets.QDialog):
@@ -542,7 +543,7 @@ class FormulaValidator(QtGui.QValidator):
             return QtGui.QValidator.Intermediate
         while iter.hasNext():
             match = iter.next()
-            if match.captured(1) not in edata:
+            if match.captured(1) not in db["elements"]["symbol"]:
                 return QtGui.QValidator.Intermediate
         return QtGui.QValidator.Acceptable
 
@@ -600,9 +601,11 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
     def recalculate(self) -> None:
         """Calculates the molar ratio of each valid element in the formula."""
         self.ratios = {}
+        elements = db["elements"]
         for element, number in self.searchFormula():
-            if element in edata:
-                ratio = edata[element][1] * float(number or 1.0)
+            idx = np.flatnonzero(elements["symbol"] == element)
+            if idx.size > 0:
+                ratio = elements["mw"][idx[0]] * float(number or 1.0)
                 self.ratios[element] = self.ratios.get(element, 0.0) + ratio
         mw = sum(self.ratios.values())
         for element in self.ratios:
@@ -633,11 +636,14 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
 
 class ParticleDatabaseDialog(QtWidgets.QDialog):
+    densitySelected = QtCore.Signal(float)
+
     def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setWindowTitle("Density Database")
+        self.resize(800, 600)
 
-        self.lineedit_formula = QtWidgets.QLineEdit(formula)
-        self.lineedit_formula.textChanged.connect(self.searchDatabase)
+        self.lineedit_search = QtWidgets.QLineEdit(formula)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -645,19 +651,58 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        self.model = NumpyRecArrayTableModel(
+            np.concatenate((db["inorganic"], db["polymer"])),
+            column_formats={"Density": "{:.4g}"},
+        )
+        self.proxy = SearchColumnsProxyModel([0, 1])
+        self.proxy.setSourceModel(self.model)
+
+        self.table = QtWidgets.QTableView()
+        self.table.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContentsOnFirstShow
+        )
+        self.table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch
+        )
+        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.table.setModel(self.proxy)
+        self.table.setColumnHidden(4, True)
+
+        self.lineedit_search.textChanged.connect(self.searchDatabase)
+        self.lineedit_search.textChanged.connect(self.table.clearSelection)
+        self.table.pressed.connect(self.completeChanged)
+        self.proxy.rowsInserted.connect(self.completeChanged)
+        self.proxy.rowsRemoved.connect(self.completeChanged)
+
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel("Formula"), 0)
-        layout.addWidget(self.lineedit_formula, 0)
-        # layout.addWidget(self.textedit_ratios, 1)
+        layout.addWidget(QtWidgets.QLabel("Search"), 0)
+        layout.addWidget(self.lineedit_search, 0)
+        layout.addWidget(self.table)
         layout.addWidget(self.button_box, 0)
 
         self.setLayout(layout)
 
-        def searchDatabase(self, string: str) -> None:
-            pass
+    def searchDatabase(self, string: str) -> None:
+        self.proxy.setSearchString(string)
+
+    def isComplete(self) -> bool:
+        return len(self.table.selectedIndexes()) > 0 or self.proxy.rowCount() == 1
+
+    def completeChanged(self) -> None:
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+
+    def accept(self) -> None:
+        idx = self.table.selectedIndexes()[3]
+        self.densitySelected.emit(self.model.data(idx))
+        super().accept()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
-    dlg = MassFractionCalculatorDialog("")
+    dlg = ParticleDatabaseDialog("")
     dlg.show()
     app.exec()
