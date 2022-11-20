@@ -674,6 +674,7 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.lineedit_search.textChanged.connect(self.searchDatabase)
         self.lineedit_search.textChanged.connect(self.table.clearSelection)
         self.table.pressed.connect(self.completeChanged)
+        self.table.doubleClicked.connect(self.accept)
         self.proxy.rowsInserted.connect(self.completeChanged)
         self.proxy.rowsRemoved.connect(self.completeChanged)
 
@@ -684,12 +685,13 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box, 0)
 
         self.setLayout(layout)
+        self.completeChanged()
 
     def searchDatabase(self, string: str) -> None:
         self.proxy.setSearchString(string)
 
     def isComplete(self) -> bool:
-        return len(self.table.selectedIndexes()) > 0 or self.proxy.rowCount() == 1
+        return len(self.table.selectedIndexes()) > 0
 
     def completeChanged(self) -> None:
         complete = self.isComplete()
@@ -697,12 +699,12 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
     def accept(self) -> None:
         idx = self.table.selectedIndexes()[3]
-        self.densitySelected.emit(self.model.data(idx))
+        self.densitySelected.emit(float(self.proxy.data(idx)))
         super().accept()
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    dlg = ParticleDatabaseDialog("")
-    dlg.show()
-    app.exec()
+# if __name__ == "__main__":
+#     app = QtWidgets.QApplication()
+#     dlg = ParticleDatabaseDialog("")
+#     dlg.show()
+#     app.exec()

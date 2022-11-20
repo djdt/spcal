@@ -101,9 +101,9 @@ class NanoPartWindow(QtWidgets.QMainWindow):
             self.dialogMassFractionCalculator,
         )
         self.action_particle_database = create_action(
-            "folder-calculate",
-            "Molar Ratio Calculator",
-            "Calculate the molar ratios of elements in a compound.",
+            "folder-database",
+            "Density Database",
+            "Search for compound densities.",
             self.dialogParticleDatabase,
         )
 

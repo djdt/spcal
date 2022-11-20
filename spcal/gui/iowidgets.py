@@ -5,8 +5,9 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-from spcal import npdata
-from spcal.gui.dialogs import MassFractionCalculatorDialog
+
+# from spcal import npdata
+from spcal.gui.dialogs import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.units import UnitsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
@@ -41,6 +42,12 @@ class SampleIOWidget(IOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
 
+        self.action_density = create_action(
+            "folder-database",
+            "Lookup Density",
+            "Search for compound densities.",
+            self.dialogParticleDatabase,
+        )
         self.action_mass_fraction = create_action(
             "folder-calculate",
             "Calculate Molar Ratio",
@@ -51,14 +58,17 @@ class SampleIOWidget(IOWidget):
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
 
-        self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
-        self.element.setValid(False)
-        self.element.setCompleter(QtWidgets.QCompleter(list(npdata.data.keys())))
-        self.element.textChanged.connect(self.elementChanged)
+        # self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
+        # self.element.setValid(False)
+        # self.element.setCompleter(QtWidgets.QCompleter(list(npdata.data.keys())))
+        # self.element.textChanged.connect(self.elementChanged)
 
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
+        )
+        self.density.lineedit.addAction(
+            self.action_density, QtWidgets.QLineEdit.TrailingPosition
         )
         self.molarmass = UnitsWidget(
             {"g/mol": 1e-3, "kg/mol": 1.0},
@@ -80,9 +90,9 @@ class SampleIOWidget(IOWidget):
             self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
         )
 
-        self.element.setToolTip(
-            "Input formula for density, molarmass and massfraction."
-        )
+        # self.element.setToolTip(
+        #     "Input formula for density, molarmass and massfraction."
+        # )
         self.density.setToolTip("Sample particle density.")
         self.molarmass.setToolTip(
             "Molecular weight, required to calculate intracellular concentrations."
@@ -101,7 +111,7 @@ class SampleIOWidget(IOWidget):
             lambda: self.optionsChanged.emit(self.name)
         )
 
-        self.inputs.layout().addRow("Formula:", self.element)
+        # self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
         self.inputs.layout().addRow("Ionic response:", self.response)
@@ -128,7 +138,7 @@ class SampleIOWidget(IOWidget):
 
     def clearInputs(self) -> None:
         self.blockSignals(True)
-        self.element.setText("")
+        # self.element.setText("")
         self.density.setValue(None)
         self.molarmass.setValue(None)
         self.response.setValue(None)
@@ -150,23 +160,31 @@ class SampleIOWidget(IOWidget):
         dlg.open()
         return dlg
 
-    def elementChanged(self, text: str) -> None:
-        if text in npdata.data:
-            density, mw, mr = npdata.data[text]
-            self.element.setValid(True)
-            self.density.setValue(density)
-            self.density.setUnit("g/cm³")
-            self.density.setEnabled(False)
-            self.molarmass.setValue(mw)
-            self.molarmass.setUnit("g/mol")
-            self.molarmass.setEnabled(False)
-            self.massfraction.setText(str(mr))
-            self.massfraction.setEnabled(False)
-        else:
-            self.element.setValid(False)
-            self.density.setEnabled(True)
-            self.molarmass.setEnabled(True)
-            self.massfraction.setEnabled(True)
+    def dialogParticleDatabase(self) -> QtWidgets.QDialog:
+        dlg = ParticleDatabaseDialog(parent=self)
+        dlg.densitySelected.connect(
+            lambda x: self.density.setBaseValue(x * 1000.0)
+        )  # to kg/m3
+        dlg.open()
+        return dlg
+
+    # def elementChanged(self, text: str) -> None:
+    #     if text in npdata.data:
+    #         density, mw, mr = npdata.data[text]
+    #         # self.element.setValid(True)
+    #         self.density.setValue(density)
+    #         self.density.setUnit("g/cm³")
+    #         self.density.setEnabled(False)
+    #         self.molarmass.setValue(mw)
+    #         self.molarmass.setUnit("g/mol")
+    #         self.molarmass.setEnabled(False)
+    #         self.massfraction.setText(str(mr))
+    #         self.massfraction.setEnabled(False)
+    #     else:
+    #         # self.element.setValid(False)
+    #         self.density.setEnabled(True)
+    #         self.molarmass.setEnabled(True)
+    #         self.massfraction.setEnabled(True)
 
     def isComplete(self) -> bool:
         return (
