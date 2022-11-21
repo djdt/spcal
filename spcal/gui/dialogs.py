@@ -543,7 +543,7 @@ class FormulaValidator(QtGui.QValidator):
             return QtGui.QValidator.Intermediate
         while iter.hasNext():
             match = iter.next()
-            if match.captured(1) not in db["elements"]["symbol"]:
+            if match.captured(1) not in db["elements"]["Symbol"]:
                 return QtGui.QValidator.Intermediate
         return QtGui.QValidator.Acceptable
 
@@ -551,6 +551,7 @@ class FormulaValidator(QtGui.QValidator):
 class MassFractionCalculatorDialog(QtWidgets.QDialog):
     ratiosChanged = QtCore.Signal()
     ratiosSelected = QtCore.Signal(dict)
+    molarMassSelected = QtCore.Signal(float)
 
     def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -559,15 +560,15 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
         self.regex = QtCore.QRegularExpression("([A-Z][a-z]?)([0-9\\.]*)")
         self.ratios: Dict[str, float] = {}
+        self.mw = 0.0
 
         self.lineedit_formula = ValidColorLineEdit(formula)
+        self.lineedit_formula.setPlaceholderText("Molecular Formula")
         self.lineedit_formula.setValidator(FormulaValidator(self.regex))
         self.lineedit_formula.textChanged.connect(self.recalculate)
 
-        self.ratiosChanged.connect(self.updateLabels)
-        self.ratiosChanged.connect(self.completeChanged)
+        self.label_mw = QtWidgets.QLabel("MW = 0 g/mol")
 
-        self.label_first = QtWidgets.QLabel()
         self.textedit_ratios = QtWidgets.QTextEdit()
         self.textedit_ratios.setReadOnly(True)
         self.textedit_ratios.setFont(QtGui.QFont("Courier"))
@@ -575,12 +576,15 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
+
+        self.ratiosChanged.connect(self.updateLabels)
+        self.ratiosChanged.connect(self.completeChanged)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel("Formula"), 0)
         layout.addWidget(self.lineedit_formula, 0)
+        layout.addWidget(self.label_mw, 0)
         layout.addWidget(self.textedit_ratios, 1)
         layout.addWidget(self.button_box, 0)
 
@@ -589,6 +593,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
     def accept(self) -> None:
         self.ratiosSelected.emit(self.ratios)
+        self.molarMassSelected.emit(self.mw)
         super().accept()
 
     def completeChanged(self) -> None:
@@ -603,13 +608,13 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.ratios = {}
         elements = db["elements"]
         for element, number in self.searchFormula():
-            idx = np.flatnonzero(elements["symbol"] == element)
+            idx = np.flatnonzero(elements["Symbol"] == element)
             if idx.size > 0:
-                ratio = elements["mw"][idx[0]] * float(number or 1.0)
+                ratio = elements["MW"][idx[0]] * float(number or 1.0)
                 self.ratios[element] = self.ratios.get(element, 0.0) + ratio
-        mw = sum(self.ratios.values())
+        self.mw = sum(self.ratios.values())
         for element in self.ratios:
-            self.ratios[element] = self.ratios[element] / mw
+            self.ratios[element] = self.ratios[element] / self.mw
         self.ratiosChanged.emit()
 
     def searchFormula(self) -> Generator[Tuple[str, float], None, None]:
@@ -633,6 +638,8 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
                 text += "<br>"
         text += "</html>"
         self.textedit_ratios.setText(text)
+
+        self.label_mw.setText(f"MW = {self.mw:.4g} g/mol")
 
 
 class ParticleDatabaseDialog(QtWidgets.QDialog):
@@ -705,6 +712,6 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
 # if __name__ == "__main__":
 #     app = QtWidgets.QApplication()
-#     dlg = ParticleDatabaseDialog("")
+#     dlg = MassFractionCalculatorDialog("")
 #     dlg.show()
 #     app.exec()

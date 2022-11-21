@@ -51,7 +51,7 @@ class SampleIOWidget(IOWidget):
         self.action_mass_fraction = create_action(
             "folder-calculate",
             "Calculate Molar Ratio",
-            "Calculate the molar ratio for a given formula.",
+            "Calculate the molar ratio and MW for a given formula.",
             self.dialogMassFractionCalculator,
         )
 
@@ -157,6 +157,7 @@ class SampleIOWidget(IOWidget):
 
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.ratiosSelected.connect(set_mass_fraction)
+        dlg.molarMassSelected.connect(lambda x: self.molarmass.setBaseValue(x / 1000.0))
         dlg.open()
         return dlg
 
