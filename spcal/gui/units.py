@@ -8,7 +8,8 @@ from spcal.gui.widgets import ValidColorLineEdit
 
 class UnitsWidget(QtWidgets.QWidget):
     valueChanged = QtCore.Signal()
-    baseValueChanged = QtCore.Signal()
+    baseValueChanged = QtCore.Signal(float)
+    baseErrorChanged = QtCore.Signal(float)
 
     def __init__(
         self,
@@ -40,7 +41,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
         self.setUnits(units)
         if default_unit is not None:
-            if self.combo.currentText() == default_unit:
+            if self.combo.currentText() == default_unit:  # pragma: no cover
                 self.unitChanged(default_unit)
             else:
                 self.setUnit(default_unit)
@@ -52,7 +53,7 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
 
-    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
+    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:  # pragma: no cover, covered by clearFocus
         super().focusOutEvent(event)
         self.updateValueFromText()
 
@@ -60,8 +61,10 @@ class UnitsWidget(QtWidgets.QWidget):
         return self._base_value
 
     def setBaseValue(self, base: float | None) -> None:
-        self._base_value = base
-        self.valueChanged.emit()
+        if self._base_value != base:
+            self._base_value = base
+            self.baseValueChanged.emit(base)
+            self.valueChanged.emit()
 
     def value(self) -> float | None:
         if self._base_value is None:
@@ -83,8 +86,10 @@ class UnitsWidget(QtWidgets.QWidget):
         return self._base_error
 
     def setBaseError(self, error: float | None) -> None:
-        self._base_error = error
-        self.valueChanged.emit()
+        if self._base_error != error:
+            self._base_error = error
+            self.valueChanged.emit()
+            self.baseErrorChanged.emit(error)
 
     def error(self) -> float | None:
         if self._base_error is None:
@@ -153,8 +158,12 @@ class UnitsWidget(QtWidgets.QWidget):
         self.valueChanged.connect(self.updateTextFromValue)
 
     def sync(self, other: "UnitsWidget") -> None:
-        self.lineedit.textChanged.connect(other.lineedit.setText)
-        other.lineedit.textChanged.connect(self.lineedit.setText)
+        self.baseValueChanged.connect(other.setBaseValue)
+        other.baseValueChanged.connect(self.setBaseValue)
+        self.baseErrorChanged.connect(other.setBaseError)
+        other.baseErrorChanged.connect(self.setBaseError)
+        # self.lineedit.textChanged.connect(other.lineedit.setText)
+        # other.lineedit.textChanged.connect(self.lineedit.setText)
         self.combo.currentTextChanged.connect(other.combo.setCurrentText)
         other.combo.currentTextChanged.connect(self.combo.setCurrentText)
 
