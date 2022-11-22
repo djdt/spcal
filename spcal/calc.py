@@ -7,7 +7,7 @@ try:
     import bottleneck as bn
 
     bottleneck_found = True
-except ImportError:
+except ImportError:  # pragma: no cover
     bottleneck_found = False
 
 
@@ -26,7 +26,7 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:
+    if bottleneck_found:  # pragma: no cover
         return bn.move_mean(x, n)[n - 1 :]
     r = np.cumsum(x)
     r[n:] = r[n:] - r[:-n]  # type: ignore
@@ -42,7 +42,7 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:
+    if bottleneck_found:  # pragma: no cover
         return bn.move_median(x, n)[n - 1 :]
 
     r = np.empty(x.size - n + 1, x.dtype)
@@ -69,7 +69,7 @@ def moving_std(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:
+    if bottleneck_found:  # pragma: no cover
         return bn.move_std(x, n)[n - 1 :]
 
     sums = np.empty(x.size - n + 1)
@@ -113,10 +113,10 @@ def calculate_limits(
     Returns:
         method, {symbol: value, ...}, array[('mean', 'lc', 'ld')]
     """
-    if responses is None or responses.size == 0:
+    if responses is None or responses.size == 0:  # pragma: no cover
         raise ValueError("Responses invalid.")
 
-    if method not in ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]:
+    if method not in ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]:  # pragma: no cover
         raise ValueError(
             'method must be one of "Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"'
         )

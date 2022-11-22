@@ -1,7 +1,8 @@
 import numpy as np
+import pytest
 from numpy.lib import stride_tricks
 
-from spcal import calc
+from spcal import calc, poisson
 
 # Force using custom
 calc.bottleneck_found = False
@@ -38,3 +39,29 @@ def test_calculate_limits_automatic():
             x, method="Automatic", sigma=3.0, error_rates=(0.05, 0.05)
         )
         assert limits[0] == ("Poisson" if lam < 50.0 else "Gaussian")
+
+
+def test_calculate_limits():
+    with pytest.raises(ValueError):
+        calc.calculate_limits(np.array([]), "Automatic")
+
+    x = np.random.poisson(lam=50.0, size=1000)
+
+    method, params, limits = calc.calculate_limits(x, "Poisson")  # ld ~= 87
+    assert method == "Poisson"
+    assert params == {"α": 0.05, "β": 0.05}
+    assert limits["lc"], limits["ld"] == poisson.formula_c(np.mean(x)) + np.mean(x)
+
+    method, params, limits = calc.calculate_limits(x, "Gaussian", sigma=5.0)  # ld ~= 86
+    assert method == "Gaussian"
+    assert params == {"σ": 5.00}
+    assert limits["lc"] == limits["ld"] == np.mean(x) + 5.0 * np.std(x)
+
+    method, params, limits = calc.calculate_limits(x, "Gaussian Median", sigma=5.0)
+    assert limits["lc"] == limits["ld"] == np.median(x) + 5.0 * np.std(x)
+
+    method, params, limits = calc.calculate_limits(x, "Highest", sigma=5.0)
+    assert method == "Poisson"
+
+    method, params, limits = calc.calculate_limits(x, "Poisson", window=3)
+    assert limits.size == x.size
