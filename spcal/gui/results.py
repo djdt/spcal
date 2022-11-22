@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -20,6 +21,8 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.io import export_nanoparticle_results
 from spcal.particle import cell_concentration
+
+logger = logging.getLogger(__name__)
 
 
 class ResultsWidget(QtWidgets.QWidget):
@@ -359,7 +362,7 @@ class ResultsWidget(QtWidgets.QWidget):
             label, unit = "Concentration", "mol/L"
             bin_width = self.bin_widths.get("concentration", None)
         else:
-            raise ValueError("drawGraph: unknown mode.")
+            raise ValueError("drawGraphHist: unknown mode")
 
         names = list(self.results.keys())
 
@@ -391,6 +394,7 @@ class ResultsWidget(QtWidgets.QWidget):
         for data in graph_data.values():
             min_bin_width = (data.max() - data.min()) / 1024
             if bin_width < min_bin_width:
+                logger.warning("drawGraphHist: exceeded maximum bins, setting to 1024")
                 bin_width = min_bin_width
                 break
 
@@ -400,7 +404,7 @@ class ResultsWidget(QtWidgets.QWidget):
         elif self.draw_mode == "Stacked":
             pass
         else:
-            raise ValueError("Invalid draw mode.")
+            raise ValueError("drawGraphHist: invalid draw mode")
 
         for i, name in enumerate(graph_data):
             bins = np.arange(
@@ -408,7 +412,6 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
-            # color.setAlpha(128)
             if self.draw_mode == "Overlay":
                 width = 1.0 / len(graph_data)
                 if len(graph_data) == 1:
@@ -419,7 +422,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 width = 0.5
                 offset = 0.0
             else:
-                raise ValueError("Invalid draw mode.")
+                raise ValueError("drawGraphHist: invalid draw mode")
             plot.drawData(  # type: ignore
                 name,
                 graph_data[name],
@@ -444,7 +447,7 @@ class ResultsWidget(QtWidgets.QWidget):
         elif mode == "Conc. (mol/L)":
             label = "Concentration"
         else:
-            raise ValueError("drawGraph: unknown mode.")
+            raise ValueError("drawGraphFractions: unknown mode")
 
         self.graph_frac.plot.setTitle(f"{label} Composition")
 
@@ -475,7 +478,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
         if len(graph_data) == 0:
             return
-        
 
         fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
         for i, name in enumerate(graph_data):
@@ -508,7 +510,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name in compositions.dtype.names:
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
-            # color.setAlpha(128)
             brushes.append(QtGui.QBrush(color))
 
         self.graph_frac.drawData(compositions, counts, brushes=brushes)
@@ -537,7 +538,7 @@ class ResultsWidget(QtWidgets.QWidget):
             x = self.results[xname]["cell_concentrations"]
             y = self.results[yname]["cell_concentrations"]
         else:
-            raise ValueError("drawGraph: unknown mode.")
+            raise ValueError("drawGraphScatter: unknown mode")
 
         valid = np.intersect1d(
             self.results[xname]["indicies"],
@@ -607,7 +608,7 @@ class ResultsWidget(QtWidgets.QWidget):
         elif mode == "Conc. (mol/L)":
             key = "cell_concentrations"
         else:
-            raise ValueError("Unknown mode.")
+            raise ValueError("updateScatterElements: unknown mode")
 
         elements = [name for name in self.results if key in self.results[name]]
 
