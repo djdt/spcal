@@ -83,9 +83,8 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     #     shift = (a.max() + 1) * np.cumsum(idx)
     #     sortidx = np.argsort(a + shift)
     #     return sortidx[np.append(b[1:], a.size) - 1] - b
-    idx =  maxima(y, regions)
+    idx = maxima(y, regions)
     return idx
-    
 
 
 def combine_detections(
@@ -108,7 +107,7 @@ def combine_detections(
         dict of total sum per peak
 
     """
-    if not all([k in regions.keys() for k in sums.keys()]):
+    if not all(k in regions.keys() for k in sums.keys()):
         raise ValueError(
             "detection_element_combined: labels and regions must have all of sums keys."
         )
@@ -222,7 +221,7 @@ def fraction_components(
 
             _iter += 1
             if _iter > 100:
-                logger.warn("Maximum iter reached for combine_similar.")
+                logger.warning("Maximum iter reached for combine_similar.")
                 break
         means, counts = np.array(combined_means, dtype=means.dtype), np.array(
             combined_counts

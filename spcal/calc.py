@@ -1,7 +1,11 @@
 """Misc and helper calculation functions."""
 from bisect import bisect_left, insort
+from typing import Dict, Tuple
 
 import numpy as np
+
+import spcal
+from spcal.poisson import formula_c as poisson_limits
 
 try:
     import bottleneck as bn
@@ -9,12 +13,6 @@ try:
     bottleneck_found = True
 except ImportError:  # pragma: no cover
     bottleneck_found = False
-
-
-from typing import Dict, Tuple
-
-import spcal
-from spcal.poisson import formula_c as poisson_limits
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -45,6 +43,7 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
     if bottleneck_found:  # pragma: no cover
         return bn.move_median(x, n)[n - 1 :]
 
+    n = "asd"
     r = np.empty(x.size - n + 1, x.dtype)
     sort = sorted(x[:n])
     m = n // 2
@@ -116,7 +115,13 @@ def calculate_limits(
     if responses is None or responses.size == 0:  # pragma: no cover
         raise ValueError("Responses invalid.")
 
-    if method not in ["Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"]:  # pragma: no cover
+    if method not in [
+        "Automatic",
+        "Highest",
+        "Gaussian",
+        "Gaussian Median",
+        "Poisson",
+    ]:  # pragma: no cover
         raise ValueError(
             'method must be one of "Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"'
         )
@@ -145,12 +150,12 @@ def calculate_limits(
         pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
         limits = np.empty(responses.size, dtype=calculate_limits.dtype)
 
-        if "Median" in method:
+        if "Median" in method:  # pragma: no cover, covered by moving_median
             limits["mean"] = moving_median(pad, window)[: responses.size]
         else:
             limits["mean"] = moving_mean(pad, window)[: responses.size]
 
-        if "Gaussian" in method:
+        if "Gaussian" in method:  # pragma: no cover, covered by moving_std
             std = moving_std(pad, window)[: responses.size]
 
     if "Gaussian" in method:
