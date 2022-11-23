@@ -50,18 +50,34 @@ def test_detection_maxima():
     maxima = detection.detection_maxima(x, regions)
     assert np.all(maxima == [1, 5, 6, 9])
 
-def test_combine_detections():
-    sums = {"A": np.array([1.0, 2.0, 4.0, 8.0]), 
-            "B": np.array([8.0, 4.0, 2.0, 8.0]),
-            }
-    #                        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8
-    labels = {"A": np.array([0,1,1,0,2,2,0,0,0,0,0,3,0,0,0,4,4,0,0]),
-              "B": np.array([0,0,1,1,1,0,0,0,0,2,2,0,3,3,0,0,4,4,0])}
-    regions = {"A": np.array([[1, 3], [4, 6], [11, 12], [15, 17]]),
-               "B": np.array([[2, 5], [9, 11], [12, 14], [16, 18]])}
 
-    sums, labels, regions = detection.combine_detections(sums, labels, regions)
-    assert np.all(sums["A"] == [3.0, 4.0, 8.0])
-    assert np.all(sums["B"] == [8.0, 6.0, 8.0])
-    assert np.all(labels == [0,1,1,1,1,1,0,0,0,2,2,2,2,2,0,3,3,3,0])
-    assert np.all(regions == [[1, 6], [9, 14], [15, 18]])
+def test_combine_detections():
+    sums = {
+        "A": np.array([1.0, 2.0, 4.0, 8.0]),
+        "B": np.array([8.0, 4.0, 2.0, 8.0]),
+    }
+    labels = {
+        "A": np.array([0, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 4, 0, 0]),
+        "B": np.array([0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 2, 0, 3, 3, 0, 0, 4, 4, 0]),
+    }
+    regions = {
+        "A": np.array([[1, 3], [4, 6], [11, 12], [15, 17]]),
+        "B": np.array([[2, 5], [9, 11], [12, 14], [16, 18]]),
+    }
+
+    csums, clabels, cregions = detection.combine_detections(sums, labels, regions)
+    assert np.all(csums["A"] == [3.0, 4.0, 8.0])
+    assert np.all(csums["B"] == [8.0, 6.0, 8.0])
+    assert np.all(clabels == [0, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 2, 2, 0, 3, 3, 3, 0])
+    assert np.all(cregions == [[1, 6], [9, 14], [15, 18]])
+
+    # Start at start, end at array end
+    labels = {
+        "A": np.array([1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 4, 4, 0, 0]),
+        "B": np.array([0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 2, 0, 3, 3, 0, 0, 4, 4, 4]),
+    }
+    csums, clabels, cregions = detection.combine_detections(sums, labels, regions)
+    assert np.all(csums["A"] == [3.0, 4.0, 8.0])
+    assert np.all(csums["B"] == [8.0, 6.0, 8.0])
+    assert np.all(clabels == [1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 2, 2, 0, 3, 3, 3, 3])
+    assert np.all(cregions == [[0, 6], [9, 14], [15, 18]])

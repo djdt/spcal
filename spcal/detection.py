@@ -107,7 +107,7 @@ def combine_detections(
         dict of total sum per peak
 
     """
-    if not all(k in regions.keys() for k in sums.keys()):
+    if not all(k in regions.keys() for k in sums.keys()):  # pragma: no cover
         raise ValueError(
             "detection_element_combined: labels and regions must have all of sums keys."
         )
@@ -156,75 +156,75 @@ def combine_detections(
     return combined, any_label, all_regions
 
 
-def fraction_components(
-    fractions: np.ndarray,
-    bins: np.ndarray | None = None,
-    combine_similar: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Binned ratios for element fractions.
-    Calculates the mean value and count of peaks with a combination of elements separated by `bins`.
-    This can be used to find the different elemental composition of NPs in a sample.
+# def fraction_components(
+#     fractions: np.ndarray,
+#     bins: np.ndarray | None = None,
+#     combine_similar: bool = False,
+# ) -> Tuple[np.ndarray, np.ndarray]:
+#     """Binned ratios for element fractions.
+#     Calculates the mean value and count of peaks with a combination of elements separated by `bins`.
+#     This can be used to find the different elemental composition of NPs in a sample.
 
-    Args:
-        fractions: ratios returned by `detection_element_fractions`
-        bins: bins for each element fraction, defaults to [0.0, 0.1, ... 0.9]
-        combine_similar: combine compositions with a difference less than half the bin width
+#     Args:
+#         fractions: ratios returned by `detection_element_fractions`
+#         bins: bins for each element fraction, defaults to [0.0, 0.1, ... 0.9]
+#         combine_similar: combine compositions with a difference less than half the bin width
 
-    Returns:
-        mean of each combination
-        count of each combination"""
-    if bins is None:
-        bins = np.linspace(0, 0.9, 10)
+#     Returns:
+#         mean of each combination
+#         count of each combination"""
+#     if bins is None:
+#         bins = np.linspace(0, 0.9, 10)
 
-    # Generate indicies from histogram of each element
-    hist = np.stack(
-        [np.digitize(fractions[name], bins=bins) for name in fractions.dtype.names],
-        axis=1,
-    )
+#     # Generate indicies from histogram of each element
+#     hist = np.stack(
+#         [np.digitize(fractions[name], bins=bins) for name in fractions.dtype.names],
+#         axis=1,
+#     )
 
-    # Unique combinations across all histogram indicies
-    _, idx, counts = np.unique(hist, axis=0, return_inverse=True, return_counts=True)
+#     # Unique combinations across all histogram indicies
+#     _, idx, counts = np.unique(hist, axis=0, return_inverse=True, return_counts=True)
 
-    # Calculate the mean value for each unique combination
-    means = np.empty(counts.size, dtype=fractions.dtype)
-    for name in fractions.dtype.names:
-        means[name] = np.bincount(idx, fractions[name]) / counts
+#     # Calculate the mean value for each unique combination
+#     means = np.empty(counts.size, dtype=fractions.dtype)
+#     for name in fractions.dtype.names:
+#         means[name] = np.bincount(idx, fractions[name]) / counts
 
-    idx = np.argsort(counts)[::-1]
-    means = means[idx]
-    counts = counts[idx]
+#     idx = np.argsort(counts)[::-1]
+#     means = means[idx]
+#     counts = counts[idx]
 
-    def rec_similar(rec: np.ndarray, x: np.ndarray, diff: float) -> np.ndarray:
-        return np.all(
-            [np.abs(rec[name] - x[name]) < diff for name in x.dtype.names],
-            axis=0,
-        )
+#     def rec_similar(rec: np.ndarray, x: np.ndarray, diff: float) -> np.ndarray:
+#         return np.all(
+#             [np.abs(rec[name] - x[name]) < diff for name in x.dtype.names],
+#             axis=0,
+#         )
 
-    def rec_mean(rec: np.ndarray) -> np.ndarray:
-        return np.array(
-            tuple(np.mean(rec[name]) for name in rec.dtype.names), dtype=rec.dtype
-        )
+#     def rec_mean(rec: np.ndarray) -> np.ndarray:
+#         return np.array(
+#             tuple(np.mean(rec[name]) for name in rec.dtype.names), dtype=rec.dtype
+#         )
 
-    _iter = 0
-    if combine_similar:
-        # diff = np.sqrt(len(fractions.dtype.names) * (bins[1] - bins[0]) ** 2)
-        # Todo Come up with better distance, not flat in all dims
-        diff = bins[1] - bins[0]
-        combined_means = []
-        combined_counts = []
-        while means.size > 0 and idx.size > 0:
-            idx = np.flatnonzero(rec_similar(means, means[0], diff))
-            combined_means.append(rec_mean(means[idx]))
-            combined_counts.append(np.sum(counts[idx]))
-            means = np.delete(means, idx)
-            counts = np.delete(counts, idx)
+#     _iter = 0
+#     if combine_similar:
+#         # diff = np.sqrt(len(fractions.dtype.names) * (bins[1] - bins[0]) ** 2)
+#         # Todo Come up with better distance, not flat in all dims
+#         diff = bins[1] - bins[0]
+#         combined_means = []
+#         combined_counts = []
+#         while means.size > 0 and idx.size > 0:
+#             idx = np.flatnonzero(rec_similar(means, means[0], diff))
+#             combined_means.append(rec_mean(means[idx]))
+#             combined_counts.append(np.sum(counts[idx]))
+#             means = np.delete(means, idx)
+#             counts = np.delete(counts, idx)
 
-            _iter += 1
-            if _iter > 100:
-                logger.warning("Maximum iter reached for combine_similar.")
-                break
-        means, counts = np.array(combined_means, dtype=means.dtype), np.array(
-            combined_counts
-        )
+#             _iter += 1
+#             if _iter > 100:
+#                 logger.warning("Maximum iter reached for combine_similar.")
+#                 break
+#         means, counts = np.array(combined_means, dtype=means.dtype), np.array(
+#             combined_counts
+#         )
 
-    return means, counts
+#     return means, counts

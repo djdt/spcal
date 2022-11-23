@@ -10,9 +10,9 @@ from spcal.poisson import formula_c as poisson_limits
 try:
     import bottleneck as bn
 
-    bottleneck_found = True
+    BOTTLENECK_FOUND = True
 except ImportError:  # pragma: no cover
-    bottleneck_found = False
+    BOTTLENECK_FOUND = False
 
 
 def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
@@ -24,7 +24,7 @@ def moving_mean(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:  # pragma: no cover
+    if BOTTLENECK_FOUND:  # pragma: no cover
         return bn.move_mean(x, n)[n - 1 :]
     r = np.cumsum(x)
     r[n:] = r[n:] - r[:-n]  # type: ignore
@@ -40,10 +40,9 @@ def moving_median(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:  # pragma: no cover
+    if BOTTLENECK_FOUND:  # pragma: no cover
         return bn.move_median(x, n)[n - 1 :]
 
-    n = "asd"
     r = np.empty(x.size - n + 1, x.dtype)
     sort = sorted(x[:n])
     m = n // 2
@@ -68,7 +67,7 @@ def moving_std(x: np.ndarray, n: int) -> np.ndarray:
         x: array
         n: window size
     """
-    if bottleneck_found:  # pragma: no cover
+    if BOTTLENECK_FOUND:  # pragma: no cover
         return bn.move_std(x, n)[n - 1 :]
 
     sums = np.empty(x.size - n + 1)
