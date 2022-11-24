@@ -270,13 +270,24 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
         self.addItem(curve)
 
-        return hist, (x[1::2] + x[2::2]) / 2.0
+        return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
-    # def drawFit(self, x: np.ndarray, y: np.ndarray, pen: QtGui.QPen | None = None) -> None:
+    def drawFit(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+        label: str | None = None,
+    ) -> None:
 
-    #     xs, ys = 
-    #     curve = pyqtgraph.PlotCurveItem(x, y)
-    #     self.addItem(curve)
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        curve = pyqtgraph.PlotCurveItem(
+            x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True, name=label
+        )
+        self.addItem(curve)
 
 
 class ResultsHistogramView(pyqtgraph.GraphicsView):
@@ -334,6 +345,11 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
         self.render(painter)
         painter.end()
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
+
+    def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
+        if name not in self.plots:
+            self.addHistogramPlot(name, **add_kws)
+        return self.plots[name]
 
     def addHistogramPlot(self, name: str, xlabel: str, xunit: str) -> HistogramPlotItem:
         self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)

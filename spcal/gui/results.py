@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from spcal.cluster import agglomerative_cluster
-from spcal.fit import fit_lognormal, fit_normal
+from spcal.fit import fit_lognormal, fit_normal, normal_pdf, lognormal_pdf
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
 from spcal.gui.graphs import (
     ResultsFractionView,
@@ -24,6 +24,8 @@ from spcal.particle import cell_concentration
 
 logger = logging.getLogger(__name__)
 
+
+# Todo: options dialog for each plot type, fit method, bins width, cluster parameters, etc.
 
 class ResultsWidget(QtWidgets.QWidget):
     signal_units = {"counts": 1.0}
@@ -399,13 +401,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 break
 
         scheme = color_schemes[self.color_scheme]
-        if self.draw_mode == "Overlay":
-            plot = self.graph_hist.addHistogramPlot("Overlay", xlabel=label, xunit=unit)
-        elif self.draw_mode == "Stacked":
-            pass
-        else:
-            raise ValueError("drawGraphHist: invalid draw mode")
-
         for i, name in enumerate(graph_data):
             bins = np.arange(
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
@@ -413,17 +408,20 @@ class ResultsWidget(QtWidgets.QWidget):
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
             if self.draw_mode == "Overlay":
+                plot_name = "Overlay"
                 width = 1.0 / len(graph_data)
                 if len(graph_data) == 1:
                     width /= 2.0
                 offset = i * width
             elif self.draw_mode == "Stacked":
-                plot = self.graph_hist.addHistogramPlot(name, xlabel=label, xunit=unit)
+                plot_name = name
                 width = 0.5
                 offset = 0.0
             else:
                 raise ValueError("drawGraphHist: invalid draw mode")
-            plot.drawData(  # type: ignore
+
+            plot = self.graph_hist.getHistogramPlot(plot_name, xlabel=label, xunit=unit)
+            hist, centers = plot.drawData(  # type: ignore
                 name,
                 graph_data[name],
                 bins=bins,
@@ -431,6 +429,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
             )
+            if self.draw_mode != "Overlay" and self.fitmethod.currentText() != "None":
+                hist = hist / bin_width / graph_data[name].size
+                xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
+                if self.fitmethod.currentText() == "Normal":
+                    fit = fit_normal(centers, hist)[2]
+                    ys = normal_pdf(xs * fit[2], fit[0], fit[1])
+                else:
+                    fit = fit_lognormal(centers, hist)[2]
+                    ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
+
+                ys = ys * bin_width * graph_data[name].size
+                pen = QtGui.QPen(QtCore.Qt.red, 2.0)
+                pen.setCosmetic(True)
+                plot.drawFit(xs, ys, pen=pen)
         self.graph_hist.zoomReset()
 
     def drawGraphFractions(self) -> None:
