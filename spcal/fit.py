@@ -7,10 +7,12 @@ _s2pi = np.sqrt(2.0 * np.pi)
 
 
 def normal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
+    """Probabilty density function of a normal distribution."""
     return 1.0 / (sigma * _s2pi) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
 def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
+    """Probabilty density function of a log-normal distribution."""
     return 1.0 / (x * sigma * _s2pi) * np.exp(-0.5 * ((np.log(x) - mu) / sigma) ** 2)
 
 
@@ -51,7 +53,7 @@ def nelder_mead(
         reflected = centroid + alpha * (centroid - simplex[-1])
         fxr = func(x, y, *reflected)
 
-        if fx[0] <= fxr < fx[-2]:  # Relfection
+        if fx[0] <= fxr < fx[-2]:  # Reflection
             simplex[-1] = reflected
             fx[-1] = fxr
         elif fxr < fx[0]:  # Expansion
@@ -79,11 +81,11 @@ def nelder_mead(
     return simplex[idx]
 
 
-def get_simplex(mins: np.ndarray, maxs: np.ndarray) -> np.ndarray:
-    mins = np.array(mins)
-    simplex = np.repeat(mins[None, :], mins.size + 1, axis=0)
-    simplex[1:] += np.diag(maxs)
-    return simplex
+# def get_simplex(mins: np.ndarray, maxs: np.ndarray) -> np.ndarray:
+#     mins = np.array(mins)
+#     simplex = np.repeat(mins[None, :], mins.size + 1, axis=0)
+#     simplex[1:] += np.diag(maxs)
+#     return simplex
 
 
 def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
