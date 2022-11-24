@@ -666,8 +666,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def filterResults(self) -> None:
         condition = np.ones(self.sample.detections.size, dtype=bool)
-        for filter in self.filters:
-            boolean, name, unit, operation, value = filter
+        for filt in self.filters:
+            boolean, name, unit, operation, value = filt
 
             ops = {
                 ">": np.greater,
@@ -854,7 +854,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
         for key, index in zip(["masses", "sizes", "cell_concentrations"], [1, 2, 3]):
-            enabled = any([key in self.results[name] for name in self.results])
+            enabled = any(key in result for result in self.results.values())
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)
