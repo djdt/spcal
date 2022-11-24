@@ -235,7 +235,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         bar_offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> None:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
@@ -254,12 +254,12 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
         x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
 
-        y = np.zeros(hist.size * 2, dtype=hist.dtype)
-        y[1::2] = hist
+        y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
+        y[1:-1:2] = hist
 
         curve = pyqtgraph.PlotCurveItem(
             x=x,
-            y=np.concatenate([y, [0.0]]),
+            y=y,
             stepMode=True,
             fillLevel=0,
             fillOutline=True,
@@ -269,6 +269,14 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         )
         self.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
         self.addItem(curve)
+
+        return hist, (x[1::2] + x[2::2]) / 2.0
+
+    # def drawFit(self, x: np.ndarray, y: np.ndarray, pen: QtGui.QPen | None = None) -> None:
+
+    #     xs, ys = 
+    #     curve = pyqtgraph.PlotCurveItem(x, y)
+    #     self.addItem(curve)
 
 
 class ResultsHistogramView(pyqtgraph.GraphicsView):
@@ -767,18 +775,18 @@ if __name__ == "__main__":  # test colors
     )
     view = QtWidgets.QGraphicsView(scene)
 
-    y = 0
+    yy = 0
     for name, colors in color_schemes.items():
         label = QtWidgets.QGraphicsTextItem(name)
-        label.setPos(0, y)
+        label.setPos(0, yy)
         view.scene().addItem(label)
-        x = 0
+        xx = 0
         for color in colors:
-            x += 100
-            rect = QtWidgets.QGraphicsRectItem(x, y, 50, 50)
+            xx += 100
+            rect = QtWidgets.QGraphicsRectItem(xx, yy, 50, 50)
             rect.setBrush(QtGui.QBrush(color))
             view.scene().addItem(rect)
-        y += 100
+        yy += 100
 
     view.show()
     app.exec()
