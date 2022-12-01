@@ -5,70 +5,75 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
-from spcal.gui.units import UnitsWidget
+from spcal.gui.units import (
+    UnitsWidget,
+    mass_units,
+    molar_concentration_units,
+    signal_units,
+    size_units,
+)
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
 from spcal.npdb import db
 
 
-class BinWidthDialog(QtWidgets.QDialog):
+class HistogramOptionsDialog(QtWidgets.QDialog):
+    optionsChanged = QtCore.Signal(dict)
     binWidthsChanged = QtCore.Signal(dict)
 
     def __init__(
         self,
-        bin_widths: Dict[str, float | None],
+        options: dict | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Histogram Bin Widths")
+        self.setWindowTitle("Histogram Options")
 
-        size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-        mass_units = {
-            "ag": 1e-21,
-            "fg": 1e-18,
-            "pg": 1e-15,
-            "ng": 1e-12,
-            "μg": 1e-9,
-            "g": 1e-3,
-            "kg": 1.0,
+        self.options = {
+            "bin widths": {
+                "signal": None,
+                "mass": None,
+                "size": None,
+                "concentration": None,
+            }
         }
-        concentration_units = {
-            "amol/L": 1e-18,
-            "fmol/L": 1e-15,
-            "pmol/L": 1e-12,
-            "nmol/L": 1e-9,
-            "μmol/L": 1e-6,
-            "mmol/L": 1e-3,
-            "mol/L": 1.0,
-        }
-
-        self.width_signal = QtWidgets.QLineEdit(str((bin_widths.get("signal", ""))))
-        self.width_signal.setPlaceholderText("auto")
-        self.width_signal.setValidator(QtGui.QIntValidator(0, 999999999))
+        if options is not None:
+            self.options.update(options)
 
         color = self.palette().color(QtGui.QPalette.Base)
-
+        self.width_signal = UnitsWidget(
+            signal_units,
+            value=self.options["bin widths"]["signal"],
+            invalid_color=color,
+        )
+        self.width_signal.setValidator(QtGui.QIntValidator(0, 999999999))
         self.width_mass = UnitsWidget(
-            mass_units, value=bin_widths.get("mass", None), invalid_color=color
+            mass_units, value=self.options["bin widths"]["mass"], invalid_color=color
         )
         self.width_size = UnitsWidget(
-            size_units, value=bin_widths.get("size", None), invalid_color=color
+            size_units, value=self.options["bin widths"]["size"], invalid_color=color
         )
         self.width_conc = UnitsWidget(
-            concentration_units,
-            value=bin_widths.get("concentration", None),
+            molar_concentration_units,
+            value=self.options["bin widths"]["concentration"],
             invalid_color=color,
         )
 
-        for widget in [self.width_mass, self.width_size, self.width_conc]:
+        for widget in [
+            self.width_signal,
+            self.width_mass,
+            self.width_size,
+            self.width_conc,
+        ]:
             widget.setBestUnit()
             widget.lineedit.setPlaceholderText("auto")
 
-        layout_form = QtWidgets.QFormLayout()
-        layout_form.addRow("Signal:", self.width_signal)
-        layout_form.addRow("Mass:", self.width_mass)
-        layout_form.addRow("Size:", self.width_size)
-        layout_form.addRow("Concentration:", self.width_conc)
+        box_widths = QtWidgets.QGroupBox("Bin Widths")
+        box_widths.setLayout(QtWidgets.QFormLayout())
+        box_widths.layout().addRow("Signal:", self.width_signal)
+        box_widths.layout().addRow("Mass:", self.width_mass)
+        box_widths.layout().addRow("Size:", self.width_size)
+        box_widths.layout().addRow("Concentration:", self.width_conc)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
@@ -78,7 +83,7 @@ class BinWidthDialog(QtWidgets.QDialog):
         self.button_box.clicked.connect(self.buttonBoxClicked)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_form)
+        layout.addWidget(box_widths)
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
@@ -93,23 +98,127 @@ class BinWidthDialog(QtWidgets.QDialog):
             self.reject()
 
     def accept(self) -> None:
-        bin_widths = {
-            "mass": self.width_mass.baseValue(),
-            "size": self.width_size.baseValue(),
-            "concentration": self.width_conc.baseValue(),
+        options = {
+            "bin widths": {
+                "signal": self.width_signal.baseValue(),
+                "mass": self.width_mass.baseValue(),
+                "size": self.width_size.baseValue(),
+                "concentration": self.width_conc.baseValue(),
+            }
         }
-        try:
-            bin_widths["signal"] = int(self.width_signal.text())
-        except ValueError:
-            bin_widths["signal"] = None
-        self.binWidthsChanged.emit(bin_widths)
+        self.optionsChanged.emit(options)
 
         super().accept()
 
     def reset(self) -> None:
-        self.width_signal.setText("")
-        for widget in [self.width_mass, self.width_size, self.width_conc]:
+        for widget in [
+            self.width_signal,
+            self.width_mass,
+            self.width_size,
+            self.width_conc,
+        ]:
             widget.setBaseValue(None)
+
+
+# class BinWidthDialog(QtWidgets.QDialog):
+#     binWidthsChanged = QtCore.Signal(dict)
+
+#     def __init__(
+#         self,
+#         bin_widths: Dict[str, float | None],
+#         parent: QtWidgets.QWidget | None = None,
+#     ):
+#         super().__init__(parent)
+#         self.setWindowTitle("Histogram Bin Widths")
+
+#         size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+#         mass_units = {
+#             "ag": 1e-21,
+#             "fg": 1e-18,
+#             "pg": 1e-15,
+#             "ng": 1e-12,
+#             "μg": 1e-9,
+#             "g": 1e-3,
+#             "kg": 1.0,
+#         }
+#         concentration_units = {
+#             "amol/L": 1e-18,
+#             "fmol/L": 1e-15,
+#             "pmol/L": 1e-12,
+#             "nmol/L": 1e-9,
+#             "μmol/L": 1e-6,
+#             "mmol/L": 1e-3,
+#             "mol/L": 1.0,
+#         }
+
+#         self.width_signal = QtWidgets.QLineEdit(str((bin_widths.get("signal", ""))))
+#         self.width_signal.setPlaceholderText("auto")
+#         self.width_signal.setValidator(QtGui.QIntValidator(0, 999999999))
+
+#         color = self.palette().color(QtGui.QPalette.Base)
+
+#         self.width_mass = UnitsWidget(
+#             mass_units, value=bin_widths.get("mass", None), invalid_color=color
+#         )
+#         self.width_size = UnitsWidget(
+#             size_units, value=bin_widths.get("size", None), invalid_color=color
+#         )
+#         self.width_conc = UnitsWidget(
+#             concentration_units,
+#             value=bin_widths.get("concentration", None),
+#             invalid_color=color,
+#         )
+
+#         for widget in [self.width_mass, self.width_size, self.width_conc]:
+#             widget.setBestUnit()
+#             widget.lineedit.setPlaceholderText("auto")
+
+#         layout_form = QtWidgets.QFormLayout()
+#         layout_form.addRow("Signal:", self.width_signal)
+#         layout_form.addRow("Mass:", self.width_mass)
+#         layout_form.addRow("Size:", self.width_size)
+#         layout_form.addRow("Concentration:", self.width_conc)
+
+#         self.button_box = QtWidgets.QDialogButtonBox(
+#             QtWidgets.QDialogButtonBox.RestoreDefaults
+#             | QtWidgets.QDialogButtonBox.Ok
+#             | QtWidgets.QDialogButtonBox.Cancel
+#         )
+#         self.button_box.clicked.connect(self.buttonBoxClicked)
+
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.addLayout(layout_form)
+#         layout.addWidget(self.button_box)
+
+#         self.setLayout(layout)
+
+#     def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+#         sbutton = self.button_box.standardButton(button)
+#         if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
+#             self.reset()
+#         elif sbutton == QtWidgets.QDialogButtonBox.Ok:
+#             self.accept()
+#         else:
+#             self.reject()
+
+#     def accept(self) -> None:
+#         bin_widths = {
+#             "mass": self.width_mass.baseValue(),
+#             "size": self.width_size.baseValue(),
+#             "concentration": self.width_conc.baseValue(),
+#         }
+#         try:
+#             bin_widths["signal"] = int(self.width_signal.text())
+#         except ValueError:
+#             bin_widths["signal"] = None
+#         self.binWidthsChanged.emit(bin_widths)
+
+#         super().accept()
+
+#     def reset(self) -> None:
+#         self.width_signal.setText("")
+#         for widget in [self.width_mass, self.width_size, self.width_conc]:
+#             widget.setBaseValue(None)
 
 
 class FilterRow(QtWidgets.QWidget):

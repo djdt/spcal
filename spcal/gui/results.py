@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from spcal.cluster import agglomerative_cluster
-from spcal.fit import fit_lognormal, fit_normal, normal_pdf, lognormal_pdf
+from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import BinWidthDialog, FilterDialog
 from spcal.gui.graphs import (
     ResultsFractionView,
@@ -18,6 +18,13 @@ from spcal.gui.graphs import (
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
+from spcal.gui.units import (
+    mass_concentration_units,
+    mass_units,
+    molar_concentration_units,
+    signal_units,
+    size_units,
+)
 from spcal.gui.util import create_action
 from spcal.io import export_nanoparticle_results
 from spcal.particle import cell_concentration
@@ -27,37 +34,8 @@ logger = logging.getLogger(__name__)
 
 # Todo: options dialog for each plot type, fit method, bins width, cluster parameters, etc.
 
-class ResultsWidget(QtWidgets.QWidget):
-    signal_units = {"counts": 1.0}
-    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-    mass_units = {
-        "ag": 1e-21,
-        "fg": 1e-18,
-        "pg": 1e-15,
-        "ng": 1e-12,
-        "μg": 1e-9,
-        "g": 1e-3,
-        "kg": 1.0,
-    }
-    molar_concentration_units = {
-        "amol/L": 1e-18,
-        "fmol/L": 1e-15,
-        "pmol/L": 1e-12,
-        "nmol/L": 1e-9,
-        "μmol/L": 1e-6,
-        "mmol/L": 1e-3,
-        "mol/L": 1.0,
-    }
-    concentration_units = {
-        "fg/L": 1e-18,
-        "pg/L": 1e-15,
-        "ng/L": 1e-12,
-        "μg/L": 1e-9,
-        "mg/L": 1e-6,
-        "g/L": 1e-3,
-        "kg/L": 1.0,
-    }
 
+class ResultsWidget(QtWidgets.QWidget):
     def __init__(
         self,
         options: OptionsWidget,
@@ -301,32 +279,32 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
 
-    def asBestUnit(
-        self, data: np.ndarray, current_unit: str = ""
-    ) -> Tuple[np.ndarray, float, str]:
-        units = {
-            "z": 1e-21,
-            "a": 1e-18,
-            "f": 1e-15,
-            "p": 1e-12,
-            "n": 1e-9,
-            "μ": 1e-6,
-            "m": 1e-3,
-            "": 1.0,
-            "k": 1e3,
-            "M": 1e6,
-        }
+    # def asBestUnit(
+    #     self, data: np.ndarray, current_unit: str = ""
+    # ) -> Tuple[np.ndarray, float, str]:
+    #     units = {
+    #         "z": 1e-21,
+    #         "a": 1e-18,
+    #         "f": 1e-15,
+    #         "p": 1e-12,
+    #         "n": 1e-9,
+    #         "μ": 1e-6,
+    #         "m": 1e-3,
+    #         "": 1.0,
+    #         "k": 1e3,
+    #         "M": 1e6,
+    #     }
 
-        data = data * units[current_unit]
+    #     data = data * units[current_unit]
 
-        mean = np.mean(data)
-        pwr = 10 ** int(np.log10(mean) - (1 if mean < 1.0 else 0))
+    #     mean = np.mean(data)
+    #     pwr = 10 ** int(np.log10(mean) - (1 if mean < 1.0 else 0))
 
-        vals = list(units.values())
-        names = list(units.keys())
-        idx = np.searchsorted(list(units.values()), pwr) - 1
+    #     vals = list(units.values())
+    #     names = list(units.keys())
+    #     idx = np.searchsorted(list(units.values()), pwr) - 1
 
-        return data / vals[idx], vals[idx] / units[current_unit], names[idx]
+    #     return data / vals[idx], vals[idx] / units[current_unit], names[idx]
 
     def readyForResults(self) -> bool:
         if not self.options.isComplete():

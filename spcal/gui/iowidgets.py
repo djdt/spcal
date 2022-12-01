@@ -8,7 +8,7 @@ import spcal
 
 # from spcal import npdata
 from spcal.gui.dialogs import MassFractionCalculatorDialog, ParticleDatabaseDialog
-from spcal.gui.units import UnitsWidget
+from spcal.gui.units import UnitsWidget, mass_concentration_units, size_units
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit
 
@@ -224,24 +224,12 @@ class ReferenceIOWidget(SampleIOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
 
-        concentration_units = {
-            "fg/L": 1e-18,
-            "pg/L": 1e-15,
-            "ng/L": 1e-12,
-            "μg/L": 1e-9,
-            "mg/L": 1e-6,
-            "g/L": 1e-3,
-            "kg/L": 1.0,
-        }
         self.concentration = UnitsWidget(
-            units=concentration_units,
+            units=mass_concentration_units,
             default_unit="ng/L",
             invalid_color=QtGui.QColor(255, 255, 172),
         )
-        self.diameter = UnitsWidget(
-            {"nm": 1e-9, "μm": 1e-6, "m": 1.0},
-            default_unit="nm",
-        )
+        self.diameter = UnitsWidget(size_units, default_unit="nm")
 
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
@@ -348,40 +336,8 @@ class ReferenceIOWidget(SampleIOWidget):
 class ResultIOWidget(IOWidget):
     optionsChanged = QtCore.Signal(str)
 
-    signal_units = {"counts": 1.0}
-    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-    mass_units = {
-        "ag": 1e-21,
-        "fg": 1e-18,
-        "pg": 1e-15,
-        "ng": 1e-12,
-        "μg": 1e-9,
-        "g": 1e-3,
-        "kg": 1.0,
-    }
-    molar_concentration_units = {
-        "amol/L": 1e-18,
-        "fmol/L": 1e-15,
-        "pmol/L": 1e-12,
-        "nmol/L": 1e-9,
-        "μmol/L": 1e-6,
-        "mmol/L": 1e-3,
-        "mol/L": 1.0,
-    }
-    concentration_units = {
-        "fg/L": 1e-18,
-        "pg/L": 1e-15,
-        "ng/L": 1e-12,
-        "μg/L": 1e-9,
-        "mg/L": 1e-6,
-        "g/L": 1e-3,
-        "kg/L": 1.0,
-    }
-
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.name = name
-
+        super().__init__(name, parent=parent)
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
@@ -394,28 +350,28 @@ class ResultIOWidget(IOWidget):
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
-            self.concentration_units,
+            mass_concentration_units,
             default_unit="ng/L",
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
-            self.concentration_units,
+            mass_concentration_units,
             default_unit="ng/L",
         )
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
-            self.size_units,
+            size_units,
             default_unit="nm",
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
-            self.size_units,
+            size_units,
             default_unit="nm",
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
-            self.size_units,
+            size_units,
             default_unit="nm",
         )
         self.median.setReadOnly(True)

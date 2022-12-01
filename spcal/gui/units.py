@@ -1,9 +1,42 @@
+"""Widget that displays a value with a coresponding unit.
+[ line edit ] [combo box]
+"""
 from typing import Dict, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import ValidColorLineEdit
+
+signal_units = {"counts": 1.0}
+size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+mass_units = {
+    "ag": 1e-21,
+    "fg": 1e-18,
+    "pg": 1e-15,
+    "ng": 1e-12,
+    "μg": 1e-9,
+    "g": 1e-3,
+    "kg": 1.0,
+}
+molar_concentration_units = {
+    "amol/L": 1e-18,
+    "fmol/L": 1e-15,
+    "pmol/L": 1e-12,
+    "nmol/L": 1e-9,
+    "μmol/L": 1e-6,
+    "mmol/L": 1e-3,
+    "mol/L": 1.0,
+}
+mass_concentration_units = {
+    "fg/L": 1e-18,
+    "pg/L": 1e-15,
+    "ng/L": 1e-12,
+    "μg/L": 1e-9,
+    "mg/L": 1e-6,
+    "g/L": 1e-3,
+    "kg/L": 1.0,
+}
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -22,19 +55,19 @@ class UnitsWidget(QtWidgets.QWidget):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-        self._base_value = None
-        self._base_error = None
-        self._previous_unit = None
-        self._units = {}
+        self._base_value: float | None = None
+        self._base_error: float | None = None
+        self._previous_unit: str | None = None
+        self._units: Dict[str, float] = {}
 
         self.formatter = formatter
         self.valid_range = validator[0], validator[1]
 
         self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
-        self.lineedit.textEdited.connect(self.updateValueFromText)
+        self.lineedit.textEdited.connect(self._updateValueFromText)
         self.lineedit.setValidator(QtGui.QDoubleValidator(*validator))
 
-        self.valueChanged.connect(self.updateTextFromValue)
+        self.valueChanged.connect(self._updateTextFromValue)
 
         self.combo = QtWidgets.QComboBox()
         self.combo.currentTextChanged.connect(self.unitChanged)
@@ -53,9 +86,11 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
 
-    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:  # pragma: no cover, covered by clearFocus
+    def focusOutEvent(
+        self, event: QtGui.QFocusEvent
+    ) -> None:  # pragma: no cover, covered by clearFocus
         super().focusOutEvent(event)
-        self.updateValueFromText()
+        self._updateValueFromText()
 
     def baseValue(self) -> float | None:
         return self._base_value
@@ -139,7 +174,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
         self._previous_unit = unit
 
-    def updateTextFromValue(self) -> None:
+    def _updateTextFromValue(self) -> None:
         value = self.value()
         if value is None:
             self.lineedit.setText("")
@@ -151,11 +186,11 @@ class UnitsWidget(QtWidgets.QWidget):
                 f"{value:{self.formatter}} ± {error:{self.formatter}}"
             )
 
-    def updateValueFromText(self) -> None:
+    def _updateValueFromText(self) -> None:
         value = self.lineedit.text()
-        self.valueChanged.disconnect(self.updateTextFromValue)
+        self.valueChanged.disconnect(self._updateTextFromValue)
         self.setValue(value)
-        self.valueChanged.connect(self.updateTextFromValue)
+        self.valueChanged.connect(self._updateTextFromValue)
 
     def sync(self, other: "UnitsWidget") -> None:
         self.baseValueChanged.connect(other.setBaseValue)
