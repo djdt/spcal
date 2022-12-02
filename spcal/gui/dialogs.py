@@ -101,6 +101,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
+            | QtWidgets.QDialogButtonBox.Apply
             | QtWidgets.QDialogButtonBox.Ok
             | QtWidgets.QDialogButtonBox.Cancel
         )
@@ -117,12 +118,16 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         sbutton = self.button_box.standardButton(button)
         if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
             self.reset()
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.Apply:
+            self.apply()
         elif sbutton == QtWidgets.QDialogButtonBox.Ok:
+            self.apply()
             self.accept()
         else:
             self.reject()
 
-    def accept(self) -> None:
+    def apply(self) -> None:
         if self.radio_fit_off.isChecked():
             fit = None
         elif self.radio_fit_norm.isChecked():
@@ -142,11 +147,9 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.fitChanged.emit(fit)
         if bin_widths != self.bin_widths:
             self.binWidthsChanged.emit(bin_widths)
-        # self.optionsChanged.emit(options)
-
-        super().accept()
 
     def reset(self) -> None:
+        self.radio_fit_log.setChecked(True)
         for widget in [
             self.width_signal,
             self.width_mass,

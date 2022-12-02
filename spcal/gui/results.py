@@ -259,11 +259,11 @@ class ResultsWidget(QtWidgets.QWidget):
     def dialogGraphOptions(self) -> None:
         if self.graph_stack.currentWidget() == self.graph_hist:
             dlg = HistogramOptionsDialog(
-                self.graph_hist_fit, self.graph_hist_bin_widths, parent=self
+                self.graph_hist_fit, self.graph_hist_bin_widths, self.window()
             )
             dlg.fitChanged.connect(self.setHistogramFit)
             dlg.binWidthsChanged.connect(self.setBinWidths)
-        dlg.open()
+        dlg.show()
 
     def dialogExportResults(self) -> None:
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
