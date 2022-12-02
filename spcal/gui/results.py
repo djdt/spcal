@@ -8,7 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from spcal.cluster import agglomerative_cluster
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
-from spcal.gui.dialogs import BinWidthDialog, FilterDialog
+from spcal.gui.dialogs import FilterDialog, HistogramOptionsDialog
 from spcal.gui.graphs import (
     ResultsFractionView,
     ResultsHistogramView,
@@ -47,8 +47,11 @@ class ResultsWidget(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.draw_mode = "Overlay"
-        self.bin_widths: Dict[str, float | None] = {}
         self.color_scheme = color_scheme
+
+        # Graph default options
+        self.graph_hist_fit: str | None = "log normal"
+        self.graph_hist_bin_widths: Dict[str, float | None] = {}
 
         self.options = options
         self.sample = sample
@@ -96,12 +99,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
-
-        self.fitmethod = QtWidgets.QComboBox()
-        self.fitmethod.addItems(["None", "Normal", "Lognormal"])
-        self.fitmethod.setCurrentText("Lognormal")
-
-        self.fitmethod.currentIndexChanged.connect(self.drawGraph)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
@@ -172,11 +169,11 @@ class ResultsWidget(QtWidgets.QWidget):
             self.dialogFilterDetections,
         )
 
-        self.action_bin_width = create_action(
-            "adjustcol",
-            "Bin Width",
-            "Set the bin width for the current result histograms.",
-            self.dialogBinWidth,
+        self.action_graph_options = create_action(
+            "configure",
+            "Graph Options",
+            "Adjust plotting options.",
+            self.dialogGraphOptions,
         )
 
         self.action_graph_zoomout = create_action(
@@ -202,7 +199,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_toolbar.addSeparator()
         self.graph_toolbar.addAction(self.action_filter_detections)
-        self.graph_toolbar.addAction(self.action_bin_width)
+        self.graph_toolbar.addAction(self.action_graph_options)
 
         self.graph_toolbar.addSeparator()
         self.graph_toolbar.addAction(self.action_graph_zoomout)
@@ -240,7 +237,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def setBinWidths(self, widths: Dict[str, float | None]) -> None:
-        self.bin_widths.update(widths)
+        self.graph_hist_bin_widths.update(widths)
         self.drawGraphHist()
 
     def setColorScheme(self, scheme: str) -> None:
@@ -255,9 +252,17 @@ class ResultsWidget(QtWidgets.QWidget):
         self.filters = filters
         self.updateResults()
 
-    def dialogBinWidth(self) -> None:
-        dlg = BinWidthDialog(self.bin_widths, parent=self)
-        dlg.binWidthsChanged.connect(self.setBinWidths)
+    def setHistogramFit(self, fit: str | None) -> None:
+        self.graph_hist_fit = fit
+        self.drawGraphHist()
+
+    def dialogGraphOptions(self) -> None:
+        if self.graph_stack.currentWidget() == self.graph_hist:
+            dlg = HistogramOptionsDialog(
+                self.graph_hist_fit, self.graph_hist_bin_widths, parent=self
+            )
+            dlg.fitChanged.connect(self.setHistogramFit)
+            dlg.binWidthsChanged.connect(self.setBinWidths)
         dlg.open()
 
     def dialogExportResults(self) -> None:
@@ -329,18 +334,18 @@ class ResultsWidget(QtWidgets.QWidget):
 
         if mode == "Signal":
             label, unit = "Intensity (counts)", ""
-            bin_width = self.bin_widths.get("signal", None)
+            bin_width = self.graph_hist_bin_widths.get("signal", None)
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
-            bin_width = self.bin_widths.get("mass", None)
+            bin_width = self.graph_hist_bin_widths.get("mass", None)
             if bin_width is not None:
                 bin_width *= 1000  # convert to gram
         elif mode == "Size (m)":
             label, unit = "Size", "m"
-            bin_width = self.bin_widths.get("size", None)
+            bin_width = self.graph_hist_bin_widths.get("size", None)
         elif mode == "Conc. (mol/L)":
             label, unit = "Concentration", "mol/L"
-            bin_width = self.bin_widths.get("concentration", None)
+            bin_width = self.graph_hist_bin_widths.get("concentration", None)
         else:
             raise ValueError("drawGraphHist: unknown mode")
 
@@ -407,15 +412,19 @@ class ResultsWidget(QtWidgets.QWidget):
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
             )
-            if self.draw_mode != "Overlay" and self.fitmethod.currentText() != "None":
+            if self.draw_mode != "Overlay" and self.graph_hist_fit is not None:
                 hist = hist / bin_width / graph_data[name].size
                 xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
-                if self.fitmethod.currentText() == "Normal":
+                if self.graph_hist_fit == "normal":
                     fit = fit_normal(centers, hist)[2]
                     ys = normal_pdf(xs * fit[2], fit[0], fit[1])
-                else:
+                elif self.graph_hist_fit == "log normal":
                     fit = fit_lognormal(centers, hist)[2]
                     ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
+                else:
+                    raise ValueError(
+                        f"drawGraphHist: unknown fit {self.graph_hist_fit}"
+                    )
 
                 ys = ys * bin_width * graph_data[name].size
                 pen = QtGui.QPen(QtCore.Qt.red, 2.0)
@@ -620,19 +629,19 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name, result in self.results.items():
             if mode == "Signal":
-                units = self.signal_units
+                units = signal_units
                 values = result["detections"]
                 lod = result["lod"]
             elif mode == "Mass (kg)" and "masses" in result:
-                units = self.mass_units
+                units = mass_units
                 values = result["masses"]
                 lod = result["lod_mass"]
             elif mode == "Size (m)" and "sizes" in result:
-                units = self.size_units
+                units = size_units
                 values = result["sizes"]
                 lod = result["lod_size"]
             elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
-                units = self.molar_concentration_units
+                units = molar_concentration_units
                 values = result["cell_concentrations"]
                 lod = result["lod_cell_concentration"]
             else:

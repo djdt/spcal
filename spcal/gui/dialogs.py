@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.units import (
     UnitsWidget,
+    time_units,
     mass_units,
     molar_concentration_units,
     signal_units,
@@ -18,44 +19,62 @@ from spcal.npdb import db
 
 
 class HistogramOptionsDialog(QtWidgets.QDialog):
-    optionsChanged = QtCore.Signal(dict)
+    fitChanged = QtCore.Signal(str)
     binWidthsChanged = QtCore.Signal(dict)
 
     def __init__(
         self,
-        options: dict | None = None,
+        fit: str | None,
+        bin_widths: Dict[str, float | None],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Histogram Options")
 
-        self.options = {
-            "bin widths": {
-                "signal": None,
-                "mass": None,
-                "size": None,
-                "concentration": None,
-            }
+        self.fit = fit
+        self.bin_widths: Dict[str, float | None] = {
+            "signal": None,
+            "mass": None,
+            "size": None,
+            "concentration": None,
         }
-        if options is not None:
-            self.options.update(options)
+        self.bin_widths.update(bin_widths)
+
+        self.radio_fit_off = QtWidgets.QRadioButton("Off")
+        self.radio_fit_norm = QtWidgets.QRadioButton("Normal")
+        self.radio_fit_log = QtWidgets.QRadioButton("Log normal")
+
+        fit_group = QtWidgets.QButtonGroup()
+        for button in [self.radio_fit_off, self.radio_fit_norm, self.radio_fit_log]:
+            fit_group.addButton(button)
+
+        if self.fit is None:
+            self.radio_fit_off.setChecked(True)
+        elif self.fit == "normal":
+            self.radio_fit_norm.setChecked(True)
+        elif self.fit == "log normal":
+            self.radio_fit_log.setChecked(True)
+        else:
+            raise ValueError("HistogramOptionsDialog: unknown fit")
 
         color = self.palette().color(QtGui.QPalette.Base)
         self.width_signal = UnitsWidget(
             signal_units,
-            value=self.options["bin widths"]["signal"],
+            value=self.bin_widths["signal"],
+            invalid_color=color,
+            validator=QtGui.QIntValidator(0, 999999999),
+        )
+        self.width_mass = UnitsWidget(
+            mass_units,
+            value=self.bin_widths["mass"],
             invalid_color=color,
         )
-        self.width_signal.setValidator(QtGui.QIntValidator(0, 999999999))
-        self.width_mass = UnitsWidget(
-            mass_units, value=self.options["bin widths"]["mass"], invalid_color=color
-        )
         self.width_size = UnitsWidget(
-            size_units, value=self.options["bin widths"]["size"], invalid_color=color
+            size_units, value=self.bin_widths["size"], invalid_color=color
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
-            value=self.options["bin widths"]["concentration"],
+            value=self.bin_widths["concentration"],
             invalid_color=color,
         )
 
@@ -67,6 +86,11 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         ]:
             widget.setBestUnit()
             widget.lineedit.setPlaceholderText("auto")
+
+        box_fit = QtWidgets.QGroupBox("Curve Fit")
+        box_fit.setLayout(QtWidgets.QHBoxLayout())
+        for button in [self.radio_fit_off, self.radio_fit_norm, self.radio_fit_log]:
+            box_fit.layout().addWidget(button)
 
         box_widths = QtWidgets.QGroupBox("Bin Widths")
         box_widths.setLayout(QtWidgets.QFormLayout())
@@ -83,6 +107,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         self.button_box.clicked.connect(self.buttonBoxClicked)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(box_fit)
         layout.addWidget(box_widths)
         layout.addWidget(self.button_box)
 
@@ -98,15 +123,26 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.reject()
 
     def accept(self) -> None:
-        options = {
-            "bin widths": {
-                "signal": self.width_signal.baseValue(),
-                "mass": self.width_mass.baseValue(),
-                "size": self.width_size.baseValue(),
-                "concentration": self.width_conc.baseValue(),
-            }
+        if self.radio_fit_off.isChecked():
+            fit = None
+        elif self.radio_fit_norm.isChecked():
+            fit = "normal"
+        else:
+            fit = "log normal"
+
+        bin_widths = {
+            "signal": self.width_signal.baseValue(),
+            "mass": self.width_mass.baseValue(),
+            "size": self.width_size.baseValue(),
+            "concentration": self.width_conc.baseValue(),
         }
-        self.optionsChanged.emit(options)
+
+        # Check for changes
+        if fit != self.fit:
+            self.fitChanged.emit(fit)
+        if bin_widths != self.bin_widths:
+            self.binWidthsChanged.emit(bin_widths)
+        # self.optionsChanged.emit(options)
 
         super().accept()
 
@@ -445,7 +481,9 @@ class ImportDialog(QtWidgets.QDialog):
         self.table.setFont(QtGui.QFont("Courier"))
 
         self.dwelltime = UnitsWidget(
-            {"ms": 1e-3, "s": 1.0}, default_unit="ms", validator=(0.0, 10.0, 10)
+            time_units,
+            default_unit="ms",
+            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.dwelltime.valueChanged.connect(self.completeChanged)
 
