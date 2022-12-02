@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.units import UnitsWidget
+from spcal.gui.units import UnitsWidget, time_units
 from spcal.gui.widgets import ValidColorLineEdit
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
@@ -22,7 +22,9 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # Instrument wide options
         self.dwelltime = UnitsWidget(
-            {"ms": 1e-3, "s": 1.0}, default_unit="ms", validator=(0.0, 10.0, 10)
+            time_units,
+            default_unit="ms",
+            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.dwelltime.setReadOnly(True)
 

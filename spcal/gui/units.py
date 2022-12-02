@@ -8,8 +8,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import ValidColorLineEdit
 
-signal_units = {"counts": 1.0}
-size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
 mass_units = {
     "ag": 1e-21,
     "fg": 1e-18,
@@ -18,15 +16,6 @@ mass_units = {
     "μg": 1e-9,
     "g": 1e-3,
     "kg": 1.0,
-}
-molar_concentration_units = {
-    "amol/L": 1e-18,
-    "fmol/L": 1e-15,
-    "pmol/L": 1e-12,
-    "nmol/L": 1e-9,
-    "μmol/L": 1e-6,
-    "mmol/L": 1e-3,
-    "mol/L": 1.0,
 }
 mass_concentration_units = {
     "fg/L": 1e-18,
@@ -37,6 +26,18 @@ mass_concentration_units = {
     "g/L": 1e-3,
     "kg/L": 1.0,
 }
+molar_concentration_units = {
+    "amol/L": 1e-18,
+    "fmol/L": 1e-15,
+    "pmol/L": 1e-12,
+    "nmol/L": 1e-9,
+    "μmol/L": 1e-6,
+    "mmol/L": 1e-3,
+    "mol/L": 1.0,
+}
+signal_units = {"counts": 1.0}
+size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
+time_units = {"μs": 1e-6, "ms": 1e-3, "s": 1.0}
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -49,7 +50,7 @@ class UnitsWidget(QtWidgets.QWidget):
         units: Dict[str, float],
         default_unit: str | None = None,
         value: float | None = None,
-        validator: Tuple[float, float, int] = (0.0, 1e99, 10),
+        validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
         formatter: str = ".6g",
         invalid_color: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
@@ -61,11 +62,14 @@ class UnitsWidget(QtWidgets.QWidget):
         self._units: Dict[str, float] = {}
 
         self.formatter = formatter
-        self.valid_range = validator[0], validator[1]
+        if validator is None:
+            validator = QtGui.QDoubleValidator(0.0, 1e99, 10)
+        self.valid_base_range = validator.bottom(), validator.top()
 
         self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
         self.lineedit.textEdited.connect(self._updateValueFromText)
-        self.lineedit.setValidator(QtGui.QDoubleValidator(*validator))
+
+        self.lineedit.setValidator(validator)
 
         self.valueChanged.connect(self._updateTextFromValue)
 
@@ -166,8 +170,8 @@ class UnitsWidget(QtWidgets.QWidget):
     def unitChanged(self, unit: str) -> None:
         self.valueChanged.emit()
 
-        bottom = self.valid_range[0] / self._units[unit]
-        top = self.valid_range[1] / self._units[unit]
+        bottom = self.valid_base_range[0] / self._units[unit]
+        top = self.valid_base_range[1] / self._units[unit]
 
         self.lineedit.validator().setBottom(bottom)
         self.lineedit.validator().setTop(top)
