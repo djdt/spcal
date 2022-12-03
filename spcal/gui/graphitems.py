@@ -1,6 +1,5 @@
 from typing import List
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs import color_schemes
@@ -39,6 +38,17 @@ class PieSlice(QtWidgets.QGraphicsEllipseItem):
             super().setBrush(self._brush)
         super().hoverLeaveEvent(event)
 
+    def paint(
+        self,
+        painter: QtGui.QPainter,
+        option: QtWidgets.QStyleOptionGraphicsItem,
+        widget: QtWidgets.QWidget | None = None,
+    ) -> None:
+        painter.save()
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        super().paint(painter, option, widget)
+        painter.restore()
+
 
 class PieChart(QtWidgets.QGraphicsItem):
     def __init__(
@@ -53,8 +63,7 @@ class PieChart(QtWidgets.QGraphicsItem):
 
         assert sum(fractions) == 1.0
         super().__init__(parent=parent)
-
-        # self.setAcceptHoverEvents(True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemHasNoContents)
 
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 0.0)
@@ -68,8 +77,6 @@ class PieChart(QtWidgets.QGraphicsItem):
     def buildPie(
         self, fractions: List[float], colors: List[QtGui.QColor]
     ) -> List[PieSlice]:
-        for item in self.slices:
-            self.scene().removeItem(item)
         self.slices.clear()
 
         angle = 0
@@ -85,13 +92,10 @@ class PieChart(QtWidgets.QGraphicsItem):
             self.slices.append(item)
         return self.slices
 
-    def boundingRect(self):
+    def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(
             -self.radius, -self.radius, self.radius * 2, self.radius * 2
         )
-
-    def paint(self):
-        pass
 
 
 app = QtWidgets.QApplication()
@@ -101,7 +105,7 @@ view = QtWidgets.QGraphicsView(scene)
 view.setMouseTracking(True)
 
 item = PieChart(100.0, [0.1, 0.7, 0.2], color_schemes["IBM Carbon"])
-item.setPos(0.0, 0.0)
+item.setPos(0.0, 100.0)
 scene.addItem(item)
 
 view.show()
