@@ -219,15 +219,12 @@ class ResultsWidget(QtWidgets.QWidget):
         # layout_chart_options = QtWidgets.QHBoxLayout()
         # layout_chart_options.addWidget(self.button_export_image)
         # layout_chart_options.addStretch(1)
-        # layout_chart_options.addWidget(QtWidgets.QLabel("Fit:"), 0)
-        # layout_chart_options.addWidget(self.fitmethod)
 
         layout_graph = QtWidgets.QHBoxLayout()
         layout_graph.addWidget(self.graph_toolbar, 0)
         layout_graph.addWidget(self.graph_stack, 1)
 
         layout_main = QtWidgets.QVBoxLayout()
-        # layout_outputs.addLayout(layout_filename)
         layout_main.addWidget(self.io, 0)
         layout_main.addLayout(layout_graph, 1)
         layout_main.addLayout(layout_filename)
@@ -253,7 +250,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updateResults()
 
     def setHistogramFit(self, fit: str | None) -> None:
-        self.graph_hist_fit = fit
+        self.graph_hist_fit = fit or None  # for fit == ''
         self.drawGraphHist()
 
     def dialogGraphOptions(self) -> None:
@@ -283,33 +280,6 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg = FilterDialog(list(self.results.keys()), self.filters, parent=self)
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
-
-    # def asBestUnit(
-    #     self, data: np.ndarray, current_unit: str = ""
-    # ) -> Tuple[np.ndarray, float, str]:
-    #     units = {
-    #         "z": 1e-21,
-    #         "a": 1e-18,
-    #         "f": 1e-15,
-    #         "p": 1e-12,
-    #         "n": 1e-9,
-    #         "μ": 1e-6,
-    #         "m": 1e-3,
-    #         "": 1.0,
-    #         "k": 1e3,
-    #         "M": 1e6,
-    #     }
-
-    #     data = data * units[current_unit]
-
-    #     mean = np.mean(data)
-    #     pwr = 10 ** int(np.log10(mean) - (1 if mean < 1.0 else 0))
-
-    #     vals = list(units.values())
-    #     names = list(units.keys())
-    #     idx = np.searchsorted(list(units.values()), pwr) - 1
-
-    #     return data / vals[idx], vals[idx] / units[current_unit], names[idx]
 
     def readyForResults(self) -> bool:
         if not self.options.isComplete():
@@ -570,31 +540,6 @@ class ResultsWidget(QtWidgets.QWidget):
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
         self.graph_hist.zoomReset()
-
-    # def updateChartFit(self, hist: np.ndarray, bins: np.ndarray, size: int) -> None:
-    #     method = self.fitmethod.currentText()
-    #     if method == "None":
-    #         self.chart.fit.clear()
-    #         self.chart.label_fit.setVisible(False)
-    #         return
-
-    #     # Convert to density
-    #     binwidth = bins[1] - bins[0]
-    #     hist = hist / binwidth / size
-
-    #     if method == "Normal":
-    #         fit = fit_normal(bins[1:], hist)[0]
-    #     elif method == "Lognormal":
-    #         fit = fit_lognormal(bins[1:], hist)[0]
-    #     else:
-    #         raise ValueError(f"Unknown fit type '{method}'.")
-
-    #     # Convert from density
-    #     fit = fit * binwidth * size
-
-    #     self.chart.setFit(bins[1:], fit)
-    #     self.chart.fit.setName(method)
-    #     self.chart.label_fit.setVisible(True)
 
     def updateScatterElements(self) -> None:
         mode = self.mode.currentText()
