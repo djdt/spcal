@@ -5,12 +5,14 @@ from pathlib import Path
 from typing import List
 
 import numpy
-from PySide6 import QtCore, QtWidgets  # isort:skip
-import pyqtgraph  # isort:skip
 
 from spcal import __version__
 from spcal.gui.main import NanoPartWindow
 from spcal.resources import icons
+
+from PySide6 import QtCore, QtWidgets  # isort:skip
+import pyqtgraph  # isort:skip
+
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
@@ -34,6 +36,9 @@ def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--reference", type=existing_file, help="open file as reference on startup"
+    )
+    parser.add_argument(
+        "--auto-yes", action="store_true", help="answer yes to all prompts"
     )
     parser.add_argument(
         "--nohook", action="store_true", help="don't install the execption hook"
@@ -66,9 +71,13 @@ def main(argv: List[str] | None = None) -> int:
     window.show()
 
     if args.sample:
-        window.sample.dialogLoadFile(args.sample)
+        dlg = window.sample.dialogLoadFile(args.sample)
+        if args.auto_yes:
+            dlg.accept()
     if args.reference:
-        window.reference.dialogLoadFile(args.reference)
+        dlg = window.reference.dialogLoadFile(args.reference)
+        if args.auto_yes:
+            dlg.accept()
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()
