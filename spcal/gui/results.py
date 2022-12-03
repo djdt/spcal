@@ -6,7 +6,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
-from spcal.cluster import agglomerative_cluster
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import FilterDialog, HistogramOptionsDialog
 from spcal.gui.graphs import (
@@ -448,17 +448,16 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) == 0:
             return
 
-        fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
-        for i, name in enumerate(graph_data):
-            fractions[:, i] = graph_data[name]
+        fractions = prepare_data_for_clustering(graph_data)
+        # fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
+        # for i, name in enumerate(graph_data):
+        #     fractions[:, i] = graph_data[name]
 
         if fractions.shape[0] == 1:  # single peak
             means, counts = fractions, np.array([1])
         elif fractions.shape[1] == 1:  # single element
             means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
-            totals = np.sum(fractions, axis=1)
-            np.divide(fractions.T, totals, where=totals > 0.0, out=fractions.T)
             means, counts = agglomerative_cluster(fractions, 0.05)
 
         compositions = np.empty(
