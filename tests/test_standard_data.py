@@ -1,6 +1,8 @@
 from pathlib import Path
+
 import numpy as np
-from spcal import particle, detection, poisson
+
+from spcal import cluster, detection, particle, poisson
 
 
 def test_standard_sizes():
@@ -42,3 +44,42 @@ def test_standard_sizes():
         assert np.isclose(
             np.median(sizes) * 1e9, expected, rtol=0.0, atol=1.0
         )  # within 1.0 nm
+
+
+def test_standard_fractions():
+    """Test data from DOI: 10.1039/d2ja00116k"""
+
+    npz = np.load(Path(__file__).parent.joinpath("data/fractions.npz"))
+
+    molar_mass = {
+        "Fe": 55.845,
+        "Co": 58.9332,
+        "Ni": 58.6934,
+        "Zn": 65.39,
+        "Ag": 107.8682,
+        "Au": 196.9665,
+    }
+    response_cps = {
+        "Fe": 35492.9,
+        "Co": 48377.6,
+        "Ni": 10444.3,
+        "Zn": 5465.4,
+        "Ag": 14388.6,
+        "Au": 16436.0,
+    }
+    theoretical_fractions = {
+        "60nm AuAg": (0.90, 0.10),  # Ag, Au
+        "80nm AuAg": (0.83, 0.17),  # Ag, Au
+        "FeCoZn": (0.67, 0.17, 0.17),
+    }
+
+    for file, value in theoretical_fractions.items():
+        data = npz[file]
+        for name in data.dtype.names:
+            data[name] = data[name] / response_cps[name] / molar_mass[name]
+        X = cluster.prepare_data_for_clustering(data)
+        X = X[np.all(X != 0, axis=1)]
+        means, _ = cluster.agglomerative_cluster(X, 0.1)
+
+        for a, b in zip(means[0], value):
+            assert abs(a - b) < 0.05
