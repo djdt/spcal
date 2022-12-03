@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -8,7 +8,11 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
-from spcal.gui.dialogs import FilterDialog, HistogramOptionsDialog
+from spcal.gui.dialogs import (
+    FilterDialog,
+    FractionsOptionsDialog,
+    HistogramOptionsDialog,
+)
 from spcal.gui.graphs import (
     ResultsFractionView,
     ResultsHistogramView,
@@ -46,19 +50,26 @@ class ResultsWidget(QtWidgets.QWidget):
     ):
         super().__init__(parent)
 
-        self.draw_mode = "Overlay"
-        self.color_scheme = color_scheme
-
-        # Graph default options
-        self.graph_hist_fit: str | None = "log normal"
-        self.graph_hist_bin_widths: Dict[str, float | None] = {}
-
         self.options = options
         self.sample = sample
         self.reference = reference
 
-        self.nbins = "auto"
         self.filters: List[Tuple[str, str, str, str, float]] = []
+        # Graph default options
+        self.graph_options: Dict[str, Any] = {
+            "scheme": color_scheme,
+            "histogram": {
+                "mode": "overlay",
+                "fit": "log normal",
+                "bin widths": {
+                    "signal": None,
+                    "size": None,
+                    "mass": None,
+                    "concentration": None,
+                },
+            },
+            "fraction": {"distance": 0.03, "minimum size": "5%"},
+        }
         self.results: Dict[str, dict] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
@@ -130,7 +141,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Histogram",
             "Overlay of results histograms.",
             lambda: (
-                self.setDrawMode("Overlay"),
+                self.setHistDrawMode("overlay"),
                 self.graph_stack.setCurrentWidget(self.graph_hist),
             ),
             checkable=True,
@@ -141,7 +152,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Stacked Histograms",
             "Single histogram per result.",
             lambda: (
-                self.setDrawMode("Stacked"),
+                self.setHistDrawMode("stacked"),
                 self.graph_stack.setCurrentWidget(self.graph_hist),
             ),
             checkable=True,
@@ -233,33 +244,51 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
-    def setBinWidths(self, widths: Dict[str, float | None]) -> None:
-        self.graph_hist_bin_widths.update(widths)
-        self.drawGraphHist()
-
     def setColorScheme(self, scheme: str) -> None:
-        self.color_scheme = scheme
+        self.graph_options["scheme"] = scheme
         self.drawGraph()
-
-    def setDrawMode(self, mode: str) -> None:
-        self.draw_mode = mode
-        self.drawGraphHist()
 
     def setFilters(self, filters) -> None:
         self.filters = filters
         self.updateResults()
 
-    def setHistogramFit(self, fit: str | None) -> None:
-        self.graph_hist_fit = fit or None  # for fit == ''
+    def setFractionDistance(self, distance: float) -> None:
+        self.graph_options["fraction"]["distance"] = distance
+        self.drawGraphFractions()
+
+    def setFractionSize(self, size: float | str) -> None:
+        self.graph_options["fraction"]["minimum size"] = size
+        self.drawGraphFractions()
+
+    def setHistDrawMode(self, mode: str) -> None:
+        self.graph_options["histogram"]["mode"] = mode
+        self.drawGraphHist()
+
+    def setHistBinWidths(self, widths: Dict[str, float | None]) -> None:
+        self.graph_options["histogram"]["bin widths"].update(widths)
+        self.drawGraphHist()
+
+    def setHistFit(self, fit: str | None) -> None:
+        self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
     def dialogGraphOptions(self) -> None:
         if self.graph_stack.currentWidget() == self.graph_hist:
             dlg = HistogramOptionsDialog(
-                self.graph_hist_fit, self.graph_hist_bin_widths, self.window()
+                self.graph_options["histogram"]["fit"],
+                self.graph_options["histogram"]["bin widths"],
+                parent=self,
             )
-            dlg.fitChanged.connect(self.setHistogramFit)
-            dlg.binWidthsChanged.connect(self.setBinWidths)
+            dlg.fitChanged.connect(self.setHistFit)
+            dlg.binWidthsChanged.connect(self.setHistBinWidths)
+        elif self.graph_stack.currentWidget() == self.graph_frac:
+            dlg = FractionsOptionsDialog(
+                self.graph_options["fraction"]["distance"],
+                self.graph_options["fraction"]["minimum size"],
+                parent=self,
+            )
+            dlg.distanceChanged.connect(self.setFractionDistance)
+            dlg.minimumSizeChanged.connect(self.setFractionSize)
         dlg.show()
 
     def dialogExportResults(self) -> None:
@@ -304,18 +333,22 @@ class ResultsWidget(QtWidgets.QWidget):
 
         if mode == "Signal":
             label, unit = "Intensity (counts)", ""
-            bin_width = self.graph_hist_bin_widths.get("signal", None)
+            bin_width = self.graph_options["histogram"]["bin widths"].get(
+                "signal", None
+            )
         elif mode == "Mass (kg)":
             label, unit = "Mass", "g"
-            bin_width = self.graph_hist_bin_widths.get("mass", None)
+            bin_width = self.graph_options["histogram"]["bin widths"].get("mass", None)
             if bin_width is not None:
                 bin_width *= 1000  # convert to gram
         elif mode == "Size (m)":
             label, unit = "Size", "m"
-            bin_width = self.graph_hist_bin_widths.get("size", None)
+            bin_width = self.graph_options["histogram"]["bin widths"].get("size", None)
         elif mode == "Conc. (mol/L)":
             label, unit = "Concentration", "mol/L"
-            bin_width = self.graph_hist_bin_widths.get("concentration", None)
+            bin_width = self.graph_options["histogram"]["bin widths"].get(
+                "concentration", None
+            )
         else:
             raise ValueError("drawGraphHist: unknown mode")
 
@@ -323,7 +356,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         graph_data = {}
         for name, result in self.results.items():
-            indices = self.results[name]["indicies"]
+            indices = result["indicies"]
             if indices.size < 2:
                 continue
             if mode == "Signal":
@@ -353,20 +386,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 bin_width = min_bin_width
                 break
 
-        scheme = color_schemes[self.color_scheme]
+        scheme = color_schemes[self.graph_options["scheme"]]
         for i, name in enumerate(graph_data):
             bins = np.arange(
                 graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
             )
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
-            if self.draw_mode == "Overlay":
+            if self.graph_options["histogram"]["mode"] == "overlay":
                 plot_name = "Overlay"
                 width = 1.0 / len(graph_data)
                 if len(graph_data) == 1:
                     width /= 2.0
                 offset = i * width
-            elif self.draw_mode == "Stacked":
+            elif self.graph_options["histogram"]["mode"] == "stacked":
                 plot_name = name
                 width = 0.5
                 offset = 0.0
@@ -382,18 +415,21 @@ class ResultsWidget(QtWidgets.QWidget):
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
             )
-            if self.draw_mode != "Overlay" and self.graph_hist_fit is not None:
+            if (
+                self.graph_options["histogram"]["mode"] != "overlay"
+                and self.graph_options["histogram"]["fit"] is not None
+            ):
                 hist = hist / bin_width / graph_data[name].size
                 xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
-                if self.graph_hist_fit == "normal":
+                if self.graph_options["histogram"]["fit"] == "normal":
                     fit = fit_normal(centers, hist)[2]
                     ys = normal_pdf(xs * fit[2], fit[0], fit[1])
-                elif self.graph_hist_fit == "log normal":
+                elif self.graph_options["histogram"]["fit"] == "log normal":
                     fit = fit_lognormal(centers, hist)[2]
                     ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
                 else:
                     raise ValueError(
-                        f"drawGraphHist: unknown fit {self.graph_hist_fit}"
+                        f"drawGraphHist: unknown fit {self.graph_options['histogram']['fit']}"
                     )
 
                 ys = ys * bin_width * graph_data[name].size
@@ -458,7 +494,9 @@ class ResultsWidget(QtWidgets.QWidget):
         elif fractions.shape[1] == 1:  # single element
             means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
-            means, counts = agglomerative_cluster(fractions, 0.05)
+            means, counts = agglomerative_cluster(
+                fractions, self.graph_options["fraction"]["distance"]
+            )
 
         compositions = np.empty(
             counts.size, dtype=[(name, np.float64) for name in graph_data]
@@ -466,14 +504,24 @@ class ResultsWidget(QtWidgets.QWidget):
         for i, name in enumerate(graph_data):
             compositions[name] = means[:, i]
 
-        mask = counts > fractions.shape[0] * 0.05
+        size = self.graph_options["fraction"]["minimum size"]
+        if isinstance(size, str) and size.endswith("%"):
+            size = fractions.shape[0] * float(size.rstrip("%")) / 100.0
+        elif isinstance(size, str):
+            size = float(size)
+        elif isinstance(size, float):
+            pass
+        else:
+            raise ValueError("drawGraphFractions: size is neither float nor a % str")
+
+        mask = counts > size
         compositions = compositions[mask]
         counts = counts[mask]
 
         if counts.size == 0:
             return
 
-        scheme = color_schemes[self.color_scheme]
+        scheme = color_schemes[self.graph_options["scheme"]]
         brushes = []
 
         for name in compositions.dtype.names:

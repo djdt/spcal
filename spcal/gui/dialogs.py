@@ -7,14 +7,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.units import (
     UnitsWidget,
-    time_units,
     mass_units,
     molar_concentration_units,
     signal_units,
     size_units,
+    time_units,
 )
 from spcal.gui.util import create_action
-from spcal.gui.widgets import ValidColorLineEdit
+from spcal.gui.widgets import DoubleOrPercentValidator, ValidColorLineEdit
 from spcal.npdb import db
 
 
@@ -144,8 +144,10 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 
         # Check for changes
         if fit != self.fit:
+            self.fit = fit
             self.fitChanged.emit(fit)
         if bin_widths != self.bin_widths:
+            self.bin_widths = bin_widths
             self.binWidthsChanged.emit(bin_widths)
 
     def reset(self) -> None:
@@ -157,6 +159,80 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_conc,
         ]:
             widget.setBaseValue(None)
+
+
+class FractionsOptionsDialog(QtWidgets.QDialog):
+    distanceChanged = QtCore.Signal(float)
+    minimumSizeChanged = QtCore.Signal(str)
+
+    def __init__(
+        self,
+        distance: float = 0.03,
+        minimum_size: str | float = "5%",
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Composition Options")
+
+        self.distance = distance
+        self.minimum_size = minimum_size
+
+        self.lineedit_distance = QtWidgets.QLineEdit(str(distance * 100.0))
+        self.lineedit_distance.setValidator(QtGui.QDoubleValidator(0.1, 99.9, 1))
+
+        self.lineedit_size = QtWidgets.QLineEdit(str(minimum_size))
+        self.lineedit_size.setValidator(DoubleOrPercentValidator(0.0, 1e99, 3, 0, 100))
+
+        layout_dist = QtWidgets.QHBoxLayout()
+        layout_dist.addWidget(self.lineedit_distance, 1)
+        layout_dist.addWidget(QtWidgets.QLabel("%"), 0)
+
+        box = QtWidgets.QGroupBox("Clustering")
+        box.setLayout(QtWidgets.QFormLayout())
+        box.layout().addRow("Distance threshold", layout_dist)
+        box.layout().addRow("Minimum cluster size", self.lineedit_size)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.RestoreDefaults
+            | QtWidgets.QDialogButtonBox.Apply
+            | QtWidgets.QDialogButtonBox.Ok
+            | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.button_box.clicked.connect(self.buttonBoxClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(box)
+        layout.addWidget(self.button_box)
+
+        self.setLayout(layout)
+
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+        sbutton = self.button_box.standardButton(button)
+        if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
+            self.reset()
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.Apply:
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.Ok:
+            self.apply()
+            self.accept()
+        else:
+            self.reject()
+
+    def apply(self) -> None:
+        distance = float(self.lineedit_distance.text()) / 100.0
+        size = self.lineedit_size.text().replace(" ", "")
+
+        # Check for changes
+        if abs(self.distance - distance) > 0.001:
+            self.distance = distance
+            self.distanceChanged.emit(distance)
+        if size != self.minimum_size:
+            self.minimum_size == size
+            self.minimumSizeChanged.emit(str(size))
+
+    def reset(self) -> None:
+        self.lineedit_distance.setText(str(self.distance * 100.0))
 
 
 # class BinWidthDialog(QtWidgets.QDialog):
