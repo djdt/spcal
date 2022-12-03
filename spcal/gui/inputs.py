@@ -45,7 +45,6 @@ class InputWidget(QtWidgets.QWidget):
         self.regions = np.array([])
         self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
 
-        self.redraw_graph_requested = False
         self.draw_mode = "Overlay"
 
         self.graph_toolbar = QtWidgets.QToolBar()
@@ -165,7 +164,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(self, file: str | None = None) -> None:
+    def dialogLoadFile(self, file: str | None = None) -> ImportDialog:
         if file is None:
             file, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self,
@@ -179,6 +178,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg = ImportDialog(file, self)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
+        return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs
