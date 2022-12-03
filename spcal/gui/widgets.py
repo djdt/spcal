@@ -58,6 +58,47 @@ class ElidedLabel(QtWidgets.QWidget):
         )
 
 
+class DoubleOrPercentValidator(QtGui.QDoubleValidator):
+    """QDoubleValidator that accepts inputs as a percent.
+
+    Inputs that end with '%' are treated as a percentage input.
+
+    Args:
+        bottom: decimal lower bound
+        top: decimal upper bound
+        decimals: number of decimals allowed
+        percent_bottom: percent lower bound
+        percent_top: percent upper bound
+        parent: parent widget
+    """
+
+    def __init__(
+        self,
+        bottom: float,
+        top: float,
+        decimals: int = 4,
+        percent_bottom: float = 0.0,
+        percent_top: float = 100.0,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(bottom, top, decimals, parent)
+        self._bottom = bottom
+        self._top = top
+        self.percent_bottom = percent_bottom
+        self.percent_top = percent_top
+
+    def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
+        # Treat as percent
+        if "%" in input:
+            if not input.endswith("%") or input.count("%") > 1:
+                return (QtGui.QValidator.Invalid, input, pos)
+            self.setRange(self.percent_bottom, self.percent_top, self.decimals())
+            return (super().validate(input.rstrip("%"), pos)[0], input, pos)
+        # Treat as double
+        self.setRange(self._bottom, self._top, self.decimals())
+        return super().validate(input, pos)
+
+
 class RangeSlider(QtWidgets.QSlider):
     value2Changed = QtCore.Signal(int)
 
