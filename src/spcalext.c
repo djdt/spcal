@@ -5,9 +5,9 @@
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
-inline double euclidean(const double *X, int i, int j, int m) {
+inline double euclidean(const double *X, npy_intp i, npy_intp j, npy_intp m) {
   double sum = 0.0;
-  for (int k = 0; k < m; ++k) {
+  for (npy_intp k = 0; k < m; ++k) {
     double dist = X[i * m + k] - X[j * m + k];
     sum += dist * dist;
   }
@@ -31,18 +31,25 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int n = PyArray_DIM(Xarray, 0);
-  int m = PyArray_DIM(Xarray, 1);
+  npy_intp n = PyArray_DIM(Xarray, 0);
+  npy_intp m = PyArray_DIM(Xarray, 1);
 
   npy_intp dims[] = {n * (n - 1) / 2};
   Darray = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+  if (!Darray) {
+    PyErr_Format(PyExc_ValueError,
+                 "unable to allocate %ld bytes for dist array.",
+                 dims[0] * sizeof(double));
+    Py_DECREF(Xarray);
+    return NULL;
+  }
 
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
-  int k = 0;
-  for (int i = 0; i < n; ++i) {
-    for (int j = i + 1; j < n; ++j, ++k) {
+  npy_intp k = 0;
+  for (npy_intp i = 0; i < n; ++i) {
+    for (npy_intp j = i + 1; j < n; ++j, ++k) {
       D[k] = euclidean(X, i, j, m);
     }
   }
