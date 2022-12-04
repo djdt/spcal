@@ -218,7 +218,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             parent=parent,
         )
         # Todo: not working
-        self.xaxis.setLabel(label=xlabel, units=xunit)
+        self.xaxis.setLabel(text=xlabel, units=xunit)
         self.yaxis.setLabel("No. Events")
 
         self.hideButtons()
@@ -348,10 +348,10 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
 
     def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
         if name not in self.plots:
-            self.addHistogramPlot(name, **add_kws)
+            return self.addHistogramPlot(name, **add_kws)
         return self.plots[name]
 
-    def addHistogramPlot(self, name: str, xlabel: str, xunit: str) -> HistogramPlotItem:
+    def addHistogramPlot(self, name: str, xlabel: str = "", xunit: str = "") -> HistogramPlotItem:
         self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
         self.plots[name].setYLink(self.layout.getItem(0, 0))
