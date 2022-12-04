@@ -1,4 +1,6 @@
 #define PY_SSIZE_T_CLEAN
+#define SQ2PI sqrt(2.0 * M_PI)
+
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
@@ -381,15 +383,41 @@ static PyObject *maxima(PyObject *self, PyObject *args) {
   return (PyObject *)Rarray;
 }
 
+double *normal_pdf(const double *x, double mu, double sigma, int size) {
+  double *pdf = malloc(sizeof(double) * size);
+  for (npy_intp i = 0; i < size; ++i) {
+    pdf[i] = 1.0 / (sigma * SQ2PI) * exp(-0.5 * pow((x[i] - mu) / sigma, 2));
+  }
+  return pdf;
+}
+
+double *lognormal_pdf(const double *x, double mu, double sigma, int size) {
+  double *pdf = malloc(sizeof(double) * size);
+  for (npy_intp i = 0; i < size; ++i) {
+    pdf[i] = 1.0 / (x[i] * sigma * SQ2PI) *
+             exp(-0.5 * pow((log(x[i]) - mu) / sigma, 2));
+  }
+  return pdf;
+}
+
 static PyMethodDef spcal_methods[] = {
+    // Clustering
     {"pairwise_euclidean", pairwise_euclidean, METH_VARARGS,
      "Calculate euclidean pairwise distance for array."},
     {"mst_linkage", mst_linkage, METH_VARARGS,
      "Return the minimum spanning tree linkage."},
     {"cluster_by_distance", cluster_by_distance, METH_VARARGS,
      "Cluster using the MST linkage."},
+    // Other
     {"maxima", maxima, METH_VARARGS,
      "Calculates maxima between pairs of start and end positions."},
+    // Fitting
+    /* {"fit_normal", fit_normal, METH_VARARGS, "Fit a normal pdf to the
+       input."}, */
+    /* {"fit_lognormal", fit_lognormal, METH_VARARGS, */
+    /*  "Fit a lognormal pdf to the input."}, */
+    /* {"nelder_mead", nelder_mead, METH_VARARGS, */
+    /*  "Find the minima of a function."}, */
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef spcal_module = {PyModuleDef_HEAD_INIT, "spcal_module",
