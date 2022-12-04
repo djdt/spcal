@@ -32,13 +32,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         self.setWindowTitle("Histogram Options")
 
         self.fit = fit
-        self.bin_widths: Dict[str, float | None] = {
-            "signal": None,
-            "mass": None,
-            "size": None,
-            "concentration": None,
-        }
-        self.bin_widths.update(bin_widths)
+        self.bin_widths = bin_widths.copy()
 
         self.radio_fit_off = QtWidgets.QRadioButton("Off")
         self.radio_fit_norm = QtWidgets.QRadioButton("Normal")
@@ -60,21 +54,21 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         color = self.palette().color(QtGui.QPalette.Base)
         self.width_signal = UnitsWidget(
             signal_units,
-            value=self.bin_widths["signal"],
+            value=self.bin_widths["detections"],
             invalid_color=color,
             validator=QtGui.QIntValidator(0, 999999999),
         )
         self.width_mass = UnitsWidget(
             mass_units,
-            value=self.bin_widths["mass"],
+            value=self.bin_widths["masses"],
             invalid_color=color,
         )
         self.width_size = UnitsWidget(
-            size_units, value=self.bin_widths["size"], invalid_color=color
+            size_units, value=self.bin_widths["sizes"], invalid_color=color
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
-            value=self.bin_widths["concentration"],
+            value=self.bin_widths["cell_concentrations"],
             invalid_color=color,
         )
 
@@ -136,10 +130,10 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             fit = "log normal"
 
         bin_widths = {
-            "signal": self.width_signal.baseValue(),
-            "mass": self.width_mass.baseValue(),
-            "size": self.width_size.baseValue(),
-            "concentration": self.width_conc.baseValue(),
+            "detections": self.width_signal.baseValue(),
+            "masses": self.width_mass.baseValue(),
+            "sizes": self.width_size.baseValue(),
+            "cell_concentrations": self.width_conc.baseValue(),
         }
 
         # Check for changes
