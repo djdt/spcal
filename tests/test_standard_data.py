@@ -47,7 +47,7 @@ def test_standard_sizes():
 
 
 def test_standard_fractions():
-    """Test data from DOI: 10.1039/d2ja00116k"""
+    """Test data from DOI: 10.1039/d2ja00116k and supp info"""
 
     npz = np.load(Path(__file__).parent.joinpath("data/fractions.npz"))
 
@@ -78,8 +78,9 @@ def test_standard_fractions():
         for name in data.dtype.names:
             data[name] = data[name] / response_cps[name] / molar_mass[name]
         X = cluster.prepare_data_for_clustering(data)
-        X = X[np.all(X != 0, axis=1)]
-        means, _ = cluster.agglomerative_cluster(X, 0.1)
+        X = X[np.all(X != 0, axis=1)]  # Remove particles with all elements
+        means, stds, _ = cluster.agglomerative_cluster(X, 0.03)
 
-        for a, b in zip(means[0], value):
-            assert abs(a - b) < 0.05
+        # mean +- std contains theoretical value
+        for a, s, b in zip(means[0], stds[0], value):
+            assert abs(a - b) < s

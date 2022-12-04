@@ -18,16 +18,20 @@ def prepare_data_for_clustering(data: np.ndarray | Dict[str, np.ndarray]) -> np.
 
 def agglomerative_cluster(
     X: np.ndarray, max_dist: float
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
     T = cluster_by_distance(Z, ZD, max_dist) - 1  # start ids at 0
 
     counts = np.bincount(T)
     means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
+    stds = np.empty((counts.size, X.shape[1]), dtype=np.float64)
 
     for i in range(means.shape[1]):
-        means[:, i] = np.bincount(T, weights=X[:, i]) / counts
+        sx = np.bincount(T, weights=X[:, i])
+        sx2 = np.bincount(T, weights=X[:, i] ** 2)
+        means[:, i] = sx / counts
+        stds[:, i] = np.sqrt(sx2 / counts - means[:, i] ** 2)
 
     idx = np.argsort(counts)[::-1]
-    return means[idx], counts[idx]
+    return means[idx], stds[idx], counts[idx]

@@ -494,7 +494,7 @@ class ResultsWidget(QtWidgets.QWidget):
         elif fractions.shape[1] == 1:  # single element
             means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
-            means, counts = agglomerative_cluster(
+            means, stds, counts = agglomerative_cluster(
                 fractions, self.graph_options["fraction"]["distance"]
             )
 
