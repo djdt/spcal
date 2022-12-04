@@ -468,6 +468,7 @@ IOType = TypeVar("IOType", bound=IOWidget)
 
 
 class IOStack(QtWidgets.QWidget, Generic[IOType]):
+    nameChanged = QtCore.Signal(str)
     optionsChanged = QtCore.Signal(str)
 
     def __init__(
@@ -484,6 +485,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
         self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
+        self.combo_name.currentTextChanged.connect(self.nameChanged)
 
         self.repopulate(["<element>"])
 
