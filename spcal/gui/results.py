@@ -40,6 +40,19 @@ logger = logging.getLogger(__name__)
 
 
 class ResultsWidget(QtWidgets.QWidget):
+    mode_labels = {
+        "Signal": ("Intensity (counts)", "", 1.0),
+        "Mass (kg)": ("Mass", "g", 1e3),
+        "Size (m)": ("Size", "m", 1.0),
+        "Conc. (mol/L)": ("Concentration", "mol/L", 1.0),
+    }
+    mode_keys = {
+        "Signal": "detections",
+        "Mass (kg)": "masses",
+        "Size (m)": "sizes",
+        "Conc. (mol/L)": "cell_concentrations",
+    }
+
     def __init__(
         self,
         options: OptionsWidget,
@@ -62,10 +75,10 @@ class ResultsWidget(QtWidgets.QWidget):
                 "mode": "overlay",
                 "fit": "log normal",
                 "bin widths": {
-                    "signal": None,
-                    "size": None,
-                    "mass": None,
-                    "concentration": None,
+                    "detections": None,
+                    "masses": None,
+                    "sizes": None,
+                    "cell_concentrations": None,
                 },
             },
             "fraction": {"distance": 0.03, "minimum size": "5%"},
@@ -110,6 +123,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
+        self.io.nameChanged.connect(self.drawGraphHist)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
@@ -331,44 +345,18 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_hist.clear()
         mode = self.mode.currentText()
 
-        if mode == "Signal":
-            label, unit = "Intensity (counts)", ""
-            bin_width = self.graph_options["histogram"]["bin widths"].get(
-                "signal", None
-            )
-        elif mode == "Mass (kg)":
-            label, unit = "Mass", "g"
-            bin_width = self.graph_options["histogram"]["bin widths"].get("mass", None)
-            if bin_width is not None:
-                bin_width *= 1000  # convert to gram
-        elif mode == "Size (m)":
-            label, unit = "Size", "m"
-            bin_width = self.graph_options["histogram"]["bin widths"].get("size", None)
-        elif mode == "Conc. (mol/L)":
-            label, unit = "Concentration", "mol/L"
-            bin_width = self.graph_options["histogram"]["bin widths"].get(
-                "concentration", None
-            )
-        else:
-            raise ValueError("drawGraphHist: unknown mode")
+        label, unit, modifier = self.mode_labels[mode]
+        key = self.mode_keys[mode]
+        bin_width = self.graph_options["histogram"]["bin widths"][key]
 
         names = list(self.results.keys())
 
         graph_data = {}
         for name, result in self.results.items():
             indices = result["indicies"]
-            if indices.size < 2:
+            if indices.size < 2 or not key in result:
                 continue
-            if mode == "Signal":
-                graph_data[name] = result["detections"][indices]
-            elif mode == "Mass (kg)" and "masses" in result:
-                graph_data[name] = result["masses"][indices] * 1000  # convert to gram
-            elif mode == "Size (m)" and "sizes" in result:
-                graph_data[name] = result["sizes"][indices]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
-                graph_data[name] = result["cell_concentrations"][indices]
-            else:
-                continue
+            graph_data[name] = result[key][indices]
 
         # median 'sturges' bin width
         if bin_width is None:
@@ -378,9 +366,10 @@ class ResultsWidget(QtWidgets.QWidget):
                     for name in graph_data
                 ]
             )
+        bin_width *= modifier  # convert to base unit (kg -> g)
         # Limit maximum number of bins
         for data in graph_data.values():
-            min_bin_width = (data.max() - data.min()) / 1024
+            min_bin_width = (data.max() - data.min()) * modifier / 1024
             if bin_width < min_bin_width:
                 logger.warning("drawGraphHist: exceeded maximum bins, setting to 1024")
                 bin_width = min_bin_width
@@ -389,7 +378,9 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[self.graph_options["scheme"]]
         for i, name in enumerate(graph_data):
             bins = np.arange(
-                graph_data[name].min(), graph_data[name].max() + bin_width, bin_width
+                graph_data[name].min() * modifier,
+                graph_data[name].max() * modifier + bin_width,
+                bin_width,
             )
             bins -= bins[0] % bin_width  # align bins
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
@@ -409,7 +400,7 @@ class ResultsWidget(QtWidgets.QWidget):
             plot = self.graph_hist.getHistogramPlot(plot_name, xlabel=label, xunit=unit)
             hist, centers = plot.drawData(  # type: ignore
                 name,
-                graph_data[name],
+                graph_data[name] * modifier,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,
@@ -443,16 +434,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_frac.clear()
         mode = self.mode.currentText()
 
-        if mode == "Signal":
-            label = "Intensity"
-        elif mode == "Mass (kg)":
-            label = "Mass"
-        elif mode == "Size (m)":
-            label = "Size"
-        elif mode == "Conc. (mol/L)":
-            label = "Concentration"
-        else:
-            raise ValueError("drawGraphFractions: unknown mode")
+        label, _, _ = self.mode_labels[mode]
+        key = self.mode_keys[mode]
 
         self.graph_frac.plot.setTitle(f"{label} Composition")
 
@@ -470,24 +453,15 @@ class ResultsWidget(QtWidgets.QWidget):
 
         graph_data = {}
         for name, result in self.results.items():
-            if mode == "Signal":
-                graph_data[name] = result["detections"][valid]
-            elif mode == "Mass (kg)" and "masses" in result:
-                graph_data[name] = result["masses"][valid] * 1000  # convert to gram
-            elif mode == "Size (m)" and "sizes" in result:
-                graph_data[name] = result["sizes"][valid]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
-                graph_data[name] = result["cell_concentrations"][valid]
-            else:
+            if key not in result:
                 continue
+            graph_data[name] = result[key][valid]
+            # no need to use modifier, normalised
 
         if len(graph_data) == 0:
             return
 
         fractions = prepare_data_for_clustering(graph_data)
-        # fractions = np.empty((num_valid, len(graph_data)), dtype=np.float64)
-        # for i, name in enumerate(graph_data):
-        #     fractions[:, i] = graph_data[name]
 
         if fractions.shape[0] == 1:  # single peak
             means, counts = fractions, np.array([1])
@@ -505,12 +479,11 @@ class ResultsWidget(QtWidgets.QWidget):
             compositions[name] = means[:, i]
 
         size = self.graph_options["fraction"]["minimum size"]
+        # Get minimum size as number
         if isinstance(size, str) and size.endswith("%"):
             size = fractions.shape[0] * float(size.rstrip("%")) / 100.0
-        elif isinstance(size, str):
+        elif isinstance(size, str | float):
             size = float(size)
-        elif isinstance(size, float):
-            pass
         else:
             raise ValueError("drawGraphFractions: size is neither float nor a % str")
 
@@ -537,24 +510,11 @@ class ResultsWidget(QtWidgets.QWidget):
         xname = self.combo_scatter_x.currentText()
         yname = self.combo_scatter_y.currentText()
         mode = self.mode.currentText()
-        if mode == "Signal":
-            label, unit = "Intensity (counts)", ""
-            x = self.results[xname]["detections"]
-            y = self.results[yname]["detections"]
-        elif mode == "Mass (kg)":
-            label, unit = "Mass", "g"
-            x = self.results[xname]["masses"] * 1000
-            y = self.results[yname]["masses"] * 1000
-        elif mode == "Size (m)":
-            label, unit = "Size", "m"
-            x = self.results[xname]["sizes"]
-            y = self.results[yname]["sizes"]
-        elif mode == "Conc. (mol/L)":
-            label, unit = "Concentration", "mol/L"
-            x = self.results[xname]["cell_concentrations"]
-            y = self.results[yname]["cell_concentrations"]
-        else:
-            raise ValueError("drawGraphScatter: unknown mode")
+        label, unit, modifier = self.mode_labels[mode]
+        key = self.mode_keys[mode]
+
+        x = self.results[xname][key] * modifier
+        y = self.results[yname][key] * modifier
 
         valid = np.intersect1d(
             self.results[xname]["indicies"],
