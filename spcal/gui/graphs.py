@@ -555,12 +555,10 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         scatter = pyqtgraph.ScatterPlotItem(
             x=x, y=y, size=6, symbol=symbol, pen=None, brush=brush
         )
-        print("scatter", name)
         self.scatters[name] = scatter
         self.addItem(scatter)
 
         self.legends[name].addItem(scatter)
-        print(self.legends[name])
 
     def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
         skip_lc = np.all(limits["lc"] == limits["ld"])
