@@ -258,6 +258,7 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
+    # Setters
     def setColorScheme(self, scheme: str) -> None:
         self.graph_options["scheme"] = scheme
         self.drawGraph()
@@ -286,6 +287,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
+    # Dialogs
     def dialogGraphOptions(self) -> None:
         if self.graph_stack.currentWidget() == self.graph_hist:
             dlg = HistogramOptionsDialog(
@@ -324,17 +326,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
 
-    def readyForResults(self) -> bool:
-        if not self.options.isComplete():
-            return False
-        if not self.sample.isComplete():
-            return False
-
-        method = self.options.efficiency_method.currentText()
-        if method != "Manual Input" and not self.reference.isComplete():
-            return False
-        return True
-
+    # Plotting
     def drawGraph(self) -> None:
         self.drawGraphHist()
         if len(self.results) > 1:
@@ -547,6 +539,17 @@ class ResultsWidget(QtWidgets.QWidget):
     def graphZoomReset(self) -> None:
         self.graph_frac.zoomReset()
         self.graph_hist.zoomReset()
+
+    def readyForResults(self) -> bool:
+        if not self.options.isComplete():
+            return False
+        if not self.sample.isComplete():
+            return False
+
+        method = self.options.efficiency_method.currentText()
+        if method != "Manual Input" and not self.reference.isComplete():
+            return False
+        return True
 
     def updateScatterElements(self) -> None:
         mode = self.mode.currentText()

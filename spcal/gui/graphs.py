@@ -71,6 +71,30 @@ color_schemes = {
 symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
 
 
+class MultipleItemSampleProxy(pyqtgraph.ItemSample):
+    def __init__(
+        self,
+        item: pyqtgraph.PlotDataItem,
+        additional_items: List[pyqtgraph.PlotDataItem] | None = None,
+    ):
+        super().__init__(item)
+        self.additional_items = []
+        if additional_items is not None:
+            self.additional_items.extend(additional_items)
+
+    def addAdditionalItem(self, item: pyqtgraph.PlotDataItem) -> None:
+        self.additional_items.append(item)
+        item.setVisible(self.item.isVisible())
+        self.update()
+
+    def mouseClickEvent(self, event: QtGui.QMouseEvent):
+        """Use the mouseClick event to toggle the visibility of the plotItem"""
+        visible = self.item.isVisible()
+        for item in self.additional_items:
+            item.setVisible(not visible)
+        super().mouseClickEvent(event)
+
+
 class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
     def scaleBy(
         self,
@@ -267,8 +291,10 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             brush=brush,
             skipFiniteCheck=True,
         )
-        self.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
         self.addItem(curve)
+        self.legend.addItem(
+            MultipleItemSampleProxy(pyqtgraph.BarGraphItem(brush=brush), [curve]), name
+        )
 
         return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
@@ -351,7 +377,9 @@ class ResultsHistogramView(pyqtgraph.GraphicsView):
             return self.addHistogramPlot(name, **add_kws)
         return self.plots[name]
 
-    def addHistogramPlot(self, name: str, xlabel: str = "", xunit: str = "") -> HistogramPlotItem:
+    def addHistogramPlot(
+        self, name: str, xlabel: str = "", xunit: str = ""
+    ) -> HistogramPlotItem:
         self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
         self.plots[name].setYLink(self.layout.getItem(0, 0))
@@ -432,8 +460,9 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             offset=(-5, 5), verSpacing=-5, colCount=3, labelTextColor="black"
         )
 
-        self.signals: List[pyqtgraph.PlotCurveItem] = []
-        self.scatters: List[pyqtgraph.ScatterPlotItem] = []
+        self.signals: Dict[str, pyqtgraph.PlotCurveItem] = {}
+        self.scatters: Dict[str, pyqtgraph.ScatterPlotItem] = {}
+        self.legends: Dict[str, MultipleItemSampleProxy] = {}
         self.limits: List[pyqtgraph.PlotCurveItem] = []
 
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
@@ -460,12 +489,12 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         return int(self.region.lines[1].value())  # type: ignore
 
     def clearSignal(self) -> None:
-        for signal in self.signals:
+        for signal in self.signals.values():
             self.removeItem(signal)
         self.signals.clear()
 
     def clearScatters(self) -> None:
-        for scatter in self.scatters:
+        for scatter in self.scatters.values():
             self.removeItem(scatter)
         self.scatters.clear()
 
@@ -476,10 +505,10 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
     def drawSignal(
         self,
+        name: str,
         x: np.ndarray,
         y: np.ndarray,
         pen: QtGui.QPen | None = None,
-        label: str | None = None,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -490,11 +519,13 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         curve = pyqtgraph.PlotCurveItem(
             x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
         )
-        if label is not None:
-            curve.opts["name"] = label
 
-        self.signals.append(curve)
+        legend_item = MultipleItemSampleProxy(curve)
+        self.signals[name] = curve
+        self.legends[name] = legend_item
+
         self.addItem(curve)
+        self.legend.addItem(legend_item, name)
 
         self.setLimits(
             xMin=x[0],
@@ -511,6 +542,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
     def drawMaxima(
         self,
+        name: str,
         x: np.ndarray,
         y: np.ndarray,
         brush: QtGui.QBrush | None = None,
@@ -522,8 +554,12 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         scatter = pyqtgraph.ScatterPlotItem(
             x=x, y=y, size=6, symbol=symbol, pen=None, brush=brush
         )
-        self.scatters.append(scatter)
+        print("scatter", name)
+        self.scatters[name] = scatter
         self.addItem(scatter)
+
+        self.legends[name].addAdditionalItem(scatter)
+        print(self.legends[name])
 
     def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
         skip_lc = np.all(limits["lc"] == limits["ld"])

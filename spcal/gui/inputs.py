@@ -323,7 +323,7 @@ class InputWidget(QtWidgets.QWidget):
 
             pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
             pen.setCosmetic(True)
-            plot.drawSignal(self.events, ys, label=name, pen=pen)
+            plot.drawSignal(name, self.events, ys, pen=pen)
 
         region = (
             (self.events[0], self.events[-1])
@@ -366,6 +366,7 @@ class InputWidget(QtWidgets.QWidget):
                     + trim[0]
                 )
                 plot.drawMaxima(
+                    name,
                     self.events[maxima],
                     self.responses[name][maxima],
                     brush=QtGui.QBrush(color),
