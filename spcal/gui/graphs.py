@@ -74,23 +74,26 @@ symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
 class MultipleItemSampleProxy(pyqtgraph.ItemSample):
     def __init__(
         self,
-        item: pyqtgraph.PlotDataItem,
-        additional_items: List[pyqtgraph.PlotDataItem] | None = None,
+        brush: QtGui.QBrush | QtGui.QColor,
+        items: List[pyqtgraph.PlotDataItem] | None = None,
     ):
-        super().__init__(item)
-        self.additional_items = []
-        if additional_items is not None:
-            self.additional_items.extend(additional_items)
+        if isinstance(brush, QtGui.QColor):
+            brush = QtGui.QBrush(brush)
 
-    def addAdditionalItem(self, item: pyqtgraph.PlotDataItem) -> None:
-        self.additional_items.append(item)
+        super().__init__(pyqtgraph.BarGraphItem(brush=brush))
+        self.items = []
+        if items is not None:
+            self.items.extend(items)
+
+    def addItem(self, item: pyqtgraph.PlotDataItem) -> None:
+        self.items.append(item)
         item.setVisible(self.item.isVisible())
         self.update()
 
     def mouseClickEvent(self, event: QtGui.QMouseEvent):
         """Use the mouseClick event to toggle the visibility of the plotItem"""
         visible = self.item.isVisible()
-        for item in self.additional_items:
+        for item in self.items:
             item.setVisible(not visible)
         super().mouseClickEvent(event)
 
@@ -177,7 +180,7 @@ class ResultsFractionView(pyqtgraph.GraphicsView):
                 x=x, height=height, width=0.75, y0=y0, pen=pen, brush=brush
             )
             self.plot.addItem(bars)
-            self.plot.legend.addItem(pyqtgraph.BarGraphItem(brush=brush), name)
+            self.plot.legend.addItem(MultipleItemSampleProxy(brush, items=[bars]), name)
 
         y_range = np.amax(counts)
         self.xaxis.setTicks([[(t, str(t + 1)) for t in x]])
@@ -292,9 +295,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             skipFiniteCheck=True,
         )
         self.addItem(curve)
-        self.legend.addItem(
-            MultipleItemSampleProxy(pyqtgraph.BarGraphItem(brush=brush), [curve]), name
-        )
+        self.legend.addItem(MultipleItemSampleProxy(brush, items=[curve]), name)
 
         return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
@@ -520,7 +521,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
             x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
         )
 
-        legend_item = MultipleItemSampleProxy(curve)
+        legend_item = MultipleItemSampleProxy(pen.color(), items=[curve])
         self.signals[name] = curve
         self.legends[name] = legend_item
 
@@ -558,7 +559,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.scatters[name] = scatter
         self.addItem(scatter)
 
-        self.legends[name].addAdditionalItem(scatter)
+        self.legends[name].addItem(scatter)
         print(self.legends[name])
 
     def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
