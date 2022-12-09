@@ -398,10 +398,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
             )
-            if (
-                self.graph_options["histogram"]["mode"] != "overlay"
-                and self.graph_options["histogram"]["fit"] is not None
-            ):
+            if self.graph_options["histogram"]["fit"] is not None:
                 hist = hist / bin_width / graph_data[name].size
                 xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
                 if self.graph_options["histogram"]["fit"] == "normal":
@@ -416,7 +413,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     )
 
                 ys = ys * bin_width * graph_data[name].size
-                pen = QtGui.QPen(QtCore.Qt.red, 2.0)
+                pen = QtGui.QPen(color, 1.0)
                 pen.setCosmetic(True)
                 plot.drawFit(xs, ys, pen=pen)
         self.graph_hist.zoomReset()

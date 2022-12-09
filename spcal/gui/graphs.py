@@ -458,7 +458,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.enableAutoRange(y=True)
         self.hideButtons()
         self.addLegend(
-            offset=(-5, 5), verSpacing=-5, colCount=3, labelTextColor="black"
+            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )
 
         self.signals: Dict[str, pyqtgraph.PlotCurveItem] = {}
@@ -562,7 +562,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
     def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
         skip_lc = np.all(limits["lc"] == limits["ld"])
-        for name in ["mean", "lc", "ld"]:
+        for name, label in zip(["mean", "lc", "ld"], ["Mean", "Lc", "Ld"]):
             if name == "lc" and skip_lc:
                 continue
 
@@ -576,7 +576,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
                 nx, y = x[diffs], limits[name][diffs]
 
             curve = pyqtgraph.PlotCurveItem(
-                x=nx, y=y, name=name, pen=pen, connect="all", skipFiniteCheck=True
+                x=nx, y=y, name=label, pen=pen, connect="all", skipFiniteCheck=True
             )
             self.limits.append(curve)
             self.addItem(curve)
