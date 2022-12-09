@@ -98,6 +98,60 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
         super().mouseClickEvent(event)
 
 
+class HistogramItemSampleProxy(pyqtgraph.ItemSample):
+    def __init__(
+        self,
+        histogram: pyqtgraph.PlotDataItem,
+        fit: pyqtgraph.PlotCurveItem | None = None,
+    ):
+        super().__init__(histogram)
+        self.item2 = fit
+
+    def mouseClickEvent(self, event: QtGui.QMouseEvent):
+        """Use the mouseClick event to toggle the visibility of the plotItem"""
+        print(event.position())
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            if QtCore.QRectF(0, 0, 20, 20).contains(event.position()):
+                visible = self.item.isVisible()
+                self.item.setVisible(not visible)
+            elif self.item2 is not None:
+                visible = self.item2.isVisible()
+                self.item2.setVisible(not visible)
+
+        event.accept()
+        self.update()
+
+    def setFit(self, fit: pyqtgraph.PlotCurveItem | None) -> None:
+        self.item2 = fit
+        self.prepareGeometryChange()
+
+    def boundingRect(self):
+        return QtCore.QRectF(-20, 0, 40, 20)
+
+    def paint(self, painter: QtGui.QPainter, *args):
+        opts = self.item.opts
+        if opts.get("antialias"):
+            painter.setRenderHint(painter.RenderHint.Antialiasing)
+
+        visible = self.item.isVisible()
+        if not visible:
+            icon = pyqtgraph.icons.invisibleEye.qicon
+            painter.drawPixmap(QtCore.QPoint(1, 1), icon.pixmap(18, 18))
+        else:
+            painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
+            painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
+
+        if self.item2 is not None:
+            visible2 = self.item2.isVisible()
+            opts = self.item2.opts
+            if not visible2:
+                icon = pyqtgraph.icons.invisibleEye.qicon
+                painter.drawPixmap(QtCore.QPoint(20 + 1, 1), icon.pixmap(18, 18))
+            else:
+                painter.setPen(pyqtgraph.mkPen(opts["pen"]))
+                painter.drawLine(20, 11, 40, 11)
+
+
 class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
     def scaleBy(
         self,
@@ -253,6 +307,8 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )
 
+        self.legends: Dict[str, HistogramItemSampleProxy] = {}
+
     def drawData(
         self,
         name: str,
@@ -294,8 +350,10 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             brush=brush,
             skipFiniteCheck=True,
         )
+
+        self.legends[name] = HistogramItemSampleProxy(curve)
         self.addItem(curve)
-        self.legend.addItem(MultipleItemSampleProxy(brush, items=[curve]), name)
+        self.legend.addItem(self.legends[name], name)
 
         return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
@@ -304,7 +362,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         x: np.ndarray,
         y: np.ndarray,
         pen: QtGui.QPen | None = None,
-        label: str | None = None,
+        name: str | None = None,
     ) -> None:
 
         if pen is None:
@@ -312,9 +370,10 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             pen.setCosmetic(True)
 
         curve = pyqtgraph.PlotCurveItem(
-            x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True, name=label
+            x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True
         )
         self.addItem(curve)
+        self.legends[name].setFit(curve)
 
 
 class ResultsHistogramView(pyqtgraph.GraphicsView):

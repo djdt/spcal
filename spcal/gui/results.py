@@ -415,7 +415,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 ys = ys * bin_width * graph_data[name].size
                 pen = QtGui.QPen(color, 1.0)
                 pen.setCosmetic(True)
-                plot.drawFit(xs, ys, pen=pen)
+                plot.drawFit(xs, ys, pen=pen, name=name)
         self.graph_hist.zoomReset()
 
     def drawGraphFractions(self) -> None:
