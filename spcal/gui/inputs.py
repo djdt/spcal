@@ -8,7 +8,8 @@ import spcal
 from spcal.calc import calculate_limits
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs import ImportDialog
-from spcal.gui.graphs import ParticleView, color_schemes, symbols
+from spcal.gui.graphs import color_schemes, symbols
+from spcal.gui.graphs.views import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action

@@ -10,15 +10,11 @@ from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import (
     FilterDialog,
-    FractionsOptionsDialog,
+    CompositionsOptionsDialog,
     HistogramOptionsDialog,
 )
-from spcal.gui.graphs import (
-    ResultsFractionView,
-    ResultsHistogramView,
-    ResultsScatterView,
-    color_schemes,
-)
+from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -81,7 +77,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "cell_concentrations": None,
                 },
             },
-            "fraction": {"distance": 0.03, "minimum size": "5%"},
+            "composition": {"distance": 0.03, "minimum size": "5%"},
         }
         self.results: Dict[str, dict] = {}
 
@@ -89,9 +85,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph_hist = ResultsHistogramView()
-        self.graph_frac = ResultsFractionView()
-        self.graph_scatter = ResultsScatterView()
+        self.graph_hist = HistogramView()
+        self.graph_composition = CompositionView()
+        self.graph_scatter = ScatterView()
 
         self.combo_scatter_x = QtWidgets.QComboBox()
         self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
@@ -119,7 +115,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_stack = QtWidgets.QStackedWidget()
         self.graph_stack.addWidget(self.graph_hist)
-        self.graph_stack.addWidget(self.graph_frac)
+        self.graph_stack.addWidget(self.graph_composition)
         self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
@@ -172,11 +168,11 @@ class ResultsWidget(QtWidgets.QWidget):
             checkable=True,
         )
         self.action_graph_histogram.setChecked(True)
-        self.action_graph_fractions = create_action(
+        self.action_graph_compositions = create_action(
             "office-chart-bar-stacked",
             "Composition",
             "Show the elemental composition of peaks.",
-            lambda: self.graph_stack.setCurrentWidget(self.graph_frac),
+            lambda: self.graph_stack.setCurrentWidget(self.graph_composition),
             checkable=True,
         )
         self.action_graph_scatter = create_action(
@@ -211,7 +207,7 @@ class ResultsWidget(QtWidgets.QWidget):
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_histogram)
         action_group_graph_view.addAction(self.action_graph_histogram_stacked)
-        action_group_graph_view.addAction(self.action_graph_fractions)
+        action_group_graph_view.addAction(self.action_graph_compositions)
         action_group_graph_view.addAction(self.action_graph_scatter)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
 
@@ -267,13 +263,13 @@ class ResultsWidget(QtWidgets.QWidget):
         self.filters = filters
         self.updateResults()
 
-    def setFractionDistance(self, distance: float) -> None:
-        self.graph_options["fraction"]["distance"] = distance
-        self.drawGraphFractions()
+    def setCompDistance(self, distance: float) -> None:
+        self.graph_options["composition"]["distance"] = distance
+        self.drawGraphCompositions()
 
-    def setFractionSize(self, size: float | str) -> None:
-        self.graph_options["fraction"]["minimum size"] = size
-        self.drawGraphFractions()
+    def setCompSize(self, size: float | str) -> None:
+        self.graph_options["composition"]["minimum size"] = size
+        self.drawGraphCompositions()
 
     def setHistDrawMode(self, mode: str) -> None:
         self.graph_options["histogram"]["mode"] = mode
@@ -297,14 +293,14 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             dlg.fitChanged.connect(self.setHistFit)
             dlg.binWidthsChanged.connect(self.setHistBinWidths)
-        elif self.graph_stack.currentWidget() == self.graph_frac:
-            dlg = FractionsOptionsDialog(
-                self.graph_options["fraction"]["distance"],
-                self.graph_options["fraction"]["minimum size"],
+        elif self.graph_stack.currentWidget() == self.graph_composition:
+            dlg = CompositionsOptionsDialog(
+                self.graph_options["composition"]["distance"],
+                self.graph_options["composition"]["minimum size"],
                 parent=self,
             )
-            dlg.distanceChanged.connect(self.setFractionDistance)
-            dlg.minimumSizeChanged.connect(self.setFractionSize)
+            dlg.distanceChanged.connect(self.setCompDistance)
+            dlg.minimumSizeChanged.connect(self.setCompSize)
         dlg.show()
 
     def dialogExportResults(self) -> None:
@@ -330,7 +326,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraph(self) -> None:
         self.drawGraphHist()
         if len(self.results) > 1:
-            self.drawGraphFractions()
+            self.drawGraphCompositions()
             self.drawGraphScatter()
 
     def drawGraphHist(self) -> None:
@@ -418,15 +414,15 @@ class ResultsWidget(QtWidgets.QWidget):
                 plot.drawFit(xs, ys, pen=pen, name=name)
         self.graph_hist.zoomReset()
 
-    def drawGraphFractions(self) -> None:
-        # Fraction view
-        self.graph_frac.clear()
+    def drawGraphCompositions(self) -> None:
+        # composition view
+        self.graph_composition.clear()
         mode = self.mode.currentText()
 
         label, _, _ = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        self.graph_frac.plot.setTitle(f"{label} Composition")
+        self.graph_composition.plot.setTitle(f"{label} Composition")
 
         # Save names order to preserve colors
         names = list(self.results.keys())
@@ -458,7 +454,7 @@ class ResultsWidget(QtWidgets.QWidget):
             means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
         else:
             means, stds, counts = agglomerative_cluster(
-                fractions, self.graph_options["fraction"]["distance"]
+                fractions, self.graph_options["composition"]["distance"]
             )
 
         compositions = np.empty(
@@ -467,7 +463,7 @@ class ResultsWidget(QtWidgets.QWidget):
         for i, name in enumerate(graph_data):
             compositions[name] = means[:, i]
 
-        size = self.graph_options["fraction"]["minimum size"]
+        size = self.graph_options["composition"]["minimum size"]
         # Get minimum size as number
         if isinstance(size, str) and size.endswith("%"):
             size = fractions.shape[0] * float(size.rstrip("%")) / 100.0
@@ -490,7 +486,7 @@ class ResultsWidget(QtWidgets.QWidget):
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
             brushes.append(QtGui.QBrush(color))
 
-        self.graph_frac.drawData(compositions, counts, brushes=brushes)
+        self.graph_composition.drawData(compositions, counts, brushes=brushes)
 
     def drawGraphScatter(self) -> None:
         self.graph_scatter.clear()
@@ -534,7 +530,7 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
     def graphZoomReset(self) -> None:
-        self.graph_frac.zoomReset()
+        self.graph_composition.zoomReset()
         self.graph_hist.zoomReset()
 
     def readyForResults(self) -> bool:
@@ -810,9 +806,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)
 
-        # Only enable fraction view and stack if more than one element
+        # Only enable composition view and stack if more than one element
         single_result = len(self.results) == 1
-        self.action_graph_fractions.setEnabled(not single_result)
+        self.action_graph_compositions.setEnabled(not single_result)
         self.action_graph_histogram_stacked.setEnabled(not single_result)
         self.action_graph_scatter.setEnabled(not single_result)
         if single_result:  # Switch to histogram

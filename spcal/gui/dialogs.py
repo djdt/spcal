@@ -155,7 +155,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             widget.setBaseValue(None)
 
 
-class FractionsOptionsDialog(QtWidgets.QDialog):
+class CompositionsOptionsDialog(QtWidgets.QDialog):
     distanceChanged = QtCore.Signal(float)
     minimumSizeChanged = QtCore.Signal(str)
 
@@ -229,130 +229,8 @@ class FractionsOptionsDialog(QtWidgets.QDialog):
         self.lineedit_distance.setText(str(self.distance * 100.0))
 
 
-# class BinWidthDialog(QtWidgets.QDialog):
-#     binWidthsChanged = QtCore.Signal(dict)
-
-#     def __init__(
-#         self,
-#         bin_widths: Dict[str, float | None],
-#         parent: QtWidgets.QWidget | None = None,
-#     ):
-#         super().__init__(parent)
-#         self.setWindowTitle("Histogram Bin Widths")
-
-#         size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-#         mass_units = {
-#             "ag": 1e-21,
-#             "fg": 1e-18,
-#             "pg": 1e-15,
-#             "ng": 1e-12,
-#             "μg": 1e-9,
-#             "g": 1e-3,
-#             "kg": 1.0,
-#         }
-#         concentration_units = {
-#             "amol/L": 1e-18,
-#             "fmol/L": 1e-15,
-#             "pmol/L": 1e-12,
-#             "nmol/L": 1e-9,
-#             "μmol/L": 1e-6,
-#             "mmol/L": 1e-3,
-#             "mol/L": 1.0,
-#         }
-
-#         self.width_signal = QtWidgets.QLineEdit(str((bin_widths.get("signal", ""))))
-#         self.width_signal.setPlaceholderText("auto")
-#         self.width_signal.setValidator(QtGui.QIntValidator(0, 999999999))
-
-#         color = self.palette().color(QtGui.QPalette.Base)
-
-#         self.width_mass = UnitsWidget(
-#             mass_units, value=bin_widths.get("mass", None), invalid_color=color
-#         )
-#         self.width_size = UnitsWidget(
-#             size_units, value=bin_widths.get("size", None), invalid_color=color
-#         )
-#         self.width_conc = UnitsWidget(
-#             concentration_units,
-#             value=bin_widths.get("concentration", None),
-#             invalid_color=color,
-#         )
-
-#         for widget in [self.width_mass, self.width_size, self.width_conc]:
-#             widget.setBestUnit()
-#             widget.lineedit.setPlaceholderText("auto")
-
-#         layout_form = QtWidgets.QFormLayout()
-#         layout_form.addRow("Signal:", self.width_signal)
-#         layout_form.addRow("Mass:", self.width_mass)
-#         layout_form.addRow("Size:", self.width_size)
-#         layout_form.addRow("Concentration:", self.width_conc)
-
-#         self.button_box = QtWidgets.QDialogButtonBox(
-#             QtWidgets.QDialogButtonBox.RestoreDefaults
-#             | QtWidgets.QDialogButtonBox.Ok
-#             | QtWidgets.QDialogButtonBox.Cancel
-#         )
-#         self.button_box.clicked.connect(self.buttonBoxClicked)
-
-#         layout = QtWidgets.QVBoxLayout()
-#         layout.addLayout(layout_form)
-#         layout.addWidget(self.button_box)
-
-#         self.setLayout(layout)
-
-#     def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
-#         sbutton = self.button_box.standardButton(button)
-#         if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
-#             self.reset()
-#         elif sbutton == QtWidgets.QDialogButtonBox.Ok:
-#             self.accept()
-#         else:
-#             self.reject()
-
-#     def accept(self) -> None:
-#         bin_widths = {
-#             "mass": self.width_mass.baseValue(),
-#             "size": self.width_size.baseValue(),
-#             "concentration": self.width_conc.baseValue(),
-#         }
-#         try:
-#             bin_widths["signal"] = int(self.width_signal.text())
-#         except ValueError:
-#             bin_widths["signal"] = None
-#         self.binWidthsChanged.emit(bin_widths)
-
-#         super().accept()
-
-#     def reset(self) -> None:
-#         self.width_signal.setText("")
-#         for widget in [self.width_mass, self.width_size, self.width_conc]:
-#             widget.setBaseValue(None)
-
-
 class FilterRow(QtWidgets.QWidget):
     closeRequested = QtCore.Signal(QtWidgets.QWidget)
-
-    signal_units = {"counts": 1.0}
-    size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-    mass_units = {
-        "ag": 1e-21,
-        "fg": 1e-18,
-        "pg": 1e-15,
-        "ng": 1e-12,
-        "μg": 1e-9,
-        "g": 1e-3,
-        "kg": 1.0,
-    }
-    molar_concentration_units = {
-        "amol/L": 1e-18,
-        "fmol/L": 1e-15,
-        "pmol/L": 1e-12,
-        "nmol/L": 1e-9,
-        "μmol/L": 1e-6,
-        "mmol/L": 1e-3,
-        "mol/L": 1.0,
-    }
 
     def __init__(self, elements: List[str], parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -374,7 +252,7 @@ class FilterRow(QtWidgets.QWidget):
         self.operation = QtWidgets.QComboBox()
         self.operation.addItems([">", "<", ">=", "<=", "=="])
 
-        self.value = UnitsWidget(units=self.signal_units)
+        self.value = UnitsWidget(units=signal_units)
         self.value.combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
         self.action_close = create_action(
@@ -413,13 +291,13 @@ class FilterRow(QtWidgets.QWidget):
 
     def changeUnits(self, unit: str) -> None:
         if unit == "Intensity":
-            units = self.signal_units
+            units = signal_units
         elif unit == "Mass":
-            units = self.mass_units
+            units = mass_units
         elif unit == "Size":
-            units = self.size_units
+            units = size_units
         else:
-            raise ValueError("Unkown unit.")
+            raise ValueError("changeUnits: unknown unit")
 
         self.value.setUnits(units)
 
@@ -428,7 +306,7 @@ class FilterRows(QtWidgets.QScrollArea):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
-        self.rows = []
+        self.rows: List[FilterRow] = []
 
         widget = QtWidgets.QWidget()
         self.setWidget(widget)
@@ -457,7 +335,7 @@ class FilterRows(QtWidgets.QScrollArea):
             filter = row.asTuple()
             if filter[-1] is not None:
                 filters.append(filter)
-        return filters
+        return filters  # type: ignore
 
 
 class FilterDialog(QtWidgets.QDialog):
