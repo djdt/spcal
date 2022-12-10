@@ -82,7 +82,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         curve = pyqtgraph.PlotCurveItem(
             x=x,
             y=y,
-            stepMode=True,
+            stepMode="center",
             fillLevel=0,
             fillOutline=True,
             pen=pen,

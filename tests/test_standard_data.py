@@ -46,10 +46,10 @@ def test_standard_sizes():
         )  # within 1.0 nm
 
 
-def test_standard_fractions():
+def test_standard_compositions():
     """Test data from DOI: 10.1039/d2ja00116k and supp info"""
 
-    npz = np.load(Path(__file__).parent.joinpath("data/fractions.npz"))
+    npz = np.load(Path(__file__).parent.joinpath("data/compositions.npz"))
 
     molar_mass = {
         "Fe": 55.845,
