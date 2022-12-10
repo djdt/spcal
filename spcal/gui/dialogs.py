@@ -531,9 +531,11 @@ class ImportDialog(QtWidgets.QDialog):
 
     def fillTable(self) -> None:
         lines = [line.split(self.delimiter()) for line in self.file_header]
-        self.table.setColumnCount(max(len(line) for line in lines))
+        col_count = max(len(line) for line in lines)
+        self.table.setColumnCount(col_count)
 
         for row, line in enumerate(lines):
+            line.extend([""] * (col_count - len(line)))
             for col, text in enumerate(line):
                 item = QtWidgets.QTableWidgetItem(text.strip())
                 self.table.setItem(row, col, item)
@@ -549,6 +551,8 @@ class ImportDialog(QtWidgets.QDialog):
         for row in range(self.table.rowCount()):
             for col in range(self.table.columnCount()):
                 item = self.table.item(row, col)
+                if item is None:
+                    continue
                 if row != header_row:
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
                 else:
@@ -806,10 +810,3 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         idx = self.table.selectedIndexes()[3]
         self.densitySelected.emit(float(self.proxy.data(idx)))
         super().accept()
-
-
-# if __name__ == "__main__":
-#     app = QtWidgets.QApplication()
-#     dlg = MassFractionCalculatorDialog("")
-#     dlg.show()
-#     app.exec()
