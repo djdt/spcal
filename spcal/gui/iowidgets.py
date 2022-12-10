@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generic, List, Tuple, Type, TypeVar
+from typing import Dict, Generic, Iterator, List, Tuple, Type, TypeVar
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -502,6 +502,10 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
     def __getitem__(self, name: str) -> IOType:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore
+
+    def __iter__(self) -> Iterator[IOType]:
+        for i in range(self.stack.count()):
+            yield self.stack.widget(i)
 
     def names(self) -> List[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
