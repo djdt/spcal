@@ -119,7 +119,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
-        self.io.nameChanged.connect(self.drawGraphHist)
+        # self.io.nameChanged.connect(self.drawGraphHist)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
