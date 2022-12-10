@@ -301,6 +301,8 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             dlg.distanceChanged.connect(self.setCompDistance)
             dlg.minimumSizeChanged.connect(self.setCompSize)
+        else:  # Todo: scatter
+            return
         dlg.show()
 
     def dialogExportResults(self) -> None:
