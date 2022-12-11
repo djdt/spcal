@@ -126,6 +126,8 @@ def click_though_results(qtbot: QtBot, results: ResultsWidget):
 def test_spcal_no_data(qtbot: QtBot):
     window = SPCalWindow()
     qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
 
     # Default enabled
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.options))
@@ -172,6 +174,8 @@ def test_spcal_no_data(qtbot: QtBot):
 def test_spcal_single_quad_data(qtbot: QtBot):
     window = SPCalWindow()
     qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
 
     npz = np.load(Path(__file__).parent.parent.joinpath("data/agilent_au_data.npz"))
     data = np.array(npz["au50nm"], dtype=[("Au", float)])

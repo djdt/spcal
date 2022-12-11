@@ -155,7 +155,7 @@ class RangeSlider(QtWidgets.QSlider):
         )
 
         handle.moveCenter(QtCore.QPoint(pos, handle.center().y()))
-        if handle.contains(event.pos()):
+        if handle.contains(event.position().toPoint()):
             event.accept()
             self._pressed = True
             self.setSliderDown(True)
@@ -179,9 +179,12 @@ class RangeSlider(QtWidgets.QSlider):
                 self,
             )
             value = self.style().sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.pos().x(), groove.width()
+                self.minimum(),
+                self.maximum(),
+                event.position().toPoint().x(),
+                groove.width(),
             )
-            handle.moveCenter(event.pos())
+            handle.moveCenter(event.position().toPoint())
             handle = handle.marginsAdded(
                 QtCore.QMargins(
                     handle.width(), handle.width(), handle.width(), handle.width()
@@ -211,16 +214,22 @@ class RangeSlider(QtWidgets.QSlider):
                 self,
             )
             value = self.style().sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.pos().x(), groove.width()
+                self.minimum(),
+                self.maximum(),
+                event.position().toPoint().x(),
+                groove.width(),
             )
-            handle.moveCenter(event.pos())
+            handle.moveCenter(event.position().toPoint())
             handle = handle.marginsAdded(
                 QtCore.QMargins(
                     handle.width(), handle.width(), handle.width(), handle.width()
                 )
             )
             value = self.style().sliderValueFromPosition(
-                self.minimum(), self.maximum(), event.pos().x(), groove.width()
+                self.minimum(),
+                self.maximum(),
+                event.position().toPoint().x(),
+                groove.width(),
             )
             self.setSliderDown(False)
             self.setValue2(value)
