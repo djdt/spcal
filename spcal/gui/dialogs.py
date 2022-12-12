@@ -54,21 +54,21 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         color = self.palette().color(QtGui.QPalette.Base)
         self.width_signal = UnitsWidget(
             signal_units,
-            value=self.bin_widths["detections"],
+            value=self.bin_widths["signal"],
             invalid_color=color,
             validator=QtGui.QIntValidator(0, 999999999),
         )
         self.width_mass = UnitsWidget(
             mass_units,
-            value=self.bin_widths["masses"],
+            value=self.bin_widths["mass"],
             invalid_color=color,
         )
         self.width_size = UnitsWidget(
-            size_units, value=self.bin_widths["sizes"], invalid_color=color
+            size_units, value=self.bin_widths["size"], invalid_color=color
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
-            value=self.bin_widths["cell_concentrations"],
+            value=self.bin_widths["cell_concentration"],
             invalid_color=color,
         )
 
@@ -130,10 +130,10 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             fit = "log normal"
 
         bin_widths = {
-            "detections": self.width_signal.baseValue(),
-            "masses": self.width_mass.baseValue(),
-            "sizes": self.width_size.baseValue(),
-            "cell_concentrations": self.width_conc.baseValue(),
+            "signal": self.width_signal.baseValue(),
+            "mass": self.width_mass.baseValue(),
+            "size": self.width_size.baseValue(),
+            "cell_concentration": self.width_conc.baseValue(),
         }
 
         # Check for changes
