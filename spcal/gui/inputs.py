@@ -5,7 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-from spcal.calc import calculate_limits
+from spcal.calc import SPCalLimit
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.graphs import color_schemes, symbols
@@ -44,7 +44,7 @@ class InputWidget(QtWidgets.QWidget):
         self.detections = np.array([])
         self.labels = np.array([])
         self.regions = np.array([])
-        self.limits: Dict[str, Tuple[str, Dict[str, float], np.ndarray]] = {}
+        self.limits: Dict[str, SPCalLimit] = {}
 
         self.draw_mode = "Overlay"
 
@@ -210,21 +210,23 @@ class InputWidget(QtWidgets.QWidget):
         return plot.region_start, plot.region_end
 
     def updateDetections(self) -> None:
-        names = self.responses.dtype.names
-
         detections = {}
         labels = {}
         regions = {}
-        for name in names:
+        assert self.responses.dtype.names is not None
+        for name in self.responses.dtype.names:
             trim = self.trimRegion(name)
             responses = self.responses[name][trim[0] : trim[1]]
             if responses.size > 0 and name in self.limits:
-                limits = self.limits[name][2]
                 (
                     detections[name],
                     labels[name],
                     regions[name],
-                ) = spcal.accumulate_detections(responses, limits["lc"], limits["ld"])
+                ) = spcal.accumulate_detections(
+                    responses,
+                    self.limits[name].limit_of_criticality,
+                    self.limits[name].limit_of_detection,
+                )
 
         self.detections, self.labels, self.regions = combine_detections(
             detections, labels, regions
@@ -256,37 +258,59 @@ class InputWidget(QtWidgets.QWidget):
             int(self.options.window_size.text())
             if self.options.window_size.hasAcceptableInput()
             and self.options.window_size.isEnabled()
-            else None
+            else 0
         )
 
-        names = self.responses.dtype.names
-        for name in names:
+        self.limits.clear()
+
+        assert self.responses.dtype.names is not None
+        for name in self.responses.dtype.names:
             trim = self.trimRegion(name)
             response = self.responses[name][trim[0] : trim[1]]
             if response.size == 0:
-                self.limits.pop(name)
                 continue
 
             if method == "Manual Input":
                 limit = float(self.options.manual.text())
-                self.limits[name] = (
-                    method,
-                    {},
-                    np.array(
-                        [(np.mean(response), limit, limit)],
-                        dtype=calculate_limits.dtype,
-                    ),
+                self.limits[name] = SPCalLimit(
+                    np.mean(response), limit, limit, name="Manual Input", params={}
+                )
+            elif method == "Automatic":
+                self.limits[name] = SPCalLimit.fromBest(
+                    response,
+                    sigma=sigma,
+                    alpha=alpha,
+                    beta=beta,
+                    window_size=window_size,
+                )
+            elif method == "Highest":
+                self.limits[name] = SPCalLimit.fromHighest(
+                    response,
+                    sigma=sigma,
+                    alpha=alpha,
+                    beta=beta,
+                    window_size=window_size,
+                )
+            elif method.startswith("Guassian"):
+                self.limits[name] = SPCalLimit.fromGaussian(
+                    response,
+                    sigma=sigma,
+                    window_size=window_size,
+                    use_median="median" in method.lower(),
                 )
             else:
-                self.limits[name] = calculate_limits(
-                    response, method, sigma, (alpha, beta), window=window_size
+                self.limits[name] = SPCalLimit.fromPoisson(
+                    response,
+                    alpha=alpha,
+                    window_size=window_size,
+                    use_median="median" in method.lower(),
                 )
         self.limitsChanged.emit()
 
     def updateOutputs(self) -> None:
-        names = self.responses.dtype.names
-
-        for name in names:
+        assert self.responses.dtype.names is not None
+        assert self.detections.dtype.names is not None
+        for name in self.responses.dtype.names:
             io = self.io[name]
             if name not in self.detections.dtype.names:
                 io.clearOutputs()
@@ -296,7 +320,9 @@ class InputWidget(QtWidgets.QWidget):
                     self.responses[name][trim[0] : trim[1]],
                     self.detections[name],
                     self.labels,
-                    self.limits[name],
+                    self.limits[name].limit_of_detection,
+                    self.limits[name].name,
+                    self.limits[name].params,
                 )
 
     def drawGraph(self) -> None:
@@ -312,6 +338,7 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
 
         scheme = color_schemes[self.color_scheme]
+        assert self.responses.dtype.names is not None
         for i, name in enumerate(self.responses.dtype.names):
             ys = self.responses[name]
             if self.draw_mode == "Stacked":
@@ -377,11 +404,11 @@ class InputWidget(QtWidgets.QWidget):
     def drawLimits(self) -> None:
         if self.draw_mode == "Overlay":
             return
-        for name in self.limits:
+        for name, limits in self.limits.items():
             trim = self.trimRegion(name)
             plot = self.graph.plots[name]
             plot.clearLimits()
-            plot.drawLimits(self.events[trim[0] : trim[1]], self.limits[name][2])
+            plot.drawLimits(self.events[trim[0] : trim[1]], limits.limit_of_detection)
 
     def resetInputs(self) -> None:
         self.blockSignals(True)

@@ -84,238 +84,310 @@ def moving_std(x: np.ndarray, n: int) -> np.ndarray:
     return np.sqrt(sqrs - sums * sums)
 
 
-def calculate_limits(
-    responses: np.ndarray,
-    method: str,
-    sigma: float = 3.0,
-    error_rates: Tuple[float, float] = (0.05, 0.05),
-    window: int | None = None,
-) -> Tuple[str, Dict[str, float], np.ndarray]:
-    """Calculates limit(s) of detections for input.
+class SPCalLimit(object):
+    def __init__(
+        self,
+        mean_background: float | np.ndarray,
+        limit_of_criticality: float | np.ndarray,
+        limit_of_detection: float | np.ndarray,
+        name: str,
+        params: Dict[str, float],
+        window_size: int = 0,
+    ):
+        self.mean_background = mean_background
+        self.limit_of_criticality = limit_of_criticality
+        self.limit_of_detection = limit_of_detection
 
-    If `window` is given then rolling filters are used to create limits. The returned values are
-    then arrays the same size as `responses`.
+        self.name = name
+        self.params = params
+        self.window_size = window_size
 
-    `method` 'Automatic' will return 'Gaussian' if mean(responses) > 50.0, otherwise 'Poisson'.
-    `method` 'Highest' will return the maximum of 'Gaussian' and 'Poisson'.
-    'Gaussian' is calculated as mean(responses) + `sigma` * std(responses).
-    'Poisson' uses `:func:spcal.poisson.formula_c`.
+    @classmethod
+    def fromGaussian(
+        cls,
+        responses: np.ndarray,
+        sigma: float = 3.0,
+        window_size: int = 0,
+        use_median: bool = False,
+    ) -> "SPCalLimit":
+        if responses.size == 0:
+            raise ValueError("fromGaussian: responses is size 0")
 
-    Args:
-        responses: array of signals
-        method: method to use {'Automatic', 'Highest', 'Gaussian', 'Gaussian Median', 'Poisson'}
-        sigma: threshold term for 'Gaussian'
-        error_rates: α and β rates for 'Poisson'
-        window: rolling limits
-
-    Returns:
-        method, {symbol: value, ...}, array[('mean', 'lc', 'ld')]
-    """
-    if responses is None or responses.size == 0:  # pragma: no cover
-        raise ValueError("Responses invalid.")
-
-    if method not in [
-        "Automatic",
-        "Highest",
-        "Gaussian",
-        "Gaussian Median",
-        "Poisson",
-    ]:  # pragma: no cover
-        raise ValueError(
-            'method must be one of "Automatic", "Highest", "Gaussian", "Gaussian Median", "Poisson"'
-        )
-
-    if "Median" in method:
-        ub = np.median(responses)
-    else:
-        ub = np.mean(responses)
-
-    assert isinstance(ub, float)
-
-    limit_params = {}
-
-    if method == "Automatic":
-        method = "Poisson" if ub < 50.0 else "Gaussian"
-    elif method == "Highest":
-        lpoisson = ub + poisson_limits(ub, alpha=error_rates[0], beta=error_rates[1])[1]
-        lgaussian = ub + sigma * np.std(responses)
-        method = "Gaussian" if lgaussian > lpoisson else "Poisson"
-
-    if window is None or window < 2:
-        limits = np.array([(ub, 0.0, 0.0)], dtype=calculate_limits.dtype)
-        if "Gaussian" in method:
+        if window_size == 0:  # No window
+            mean = np.median(responses) if use_median else np.mean(responses)
             std = np.std(responses)
-    else:
-        pad = np.pad(responses, [window // 2, window // 2], mode="reflect")
-        limits = np.empty(responses.size, dtype=calculate_limits.dtype)
-
-        if "Median" in method:  # pragma: no cover, covered by moving_median
-            limits["mean"] = moving_median(pad, window)[: responses.size]
         else:
-            limits["mean"] = moving_mean(pad, window)[: responses.size]
+            pad = np.pad(
+                responses, [window_size // 2, window_size // 2], mode="reflect"
+            )
+            mean = (
+                moving_median(pad, window_size)
+                if use_median
+                else moving_mean(pad, window_size)
+            )
+            mean = mean[: responses.size]
+            std = moving_std(pad, window_size)[: responses.size]
 
-        if "Gaussian" in method:  # pragma: no cover, covered by moving_std
-            std = moving_std(pad, window)[: responses.size]
-
-    if "Gaussian" in method:
-        limits["ld"] = limits["mean"] + sigma * std
-        limits["lc"] = limits["ld"]
-        limit_params["σ"] = sigma
-    else:
-        sc, sd = poisson_limits(
-            limits["mean"], alpha=error_rates[0], beta=error_rates[1]
+        ld = mean + std * sigma
+        return cls(
+            mean,
+            ld,
+            ld,
+            name="Gaussian" + " Median" if use_median else "",
+            params={"sigma": sigma},
+            window_size=window_size,
         )
-        limits["lc"] = limits["mean"] + sc
-        limits["ld"] = limits["mean"] + sd
-        limit_params["α"] = error_rates[0]
-        limit_params["β"] = error_rates[1]
 
-    return method, limit_params, limits
+    @classmethod
+    def fromPoisson(
+        cls,
+        responses: np.ndarray,
+        alpha: float = 0.05,
+        beta: float = 0.05,
+        window_size: int = 0,
+        use_median: bool = False,
+    ) -> "SPCalLimit":
+        if responses.size == 0:
+            raise ValueError("fromPoisson: responses is size 0")
 
+        if window_size == 0:  # No window
+            mean = np.median(responses) if use_median else np.mean(responses)
+        else:
+            pad = np.pad(
+                responses, [window_size // 2, window_size // 2], mode="reflect"
+            )
+            mean = (
+                moving_median(pad, window_size)
+                if use_median
+                else moving_mean(pad, window_size)
+            )
+            mean = mean[: responses.size]
 
-calculate_limits.dtype = np.dtype(
-    {"names": ["mean", "lc", "ld"], "formats": [np.float64, np.float64, np.float64]}
-)
+        sc, sd = poisson_limits(mean, alpha=alpha, beta=beta)
 
-
-def results_from_mass_response(
-    detections: np.ndarray,
-    background: float,
-    lod: np.ndarray,
-    density: float,
-    mass_fraction: float,
-    mass_response: float,
-) -> dict:
-    """Calculates the masses, sizes and lods from mass response.
-
-    All values are in SI units.
-    The `lod` should be calculated by `:func:spcal.calculate_limits`.
-
-    Args:
-        detections: array of summed signals
-        background: background mean
-        lod: limit of detection(s)
-        density: of NP (kg/m3)
-        massfraction: of NP
-        massresponse: of a reference material (kg/count)
-
-    Returns:
-        dict of results
-    """
-
-    # if isinstance(lod, np.ndarray):
-    #     lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
-
-    masses = detections * (mass_response / mass_fraction)
-    sizes = spcal.particle_size(masses, density=density)
-
-    bed = spcal.particle_size(
-        background * (mass_response / mass_fraction), density=density
-    )
-    lod_mass = lod * (mass_response / mass_fraction)
-    lod_size = spcal.particle_size(lod_mass, density=density)
-
-    return {  # type: ignore
-        "masses": masses,
-        "sizes": sizes,
-        "background_size": bed,
-        "lod": lod,
-        "lod_mass": lod_mass,
-        "lod_size": lod_size,
-    }
-
-
-def results_from_nebulisation_efficiency(
-    detections: np.ndarray,
-    background: float,
-    lod: np.ndarray,
-    density: float,
-    dwelltime: float,
-    efficiency: float,
-    mass_fraction: float,
-    uptake: float,
-    response: float,
-    time: float,
-) -> dict:
-    """Calculates the masses, sizes, background and lods from transport efficiency.
-
-    All values are in SI units.
-    The `lod` should be calculated by `:func:spcal.calculate_limits`.
-
-    Args:
-        detections: array of summed signals
-        background: background mean
-        lod: limit of detection(s)
-        density: of NP (kg/m3)
-        dwelltime: quadrupole dwell time (s)
-        efficiency: transport efficiency
-        massfraction: of NP
-        uptake: sample flow rate (L/s)
-        response: of an ionic standard (count/(kg/L))
-        time: total aquisition time (s)
-
-    Returns:
-        dict of results
-    """
-
-    # if isinstance(lod, np.ndarray):
-    #     lod = np.array([np.amin(lod), np.amax(lod), np.mean(lod), np.median(lod)])
-
-    masses = spcal.particle_mass(
-        detections,
-        dwell=dwelltime,
-        efficiency=efficiency,
-        flow_rate=uptake,
-        response_factor=response,
-        mass_fraction=mass_fraction,
-    )
-    sizes = spcal.particle_size(masses, density=density)
-
-    number_concentration = np.around(
-        spcal.particle_number_concentration(
-            detections.size,
-            efficiency=efficiency,
-            flow_rate=uptake,
-            time=time,
+        return cls(
+            mean,
+            mean + sc,
+            mean + sd,
+            name="Poisson" + " Median" if use_median else "",
+            params={"alpha": alpha, "beta": beta},
+            window_size=window_size,
         )
-    )
-    concentration = spcal.particle_total_concentration(
-        masses,
-        efficiency=efficiency,
-        flow_rate=uptake,
-        time=time,
-    )
 
-    ionic = background / response
-    bed = spcal.particle_size(
-        spcal.particle_mass(
-            background,
-            dwell=dwelltime,
-            efficiency=efficiency,
-            flow_rate=uptake,
-            response_factor=response,
-            mass_fraction=mass_fraction,
-        ),
-        density=density,
-    )
-    lod_mass = spcal.particle_mass(
-        lod,
-        dwell=dwelltime,
-        efficiency=efficiency,
-        flow_rate=uptake,
-        response_factor=response,
-        mass_fraction=mass_fraction,
-    )
-    lod_size = spcal.particle_size(lod_mass, density=density)
+    @classmethod
+    def fromBest(
+        cls,
+        responses: np.ndarray,
+        sigma: float = 3.0,
+        alpha: float = 0.05,
+        beta: float = 0.05,
+        window_size: int = 0,
+        use_median: bool = False,
+    ) -> "SPCalLimit":
+        mean = np.median(responses) if use_median else np.mean(responses)
 
-    return {
-        "masses": masses,
-        "sizes": sizes,
-        "concentration": concentration,
-        "number_concentration": number_concentration,
-        "background_concentration": ionic,
-        "background_size": bed,
-        "lod": lod,
-        "lod_mass": lod_mass,
-        "lod_size": lod_size,
-    }
+        if mean > 50.0:
+            return SPCalLimit.fromGaussian(
+                responses, sigma=sigma, window_size=window_size, use_median=use_median
+            )
+        else:
+            return SPCalLimit.fromPoisson(
+                responses,
+                alpha=alpha,
+                beta=beta,
+                window_size=window_size,
+                use_median=use_median,
+            )
+
+    @classmethod
+    def fromHighest(
+        cls,
+        responses: np.ndarray,
+        sigma: float = 3.0,
+        alpha: float = 0.05,
+        beta: float = 0.05,
+        window_size: int = 0,
+        use_median: bool = False,
+    ) -> "SPCalLimit":
+        mean = np.median(responses) if use_median else np.mean(responses)
+
+        gaussian = SPCalLimit.fromGaussian(
+            responses, sigma=sigma, window_size=window_size, use_median=use_median
+        )
+        poisson = SPCalLimit.fromPoisson(
+            responses,
+            alpha=alpha,
+            beta=beta,
+            window_size=window_size,
+            use_median=use_median,
+        )
+        if np.mean(gaussian.mean_background) > np.mean(poisson.mean_background):
+            return gaussian
+        else:
+            return poisson
+
+
+class SPCalResult(object):
+    def __init__(
+        self,
+        file: str,
+        responses: np.ndarray,
+        detections: np.ndarray,
+        labels: np.ndarray,
+        inputs_kws: Dict[str, float],
+    ):
+        self.file = file
+
+        self.responses = responses
+        self.detections = {"signal": detections}
+        self.indicies = np.flatnonzero(detections)
+
+        self.background = np.mean(responses[labels == 0])
+        self.background_error = np.std(responses[labels == 0])
+
+        self.inputs = inputs_kws
+
+    @property
+    def events(self) -> int:
+        return self.responses.size
+
+    @property
+    def ionic_background(self) -> float | None:
+        if not "response" in self.inputs:
+            return None
+        return self.background / self.inputs["response"]
+
+    @property
+    def number(self) -> int:
+        return self.indicies.size
+
+    @property
+    def number_error(self) -> int:
+        return np.sqrt(self.number)
+
+    @property
+    def mass_concentration(self) -> float | None:
+        if "mass" not in self.detections or any(
+            x not in self.inputs for x in ["efficiency", "uptake", "time"]
+        ):
+            return None
+        return spcal.particle_total_concentration(
+            self.detections["mass"],
+            efficiency=self.inputs["efficiency"],
+            flow_rate=self.inputs["uptake"],
+            time=self.inputs["time"],
+        )
+
+    @property
+    def number_concentration(self) -> float | None:
+        if any(x not in self.inputs for x in ["efficiency", "uptake", "time"]):
+            return None
+        return np.around(
+            spcal.particle_number_concentration(
+                self.number,
+                efficiency=self.inputs["efficiency"],
+                flow_rate=self.inputs["uptake"],
+                time=self.inputs["time"],
+            )
+        )
+
+    def asCellConcentration(
+        self, value: float | np.ndarray
+    ) -> float | np.ndarray | None:
+        mass = self.asMass(value)
+        if mass is not None and all(
+            x in self.inputs for x in ["cell_diameter", "molar_mass"]
+        ):
+            return spcal.cell_concentration(
+                mass,
+                diameter=self.inputs["cell_diameter"],
+                molar_mass=self.inputs["molar_mass"],
+            )
+        return None
+
+    def asMass(self, value: float | np.ndarray) -> float | np.ndarray | None:
+        if all(  # Via efficiency
+            x in self.inputs
+            for x in ["dwelltime", "efficiency", "uptake", "response", "mass_fraction"]
+        ):
+            return spcal.particle_mass(
+                value,
+                dwell=self.inputs["dwelltime"],
+                efficiency=self.inputs["efficiency"],
+                flow_rate=self.inputs["uptake"],
+                response_factor=self.inputs["response"],
+                mass_fraction=self.inputs["mass_fraction"],
+            )
+        elif all(x in self.inputs for x in ["mass_response", "mass_fraction"]):
+            # Via mass response
+            return value * self.inputs["mass_response"] / self.inputs["mass_fraction"]
+        else:
+            return None
+
+    def asSize(self, value: float | np.ndarray) -> float | np.ndarray | None:
+        mass = self.asMass(value)
+        if mass is not None and "density" in self.inputs:
+            return spcal.particle_size(mass, density=self.inputs["density"])
+        return None
+
+    def fromNebulisationEfficiency(
+        self,
+    ) -> None:
+        if any(
+            x not in self.inputs
+            for x in ["dwelltime", "efficiency", "uptake", "response", "mass_fraction"]
+        ):
+            raise ValueError("fromNebulisationEfficiency: missing required mass input")
+
+        self.detections["mass"] = np.asarray(
+            spcal.particle_mass(
+                self.detections["signal"],
+                dwell=self.inputs["dwelltime"],
+                efficiency=self.inputs["efficiency"],
+                flow_rate=self.inputs["uptake"],
+                response_factor=self.inputs["response"],
+                mass_fraction=self.inputs["mass_fraction"],
+            )
+        )
+        if "density" not in self.inputs:
+            Warning("fromNebulisationEfficiency: missing required size input")
+        else:
+            self.detections["size"] = np.asarray(
+                spcal.particle_size(
+                    self.detections["mass"], density=self.inputs["density"]
+                )
+            )
+
+        if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
+            self.detections["cell_concentration"] = np.asarray(
+                spcal.cell_concentration(
+                    self.detections["mass"],
+                    diameter=self.inputs["cell_diameter"],
+                    molar_mass=self.inputs["molar_mass"],
+                )
+            )
+
+    def fromMassResponse(self) -> None:
+        if any(x not in self.inputs for x in ["mass_response", "mass_fraction"]):
+            raise ValueError("fromMassResponse: missing required mass input")
+
+        self.detections["mass"] = self.detections["signal"] * (
+            self.inputs["mass_response"] / self.inputs["mass_fraction"]
+        )
+        if "density" not in self.inputs:
+            Warning("fromMassResponse: missing required size input")
+        else:
+            self.detections["size"] = np.asarray(
+                spcal.particle_size(
+                    self.detections["mass"], density=self.inputs["density"]
+                )
+            )
+
+        if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
+            self.detections["cell_concentration"] = np.asarray(
+                spcal.cell_concentration(
+                    self.detections["mass"],
+                    diameter=self.inputs["cell_diameter"],
+                    molar_mass=self.inputs["molar_mass"],
+                )
+            )

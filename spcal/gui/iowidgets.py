@@ -199,18 +199,19 @@ class SampleIOWidget(IOWidget):
         responses: np.ndarray,
         detections: np.ndarray,
         labels: np.ndarray,
-        limits: Tuple[str, Dict[str, float], np.ndarray],
+        lod: float,
+        limit_name: str,
+        limit_params: Dict[str, float],
     ) -> None:
         background = np.mean(responses[labels == 0])
         background_std = np.std(responses[labels == 0])
-        lod = np.mean(limits[2]["ld"])  # + self.background
 
         count = np.count_nonzero(detections)
 
         self.count.setText(f"{count} ± {np.sqrt(count):.1f}")
         self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
         self.lod_count.setText(
-            f"{lod:.4g} ({limits[0]}, {','.join(f'{k}={v}' for k,v in limits[1].items())})"
+            f"{lod:.4g} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
         )
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:

@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import results_from_mass_response, results_from_nebulisation_efficiency
+from spcal.calc import SPCalResult
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import (
-    FilterDialog,
     CompositionsOptionsDialog,
+    FilterDialog,
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
@@ -43,10 +43,10 @@ class ResultsWidget(QtWidgets.QWidget):
         "Conc. (mol/L)": ("Concentration", "mol/L", 1.0),
     }
     mode_keys = {
-        "Signal": "detections",
-        "Mass (kg)": "masses",
-        "Size (m)": "sizes",
-        "Conc. (mol/L)": "cell_concentrations",
+        "Signal": "signal",
+        "Mass (kg)": "mass",
+        "Size (m)": "size",
+        "Conc. (mol/L)": "cell_concentration",
     }
 
     def __init__(
@@ -71,15 +71,15 @@ class ResultsWidget(QtWidgets.QWidget):
                 "mode": "overlay",
                 "fit": "log normal",
                 "bin widths": {
-                    "detections": None,
-                    "masses": None,
-                    "sizes": None,
-                    "cell_concentrations": None,
+                    "signal": None,
+                    "mass": None,
+                    "size": None,
+                    "cell_concentration": None,
                 },
             },
             "composition": {"distance": 0.03, "minimum size": "5%"},
         }
-        self.results: Dict[str, dict] = {}
+        self.results: Dict[str, SPCalResult] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -343,10 +343,10 @@ class ResultsWidget(QtWidgets.QWidget):
 
         graph_data = {}
         for name, result in self.results.items():
-            indices = result["indicies"]
-            if indices.size < 2 or not key in result:
+            indices = result.indicies
+            if indices.size < 2 or not key in result.detections:
                 continue
-            graph_data[name] = result[key][indices]
+            graph_data[name] = result.detections[key][indices]
 
         # median 'sturges' bin width
         if bin_width is None:
@@ -430,9 +430,9 @@ class ResultsWidget(QtWidgets.QWidget):
         names = list(self.results.keys())
 
         # Get list of any un filter detection
-        valid = np.zeros(self.results[names[0]]["detections"].size, dtype=bool)
+        valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
         for result in self.results.values():
-            valid[result["indicies"]] = True
+            valid[result.indicies] = True
 
         num_valid = np.count_nonzero(valid)
         if num_valid == 0:
@@ -440,9 +440,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         graph_data = {}
         for name, result in self.results.items():
-            if key not in result:
+            if key not in result.detections:
                 continue
-            graph_data[name] = result[key][valid]
+            graph_data[name] = result.detections[key][valid]
             # no need to use modifier, normalised
 
         if len(graph_data) == 0:
@@ -500,12 +500,12 @@ class ResultsWidget(QtWidgets.QWidget):
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        x = self.results[xname][key] * modifier
-        y = self.results[yname][key] * modifier
+        x = self.results[xname].detections[key] * modifier
+        y = self.results[yname].detections[key] * modifier
 
         valid = np.intersect1d(
-            self.results[xname]["indicies"],
-            self.results[yname]["indicies"],
+            self.results[xname].indicies,
+            self.results[yname].indicies,
             assume_unique=True,
         )
 
@@ -548,18 +548,11 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateScatterElements(self) -> None:
         mode = self.mode.currentText()
-        if mode == "Signal":
-            key = "detections"
-        elif mode == "Mass (kg)":
-            key = "masses"
-        elif mode == "Size (m)":
-            key = "sizes"
-        elif mode == "Conc. (mol/L)":
-            key = "cell_concentrations"
-        else:
-            raise ValueError("updateScatterElements: unknown mode")
+        key = self.mode_keys[mode]
 
-        elements = [name for name in self.results if key in self.results[name]]
+        elements = [
+            name for name in self.results if key in self.results[name].detections
+        ]
 
         for i, combo in enumerate([self.combo_scatter_x, self.combo_scatter_y]):
             current = combo.currentText()
@@ -574,43 +567,44 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
 
         self.io.repopulate(list(self.results.keys()))
 
         for name, result in self.results.items():
+            lod = self.sample.limits[name].limit_of_detection
             if mode == "Signal":
                 units = signal_units
-                values = result["detections"]
-                lod = result["lod"]
-            elif mode == "Mass (kg)" and "masses" in result:
+                values = result.detections["signal"]
+            elif mode == "Mass (kg)" and "mass" in result.detections:
                 units = mass_units
-                values = result["masses"]
-                lod = result["lod_mass"]
-            elif mode == "Size (m)" and "sizes" in result:
+                values = result.detections["mass"]
+                lod = result.asMass(lod)
+            elif mode == "Size (m)" and "size" in result.detections:
                 units = size_units
-                values = result["sizes"]
-                lod = result["lod_size"]
-            elif mode == "Conc. (mol/L)" and "cell_concentrations" in result:
+                values = result.detections["size"]
+                lod = result.asSize(lod)
+            elif mode == "Conc. (mol/L)" and "cell_concentration" in result.detections:
                 units = molar_concentration_units
-                values = result["cell_concentrations"]
-                lod = result["lod_cell_concentration"]
+                values = result.detections["cell_concentration"]
+                lod = result.asCellConcentration(lod)
             else:
                 self.io[name].clearOutputs()
                 continue
 
-            indicies = result["indicies"]
+            indicies = result.indicies
 
             self.io[name].updateOutputs(
                 values[indicies],
                 units,
                 lod,
-                count=indicies.size,
+                count=result.number,
                 count_percent=indicies.size / values.size * 100.0,
-                count_error=np.sqrt(indicies.size),
-                conc=result.get("concentration", None),
-                number_conc=result.get("number_concentration", None),
-                background_conc=result.get("background_concentration", None),
-                background_error=result["background_std"] / result["background"],
+                count_error=result.number_error,
+                conc=result.mass_concentration,
+                number_conc=result.number_concentration,
+                background_conc=result.ionic_background,
+                background_error=result.background / result.background_error,
             )
 
     def filterResults(self) -> None:
@@ -627,13 +621,13 @@ class ResultsWidget(QtWidgets.QWidget):
             }
             bool_ops = {"And": np.logical_and, "Or": np.logical_or}
 
-            indicies = self.results[name]["indicies"]
+            indicies = self.results[name].indicies
             if unit == "Intensity":
-                data = self.results[name]["detections"]
-            elif unit == "Mass" and "masses" in self.results[name]:
-                data = self.results[name]["masses"]
-            elif unit == "Size" and "sizes" in self.results[name]:
-                data = self.results[name]["sizes"]
+                data = self.results[name].detections["signal"]
+            elif unit == "Mass" and "mass" in self.results[name].detections:
+                data = self.results[name].detections["mass"]
+            elif unit == "Size" and "size" in self.results[name].detections:
+                data = self.results[name].detections["size"]
             else:
                 continue
 
@@ -642,8 +636,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
         valid_indicies = np.flatnonzero(condition)
         for name in self.results:
-            indicies = self.results[name]["indicies"]
-            self.results[name]["indicies"] = indicies[np.in1d(indicies, valid_indicies)]
+            indicies = self.results[name].indicies
+            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
@@ -663,132 +657,52 @@ class ResultsWidget(QtWidgets.QWidget):
 
             indicies = np.flatnonzero(self.sample.detections[name])
 
-            result = {
-                "background": np.mean(responses[self.sample.labels == 0]),
-                "background_std": np.std(responses[self.sample.labels == 0]),
-                "detections": self.sample.detections[name],
-                "indicies": indicies,
-                "total_detections": self.sample.detections.size,
-                "events": responses.size,
-                "file": self.sample.label_file.text(),
-                "limit_method": f"{self.sample.limits[name][0]},{','.join(f'{k}={v}' for k,v in self.sample.limits[name][1].items())}",
-                "lod": self.sample.limits[name][2]["ld"],
-                "inputs": {"dwelltime": dwelltime},
+            inputs = {
+                "dwelltime": dwelltime,
+                "uptake": uptake,
+                "cell_diameter": self.options.celldiameter.baseValue(),
+                "molar_mass": self.sample.io[name].molarmass.baseValue(),
+                "density": self.sample.io[name].density.baseValue(),
+                "response": self.sample.io[name].response.baseValue(),
+                "time": responses.size * dwelltime,
             }
-            if self.options.check_use_window.isChecked():
-                result["limit_window"] = int(self.options.window_size.text())
 
-            if method in ["Manual Input", "Reference Particle"]:
-                try:
-                    if method == "Manual Input":
-                        efficiency = float(self.options.efficiency.text())
-                    elif method == "Reference Particle":
-                        efficiency = self.reference.getEfficiency(name)
-                    else:
-                        efficiency = None
-                except ValueError:
-                    efficiency = None
-
-                density = self.sample.io[name].density.baseValue()
-                response = self.sample.io[name].response.baseValue()
-                time = result["events"] * dwelltime
-
-                try:
-                    mass_fraction = float(self.sample.io[name].massfraction.text())
-                except ValueError:
-                    mass_fraction = None
-
-                if (
-                    dwelltime is not None
-                    and density is not None
-                    and efficiency is not None
-                    and mass_fraction is not None
-                    and response is not None
-                    and uptake is not None
-                ):
-                    result.update(
-                        results_from_nebulisation_efficiency(
-                            result["detections"],
-                            result["background"],
-                            result["lod"],
-                            density=density,
-                            dwelltime=dwelltime,
-                            efficiency=efficiency,
-                            mass_fraction=mass_fraction,
-                            uptake=uptake,
-                            response=response,
-                            time=time,
-                        )
-                    )
-                    result["inputs"].update(
-                        {
-                            "density": density,
-                            "transport_efficiency": efficiency,
-                            "mass_fraction": mass_fraction,
-                            "uptake": uptake,
-                            "response": response,
-                            "time": time,
-                        }
-                    )
-            elif method == "Mass Response" and name in self.reference.io:
-                try:
-                    mass_fraction = float(self.sample.io[name].massfraction.text())
-                except ValueError:
-                    mass_fraction = None
-
-                density = self.sample.io[name].density.baseValue()
-                mass_response = self.reference.io[name].massresponse.baseValue()
-
-                if (
-                    density is not None
-                    and mass_fraction is not None
-                    and mass_response is not None
-                ):
-                    result.update(
-                        results_from_mass_response(
-                            result["detections"],
-                            result["background"],
-                            result["lod"],
-                            density=density,
-                            mass_fraction=mass_fraction,
-                            mass_response=mass_response,
-                        )
-                    )
-                    result["inputs"].update(
-                        {
-                            "density": density,
-                            "mass_fraction": mass_fraction,
-                            "mass_response": mass_response,
-                        }
-                    )
-            # end if method
-
-            # Cell inputs
-            cell_diameter = self.options.celldiameter.baseValue()
-            molar_mass = self.sample.io[name].molarmass.baseValue()
-
-            if (
-                cell_diameter is not None and "sizes" in result
-            ):  # Scale sizes to hypothesised
-                scale = cell_diameter / np.mean(result["sizes"])
-                result["sizes"] *= scale
-                result["lod_size"] *= scale
-                result["inputs"].update({"cell_diameter": cell_diameter})
-
-            if (
-                cell_diameter is not None and molar_mass is not None
-            ):  # Calculate the intracellular concetrations
-                result["cell_concentrations"] = cell_concentration(
-                    result["masses"],
-                    diameter=cell_diameter,
-                    molar_mass=molar_mass,
+            try:
+                if method == "Manual Input":
+                    inputs["efficiency"] = float(self.options.efficiency.text())
+                elif method == "Reference Particle":
+                    inputs["efficiency"] = self.reference.getEfficiency(name)
+                elif method == "Mass Response":
+                    inputs["mass_response"] = self.reference.io[
+                        name
+                    ].massresponse.baseValue()
+            except ValueError:
+                pass
+            try:
+                inputs["mass_fraction"] = float(
+                    self.sample.io[name].massfraction.text()
                 )
-                result["lod_cell_concentration"] = cell_concentration(
-                    result["lod_mass"],
-                    diameter=cell_diameter,
-                    molar_mass=molar_mass,
-                )
-                result["inputs"].update({"molar_mass": molar_mass})
+            except ValueError:
+                pass
+
+            # Remove invalid
+            inputs = {k: v for k, v in inputs.items() if v is not None}
+
+            result = SPCalResult(
+                self.sample.label_file.text(),
+                responses,
+                self.sample.detections[name],
+                self.sample.labels,
+                inputs,
+            )
+
+            try:
+                if method in ["Manual Input", "Reference Particle"]:
+                    result.fromNebulisationEfficiency()
+                elif method == "Mass Response":
+                    result.fromMassResponse()
+            except ValueError:
+                pass
 
             self.results[name] = result
 
@@ -802,8 +716,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
-        for key, index in zip(["masses", "sizes", "cell_concentrations"], [1, 2, 3]):
-            enabled = any(key in result for result in self.results.values())
+        for key, index in zip(["mass", "size", "cell_concentration"], [1, 2, 3]):
+            enabled = any(key in result.detections for result in self.results.values())
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)
