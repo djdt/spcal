@@ -320,7 +320,7 @@ class InputWidget(QtWidgets.QWidget):
                     self.responses[name][trim[0] : trim[1]],
                     self.detections[name],
                     self.labels,
-                    np.mean(self.limits[name].limit_of_detection)
+                    np.mean(self.limits[name].limit_of_detection),
                     self.limits[name].name,
                     self.limits[name].params,
                 )
