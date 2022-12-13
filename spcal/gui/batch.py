@@ -6,6 +6,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
+from spcal.calc import SPCalLimit, SPCalResult
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.io import export_nanoparticle_results
@@ -19,67 +20,78 @@ logger = logging.getLogger(__name__)
 
 def process_file_detections(
     file: Path,
-    options: dict,
+    import_options: dict,
     trims: Dict[str, Tuple[int, int]],
     limit_method: str,
-    limit_sigma: float,
-    limit_error_rates: Tuple[float, float],
+    limit_params: Dict[str, float],
     limit_manual: float,
-    limit_window: int | None = None,
+    limit_window: int = 0,
 ) -> dict:
     responses = np.genfromtxt(
         file,
-        delimiter=options["delimiter"],
-        usecols=options["columns"],
-        names=options["headers"],
-        skip_header=options["first line"],
+        delimiter=import_options["delimiter"],
+        usecols=import_options["columns"],
+        names=import_options["headers"],
+        skip_header=import_options["first line"],
         converters={0: lambda s: float(s.replace(",", "."))},
         invalid_raise=False,
     )
     if responses.size == 0 or responses.dtype.names is None:
         raise ValueError(f"Unabled to import file '{file.name}'.")
 
-    if options["cps"]:
-        dwell = options["dwelltime"]
+    if import_options["cps"]:
+        dwell = import_options["dwelltime"]
         for name in responses.dtype.names:
             responses[name] *= dwell  # type: ignore
 
-    results = {}
+    results: Dict[str, SPCalResult] = {}
     for name in responses.dtype.names:
-        data = responses[name][trims[name][0] : responses.size - trims[name][1]]
-
+        response = responses[name][trims[name][0] : responses.size - trims[name][1]]  # type: ignore
         if limit_method == "Manual Input":
-            limits = (
-                limit_method,
-                {},
-                np.array(
-                    [(np.mean(data), limit_manual, limit_manual)],
-                    dtype=calculate_limits.dtype,
-                ),
+            limits = SPCalLimit(
+                np.mean(response),
+                limit_manual,
+                limit_manual,
+                name="Manual Input",
+                params={},
+            )
+        elif limit_method == "Automatic":
+            limits = SPCalLimit.fromBest(
+                response,
+                sigma=limit_params["sigma"],
+                alpha=limit_params["alpha"],
+                beta=limit_params["beta"],
+                window_size=limit_window,
+            )
+        elif limit_method == "Highest":
+            limits = SPCalLimit.fromHighest(
+                response,
+                sigma=limit_params["sigma"],
+                alpha=limit_params["alpha"],
+                beta=limit_params["beta"],
+                window_size=limit_window,
+            )
+        elif limit_method.startswith("Guassian"):
+            limits = SPCalLimit.fromGaussian(
+                response,
+                sigma=limit_params["sigma"],
+                window_size=limit_window,
+                use_median="median" in limit_method.lower(),
             )
         else:
-            limits = calculate_limits(
-                data,
-                limit_method,
-                limit_sigma,
-                limit_error_rates,
-                window=limit_window,
+            limits = SPCalLimit.fromPoisson(
+                response,
+                alpha=limit_params["alpha"],
+                beta=limit_params["beta"],
+                window_size=limit_window,
+                use_median="median" in limit_method.lower(),
             )
 
         detections, labels, _ = spcal.accumulate_detections(
-            data, limits[2]["lc"], limits[2]["ld"]
+            response, limits.limit_of_criticality, limits.limit_of_detection
         )
-        results[name] = {
-            "detections": detections,
-            "detections_std": np.sqrt(detections.size),
-            "background": np.mean(data[labels == 0]),
-            "background_std": np.std(data[labels == 0]),
-            "events": data.size,
-            "file": str(file),
-            "limit_method": f"{limits[0]},{','.join(f'{k}={v}' for k,v in limits[1].items())}",
-            "lod": limits[2]["ld"],
-            "inputs": {"dwelltime": options["dwelltime"]},
-        }
+
+        results[name] = SPCalResult(file, responses, detections, labels, limits)
 
     return results
 
@@ -93,15 +105,13 @@ class ProcessThread(QtCore.QThread):
         infiles: List[Path],
         outfiles: List[Path],
         import_options: dict,
-        method: Callable,
-        method_kws: Dict[str, Dict[str, float | None]],
-        cell_kws: Dict[str, Dict[str, float | None]],
+        inputs: Dict[str, Dict[str, float | None]],
+        method: str,
         trims: Dict[str, Tuple[int, int]],
         limit_method: str = "Automatic",
-        limit_sigma: float = 3.0,
-        limit_error_rates: Tuple[float, float] = (0.05, 0.05),
+        limit_params: Dict[str, float] | None = None,
         limit_manual: float = 0.0,
-        limit_window: int | None = None,
+        limit_window: int = 0,
         cps_dwelltime: float | None = None,
         parent: QtCore.QObject | None = None,
     ):
@@ -112,14 +122,14 @@ class ProcessThread(QtCore.QThread):
         self.import_options = import_options
 
         self.method = method
-        self.method_kws = method_kws
-        self.cell_kws = cell_kws
+        self.inputs = {k: v for k, v in inputs.items() if v is not None}
 
         self.trims = trims
 
         self.limit_method = limit_method
-        self.limit_error_rates = limit_error_rates
-        self.limit_sigma = limit_sigma
+        self.limit_params = {"sigma": 3.0, "alpha": 0.05, "beta": 0.05}
+        if limit_params is not None:
+            self.limit_params.update(limit_params)
         self.limit_manual = limit_manual
         self.limit_window = limit_window
         self.cps_dwelltime = cps_dwelltime
@@ -134,8 +144,7 @@ class ProcessThread(QtCore.QThread):
                     self.import_options,
                     self.trims,
                     self.limit_method,
-                    self.limit_sigma,
-                    self.limit_error_rates,
+                    limit_params=self.limit_params,
                     limit_manual=self.limit_manual,
                     limit_window=self.limit_window,
                 )
@@ -145,50 +154,23 @@ class ProcessThread(QtCore.QThread):
                 continue
 
             try:
-                for name in results:
-                    self.method_kws[name]["time"] = (
-                        results[name]["events"] * self.method_kws[name]["dwelltime"]
+                for name, result in results.items():
+                    self.inputs[name]["time"] = (
+                        result.response * self.inputs[name]["dwelltime"]
                     )
-                    if any(x is None for x in self.method_kws[name].values()):
-                        logger.warning(
-                            f"{infile}:{name}, missing inputs for calibrated results."
-                        )
-                    else:
-                        results[name].update(
-                            self.method(
-                                results[name]["detections"],
-                                results[name]["background"],
-                                results[name]["lod"],
-                                **self.method_kws[name],
-                            )
-                        )
-                        results[name]["inputs"] = {
-                            k: v
-                            for k, v in self.method_kws[name].items()
-                            if v is not None
-                        }
 
-                    if self.cell_kws[name]["cell_diameter"] is not None:
-                        if self.cell_kws[name]["molar_mass"] is None:
-                            logger.warning(
-                                f"{infile}:{name}, missing inputs for cell results."
-                            )
-                        else:
-                            results[name][
-                                "cell_concentrations"
-                            ] = spcal.cell_concentration(
-                                results[name]["masses"],
-                                diameter=self.cell_kws[name]["cell_diameter"],
-                                molar_mass=self.cell_kws[name]["molar_mass"],
-                            )
-                            results[name][
-                                "lod_cell_concentration"
-                            ] = spcal.cell_concentration(
-                                results[name]["lod_mass"],
-                                diameter=self.cell_kws[name]["cell_diameter"],
-                                molar_mass=self.cell_kws[name]["molar_mass"],
-                            )
-                            results[name]["inputs"].update(self.cell_kws[name])
+                    # No None inputs
+                    result.inputs.update(
+                        {k: v for k, v in self.inputs[name].items() if v is not None}
+                    )
+
+                    try:
+                        if self.method in ["Manual Input", "Reference Particle"]:
+                            result.fromNebulisationEfficiency()
+                        elif self.method == "Mass Response":
+                            result.fromMassResponse()
+                    except ValueError:
+                        pass
 
             except ValueError as e:
                 logger.exception(e)
@@ -423,34 +405,16 @@ class BatchProcessDialog(QtWidgets.QDialog):
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
 
-        self.completed_files = []
-        self.failed_files = []
+        self.completed_files: List[str] = []
+        self.failed_files: List[str] = []
 
         self.progress.setMaximum(len(infiles))
         self.progress.setValue(1)
 
         method = self.options.efficiency_method.currentText()
 
-        if method in ["Manual Input", "Reference Particle"]:
-            method_fn = results_from_nebulisation_efficiency
-        elif method == "Mass Response":
-            method_fn = results_from_mass_response
-        else:
-            raise ValueError("Unknown method")
-
-        trims = np.array(
-            [self.sample.trimRegion(name) for name in self.sample.detections]
-        )
-        trim_average = np.mean(trims[:, 0]), self.sample.responses.size - np.mean(
-            trims[:, 1]
-        )
-        trim_max = np.amax(trims[:, 0]), self.sample.responses.size - np.amin(
-            trims[:, 1]
-        )
-
         trims = {}
-        method_kws = {}
-        cell_kws = {}
+        inputs: Dict[str, Dict[str, float | None]] = {}
         for name in self.sample.detections:
             # trims converted to left, -right
             if self.combo_trim.currentText() == "None":
@@ -458,69 +422,50 @@ class BatchProcessDialog(QtWidgets.QDialog):
             elif self.combo_trim.currentText() == "As Sample":
                 trim = self.sample.trimRegion(name)
                 trims[name] = trim[0], self.sample.responses.size - trim[1]
-            elif self.combo_trim.currentText() == "Average":
-                trims[name] = trim_average
-            elif self.combo_trim.currentText() == "Maximum":
-                trims[name] = trim_max
 
             if not self.trim_left.isChecked():
                 trims[name] = 0, trims[name][1]
             if not self.trim_right.isChecked():
                 trims[name] = trims[name][0], 0
 
-            if method in ["Manual Input", "Reference Particle"]:
-                try:
-                    if method == "Manual Input":
-                        efficiency = float(self.options.efficiency.text())
-                    elif method == "Reference Particle" and name in self.reference.io:
-                        efficiency = float(self.reference.io[name].efficiency.text())
-                    else:
-                        efficiency = None
-                except ValueError:
-                    efficiency = None
-
-                method_kws[name] = {
-                    "density": self.sample.io[name].density.baseValue(),
-                    "dwelltime": self.options.dwelltime.baseValue(),
-                    "efficiency": efficiency,
-                    "mass_fraction": float(self.sample.io[name].massfraction.text()),
-                    "uptake": self.options.uptake.baseValue(),
-                    "response": self.sample.io[name].response.baseValue(),
-                }
-            elif method == "Mass Response":
-                method_kws = {
-                    "density": self.sample.io[name].density.baseValue(),
-                    "dwelltime": self.options.dwelltime.baseValue(),
-                    "mass_fraction": float(self.sample.io[name].massfraction.text()),
-                    "mass_response": self.reference.massresponse.baseValue(),
-                }
-            else:
-                raise ValueError("Unknown method")
-
-            cell_kws[name] = {
+            inputs[name] = {
+                "dwelltime": self.options.dwelltime.baseValue(),
+                "uptake": self.options.uptake.baseValue(),
                 "cell_diameter": self.options.celldiameter.baseValue(),
                 "molar_mass": self.sample.io[name].molarmass.baseValue(),
+                "density": self.sample.io[name].density.baseValue(),
+                "response": self.sample.io[name].response.baseValue(),
             }
+            try:
+                if method == "Manual Input":
+                    inputs[name]["efficiency"] = float(self.options.efficiency.text())
+                elif method == "Reference Particle":
+                    inputs[name]["efficiency"] = self.reference.getEfficiency(name)
+                elif method == "Mass Response":
+                    inputs[name]["mass_response"] = self.reference.io[
+                        name
+                    ].massresponse.baseValue()
+            except ValueError:
+                pass
 
         self.thread = ProcessThread(
             infiles,
             outfiles,
-            self.sample.import_options,
-            method_fn,
-            method_kws,
-            cell_kws=cell_kws,
+            import_options=self.sample.import_options,
+            inputs=inputs,
+            method=method,
             trims=trims,
             limit_method=self.options.method.currentText(),
-            limit_sigma=float(self.options.sigma.text()),
-            limit_error_rates=(
-                float(self.options.error_rate_alpha.text()),
-                float(self.options.error_rate_beta.text()),
-            ),
+            limit_params={
+                "sigma": float(self.options.sigma.text()),
+                "alpha": float(self.options.error_rate_alpha.text()),
+                "beta": float(self.options.error_rate_beta.text()),
+            },
             limit_manual=float(self.options.manual.text() or 0.0),
             limit_window=(
                 int(self.options.window_size.text())
                 if self.options.window_size.isEnabled()
-                else None
+                else 0
             ),
             parent=self,
         )
