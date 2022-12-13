@@ -649,13 +649,10 @@ class ResultsWidget(QtWidgets.QWidget):
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
 
-        names = list(self.sample.detections.dtype.names)
-
-        for name in names:
-            trim = self.sample.trimRegion(name)
-            responses = self.sample.responses[name][trim[0] : trim[1]]
-
-            indicies = np.flatnonzero(self.sample.detections[name])
+        assert dwelltime is not None
+        assert self.sample.detections.dtype.names is not None
+        for name in self.sample.detections.dtype.names:
+            result = self.sample.asResult(name)
 
             inputs = {
                 "dwelltime": dwelltime,
@@ -664,7 +661,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 "molar_mass": self.sample.io[name].molarmass.baseValue(),
                 "density": self.sample.io[name].density.baseValue(),
                 "response": self.sample.io[name].response.baseValue(),
-                "time": responses.size * dwelltime,
+                "time": result.events * dwelltime,
             }
 
             try:
@@ -685,16 +682,8 @@ class ResultsWidget(QtWidgets.QWidget):
             except ValueError:
                 pass
 
-            # Remove invalid
-            inputs = {k: v for k, v in inputs.items() if v is not None}
-
-            result = SPCalResult(
-                self.sample.label_file.text(),
-                responses,
-                self.sample.detections[name],
-                self.sample.labels,
-                inputs,
-            )
+            # No None inputs
+            result.inputs.update({k: v for k, v in inputs.items() if v is not None})
 
             try:
                 if method in ["Manual Input", "Reference Particle"]:

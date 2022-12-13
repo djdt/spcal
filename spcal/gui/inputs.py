@@ -5,7 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-from spcal.calc import SPCalLimit
+from spcal.calc import SPCalLimit, SPCalResult
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.graphs import color_schemes, symbols
@@ -209,6 +209,16 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots[name]
         return plot.region_start, plot.region_end
 
+    def asResult(self, name: str) -> SPCalResult:
+        trim = self.trimRegion(name)
+        return SPCalResult(
+            self.label_file.text(),
+            self.responses[name][trim[0] : trim[1]],
+            self.detections[name],
+            self.labels,
+            self.limits[name],
+        )
+
     def updateDetections(self) -> None:
         detections = {}
         labels = {}
@@ -302,6 +312,7 @@ class InputWidget(QtWidgets.QWidget):
                 self.limits[name] = SPCalLimit.fromPoisson(
                     response,
                     alpha=alpha,
+                    beta=beta,
                     window_size=window_size,
                     use_median="median" in method.lower(),
                 )
