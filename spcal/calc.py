@@ -1,5 +1,6 @@
 """Misc and helper calculation functions."""
 from bisect import bisect_left, insort
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
@@ -230,13 +231,14 @@ class SPCalLimit(object):
 class SPCalResult(object):
     def __init__(
         self,
-        file: str,
+        file: str | Path,
         responses: np.ndarray,
         detections: np.ndarray,
         labels: np.ndarray,
-        inputs_kws: Dict[str, float],
+        limits: SPCalLimit | None = None,
+        inputs_kws: Dict[str, float] | None = None,
     ):
-        self.file = file
+        self.file = Path(file)
 
         self.responses = responses
         self.detections = {"signal": detections}
@@ -245,7 +247,11 @@ class SPCalResult(object):
         self.background = np.mean(responses[labels == 0])
         self.background_error = np.std(responses[labels == 0])
 
-        self.inputs = inputs_kws
+        self.limits = limits
+
+        self.inputs = {}
+        if inputs_kws is not None:
+            self.inputs.update({k: v for k, v in inputs_kws.items() if v is not None})
 
     @property
     def events(self) -> int:
