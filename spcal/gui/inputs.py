@@ -37,7 +37,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.color_scheme = color_scheme
 
-        self.import_options = {}
+        self.import_options: dict = {}
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -220,27 +220,19 @@ class InputWidget(QtWidgets.QWidget):
         )
 
     def updateDetections(self) -> None:
-        detections = {}
-        labels = {}
-        regions = {}
+        d, l, r = {}, {}, {}
         assert self.responses.dtype.names is not None
         for name in self.responses.dtype.names:
             trim = self.trimRegion(name)
             responses = self.responses[name][trim[0] : trim[1]]
             if responses.size > 0 and name in self.limits:
-                (
-                    detections[name],
-                    labels[name],
-                    regions[name],
-                ) = spcal.accumulate_detections(
+                (d[name], l[name], r[name],) = spcal.accumulate_detections(
                     responses,
                     self.limits[name].limit_of_criticality,
                     self.limits[name].limit_of_detection,
                 )
 
-        self.detections, self.labels, self.regions = combine_detections(
-            detections, labels, regions
-        )
+        self.detections, self.labels, self.regions = combine_detections(d, l, r)
 
         self.detectionsChanged.emit()
 
@@ -285,36 +277,14 @@ class InputWidget(QtWidgets.QWidget):
                 self.limits[name] = SPCalLimit(
                     np.mean(response), limit, limit, name="Manual Input", params={}
                 )
-            elif method == "Automatic":
-                self.limits[name] = SPCalLimit.fromBest(
-                    response,
-                    sigma=sigma,
-                    alpha=alpha,
-                    beta=beta,
-                    window_size=window_size,
-                )
-            elif method == "Highest":
-                self.limits[name] = SPCalLimit.fromHighest(
-                    response,
-                    sigma=sigma,
-                    alpha=alpha,
-                    beta=beta,
-                    window_size=window_size,
-                )
-            elif method.startswith("Guassian"):
-                self.limits[name] = SPCalLimit.fromGaussian(
-                    response,
-                    sigma=sigma,
-                    window_size=window_size,
-                    use_median="median" in method.lower(),
-                )
             else:
-                self.limits[name] = SPCalLimit.fromPoisson(
+                self.limits[name] = SPCalLimit.fromMethodString(
+                    method,
                     response,
+                    sigma=sigma,
                     alpha=alpha,
                     beta=beta,
                     window_size=window_size,
-                    use_median="median" in method.lower(),
                 )
         self.limitsChanged.emit()
 
