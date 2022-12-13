@@ -5,8 +5,8 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal
 from spcal.calc import SPCalLimit, SPCalResult
+from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.io import export_nanoparticle_results
@@ -16,87 +16,10 @@ logger = logging.getLogger(__name__)
 
 # Todo: warn if files have different elements
 
-def process_file_detections(
-    file: Path,
-    import_options: dict,
-    trims: Dict[str, Tuple[int, int]],
-    limit_method: str,
-    limit_params: Dict[str, float],
-    limit_manual: float,
-    limit_window: int = 0,
-) -> dict:
-    responses = np.genfromtxt(
-        file,
-        delimiter=import_options["delimiter"],
-        usecols=import_options["columns"],
-        names=import_options["headers"],
-        skip_header=import_options["first line"],
-        converters={0: lambda s: float(s.replace(",", "."))},
-        invalid_raise=False,
-    )
-    if responses.size == 0 or responses.dtype.names is None:
-        raise ValueError(f"Unabled to import file '{file.name}'.")
-
-    if import_options["cps"]:
-        dwell = import_options["dwelltime"]
-        for name in responses.dtype.names:
-            responses[name] *= dwell  # type: ignore
-
-    results: Dict[str, SPCalResult] = {}
-    for name in responses.dtype.names:
-        response = responses[name][trims[name][0] : responses.size - trims[name][1]]  # type: ignore
-        if limit_method == "Manual Input":
-            limits = SPCalLimit(
-                np.mean(response),
-                limit_manual,
-                limit_manual,
-                name="Manual Input",
-                params={},
-            )
-        elif limit_method == "Automatic":
-            limits = SPCalLimit.fromBest(
-                response,
-                sigma=limit_params["sigma"],
-                alpha=limit_params["alpha"],
-                beta=limit_params["beta"],
-                window_size=limit_window,
-            )
-        elif limit_method == "Highest":
-            limits = SPCalLimit.fromHighest(
-                response,
-                sigma=limit_params["sigma"],
-                alpha=limit_params["alpha"],
-                beta=limit_params["beta"],
-                window_size=limit_window,
-            )
-        elif limit_method.startswith("Guassian"):
-            limits = SPCalLimit.fromGaussian(
-                response,
-                sigma=limit_params["sigma"],
-                window_size=limit_window,
-                use_median="median" in limit_method.lower(),
-            )
-        else:
-            limits = SPCalLimit.fromPoisson(
-                response,
-                alpha=limit_params["alpha"],
-                beta=limit_params["beta"],
-                window_size=limit_window,
-                use_median="median" in limit_method.lower(),
-            )
-
-        detections, labels, _ = spcal.accumulate_detections(
-            response, limits.limit_of_criticality, limits.limit_of_detection
-        )
-
-        results[name] = SPCalResult(file, responses, detections, labels, limits)
-
-    return results
-
 
 class ProcessThread(QtCore.QThread):
     processComplete = QtCore.Signal(str)
-    processFailed = QtCore.Signal(str)
+    processFailed = QtCore.Signal(str, str, Exception)
 
     def __init__(
         self,
@@ -105,12 +28,11 @@ class ProcessThread(QtCore.QThread):
         import_options: dict,
         inputs: Dict[str, Dict[str, float | None]],
         method: str,
-        trims: Dict[str, Tuple[int, int]],
+        trim: Tuple[int, int],
         limit_method: str = "Automatic",
         limit_params: Dict[str, float] | None = None,
         limit_manual: float = 0.0,
         limit_window: int = 0,
-        cps_dwelltime: float | None = None,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -122,39 +44,83 @@ class ProcessThread(QtCore.QThread):
         self.method = method
         self.inputs = {k: v for k, v in inputs.items() if v is not None}
 
-        self.trims = trims
+        self.trim = trim
 
         self.limit_method = limit_method
         self.limit_params = {"sigma": 3.0, "alpha": 0.05, "beta": 0.05}
         if limit_params is not None:
             self.limit_params.update(limit_params)
         self.limit_manual = limit_manual
-        self.limit_window = limit_window
-        self.cps_dwelltime = cps_dwelltime
+        self.limit_window_size = limit_window
 
     def run(self) -> None:
         for infile, outfile in zip(self.infiles, self.outfiles):
             if self.isInterruptionRequested():
                 break
+
+            # === Import data ===
             try:
-                results = process_file_detections(
+                responses = np.genfromtxt(
                     infile,
-                    self.import_options,
-                    self.trims,
-                    self.limit_method,
-                    limit_params=self.limit_params,
-                    limit_manual=self.limit_manual,
-                    limit_window=self.limit_window,
+                    delimiter=self.import_options["delimiter"],
+                    usecols=self.import_options["columns"],
+                    names=self.import_options["headers"],
+                    skip_header=self.import_options["first line"],
+                    converters={0: lambda s: float(s.replace(",", "."))},
+                    invalid_raise=False,
                 )
-            except ValueError as e:
-                logger.exception(e)
-                self.processFailed.emit(infile.name)
+                responses = responses[self.trim[0] : responses.size - self.trim[1]]
+                if responses.size == 0 or responses.dtype.names is None:
+                    raise ValueError("responses size zero")
+            except Exception as e:
+                self.processFailed.emit(infile.name, "unable to read from file", e)
                 continue
+
+            if self.import_options["cps"]:
+                for name in responses.dtype.names:
+                    responses[name] *= self.import_options["dwelltime"]  # type: ignore
+
+            # === Calculate Limits ===
+            limits: Dict[str, SPCalLimit] = {}
+            d, l, r = {}, {}, {}
+            for name in responses.dtype.names:
+                if self.limit_method == "Manual Input":
+                    limits[name] = SPCalLimit(
+                        np.mean(responses[name]),
+                        self.limit_manual,
+                        self.limit_manual,
+                        name="Manual Input",
+                        params={},
+                    )
+                else:
+                    limits[name] = SPCalLimit.fromMethodString(
+                        self.limit_method,
+                        responses[name],
+                        sigma=self.limit_params["sigma"],
+                        alpha=self.limit_params["alpha"],
+                        beta=self.limit_params["beta"],
+                        window_size=self.limit_window_size,
+                    )
+
+                # === Create detections ===
+                d[name], l[name], r[name] = accumulate_detections(
+                    responses[name],
+                    limits[name].limit_of_criticality,
+                    limits[name].limit_of_detection,
+                )
+
+            detections, labels, regions = combine_detections(d, l, r)
+
+            results = {
+                name: SPCalResult(
+                    infile, responses[name], detections[name], labels, limits[name]
+                )
+            }
 
             try:
                 for name, result in results.items():
                     self.inputs[name]["time"] = (
-                        result.response * self.inputs[name]["dwelltime"]
+                        result.events * self.import_options["dwelltime"]
                     )
 
                     # No None inputs
@@ -170,16 +136,15 @@ class ProcessThread(QtCore.QThread):
                     except ValueError:
                         pass
 
-            except ValueError as e:
-                logger.exception(e)
-                self.processFailed.emit(infile.name)
+            except Exception as e:
+                self.processFailed.emit(infile.name, "calculation of results failed", e)
                 continue
 
             try:
-                export_nanoparticle_results(outfile, results)
-            except ValueError as e:
-                logger.exception(e)
-                self.processFailed.emit(infile.name)
+                # export_nanoparticle_results(outfile, results)
+                pass
+            except Exception as e:
+                self.processFailed.emit(infile.name, "export failed", e)
                 continue
 
             self.processComplete.emit(infile.name)
@@ -216,22 +181,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_process.setEnabled(len(files) > 0)
         self.button_process.pressed.connect(self.buttonProcess)
 
-        self.combo_trim = QtWidgets.QComboBox()
-        self.combo_trim.addItems(["None", "As Sample", "Average", "Maximum"])
-        self.combo_trim.setCurrentText("As Sample")
-        for i, tooltip in enumerate(
-            [
-                "Ignore sample trim and do not trim any data.",
-                "Use per element trim from currently loaded sample",
-                "Use average of all sample element trims.",
-                "Use maximum of all sample element trims.",
-            ]
-        ):
-            self.combo_trim.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
-
-        self.trim_left = QtWidgets.QCheckBox("Use sample left trims.")
+        self.trim_left = QtWidgets.QCheckBox("Use sample left trim.")
         self.trim_left.setChecked(True)
-        self.trim_right = QtWidgets.QCheckBox("Use sample right trims.")
+        self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
         self.trim_right.setChecked(True)
 
         self.progress = QtWidgets.QProgressBar()
@@ -260,7 +212,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow("Output Name:", self.output_name)
         self.inputs.layout().addRow("Output Directory:", self.output_dir)
         self.inputs.layout().addWidget(self.button_output)
-        self.inputs.layout().addRow("Trim:", self.combo_trim)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
 
@@ -395,8 +346,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.completed_files.append(file)
         self.advanceProgress()
 
-    def processFailed(self, file: str) -> None:
-        self.failed_files.append(file)
+    def processFailed(self, file: str, msg: str, exception: Exception) -> None:
+        self.failed_files.append((file, msg))
+        logger.exception(exception)
         self.advanceProgress()
 
     def startProcess(self) -> None:
@@ -404,28 +356,25 @@ class BatchProcessDialog(QtWidgets.QDialog):
         outfiles = self.outputsForFiles(infiles)
 
         self.completed_files: List[str] = []
-        self.failed_files: List[str] = []
+        self.failed_files: List[Tuple[str, str]] = []
 
         self.progress.setMaximum(len(infiles))
         self.progress.setValue(1)
 
         method = self.options.efficiency_method.currentText()
 
-        trims = {}
         inputs: Dict[str, Dict[str, float | None]] = {}
-        for name in self.sample.detections:
-            # trims converted to left, -right
-            if self.combo_trim.currentText() == "None":
-                trims[name] = 0, 0
-            elif self.combo_trim.currentText() == "As Sample":
-                trim = self.sample.trimRegion(name)
-                trims[name] = trim[0], self.sample.responses.size - trim[1]
 
-            if not self.trim_left.isChecked():
-                trims[name] = 0, trims[name][1]
-            if not self.trim_right.isChecked():
-                trims[name] = trims[name][0], 0
+        assert self.sample.responses.dtype.names is not None
+        trim = self.sample.trimRegion(self.sample.responses.dtype.names[0])
+        # trims converted to left, -right
+        trim = trim[0], self.sample.responses.size - trim[1]
+        if not self.trim_left.isChecked():
+            trim = 0, trim[1]
+        if not self.trim_right.isChecked():
+            trim = trim[0], 0
 
+        for name in self.sample.responses.dtype.names:
             inputs[name] = {
                 "dwelltime": self.options.dwelltime.baseValue(),
                 "uptake": self.options.uptake.baseValue(),
@@ -452,7 +401,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             import_options=self.sample.import_options,
             inputs=inputs,
             method=method,
-            trims=trims,
+            trim=trim,
             limit_method=self.options.method.currentText(),
             limit_params={
                 "sigma": float(self.options.sigma.text()),
@@ -485,6 +434,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 f"Failed to process {len(self.failed_files)} files!",
                 parent=self,
             )
-            newline = "\n"
-            msg.setDetailedText(f"\n{newline.join(f for f in self.failed_files)}")
+            text = "\n".join(f"{f} :: {m}" for f, m in self.failed_files)
+            msg.setDetailedText("\n" + text)
             msg.exec_()
