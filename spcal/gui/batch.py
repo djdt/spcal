@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 # Todo: warn if files have different elements
-# Todo: update fro SPCalLimits / Results
-
 
 def process_file_detections(
     file: Path,
