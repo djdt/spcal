@@ -104,6 +104,51 @@ class SPCalLimit(object):
         self.window_size = window_size
 
     @classmethod
+    def fromMethodString(
+        cls,
+        method: str,
+        responses: np.ndarray,
+        sigma: float = 3.0,
+        alpha: float = 0.05,
+        beta: float = 0.05,
+        window_size: int = 0,
+    ) -> "SPCalLimit":
+        method = method.lower()
+        if method in ["automatic", "best"]:
+            return SPCalLimit.fromBest(
+                responses,
+                sigma=sigma,
+                alpha=alpha,
+                beta=beta,
+                window_size=window_size,
+            )
+        elif method == "highest":
+            return SPCalLimit.fromHighest(
+                responses,
+                sigma=sigma,
+                alpha=alpha,
+                beta=beta,
+                window_size=window_size,
+            )
+        elif method.startswith("gaussian"):
+            return SPCalLimit.fromGaussian(
+                responses,
+                sigma=sigma,
+                window_size=window_size,
+                use_median="median" in method,
+            )
+        elif method.startswith("poisson"):
+            return SPCalLimit.fromPoisson(
+                responses,
+                alpha=alpha,
+                beta=beta,
+                window_size=window_size,
+                use_median="median" in method,
+            )
+        else:
+            raise ValueError("fromMethodString: unknown method")
+
+    @classmethod
     def fromGaussian(
         cls,
         responses: np.ndarray,
@@ -134,7 +179,7 @@ class SPCalLimit(object):
             mean,
             ld,
             ld,
-            name="Gaussian" + " Median" if use_median else "",
+            name="Gaussian" + (" Median" if use_median else ""),
             params={"sigma": sigma},
             window_size=window_size,
         )
@@ -170,7 +215,7 @@ class SPCalLimit(object):
             mean,
             mean + sc,
             mean + sd,
-            name="Poisson" + " Median" if use_median else "",
+            name="Poisson" + (" Median" if use_median else ""),
             params={"alpha": alpha, "beta": beta},
             window_size=window_size,
         )
@@ -187,6 +232,7 @@ class SPCalLimit(object):
     ) -> "SPCalLimit":
         mean = np.median(responses) if use_median else np.mean(responses)
 
+        # Todo check for normality
         if mean > 50.0:
             return SPCalLimit.fromGaussian(
                 responses, sigma=sigma, window_size=window_size, use_median=use_median
@@ -222,7 +268,7 @@ class SPCalLimit(object):
             window_size=window_size,
             use_median=use_median,
         )
-        if np.mean(gaussian.mean_background) > np.mean(poisson.mean_background):
+        if np.mean(gaussian.limit_of_detection) > np.mean(poisson.limit_of_detection):
             return gaussian
         else:
             return poisson
