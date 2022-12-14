@@ -5,7 +5,8 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-from spcal.calc import SPCalLimit, SPCalResult
+from spcal.limit import SPCalLimit
+from spcal.result import SPCalResult
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs import ImportDialog
 from spcal.gui.graphs import color_schemes, symbols

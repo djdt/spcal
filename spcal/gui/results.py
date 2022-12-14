@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import SPCalResult
+from spcal.result import SPCalResult
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import (
