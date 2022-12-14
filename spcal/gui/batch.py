@@ -8,7 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
-from spcal.io import export_nanoparticle_results, import_single_particle_file
+from spcal.io import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -149,7 +149,7 @@ class ProcessThread(QtCore.QThread):
 
             # === Export to file ===
             try:
-                export_nanoparticle_results(outfile, results)
+                export_single_particle_results(outfile, results)
             except Exception as e:
                 self.processFailed.emit(infile.name, "export failed", e)
                 continue

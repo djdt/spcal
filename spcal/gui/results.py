@@ -26,7 +26,7 @@ from spcal.gui.units import (
     size_units,
 )
 from spcal.gui.util import create_action
-from spcal.io import export_nanoparticle_results
+from spcal.io import export_single_particle_results
 from spcal.particle import cell_concentration
 
 logger = logging.getLogger(__name__)
@@ -310,9 +310,9 @@ class ResultsWidget(QtWidgets.QWidget):
             self, "Export", "", "CSV Documents (*.csv)"
         )
         if file != "":
-            export_nanoparticle_results(Path(file), self.results)
+            export_single_particle_results(Path(file), self.results)
 
-    # def dialogExportImage(self) -> None:
+    # def dialogexport_single_particle_results(self) -> None:
     #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
     #         self, "Export Image", "", "PNG Images (*.png)"
     #     )

@@ -1,10 +1,11 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, TextIO, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Set, TextIO, Tuple
 
 import numpy as np
 
 from spcal import __version__
+from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 
@@ -53,227 +54,241 @@ def import_single_particle_file(
     return data, names
 
 
-def export_nanoparticle_results(path: Path, results: dict) -> None:
-    """Writes data from a results dict.
+def export_single_particle_results(
+    path: Path | str, results: Dict[str, SPCalResult]
+) -> None:
+    """Export results for elements to a file."""
 
-    Structure is Dict[<name>, Dict[<key>, <value>]]
-    Valid keys are:
-        'file': original file path
-        'events': the number of aquisition events
-        'inputs': dictionary of inputs in SI units
-        'detections': array of NP detections
-        'detections_std': stddev of detection count
-        'limit_method': method used to calculate LOD and epsilon/sigma, (str, float)
-        'limit_window': window size used for thresholding
-        'background': mean background (counts)
-        'background_size': background equivilent diameter (m)
-        'background_concentration': iconic background (kg/L)
-        'background_std': stddev of background (counts)
-        'lod': value or array of limits of detection (counts)
-        'lod_mass': lod in (kg)
-        'lod_size': lod in (m)
-        'lod_cell_concentration': lod in (mol/L)
-        'number_concentration': NP concentration (#/L)
-        'concentration': NP concentration (kg/L)
-        'masses': NP mass array (kg)
-        'sizes': NP size array (m)
-        'cell_concentrations': intracellular concentrations (mol/L)
-    """
-
-    def get_key_or_default(results: dict, name: str, key: str, default: Any) -> Any:
-        return (
-            results[name][key] if name in results and key in results[name] else default
-        )
-
-    def write_if_key_exists(
-        fp: TextIO, results: dict, key: str, prefix: str, postfix: str = ""
+    def write_if_exists(
+        fp: TextIO,
+        results: Dict[str, SPCalResult],
+        fn: Callable[[SPCalResult], Any],
+        prefix: str = "",
+        postfix: str = "",
+        delimiter: str = ",",
+        format: str = "{:.8g}",
     ) -> None:
-        if any(key in results[name] for name in results):
-            line = ",".join(
-                str(get_key_or_default(results, name, key, ""))
-                for name in results.keys()
-            )
-            fp.write(f"{prefix}{line}{postfix}\n")
+        values = [fn(result) for result in results.values()]
+        if all(x is None for x in values):
+            return
+        text = delimiter.join(format.format(v) if v is not None else "" for v in values)
+        fp.write(prefix + text + postfix + "\n")
 
-    input_units = {
-        "cell_diameter": "m",
-        "density": "kg/m3",
-        "dwelltime": "s",
-        "molar_mass": "kg/mol",
-        "reponse": "counts/(kg/L)",
-        "time": "s",
-        "uptake": "L/s",
-    }
-
-    names = list(results.keys())
-    with path.open("w", encoding="utf-8") as fp:
+    def write_header(fp: TextIO, first_result: SPCalResult) -> None:
         fp.write(f"# SPCal Export {__version__}\n")
-        fp.write(f"# File,'{results[names[0]]['file']}'\n")
-        fp.write(f"# Acquisition events,{results[names[0]]['events']}\n")
+        fp.write(f"# File,'{first_result.file}'\n")
+        fp.write(f"# Acquisition events,{first_result.events}\n")
+        fp.write("#\n")
 
-        # === Options and inputs ===
-        fp.write(f"#\n# Options and inputs\n")
-        fp.write(f"#,{','.join(names)}\n")
-        inputs = set()
-        for name in names:
-            inputs.update(results[name]["inputs"].keys())
-        inputs = sorted(list(inputs))
-        for input in inputs:
-            values = [str(results[name]["inputs"].get(input, "")) for name in names]
+    def write_inputs(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+        input_units = {
+            "cell_diameter": "m",
+            "density": "kg/m3",
+            "dwelltime": "s",
+            "molar_mass": "kg/mol",
+            "reponse": "counts/(kg/L)",
+            "time": "s",
+            "uptake": "L/s",
+        }
+
+        # first_result = next(iter(results.values()))
+
+        # Todo: split into insutrment, sample, reference inputs?
+        fp.write(f"# Options and inputs,{','.join(results.keys())}\n")
+        # fp.write(f"# Dwelltime,{first_result.inputs['dwelltime']},s")
+        # fp.write(f"# Uptake,{first_result.inputs['dwelltime']},s")
+
+        input_set: Set[str] = set()  # All inputs across all elements
+        for result in results.values():
+            input_set.update(result.inputs.keys())
+
+        for input in sorted(list(input_set)):
+            values = [str(result.inputs.get(input, "")) for result in results.values()]
             fp.write(
-                f"# {str(input).replace('_', ' ').capitalize()},{','.join(values)},{input_units.get(input, '')}\n"
+                f"# {input.replace('_', ' ').capitalize()},"
+                f"{','.join(values)},{input_units.get(input, '')}\n"
             )
+        fp.write("#\n")
 
-        # === Limit method and params ===
-        fp.write(
-            f"# Limit method,{','.join(results[name]['limit_method'].replace(',', ';') for name in names)}\n"
+        def limit_name_and_params(r: SPCalResult):
+            params = ";".join(f"{k}={v:.4g}" for k, v in r.limits.params.items())
+            if r.limits.window_size != 0:
+                if len(params) > 0:
+                    params += ";"
+                params += f"window={r.limits.window_size}"
+            if len(params) == 0:
+                return r.limits.name
+            return r.limits.name + " (" + params + ")"
+
+        write_if_exists(
+            fp, results, limit_name_and_params, "# Limit method,", format="{}"
         )
-        write_if_key_exists(fp, results, "limit_window", "# Limit window,")
 
-        # === Detection counts ===
-        fp.write("#\n# Detection results\n")
-        fp.write(f"#,{','.join(names)}\n")
+        fp.write("#\n")
 
-        counts = [results[name]["indicies"].size for name in names]
-        fp.write(f"# Detected particles,{','.join(str(c) for c in counts)}\n")
-        fp.write(f"# Detection stdev,{','.join(str(np.sqrt(c)) for c in counts)}\n")
-        write_if_key_exists(
+    def write_detection_results(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+        fp.write(f"# Detection results,{','.join(results.keys())}\n")
+
+        write_if_exists(fp, results, lambda r: r.number, "# Particle number,")
+        write_if_exists(fp, results, lambda r: r.number_error, "# Number error,")
+        write_if_exists(
             fp,
             results,
-            "number_concentration",
-            prefix="# Number concentration,",
+            lambda r: r.number_concentration,
+            "# Number concentration,",
             postfix=",#/L",
         )
-        write_if_key_exists(
-            fp, results, "concentration", prefix="# Concentration,", postfix=",kg/L"
-        )
-
-        # === Background ===
-        write_if_key_exists(
-            fp, results, "background", prefix="# Background,", postfix=",counts"
-        )
-        write_if_key_exists(fp, results, "background_size", prefix="#,", postfix=",m")
-        write_if_key_exists(
+        write_if_exists(
             fp,
             results,
-            "background_std",
-            prefix="# Background stddev,",
-            postfix=",counts",
-        )
-        write_if_key_exists(
-            fp,
-            results,
-            "background_concentration",
-            prefix="# Ionic background,",
+            lambda r: r.mass_concentration,
+            "# Mass concentration,",
             postfix=",kg/L",
         )
+        fp.write("#\n")
 
-        # === LODs ===
-        def limit_or_range(x: np.ndarray) -> str:
-            if np.all(x == 0.0):
-                return ""
-            return f"{x.min()} - {x.max()}" if x.size > 1 else str(x[0])
-
-        lods = [results[name]["lod"] for name in names]
-        lods_mass = [
-            get_key_or_default(results, name, "lod_mass", np.array([0.0]))
-            for name in names
-        ]
-        lods_size = [
-            get_key_or_default(results, name, "lod_size", np.array([0.0]))
-            for name in names
-        ]
-        lods_conc = [
-            get_key_or_default(results, name, "lod_cell_concentration", np.array([0.0]))
-            for name in names
-        ]
-
-        fp.write(
-            f"# Limits of detection,{','.join(limit_or_range(x) for x in lods)},counts\n"
+        # === Background ===
+        write_if_exists(
+            fp, results, lambda r: r.background, "# Background,", postfix=",counts"
         )
-        if any(np.any(x > 0.0) for x in lods_mass):
-            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_mass)},kg\n")
-        if any(np.any(x > 0.0) for x in lods_size):
-            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_size)},m\n")
-        if any(np.any(x > 0.0) for x in lods_conc):
-            fp.write(f"#,{','.join(limit_or_range(x) for x in lods_conc)},mol/L\n")
+        # write_if_exists(
+        #     fp, results, lambda r: r.asMass(r.background), "#,", postfix=",kg"
+        # )
+        write_if_exists(
+            fp, results, lambda r: r.asSize(r.background), "#,", postfix=",m"
+        )
+        write_if_exists(
+            fp,
+            results,
+            lambda r: r.background_error,
+            "# Background error,",
+            postfix=",counts",
+        )
+        write_if_exists(
+            fp,
+            results,
+            lambda r: r.ionic_background,
+            "# Ionic background,",
+            postfix=",kg/L",
+        )
+        fp.write("#\n")
 
-        detections = [results[n]["detections"][results[n]["indicies"]] for n in names]
-        masses = [
-            results[n]["masses"][results[n]["indicies"]]
-            if "masses" in results[n]
-            else 0.0
-            for n in names
-        ]
-        sizes = [
-            results[n]["sizes"][results[n]["indicies"]]
-            if "sizes" in results[n]
-            else 0.0
-            for n in names
-        ]
-        concs = [
-            results[n]["cell_concentrations"][results[n]["indicies"]]
-            if "cell_concentrations" in results[n]
-            else 0.0
-            for n in names
-        ]
-        # === Mean values ===
-        means = np.mean(detections, axis=0)
-        mass_means = np.mean(masses, axis=0)
-        size_means = np.mean(sizes, axis=0)
-        conc_means = np.mean(concs, axis=0)
+        fp.write(f"# Mean,{','.join(results.keys())}\n")
 
-        fp.write(f"# Mean,{','.join(str(x or '') for x in means)},counts\n")
-        if np.any(mass_means > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in mass_means)},kg\n")
-        if np.any(size_means > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in size_means)},m\n")
-        if np.any(conc_means > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in conc_means)},mol/L\n")
+        def ufunc_or_none(r: SPCalResult, ufunc, key: str) -> float | None:
+            if key not in r.detections:
+                return None
+            return ufunc(r.detections[key][r.indicies])
 
-        # === Median values ===
-        medians = np.median(detections, axis=0)
-        mass_medians = np.median(masses, axis=0)
-        size_medians = np.median(sizes, axis=0)
-        conc_medians = np.median(concs, axis=0)
+        for key, unit in zip(
+            ["signal", "mass", "size", "cell_concentration"],
+            ["counts", "kg", "m", "mol/L"],
+        ):
+            write_if_exists(
+                fp,
+                results,
+                lambda r: (ufunc_or_none(r, np.mean, key)),
+                "#,",
+                postfix="," + unit,
+            )
+        fp.write(f"# Median,{','.join(results.keys())}\n")
+        for key, unit in zip(
+            ["signal", "mass", "size", "cell_concentration"],
+            ["counts", "kg", "m", "mol/L"],
+        ):
+            write_if_exists(
+                fp,
+                results,
+                lambda r: (ufunc_or_none(r, np.median, key)),
+                "#,",
+                postfix="," + unit,
+            )
 
-        fp.write(f"# Median,{','.join(str(x) for x in medians)},counts\n")
-        if np.any(mass_medians > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in mass_medians)},kg\n")
-        if np.any(size_medians > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in size_medians)},m\n")
-        if np.any(conc_medians > 0.0):
-            fp.write(f"#,{','.join(str(x or '') for x in conc_medians)},mol/L\n")
+    def write_limits(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+        fp.write(f"# Limits of detection,{','.join(results.keys())}\n")
 
-        if len(results) > 1:
-            # Todo
-            fp.write("#\n# Major Peak Compositions\n")
+        def limit_or_range(
+            x: np.ndarray | float | None, format: str = "{:.8g}"
+        ) -> str | None:
+            if x is None:
+                return None
+            elif isinstance(x, float):
+                return format.format(x)
+            return format.format(x.min()) + " - " + format.format(x.max())
 
-        fp.write("#\n# Raw detection data\n")
+        write_if_exists(
+            fp,
+            results,
+            lambda r: limit_or_range(r.limits.limit_of_detection),
+            "#,",
+            postfix=",counts",
+            format="{}",
+        )
+        write_if_exists(
+            fp,
+            results,
+            lambda r: limit_or_range(r.asMass(r.limits.limit_of_detection)),
+            "#,",
+            postfix=",kg",
+            format="{}",
+        )
+        write_if_exists(
+            fp,
+            results,
+            lambda r: limit_or_range(r.asSize(r.limits.limit_of_detection)),
+            "#,",
+            postfix=",m",
+            format="{}",
+        )
+        write_if_exists(
+            fp,
+            results,
+            lambda r: limit_or_range(
+                r.asCellConcentration(r.limits.limit_of_detection)
+            ),
+            "#,",
+            postfix=",mol/L",
+            format="{}",
+        )
+        fp.write("#\n")
+
+    def write_arrays(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+        fp.write("# Raw detection data\n")
         # Output data
         data = []
         header_name = ""
         header_unit = ""
 
-        for name in names:
+        for name, result in results.items():
             header_name += f",{name}"
             header_unit += ",counts"
-            data.append(results[name]["detections"])
+            data.append(result.detections["signal"])
             for key, unit in [
-                ("masses", "kg"),
-                ("sizes", "m"),
-                ("cell_concentrations", "mol/L"),
+                ("mass", "kg"),
+                ("size", "m"),
+                ("cell_concentration", "mol/L"),
             ]:
-                if key in results[name]:
+                if key in result.detections:
                     header_name += f",{name}"
                     header_unit += f",{unit}"
-                    data.append(results[name][key])
+                    data.append(result.detections[key])
 
         data = np.stack(data, axis=1)
 
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
-            fp.write(",".join("" if x == 0.0 else str(x) for x in line) + "\n")
+            fp.write(
+                ",".join("" if x == 0.0 else "{:.8g}".format(x) for x in line) + "\n"
+            )
+        fp.write("#\n")
 
-        logger.info(f"Exported results for to {path.name}.")
+    path = Path(path)
+
+    with path.open("w", encoding="utf-8") as fp:
+        write_header(fp, next(iter(results.values())))
+        write_inputs(fp, results)
+        write_detection_results(fp, results)
+        write_limits(fp, results)
+        write_arrays(fp, results)
+        fp.write("# End of export")
