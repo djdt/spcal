@@ -5,11 +5,12 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import SPCalLimit, SPCalResult
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
-from spcal.io import export_nanoparticle_results
+from spcal.io import export_nanoparticle_results, import_single_particle_file
+from spcal.limit import SPCalLimit
+from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 
@@ -60,33 +61,38 @@ class ProcessThread(QtCore.QThread):
 
             # === Import data ===
             try:
-                responses = np.genfromtxt(
+                data, old_names = import_single_particle_file(
                     infile,
                     delimiter=self.import_options["delimiter"],
-                    usecols=self.import_options["columns"],
-                    names=self.import_options["headers"],
-                    skip_header=self.import_options["first line"],
-                    converters={0: lambda s: float(s.replace(",", "."))},
-                    invalid_raise=False,
+                    columns=self.import_options["columns"],
+                    first_line=self.import_options["first line"],
+                    new_names=self.import_options["names"],
+                    convert_cps=self.import_options["dwelltime"]
+                    if self.import_options["cps"]
+                    else None,
                 )
-                responses = responses[self.trim[0] : responses.size - self.trim[1]]
-                if responses.size == 0 or responses.dtype.names is None:
-                    raise ValueError("responses size zero")
+                if (
+                    old_names != self.import_options["old names"]
+                    or data.dtype.names is None
+                ):
+                    raise ValueError("different elements from sample")
+
+                data = data[self.trim[0] : data.size - self.trim[1]]
+                if data.size == 0:
+                    raise ValueError("data size zero")
+
             except Exception as e:
                 self.processFailed.emit(infile.name, "unable to read from file", e)
                 continue
 
-            if self.import_options["cps"]:
-                for name in responses.dtype.names:
-                    responses[name] *= self.import_options["dwelltime"]  # type: ignore
-
             # === Calculate Limits ===
             limits: Dict[str, SPCalLimit] = {}
             d, l, r = {}, {}, {}
-            for name in responses.dtype.names:
+            assert data.dtype.names is not None
+            for name in data.dtype.names:
                 if self.limit_method == "Manual Input":
                     limits[name] = SPCalLimit(
-                        np.mean(responses[name]),
+                        np.mean(data[name]),
                         self.limit_manual,
                         self.limit_manual,
                         name="Manual Input",
@@ -95,7 +101,7 @@ class ProcessThread(QtCore.QThread):
                 else:
                     limits[name] = SPCalLimit.fromMethodString(
                         self.limit_method,
-                        responses[name],
+                        data[name],
                         sigma=self.limit_params["sigma"],
                         alpha=self.limit_params["alpha"],
                         beta=self.limit_params["beta"],
@@ -104,7 +110,7 @@ class ProcessThread(QtCore.QThread):
 
                 # === Create detections ===
                 d[name], l[name], r[name] = accumulate_detections(
-                    responses[name],
+                    data[name],
                     limits[name].limit_of_criticality,
                     limits[name].limit_of_detection,
                 )
@@ -113,10 +119,11 @@ class ProcessThread(QtCore.QThread):
 
             results = {
                 name: SPCalResult(
-                    infile, responses[name], detections[name], labels, limits[name]
+                    infile, data[name], detections[name], labels, limits[name]
                 )
             }
 
+            # === Calculate results ===
             try:
                 for name, result in results.items():
                     self.inputs[name]["time"] = (
@@ -140,9 +147,9 @@ class ProcessThread(QtCore.QThread):
                 self.processFailed.emit(infile.name, "calculation of results failed", e)
                 continue
 
+            # === Export to file ===
             try:
-                # export_nanoparticle_results(outfile, results)
-                pass
+                export_nanoparticle_results(outfile, results)
             except Exception as e:
                 self.processFailed.emit(infile.name, "export failed", e)
                 continue
@@ -229,7 +236,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 f"{c} :: {n}"
                 for c, n in zip(
                     self.sample.import_options["columns"],
-                    self.sample.import_options["headers"],
+                    self.sample.import_options["names"],
                 )
             )
         )

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, TextIO, Tuple
+from typing import Any, Dict, List, TextIO, Tuple
 
 import numpy as np
 
@@ -9,73 +9,48 @@ from spcal import __version__
 logger = logging.getLogger(__name__)
 
 
-def read_nanoparticle_file(path: Path | str) -> Tuple[np.ndarray, Dict]:
-    """Imports data and parameters from a NP export.
-
-    Data is expected to be a text or csv in a single column of responses, or twos columns:
-    1) aquisition times, 2) responses. If two columns are found then the parameter 'dwelltime'
-    will be set as the mean difference of the first coulmn. If 'cps' is read in the file header
-    then the parameter 'cps' will be set to True.
-
-    Tested with Agilent and thermo exports.
+def import_single_particle_file(
+    path: Path | str,
+    delimiter: str = ",",
+    columns: Tuple[int] | None = None,
+    first_line: int = 1,
+    new_names: Tuple[str] | None = None,
+    convert_cps: float | None = None,
+) -> Tuple[np.ndarray, List[str]]:
+    """Imports data stored as text with elements in columns.
 
     Args:
-        path: path to the file
-        delimiter: text delimiter, default to comma
+        path: path to file
+        delimiter: delimiting character between columns
+        columns: which columns to import, deafults to all
+        first_line: the first data (not header) line
+        new_names: rename columns
+        convert_cps: the dwelltime (in s) if data is stored as counts per second, else None
 
     Returns:
-        signal
-        dict of any parameters
+        data, structred array
+        old_names, the original names used in text file
     """
-
-    def delimited_translated_columns(path: Path, columns: int = 3):
-        """Translates inputs with ';' to have ',' as delimiter and '.' as decimal.
-        Ensures at least `columns` columns in data by prepending ','."""
-        map = str.maketrans({";": ",", ",": "."})
-        with path.open("r") as fp:
-            for line in fp:
-                if ";" in line:
-                    line = line.translate(map)
-                count = line.count(",")
-                if count < columns:
-                    yield "," * (columns - count - 1) + line
-                else:
-                    yield line
-
-    def read_header_params(path: Path, size: int = 1024) -> Dict:
-        with path.open("r") as fp:
-            header = fp.read(size)
-
-        parameters = {"cps": "cps" in header.lower()}
-        return parameters
-
-    if isinstance(path, str):
-        path = Path(path)
-
     data = np.genfromtxt(
-        delimited_translated_columns(path, 3),
-        delimiter=",",
-        usecols=(0, 1, 2),
-        dtype=np.float64,
+        path,
+        delimiter=delimiter,
+        usecols=columns,
+        names=True,
+        skip_header=first_line - 1,
+        converters={0: lambda s: float(s.replace(",", "."))},
+        invalid_raise=False,
     )
-    parameters = read_header_params(path)
+    assert data.dtype.names is not None
 
-    response = data[:, 2]
-    # Remove any invalid rows, e.g. headers
-    valid_response = ~np.isnan(response)
-    response = response[valid_response]
+    names = list(data.dtype.names)
+    if new_names is not None:
+        data.dtype.names = new_names
 
-    if not np.all(np.isnan(data[:, 1])):
-        #        3 columns of data, thermo export of [Number, Time, Signal]
-        if not np.all(np.isnan(data[:, 0])):
-            pass
-        else:  # 2 columns of data, agilent export of [Time, Signal]
-            pass
-        times = data[:, 1][valid_response]
-        parameters["dwelltime"] = np.round(np.mean(np.diff(times)), 6)
+    if convert_cps is not None:
+        for name in data.dtype.names:
+            data[name] = data[name] * convert_cps  # type: ignore
 
-    logger.info(f"Imported {response.size} points from {path.name}.")
-    return response, parameters
+    return data, names
 
 
 def export_nanoparticle_results(path: Path, results: dict) -> None:

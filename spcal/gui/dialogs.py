@@ -15,6 +15,7 @@ from spcal.gui.units import (
 )
 from spcal.gui.util import create_action
 from spcal.gui.widgets import DoubleOrPercentValidator, ValidColorLineEdit
+from spcal.io import import_single_particle_file
 from spcal.npdb import db
 
 
@@ -500,7 +501,7 @@ class ImportDialog(QtWidgets.QDialog):
 
     def isComplete(self) -> bool:
         return self.dwelltime.hasAcceptableInput() and not any(
-            x in self.forbidden_names for x in self.headers()
+            x in self.forbidden_names for x in self.names()
         )
 
     def completeChanged(self) -> None:
@@ -523,7 +524,7 @@ class ImportDialog(QtWidgets.QDialog):
             c for c in range(self.table.columnCount()) if c not in self.ignoreColumns()
         ]
 
-    def headers(self) -> List[str]:
+    def names(self) -> List[str]:
         return [
             self.table.item(self.spinbox_first_line.value() - 1, c).text()
             for c in self.useColumns()
@@ -599,30 +600,24 @@ class ImportDialog(QtWidgets.QDialog):
             "ignores": self.ignoreColumns(),
             "columns": self.useColumns(),
             "first line": self.spinbox_first_line.value(),
-            "headers": self.headers(),
+            "names": self.names(),
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
-
-    # def setImportOptions(self, options: dict) -> None:
-    #     pass
 
     def accept(self) -> None:
         options = self.importOptions()
 
-        data = np.genfromtxt(
+        data, old_names = import_single_particle_file(
             options["path"],
             delimiter=options["delimiter"],
-            usecols=options["columns"],
-            names=options["headers"],
-            skip_header=options["first line"],
-            converters={0: lambda s: float(s.replace(",", "."))},
-            invalid_raise=False,
+            columns=options["columns"],
+            first_line=options["first line"],
+            new_names=options["names"],
+            convert_cps=options["dwelltime"] if options["cps"] else None,
         )
-
-        if options["cps"]:
-            dwell = options["dwelltime"]
-            for name in data.dtype.names:
-                data[name] *= dwell  # type: ignore
+        # Save original names
+        assert data.dtype.names is not None
+        options["old names"] = old_names
 
         self.dataImported.emit(data, options)
         super().accept()
