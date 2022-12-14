@@ -15,7 +15,7 @@ class SPCalResult(object):
         responses: np.ndarray,
         detections: np.ndarray,
         labels: np.ndarray,
-        limits: SPCalLimit | None = None,
+        limits: SPCalLimit,
         inputs_kws: Dict[str, float] | None = None,
     ):
         self.file = Path(file)
