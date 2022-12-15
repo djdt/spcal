@@ -57,29 +57,38 @@ def import_single_particle_file(
 def export_single_particle_results(
     path: Path | str,
     results: Dict[str, SPCalResult],
-    inputs_units: Dict[str, Tuple[str, float]] | None = None,
-    detection_units: Dict[str, Tuple[str, float]] | None = None,
+    units_for_inputs: Dict[str, Tuple[str, float]] | None = None,
+    units_for_results: Dict[str, Tuple[str, float]] | None = None,
 ) -> None:
-    """Export results for elements to a file."""
+    """Export results for elements to a file.
+
+    Args:
+        path: path to output csv
+        results: dict of SPCalResult for each element
+        units_for_inputs: units for option/sample inputs, defaults to sane
+        units_for_results: units for output of detections and lods
+    """
 
     input_units = {
-            "cell_diameter": ("m", 1.0),
-            "density": ("kg/m3", 1.0),
-            "dwelltime": ("s", 1.0),
-            "molar_mass": ("kg/mol", 1.0),
-            "reponse": ("counts/(kg/L)", 1.0),
-            "time": ("s", 1.0),
-            "uptake": ("L/s", 1.0),
+        "cell_diameter": ("μm", 1e-6),
+        "density": ("g/cm3", 1e3),
+        "dwelltime": ("ms", 1e-3),
+        "molar_mass": ("g/mol", 1e-3),
+        "reponse": ("counts/(kg/L)", 1.0),
+        "time": ("s", 1.0),
+        "uptake": ("mL/min", 1e-3 / 60.0),
     }
-    units = {
+    result_units = {
         "signal": ("counts", 1.0),
         "mass": ("kg", 1.0),
         "size": ("m", 1.0),
         "cell_concentration": ("mol/L", 1.0),
     }
 
-    if detection_units is not None:
-        units.update(detection_units)
+    if units_for_inputs is not None:
+        input_units.update(units_for_inputs)
+    if units_for_results is not None:
+        result_units.update(units_for_results)
 
     def write_if_exists(
         fp: TextIO,
@@ -103,18 +112,6 @@ def export_single_particle_results(
         fp.write("#\n")
 
     def write_inputs(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
-        input_units = {
-            "cell_diameter": "m",
-            "density": "kg/m3",
-            "dwelltime": "s",
-            "molar_mass": "kg/mol",
-            "reponse": "counts/(kg/L)",
-            "time": "s",
-            "uptake": "L/s",
-        }
-
-        # first_result = next(iter(results.values()))
-
         # Todo: split into insutrment, sample, reference inputs?
         fp.write(f"# Options and inputs,{','.join(results.keys())}\n")
         # fp.write(f"# Dwelltime,{first_result.inputs['dwelltime']},s")
@@ -125,10 +122,13 @@ def export_single_particle_results(
             input_set.update(result.inputs.keys())
 
         for input in sorted(list(input_set)):
-            values = [str(result.inputs.get(input, "")) for result in results.values()]
-            fp.write(
-                f"# {input.replace('_', ' ').capitalize()},"
-                f"{','.join(values)},{input_units.get(input, '')}\n"
+            unit, factor = input_units.get(input, ("", 1.0))
+            write_if_exists(
+                fp,
+                results,
+                lambda r: (r.inputs.get(input, 0.0) / factor) or None,
+                f"# {input.replace('_', ' ').capitalize()},",
+                postfix="," + unit,
             )
         fp.write("#\n")
 
@@ -176,8 +176,13 @@ def export_single_particle_results(
         # write_if_exists(
         #     fp, results, lambda r: r.asMass(r.background), "#,", postfix=",kg"
         # )
+        unit, factor = result_units["size"]
         write_if_exists(
-            fp, results, lambda r: r.asSize(r.background), "#,", postfix=",m"
+            fp,
+            results,
+            lambda r: ((r.asSize(r.background) or 0.0) / factor) or None,
+            "#,",
+            postfix="," + unit,
         )
         write_if_exists(
             fp,
@@ -195,17 +200,16 @@ def export_single_particle_results(
         )
         fp.write("#\n")
 
-        fp.write(f"# Mean,{','.join(results.keys())}\n")
-
         def ufunc_or_none(
             r: SPCalResult, ufunc, key: str, factor: float = 1.0
         ) -> float | None:
             if key not in r.detections:
                 return None
-            return ufunc(r.detections[key][r.indicies]) * factor
+            return ufunc(r.detections[key][r.indicies]) / factor
 
+        fp.write(f"# Mean,{','.join(results.keys())}\n")
         for key in ["signal", "mass", "size", "cell_concentration"]:
-            unit, factor = units[key]
+            unit, factor = result_units[key]
             write_if_exists(
                 fp,
                 results,
@@ -215,7 +219,7 @@ def export_single_particle_results(
             )
         fp.write(f"# Median,{','.join(results.keys())}\n")
         for key in ["signal", "mass", "size", "cell_concentration"]:
-            unit, factor = units[key]
+            unit, factor = result_units[key]
             write_if_exists(
                 fp,
                 results,
@@ -245,14 +249,14 @@ def export_single_particle_results(
                 return None
             elif isinstance(lod, np.ndarray):
                 return (
-                    format.format(lod[0] * factor)
+                    format.format(lod[0] / factor)
                     + " - "
-                    + format.format(lod[1] * factor)
+                    + format.format(lod[1] / factor)
                 )
-            return format.format(lod * factor)
+            return format.format(lod / factor)
 
         for key in ["signal", "mass", "size", "cell_concentration"]:
-            unit, factor = units[key]
+            unit, factor = result_units[key]
             write_if_exists(
                 fp,
                 results,
@@ -273,10 +277,10 @@ def export_single_particle_results(
         for name, result in results.items():
             for key in ["signal", "mass", "size", "cell_concentration"]:
                 if key in result.detections:
-                    unit, factor = units[key]
+                    unit, factor = result_units[key]
                     header_name += f",{name}"
                     header_unit += ",counts"
-                    data.append(result.detections[key] * factor)
+                    data.append(result.detections[key] / factor)
 
         data = np.stack(data, axis=1)
 
