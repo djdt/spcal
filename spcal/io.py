@@ -57,10 +57,20 @@ def import_single_particle_file(
 def export_single_particle_results(
     path: Path | str,
     results: Dict[str, SPCalResult],
-    output_units: Dict[str, Tuple[str, float]] | None = None,
+    inputs_units: Dict[str, Tuple[str, float]] | None = None,
+    detection_units: Dict[str, Tuple[str, float]] | None = None,
 ) -> None:
     """Export results for elements to a file."""
 
+    input_units = {
+            "cell_diameter": ("m", 1.0),
+            "density": ("kg/m3", 1.0),
+            "dwelltime": ("s", 1.0),
+            "molar_mass": ("kg/mol", 1.0),
+            "reponse": ("counts/(kg/L)", 1.0),
+            "time": ("s", 1.0),
+            "uptake": ("L/s", 1.0),
+    }
     units = {
         "signal": ("counts", 1.0),
         "mass": ("kg", 1.0),
@@ -68,8 +78,8 @@ def export_single_particle_results(
         "cell_concentration": ("mol/L", 1.0),
     }
 
-    if output_units is not None:
-        units.update(output_units)
+    if detection_units is not None:
+        units.update(detection_units)
 
     def write_if_exists(
         fp: TextIO,
