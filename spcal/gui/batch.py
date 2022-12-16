@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 # Todo: warn if files have different elements
+# Todo: filters?
+# Todo: compositions
+# Todo: export options for units, what to export
 
 
 class ProcessThread(QtCore.QThread):
