@@ -172,6 +172,3 @@ def test_export_singleparticle_arrays():
             tmp.readline()
         assert tmp.readline().startswith("cts,cts,fg")
         assert tmp.readline().startswith("5,9,0.45")
-
-
-test_export_singleparticle_results()
