@@ -279,7 +279,7 @@ def export_single_particle_results(
                 if key in result.detections:
                     unit, factor = result_units[key]
                     header_name += f",{name}"
-                    header_unit += ",counts"
+                    header_unit += f",{unit}"
                     data.append(result.detections[key] / factor)
 
         data = np.stack(data, axis=1)
