@@ -18,6 +18,8 @@ class SPCalResult(object):
         limits: SPCalLimit,
         inputs_kws: Dict[str, float] | None = None,
     ):
+        if detections.size == 0:
+            raise ValueError("SPCalResult: detections size is zero")
         self.file = Path(file)
 
         self.responses = responses
