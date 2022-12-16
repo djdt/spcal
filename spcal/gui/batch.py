@@ -121,6 +121,7 @@ class ProcessThread(QtCore.QThread):
                 name: SPCalResult(
                     infile, data[name], detections[name], labels, limits[name]
                 )
+                for name in detections.dtype.names
             }
 
             # === Calculate results ===
