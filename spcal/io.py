@@ -305,7 +305,8 @@ def export_single_particle_results(
         write_header(fp, next(iter(results.values())))
         if output_inputs:
             write_inputs(fp, results)
-        write_detection_results(fp, results)
+        if output_results:
+            write_detection_results(fp, results)
         if output_limits:
             write_limits(fp, results)
         if output_arrays:
