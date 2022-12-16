@@ -8,6 +8,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
+from spcal.gui.results import ResultsWidget
+from spcal.gui.units import mass_units, size_units, molar_concentration_units
 from spcal.io import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
@@ -172,6 +174,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
+        results: ResultsWidget,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -225,6 +228,18 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
+        
+        self.mass_units = QtWidgets.QComboBox()
+        self.mass_units.addItems(mass_units.keys())
+        self.mass_units.setCurrentText()
+        self.size_units = QtWidgets.QComboBox()
+        self.size_units.addItems(size_units.keys())
+        self.size_units.setCurrentText()
+        self.conc_units = QtWidgets.QComboBox()
+        self.conc_units.addItems(molar_concentration_units.keys())
+        self.conc_units.setCurrentText()
+
+        self.units.layout().addRow("Mass unit", self.combo_)
 
         self.import_options = QtWidgets.QGroupBox("Import Options")
         self.import_options.setLayout(QtWidgets.QFormLayout())

@@ -1,11 +1,10 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.result import SPCalResult
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import (
@@ -28,6 +27,7 @@ from spcal.gui.units import (
 from spcal.gui.util import create_action
 from spcal.io import export_single_particle_results
 from spcal.particle import cell_concentration
+from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 
@@ -484,6 +484,7 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[self.graph_options["scheme"]]
         brushes = []
 
+        assert compositions.dtype.names is not None
         for name in compositions.dtype.names:
             color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
             brushes.append(QtGui.QBrush(color))
@@ -579,15 +580,15 @@ class ResultsWidget(QtWidgets.QWidget):
             elif mode == "Mass (kg)" and "mass" in result.detections:
                 units = mass_units
                 values = result.detections["mass"]
-                lod = result.asMass(lod)
+                lod = result.asMass(lod)  # type: ignore
             elif mode == "Size (m)" and "size" in result.detections:
                 units = size_units
                 values = result.detections["size"]
-                lod = result.asSize(lod)
+                lod = result.asSize(lod)  # type: ignore
             elif mode == "Conc. (mol/L)" and "cell_concentration" in result.detections:
                 units = molar_concentration_units
                 values = result.detections["cell_concentration"]
-                lod = result.asCellConcentration(lod)
+                lod = result.asCellConcentration(lod)  # type: ignore
             else:
                 self.io[name].clearOutputs()
                 continue
@@ -597,7 +598,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.io[name].updateOutputs(
                 values[indicies],
                 units,
-                lod,
+                lod,  # type: ignore
                 count=result.number,
                 count_percent=indicies.size / values.size * 100.0,
                 count_error=result.number_error,
@@ -612,14 +613,17 @@ class ResultsWidget(QtWidgets.QWidget):
         for filt in self.filters:
             boolean, name, unit, operation, value = filt
 
-            ops = {
+            ops: Dict[str, Callable[[np.ndarray, float], np.ndarray]] = {
                 ">": np.greater,
                 "<": np.less,
                 ">=": np.greater_equal,
                 "<=": np.less_equal,
                 "==": np.equal,
             }
-            bool_ops = {"And": np.logical_and, "Or": np.logical_or}
+            bool_ops: Dict[str, Callable[[np.ndarray, np.ndarray], np.ndarray]] = {
+                "And": np.logical_and,
+                "Or": np.logical_or,
+            }
 
             indicies = self.results[name].indicies
             if unit == "Intensity":
