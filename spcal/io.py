@@ -62,7 +62,6 @@ def export_single_particle_results(
     units_for_results: Dict[str, Tuple[str, float]] | None = None,
     output_inputs: bool = True,
     output_results: bool = True,
-    output_limits: bool = True,
     output_arrays: bool = True,
 ) -> None:
     """Export results for elements to a file.
@@ -79,9 +78,9 @@ def export_single_particle_results(
         "density": ("g/cm3", 1e3),
         "dwelltime": ("ms", 1e-3),
         "molar_mass": ("g/mol", 1e-3),
-        "reponse": ("counts/(kg/L)", 1.0),
+        "response": ("counts/(μg/L)", 1e9),
         "time": ("s", 1.0),
-        "uptake": ("mL/min", 1e-3 / 60.0),
+        "uptake": ("ml/min", 1e-3 / 60.0),
     }
     result_units = {
         "signal": ("counts", 1.0),
@@ -167,12 +166,13 @@ def export_single_particle_results(
             "# Number concentration,",
             postfix=",#/L",
         )
+        unit, factor = result_units["mass"]
         write_if_exists(
             fp,
             results,
-            lambda r: r.mass_concentration,
+            lambda r: ((r.mass_concentration or 0.0) / factor) or None,
             "# Mass concentration,",
-            postfix=",kg/L",
+            postfix=f",{unit}/L",
         )
         fp.write("#\n")
 
@@ -198,12 +198,13 @@ def export_single_particle_results(
             "# Background error,",
             postfix=",counts",
         )
+        unit, factor = result_units["mass"]
         write_if_exists(
             fp,
             results,
-            lambda r: r.ionic_background,
+            lambda r: ((r.ionic_background or 0.0) / factor) or None,
             "# Ionic background,",
-            postfix=",kg/L",
+            postfix=f",{unit}/L",
         )
         fp.write("#\n")
 
@@ -307,7 +308,6 @@ def export_single_particle_results(
             write_inputs(fp, results)
         if output_results:
             write_detection_results(fp, results)
-        if output_limits:
             write_limits(fp, results)
         if output_arrays:
             write_arrays(fp, results)
