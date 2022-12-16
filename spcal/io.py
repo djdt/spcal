@@ -1,3 +1,4 @@
+import datetime
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Set, TextIO, Tuple
@@ -59,6 +60,10 @@ def export_single_particle_results(
     results: Dict[str, SPCalResult],
     units_for_inputs: Dict[str, Tuple[str, float]] | None = None,
     units_for_results: Dict[str, Tuple[str, float]] | None = None,
+    output_inputs: bool = True,
+    output_results: bool = True,
+    output_limits: bool = True,
+    output_arrays: bool = True,
 ) -> None:
     """Export results for elements to a file.
 
@@ -106,8 +111,10 @@ def export_single_particle_results(
         fp.write(prefix + text + postfix + "\n")
 
     def write_header(fp: TextIO, first_result: SPCalResult) -> None:
+        date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
         fp.write(f"# SPCal Export {__version__}\n")
-        fp.write(f"# File,'{first_result.file}'\n")
+        fp.write(f"# Date,{date}\n")
+        fp.write(f"# File,{first_result.file}\n")
         fp.write(f"# Acquisition events,{first_result.events}\n")
         fp.write("#\n")
 
@@ -296,8 +303,11 @@ def export_single_particle_results(
 
     with path.open("w", encoding="utf-8") as fp:
         write_header(fp, next(iter(results.values())))
-        write_inputs(fp, results)
+        if output_inputs:
+            write_inputs(fp, results)
         write_detection_results(fp, results)
-        write_limits(fp, results)
-        write_arrays(fp, results)
+        if output_limits:
+            write_limits(fp, results)
+        if output_arrays:
+            write_arrays(fp, results)
         fp.write("# End of export")
