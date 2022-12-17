@@ -9,7 +9,7 @@ from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
-from spcal.gui.units import mass_units, size_units, molar_concentration_units
+from spcal.gui.units import mass_units, molar_concentration_units, size_units
 from spcal.io import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
@@ -39,6 +39,7 @@ class ProcessThread(QtCore.QThread):
         limit_params: Dict[str, float] | None = None,
         limit_manual: float = 0.0,
         limit_window: int = 0,
+        units: Dict[str, Tuple[str, float]] | None = None,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -58,6 +59,8 @@ class ProcessThread(QtCore.QThread):
             self.limit_params.update(limit_params)
         self.limit_manual = limit_manual
         self.limit_window_size = limit_window
+
+        self.units = units
 
     def run(self) -> None:
         for infile, outfile in zip(self.infiles, self.outfiles):
@@ -146,7 +149,8 @@ class ProcessThread(QtCore.QThread):
                             result.fromNebulisationEfficiency()
                         elif self.method == "Mass Response":
                             result.fromMassResponse()
-                    except ValueError:
+                    except ValueError as e:
+                        print(name, e)
                         pass
 
             except Exception as e:
@@ -155,7 +159,9 @@ class ProcessThread(QtCore.QThread):
 
             # === Export to file ===
             try:
-                export_single_particle_results(outfile, results)
+                export_single_particle_results(
+                    outfile, results, units_for_results=self.units
+                )
             except Exception as e:
                 self.processFailed.emit(infile.name, "export failed", e)
                 continue
@@ -174,7 +180,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
-        results: ResultsWidget,
+        best_units: Dict[str, Tuple[str, float]],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -228,18 +234,22 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
-        
+
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(mass_units.keys())
-        self.mass_units.setCurrentText()
+        self.mass_units.setCurrentText(best_units["mass"][0])
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(size_units.keys())
-        self.size_units.setCurrentText()
+        self.size_units.setCurrentText(best_units["size"][0])
         self.conc_units = QtWidgets.QComboBox()
         self.conc_units.addItems(molar_concentration_units.keys())
-        self.conc_units.setCurrentText()
+        self.conc_units.setCurrentText(best_units["cell_concentration"][0])
 
-        self.units.layout().addRow("Mass unit", self.combo_)
+        self.units = QtWidgets.QGroupBox("Output Units")
+        self.units.setLayout(QtWidgets.QFormLayout())
+        self.units.layout().addRow("Mass units", self.mass_units)
+        self.units.layout().addRow("Size units", self.size_units)
+        self.units.layout().addRow("Conc. units", self.conc_units)
 
         self.import_options = QtWidgets.QGroupBox("Import Options")
         self.import_options.setLayout(QtWidgets.QFormLayout())
@@ -278,6 +288,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout_right = QtWidgets.QVBoxLayout()
         layout_right.addWidget(self.inputs, 0)
         layout_right.addWidget(self.import_options, 0)
+        layout_right.addWidget(self.units, 0)
 
         layout_horz = QtWidgets.QHBoxLayout()
         layout_horz.addLayout(layout_list)
@@ -410,6 +421,12 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "response": self.sample.io[name].response.baseValue(),
             }
             try:
+                inputs[name]["mass_fraction"] = float(
+                    self.sample.io[name].massfraction.text()
+                )
+            except ValueError:
+                pass
+            try:
                 if method == "Manual Input":
                     inputs[name]["efficiency"] = float(self.options.efficiency.text())
                 elif method == "Reference Particle":
@@ -440,6 +457,20 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 if self.options.window_size.isEnabled()
                 else 0
             ),
+            units={
+                "mass": (
+                    self.mass_units.currentText(),
+                    mass_units[self.mass_units.currentText()],
+                ),
+                "size": (
+                    self.size_units.currentText(),
+                    size_units[self.size_units.currentText()],
+                ),
+                "conc": (
+                    self.conc_units.currentText(),
+                    molar_concentration_units[self.conc_units.currentText()],
+                ),
+            },
             parent=self,
         )
 

@@ -722,3 +722,26 @@ class ResultsWidget(QtWidgets.QWidget):
         self.action_graph_scatter.setEnabled(not single_result)
         if single_result:  # Switch to histogram
             self.action_graph_histogram.trigger()
+
+    def bestUnitsForResults(self) -> Dict[str, Tuple[str, float]]:
+        best_units = {
+            # "signal": ("counts", 1.0),
+            "mass": ("kg", 1.0),
+            "size": ("m", 1.0),
+            "cell_concentration": ("mol/L", 1.0),
+        }
+        for key, units in zip(
+            best_units, [mass_units, size_units, molar_concentration_units]
+        ):
+            unit_keys = list(units.keys())
+            unit_values = list(units.values())
+            for result in self.results.values():
+                if key not in result.detections:
+                    continue
+                mean = np.mean(result.detections[key])
+                idx = max(np.searchsorted(list(unit_values), mean) - 1, 0)
+                if unit_values[idx] < best_units[key][1]:
+                    best_units[key] = unit_keys[idx], unit_values[idx]
+
+        best_units["signal"] = ("counts", 1.0)
+        return best_units

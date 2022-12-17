@@ -169,8 +169,14 @@ class SPCalWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
+        self.results.updateResults()  # Force an update
         dlg = BatchProcessDialog(
-            [], self.sample, self.reference, self.options, parent=self
+            [],
+            self.sample,
+            self.reference,
+            self.options,
+            self.results.bestUnitsForResults(),
+            parent=self,
         )
         dlg.open()
         return dlg
