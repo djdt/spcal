@@ -60,8 +60,10 @@ def export_single_particle_results(
     results: Dict[str, SPCalResult],
     units_for_inputs: Dict[str, Tuple[str, float]] | None = None,
     units_for_results: Dict[str, Tuple[str, float]] | None = None,
+    composition_kws: Dict[str, Any] | None = None,
     output_inputs: bool = True,
     output_results: bool = True,
+    output_compositions: bool = False,
     output_arrays: bool = True,
 ) -> None:
     """Export results for elements to a file.
@@ -88,6 +90,10 @@ def export_single_particle_results(
         "size": ("m", 1.0),
         "cell_concentration": ("mol/L", 1.0),
     }
+
+    compostion_distance = 0.03
+    if composition_kws is not None and "distance" in composition_kws:
+        compostion_distance = composition_kws["distance"]
 
     if units_for_inputs is not None:
         input_units.update(units_for_inputs)
@@ -235,6 +241,48 @@ def export_single_particle_results(
                 "#,",
                 postfix="," + unit,
             )
+
+    def write_compositions(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+        from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
+
+        fp.write(f"# Peak compositions,number,{','.join(results.keys())}\n")
+        # For filtered?
+        # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
+        # for result in self.results.values():
+        #     valid[result.indicies] = True
+
+        # num_valid = np.count_nonzero(valid)
+        # if num_valid == 0:
+        #     return
+
+        for key in ["signal", "mass", "size", "cell_concentration"]:
+            data = {
+                name: r.detections[key]
+                for name, r in results.items()
+                if key in r.detections
+            }
+            if len(data) == 0:
+                continue
+            fractions = prepare_data_for_clustering(data)
+
+            if fractions.shape[0] == 1:  # single peak
+                continue
+            elif fractions.shape[1] == 1:  # single element
+                continue
+            else:
+                means, stds, counts = agglomerative_cluster(
+                    fractions, compostion_distance
+                )
+
+            compositions = np.empty(
+                counts.size, dtype=[(name, np.float64) for name in data]
+            )
+            for i, name in enumerate(data):
+                compositions[name] = means[:, i]
+
+            fp.write(f"{key},count,{','.join(results.keys())}\n")
+            for m, s, c in zip(means, stds, counts):
+                fp.write(f",{c}," + ",".join("{:.4g}".format(f) for f in m))
 
     def write_limits(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
         fp.write(f"# Limits of detection,{','.join(results.keys())}\n")
