@@ -225,7 +225,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.output_dir.setToolTip("Leave blank to use the input directory.")
         self.output_dir.textChanged.connect(self.completeChanged)
 
-        self.output_name = QtWidgets.QLineEdit("%_result.csv")
+        self.output_name = QtWidgets.QLineEdit("%_results.csv")
         self.output_name.setToolTip("Use '%' to represent the input file name.")
         self.output_name.textChanged.connect(self.completeChanged)
 

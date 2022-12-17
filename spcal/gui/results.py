@@ -9,6 +9,7 @@ from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs import (
     CompositionsOptionsDialog,
+    ExportDialog,
     FilterDialog,
     HistogramOptionsDialog,
 )
@@ -25,7 +26,6 @@ from spcal.gui.units import (
     size_units,
 )
 from spcal.gui.util import create_action
-from spcal.io import export_single_particle_results
 from spcal.particle import cell_concentration
 from spcal.result import SPCalResult
 
@@ -306,11 +306,14 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.show()
 
     def dialogExportResults(self) -> None:
-        file, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Export", "", "CSV Documents (*.csv)"
+        path = Path(self.sample.label_file.text())
+        dlg = ExportDialog(
+            path.with_name(path.stem + "_results.csv"),
+            self.results,
+            units=self.bestUnitsForResults(),
+            parent=self,
         )
-        if file != "":
-            export_single_particle_results(Path(file), self.results)
+        dlg.open()
 
     # def dialogexport_single_particle_results(self) -> None:
     #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
