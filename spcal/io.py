@@ -245,7 +245,8 @@ def export_single_particle_results(
     def write_compositions(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
         from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 
-        fp.write(f"# Peak compositions,number,{','.join(results.keys())}\n")
+        keys = ",".join(f"{key},error" for key in results.keys())
+        fp.write(f"# Peak composition,count,{keys}\n")
         # For filtered?
         # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
         # for result in self.results.values():
@@ -257,16 +258,15 @@ def export_single_particle_results(
 
         for key in ["signal", "mass", "size", "cell_concentration"]:
             data = {
-                name: r.detections[key]
+                name: r.detections[key] if key in r.detections else np.array([0])
                 for name, r in results.items()
-                if key in r.detections
             }
             if len(data) == 0:
                 continue
             fractions = prepare_data_for_clustering(data)
 
             if fractions.shape[0] == 1:  # single peak
-                continue
+                means, stds, counts = fractions, np.zeros_like(fractions), np.array([1])
             elif fractions.shape[1] == 1:  # single element
                 continue
             else:
@@ -280,9 +280,15 @@ def export_single_particle_results(
             for i, name in enumerate(data):
                 compositions[name] = means[:, i]
 
-            fp.write(f"{key},count,{','.join(results.keys())}\n")
-            for m, s, c in zip(means, stds, counts):
-                fp.write(f",{c}," + ",".join("{:.4g}".format(f) for f in m))
+            for i in range(counts.size):
+                fp.write(
+                    f"# {key.replace('_', ' ').capitalize()},{counts[i]},"
+                    + ",".join(
+                        "{:.4g},{:.4g}".format(m, s)
+                        for m, s in zip(means[i, :], stds[i, :])
+                    )
+                    + "\n"
+                )
 
     def write_limits(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
         fp.write(f"# Limits of detection,{','.join(results.keys())}\n")
@@ -357,6 +363,8 @@ def export_single_particle_results(
         if output_results:
             write_detection_results(fp, results)
             write_limits(fp, results)
+        if output_compositions:
+            write_compositions(fp, results)
         if output_arrays:
             write_arrays(fp, results)
         fp.write("# End of export")

@@ -164,7 +164,6 @@ def test_export_singleparticle_arrays():
             tmp.name,
             results,
             output_inputs=False,
-            output_limits=False,
             output_results=False,
             units_for_results={"signal": ("cts", 1.0), "mass": ("fg", 1e-18)},
         )
@@ -172,3 +171,24 @@ def test_export_singleparticle_arrays():
             tmp.readline()
         assert tmp.readline().startswith("cts,cts,fg")
         assert tmp.readline().startswith("5,9,0.45")
+
+
+def test_export_singleparticle_compositions():
+    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
+        export_single_particle_results(
+            tmp.name,
+            results,
+            output_inputs=False,
+            output_results=False,
+            output_arrays=False,
+            output_compositions=True,
+        )
+
+        for i in range(5):
+            tmp.readline()
+        # tmp.readline()
+        assert tmp.readline() == "# Peak composition,count,a,error,b,error\n"
+        assert tmp.readline() == "# Signal,1,0.3571,0,0.6429,0\n"
+        assert tmp.readline() == "# Mass,1,0,0,1,0\n"
+        assert tmp.readline() == "# Size,1,0,0,1,0\n"
+        assert tmp.readline() == "# Cell concentration,1,0,0,1,0\n"
