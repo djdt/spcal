@@ -427,6 +427,11 @@ class ExportDialog(QtWidgets.QDialog):
         self.button_path = QtWidgets.QPushButton("Select File")
         self.button_path.clicked.connect(self.dialogFilePath)
 
+        file_box = QtWidgets.QGroupBox("Save File")
+        file_box.setLayout(QtWidgets.QHBoxLayout())
+        file_box.layout().addWidget(self.lineedit_path, 1)
+        file_box.layout().addWidget(self.button_path, 0)
+
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(mass_units.keys())
         self.mass_units.setCurrentText(_units["mass"])
@@ -443,21 +448,32 @@ class ExportDialog(QtWidgets.QDialog):
         units_box.layout().addRow("Size units", self.size_units)
         units_box.layout().addRow("Conc. units", self.conc_units)
 
+        self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
+        self.check_export_inputs.setChecked(True)
+        self.check_export_arrays = QtWidgets.QCheckBox(
+            "Export detected particle arrays."
+        )
+        self.check_export_arrays.setChecked(True)
+        self.check_export_compositions = QtWidgets.QCheckBox(
+            "Export peak compositions."
+        )
+
+        switches_box = QtWidgets.QGroupBox("Export options")
+        switches_box.setLayout(QtWidgets.QVBoxLayout())
+        switches_box.layout().addWidget(self.check_export_inputs)
+        switches_box.layout().addWidget(self.check_export_arrays)
+        switches_box.layout().addWidget(self.check_export_compositions)
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        file_box = QtWidgets.QGroupBox("Save File")
-        file_box.setLayout(QtWidgets.QHBoxLayout())
-        file_box.layout().addWidget(self.lineedit_path, 1)
-        file_box.layout().addWidget(self.button_path, 0)
-
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(file_box)
         layout.addWidget(units_box)
-        # layout.addWidget(switches_box)
+        layout.addWidget(switches_box)
         layout.addWidget(self.button_box, 0)
 
         self.setLayout(layout)
@@ -491,7 +507,12 @@ class ExportDialog(QtWidgets.QDialog):
         }
 
         export_single_particle_results(
-            self.lineedit_path.text(), self.results, units_for_results=units
+            self.lineedit_path.text(),
+            self.results,
+            units_for_results=units,
+            output_inputs=self.check_export_inputs.isChecked(),
+            output_compositions=self.check_export_compositions.isChecked(),
+            output_arrays=self.check_export_arrays.isChecked(),
         )
         super().accept()
 
