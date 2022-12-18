@@ -521,6 +521,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 f"Failed to process {len(self.failed_files)} files!",
                 parent=self,
             )
+            msg.setMinimumWidth(300)
             text = "\n".join(f"{f} :: {m}" for f, m in self.failed_files)
             msg.setDetailedText("\n" + text)
-            msg.exec_()
+            msg.exec()
