@@ -96,7 +96,7 @@ class ProcessThread(QtCore.QThread):
                     raise ValueError("data size zero")
 
             except Exception as e:
-                self.processFailed.emit(infile.name, "unable to read from file", e)
+                self.processFailed.emit(infile.name, f"unable to read file, {e}", e)
                 continue
 
             # === Calculate Limits ===
@@ -156,7 +156,6 @@ class ProcessThread(QtCore.QThread):
                         elif self.method == "Mass Response":
                             result.fromMassResponse()
                     except ValueError as e:
-                        print(name, e)
                         pass
 
             except Exception as e:
