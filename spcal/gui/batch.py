@@ -40,6 +40,9 @@ class ProcessThread(QtCore.QThread):
         limit_manual: float = 0.0,
         limit_window: int = 0,
         units: Dict[str, Tuple[str, float]] | None = None,
+        output_inputs: bool = True,
+        output_compositions: bool = False,
+        output_arrays: bool = True,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -61,6 +64,9 @@ class ProcessThread(QtCore.QThread):
         self.limit_window_size = limit_window
 
         self.units = units
+        self.output_inputs = output_inputs
+        self.output_compositions = output_compositions
+        self.output_arrays = output_arrays
 
     def run(self) -> None:
         for infile, outfile in zip(self.infiles, self.outfiles):
@@ -160,7 +166,12 @@ class ProcessThread(QtCore.QThread):
             # === Export to file ===
             try:
                 export_single_particle_results(
-                    outfile, results, units_for_results=self.units
+                    outfile,
+                    results,
+                    units_for_results=self.units,
+                    output_inputs=self.output_inputs,
+                    output_compositions=self.output_compositions,
+                    output_arrays=self.output_arrays,
                 )
             except Exception as e:
                 self.processFailed.emit(infile.name, "export failed", e)
@@ -245,11 +256,27 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.conc_units.addItems(molar_concentration_units.keys())
         self.conc_units.setCurrentText(best_units["cell_concentration"][0])
 
-        self.units = QtWidgets.QGroupBox("Output Units")
-        self.units.setLayout(QtWidgets.QFormLayout())
-        self.units.layout().addRow("Mass units", self.mass_units)
-        self.units.layout().addRow("Size units", self.size_units)
-        self.units.layout().addRow("Conc. units", self.conc_units)
+        units = QtWidgets.QGroupBox("Output Units")
+        units.setLayout(QtWidgets.QFormLayout())
+        units.layout().addRow("Mass units", self.mass_units)
+        units.layout().addRow("Size units", self.size_units)
+        units.layout().addRow("Conc. units", self.conc_units)
+
+        self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
+        self.check_export_inputs.setChecked(True)
+        self.check_export_arrays = QtWidgets.QCheckBox(
+            "Export detected particle arrays."
+        )
+        self.check_export_arrays.setChecked(True)
+        self.check_export_compositions = QtWidgets.QCheckBox(
+            "Export peak compositions."
+        )
+
+        switches = QtWidgets.QGroupBox("Output Options")
+        switches.setLayout(QtWidgets.QVBoxLayout())
+        switches.layout().addWidget(self.check_export_inputs)
+        switches.layout().addWidget(self.check_export_arrays)
+        switches.layout().addWidget(self.check_export_compositions)
 
         self.import_options = QtWidgets.QGroupBox("Import Options")
         self.import_options.setLayout(QtWidgets.QFormLayout())
@@ -288,7 +315,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout_right = QtWidgets.QVBoxLayout()
         layout_right.addWidget(self.inputs, 0)
         layout_right.addWidget(self.import_options, 0)
-        layout_right.addWidget(self.units, 0)
+        layout_right.addWidget(units, 0)
+        layout_right.addWidget(switches, 0)
 
         layout_horz = QtWidgets.QHBoxLayout()
         layout_horz.addLayout(layout_list)
@@ -471,6 +499,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     molar_concentration_units[self.conc_units.currentText()],
                 ),
             },
+            output_inputs=self.check_export_inputs.isChecked(),
+            output_compositions=self.check_export_compositions.isChecked(),
+            output_arrays=self.check_export_arrays.isChecked(),
             parent=self,
         )
 
