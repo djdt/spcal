@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
-#define SQ2PI sqrt(2.0 * M_PI)
+#define PI 3.14159265358979323846
+#define SQ2PI sqrt(2.0 * PI)
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
