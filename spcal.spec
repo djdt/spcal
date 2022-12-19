@@ -12,7 +12,7 @@ block_cipher = None
 a = Analysis(
     [Path("spcal", "__main__.py")],
     binaries=None,
-    datas=[],
+    datas=["spcal/resources/npdb.npz"],
     hiddenimports=["bottleneck"],
     hookspath=None,
     runtime_hooks=None,
