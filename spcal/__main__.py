@@ -6,11 +6,11 @@ from typing import List
 
 import numpy
 
+from PySide6 import QtCore, QtWidgets
 from spcal import __version__
+import spcal.resources
 from spcal.gui.main import SPCalWindow
-from spcal.resources import icons
 
-from PySide6 import QtCore, QtWidgets  # isort:skip
 import pyqtgraph  # isort:skip
 
 

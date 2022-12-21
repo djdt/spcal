@@ -1,6 +1,8 @@
 import argparse
 import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import List, Set
 
@@ -57,6 +59,13 @@ def write_qrc(
         fp.write("</RCC>")
 
 
+def build_icons_resource(qrc: Path, output: Path, rcc: str):
+    cmd = [rcc, "-g", "python", "-o", str(output), str(qrc)]
+    print(f"running {' '.join(cmd[:-1])} <icons.qrc>")
+    proc = subprocess.run(cmd, capture_output=True)
+    proc.check_returncode()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("project", type=Path, help="The project directory.")
@@ -72,10 +81,18 @@ if __name__ == "__main__":
         default=[16, 24, 32],
         help="icon sizes to use",
     )
+    parser.add_argument(
+        "--rcc", default="/usr/lib/qt6/rcc", help="rcc to generates resources"
+    )
+    parser.add_argument(
+        "--output", type=Path, default="../spcal/resources/icons.py", help="output path"
+    )
     args = parser.parse_args(sys.argv[1:])
 
     icon_names = collect_icons(args.project)
-    write_index_theme(Path("index.theme"), args.sizes)
-    write_qrc(
-        Path("icons.qrc"), Path("index.theme"), args.icons, list(icon_names), args.sizes
-    )
+    print(f"found {len(icon_names)} icons", flush=True)
+    with tempfile.NamedTemporaryFile() as index_tmp, tempfile.NamedTemporaryFile() as qrc_tmp:
+        index, qrc = Path(index_tmp.name), Path(qrc_tmp.name)
+        write_index_theme(index, args.sizes)
+        write_qrc(qrc, index, args.icons, list(icon_names), args.sizes)
+        build_icons_resource(qrc, args.output, args.rcc)
