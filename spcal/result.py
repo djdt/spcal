@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 
 import numpy as np
 
-import spcal
+from spcal import particle
 from spcal.limit import SPCalLimit
 
 
@@ -59,7 +59,7 @@ class SPCalResult(object):
             x not in self.inputs for x in ["efficiency", "uptake", "time"]
         ):
             return None
-        return spcal.particle_total_concentration(
+        return particle.particle_total_concentration(
             self.detections["mass"],
             efficiency=self.inputs["efficiency"],
             flow_rate=self.inputs["uptake"],
@@ -71,7 +71,7 @@ class SPCalResult(object):
         if any(x not in self.inputs for x in ["efficiency", "uptake", "time"]):
             return None
         return np.around(
-            spcal.particle_number_concentration(
+            particle.particle_number_concentration(
                 self.number,
                 efficiency=self.inputs["efficiency"],
                 flow_rate=self.inputs["uptake"],
@@ -86,7 +86,7 @@ class SPCalResult(object):
         if mass is not None and all(
             x in self.inputs for x in ["cell_diameter", "molar_mass"]
         ):
-            return spcal.cell_concentration(
+            return particle.cell_concentration(
                 mass,
                 diameter=self.inputs["cell_diameter"],
                 molar_mass=self.inputs["molar_mass"],
@@ -98,7 +98,7 @@ class SPCalResult(object):
             x in self.inputs
             for x in ["dwelltime", "efficiency", "uptake", "response", "mass_fraction"]
         ):
-            return spcal.particle_mass(
+            return particle.particle_mass(
                 value,
                 dwell=self.inputs["dwelltime"],
                 efficiency=self.inputs["efficiency"],
@@ -115,7 +115,7 @@ class SPCalResult(object):
     def asSize(self, value: float | np.ndarray) -> float | np.ndarray | None:
         mass = self.asMass(value)
         if mass is not None and "density" in self.inputs:
-            return spcal.particle_size(mass, density=self.inputs["density"])
+            return particle.particle_size(mass, density=self.inputs["density"])
         return None
 
     def fromNebulisationEfficiency(
@@ -128,7 +128,7 @@ class SPCalResult(object):
             raise ValueError("fromNebulisationEfficiency: missing required mass input")
 
         self.detections["mass"] = np.asarray(
-            spcal.particle_mass(
+            particle.particle_mass(
                 self.detections["signal"],
                 dwell=self.inputs["dwelltime"],
                 efficiency=self.inputs["efficiency"],
@@ -141,14 +141,14 @@ class SPCalResult(object):
             Warning("fromNebulisationEfficiency: missing required size input")
         else:
             self.detections["size"] = np.asarray(
-                spcal.particle_size(
+                particle.particle_size(
                     self.detections["mass"], density=self.inputs["density"]
                 )
             )
 
         if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
             self.detections["cell_concentration"] = np.asarray(
-                spcal.cell_concentration(
+                particle.cell_concentration(
                     self.detections["mass"],
                     diameter=self.inputs["cell_diameter"],
                     molar_mass=self.inputs["molar_mass"],
@@ -166,14 +166,14 @@ class SPCalResult(object):
             Warning("fromMassResponse: missing required size input")
         else:
             self.detections["size"] = np.asarray(
-                spcal.particle_size(
+                particle.particle_size(
                     self.detections["mass"], density=self.inputs["density"]
                 )
             )
 
         if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
             self.detections["cell_concentration"] = np.asarray(
-                spcal.cell_concentration(
+                particle.cell_concentration(
                     self.detections["mass"],
                     diameter=self.inputs["cell_diameter"],
                     molar_mass=self.inputs["molar_mass"],
