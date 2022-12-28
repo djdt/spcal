@@ -30,3 +30,9 @@ def test_moving_std():
     assert np.all(np.isclose(np.std(v, axis=1), calc.moving_std(x, 9)))
     v = stride_tricks.sliding_window_view(x, 10)
     assert np.all(np.isclose(np.std(v, axis=1), calc.moving_std(x, 10)))
+
+
+def test_otsu():
+    x = np.cos(np.linspace(0, np.pi, 1000, endpoint=True))
+    t = calc.otsu(x, nbins=256)
+    assert t == -0.00390625  # skimage.filters.threshold_otsu(x)
