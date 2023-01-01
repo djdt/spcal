@@ -1,67 +1,108 @@
+import argparse
+from pathlib import Path
+from typing import List
+
 import numpy as np
+import numpy.lib.recfunctions as rfn
 
-elements = np.genfromtxt(
-    "data/elements.csv",
-    delimiter="\t",
-    skip_header=1,
-    dtype=[
-        ("Number", int),
-        ("Symbol", "U2"),
-        ("Name", "U16"),
-        ("MW", float),
-        ("Density", float),
-        ("MP", float),
-        ("BP", float),
-        ("Ref", int),
-    ],
-)
-elements["MP"] -= 273.15  # Convert to C
-elements["BP"] -= 273.15  # Convert to C
 
-inorganic = np.genfromtxt(
-    "data/inorganic.csv",
-    delimiter="\t",
-    skip_header=1,
-    usecols=(0, 1, 2, 3, 4),
-    dtype=[
-        ("Formula", "U16"),
-        ("Name", "U64"),
-        ("CAS", "U12"),
-        ("Density", float),
-        ("Ref", int),
-    ],
-)
+def make_elements(
+    path: str, delimiter: str = "\t", drop_names: List[str] = ["MP", "BP"]
+):
+    elements = np.genfromtxt(
+        path,
+        delimiter=delimiter,
+        skip_header=1,
+        dtype=[
+            ("Number", np.uint16),
+            ("Symbol", "U2"),
+            ("Name", "U16"),
+            ("MW", np.float32),
+            ("Density", np.float32),
+            ("MP", np.float32),
+            ("BP", np.float32),
+            ("Ref", np.uint8),
+        ],
+    )
+    elements["MP"] -= 273.15  # Convert to C
+    elements["BP"] -= 273.15  # Convert to C
+    return rfn.drop_fields(elements, drop_names)
 
-polymer = np.genfromtxt(
-    "data/polymer.csv",
-    delimiter="\t",
-    skip_header=1,
-    usecols=(0, 1, 2, 3, 4),
-    dtype=[
-        ("Formula", "U16"),
-        ("Name", "U64"),
-        ("CAS", "U12"),
-        ("Density", float),
-        ("Ref", int),
-    ],
-)
 
-refs = np.genfromtxt(
-    "data/refs.csv",
-    delimiter="\t",
-    skip_header=1,
-    dtype=[
-        ("Ref", int),
-        ("Source", "U64"),
-        ("ID", "U32"),
-    ],
-)
+def make_isotopes(path: str, delimiter: str = "\t"):
+    isotopes = np.genfromtxt(
+        path,
+        delimiter=delimiter,
+        skip_header=1,
+        dtype=[
+            ("Number", np.uint16),
+            ("Symbol", "U2"),
+            ("Isotope", np.uint16),
+            ("Mass", np.float32),
+            ("Composition", np.float32),
+            ("Preferred", np.uint8),
+            ("Ref", np.uint8),
+        ],
+    )
+    preferred = isotopes["Preferred"] == 1
+    natural = ~np.isnan(isotopes["Composition"])
 
-np.savez_compressed(
-    "../spcal/resources/npdb.npz",
-    elements=elements,
-    inorganic=inorganic,
-    polymer=polymer,
-    refs=refs,
-)
+    return isotopes[preferred | natural]
 
+
+def make_inorganic(path: str, delimiter: str = "\t"):
+    return np.genfromtxt(
+        path,
+        delimiter=delimiter,
+        skip_header=1,
+        dtype=[
+            ("Formula", "U16"),
+            ("Name", "U64"),
+            ("CAS", "U12"),
+            ("Density", np.float32),
+            ("Ref", np.uint8),
+        ],
+    )
+
+
+def make_polymer(path: str, delimiter: str = "\t"):
+    return np.genfromtxt(
+        path,
+        delimiter=delimiter,
+        skip_header=1,
+        dtype=[
+            ("Formula", "U16"),
+            ("Name", "U64"),
+            ("CAS", "U12"),
+            ("Density", np.float32),
+            ("Ref", np.uint8),
+        ],
+    )
+
+
+def make_refs(path: str, delimiter: str = "\t"):
+    return np.genfromtxt(
+        path,
+        delimiter=delimiter,
+        skip_header=1,
+        dtype=[
+            ("Ref", np.uint8),
+            ("Source", "U64"),
+            ("ID", "U32"),
+        ],
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dir", type=Path, help="Path to data directory.")
+    args = parser.parse_args()
+
+    np.savez_compressed(
+        "../spcal/resources/npdb.npz",
+        elements=make_elements(args.dir.joinpath("elements.csv")),
+        isotopes=make_isotopes(args.dir.joinpath("isotopes.csv")),
+        inorganic=make_inorganic(args.dir.joinpath("inorganic.csv")),
+        polymer=make_polymer(args.dir.joinpath("polymer.csv")),
+        refs=make_refs(args.dir.joinpath("refs.csv")),
+    )
