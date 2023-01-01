@@ -88,7 +88,7 @@ def make_refs(path: str, delimiter: str = "\t"):
         dtype=[
             ("Ref", np.uint8),
             ("Source", "U64"),
-            ("ID", "U32"),
+            ("ID", "U64"),
         ],
     )
 
