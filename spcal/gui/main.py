@@ -6,7 +6,7 @@ from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.dialogs import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.log import LoggingDialog

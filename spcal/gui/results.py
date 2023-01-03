@@ -7,10 +7,10 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
-from spcal.gui.dialogs import (
+from spcal.gui.dialogs.export import ExportDialog
+from spcal.gui.dialogs.filter import FilterDialog
+from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
-    ExportDialog,
-    FilterDialog,
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
@@ -19,20 +19,15 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.units import (
-    mass_concentration_units,
     mass_units,
     molar_concentration_units,
     signal_units,
     size_units,
 )
 from spcal.gui.util import create_action
-from spcal.particle import cell_concentration
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
-
-
-# Todo: options dialog for each plot type, fit method, bins width, cluster parameters, etc.
 
 
 class ResultsWidget(QtWidgets.QWidget):

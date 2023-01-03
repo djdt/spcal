@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generic, Iterator, List, Tuple, Type, TypeVar
+from typing import Dict, Generic, Iterator, List, Type, TypeVar
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal
 
 # from spcal import npdata
-from spcal.gui.dialogs import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.units import UnitsWidget, mass_concentration_units, size_units
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValidColorLineEdit

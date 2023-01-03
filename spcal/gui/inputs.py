@@ -5,16 +5,16 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
-from spcal.limit import SPCalLimit
-from spcal.result import SPCalResult
 from spcal.detection import combine_detections, detection_maxima
-from spcal.gui.dialogs import ImportDialog
+from spcal.gui.dialogs.import import ImportDialog
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.views import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
+from spcal.limit import SPCalLimit
+from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 
