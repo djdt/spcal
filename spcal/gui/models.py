@@ -8,8 +8,8 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
     """Access a numpy structured array through a table.
 
     Args:
-        array: ndim > 2
-        axes: axes to view as (column, row)
+        array: 1d array
+        fill_values: default value for missing data for each type
         column_formats: dict of column names and formatting strings for display
         parent: parent object
     """
