@@ -33,15 +33,21 @@ def import_single_particle_file(
         data, structred array
         old_names, the original names used in text file
     """
-    data = np.genfromtxt(
-        path,
-        delimiter=delimiter,
-        usecols=columns,
-        names=True,
-        skip_header=first_line - 1,
-        converters={0: lambda s: float(s.replace(",", "."))},
-        invalid_raise=False,
-    )
+    path = Path(path)
+    with path.open("rb") as fp:
+        if delimiter != ",":
+            gen = (x.replace(b",", b".") for x in fp)
+        else:
+            gen = (x for x in fp)
+
+        data = np.genfromtxt(
+            gen,
+            delimiter=delimiter,
+            usecols=columns,
+            names=True,
+            skip_header=first_line - 1,
+            invalid_raise=False,
+        )
     assert data.dtype.names is not None
 
     names = list(data.dtype.names)

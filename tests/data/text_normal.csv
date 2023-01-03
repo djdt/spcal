@@ -1,0 +1,6 @@
+# Test file for text import
+A,B,C
+1,1,1
+1.0,2.00,02.0
+0.0,# bad column
+1e0,3.0e+0,4e+00
