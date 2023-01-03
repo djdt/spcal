@@ -44,6 +44,7 @@ def make_isotopes(path: str, delimiter: str = "\t"):
             ("Ref", np.uint8),
         ],
     )
+    return isotopes
     preferred = isotopes["Preferred"] == 1
     natural = ~np.isnan(isotopes["Composition"])
 
