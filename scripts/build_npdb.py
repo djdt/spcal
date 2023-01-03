@@ -7,7 +7,7 @@ import numpy.lib.recfunctions as rfn
 
 
 def make_elements(
-    path: str, delimiter: str = "\t", drop_names: List[str] = ["MP", "BP"]
+    path: str, delimiter: str = "\t", drop_names: List[str] = ["MP", "BP", "Ref"]
 ):
     elements = np.genfromtxt(
         path,
@@ -29,7 +29,7 @@ def make_elements(
     return rfn.drop_fields(elements, drop_names)
 
 
-def make_isotopes(path: str, delimiter: str = "\t"):
+def make_isotopes(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
     isotopes = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -44,15 +44,11 @@ def make_isotopes(path: str, delimiter: str = "\t"):
             ("Ref", np.uint8),
         ],
     )
-    return isotopes
-    preferred = isotopes["Preferred"] == 1
-    natural = ~np.isnan(isotopes["Composition"])
-
-    return isotopes[preferred | natural]
+    return rfn.drop_fields(isotopes, drop_names)
 
 
-def make_inorganic(path: str, delimiter: str = "\t"):
-    return np.genfromtxt(
+def make_inorganic(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
+    inorganic = np.genfromtxt(
         path,
         delimiter=delimiter,
         skip_header=1,
@@ -64,10 +60,11 @@ def make_inorganic(path: str, delimiter: str = "\t"):
             ("Ref", np.uint8),
         ],
     )
+    return rfn.drop_fields(inorganic, drop_names)
 
 
-def make_polymer(path: str, delimiter: str = "\t"):
-    return np.genfromtxt(
+def make_polymer(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
+    polymer = np.genfromtxt(
         path,
         delimiter=delimiter,
         skip_header=1,
@@ -79,6 +76,7 @@ def make_polymer(path: str, delimiter: str = "\t"):
             ("Ref", np.uint8),
         ],
     )
+    return rfn.drop_fields(polymer, drop_names)
 
 
 def make_refs(path: str, delimiter: str = "\t"):
@@ -105,5 +103,5 @@ if __name__ == "__main__":
         isotopes=make_isotopes(args.dir.joinpath("isotopes.csv")),
         inorganic=make_inorganic(args.dir.joinpath("inorganic.csv")),
         polymer=make_polymer(args.dir.joinpath("polymer.csv")),
-        refs=make_refs(args.dir.joinpath("refs.csv")),
+        # refs=make_refs(args.dir.joinpath("refs.csv")),
     )
