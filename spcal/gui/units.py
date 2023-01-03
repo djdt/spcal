@@ -1,7 +1,7 @@
 """Widget that displays a value with a coresponding unit.
 [ line edit ] [combo box]
 """
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets

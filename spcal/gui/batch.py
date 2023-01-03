@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -8,7 +8,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
-from spcal.gui.results import ResultsWidget
 from spcal.gui.units import mass_units, molar_concentration_units, size_units
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
