@@ -7,12 +7,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
-from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
 )
+from spcal.gui.dialogs.io import ExportDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
