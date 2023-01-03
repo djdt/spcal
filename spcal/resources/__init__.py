@@ -1,7 +1,6 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtGui
 
 from . import icons
 
-# Set Some Qt attributes
-QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+# Set the icon theme
 QtGui.QIcon.setThemeName("spcal")
