@@ -15,7 +15,7 @@ from spcal.gui.units import (
 )
 from spcal.gui.util import create_action
 from spcal.gui.widgets import DoubleOrPercentValidator, ValidColorLineEdit
-from spcal.io import export_single_particle_results, import_single_particle_file
+from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.npdb import db
 from spcal.result import SPCalResult
 

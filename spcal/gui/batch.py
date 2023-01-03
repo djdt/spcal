@@ -10,7 +10,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.units import mass_units, molar_concentration_units, size_units
-from spcal.io import export_single_particle_results, import_single_particle_file
+from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 

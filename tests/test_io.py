@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from spcal.io import export_single_particle_results, import_single_particle_file
+from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
