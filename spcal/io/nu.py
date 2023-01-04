@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -68,9 +68,9 @@ def read_nu_integ_binary(
         return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
 
 
-def is_nu_directory(path: str | Path) -> bool:
+def is_nu_directory(path: Path) -> bool:
     """Checks path is directory containing a 'run.info' and 'integrated.index'"""
-    path = Path(path)
+
     if not path.is_dir():
         return False
     if not path.joinpath("run.info").exists():
@@ -81,24 +81,23 @@ def is_nu_directory(path: str | Path) -> bool:
     return True
 
 
-def read_nu_directory(
-    path: str | Path, threads: int | None = 1, raw: bool = False
-) -> Union[Tuple[np.ndarray, dict], Tuple[np.ndarray, np.ndarray, dict]]:
+def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
     file. Data is read from '.integ' files listed in the 'integrated.index' and
     are checked for correct starting cyle, segment and acquistion numbers.
-    If threads != 1, a ProcessPoolExecutor is used for multithreaded IO.
 
     Args:
         path: path to data directory
-        threads: number of threads to use for import
+        raw: return raw data
 
     Returns:
-        concatenated data from the integ files
+        masses from first acquistion
+        signals
         dict of parameters from run.info
     """
+
     path = Path(path)
     if not is_nu_directory(path):
         raise ValueError("read_nu_directory: missing 'run.info' or 'integrated.index'")
@@ -108,48 +107,17 @@ def read_nu_directory(
     with path.joinpath("integrated.index").open("r") as fp:
         integ_index = json.load(fp)
 
-    # Todo, single threaded is faster on uni PC, check others
-    # PC , Single, Multi
-    # uni, 1.66  , 3.44
-    if threads == 1:
-        data = np.concatenate(
-            [
-                read_nu_integ_binary(
-                    path.joinpath(f"{idx['FileNum']}.integ"),
-                    idx["FirstCycNum"],
-                    idx["FirstSegNum"],
-                    idx["FirstAcqNum"],
-                )
-                for idx in integ_index
-            ]
-        )
-    else:
-        import concurrent.futures
-
-        integs = []
-        with concurrent.futures.ProcessPoolExecutor(max_workers=threads) as ex:
-            futures = [
-                ex.submit(
-                    read_nu_integ_binary,
-                    path.joinpath(f"{idx['FileNum']}.integ"),
-                    idx["FirstCycNum"],
-                    idx["FirstSegNum"],
-                    idx["FirstAcqNum"],
-                )
-                for idx in integ_index
-            ]
-            for future in concurrent.futures.as_completed(futures):
-                try:
-                    integs.append(future.result())
-                except Exception as e:
-                    print(f"read_nu_directory: exception for {future}, {e}")
-
-        data = np.concatenate(integs)
-        order = np.argsort(data["acq_number"])
-        data = data[order]
-
-    if raw:
-        return data, run_info
+    data = np.concatenate(
+        [
+            read_nu_integ_binary(
+                path.joinpath(f"{idx['FileNum']}.integ"),
+                idx["FirstCycNum"],
+                idx["FirstSegNum"],
+                idx["FirstAcqNum"],
+            )
+            for idx in integ_index
+        ]
+    )
 
     segment_delays = {
         s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
