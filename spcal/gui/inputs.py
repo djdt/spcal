@@ -390,7 +390,7 @@ class InputWidget(QtWidgets.QWidget):
             trim = self.trimRegion(name)
             plot = self.graph.plots[name]
             plot.clearLimits()
-            plot.drawLimits(self.events[trim[0] : trim[1]], limits.limit_of_detection)
+            plot.drawLimits(self.events[trim[0] : trim[1]], limits.mean_background, limits.limit_of_detection)
 
     def resetInputs(self) -> None:
         self.blockSignals(True)

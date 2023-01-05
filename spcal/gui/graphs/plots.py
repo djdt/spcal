@@ -4,8 +4,8 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from spcal.gui.graphs.legends import HistogramItemSample, MultipleItemSampleProxy
+from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
 class HistogramPlotItem(pyqtgraph.PlotItem):
@@ -118,8 +118,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
 
 
 class ParticlePlotItem(pyqtgraph.PlotItem):
-    limit_colors = {"mean": QtCore.Qt.red, "lc": QtCore.Qt.green, "ld": QtCore.Qt.blue}
-
     def __init__(
         self,
         name: str,
@@ -253,20 +251,27 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
         self.legends[name].addItem(scatter)
 
-    def drawLimits(self, x: np.ndarray, limits: np.ndarray) -> None:
-        skip_lc = np.all(limits["lc"] == limits["ld"])
-        for name, label in zip(["mean", "lc", "ld"], ["Mean", "Lc", "Ld"]):
-            if name == "lc" and skip_lc:
-                continue
+    def drawLimits(
+        self,
+        x: np.ndarray,
+        mean: float | np.ndarray,
+        threshold: float | np.ndarray,
+    ) -> None:
+        # skip_lc = np.all(limits["lc"] == limits["ld"])
+        pen = QtGui.QPen(QtCore.Qt.red, 1.0, QtCore.Qt.DashLine)
+        pen.setCosmetic(True)
 
-            pen = QtGui.QPen(self.limit_colors[name], 1.0, QtCore.Qt.DashLine)
-            pen.setCosmetic(True)
-
-            if limits[name].size == 1:
-                nx, y = [x[0], x[-1]], [limits[name][0], limits[name][0]]
+        for limit, label, color in zip(
+            [mean, threshold],
+            ["Mean", "Detection Threshold"],
+            [QtCore.Qt.red, QtCore.Qt.blue],
+        ):
+            pen.setColor(color)
+            if isinstance(limit, float):
+                nx, y = [x[0], x[-1]], [limit, limit]
             else:
-                diffs = np.diff(limits[name], n=2, append=0, prepend=0) != 0
-                nx, y = x[diffs], limits[name][diffs]
+                diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
+                nx, y = x[diffs], limit[diffs]
 
             curve = pyqtgraph.PlotCurveItem(
                 x=nx, y=y, name=label, pen=pen, connect="all", skipFiniteCheck=True
