@@ -12,6 +12,7 @@ def make_elements(
     elements = np.genfromtxt(
         path,
         delimiter=delimiter,
+        comments="#",
         skip_header=1,
         dtype=[
             ("Number", np.uint16),
@@ -33,6 +34,7 @@ def make_isotopes(path: str, delimiter: str = "\t", drop_names: List[str] = ["Re
     isotopes = np.genfromtxt(
         path,
         delimiter=delimiter,
+        comments="#",
         skip_header=1,
         dtype=[
             ("Number", np.uint16),
@@ -51,6 +53,7 @@ def make_inorganic(path: str, delimiter: str = "\t", drop_names: List[str] = ["R
     inorganic = np.genfromtxt(
         path,
         delimiter=delimiter,
+        comments="#",
         skip_header=1,
         dtype=[
             ("Formula", "U16"),
@@ -67,6 +70,7 @@ def make_polymer(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref
     polymer = np.genfromtxt(
         path,
         delimiter=delimiter,
+        comments="#",
         skip_header=1,
         dtype=[
             ("Formula", "U16"),
@@ -83,6 +87,7 @@ def make_refs(path: str, delimiter: str = "\t"):
     return np.genfromtxt(
         path,
         delimiter=delimiter,
+        comments="#",
         skip_header=1,
         dtype=[
             ("Ref", np.uint8),
