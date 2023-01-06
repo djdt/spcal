@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.units import UnitsWidget, time_units
-from spcal.gui.widgets import ValidColorLineEdit
+from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
+from spcal.siunits import time_units
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
 
@@ -162,7 +162,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
             default_unit="μm",
-            invalid_color=QtGui.QColor(255, 255, 172),
+            color_invalid=QtGui.QColor(255, 255, 172),
         )
         self.celldiameter.setToolTip(
             "Sets the mean particle size and calculates intracellular concentrations."

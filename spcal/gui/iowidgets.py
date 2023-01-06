@@ -8,9 +8,9 @@ import spcal
 
 # from spcal import npdata
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
-from spcal.gui.units import UnitsWidget, mass_concentration_units, size_units
 from spcal.gui.util import create_action
-from spcal.gui.widgets import ValidColorLineEdit
+from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
+from spcal.siunits import mass_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class SampleIOWidget(IOWidget):
         self.molarmass = UnitsWidget(
             {"g/mol": 1e-3, "kg/mol": 1.0},
             default_unit="g/mol",
-            invalid_color=QtGui.QColor(255, 255, 172),
+            color_invalid=QtGui.QColor(255, 255, 172),
         )
         self.response = UnitsWidget(
             {
@@ -228,7 +228,7 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration = UnitsWidget(
             units=mass_concentration_units,
             default_unit="ng/L",
-            invalid_color=QtGui.QColor(255, 255, 172),
+            color_invalid=QtGui.QColor(255, 255, 172),
         )
         self.diameter = UnitsWidget(size_units, default_unit="nm")
 

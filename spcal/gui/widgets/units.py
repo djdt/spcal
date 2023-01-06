@@ -6,38 +6,7 @@ from typing import Dict
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import ValidColorLineEdit
-
-mass_units = {
-    "ag": 1e-21,
-    "fg": 1e-18,
-    "pg": 1e-15,
-    "ng": 1e-12,
-    "μg": 1e-9,
-    "g": 1e-3,
-    "kg": 1.0,
-}
-mass_concentration_units = {
-    "fg/L": 1e-18,
-    "pg/L": 1e-15,
-    "ng/L": 1e-12,
-    "μg/L": 1e-9,
-    "mg/L": 1e-6,
-    "g/L": 1e-3,
-    "kg/L": 1.0,
-}
-molar_concentration_units = {
-    "amol/L": 1e-18,
-    "fmol/L": 1e-15,
-    "pmol/L": 1e-12,
-    "nmol/L": 1e-9,
-    "μmol/L": 1e-6,
-    "mmol/L": 1e-3,
-    "mol/L": 1.0,
-}
-signal_units = {"counts": 1.0}
-size_units = {"nm": 1e-9, "μm": 1e-6, "m": 1.0}
-time_units = {"μs": 1e-6, "ms": 1e-3, "s": 1.0}
+from spcal.gui.widgets.validcolorle import ValidColorLineEdit
 
 
 class UnitsWidget(QtWidgets.QWidget):
@@ -52,7 +21,7 @@ class UnitsWidget(QtWidgets.QWidget):
         value: float | None = None,
         validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
         formatter: str = ".6g",
-        invalid_color: QtGui.QColor | None = None,
+        color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -66,7 +35,7 @@ class UnitsWidget(QtWidgets.QWidget):
             validator = QtGui.QDoubleValidator(0.0, 1e99, 10)
         self.valid_base_range = validator.bottom(), validator.top()
 
-        self.lineedit = ValidColorLineEdit(color_bad=invalid_color)
+        self.lineedit = ValidColorLineEdit(color_invalid=color_invalid)
         self.lineedit.textEdited.connect(self._updateValueFromText)
 
         self.lineedit.setValidator(validator)

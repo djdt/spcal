@@ -8,10 +8,10 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
-from spcal.gui.units import mass_units, molar_concentration_units, size_units
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
+from spcal.siunits import mass_units, molar_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
 

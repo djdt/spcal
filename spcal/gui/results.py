@@ -18,14 +18,14 @@ from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
-from spcal.gui.units import (
+from spcal.gui.util import create_action
+from spcal.result import SPCalResult
+from spcal.siunits import (
     mass_units,
     molar_concentration_units,
     signal_units,
     size_units,
 )
-from spcal.gui.util import create_action
-from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 

@@ -4,15 +4,10 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.units import (
-    UnitsWidget,
-    mass_units,
-    molar_concentration_units,
-    size_units,
-    time_units,
-)
+from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.result import SPCalResult
+from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
 
 
 class ExportDialog(QtWidgets.QDialog):

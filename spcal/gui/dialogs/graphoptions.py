@@ -2,14 +2,14 @@ from typing import Dict
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.units import (
-    UnitsWidget,
+from spcal.gui.objects import DoubleOrPercentValidator
+from spcal.gui.widgets import UnitsWidget
+from spcal.siunits import (
     mass_units,
     molar_concentration_units,
     signal_units,
     size_units,
 )
-from spcal.gui.widgets import DoubleOrPercentValidator
 
 
 class HistogramOptionsDialog(QtWidgets.QDialog):
@@ -49,21 +49,21 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         self.width_signal = UnitsWidget(
             signal_units,
             value=self.bin_widths["signal"],
-            invalid_color=color,
+            color_invalid=color,
             validator=QtGui.QIntValidator(0, 999999999),
         )
         self.width_mass = UnitsWidget(
             mass_units,
             value=self.bin_widths["mass"],
-            invalid_color=color,
+            color_invalid=color,
         )
         self.width_size = UnitsWidget(
-            size_units, value=self.bin_widths["size"], invalid_color=color
+            size_units, value=self.bin_widths["size"], color_invalid=color
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
             value=self.bin_widths["cell_concentration"],
-            invalid_color=color,
+            color_invalid=color,
         )
 
         for widget in [

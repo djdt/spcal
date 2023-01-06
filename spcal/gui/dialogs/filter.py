@@ -2,8 +2,9 @@ from typing import List, Tuple
 
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.units import UnitsWidget, mass_units, signal_units, size_units
 from spcal.gui.util import create_action
+from spcal.gui.widgets import UnitsWidget
+from spcal.siunits import mass_units, signal_units, size_units
 
 
 class FilterRow(QtWidgets.QWidget):
