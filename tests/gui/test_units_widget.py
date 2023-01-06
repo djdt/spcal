@@ -1,8 +1,8 @@
-from PySide6 import QtCore, QtWidgets
-from spcal.gui.units import UnitsWidget
-
 import pytest
+from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
+
+from spcal.gui.widgets.units import UnitsWidget
 
 
 def test_units_widget(qtbot: QtBot):

@@ -1,7 +1,8 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.widgets import RangeSlider, ValidColorLineEdit
+from spcal.gui.widgets.rangeslider import RangeSlider
+from spcal.gui.widgets.validcolorle import ValidColorLineEdit
 
 
 def test_range_slider(qtbot: QtBot):
@@ -103,15 +104,15 @@ def test_valid_color_line_edit(qtbot: QtBot):
     with qtbot.wait_exposed(le):
         le.show()
 
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_good
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
     le.setValidator(QtGui.QIntValidator(0, 100))
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_bad
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_invalid
     le.setText("5")
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_good
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
     le.setText("a")
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_bad
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_invalid
     le.setActive(False)
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_good
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
     le.setActive(True)
     le.setEnabled(False)
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_good
+    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
