@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
@@ -7,12 +8,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs.io import ImportDialog
+from spcal.gui.dialogs.nu import NuImportDialog
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.views import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
+from spcal.io.nu import is_nu_directory
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -157,6 +160,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if event.mimeData().hasUrls():
+            # Todo, nu import check
             for url in event.mimeData().urls():
                 self.dialogLoadFile(url.toLocalFile())
                 break
@@ -166,21 +170,44 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(self, file: str | None = None) -> ImportDialog:
-        if file is None:
-            file, _ = QtWidgets.QFileDialog.getOpenFileName(
+    def dialogLoadFile(
+        self, path: str | Path | None = None
+    ) -> ImportDialog | NuImportDialog | None:
+        if path is None:
+            path, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self,
                 "Open",
                 "",
-                "CSV Documents(*.csv *.txt *.text);;All files(*)",
+                (
+                    "NP Data Files (*.csv *.info);;CSV Documents(*.csv *.txt *.text);;"
+                    "Nu Instruments(*.info);;All files(*)"
+                ),
             )
-        if file == "" or file is None:
-            return
+            if path == "":
+                return None
 
-        dlg = ImportDialog(file, self)
+        path = Path(path)
+
+        if path.suffix == ".info":
+            if not is_nu_directory(path.parent):
+                raise FileNotFoundError("dialogLoadFile: invalid Nu directory.")
+            dlg = NuImportDialog(path.parent, self)
+        else:
+            dlg = ImportDialog(path, self)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
         return dlg
+
+    # def dialogLoadNuDirectory(self, dir: str | None = None) -> NuImportDialog | None:
+    #     if dir is None:
+    #         dir, _ = QtWidgets.QFileDialog.getExistingDirectory(self, "Open", "")
+    #     if dir == "" or dir is None:
+    #         return None
+
+    #     dlg = NuImportDialog(dir, self)
+    #     dlg.dataImported.connect(self.loadData)
+    #     dlg.open()
+    #     return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs
@@ -390,7 +417,11 @@ class InputWidget(QtWidgets.QWidget):
             trim = self.trimRegion(name)
             plot = self.graph.plots[name]
             plot.clearLimits()
-            plot.drawLimits(self.events[trim[0] : trim[1]], limits.mean_background, limits.limit_of_detection)
+            plot.drawLimits(
+                self.events[trim[0] : trim[1]],
+                limits.mean_background,
+                limits.limit_of_detection,
+            )
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
