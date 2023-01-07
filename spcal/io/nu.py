@@ -12,11 +12,11 @@ def get_masses_from_nu_data(
 
     Args:
         data: from `read_integ_binary`
-        delays: array of delays from `get_delays_for_segments`
         cal_coef: from run.info 'MassCalCoefficients'
+        segment_delays: dict of segment nums and delays from `SegmentInfo`
 
     Returns:
-        1d named array of signals
+        2d array of masses
     """
 
     delays = np.zeros(max(segment_delays.keys()))
