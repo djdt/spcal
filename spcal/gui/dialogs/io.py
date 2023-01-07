@@ -211,7 +211,7 @@ class ImportDialog(QtWidgets.QDialog):
         import_box.setLayout(import_form)
 
         data_form = QtWidgets.QFormLayout()
-        data_form.addRow("Dwell Time:", self.dwelltime)
+        data_form.addRow("Dwelltime:", self.dwelltime)
         data_form.addRow("Intensity Units:", self.combo_intensity_units)
 
         data_box = QtWidgets.QGroupBox("Data Options")
