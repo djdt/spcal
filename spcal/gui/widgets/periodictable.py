@@ -182,7 +182,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
     def selectPreferredIsotopes(self, checked: bool) -> None:
         preferred = self.preferred()
         for num, action in self.actions.items():
-            if checked and num in preferred["Isotope"]:
+            if checked and np.in1d(num, preferred["Isotope"]):
                 action.setChecked(True)
             else:
                 action.setChecked(False)
@@ -234,6 +234,8 @@ class PeriodicTableButton(QtWidgets.QToolButton):
 
 
 class PeriodicTableSelector(QtWidgets.QWidget):
+    isotopesChanged = QtCore.Signal()
+
     def __init__(
         self,
         enabled_isotopes: np.ndarray | None = None,
@@ -253,12 +255,14 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             self.buttons[symbol] = PeriodicTableButton(
                 isotopes, enabled_isotopes[enabled_isotopes["Symbol"] == symbol]
             )
-            self.buttons[symbol].isotopesChanged.connect(self.findCollisions)
+            self.buttons[symbol].isotopesChanged.connect(self.isotopesChanged)
 
         layout = QtWidgets.QGridLayout()
         for symbol, (row, col) in element_positions.items():
             layout.addWidget(self.buttons[symbol], row, col)
+        layout.setRowStretch(row + 1, 1)  # Last row stretch
 
+        self.isotopesChanged.connect(self.findCollisions)
         self.setLayout(layout)
 
     def selectedIsotopes(self) -> np.ndarray | None:

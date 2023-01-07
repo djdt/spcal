@@ -65,6 +65,7 @@ def read_nu_integ_binary(
             raise ValueError("read_integ_binary: incorrect FirstAcqNum")
         num_results = int.from_bytes(fp.read(4), "little")
         fp.seek(0)
+
         return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
 
 
