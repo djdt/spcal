@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -17,41 +17,35 @@ logger = logging.getLogger(__name__)
 # Todo, info at the top
 
 
-class NuImportThread(QtCore.QThread):
-    exceptionRaised = QtCore.Signal(Exception)
+class WorkerSignals(QtCore.QObject):
+    finished = QtCore.Signal()
+    exception = QtCore.Signal(Exception)
+    result = QtCore.Signal(object)
 
+
+class Worker(QtCore.QRunnable):
     def __init__(
         self,
-        path: Path,
-        first_cyc_number: int,
-        first_seg_number: int,
-        first_acq_number: int,
-        cal_coef: Tuple[float, float],
-        segment_delays: Dict[int, float],
-        parent: QtCore.QObject | None = None,
+        func: Callable,
+        *args,
+        **kwargs,
     ):
-        super().__init__(parent)
+        super().__init__()
 
-        self.path = path
-        self.first_cyc_number = first_cyc_number
-        self.first_seg_number = first_seg_number
-        self.first_acq_number = first_acq_number
-        self.cal_coef = cal_coef
-        self.segment_delays = segment_delays
-
-        self.signals: np.ndarray = np.array([])
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
 
     def run(self) -> None:
         try:
-            data = read_nu_integ_binary(
-                self.path,
-                self.first_cyc_number,
-                self.first_seg_number,
-                self.first_acq_number,
-            )
-            self.signals = data["result"]["signal"]
+            result = self.func(*self.args, **self.kwargs)
         except Exception as e:
-            self.exceptionRaised.emit(e)
+            self.signals.exception.emit(e)
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
 
 
 class NuImportDialog(QtWidgets.QDialog):
@@ -99,8 +93,10 @@ class NuImportDialog(QtWidgets.QDialog):
         self.table.isotopesChanged.connect(self.completeChanged)
 
         self.progress = QtWidgets.QProgressBar()
-        self.threads: List[QtCore.QThread] = []
-        self.completedCount = 0
+        self.aborted = False
+
+        self.threadpool = QtCore.QThreadPool()
+        self.results: List[Tuple[int, np.ndarray]] = []
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -150,19 +146,34 @@ class NuImportDialog(QtWidgets.QDialog):
             "segmentDelays": self.segment_delays,
         }
 
-    def threadComplete(self) -> None:
-        self.advanceProgress()
-        self.completedCount += 1
+    def setControlsEnabled(self, enabled: bool) -> None:
+        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        button.setEnabled(enabled)
+        self.table.setEnabled(enabled)
+        self.dwelltime.setEnabled(enabled)
 
-        if self.completedCount == len(self.threads) and not any(
-            thread.isInterruptionRequested() for thread in self.threads
-        ):
+    def abort(self) -> None:
+        self.aborted = True
+        self.threadpool.clear()
+        self.threadpool.waitForDone()
+        self.progress.reset()
+
+        self.setControlsEnabled(True)
+
+    def threadComplete(self) -> None:
+        if self.aborted:
+            return
+
+        self.advanceProgress()
+        if self.progress.value() == self.progress.maximum():
             self.finaliseImport()
 
     def threadFailed(self, exception: Exception) -> None:
+        if self.aborted:
+            return
+
         logger.exception(exception)
-        for thread in self.threads:
-            thread.requestInterruption()
+        self.abort()
 
         msg = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Warning,
@@ -172,12 +183,40 @@ class NuImportDialog(QtWidgets.QDialog):
         )
         msg.exec()
 
+    def accept(self) -> None:
+        def read_signals(path: Path):
+            data = read_nu_integ_binary(path)
+            return data["result"]["signal"]
+
+        self.setControlsEnabled(False)
+
+        self.aborted = False
+        self.progress.setMaximum(len(self.index))
+        self.progress.setValue(1)
+        self.results.clear()
+
+        for idx in self.index:
+            worker = Worker(
+                read_signals,
+                self.file_path.joinpath(f"{idx['FileNum']}.integ"),
+            )
+            worker.signals.finished.connect(self.threadComplete)
+            worker.signals.exception.connect(self.threadFailed)
+            worker.signals.result.connect(
+                lambda r: self.results.append((idx["FileNum"], r))
+            )
+            self.threadpool.start(worker)
+
+    def reject(self) -> None:
+        if self.threadpool.activeThreadCount() > 0:
+            self.abort()
+        else:
+            super().reject()
+
     def finaliseImport(self) -> None:
+        self.threadpool.waitForDone()
         signals = np.concatenate(
-            [
-                thread.signals
-                for thread in sorted(self.threads, key=lambda t: t.first_acq_number)
-            ]
+            [result[1] for result in sorted(self.results, key=lambda r: r[0])]
         )
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
@@ -195,52 +234,3 @@ class NuImportDialog(QtWidgets.QDialog):
         self.dataImported.emit(data, self.importOptions())
 
         super().accept()
-
-    def setControlsEnabled(self, enabled: bool) -> None:
-        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
-        button.setEnabled(enabled)
-        self.table.setEnabled(enabled)
-        self.dwelltime.setEnabled(enabled)
-
-    def abort(self) -> None:
-        for thread in self.threads:
-            thread.requestInterruption()
-        for thread in self.threads:
-            thread.terminate()
-        for thread in self.threads:
-            thread.wait()
-
-        self.threads.clear()
-        self.completedCount = 0
-        self.progress.reset()
-
-        self.setControlsEnabled(True)
-
-    def accept(self) -> None:
-        self.setControlsEnabled(False)
-
-        self.threads.clear()
-        self.completedCount = 0
-        self.progress.setMaximum(len(self.index))
-        self.progress.setValue(1)
-
-        for idx in self.index:
-            thread = NuImportThread(
-                self.file_path.joinpath(f"{idx['FileNum']}.integ"),
-                idx["FirstCycNum"],
-                idx["FirstSegNum"],
-                idx["FirstAcqNum"],
-                self.info["MassCalCoefficients"],
-                self.segment_delays,
-            )
-            thread.finished.connect(self.threadComplete)
-            thread.exceptionRaised.connect(self.threadFailed)
-            self.threads.append(thread)
-        for thread in self.threads:
-            thread.start()
-
-    def reject(self) -> None:
-        if any(thread.isRunning() for thread in self.threads):
-            self.abort()
-        else:
-            super().reject()
