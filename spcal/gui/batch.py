@@ -8,6 +8,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
+from spcal.gui.util import Worker
+from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
@@ -18,160 +20,125 @@ logger = logging.getLogger(__name__)
 # Todo: filters?
 
 
-class ProcessThread(QtCore.QThread):
-    processComplete = QtCore.Signal(str)
-    processFailed = QtCore.Signal(str, str, Exception)
+def process_data(
+    path: Path,
+    data: np.ndarray,
+    method: str,
+    inputs: Dict[str, Dict[str, float | None]],
+    limit_method: str,
+    limit_params: Dict[str, float],
+    limit_window_size: int = 0,
+) -> Dict[str, SPCalResult]:
 
-    def __init__(
-        self,
-        infiles: List[Path],
-        outfiles: List[Path],
-        import_options: dict,
-        inputs: Dict[str, Dict[str, float | None]],
-        method: str,
-        trim: Tuple[int, int],
-        limit_method: str = "Automatic",
-        limit_params: Dict[str, float] | None = None,
-        limit_manual: float = 0.0,
-        limit_window: int = 0,
-        units: Dict[str, Tuple[str, float]] | None = None,
-        output_inputs: bool = True,
-        output_compositions: bool = False,
-        output_arrays: bool = True,
-        parent: QtCore.QObject | None = None,
-    ):
-        super().__init__(parent)
+    # === Calculate Limits ===
+    limits: Dict[str, SPCalLimit] = {}
+    d, l, r = {}, {}, {}
+    assert data.dtype.names is not None
+    for name in data.dtype.names:
+        if limit_method == "Manual Input":
+            limits[name] = SPCalLimit(
+                np.mean(data[name]),
+                limit_params["manual"],
+                limit_params["manual"],
+                name="Manual Input",
+                params={},
+            )
+        else:
+            limits[name] = SPCalLimit.fromMethodString(
+                limit_method,
+                data[name],
+                sigma=limit_params["sigma"],
+                alpha=limit_params["alpha"],
+                beta=limit_params["beta"],
+                window_size=limit_window_size,
+            )
 
-        self.infiles = infiles
-        self.outfiles = outfiles
-        self.import_options = import_options
+        # === Create detections ===
+        d[name], l[name], r[name] = accumulate_detections(
+            data[name],
+            limits[name].limit_of_criticality,
+            limits[name].limit_of_detection,
+        )
 
-        self.method = method
-        self.inputs = {k: v for k, v in inputs.items() if v is not None}
+    detections, labels, regions = combine_detections(d, l, r)
 
-        self.trim = trim
+    results = {
+        name: SPCalResult(path, data[name], detections[name], labels, limits[name])
+        for name in detections.dtype.names
+    }
 
-        self.limit_method = limit_method
-        self.limit_params = {"sigma": 3.0, "alpha": 0.05, "beta": 0.05}
-        if limit_params is not None:
-            self.limit_params.update(limit_params)
-        self.limit_manual = limit_manual
-        self.limit_window_size = limit_window
+    # === Calculate results ===
+    for name, result in results.items():
+        assert inputs[name]["dwelltime"] is not None
+        inputs[name]["time"] = result.events * inputs[name]["dwelltime"]  # type: ignore
 
-        self.units = units
-        self.output_inputs = output_inputs
-        self.output_compositions = output_compositions
-        self.output_arrays = output_arrays
+        # No None inputs
+        result.inputs.update({k: v for k, v in inputs[name].items() if v is not None})
 
-    def run(self) -> None:
-        for infile, outfile in zip(self.infiles, self.outfiles):
-            if self.isInterruptionRequested():
-                break
+        try:
+            if method in ["Manual Input", "Reference Particle"]:
+                result.fromNebulisationEfficiency()
+            elif method == "Mass Response":
+                result.fromMassResponse()
+        except ValueError:
+            pass
 
-            # === Import data ===
-            try:
-                data, old_names = import_single_particle_file(
-                    infile,
-                    delimiter=self.import_options["delimiter"],
-                    columns=self.import_options["columns"],
-                    first_line=self.import_options["first line"],
-                    new_names=self.import_options["names"],
-                    convert_cps=self.import_options["dwelltime"]
-                    if self.import_options["cps"]
-                    else None,
-                )
-                if (
-                    old_names != self.import_options["old names"]
-                    or data.dtype.names is None
-                ):
-                    raise ValueError("different elements from sample")
+    return results
 
-                data = data[self.trim[0] : data.size - self.trim[1]]
-                if data.size == 0:
-                    raise ValueError("data size zero")
 
-            except Exception as e:
-                self.processFailed.emit(infile.name, f"unable to read file, {e}", e)
-                continue
+def process_text_file(
+    path: Path,
+    outpath: Path,
+    import_options: dict,
+    trim: Tuple[int, int],
+    process_kws: dict,
+    output_kws: dict,
+) -> None:
+    data, old_names = import_single_particle_file(
+        path,
+        delimiter=import_options["delimiter"],
+        columns=import_options["columns"],
+        first_line=import_options["first line"],
+        new_names=import_options["names"],
+        convert_cps=import_options["dwelltime"] if import_options["cps"] else None,
+    )
+    if old_names != import_options["old names"] or data.dtype.names is None:
+        raise ValueError("different elements from sample")
 
-            # === Calculate Limits ===
-            limits: Dict[str, SPCalLimit] = {}
-            d, l, r = {}, {}, {}
-            assert data.dtype.names is not None
-            for name in data.dtype.names:
-                if self.limit_method == "Manual Input":
-                    limits[name] = SPCalLimit(
-                        np.mean(data[name]),
-                        self.limit_manual,
-                        self.limit_manual,
-                        name="Manual Input",
-                        params={},
-                    )
-                else:
-                    limits[name] = SPCalLimit.fromMethodString(
-                        self.limit_method,
-                        data[name],
-                        sigma=self.limit_params["sigma"],
-                        alpha=self.limit_params["alpha"],
-                        beta=self.limit_params["beta"],
-                        window_size=self.limit_window_size,
-                    )
+    data = data[trim[0] : data.size - trim[1]]
+    if data.size == 0:
+        raise ValueError("data size zero")
 
-                # === Create detections ===
-                d[name], l[name], r[name] = accumulate_detections(
-                    data[name],
-                    limits[name].limit_of_criticality,
-                    limits[name].limit_of_detection,
-                )
+    results = process_data(path, data, **process_kws)
 
-            detections, labels, regions = combine_detections(d, l, r)
+    # === Export to file ===
+    export_single_particle_results(outpath, results, **output_kws)
 
-            results = {
-                name: SPCalResult(
-                    infile, data[name], detections[name], labels, limits[name]
-                )
-                for name in detections.dtype.names
-            }
 
-            # === Calculate results ===
-            try:
-                for name, result in results.items():
-                    self.inputs[name]["time"] = (
-                        result.events * self.import_options["dwelltime"]
-                    )
+def process_nu_file(
+    path: Path,
+    outpath: Path,
+    import_options: dict,
+    trim: Tuple[int, int],
+    process_kws: dict,
+    output_kws: dict,
+) -> None:
+    masses, signals, info = read_nu_directory(path)
 
-                    # No None inputs
-                    result.inputs.update(
-                        {k: v for k, v in self.inputs[name].items() if v is not None}
-                    )
+    selected_masses = {
+        f"{i['Symbol']}{i['Isotope']}": i["Mass"]
+        for i in import_options["selectedIsotopes"]
+    }
+    data = select_nu_signals(masses, signals, selected_masses=selected_masses)
 
-                    try:
-                        if self.method in ["Manual Input", "Reference Particle"]:
-                            result.fromNebulisationEfficiency()
-                        elif self.method == "Mass Response":
-                            result.fromMassResponse()
-                    except ValueError as e:
-                        pass
+    data = data[trim[0] : data.size - trim[1]]
+    if data.size == 0:
+        raise ValueError("data size zero")
 
-            except Exception as e:
-                self.processFailed.emit(infile.name, "calculation of results failed", e)
-                continue
+    results = process_data(path, data, **process_kws)
 
-            # === Export to file ===
-            try:
-                export_single_particle_results(
-                    outfile,
-                    results,
-                    units_for_results=self.units,
-                    output_inputs=self.output_inputs,
-                    output_compositions=self.output_compositions,
-                    output_arrays=self.output_arrays,
-                )
-            except Exception as e:
-                self.processFailed.emit(infile.name, "export failed", e)
-                continue
-
-            self.processComplete.emit(infile.name)
+    # === Export to file ===
+    export_single_particle_results(outpath, results, **output_kws)
 
 
 class BatchProcessDialog(QtWidgets.QDialog):
@@ -200,7 +167,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.button_files = QtWidgets.QPushButton("Open Files")
         self.button_files.pressed.connect(self.dialogLoadFiles)
         self.button_output = QtWidgets.QPushButton("Open Directory")
-        self.button_output.pressed.connect(self.dialogOpenOuputDir)
+        self.button_output.pressed.connect(self.dialogOpenOutputDir)
 
         self.button_process = QtWidgets.QPushButton("Start Batch")
         self.button_process.setEnabled(len(files) > 0)
@@ -212,7 +179,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.trim_right.setChecked(True)
 
         self.progress = QtWidgets.QProgressBar()
-        self.thread: QtCore.QThread | None = None
+        self.threadpool = QtCore.QThreadPool()
+        self.threadpool.setMaxThreadCount(1)
+        self.aborted = False
+        self.running = False
 
         self.files = QtWidgets.QListWidget()
         self.files.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -366,13 +336,16 @@ class BatchProcessDialog(QtWidgets.QDialog):
             self,
             "Batch Process Files",
             "",
-            "CSV Documents(*.csv *.txt *.text);;All files(*)",
+            (
+                "NP Data Files (*.csv *.info);;CSV Documents(*.csv *.txt *.text);;"
+                "Nu Instruments(*.info);;All files(*)"
+            ),
         )
 
         if len(files) > 0:
             self.files.addItems(files)
 
-    def dialogOpenOuputDir(self) -> None:
+    def dialogOpenOutputDir(self) -> None:
         dir = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Output Directory", "", QtWidgets.QFileDialog.ShowDirsOnly
         )
@@ -392,31 +365,30 @@ class BatchProcessDialog(QtWidgets.QDialog):
         return outputs
 
     def buttonProcess(self) -> None:
-        if self.thread is None:
+        if self.running:
+            self.abort()
+        else:
             self.button_process.setText("Cancel Batch")
-            self.startProcess()
-        elif self.thread.isRunning():
-            self.thread.requestInterruption()
+            self.start()
 
-    def advanceProgress(self) -> None:
-        self.progress.setValue(self.progress.value() + 1)
+    def abort(self) -> None:
+        self.aborted = True
+        self.threadpool.clear()
+        self.threadpool.waitForDone()
 
-    def processComplete(self, file: str) -> None:
-        self.completed_files.append(file)
-        self.advanceProgress()
+        self.progress.reset()
+        self.button_process.setText("Start Batch")
+        self.running = False
 
-    def processFailed(self, file: str, msg: str, exception: Exception) -> None:
-        self.failed_files.append((file, msg))
-        logger.exception(exception)
-        self.advanceProgress()
-
-    def startProcess(self) -> None:
+    def start(self) -> None:
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
 
         self.completed_files: List[str] = []
         self.failed_files: List[Tuple[str, str]] = []
 
+        self.aborted = False
+        self.running = True
         self.progress.setMaximum(len(infiles))
         self.progress.setValue(1)
 
@@ -460,63 +432,89 @@ class BatchProcessDialog(QtWidgets.QDialog):
             except ValueError:
                 pass
 
-        self.thread = ProcessThread(
-            infiles,
-            outfiles,
-            import_options=self.sample.import_options,
-            inputs=inputs,
-            method=method,
-            trim=trim,
-            limit_method=self.options.method.currentText(),
-            limit_params={
-                "sigma": float(self.options.sigma.text()),
-                "alpha": float(self.options.error_rate_alpha.text()),
-                "beta": float(self.options.error_rate_beta.text()),
-            },
-            limit_manual=float(self.options.manual.text() or 0.0),
-            limit_window=(
-                int(self.options.window_size.text())
-                if self.options.window_size.isEnabled()
-                else 0
+        limit_params = {
+            "sigma": float(self.options.sigma.text()),
+            "alpha": float(self.options.error_rate_alpha.text()),
+            "beta": float(self.options.error_rate_beta.text()),
+            "manual": float(self.options.manual.text() or 0.0),
+        }
+        units = {
+            "mass": (
+                self.mass_units.currentText(),
+                mass_units[self.mass_units.currentText()],
             ),
-            units={
-                "mass": (
-                    self.mass_units.currentText(),
-                    mass_units[self.mass_units.currentText()],
-                ),
-                "size": (
-                    self.size_units.currentText(),
-                    size_units[self.size_units.currentText()],
-                ),
-                "conc": (
-                    self.conc_units.currentText(),
-                    molar_concentration_units[self.conc_units.currentText()],
-                ),
-            },
-            output_inputs=self.check_export_inputs.isChecked(),
-            output_compositions=self.check_export_compositions.isChecked(),
-            output_arrays=self.check_export_arrays.isChecked(),
+            "size": (
+                self.size_units.currentText(),
+                size_units[self.size_units.currentText()],
+            ),
+            "conc": (
+                self.conc_units.currentText(),
+                molar_concentration_units[self.conc_units.currentText()],
+            ),
+        }
+        fn = (
+            process_text_file
+            if self.sample.import_options["importer"] == "text"
+            else process_nu_file
+        )
+        for path, outpath in zip(infiles, outfiles):
+            worker = Worker(
+                fn,
+                path,
+                outpath,
+                import_options=self.sample.import_options,
+                trim=trim,
+                process_kws={
+                    "method": method,
+                    "inputs": inputs,
+                    "limit_method": self.options.method.currentText(),
+                    "limit_params": limit_params,
+                    "limit_window_size": int(self.options.window_size.text())
+                    if self.options.window_size.isEnabled()
+                    else 0,
+                },
+                output_kws={
+                    "units_for_results": units,
+                    "output_inputs": self.check_export_inputs.isChecked(),
+                    "output_compositions": self.check_export_compositions.isChecked(),
+                    "output_arrays": self.check_export_arrays.isChecked(),
+                },
+            )
+            worker.signals.finished.connect(self.workerComplete)
+            worker.signals.exception.connect(self.workerFailed)
+            self.threadpool.start(worker)
+
+        self.processingStarted.emit()
+
+    def finalise(self) -> None:
+        self.threadpool.waitForDone()
+        self.running = False
+
+        self.progress.reset()
+        self.button_process.setText("Start Batch")
+
+        self.processingFinshed.emit()
+
+    def workerComplete(self) -> None:
+        if self.aborted:
+            return
+
+        self.progress.setValue(self.progress.value() + 1)
+        if self.threadpool.activeThreadCount() == 0 and self.running:
+            self.finalise()
+
+    def workerFailed(self, exception: Exception) -> None:
+        if self.aborted:
+            return
+
+        self.abort()
+
+        logger.exception(exception)
+
+        msg = QtWidgets.QMessageBox(
+            QtWidgets.QMessageBox.Warning,
+            "Batch Process Failed",
+            str(exception),
             parent=self,
         )
-
-        self.thread.processComplete.connect(self.processComplete)
-        self.thread.processFailed.connect(self.processFailed)
-        self.thread.finished.connect(self.finishProcess)
-        self.thread.start()
-
-    def finishProcess(self) -> None:
-        self.button_process.setText("Start Batch")
-        self.progress.setValue(0)
-        self.thread = None
-
-        if len(self.failed_files) > 0:
-            msg = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Warning,
-                "Import Failed",
-                f"Failed to process {len(self.failed_files)} files!",
-                parent=self,
-            )
-            msg.setMinimumWidth(300)
-            text = "\n".join(f"{f} :: {m}" for f, m in self.failed_files)
-            msg.setDetailedText("\n" + text)
-            msg.exec()
+        msg.exec()

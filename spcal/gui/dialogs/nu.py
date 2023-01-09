@@ -6,11 +6,11 @@ from typing import Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.util import Worker
 from spcal.gui.widgets import PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.npdb import db
 from spcal.siunits import time_units
-from spcal.gui.util import Worker
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +63,7 @@ class NuImportDialog(QtWidgets.QDialog):
 
         self.progress = QtWidgets.QProgressBar()
         self.aborted = False
+        self.running = False
 
         self.threadpool = QtCore.QThreadPool()
         self.results: List[Tuple[int, np.ndarray]] = []
@@ -94,9 +95,6 @@ class NuImportDialog(QtWidgets.QDialog):
         return {
             s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
         }
-
-    def advanceProgress(self) -> None:
-        self.progress.setValue(self.progress.value() + 1)
 
     def isComplete(self) -> bool:
         isotopes = self.table.selectedIsotopes()
@@ -135,16 +133,17 @@ class NuImportDialog(QtWidgets.QDialog):
         if self.aborted:
             return
 
-        self.advanceProgress()
-        if self.progress.value() == self.progress.maximum():
-            self.finaliseImport()
+        self.progress.setValue(self.progress.value() + 1)
+        if self.threadpool.activeThreadCount() == 0 and self.running:
+            self.finalise()
 
     def threadFailed(self, exception: Exception) -> None:
         if self.aborted:
             return
 
-        logger.exception(exception)
         self.abort()
+
+        logger.exception(exception)
 
         msg = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Warning,
@@ -162,6 +161,7 @@ class NuImportDialog(QtWidgets.QDialog):
         self.setControlsEnabled(False)
 
         self.aborted = False
+        self.running = True
         self.progress.setMaximum(len(self.index))
         self.progress.setValue(1)
         self.results.clear()
@@ -184,8 +184,9 @@ class NuImportDialog(QtWidgets.QDialog):
         else:
             super().reject()
 
-    def finaliseImport(self) -> None:
+    def finalise(self) -> None:
         self.threadpool.waitForDone()
+        self.running = False
 
         signals = np.concatenate(
             [result[1] for result in sorted(self.results, key=lambda r: r[0])]
