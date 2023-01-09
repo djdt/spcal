@@ -135,7 +135,7 @@ def select_nu_signals(
     masses: np.ndarray,
     signals: np.ndarray,
     selected_masses: Dict[str, float],
-    max_mass_diff: float = 0.1,
+    max_mass_diff: float = 0.5,
 ) -> np.ndarray:
     """Reduces signals to the isotopes in selected_masses.
 
