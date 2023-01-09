@@ -177,8 +177,6 @@ class SPCalLimit(object):
         window_size: int = 0,
         use_median: bool = False,
     ) -> "SPCalLimit":
-        mean = np.median(responses) if use_median else np.mean(responses)
-
         gaussian = SPCalLimit.fromGaussian(
             responses, sigma=sigma, window_size=window_size, use_median=use_median
         )
