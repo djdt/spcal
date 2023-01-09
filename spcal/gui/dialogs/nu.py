@@ -126,6 +126,7 @@ class NuImportDialog(QtWidgets.QDialog):
         self.threadpool.clear()
         self.threadpool.waitForDone()
         self.progress.reset()
+        self.running = False
 
         self.setControlsEnabled(True)
 
@@ -179,7 +180,7 @@ class NuImportDialog(QtWidgets.QDialog):
             self.threadpool.start(worker)
 
     def reject(self) -> None:
-        if self.threadpool.activeThreadCount() > 0:
+        if self.running:
             self.abort()
         else:
             super().reject()
