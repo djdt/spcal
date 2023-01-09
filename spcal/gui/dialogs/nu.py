@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -11,41 +11,11 @@ from spcal.gui.widgets import PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary
 from spcal.npdb import db
 from spcal.siunits import time_units
+from spcal.util import Worker
 
 logger = logging.getLogger(__name__)
 
 # Todo, info at the top
-
-
-class WorkerSignals(QtCore.QObject):
-    finished = QtCore.Signal()
-    exception = QtCore.Signal(Exception)
-    result = QtCore.Signal(object)
-
-
-class Worker(QtCore.QRunnable):
-    def __init__(
-        self,
-        func: Callable,
-        *args,
-        **kwargs,
-    ):
-        super().__init__()
-
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
-
-    def run(self) -> None:
-        try:
-            result = self.func(*self.args, **self.kwargs)
-        except Exception as e:
-            self.signals.exception.emit(e)
-        else:
-            self.signals.result.emit(result)
-        finally:
-            self.signals.finished.emit()
 
 
 class NuImportDialog(QtWidgets.QDialog):
@@ -139,11 +109,13 @@ class NuImportDialog(QtWidgets.QDialog):
 
     def importOptions(self) -> dict:
         return {
+            "importer": "nu",
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
+            "masses": self.masses,
             "selectedIsotopes": self.table.selectedIsotopes(),
-            "massCalCoefficients": self.info["MassCalCoefficients"],
-            "segmentDelays": self.segment_delays,
+            # "massCalCoefficients": self.info["MassCalCoefficients"],
+            # "segmentDelays": self.segment_delays,
         }
 
     def setControlsEnabled(self, enabled: bool) -> None:
@@ -215,6 +187,7 @@ class NuImportDialog(QtWidgets.QDialog):
 
     def finaliseImport(self) -> None:
         self.threadpool.waitForDone()
+
         signals = np.concatenate(
             [result[1] for result in sorted(self.results, key=lambda r: r[0])]
         )
