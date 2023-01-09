@@ -189,13 +189,27 @@ class NuImportDialog(QtWidgets.QDialog):
         self.threadpool.waitForDone()
         self.running = False
 
-        signals = np.concatenate(
-            [result[1] for result in sorted(self.results, key=lambda r: r[0])]
-        )
-        isotopes = self.table.selectedIsotopes()
-        assert isotopes is not None
-        selected_masses = {f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes}
-        data = select_nu_signals(self.masses, signals, selected_masses)
+        try:
+            signals = np.concatenate(
+                [result[1] for result in sorted(self.results, key=lambda r: r[0])]
+            )
+            isotopes = self.table.selectedIsotopes()
+            assert isotopes is not None
+            selected_masses = {
+                f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes
+            }
+            data = select_nu_signals(self.masses, signals, selected_masses)
+        except Exception as e:
+            msg = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Warning,
+                "Import Failed",
+                str(e),
+                parent=self,
+            )
+            msg.exec()
+            self.abort()
+            return
+
         self.dataImported.emit(data, self.importOptions())
 
         super().accept()
