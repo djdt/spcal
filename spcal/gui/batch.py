@@ -180,7 +180,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         self.progress = QtWidgets.QProgressBar()
         self.threadpool = QtCore.QThreadPool()
-        self.threadpool.setMaxThreadCount(1)
+        self.threadpool.setMaxThreadCount(1)  # No advantage multi?
         self.aborted = False
         self.running = False
 
@@ -389,8 +389,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         self.aborted = False
         self.running = True
+        self.progress.setValue(0)
         self.progress.setMaximum(len(infiles))
-        self.progress.setValue(1)
 
         method = self.options.efficiency_method.currentText()
 
@@ -468,7 +468,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "method": method,
                     "inputs": inputs,
                     "limit_method": self.options.method.currentText(),
-                    "limit_params": limit_params,
+                    "limit_params": limit_params.copy(),
                     "limit_window_size": int(self.options.window_size.text())
                     if self.options.window_size.isEnabled()
                     else 0,

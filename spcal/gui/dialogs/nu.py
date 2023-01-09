@@ -162,8 +162,8 @@ class NuImportDialog(QtWidgets.QDialog):
 
         self.aborted = False
         self.running = True
+        self.progress.setValue(0)
         self.progress.setMaximum(len(self.index))
-        self.progress.setValue(1)
         self.results.clear()
 
         for idx in self.index:
