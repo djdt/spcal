@@ -4,14 +4,13 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import numpy as np
-import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import PeriodicTableSelector, UnitsWidget
-from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary
+from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.npdb import db
 from spcal.siunits import time_units
-from spcal.util import Worker
+from spcal.gui.util import Worker
 
 logger = logging.getLogger(__name__)
 
@@ -193,17 +192,8 @@ class NuImportDialog(QtWidgets.QDialog):
         )
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
-
-        diffs = isotopes["Mass"].reshape(1, -1) - self.masses.reshape(-1, 1)
-        idx = np.argmin(np.abs(diffs), axis=0)
-
-        dtype = np.dtype(
-            {
-                "names": [f"{i['Symbol']}{i['Isotope']}" for i in isotopes],
-                "formats": [np.float32 for _ in idx],
-            }
-        )
-        data = rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
+        selected_masses = {f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes}
+        data = select_nu_signals(self.masses, signals, selected_masses)
         self.dataImported.emit(data, self.importOptions())
 
         super().accept()

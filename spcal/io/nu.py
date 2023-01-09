@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 
 
 def get_masses_from_nu_data(
@@ -27,6 +28,19 @@ def get_masses_from_nu_data(
     masses = (data["result"]["center"] * 0.5) + delays[:, None]
     # Convert from time to mass (sqrt(m/q) = a + t * b)
     return (cal_coef[0] + masses * cal_coef[1]) ** 2
+
+
+def is_nu_directory(path: Path) -> bool:
+    """Checks path is directory containing a 'run.info' and 'integrated.index'"""
+
+    if not path.is_dir():
+        return False
+    if not path.joinpath("run.info").exists():
+        return False
+    if not path.joinpath("integrated.index").exists():
+        return False
+
+    return True
 
 
 def read_nu_integ_binary(
@@ -67,19 +81,6 @@ def read_nu_integ_binary(
         fp.seek(0)
 
         return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
-
-
-def is_nu_directory(path: Path) -> bool:
-    """Checks path is directory containing a 'run.info' and 'integrated.index'"""
-
-    if not path.is_dir():
-        return False
-    if not path.joinpath("run.info").exists():
-        return False
-    if not path.joinpath("integrated.index").exists():
-        return False
-
-    return True
 
 
 def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
@@ -128,3 +129,43 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
         data[0], run_info["MassCalCoefficients"], segment_delays
     )
     return masses, data["result"]["signal"], run_info
+
+
+def select_nu_signals(
+    masses: np.ndarray,
+    signals: np.ndarray,
+    selected_masses: Dict[str, float],
+    max_mass_diff: float = 0.1,
+) -> np.ndarray:
+    """Reduces signals to the isotopes in selected_masses.
+
+    Args:
+        masses: from `read_nu_directory`
+        signals: from `read_nu_directory`
+        selected_masses: dict of isotope name: mass
+        max_mass_diff: maximum difference (Da) from mass to allow
+
+    Returns:
+        structured array of signals
+
+    Raises:
+        ValueError if the smallest mass difference from 'selected_masses' is
+            greater than 'max_mass_diff'
+    """
+    diffs = np.fromiter(selected_masses.values(), dtype=np.float32).reshape(
+        1, -1
+    ) - masses.reshape(-1, 1)
+    idx = np.argmin(np.abs(diffs), axis=0)
+
+    if np.any(diffs[idx] > max_mass_diff):
+        raise ValueError(
+            "select_nu_signals: could not find mass closer than 'max_mass_diff'"
+        )
+
+    dtype = np.dtype(
+        {
+            "names": list(selected_masses.keys()),
+            "formats": [np.float32 for _ in idx],
+        }
+    )
+    return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
