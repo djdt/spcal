@@ -324,6 +324,7 @@ class ImportDialog(QtWidgets.QDialog):
 
     def importOptions(self) -> dict:
         return {
+            "importer": "text",
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "delimiter": self.delimiter(),
