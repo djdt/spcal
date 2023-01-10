@@ -12,7 +12,7 @@ from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
 )
-from spcal.gui.dialogs.io import ExportDialog
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget

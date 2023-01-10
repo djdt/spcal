@@ -7,8 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
 from spcal.detection import combine_detections, detection_maxima
-from spcal.gui.dialogs.io import ImportDialog
-from spcal.gui.dialogs.nu import NuImportDialog
+from spcal.gui.dialogs._import import ImportDialog, NuImportDialog
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.views import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
