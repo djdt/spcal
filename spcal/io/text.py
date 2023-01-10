@@ -1,14 +1,11 @@
 import datetime
-import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Set, TextIO, Tuple
+from typing import Any, Callable, Dict, List, Set, TextIO, Tuple
 
 import numpy as np
 
 from spcal import __version__
 from spcal.result import SPCalResult
-
-logger = logging.getLogger(__name__)
 
 
 def import_single_particle_file(
@@ -27,7 +24,8 @@ def import_single_particle_file(
         columns: which columns to import, deafults to all
         first_line: the first data (not header) line
         new_names: rename columns
-        convert_cps: the dwelltime (in s) if data is stored as counts per second, else None
+        convert_cps: the dwelltime (in s) if data is stored as counts per second,
+            else None
 
     Returns:
         data, structred array
