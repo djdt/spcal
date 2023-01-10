@@ -135,9 +135,10 @@ def select_nu_signals(
     masses: np.ndarray,
     signals: np.ndarray,
     selected_masses: Dict[str, float],
-    max_mass_diff: float = 0.5,
+    max_mass_diff: float = 0.1,
 ) -> np.ndarray:
     """Reduces signals to the isotopes in selected_masses.
+    'masses' must be sorted
 
     Args:
         masses: from `read_nu_directory`
@@ -152,12 +153,24 @@ def select_nu_signals(
         ValueError if the smallest mass difference from 'selected_masses' is
             greater than 'max_mass_diff'
     """
-    diffs = np.fromiter(selected_masses.values(), dtype=np.float32).reshape(
-        1, -1
-    ) - masses.reshape(-1, 1)
-    idx = np.argmin(np.abs(diffs), axis=0)
 
-    if np.any(diffs[idx] > max_mass_diff):
+    def find_closest_idx(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+        idx = np.searchsorted(x, y, side="left")
+        prev_less = np.abs(y - x[np.maximum(idx - 1, 0)]) < np.abs(
+            y - x[np.minimum(idx, len(x) - 1)]
+        )
+        prev_less = (idx == len(x)) | prev_less
+        idx[prev_less] -= 1
+        return idx
+
+    assert np.all(masses[:-1] <= masses[1:])  # check sorted
+
+    selected = np.fromiter(selected_masses.values(), dtype=np.float32)
+    idx = find_closest_idx(masses, selected)
+
+    diffs = np.abs(masses[idx] - selected)
+
+    if np.any(diffs > max_mass_diff):
         raise ValueError(
             "select_nu_signals: could not find mass closer than 'max_mass_diff'"
         )
