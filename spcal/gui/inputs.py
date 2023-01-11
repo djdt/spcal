@@ -412,14 +412,26 @@ class InputWidget(QtWidgets.QWidget):
     def drawLimits(self) -> None:
         if self.draw_mode == "Overlay":
             return
-        for name, limits in self.limits.items():
-            trim = self.trimRegion(name)
-            plot = self.graph.plots[name]
+
+        for plot in self.graph.plots.values():
             plot.clearLimits()
+
+        for i, (name, limits) in enumerate(self.limits.items()):
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
+            pen.setCosmetic(True)
+
+            trim = self.trimRegion(name)
+
+            if self.draw_mode == "Overlay":
+                plot = self.graph.plots["Overlay"]
+            else:
+                plot = self.graph.plots[name]
+
             plot.drawLimits(
                 self.events[trim[0] : trim[1]],
-                limits.mean_background,
+                # limits.mean_background,
                 limits.limit_of_detection,
+                pen=pen
             )
 
     def resetInputs(self) -> None:

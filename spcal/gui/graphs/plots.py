@@ -254,27 +254,47 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
     def drawLimits(
         self,
         x: np.ndarray,
-        mean: float | np.ndarray,
-        threshold: float | np.ndarray,
+        # mean: float | np.ndarray,
+        limit: float | np.ndarray,
+        pen: QtGui.QPen | None = None,
     ) -> None:
-        # skip_lc = np.all(limits["lc"] == limits["ld"])
-        pen = QtGui.QPen(QtCore.Qt.red, 1.0, QtCore.Qt.DashLine)
-        pen.setCosmetic(True)
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
+            pen.setCosmetic(True)
 
-        for limit, label, color in zip(
-            [mean, threshold],
-            ["Mean", "Detection Threshold"],
-            [QtCore.Qt.red, QtCore.Qt.blue],
-        ):
-            pen.setColor(color)
-            if isinstance(limit, float):
-                nx, y = [x[0], x[-1]], [limit, limit]
-            else:
-                diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
-                nx, y = x[diffs], limit[diffs]
+        if isinstance(limit, float) or limit.size == 1:
+            nx, y = [x[0], x[-1]], [limit, limit]
+        else:
+            diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
+            nx, y = x[diffs], limit[diffs]
 
-            curve = pyqtgraph.PlotCurveItem(
-                x=nx, y=y, name=label, pen=pen, connect="all", skipFiniteCheck=True
-            )
-            self.limits.append(curve)
-            self.addItem(curve)
+        curve = pyqtgraph.PlotCurveItem(
+            x=nx,
+            y=y,
+            name="Detection Threshold",
+            pen=pen,
+            connect="all",
+            skipFiniteCheck=True,
+        )
+        self.limits.append(curve)
+        self.addItem(curve)
+        #     self.limits.append(curve)
+        #     self.addItem(curve)
+        # for limit, label, color in zip(
+        #     [mean, threshold],
+        #     ["Mean", "Detection Threshold"],
+        #     [QtCore.Qt.red, QtCore.Qt.black],
+        # ):
+        #     pen.setColor(color)
+
+        #     if isinstance(limit, float) or limit.size == 1:
+        #         nx, y = [x[0], x[-1]], [limit, limit]
+        #     else:
+        #         diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
+        #         nx, y = x[diffs], limit[diffs]
+
+        #     curve = pyqtgraph.PlotCurveItem(
+        #         x=nx, y=y, name=label, pen=pen, connect="all", skipFiniteCheck=True
+        #     )
+        #     self.limits.append(curve)
+        #     self.addItem(curve)
