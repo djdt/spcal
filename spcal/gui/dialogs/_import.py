@@ -9,10 +9,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.util import Worker
 from spcal.gui.widgets import ElidedLabel, PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
-from spcal.io.text import export_single_particle_results, import_single_particle_file
+from spcal.io.text import import_single_particle_file
 from spcal.npdb import db
-from spcal.result import SPCalResult
-from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
+from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
 
@@ -135,13 +134,6 @@ class ImportDialog(_ImportDialogBase):
             QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
         )
         self.le_ignore_columns.textChanged.connect(self.updateTableIgnores)
-
-        self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
-        )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
 
         self.box_options.layout().addRow("Intensity Units:", self.combo_intensity_units)
         self.box_options.layout().addRow("Delimiter:", self.combo_delimiter)
