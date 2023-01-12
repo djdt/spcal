@@ -408,6 +408,8 @@ class NuImportDialog(_ImportDialogBase):
             signals = np.concatenate(
                 [result[1] for result in sorted(self.results, key=lambda r: r[0])]
             )
+            signals = signals / self.info["AverageSingleIonArea"]
+
             isotopes = self.table.selectedIsotopes()
             assert isotopes is not None
             selected_masses = {

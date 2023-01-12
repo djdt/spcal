@@ -92,11 +92,10 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
 
     Args:
         path: path to data directory
-        raw: return raw data
 
     Returns:
         masses from first acquistion
-        signals
+        signals in counts
         dict of parameters from run.info
     """
 
@@ -128,7 +127,8 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
     masses = get_masses_from_nu_data(
         data[0], run_info["MassCalCoefficients"], segment_delays
     )
-    return masses, data["result"]["signal"], run_info
+    signals = data["result"]["signal"] / run_info["AverageSingleIonArea"]
+    return masses, signals, run_info
 
 
 def select_nu_signals(
