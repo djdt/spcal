@@ -136,6 +136,43 @@ def process_nu_file(
     export_single_particle_results(outpath, results, **output_kws)
 
 
+class OptionsWidget(QtWidgets.QGroupBox):
+    def __init__(self, options: dict, parent: QtWidgets.QWidget | None = None):
+        super().__init__("Import Options", parent)
+
+        self.ignores = ["importer", "path", "old names", "masses"]
+        self.options = options
+        self.layout = QtWidgets.QFormLayout()
+
+        for k, v in options.items():
+            if k in :
+                continue
+            layout.addRow(f"{k}:", QtWidgets.QLabel(str(v)))
+
+        self.setLayout(layout)
+
+    def widgetForKey(self, key: str) -> QtWidgets.QWidget:
+        value = self.options[key]
+        if isinstance(value, list):
+            return QtWidgets.QLabel(", ".join(str(x) for x in list))
+        return QtWidgets.QLabel(str(value))
+
+    def widgetForList(self, key: str, value: List[Any]) -> QtWidgets.QTextEdit:
+        widget = QtWidgets.QTextEdit()
+        widget.setPlainText(
+            "\n".join(
+                f"{c} :: {n}"
+                for c, n in zip(
+                    self.sample.import_options["columns"],
+                    self.sample.import_options["names"],
+                )
+            )
+        )
+        te_columns.setReadOnly(True)
+        self.layout.addRow(f"{key}:", )
+
+
+
 class BatchProcessDialog(QtWidgets.QDialog):
     fileprocessed = QtCore.Signal()
     processingStarted = QtCore.Signal()
@@ -237,35 +274,36 @@ class BatchProcessDialog(QtWidgets.QDialog):
         switches.layout().addWidget(self.check_export_arrays)
         switches.layout().addWidget(self.check_export_compositions)
 
-        self.import_options = QtWidgets.QGroupBox("Import Options")
-        self.import_options.setLayout(QtWidgets.QFormLayout())
+        self.import_options = OptionsWidget(self.sample.import_options)
+        # self.import_options = QtWidgets.QGroupBox("Import Options")
+        # self.import_options.setLayout(QtWidgets.QFormLayout())
 
-        le_delimiter = QtWidgets.QLineEdit(self.sample.import_options["delimiter"])
-        le_delimiter.setReadOnly(True)
-        sb_first_line = QtWidgets.QSpinBox()
-        sb_first_line.setValue(self.sample.import_options["first line"])
-        sb_first_line.setReadOnly(True)
-        te_columns = QtWidgets.QTextEdit()
-        te_columns.setPlainText(
-            "\n".join(
-                f"{c} :: {n}"
-                for c, n in zip(
-                    self.sample.import_options["columns"],
-                    self.sample.import_options["names"],
-                )
-            )
-        )
-        te_columns.setReadOnly(True)
-        le_units = QtWidgets.QLineEdit(
-            "CPS" if self.sample.import_options["cps"] else "Counts"
-        )
-        le_units.setReadOnly(True)
+        # le_delimiter = QtWidgets.QLineEdit(self.sample.import_options["delimiter"])
+        # le_delimiter.setReadOnly(True)
+        # sb_first_line = QtWidgets.QSpinBox()
+        # sb_first_line.setValue(self.sample.import_options["first line"])
+        # sb_first_line.setReadOnly(True)
+        # te_columns = QtWidgets.QTextEdit()
+        # te_columns.setPlainText(
+        #     "\n".join(
+        #         f"{c} :: {n}"
+        #         for c, n in zip(
+        #             self.sample.import_options["columns"],
+        #             self.sample.import_options["names"],
+        #         )
+        #     )
+        # )
+        # te_columns.setReadOnly(True)
+        # le_units = QtWidgets.QLineEdit(
+        #     "CPS" if self.sample.import_options["cps"] else "Counts"
+        # )
+        # le_units.setReadOnly(True)
 
-        self.import_options.layout().addRow("Delimiter:", le_delimiter)
+        # self.import_options.layout().addRow("Delimiter:", le_delimiter)
 
-        self.import_options.layout().addRow("Import from row:", sb_first_line)
-        self.import_options.layout().addRow("Use Columns:", te_columns)
-        self.import_options.layout().addRow("Intensity Units:", le_units)
+        # self.import_options.layout().addRow("Import from row:", sb_first_line)
+        # self.import_options.layout().addRow("Use Columns:", te_columns)
+        # self.import_options.layout().addRow("Intensity Units:", le_units)
 
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
