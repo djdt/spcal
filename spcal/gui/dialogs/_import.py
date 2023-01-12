@@ -158,7 +158,7 @@ class ImportDialog(_ImportDialogBase):
         return delimiter
 
     def ignoreColumns(self) -> List[int]:
-        return [int(i or 0) - 1 for i in self.le_ignore_columns.text().split(";")]
+        return [int(i) - 1 for i in self.le_ignore_columns.text().split(";") if i != ""]
 
     def useColumns(self) -> List[int]:
         return [
