@@ -18,14 +18,14 @@ def test_standard_sizes():
     density = 19.32e3
 
     for x, expected in [
-        (data["au15nm"], 15.0),
-        (data["au50nm"], 50.0),
+        (data["au15nm"], 15.0e-9),
+        (data["au50nm"], 50.0e-9),
     ]:
         ub = np.mean(x)
         assert isinstance(ub, float)
         # 15 nm
-        yc, yd = poisson.formula_c(ub)
-        detections, _, _ = detection.accumulate_detections(x, yc + ub, yd + ub)
+        yc, _ = poisson.formula_c(ub, alpha=0.05)
+        detections, _, _ = detection.accumulate_detections(x, yc + ub)
 
         masses = particle.particle_mass(
             detections,
@@ -37,13 +37,9 @@ def test_standard_sizes():
         )
 
         sizes = particle.particle_size(masses, density=density)
-
-        assert np.isclose(
-            np.mean(sizes) * 1e9, expected, rtol=0.01, atol=0.0
-        )  # within 1%
-        assert np.isclose(
-            np.median(sizes) * 1e9, expected, rtol=0.0, atol=1.0
-        )  # within 1.0 nm
+        # within 1.0 nm
+        assert np.isclose(np.mean(sizes), expected, rtol=0.0, atol=1e-9)
+        assert np.isclose(np.median(sizes), expected, rtol=0.0, atol=1e-9)
 
 
 def test_standard_compositions():

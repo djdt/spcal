@@ -73,10 +73,8 @@ class InputWidget(QtWidgets.QWidget):
         self.options.method.currentTextChanged.connect(self.updateLimits)
         self.options.window_size.editingFinished.connect(self.updateLimits)
         self.options.check_use_window.toggled.connect(self.updateLimits)
-        self.options.sigma.editingFinished.connect(self.updateLimits)
         self.options.manual.editingFinished.connect(self.updateLimits)
         self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
-        self.options.error_rate_beta.editingFinished.connect(self.updateLimits)
         self.options.efficiency_method.currentTextChanged.connect(
             self.onEfficiencyMethodChanged
         )
@@ -255,8 +253,7 @@ class InputWidget(QtWidgets.QWidget):
             if responses.size > 0 and name in self.limits:
                 (d[name], l[name], r[name],) = spcal.accumulate_detections(
                     responses,
-                    self.limits[name].limit_of_criticality,
-                    self.limits[name].limit_of_detection,
+                    self.limits[name].detection_threshold,
                 )
 
         self.detections, self.labels, self.regions = combine_detections(d, l, r)
@@ -268,19 +265,9 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         method = self.options.method.currentText()
-        sigma = (
-            float(self.options.sigma.text())
-            if self.options.sigma.hasAcceptableInput()
-            else 3.0
-        )
         alpha = (
             float(self.options.error_rate_alpha.text())
             if self.options.error_rate_alpha.hasAcceptableInput()
-            else 0.05
-        )
-        beta = (
-            float(self.options.error_rate_beta.text())
-            if self.options.error_rate_beta.hasAcceptableInput()
             else 0.05
         )
         window_size = (
@@ -302,15 +289,13 @@ class InputWidget(QtWidgets.QWidget):
             if method == "Manual Input":
                 limit = float(self.options.manual.text())
                 self.limits[name] = SPCalLimit(
-                    np.mean(response), limit, limit, name="Manual Input", params={}
+                    np.mean(response), limit, name="Manual Input", params={}
                 )
             else:
                 self.limits[name] = SPCalLimit.fromMethodString(
                     method,
                     response,
-                    sigma=sigma,
                     alpha=alpha,
-                    beta=beta,
                     window_size=window_size,
                 )
         self.limitsChanged.emit()
@@ -328,7 +313,7 @@ class InputWidget(QtWidgets.QWidget):
                     self.responses[name][trim[0] : trim[1]],
                     self.detections[name],
                     self.labels,
-                    np.mean(self.limits[name].limit_of_detection),
+                    np.mean(self.limits[name].detection_threshold),
                     self.limits[name].name,
                     self.limits[name].params,
                 )
@@ -430,8 +415,8 @@ class InputWidget(QtWidgets.QWidget):
             plot.drawLimits(
                 self.events[trim[0] : trim[1]],
                 # limits.mean_background,
-                limits.limit_of_detection,
-                pen=pen
+                limits.detection_threshold,
+                pen=pen,
             )
 
     def resetInputs(self) -> None:
@@ -472,6 +457,7 @@ class ReferenceWidget(InputWidget):
             return
         if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
+            assert names is not None
         else:
             names = [_name]
 

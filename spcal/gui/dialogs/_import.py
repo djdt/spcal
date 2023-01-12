@@ -411,6 +411,7 @@ class NuImportDialog(_ImportDialogBase):
         self.threadpool.waitForDone()
         self.running = False
 
+        options = self.importOptions()
         try:
             signals = np.concatenate(
                 [result[1] for result in sorted(self.results, key=lambda r: r[0])]
@@ -432,7 +433,7 @@ class NuImportDialog(_ImportDialogBase):
             self.abort()
             return
 
-        self.dataImported.emit(data, self.importOptions())
+        self.dataImported.emit(data, options)
         logger.info(f"Nu instruments data loaded from {self.file_path}.")
         super().accept()
 

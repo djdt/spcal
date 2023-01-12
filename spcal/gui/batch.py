@@ -47,9 +47,7 @@ def process_data(
             limits[name] = SPCalLimit.fromMethodString(
                 limit_method,
                 data[name],
-                sigma=limit_params["sigma"],
                 alpha=limit_params["alpha"],
-                beta=limit_params["beta"],
                 window_size=limit_window_size,
             )
 
@@ -433,9 +431,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 pass
 
         limit_params = {
-            "sigma": float(self.options.sigma.text()),
             "alpha": float(self.options.error_rate_alpha.text()),
-            "beta": float(self.options.error_rate_beta.text()),
             "manual": float(self.options.manual.text() or 0.0),
         }
         units = {

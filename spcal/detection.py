@@ -10,18 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 def accumulate_detections(
-    y: np.ndarray,
-    limit_accumulation: float | np.ndarray,
-    limit_detection: float | np.ndarray,
+    y: np.ndarray, limit_accumulation: float | np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
-    Contiguous regions above `limit_accumulation` that contain at least one value above
-    `limit_detection` are summed.
+    Contiguous regions above `limit_accumulation` are summed.
 
     Args:
         y: array
-        limit_detection: value(s) for detection of region
         limit_accumulation: minimum accumulation value(s)
 
     Returns:
@@ -29,8 +25,6 @@ def accumulate_detections(
         labels of regions
         regions [starts, ends]
     """
-    if np.any(limit_detection < limit_accumulation):
-        raise ValueError("limit_detection must be greater than limit_accumulation.")
     # Get start and end positions of regions above accumulation limit
     diff = np.diff((y > limit_accumulation).astype(np.int8), prepend=0)
     starts = np.flatnonzero(diff == 1)
@@ -43,10 +37,6 @@ def accumulate_detections(
         end_point_added = True
     regions = np.stack((starts, ends), axis=1)
 
-    # Get maximum values in each region
-    detections = np.logical_or.reduceat(y > limit_detection, regions.ravel())[::2]
-    # Remove regions without a max value above detection limit
-    regions = regions[detections]
     # Sum regions
     sums = np.add.reduceat(y, regions.ravel())[::2]
 

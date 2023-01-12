@@ -25,11 +25,7 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert options.window_size.text() == "99"
 
     qtbot.keyClick(options.error_rate_alpha, QtCore.Qt.Key_1)
-    qtbot.keyClick(options.error_rate_beta, QtCore.Qt.Key_2)
-    qtbot.keyClick(options.sigma, QtCore.Qt.Key_3)
-    assert options.error_rate_alpha.text() == "0.051"
-    assert options.error_rate_beta.text() == "0.052"
-    assert options.sigma.text() == "5.03"
+    assert options.error_rate_alpha.text() == "0.0011"
 
     assert not options.manual.isEnabled()
     options.method.setCurrentIndex(5)

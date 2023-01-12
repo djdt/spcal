@@ -300,7 +300,7 @@ def export_single_particle_results(
         def limit_or_range(
             r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
         ) -> str | None:
-            lod = r.limits.limit_of_detection
+            lod = r.limits.detection_threshold
             if isinstance(lod, np.ndarray):
                 lod = np.array([lod.min(), lod.max()])
 

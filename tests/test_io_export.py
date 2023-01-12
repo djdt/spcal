@@ -1,9 +1,8 @@
 import tempfile
-from pathlib import Path
 
 import numpy as np
 
-from spcal.io.text import export_single_particle_results, import_single_particle_file
+from spcal.io.text import export_single_particle_results
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -13,9 +12,7 @@ results = {
         np.ones(100),
         np.array([5]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
-        SPCalLimit(
-            0.5, 5.0, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0}, window_size=9
-        ),
+        SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0}, window_size=9),
         inputs_kws={"dwelltime": 1e-6, "uptake": 1e-3, "not_a_kw": 10.0, "time": 100.0},
     ),
     "b": SPCalResult(
@@ -23,7 +20,7 @@ results = {
         np.full(100, 0.5),
         np.array([9]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
-        SPCalLimit(0.5, 5.0, 9.0, "Limit", {}),
+        SPCalLimit(0.5, 9.0, "Limit", {}),
         inputs_kws={
             "cell_diameter": 10e-6,
             "dwelltime": 1e-6,

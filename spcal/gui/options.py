@@ -121,24 +121,13 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
 
-        self.error_rate_alpha = QtWidgets.QLineEdit("0.05")
-        self.error_rate_alpha.setPlaceholderText("0.05")
-        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
+        self.error_rate_alpha = QtWidgets.QLineEdit("0.001")
+        self.error_rate_alpha.setPlaceholderText("0.001")
+        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(1e-6, 0.5, 9))
         self.error_rate_alpha.setToolTip(
-            "Type I (false positive) error rate for Poisson filter."
+            "Type I (false positive) error rate for filters."
         )
 
-        self.error_rate_beta = QtWidgets.QLineEdit("0.05")
-        self.error_rate_beta.setPlaceholderText("0.05")
-        self.error_rate_beta.setValidator(QtGui.QDoubleValidator(0.001, 0.5, 3))
-        self.error_rate_beta.setToolTip(
-            "Type II (false negative) error rate for Poisson filter."
-        )
-
-        self.sigma = QtWidgets.QLineEdit("5.0")
-        self.sigma.setPlaceholderText("5.0")
-        self.sigma.setValidator(QtGui.QDoubleValidator(0.0, 1e9, 2))
-        self.sigma.setToolTip("LOD in number of standard deviations from mean.")
         self.manual = QtWidgets.QLineEdit("10.0")
         self.manual.setEnabled(False)
         self.manual.setValidator(QtGui.QDoubleValidator(1e-9, 1e9, 2))
@@ -148,15 +137,12 @@ class OptionsWidget(QtWidgets.QWidget):
 
         layout_error_rate = QtWidgets.QHBoxLayout()
         layout_error_rate.addWidget(self.error_rate_alpha, 1)
-        layout_error_rate.addWidget(QtWidgets.QLabel(","), 0)
-        layout_error_rate.addWidget(self.error_rate_beta, 1)
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Filter method:", self.method)
-        self.limit_inputs.layout().addRow("α, β:", layout_error_rate)
-        self.limit_inputs.layout().addRow("Sigma:", self.sigma)
+        self.limit_inputs.layout().addRow("α:", layout_error_rate)
         self.limit_inputs.layout().addRow("Manual limit:", self.manual)
 
         self.celldiameter = UnitsWidget(

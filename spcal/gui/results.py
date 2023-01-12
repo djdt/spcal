@@ -7,12 +7,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
 )
-from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
@@ -566,12 +566,12 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
-        key = self.mode_keys[mode]
+        # key = self.mode_keys[mode]
 
         self.io.repopulate(list(self.results.keys()))
 
         for name, result in self.results.items():
-            lod = self.sample.limits[name].limit_of_detection
+            lod = self.sample.limits[name].detection_threshold
             if mode == "Signal":
                 units = signal_units
                 values = result.detections["signal"]

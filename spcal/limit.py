@@ -1,3 +1,4 @@
+from statistics import NormalDist
 from typing import Dict
 
 import numpy as np
@@ -10,15 +11,13 @@ class SPCalLimit(object):
     def __init__(
         self,
         mean_background: float | np.ndarray,
-        limit_of_criticality: float | np.ndarray,
-        limit_of_detection: float | np.ndarray,
+        detection_threshold: float | np.ndarray,
         name: str,
         params: Dict[str, float],
         window_size: int = 0,
     ):
         self.mean_background = mean_background
-        self.limit_of_criticality = limit_of_criticality
-        self.limit_of_detection = limit_of_detection
+        self.detection_threshold = detection_threshold
 
         self.name = name
         self.params = params
@@ -29,32 +28,20 @@ class SPCalLimit(object):
         cls,
         method: str,
         responses: np.ndarray,
-        sigma: float = 3.0,
-        alpha: float = 0.05,
-        beta: float = 0.05,
+        alpha: float = 0.001,
         window_size: int = 0,
     ) -> "SPCalLimit":
         method = method.lower()
         if method in ["automatic", "best"]:
-            return SPCalLimit.fromBest(
-                responses,
-                sigma=sigma,
-                alpha=alpha,
-                beta=beta,
-                window_size=window_size,
-            )
+            return SPCalLimit.fromBest(responses, alpha=alpha, window_size=window_size)
         elif method == "highest":
             return SPCalLimit.fromHighest(
-                responses,
-                sigma=sigma,
-                alpha=alpha,
-                beta=beta,
-                window_size=window_size,
+                responses, alpha=alpha, window_size=window_size
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
                 responses,
-                sigma=sigma,
+                alpha=alpha,
                 window_size=window_size,
                 use_median="median" in method,
             )
@@ -62,7 +49,6 @@ class SPCalLimit(object):
             return SPCalLimit.fromPoisson(
                 responses,
                 alpha=alpha,
-                beta=beta,
                 window_size=window_size,
                 use_median="median" in method,
             )
@@ -73,10 +59,11 @@ class SPCalLimit(object):
     def fromGaussian(
         cls,
         responses: np.ndarray,
-        sigma: float = 3.0,
+        alpha: float = 0.001,
         window_size: int = 0,
         use_median: bool = False,
     ) -> "SPCalLimit":
+
         if responses.size == 0:
             raise ValueError("fromGaussian: responses is size 0")
 
@@ -95,13 +82,13 @@ class SPCalLimit(object):
             mean = mean[: responses.size]
             std = moving_std(pad, window_size)[: responses.size]
 
-        ld = mean + std * sigma
+        z = NormalDist().inv_cdf(1.0 - alpha)
+
         return cls(
             mean,
-            ld,
-            ld,
+            mean + std * z,
             name="Gaussian" + (" Median" if use_median else ""),
-            params={"sigma": sigma},
+            params={"alpha": alpha},
             window_size=window_size,
         )
 
@@ -109,8 +96,7 @@ class SPCalLimit(object):
     def fromPoisson(
         cls,
         responses: np.ndarray,
-        alpha: float = 0.05,
-        beta: float = 0.05,
+        alpha: float = 0.001,
         window_size: int = 0,
         use_median: bool = False,
     ) -> "SPCalLimit":
@@ -130,14 +116,13 @@ class SPCalLimit(object):
             )
             mean = mean[: responses.size]
 
-        sc, sd = poisson_limits(mean, alpha=alpha, beta=beta)
+        sc, _ = poisson_limits(mean, alpha=alpha)
 
         return cls(
             mean,
             mean + sc,
-            mean + sd,
             name="Poisson" + (" Median" if use_median else ""),
-            params={"alpha": alpha, "beta": beta},
+            params={"alpha": alpha},
             window_size=window_size,
         )
 
@@ -145,9 +130,7 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
-        sigma: float = 3.0,
-        alpha: float = 0.05,
-        beta: float = 0.05,
+        alpha: float = 0.001,
         window_size: int = 0,
         use_median: bool = False,
     ) -> "SPCalLimit":
@@ -156,38 +139,28 @@ class SPCalLimit(object):
         # Todo check for normality
         if mean > 50.0:
             return SPCalLimit.fromGaussian(
-                responses, sigma=sigma, window_size=window_size, use_median=use_median
+                responses, alpha=alpha, window_size=window_size, use_median=use_median
             )
         else:
             return SPCalLimit.fromPoisson(
-                responses,
-                alpha=alpha,
-                beta=beta,
-                window_size=window_size,
-                use_median=use_median,
+                responses, alpha=alpha, window_size=window_size, use_median=use_median
             )
 
     @classmethod
     def fromHighest(
         cls,
         responses: np.ndarray,
-        sigma: float = 3.0,
-        alpha: float = 0.05,
-        beta: float = 0.05,
+        alpha: float = 0.001,
         window_size: int = 0,
         use_median: bool = False,
     ) -> "SPCalLimit":
         gaussian = SPCalLimit.fromGaussian(
-            responses, sigma=sigma, window_size=window_size, use_median=use_median
+            responses, alpha=alpha, window_size=window_size, use_median=use_median
         )
         poisson = SPCalLimit.fromPoisson(
-            responses,
-            alpha=alpha,
-            beta=beta,
-            window_size=window_size,
-            use_median=use_median,
+            responses, alpha=alpha, window_size=window_size, use_median=use_median
         )
-        if np.mean(gaussian.limit_of_detection) > np.mean(poisson.limit_of_detection):
+        if np.mean(gaussian.detection_threshold) > np.mean(poisson.detection_threshold):
             return gaussian
         else:
             return poisson
