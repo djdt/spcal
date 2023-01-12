@@ -39,7 +39,6 @@ def process_data(
             limits[name] = SPCalLimit(
                 np.mean(data[name]),
                 limit_params["manual"],
-                limit_params["manual"],
                 name="Manual Input",
                 params={},
             )
@@ -53,9 +52,7 @@ def process_data(
 
         # === Create detections ===
         d[name], l[name], r[name] = accumulate_detections(
-            data[name],
-            limits[name].limit_of_criticality,
-            limits[name].limit_of_detection,
+            data[name], limits[name].detection_threshold
         )
 
     detections, labels, regions = combine_detections(d, l, r)
@@ -382,9 +379,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
 
-        self.completed_files: List[str] = []
-        self.failed_files: List[Tuple[str, str]] = []
-
         self.aborted = False
         self.running = True
         self.progress.setValue(0)
@@ -480,6 +474,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
             worker.signals.exception.connect(self.workerFailed)
             self.threadpool.start(worker)
 
+        logger.info(f"Batch processing started for {len(infiles)} files.")
         self.processingStarted.emit()
 
     def finalise(self) -> None:
@@ -489,6 +484,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.progress.reset()
         self.button_process.setText("Start Batch")
 
+        logger.info("Batch processing complete.")
         self.processingFinshed.emit()
 
     def workerComplete(self) -> None:
