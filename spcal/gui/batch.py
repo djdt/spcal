@@ -9,11 +9,12 @@ from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
+from spcal.gui.widgets import UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
-from spcal.siunits import mass_units, molar_concentration_units, size_units
+from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
 
 logger = logging.getLogger(__name__)
 
@@ -136,41 +137,40 @@ def process_nu_file(
     export_single_particle_results(outpath, results, **output_kws)
 
 
-class OptionsWidget(QtWidgets.QGroupBox):
+class ImportOptionsWidget(QtWidgets.QGroupBox):
     def __init__(self, options: dict, parent: QtWidgets.QWidget | None = None):
         super().__init__("Import Options", parent)
 
         self.ignores = ["importer", "path", "old names", "masses"]
         self.options = options
-        self.layout = QtWidgets.QFormLayout()
+        self.shown = False
 
-        for k, v in options.items():
-            if k in :
+        layout = QtWidgets.QFormLayout()
+
+        for key in options.keys():
+            if key in self.ignores:
                 continue
-            layout.addRow(f"{k}:", QtWidgets.QLabel(str(v)))
+            layout.addRow(f"{key}:", self.widgetForKey(key))
 
         self.setLayout(layout)
 
     def widgetForKey(self, key: str) -> QtWidgets.QWidget:
         value = self.options[key]
-        if isinstance(value, list):
-            return QtWidgets.QLabel(", ".join(str(x) for x in list))
-        return QtWidgets.QLabel(str(value))
-
-    def widgetForList(self, key: str, value: List[Any]) -> QtWidgets.QTextEdit:
-        widget = QtWidgets.QTextEdit()
-        widget.setPlainText(
-            "\n".join(
-                f"{c} :: {n}"
-                for c, n in zip(
-                    self.sample.import_options["columns"],
-                    self.sample.import_options["names"],
-                )
-            )
-        )
-        te_columns.setReadOnly(True)
-        self.layout.addRow(f"{key}:", )
-
+        if key == "dwelltime":
+            widget = UnitsWidget(time_units, value=value)
+            widget.setBestUnit()
+        elif isinstance(value, list) and len(value) > 1:
+            from spcal.gui.widgets.smalltextedit import SmallTextEdit
+            widget = SmallTextEdit(",\n".join(str(x) for x in value))
+            # widget.show()
+            # widget.setMaximumHeight(
+            #     widget.fontMetrics().height()
+            #     * (1 + widget.document().begin().layout().lineCount())
+            # )
+        else:
+            widget = QtWidgets.QLineEdit(str(value).strip("[]"))
+        widget.setReadOnly(True)
+        return widget
 
 
 class BatchProcessDialog(QtWidgets.QDialog):
@@ -274,7 +274,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         switches.layout().addWidget(self.check_export_arrays)
         switches.layout().addWidget(self.check_export_compositions)
 
-        self.import_options = OptionsWidget(self.sample.import_options)
+        self.import_options = ImportOptionsWidget(self.sample.import_options)
         # self.import_options = QtWidgets.QGroupBox("Import Options")
         # self.import_options.setLayout(QtWidgets.QFormLayout())
 
@@ -308,12 +308,13 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout_list = QtWidgets.QVBoxLayout()
         layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
         layout_list.addWidget(self.files, 1)
+        layout_list.addWidget(units, 0)
+        layout_list.addWidget(switches, 0)
 
         layout_right = QtWidgets.QVBoxLayout()
         layout_right.addWidget(self.inputs, 0)
         layout_right.addWidget(self.import_options, 0)
-        layout_right.addWidget(units, 0)
-        layout_right.addWidget(switches, 0)
+        layout_right.addStretch(1)
 
         layout_horz = QtWidgets.QHBoxLayout()
         layout_horz.addLayout(layout_list)
