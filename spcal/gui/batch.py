@@ -122,8 +122,7 @@ def process_nu_file(
     masses, signals, info = read_nu_directory(path)
 
     selected_masses = {
-        f"{i['Symbol']}{i['Isotope']}": i["Mass"]
-        for i in import_options["selectedIsotopes"]
+        f"{i['Symbol']}{i['sotope']}": i["Mass"] for i in import_options["isotopes"]
     }
     data = select_nu_signals(masses, signals, selected_masses=selected_masses)
 

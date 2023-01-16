@@ -331,8 +331,7 @@ class NuImportDialog(_ImportDialogBase):
             "importer": "nu",
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
-            "masses": self.masses,
-            "selectedIsotopes": self.table.selectedIsotopes(),
+            "isotopes": self.table.selectedIsotopes(),
         }
 
     def setControlsEnabled(self, enabled: bool) -> None:
