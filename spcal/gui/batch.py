@@ -9,7 +9,7 @@ from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
-from spcal.gui.widgets import UnitsWidget
+from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, import_single_particle_file
 from spcal.limit import SPCalLimit
@@ -158,14 +158,12 @@ class ImportOptionsWidget(QtWidgets.QGroupBox):
         if key == "dwelltime":
             widget = UnitsWidget(time_units, value=value)
             widget.setBestUnit()
+        elif key == "isotopes":
+            widget = AdjustingTextEdit(
+                ", ".join(f"{x['Symbol']}{x['Number']}" for x in value)
+            )
         elif isinstance(value, list) and len(value) > 1:
-            from spcal.gui.widgets.smalltextedit import SmallTextEdit
-            widget = SmallTextEdit(",\n".join(str(x) for x in value))
-            # widget.show()
-            # widget.setMaximumHeight(
-            #     widget.fontMetrics().height()
-            #     * (1 + widget.document().begin().layout().lineCount())
-            # )
+            widget = AdjustingTextEdit(", ".join(str(x) for x in value))
         else:
             widget = QtWidgets.QLineEdit(str(value).strip("[]"))
         widget.setReadOnly(True)
@@ -226,6 +224,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs = QtWidgets.QGroupBox("Batch Options")
         self.inputs.setLayout(QtWidgets.QFormLayout())
 
+        self.import_options = ImportOptionsWidget(self.sample.import_options)
+
         self.output_dir = QtWidgets.QLineEdit("")
         self.output_dir.setPlaceholderText("Same as input")
         self.output_dir.setToolTip("Leave blank to use the input directory.")
@@ -251,12 +251,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.conc_units.addItems(molar_concentration_units.keys())
         self.conc_units.setCurrentText(best_units["cell_concentration"][0])
 
-        units = QtWidgets.QGroupBox("Output Units")
-        units.setLayout(QtWidgets.QFormLayout())
-        units.layout().addRow("Mass units", self.mass_units)
-        units.layout().addRow("Size units", self.size_units)
-        units.layout().addRow("Conc. units", self.conc_units)
-
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
         self.check_export_arrays = QtWidgets.QCheckBox(
@@ -267,62 +261,34 @@ class BatchProcessDialog(QtWidgets.QDialog):
             "Export peak compositions."
         )
 
-        switches = QtWidgets.QGroupBox("Output Options")
-        switches.setLayout(QtWidgets.QVBoxLayout())
-        switches.layout().addWidget(self.check_export_inputs)
-        switches.layout().addWidget(self.check_export_arrays)
-        switches.layout().addWidget(self.check_export_compositions)
+        outputs = QtWidgets.QGroupBox("Output Options")
+        outputs.setLayout(QtWidgets.QFormLayout())
+        outputs.layout().addRow("Mass units", self.mass_units)
+        outputs.layout().addRow("Size units", self.size_units)
+        outputs.layout().addRow("Conc. units", self.conc_units)
+        outputs.layout().addRow(self.check_export_inputs)
+        outputs.layout().addRow(self.check_export_arrays)
+        outputs.layout().addRow(self.check_export_compositions)
 
-        self.import_options = ImportOptionsWidget(self.sample.import_options)
-        # self.import_options = QtWidgets.QGroupBox("Import Options")
-        # self.import_options.setLayout(QtWidgets.QFormLayout())
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(
+            self.button_files, 0, 0, 1, 2, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
-        # le_delimiter = QtWidgets.QLineEdit(self.sample.import_options["delimiter"])
-        # le_delimiter.setReadOnly(True)
-        # sb_first_line = QtWidgets.QSpinBox()
-        # sb_first_line.setValue(self.sample.import_options["first line"])
-        # sb_first_line.setReadOnly(True)
-        # te_columns = QtWidgets.QTextEdit()
-        # te_columns.setPlainText(
-        #     "\n".join(
-        #         f"{c} :: {n}"
-        #         for c, n in zip(
-        #             self.sample.import_options["columns"],
-        #             self.sample.import_options["names"],
-        #         )
-        #     )
-        # )
-        # te_columns.setReadOnly(True)
-        # le_units = QtWidgets.QLineEdit(
-        #     "CPS" if self.sample.import_options["cps"] else "Counts"
-        # )
-        # le_units.setReadOnly(True)
+        layout.addWidget(self.files, 1, 0, 1, 1)
+        layout.addWidget(self.inputs, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignTop)
 
-        # self.import_options.layout().addRow("Delimiter:", le_delimiter)
+        layout.addWidget(outputs, 2, 0, 1, 1)
+        layout.addWidget(
+            self.import_options, 2, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignTop
+        )
 
-        # self.import_options.layout().addRow("Import from row:", sb_first_line)
-        # self.import_options.layout().addRow("Use Columns:", te_columns)
-        # self.import_options.layout().addRow("Intensity Units:", le_units)
+        layout.addWidget(self.progress, 3, 0, 1, 2)
+        layout.addWidget(
+            self.button_process, 4, 0, 1, 2, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
-        layout_list = QtWidgets.QVBoxLayout()
-        layout_list.addWidget(self.button_files, 0, QtCore.Qt.AlignLeft)
-        layout_list.addWidget(self.files, 1)
-        layout_list.addWidget(units, 0)
-        layout_list.addWidget(switches, 0)
-
-        layout_right = QtWidgets.QVBoxLayout()
-        layout_right.addWidget(self.inputs, 0)
-        layout_right.addWidget(self.import_options, 0)
-        layout_right.addStretch(1)
-
-        layout_horz = QtWidgets.QHBoxLayout()
-        layout_horz.addLayout(layout_list)
-        layout_horz.addLayout(layout_right, 0)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_horz)
-        layout.addWidget(self.progress, 0)
-        layout.addWidget(self.button_process, 0, QtCore.Qt.AlignRight)
+        # layout.setRowStretch(1, 1)
 
         self.setLayout(layout)
 
