@@ -16,6 +16,9 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         self.setFixedWidth(20)
         self.item2 = fit
 
+        self.fit_icon = QtGui.QPainterPath()
+        self.fit_icon.cubicTo(0, 0, 0, 10, 0, 20)
+
     def mouseClickEvent(
         self, event: QtGui.QMouseEvent
     ):  # Dumb pyqtgraph class, use pos()
@@ -32,6 +35,16 @@ class HistogramItemSample(pyqtgraph.ItemSample):
 
         event.accept()
         self.update()
+
+    def normalPath(
+        self, x0: float, y0: float, x1: float, y1: float
+    ) -> QtGui.QPainterPath:
+        xm = x0 + (x1 - x0) / 2.0
+        path = QtGui.QPainterPath()
+        path.moveTo(x0, y1)
+        path.cubicTo(x0 + (xm - x0) / 2.0, y1, xm - (xm - x0) / 3.0, y0, xm, y0)
+        path.cubicTo(xm + (xm - x0) / 3.0, y0, x1 - (xm - x0) / 2.0, y1, x1, y1)
+        return path
 
     def setFit(self, fit: pyqtgraph.PlotCurveItem | None) -> None:
         self.item2 = fit
@@ -60,8 +73,9 @@ class HistogramItemSample(pyqtgraph.ItemSample):
                 icon = pyqtgraph.icons.invisibleEye.qicon
                 painter.drawPixmap(QtCore.QPoint(20 + 3 + 1, 1), icon.pixmap(18, 18))
             else:
-                painter.setPen(pyqtgraph.mkPen(opts["pen"]))
-                painter.drawLine(23, 11, 40, 11)
+                painter.strokePath(
+                    self.normalPath(23, 2, 40, 18), pyqtgraph.mkPen(opts["pen"])
+                )
 
 
 class MultipleItemSampleProxy(pyqtgraph.ItemSample):
