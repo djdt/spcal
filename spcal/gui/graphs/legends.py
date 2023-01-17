@@ -73,8 +73,9 @@ class HistogramItemSample(pyqtgraph.ItemSample):
                 icon = pyqtgraph.icons.invisibleEye.qicon
                 painter.drawPixmap(QtCore.QPoint(20 + 3 + 1, 1), icon.pixmap(18, 18))
             else:
+                painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
                 painter.strokePath(
-                    self.normalPath(23, 2, 40, 18), pyqtgraph.mkPen(opts["pen"])
+                    self.normalPath(25, 2, 38, 18), pyqtgraph.mkPen(opts["pen"])
                 )
 
 
