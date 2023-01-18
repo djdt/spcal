@@ -27,7 +27,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self.yaxis.enableAutoSIPrefix(False)
 
         super().__init__(
-            title="Results Histogram",
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             viewBox=ViewBoxForceScaleAtZero(enableMenu=False),
@@ -138,7 +137,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.yaxis.setLabel(text="Intensity (counts)", units="")
 
         super().__init__(
-            title=name,
             name=name,
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             enableMenu=False,

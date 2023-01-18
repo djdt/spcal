@@ -21,17 +21,24 @@ class _SPCalGraphicsView(pyqtgraph.GraphicsView):
         )
 
         self.action_show_legend = create_action(
-            "label",
-            "Toggle Legend",
+            "view-hidden",
+            "Hide Legend",
             "Toggle visibility of the legend.",
-            self.toggleLegend,
+            self.toggleLegendVisible,
         )
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
-
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
-        menu.addAction(self.action_show_legend)
+        if all(legend is not None for legend in self.legends()):
+            if any(legend.isVisible() for legend in self.legends()):
+                self.action_show_legend.setIcon(QtGui.QIcon.fromTheme("view-hidden"))
+                self.action_show_legend.setText("Hide Legend")
+            else:
+                self.action_show_legend.setIcon(QtGui.QIcon.fromTheme("view-visible"))
+                self.action_show_legend.setText("Show Legend")
+
+            menu.addAction(self.action_show_legend)
         menu.exec(event.globalPos())
 
     def copyToClipboard(self) -> None:
@@ -42,11 +49,15 @@ class _SPCalGraphicsView(pyqtgraph.GraphicsView):
         painter.end()
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
-    def toggleLegend(self, visible: bool) -> None:
-        raise NotImplementedError
+    def legends(self) -> List[pyqtgraph.LegendItem]:
+        return []
+
+    def toggleLegendVisible(self) -> None:
+        for legend in self.legends():
+            legend.setVisible(not legend.isVisible())
 
 
-class _SinglePlotGrapgicsView(_SPCalGraphicsView):
+class _SinglePlotGraphicsView(_SPCalGraphicsView):
     def __init__(
         self,
         title: str,
@@ -84,9 +95,8 @@ class _SinglePlotGrapgicsView(_SPCalGraphicsView):
         self.plot.clear()
         self.plot.legend.clear()
 
-    def toggleLegend(self) -> None:
-        if self.legend is not None:
-            self.legend.setVisible(not self.legend.isVisible())
+    def legends(self) -> List[pyqtgraph.LegendItem]:
+        return [self.plot.legend]
 
     def zoomReset(self) -> None:
         self.plot.setRange(
@@ -136,12 +146,38 @@ class _ScrollableGraphicsView(_SPCalGraphicsView):
         self.layout.clear()
         self.plots = {}
 
-    def toggleLegend(self) -> None:
+    def legends(self) -> List[pyqtgraph.LegendItem]:
+        return [plot.legend for plot in self.plots.values()]
+
+    def bounds(self) -> Tuple[float, float, float, float]:
+        bounds = np.array(
+            [plot.vb.childrenBounds() for plot in self.plots.values()], dtype=float
+        )
+        if np.all(np.isnan(bounds)):
+            return 0.0, 1.0, 0.0, 1.0
+        return (
+            np.nanmin(bounds[:, 0, 0]),
+            np.nanmax(bounds[:, 0, 1]),
+            np.nanmin(bounds[:, 1, 0]),
+            np.nanmax(bounds[:, 1, 1]),
+        )
+
+    def zoomReset(self) -> None:
+        if self.layout.getItem(0, 0) is None:
+            return
+        xmin, xmax, ymin, ymax = self.bounds()
+
         for plot in self.plots.values():
-            plot.legend.setVisible(not plot.legend.isVisible())
+            plot.setLimits(xMin=xmin, xMax=xmax, yMin=ymin, yMax=ymax)
+
+        self.layout.getItem(0, 0).setRange(
+            xRange=(xmin, xmax),
+            yRange=(ymin, ymax),
+            disableAutoRange=True,
+        )
 
 
-class CompositionView(_SinglePlotGrapgicsView):
+class CompositionView(_SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(
             "Detection Compositions",
@@ -185,7 +221,7 @@ class CompositionView(_SinglePlotGrapgicsView):
         )
 
 
-class ScatterView(_SinglePlotGrapgicsView):
+class ScatterView(_SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("Scatter", xlabel="", ylabel="", parent=parent)
 
@@ -256,14 +292,6 @@ class ScatterView(_SinglePlotGrapgicsView):
 
 
 class HistogramView(_ScrollableGraphicsView):
-    def __init__(
-        self,
-        parent: QtWidgets.QWidget | None = None,
-    ):
-        super().__init__(parent=parent)
-
-        self.plots: Dict[str, HistogramPlotItem] = {}
-
     def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
         if name not in self.plots:
             return self.addHistogramPlot(name, **add_kws)
@@ -283,33 +311,6 @@ class HistogramView(_ScrollableGraphicsView):
 
         return self.plots[name]
 
-    def bounds(self) -> Tuple[float, float, float, float]:
-        bounds = np.array(
-            [plot.vb.childrenBounds() for plot in self.plots.values()], dtype=float
-        )
-        if np.all(np.isnan(bounds)):
-            return 0.0, 1.0, 0.0, 1.0
-        return (
-            np.nanmin(bounds[:, 0, 0]),
-            np.nanmax(bounds[:, 0, 1]),
-            np.nanmin(bounds[:, 1, 0]),
-            np.nanmax(bounds[:, 1, 1]),
-        )
-
-    def zoomReset(self) -> None:
-        if self.layout.getItem(0, 0) is None:
-            return
-        xmin, xmax, ymin, ymax = self.bounds()
-
-        for plot in self.plots.values():
-            plot.setLimits(xMin=xmin, xMax=xmax, yMin=ymin, yMax=ymax)
-
-        self.layout.getItem(0, 0).setRange(
-            xRange=(xmin, xmax),
-            yRange=(ymin, ymax),
-            disableAutoRange=True,
-        )
-
 
 class ParticleView(_ScrollableGraphicsView):
     regionChanged = QtCore.Signal()
@@ -320,8 +321,6 @@ class ParticleView(_ScrollableGraphicsView):
     ):
         self.downsample = 1
         super().__init__(minimum_plot_height=150, parent=parent)
-
-        self.plots: Dict[str, ParticlePlotItem] = {}
 
     def addParticlePlot(self, name: str, xscale: float = 1.0) -> ParticlePlotItem:
         self.plots[name] = ParticlePlotItem(name=name, xscale=xscale)
@@ -345,11 +344,3 @@ class ParticleView(_ScrollableGraphicsView):
             plot.region.setRegion(region.getRegion())
             plot.region.blockSignals(False)
         self.blockSignals(False)
-
-    def clear(self) -> None:
-        self.layout.clear()
-        self.plots = {}
-
-    def zoomReset(self) -> None:
-        for plot in self.plots.values():
-            plot.autoRange()
