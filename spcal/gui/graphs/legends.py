@@ -14,29 +14,76 @@ class HistogramItemSample(pyqtgraph.ItemSample):
     ):
         super().__init__(histogram)
         self.setFixedWidth(20)
-        self.item2 = fit
+        self.item_fit = fit
 
-        self.fit_icon = QtGui.QPainterPath()
-        self.fit_icon.cubicTo(0, 0, 0, 10, 0, 20)
+        self.size = 20.0
+        self.pad = 2.0
+
+    def boundingRect(self):
+        return QtCore.QRectF(0, 0, self.size * 2 + self.pad, self.size)
 
     def mouseClickEvent(
         self, event: QtGui.QMouseEvent
     ):  # Dumb pyqtgraph class, use pos()
         """Use the mouseClick event to toggle the visibility of the plotItem"""
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            if QtCore.QRectF(0, 0, 20, 20).contains(event.pos()):
-                visible = self.item.isVisible()
-                self.item.setVisible(not visible)
-            elif self.item2 is not None and QtCore.QRectF(23, 0, 20, 20).contains(
+            if QtCore.QRectF(self.size + self.pad, 0, self.size, self.size).contains(
                 event.pos()
             ):
-                visible = self.item2.isVisible()
-                self.item2.setVisible(not visible)
+                visible = self.item.isVisible()
+                self.item.setVisible(not visible)
+            elif self.item_fit is not None and QtCore.QRectF(
+                0, 0, self.size, self.size
+            ).contains(event.pos()):
+                visible = self.item_fit.isVisible()
+                self.item_fit.setVisible(not visible)
 
         event.accept()
         self.update()
 
-    def normalPath(
+    def paint(self, painter: QtGui.QPainter, *args):
+        opts = self.item.opts
+        if opts.get("antialias"):
+            painter.setRenderHint(painter.RenderHint.Antialiasing)
+
+        offset = self.size + self.pad
+        if not self.item.isVisible():
+            icon = pyqtgraph.icons.invisibleEye.qicon
+            painter.drawPixmap(
+                QtCore.QPoint(offset + self.pad, self.pad),
+                icon.pixmap(self.size - self.pad * 2.0, self.size - self.pad * 2.0),
+            )
+        else:
+            painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
+            painter.drawPath(
+                self.pathForHist(
+                    offset + self.pad,
+                    self.pad,
+                    offset + self.size - self.pad * 2.0,
+                    self.size - self.pad * 2.0,
+                )
+            )
+
+        offset = 0.0
+        if self.item_fit is not None:
+            opts = self.item_fit.opts
+            if not self.item_fit.isVisible():
+                icon = pyqtgraph.icons.invisibleEye.qicon
+                painter.drawPixmap(
+                    QtCore.QPoint(offset + self.pad, self.pad),
+                    icon.pixmap(self.size - self.pad * 2.0, self.size - self.pad * 2.0),
+                )
+            else:
+                painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+                path = self.pathForFit(
+                    offset + self.pad,
+                    self.pad,
+                    offset + self.size - self.pad * 2.0,
+                    self.size - self.pad * 2.0,
+                )
+                painter.strokePath(path, pyqtgraph.mkPen(opts["pen"]))
+
+    def pathForFit(
         self, x0: float, y0: float, x1: float, y1: float
     ) -> QtGui.QPainterPath:
         xm = x0 + (x1 - x0) / 2.0
@@ -46,37 +93,20 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         path.cubicTo(xm + (xm - x0) / 3.0, y0, x1 - (xm - x0) / 2.0, y1, x1, y1)
         return path
 
+    def pathForHist(
+        self, x0: float, y0: float, x1: float, y1: float
+    ) -> QtGui.QPainterPath:
+        dx = (x1 - x0) / 3.0
+        h = y1 - y0
+        path = QtGui.QPainterPath()
+        path.addRect(QtCore.QRectF(x0, y0 + h / 2.0, dx, h / 2.0))
+        path.addRect(QtCore.QRectF(x0 + dx, y1 - h / 3.0, dx, h / 3.0))
+        path.addRect(QtCore.QRectF(x0 + 2.0 * dx, y0, dx, h))
+        return path
+
     def setFit(self, fit: pyqtgraph.PlotCurveItem | None) -> None:
-        self.item2 = fit
+        self.item_fit = fit
         self.prepareGeometryChange()
-
-    def boundingRect(self):
-        return QtCore.QRectF(0, 0, 43, 20)
-
-    def paint(self, painter: QtGui.QPainter, *args):
-        opts = self.item.opts
-        if opts.get("antialias"):
-            painter.setRenderHint(painter.RenderHint.Antialiasing)
-
-        visible = self.item.isVisible()
-        if not visible:
-            icon = pyqtgraph.icons.invisibleEye.qicon
-            painter.drawPixmap(QtCore.QPoint(1, 1), icon.pixmap(18, 18))
-        else:
-            painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
-            painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
-
-        if self.item2 is not None:
-            visible2 = self.item2.isVisible()
-            opts = self.item2.opts
-            if not visible2:
-                icon = pyqtgraph.icons.invisibleEye.qicon
-                painter.drawPixmap(QtCore.QPoint(20 + 3 + 1, 1), icon.pixmap(18, 18))
-            else:
-                painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-                painter.strokePath(
-                    self.normalPath(25, 2, 38, 18), pyqtgraph.mkPen(opts["pen"])
-                )
 
 
 class MultipleItemSampleProxy(pyqtgraph.ItemSample):
