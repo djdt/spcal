@@ -5,6 +5,60 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.graphs import color_schemes
 
 
+class MarkerItem(QtWidgets.QGraphicsPathItem):
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        text: str = "",
+        height: float = 6.0,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+        parent: QtWidgets.QGraphicsItem | None = None,
+    ):
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.black)
+
+        super().__init__(parent)
+        self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations, True)
+        self.setPos(x, y)
+
+        width = height / np.sqrt(3.0)
+        path = QtGui.QPainterPath()
+        path.addPolygon(
+            QtGui.QPolygonF(
+                [
+                    QtCore.QPointF(0, 0),
+                    QtCore.QPointF(-width, -height),
+                    QtCore.QPointF(width, -height),
+                ]
+            )
+        )
+        self.setPath(path)
+        self.setPen(pen)
+        self.setBrush(brush)
+
+        self.text = QtWidgets.QGraphicsSimpleTextItem(text, self)
+        # self.text.setPen(pen)
+        # self.text.setBrush(brush)
+
+        trect = QtGui.QFontMetrics(self.text.font()).boundingRect(self.text.text())
+        self.text.setPos(-trect.width() / 2.0, -(height + trect.height()))
+
+    def paint(
+        self,
+        painter: QtGui.QPainter,
+        option: QtWidgets.QStyleOptionGraphicsItem,
+        widget: QtWidgets.QWidget | None = None,
+    ) -> None:
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        super().paint(painter, option, widget)
+
+
 class PieSlice(QtWidgets.QGraphicsEllipseItem):
     def __init__(
         self,

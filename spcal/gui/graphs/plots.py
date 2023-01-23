@@ -50,10 +50,12 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
     def drawData(
         self,
         name: str,
-        x: np.ndarray,
+        data: np.ndarray,
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
+        # draw_median: bool = True,
+        # draw_mean: bool = True,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -66,7 +68,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         assert bar_width > 0.0 and bar_width <= 1.0
         assert bar_offset >= 0.0 and bar_offset < 1.0
 
-        hist, edges = np.histogram(x, bins)
+        hist, edges = np.histogram(data, bins)
         widths = np.diff(edges)
 
         x = np.repeat(edges, 2)
@@ -92,6 +94,16 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self.legends[name] = HistogramItemSample(curve)
         self.addItem(curve)
         self.legend.addItem(self.legends[name], name)
+
+        # if draw_mean:
+        #     mean = np.mean(data)
+        #     marker = MarkerItem(mean, y.max(), text="x", brush=brush)
+        #     self.addItem(marker)
+
+        # if draw_median:
+        #     median = np.median(data)
+        #     marker = MarkerItem(median, y.max(), text="M", brush=brush)
+        #     self.addItem(marker)
 
         return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
