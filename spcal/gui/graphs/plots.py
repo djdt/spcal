@@ -131,21 +131,22 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self,
         limit: float,
         label: str,
-        symbol: str = "o",
+        pos: float = 0.95,
         pen: QtGui.QPen | None = None,
         name: str | None = None,
+        visible: bool = True,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 2.0, QtCore.Qt.PenStyle.DashLine)
             pen.setCosmetic(True)
 
         line = pyqtgraph.InfiniteLine(
-            limit,
-            label=label,
-            markers=[(symbol, 0.95, 6)],
-            labelOpts={"position": 0.95, "color": "black"},
-            pen=pen,
+            limit, label=label, labelOpts={"position": pos, "color": "black"}, pen=pen
         )
+        line.setVisible(visible)
+        if name is not None:
+            self.legends[name].addLimit(line)
+            self.legend.updateSize()
         self.addItem(line)
 
 

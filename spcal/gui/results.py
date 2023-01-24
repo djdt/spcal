@@ -340,11 +340,14 @@ class ResultsWidget(QtWidgets.QWidget):
         names = list(self.results.keys())
 
         graph_data = {}
+        lods = {}
+        line_pos = 0.95
         for name, result in self.results.items():
             indices = result.indicies
             if indices.size < 2 or key not in result.detections:
                 continue
             graph_data[name] = result.detections[key][indices]
+            lods[name] = result.convertTo(result.limits.detection_threshold, key)
 
         # median 'sturges' bin width
         if bin_width is None:
@@ -417,7 +420,20 @@ class ResultsWidget(QtWidgets.QWidget):
             # Draw all the limits
             pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
             pen.setCosmetic(True)
-            plot.drawLimit(np.mean(graph_data[name]), "mean", pen=pen)
+
+            visible = not self.graph_options["histogram"]["mode"] == "overlay"
+            plot.drawLimit(
+                lods[name], "LOD", pos=line_pos, pen=pen, name=name, visible=visible
+            )
+            pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+            plot.drawLimit(
+                np.mean(graph_data[name]),
+                "mean",
+                pos=line_pos,
+                pen=pen,
+                name=name,
+                visible=visible,
+            )
         self.graph_hist.zoomReset()
 
     def drawGraphCompositions(self) -> None:

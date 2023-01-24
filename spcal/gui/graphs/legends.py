@@ -14,15 +14,17 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         limits: List[pyqtgraph.InfiniteLine] | None = None,
     ):
         super().__init__(histogram)
-        self.setFixedWidth(20)
         self.item_fit = fit
-        self.item_limits = limits
+        self.item_limits = []
+        if limits is not None:
+            self.item_limits.extend(limits)
 
         self.size = 20.0
         self.pad = 2.0
+        self.setFixedWidth(self.size * 2 + self.pad)
 
     def boundingRect(self):
-        return QtCore.QRectF(0, 0, self.size * 2 + self.pad, self.size)
+        return QtCore.QRectF(0, 0, self.size * 3 + self.pad * 2, self.size)
 
     def mouseClickEvent(
         self, event: QtGui.QMouseEvent
@@ -31,7 +33,7 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         if event.button() != QtCore.Qt.MouseButton.LeftButton:
             return
 
-        if self.item_limits is not None and QtCore.QRectF(
+        if len(self.item_limits) > 0 and QtCore.QRectF(
             0, 0, self.size, self.size
         ).contains(event.pos()):
             visible = any(limit.isVisible() for limit in self.item_limits)
@@ -52,28 +54,24 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         self.update()
 
     def paint(self, painter: QtGui.QPainter, *args):
-        opts = self.item.opts
-        if opts.get("antialias"):
-            painter.setRenderHint(painter.RenderHint.Antialiasing)
+        painter.setRenderHint(painter.RenderHint.Antialiasing)
 
         offset = 0.0
-        if self.item_fit is not None:
-            opts = self.item_fit.opts
-            if not self.item_fit.isVisible():
+        if len(self.item_limits) > 0:
+            if not all(limit.isVisible() for limit in self.item_limits):
                 icon = pyqtgraph.icons.invisibleEye.qicon
                 painter.drawPixmap(
                     QtCore.QPoint(offset + self.pad, self.pad),
                     icon.pixmap(self.size - self.pad * 2.0, self.size - self.pad * 2.0),
                 )
             else:
-                painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-                path = self.pathForFit(
-                    offset + self.pad,
+                painter.setPen(self.item_limits[0].pen)
+                painter.drawLine(
+                    offset + self.size / 2.0,
                     self.pad,
-                    offset + self.size - self.pad * 2.0,
-                    self.size - self.pad * 2.0,
+                    offset + self.size / 2.0,
+                    self.size - self.pad,
                 )
-                painter.strokePath(path, pyqtgraph.mkPen(opts["pen"]))
 
         offset = self.size + self.pad
         if self.item_fit is not None:
@@ -85,7 +83,6 @@ class HistogramItemSample(pyqtgraph.ItemSample):
                     icon.pixmap(self.size - self.pad * 2.0, self.size - self.pad * 2.0),
                 )
             else:
-                painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
                 path = self.pathForFit(
                     offset + self.pad,
                     self.pad,
@@ -102,7 +99,9 @@ class HistogramItemSample(pyqtgraph.ItemSample):
                 icon.pixmap(self.size - self.pad * 2.0, self.size - self.pad * 2.0),
             )
         else:
+            opts = self.item.opts
             painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
+            painter.setPen(pyqtgraph.mkPen(opts["pen"]))
             painter.drawPath(
                 self.pathForHist(
                     offset + self.pad,
@@ -111,7 +110,6 @@ class HistogramItemSample(pyqtgraph.ItemSample):
                     self.size - self.pad * 2.0,
                 )
             )
-
 
     def pathForFit(
         self, x0: float, y0: float, x1: float, y1: float
@@ -133,6 +131,10 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         path.addRect(QtCore.QRectF(x0 + dx, y1 - h / 3.0, dx, h / 3.0))
         path.addRect(QtCore.QRectF(x0 + 2.0 * dx, y0, dx, h))
         return path
+
+    def addLimit(self, limit: pyqtgraph.InfiniteLine) -> None:
+        self.item_limits.append(limit)
+        self.prepareGeometryChange()
 
     def setFit(self, fit: pyqtgraph.PlotCurveItem | None) -> None:
         self.item_fit = fit
