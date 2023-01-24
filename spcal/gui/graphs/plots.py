@@ -54,8 +54,8 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
-        # draw_median: bool = True,
-        # draw_mean: bool = True,
+        draw_median: bool = True,
+        draw_mean: bool = True,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -126,6 +126,27 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         if name is not None:
             self.legends[name].setFit(curve)
             self.legend.updateSize()
+
+    def drawLimit(
+        self,
+        limit: float,
+        label: str,
+        symbol: str = "o",
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 2.0, QtCore.Qt.PenStyle.DashLine)
+            pen.setCosmetic(True)
+
+        line = pyqtgraph.InfiniteLine(
+            limit,
+            label=label,
+            markers=[(symbol, 0.95, 6)],
+            labelOpts={"position": 0.95, "color": "black"},
+            pen=pen,
+        )
+        self.addItem(line)
 
 
 class ParticlePlotItem(pyqtgraph.PlotItem):

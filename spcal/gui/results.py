@@ -342,7 +342,7 @@ class ResultsWidget(QtWidgets.QWidget):
         graph_data = {}
         for name, result in self.results.items():
             indices = result.indicies
-            if indices.size < 2 or not key in result.detections:
+            if indices.size < 2 or key not in result.detections:
                 continue
             graph_data[name] = result.detections[key][indices]
 
@@ -405,13 +405,19 @@ class ResultsWidget(QtWidgets.QWidget):
                     ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
                 else:
                     raise ValueError(
-                        f"drawGraphHist: unknown fit {self.graph_options['histogram']['fit']}"
+                        "drawGraphHist: unknown fit "
+                        f"{self.graph_options['histogram']['fit']}"
                     )
 
                 ys = ys * bin_width * graph_data[name].size
                 pen = QtGui.QPen(color, 1.0)
                 pen.setCosmetic(True)
                 plot.drawFit(xs, ys, pen=pen, name=name)
+
+            # Draw all the limits
+            pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
+            pen.setCosmetic(True)
+            plot.drawLimit(np.mean(graph_data[name]), "mean", pen=pen)
         self.graph_hist.zoomReset()
 
     def drawGraphCompositions(self) -> None:

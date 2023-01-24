@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs import color_schemes
@@ -152,16 +153,17 @@ class PieChart(QtWidgets.QGraphicsItem):
         )
 
 
-app = QtWidgets.QApplication()
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
 
-scene = QtWidgets.QGraphicsScene(-100, -100, 200, 200)
-view = QtWidgets.QGraphicsView(scene)
-view.setMouseTracking(True)
+    scene = QtWidgets.QGraphicsScene(-100, -100, 200, 200)
+    view = QtWidgets.QGraphicsView(scene)
+    view.setMouseTracking(True)
 
-item = PieChart(100.0, [0.1, 0.7, 0.2], color_schemes["IBM Carbon"])
-item.setPos(0.0, 100.0)
-scene.addItem(item)
+    item = PieChart(100.0, [0.1, 0.7, 0.2], color_schemes["IBM Carbon"])
+    item.setPos(0.0, 100.0)
+    scene.addItem(item)
 
-view.show()
+    view.show()
 
-app.exec()
+    app.exec()
