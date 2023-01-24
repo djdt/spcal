@@ -304,12 +304,7 @@ def export_single_particle_results(
             if isinstance(lod, np.ndarray):
                 lod = np.array([lod.min(), lod.max()])
 
-            if key == "mass":
-                lod = r.asMass(lod)  # type: ignore
-            elif key == "size":
-                lod = r.asSize(lod)  # type: ignore
-            elif key == "cell_concentration":
-                lod = r.asCellConcentration(lod)  # type: ignore
+            lod = r.convertTo(lod, key)  # type: ignore
 
             if lod is None:
                 return None

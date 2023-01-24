@@ -41,7 +41,7 @@ class SPCalResult(object):
 
     @property
     def ionic_background(self) -> float | None:
-        if not "response" in self.inputs:
+        if "response" not in self.inputs:
             return None
         return self.background / self.inputs["response"]
 
@@ -117,6 +117,20 @@ class SPCalResult(object):
         if mass is not None and "density" in self.inputs:
             return particle.particle_size(mass, density=self.inputs["density"])
         return None
+
+    def convertTo(
+        self, value: float | np.ndarray, key: str
+    ) -> float | np.ndarray | None:
+        if key == "signal":
+            return value
+        elif key == "mass":
+            return self.asMass(value)
+        elif key == "size":
+            return self.asSize(value)
+        elif key == "cell_concentration":
+            return self.asCellConcentration(value)
+        else:
+            raise ValueError(f"convertTo: unknown key '{key}'.")
 
     def fromNebulisationEfficiency(
         self,
