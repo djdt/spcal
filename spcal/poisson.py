@@ -71,7 +71,8 @@ def formula_a(
 
     References:
         United States Environmental Protection Agency,
-            MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
+            MARLAP Manual Volume III: Chapter 20,
+            Detection and Quantification Capabilities Overview
     """
     z_a = NormalDist().inv_cdf((1.0 - alpha))
     z_b = NormalDist().inv_cdf((1.0 - beta))
@@ -108,14 +109,17 @@ def formula_c(
 
     References:
         United States Environmental Protection Agency,
-            MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
+            MARLAP Manual Volume III: Chapter 20,
+            Detection and Quantification Capabilities Overview
     """
     z_a = NormalDist().inv_cdf((1.0 - alpha))
     z_b = NormalDist().inv_cdf((1.0 - beta))
 
     tr = t_sample / t_blank
 
-    Sc = z_a**2 / 2.0 * tr + z_a * np.sqrt(z_a**2 / 4.0 * tr * tr + Nb * tr * (1.0 + tr))
+    Sc = z_a**2 / 2.0 * tr + z_a * np.sqrt(
+        z_a**2 / 4.0 * tr * tr + Nb * tr * (1.0 + tr)
+    )
     Sd = Sc + z_b**2 / 2.0 + z_b * np.sqrt((z_b**2 / 4.0) + Sc + Nb * (1.0 + tr))
 
     return Sc, Sd
@@ -144,7 +148,8 @@ def stapleton_approximation(
 
     References:
         United States Environmental Protection Agency,
-            MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview
+            MARLAP Manual Volume III: Chapter 20,
+            Detection and Quantification Capabilities Overview
     """
     z_a = NormalDist().inv_cdf((1.0 - alpha))
     z_b = NormalDist().inv_cdf((1.0 - beta))
