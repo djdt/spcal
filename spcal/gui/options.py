@@ -85,7 +85,6 @@ class OptionsWidget(QtWidgets.QWidget):
                 "Automatic",
                 "Highest",
                 "Gaussian",
-                "Gaussian Median",
                 "Poisson",
                 "Manual Input",
             ]
@@ -96,29 +95,20 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
         self.method.setItemData(
-            1,
-            "Use the highest of Gaussian and Poisson.",
-            QtCore.Qt.ToolTipRole,
+            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
         )
         self.method.setItemData(
             2,
-            "Gaussian threshold with LOD of mean + 'simga' * σ.",
+            "Iteratively threshold using the median and standard deviation.",
             QtCore.Qt.ToolTipRole,
         )
         self.method.setItemData(
             3,
-            "Gaussian threshold with LOD of median + 'simga' * σ.",
+            "Iteratively threshold using Formula C from the MARLAP manual.",
             QtCore.Qt.ToolTipRole,
         )
         self.method.setItemData(
-            4,
-            "Regions of Lc with at least one value above Ld.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.method.setItemData(
-            5,
-            "Use a manually defined limit for filtering.",
-            QtCore.Qt.ToolTipRole,
+            4, "Use a manually defined limit for filtering.", QtCore.Qt.ToolTipRole
         )
 
         self.error_rate_alpha = QtWidgets.QLineEdit("0.001")
