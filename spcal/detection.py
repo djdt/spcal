@@ -1,12 +1,9 @@
 """Functions for detecting and classifying particles."""
-import logging
 from typing import Dict, Tuple
 
 import numpy as np
 
 from spcal.lib.spcalext import maxima
-
-logger = logging.getLogger(__name__)
 
 
 def accumulate_detections(
