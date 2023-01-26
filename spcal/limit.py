@@ -30,7 +30,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         window_size: int = 0,
-        max_iters: int = 100,
+        max_iters: int = 10,
     ) -> "SPCalLimit":
         method = method.lower()
         if method in ["automatic", "best"]:
@@ -58,7 +58,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         window_size: int = 0,
-        max_iters: int = 100,
+        max_iters: int = 10,
     ) -> "SPCalLimit":
 
         if responses.size == 0:
@@ -82,6 +82,8 @@ class SPCalLimit(object):
 
             threshold = mu + std * z
             iters += 1
+        if iters == max_iters and max_iters != 1:
+            raise Warning("fromPoisson: reached max_iters")
 
         return cls(
             mu,
@@ -97,7 +99,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         window_size: int = 0,
-        max_iters: int = 100,
+        max_iters: int = 10,
     ) -> "SPCalLimit":
         if responses.size == 0:
             raise ValueError("fromPoisson: responses is size 0")
@@ -117,6 +119,8 @@ class SPCalLimit(object):
             sc, _ = poisson_limits(mu, alpha=alpha)
             threshold = mu + sc
             iters += 1
+        if iters == max_iters and max_iters != 1:
+            raise Warning("fromPoisson: reached max_iters")
 
         return cls(
             mu,
@@ -132,7 +136,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         window_size: int = 0,
-        max_iters: int = 100,
+        max_iters: int = 10,
     ) -> "SPCalLimit":
         mean = np.mean(responses)
 
