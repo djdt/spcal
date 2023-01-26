@@ -2,6 +2,7 @@ import logging
 from statistics import NormalDist
 from typing import Dict
 
+import bottleneck as bn
 import numpy as np
 
 from spcal.calc import moving_mean, moving_median, moving_std
@@ -95,8 +96,15 @@ class SPCalLimit(object):
                 pad = np.pad(
                     responses, [window_size // 2, window_size // 2], mode="reflect"
                 )
-                mu = moving_median(pad, window_size)
-                std = moving_std(pad, window_size)
+                pad[window_size // 2 : -(window_size // 2)][
+                    responses > threshold
+                ] = np.nan
+                mu = bn.move_mean(pad, window_size, min_count=1)[
+                    2 * (window_size // 2) :
+                ]
+                std = bn.move_std(pad, window_size, min_count=1)[
+                    2 * (window_size // 2) :
+                ]
 
             threshold = mu + std * z
             iters += 1
@@ -124,17 +132,22 @@ class SPCalLimit(object):
         if responses.size == 0:
             raise ValueError("fromPoisson: responses is size 0")
 
-        threshold, prev_threshold = np.inf, np.inf
+        threshold, prev_threshold, iters = np.inf, np.inf
         iters = 0
         while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
-                mu = np.mean(responses[responses < prev_threshold])
+                mu = np.mean(responses[responses < threshold])
             else:
                 pad = np.pad(
                     responses, [window_size // 2, window_size // 2], mode="reflect"
                 )
-                mu = moving_mean(pad, window_size)
+                pad[window_size // 2 : -(window_size // 2)][
+                    responses > threshold
+                ] = np.nan
+                mu = bn.move_mean(pad, window_size, min_count=1)[
+                    2 * (window_size // 2) :
+                ]
 
             sc, _ = poisson_limits(mu, alpha=alpha)
             threshold = mu + sc
