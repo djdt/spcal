@@ -399,7 +399,7 @@ class NuImportDialog(_ImportDialogBase):
             self.threadpool.start(worker)
 
     def finalise(self) -> None:
-        self.threadpool.waitForDone()
+        self.threadpool.waitForDone(1000)
         self.running = False
 
         options = self.importOptions()
