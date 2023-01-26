@@ -93,18 +93,14 @@ class SPCalLimit(object):
                 mu = np.mean(responses[responses < threshold])
                 std = np.std(responses[responses < threshold])
             else:
+                halfwin = window_size // 2
                 pad = np.pad(
-                    responses, [window_size // 2, window_size // 2], mode="reflect"
+                    np.where(responses < threshold, responses, np.nan),
+                    [halfwin, halfwin],
+                    mode="reflect",
                 )
-                pad[window_size // 2 : -(window_size // 2)][
-                    responses > threshold
-                ] = np.nan
-                mu = bn.move_mean(pad, window_size, min_count=1)[
-                    2 * (window_size // 2) :
-                ]
-                std = bn.move_std(pad, window_size, min_count=1)[
-                    2 * (window_size // 2) :
-                ]
+                mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
+                std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
 
             threshold = mu + std * z
             iters += 1
@@ -132,22 +128,20 @@ class SPCalLimit(object):
         if responses.size == 0:
             raise ValueError("fromPoisson: responses is size 0")
 
-        threshold, prev_threshold, iters = np.inf, np.inf
+        threshold, prev_threshold = np.inf, np.inf
         iters = 0
         while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
                 mu = np.mean(responses[responses < threshold])
             else:
+                halfwin = window_size // 2
                 pad = np.pad(
-                    responses, [window_size // 2, window_size // 2], mode="reflect"
+                    np.where(responses < threshold, responses, np.nan),
+                    [halfwin, halfwin],
+                    mode="reflect",
                 )
-                pad[window_size // 2 : -(window_size // 2)][
-                    responses > threshold
-                ] = np.nan
-                mu = bn.move_mean(pad, window_size, min_count=1)[
-                    2 * (window_size // 2) :
-                ]
+                mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
             sc, _ = poisson_limits(mu, alpha=alpha)
             threshold = mu + sc
