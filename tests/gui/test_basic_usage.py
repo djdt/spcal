@@ -22,7 +22,7 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert options.check_use_window.isChecked()
     assert options.window_size.isEnabled()
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
-    assert options.window_size.text() == "99"
+    assert options.window_size.text() == "100"
 
     qtbot.keyClick(options.error_rate_poisson, QtCore.Qt.Key_1)
     assert options.error_rate_poisson.text() == "0.0011"

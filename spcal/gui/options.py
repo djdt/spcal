@@ -71,7 +71,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
-        self.window_size = ValidColorLineEdit("999")
+        self.window_size = ValidColorLineEdit("1000")
         self.window_size.setValidator(QtGui.QIntValidator(3, 1000000))
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
