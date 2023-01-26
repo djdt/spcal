@@ -69,12 +69,8 @@ class InputWidget(QtWidgets.QWidget):
         self.detectionsChanged.connect(self.drawDetections)
 
         self.options = options
-        self.options.dwelltime.valueChanged.connect(self.updateLimits)
-        self.options.method.currentTextChanged.connect(self.updateLimits)
-        self.options.window_size.editingFinished.connect(self.updateLimits)
-        self.options.check_use_window.toggled.connect(self.updateLimits)
-        self.options.manual.editingFinished.connect(self.updateLimits)
-        self.options.error_rate_alpha.editingFinished.connect(self.updateLimits)
+        # self.options.dwelltime.valueChanged.connect(self.updateLimits)
+        self.options.limitOptionsChanged.connect(self.updateLimits)
         self.options.efficiency_method.currentTextChanged.connect(
             self.onEfficiencyMethodChanged
         )
@@ -265,10 +261,15 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         method = self.options.method.currentText()
-        alpha = (
-            float(self.options.error_rate_alpha.text())
-            if self.options.error_rate_alpha.hasAcceptableInput()
-            else 0.05
+        poisson_alpha = (
+            float(self.options.error_rate_poisson.text())
+            if self.options.error_rate_poisson.hasAcceptableInput()
+            else 0.001
+        )
+        gaussian_alpha = (
+            float(self.options.error_rate_gaussian.text())
+            if self.options.error_rate_gaussian.hasAcceptableInput()
+            else 1e-6
         )
         window_size = (
             int(self.options.window_size.text())
@@ -276,6 +277,7 @@ class InputWidget(QtWidgets.QWidget):
             and self.options.window_size.isEnabled()
             else 0
         )
+        max_iter = 10 if self.options.check_iterative.isChecked() else 1
 
         self.limits.clear()
 
@@ -295,8 +297,10 @@ class InputWidget(QtWidgets.QWidget):
                 self.limits[name] = SPCalLimit.fromMethodString(
                     method,
                     response,
-                    alpha=alpha,
+                    poisson_alpha=poisson_alpha,
+                    gaussian_alpha=gaussian_alpha,
                     window_size=window_size,
+                    max_iters=max_iter,
                 )
         self.limitsChanged.emit()
 

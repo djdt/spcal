@@ -1,3 +1,5 @@
+from statistics import NormalDist
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
@@ -8,6 +10,7 @@ from spcal.siunits import time_units
 
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
+    limitOptionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -98,25 +101,37 @@ class OptionsWidget(QtWidgets.QWidget):
             1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
         )
         self.method.setItemData(
-            2,
-            "Iteratively threshold using the median and standard deviation.",
-            QtCore.Qt.ToolTipRole,
+            2, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
         )
         self.method.setItemData(
             3,
-            "Iteratively threshold using Formula C from the MARLAP manual.",
+            "Threshold using Formula C from the MARLAP manual.",
             QtCore.Qt.ToolTipRole,
         )
         self.method.setItemData(
             4, "Use a manually defined limit for filtering.", QtCore.Qt.ToolTipRole
         )
 
-        self.error_rate_alpha = QtWidgets.QLineEdit("0.001")
-        self.error_rate_alpha.setPlaceholderText("0.001")
-        self.error_rate_alpha.setValidator(QtGui.QDoubleValidator(1e-6, 0.5, 9))
-        self.error_rate_alpha.setToolTip(
-            "Type I (false positive) error rate for filters."
+        self.error_rate_poisson = ValidColorLineEdit("0.001")
+        self.error_rate_poisson.setPlaceholderText("0.001")
+        self.error_rate_poisson.setValidator(QtGui.QDoubleValidator(1e-12, 0.5, 9))
+        self.error_rate_poisson.setToolTip(
+            "Type I (false positive) error rate for Poisson filters."
         )
+        self.error_rate_gaussian = ValidColorLineEdit("1e-6")
+        self.error_rate_gaussian.setPlaceholderText("1e-6")
+        self.error_rate_gaussian.setValidator(QtGui.QDoubleValidator(1e-12, 0.5, 9))
+        self.error_rate_gaussian.setToolTip(
+            "Type I (false positive) error rate for Guassian filters."
+        )
+        self.error_rate_gaussian.editingFinished.connect(self.updateLabelSigma)
+
+        self.label_sigma_gaussian = QtWidgets.QLabel("4.75 σ")
+        self.label_sigma_gaussian.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.label_sigma_gaussian.setIndent(10)
+
+        self.check_iterative = QtWidgets.QCheckBox("Iterative")
+        self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
         self.manual = QtWidgets.QLineEdit("10.0")
         self.manual.setEnabled(False)
@@ -125,14 +140,35 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.method.currentTextChanged.connect(self.limitMethodChanged)
 
-        layout_error_rate = QtWidgets.QHBoxLayout()
-        layout_error_rate.addWidget(self.error_rate_alpha, 1)
+        self.window_size.editingFinished.connect(self.limitOptionsChanged)
+        self.check_use_window.toggled.connect(self.limitOptionsChanged)
+        self.method.currentTextChanged.connect(self.limitOptionsChanged)
+        self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
+        self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
+        self.check_iterative.toggled.connect(self.limitOptionsChanged)
+        self.manual.editingFinished.connect(self.limitOptionsChanged)
+
+        layout_method = QtWidgets.QHBoxLayout()
+        layout_method.addWidget(self.method)
+        layout_method.addWidget(self.check_iterative)
+
+        layout_gaussian = QtWidgets.QGridLayout()
+        layout_gaussian.addWidget(self.error_rate_gaussian, 0, 0, 1, 1)
+        layout_gaussian.addWidget(
+            self.label_sigma_gaussian,
+            0,
+            0,
+            1,
+            1,
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter,
+        )
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
-        self.limit_inputs.layout().addRow("Filter method:", self.method)
-        self.limit_inputs.layout().addRow("α:", layout_error_rate)
+        self.limit_inputs.layout().addRow("Filter method:", layout_method)
+        self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
+        self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
         self.limit_inputs.layout().addRow("Manual limit:", self.manual)
 
         self.celldiameter = UnitsWidget(
@@ -157,6 +193,14 @@ class OptionsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_left)
 
         self.setLayout(layout)
+
+    def updateLabelSigma(self) -> None:
+        try:
+            alpha = float(self.error_rate_gaussian.text())
+        except ValueError:
+            return
+        sigma = NormalDist().inv_cdf(1.0 - alpha)
+        self.label_sigma_gaussian.setText(f"{sigma:.2f} σ")
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":

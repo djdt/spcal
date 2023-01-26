@@ -4,7 +4,7 @@ import numpy as np
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
+from spcal.gui.inputs import InputWidget, ReferenceWidget
 from spcal.gui.main import SPCalWindow
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
@@ -24,11 +24,21 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
     assert options.window_size.text() == "99"
 
-    qtbot.keyClick(options.error_rate_alpha, QtCore.Qt.Key_1)
-    assert options.error_rate_alpha.text() == "0.0011"
+    qtbot.keyClick(options.error_rate_poisson, QtCore.Qt.Key_1)
+    assert options.error_rate_poisson.text() == "0.0011"
+
+    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Backspace)
+    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_5)
+    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Enter)
+    assert options.error_rate_gaussian.text() == "1e-5"
+    assert options.label_sigma_gaussian.text() == "4.26 σ"
+
+    with qtbot.wait_signal(options.check_iterative.toggled, timeout=50):
+        options.check_iterative.click()
+    assert options.check_iterative.isChecked()
 
     assert not options.manual.isEnabled()
-    options.method.setCurrentIndex(5)
+    options.method.setCurrentIndex(4)
     assert options.manual.isEnabled()
     qtbot.keyClick(options.manual, QtCore.Qt.Key_1)
     assert options.manual.text() == "10.01"

@@ -1,3 +1,4 @@
+import logging
 from statistics import NormalDist
 from typing import Dict
 
@@ -5,6 +6,8 @@ import numpy as np
 
 from spcal.calc import moving_mean, moving_median, moving_std
 from spcal.poisson import formula_c as poisson_limits
+
+logger = logging.getLogger(__name__)
 
 
 class SPCalLimit(object):
@@ -28,26 +31,40 @@ class SPCalLimit(object):
         cls,
         method: str,
         responses: np.ndarray,
-        alpha: float = 0.001,
+        poisson_alpha: float = 0.001,
+        gaussian_alpha: float = 1e-6,
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
         method = method.lower()
         if method in ["automatic", "best"]:
             return SPCalLimit.fromBest(
-                responses, alpha=alpha, window_size=window_size, max_iters=max_iters
+                responses,
+                poisson_alpha=poisson_alpha,
+                gaussian_alpha=gaussian_alpha,
+                window_size=window_size,
+                max_iters=max_iters,
             )
         elif method == "highest":
             return SPCalLimit.fromHighest(
-                responses, alpha=alpha, window_size=window_size
+                responses,
+                poisson_alpha=poisson_alpha,
+                gaussian_alpha=gaussian_alpha,
+                window_size=window_size,
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
-                responses, alpha=alpha, window_size=window_size, max_iters=max_iters
+                responses,
+                alpha=gaussian_alpha,
+                window_size=window_size,
+                max_iters=max_iters,
             )
         elif method.startswith("poisson"):
             return SPCalLimit.fromPoisson(
-                responses, alpha=alpha, window_size=window_size, max_iters=max_iters
+                responses,
+                alpha=poisson_alpha,
+                window_size=window_size,
+                max_iters=max_iters,
             )
         else:
             raise ValueError("fromMethodString: unknown method")
@@ -64,15 +81,16 @@ class SPCalLimit(object):
         if responses.size == 0:
             raise ValueError("fromGaussian: responses is size 0")
 
-        z = NormalDist().inv_cdf(1.0 - alpha / 2.0)  # div 2.0 as one-sided
+        z = NormalDist().inv_cdf(1.0 - alpha)
 
-        threshold, prev_threshold = 0.0, np.inf
+        threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while np.all(prev_threshold > threshold) and iters < max_iters:
+        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
             prev_threshold = threshold
+
             if window_size == 0:  # No window
-                mu = np.median(responses)  # Median is a better estimator of center
-                std = np.std(responses)
+                mu = np.mean(responses[responses < threshold])
+                std = np.std(responses[responses < threshold])
             else:
                 pad = np.pad(
                     responses, [window_size // 2, window_size // 2], mode="reflect"
@@ -82,8 +100,9 @@ class SPCalLimit(object):
 
             threshold = mu + std * z
             iters += 1
+
         if iters == max_iters and max_iters != 1:
-            raise Warning("fromPoisson: reached max_iters")
+            logger.warning("fromPoisson: reached max_iters")
 
         return cls(
             mu,
@@ -101,15 +120,16 @@ class SPCalLimit(object):
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
+
         if responses.size == 0:
             raise ValueError("fromPoisson: responses is size 0")
 
-        threshold, prev_threshold = 0.0, np.inf
+        threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while np.all(prev_threshold > threshold) and iters < max_iters:
+        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
-                mu = np.mean(responses)
+                mu = np.mean(responses[responses < prev_threshold])
             else:
                 pad = np.pad(
                     responses, [window_size // 2, window_size // 2], mode="reflect"
@@ -119,8 +139,9 @@ class SPCalLimit(object):
             sc, _ = poisson_limits(mu, alpha=alpha)
             threshold = mu + sc
             iters += 1
+
         if iters == max_iters and max_iters != 1:
-            raise Warning("fromPoisson: reached max_iters")
+            logger.warning("fromPoisson: reached max_iters")
 
         return cls(
             mu,
@@ -134,7 +155,8 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
-        alpha: float = 0.001,
+        poisson_alpha: float = 0.001,
+        gaussian_alpha: float = 1e-6,
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
@@ -143,22 +165,36 @@ class SPCalLimit(object):
         # Todo check for normality
         if mean > 50.0:
             return SPCalLimit.fromGaussian(
-                responses, alpha=alpha, window_size=window_size, max_iters=max_iters
+                responses,
+                alpha=gaussian_alpha,
+                window_size=window_size,
+                max_iters=max_iters,
             )
         else:
             return SPCalLimit.fromPoisson(
-                responses, alpha=alpha, window_size=window_size, max_iters=max_iters
+                responses,
+                alpha=poisson_alpha,
+                window_size=window_size,
+                max_iters=max_iters,
             )
 
     @classmethod
     def fromHighest(
-        cls, responses: np.ndarray, alpha: float = 0.001, window_size: int = 0
+        cls,
+        responses: np.ndarray,
+        poisson_alpha: float = 0.001,
+        gaussian_alpha: float = 1e-6,
+        window_size: int = 0,
+        max_iters: int = 10,
     ) -> "SPCalLimit":
         gaussian = SPCalLimit.fromGaussian(
-            responses, alpha=alpha, window_size=window_size, max_iters=1
+            responses,
+            alpha=gaussian_alpha,
+            window_size=window_size,
+            max_iters=max_iters,
         )
         poisson = SPCalLimit.fromPoisson(
-            responses, alpha=alpha, window_size=window_size, max_iters=1
+            responses, alpha=poisson_alpha, window_size=window_size, max_iters=max_iters
         )
         if np.mean(gaussian.detection_threshold) > np.mean(poisson.detection_threshold):
             return gaussian
