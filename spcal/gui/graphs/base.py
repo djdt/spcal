@@ -161,15 +161,17 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         )
 
     def zoomReset(self) -> None:
-        if self.layout.getItem(0, 0) is None:
-            return
-        xmin, xmax, ymin, ymax = self.bounds()
-
         for plot in self.plots.values():
-            plot.setLimits(xMin=xmin, xMax=xmax, yMin=ymin, yMax=ymax)
+            plot.vb.autoRange()
+        # if self.layout.getItem(0, 0) is None:
+        #     return
+        # xmin, xmax, ymin, ymax = self.bounds()
 
-        self.layout.getItem(0, 0).setRange(
-            xRange=(xmin, xmax),
-            yRange=(ymin, ymax),
-            disableAutoRange=True,
-        )
+        # for plot in self.plots.values():
+        #     plot.setLimits(xMin=xmin, xMax=xmax, yMin=ymin, yMax=ymax)
+
+        # self.layout.getItem(0, 0).setRange(
+        #     xRange=(xmin, xmax),
+        #     yRange=(ymin, ymax),
+        #     disableAutoRange=True,
+        # )
