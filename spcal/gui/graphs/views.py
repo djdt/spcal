@@ -134,11 +134,10 @@ class HistogramView(MultiPlotGraphicsView):
     ) -> HistogramPlotItem:
         self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
         self.plots[name].setXLink(self.layout.getItem(0, 0))
-        self.plots[name].setYLink(self.layout.getItem(0, 0))
+        # self.plots[name].setYLink(self.layout.getItem(0, 0))
 
         self.layout.addItem(self.plots[name])
         self.layout.nextRow()
-
         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
         return self.plots[name]
@@ -158,7 +157,6 @@ class ParticleView(MultiPlotGraphicsView):
         self.plots[name].region.sigRegionChangeFinished.connect(self.regionChanged)
 
         self.layout.addItem(self.plots[name])
-
         self.layout.nextRow()
         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
