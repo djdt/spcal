@@ -248,7 +248,8 @@ class ReferenceIOWidget(SampleIOWidget):
             "Calibrate for all elements."
         )
         self.check_use_efficiency_for_all.setToolTip(
-            "Use this element to calculate transport efficiency for all other elements, otherwise each element is calculated individually."
+            "Use this element to calculate transport efficiency for all other elements, "
+            "otherwise each element is calculated individually."
         )
 
         self.efficiency = QtWidgets.QLineEdit()
@@ -540,7 +541,18 @@ class SampleIOStack(IOStack[SampleIOWidget]):
 class ReferenceIOStack(IOStack[ReferenceIOWidget]):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         self.button_group_check_efficiency = QtWidgets.QButtonGroup()
+        self.button_group_check_efficiency.buttonClicked.connect(self.buttonClicked)
+        self.last_button_checked: QtWidgets.QAbstractButton | None = None
         super().__init__(ReferenceIOWidget, parent=parent)
+
+    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
+        if button == self.last_button_checked:
+            self.button_group_check_efficiency.setExclusive(False)
+            self.button_group_check_efficiency.checkedButton().setChecked(False)
+            self.button_group_check_efficiency.setExclusive(True)
+            self.last_button_checked = None
+        else:
+            self.last_button_checked = button
 
     def repopulate(self, names: List[str]) -> None:
         super().repopulate(names)
