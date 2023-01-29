@@ -146,9 +146,9 @@ class SampleIOWidget(IOWidget):
         self.blockSignals(False)
 
     def clearOutputs(self) -> None:
-        self.count.setText("")
-        self.background_count.setText("")
-        self.lod_count.setText("")
+        self.count.clear()
+        self.background_count.clear()
+        self.lod_count.clear()
 
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
         def set_mass_fraction(ratios: Dict[str, float]):
@@ -248,8 +248,8 @@ class ReferenceIOWidget(SampleIOWidget):
             "Calibrate for all elements."
         )
         self.check_use_efficiency_for_all.setToolTip(
-            "Use this element to calculate transport efficiency for all other elements, "
-            "otherwise each element is calculated individually."
+            "Use this element to calculate transport efficiency for all other elements,"
+            " otherwise each element is calculated individually."
         )
 
         self.efficiency = QtWidgets.QLineEdit()
@@ -280,9 +280,16 @@ class ReferenceIOWidget(SampleIOWidget):
         self.blockSignals(True)
         self.diameter.setValue(None)
         self.concentration.setValue(None)
-        self.efficiency.setText("")
         self.massresponse.setValue(None)
         self.blockSignals(False)
+
+    def clearOutputs(self) -> None:
+        super().clearOutputs()
+        self.efficiency.clear()
+        self.check_use_efficiency_for_all.group().setExclusive(False)
+        self.check_use_efficiency_for_all.setChecked(False)
+        self.check_use_efficiency_for_all.group().setExclusive(True)
+        self.massresponse.setValue(None)
 
     def updateEfficiency(
         self,

@@ -426,8 +426,10 @@ class InputWidget(QtWidgets.QWidget):
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
+        self.graph.clear()
         for i in range(self.io.stack.count()):
             self.io.stack.widget(i).clearInputs()
+            self.io.stack.widget(i).clearOutputs()
         self.blockSignals(False)
 
     def onEfficiencyMethodChanged(self, method: str) -> None:
@@ -458,15 +460,14 @@ class ReferenceWidget(InputWidget):
         self.detectionsChanged.connect(self.updateEfficiency)
 
     def updateEfficiency(self, _name: str | None = None) -> None:
-        if self.responses.size == 0:
+        dwell = self.options.dwelltime.baseValue()
+        if self.responses.size == 0 or dwell is None:
             return
         if _name is None or _name == "Overlay":
             names = self.responses.dtype.names
         else:
             names = (_name,)
 
-        dwell = self.options.dwelltime.baseValue()
-        assert dwell is not None
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
 
