@@ -4,6 +4,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.graphs.base import PlotCurveItemFix
 from spcal.gui.graphs.legends import HistogramItemSample, MultipleItemSampleProxy
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
@@ -23,8 +24,9 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             pen.setCosmetic(True)
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel(text=xlabel, units=xunit)
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
-        self.yaxis.enableAutoSIPrefix(False)
+        self.yaxis.setLabel("No. Events")
 
         super().__init__(
             name="hist",
@@ -33,8 +35,11 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             parent=parent,
         )
         # Todo: not working
-        self.xaxis.setLabel(text=xlabel, units=xunit)
-        self.yaxis.setLabel("No. Events")
+
+        self.setMouseEnabled(y=False)
+        self.setAutoVisible(y=True)
+        self.enableAutoRange(y=True)
+        self.setLimits(xMin=0.0, yMin=0.0)
 
         self.hideButtons()
         self.addLegend(
@@ -80,7 +85,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
         y[1:-1:2] = hist
 
-        curve = pyqtgraph.PlotCurveItem(
+        curve = PlotCurveItemFix(
             x=x,
             y=y,
             stepMode="center",
@@ -94,16 +99,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self.legends[name] = HistogramItemSample(curve)
         self.addItem(curve)
         self.legend.addItem(self.legends[name], name)
-
-        # if draw_mean:
-        #     mean = np.mean(data)
-        #     marker = MarkerItem(mean, y.max(), text="x", brush=brush)
-        #     self.addItem(marker)
-
-        # if draw_median:
-        #     median = np.median(data)
-        #     marker = MarkerItem(median, y.max(), text="M", brush=brush)
-        #     self.addItem(marker)
 
         return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
 
@@ -165,7 +160,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(text="Time", units="s")
         self.xaxis.setScale(xscale)
-        self.xaxis.enableAutoSIPrefix(False)
 
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
         self.yaxis.setLabel(text="Intensity (counts)", units="")
@@ -179,6 +173,8 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         self.setMouseEnabled(y=False)
         self.setAutoVisible(y=True)
         self.enableAutoRange(y=True)
+        self.setLimits(yMin=0.0)
+
         self.hideButtons()
         self.addLegend(
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
@@ -240,7 +236,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
         # optimise by removing points with 0 change in gradient
         diffs = np.diff(y, n=2, append=0, prepend=0) != 0
-        curve = pyqtgraph.PlotCurveItem(
+        curve = PlotCurveItemFix(
             x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
         )
 
@@ -250,15 +246,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
 
         self.addItem(curve)
         self.legend.addItem(legend_item, name)
-
-        self.setLimits(
-            xMin=x[0],
-            xMax=x[-1],
-            yMin=0,
-            minXRange=(x[-1] - x[0]) * 1e-5,
-            minYRange=np.ptp(y[diffs]) * 0.01,
-        )
-        self.enableAutoRange(y=True)  # rescale to max bounds
 
         self.region.blockSignals(True)
         self.region.setBounds((x[0], x[-1]))
@@ -310,23 +297,3 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         )
         self.limits.append(curve)
         self.addItem(curve)
-        #     self.limits.append(curve)
-        #     self.addItem(curve)
-        # for limit, label, color in zip(
-        #     [mean, threshold],
-        #     ["Mean", "Detection Threshold"],
-        #     [QtCore.Qt.red, QtCore.Qt.black],
-        # ):
-        #     pen.setColor(color)
-
-        #     if isinstance(limit, float) or limit.size == 1:
-        #         nx, y = [x[0], x[-1]], [limit, limit]
-        #     else:
-        #         diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
-        #         nx, y = x[diffs], limit[diffs]
-
-        #     curve = pyqtgraph.PlotCurveItem(
-        #         x=nx, y=y, name=label, pen=pen, connect="all", skipFiniteCheck=True
-        #     )
-        #     self.limits.append(curve)
-        #     self.addItem(curve)

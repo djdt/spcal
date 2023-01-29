@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
-from spcal.gui.graphs.plots import HistogramPlotItem, ParticlePlotItem
+from spcal.gui.graphs.plots import ParticlePlotItem
 
 
 class CompositionView(SinglePlotGraphicsView):
@@ -123,24 +123,32 @@ class ScatterView(SinglePlotGraphicsView):
         self.plot.addItem(curve)
 
 
-class HistogramView(MultiPlotGraphicsView):
-    def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
-        if name not in self.plots:
-            return self.addHistogramPlot(name, **add_kws)
-        return self.plots[name]
+# class HistogramView(MultiPlotGraphicsView):
+#     #     def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
+#     #         if name not in self.plots:
+#     #             return self.addHistogramPlot(name, **add_kws)
+#     #         return self.plots[name]
 
-    def addHistogramPlot(
-        self, name: str, xlabel: str = "", xunit: str = ""
-    ) -> HistogramPlotItem:
-        self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
-        self.plots[name].setXLink(self.layout.getItem(0, 0))
-        # self.plots[name].setYLink(self.layout.getItem(0, 0))
+#     def addPlot(
+#         self,
+#         name: str,
+#         xlabel: str = "",
+#         xunit: str = "",
+#         **kwargs,
+#     ) -> HistogramPlotItem:
+#         plot = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
+#         super().addPlot(name, plot, xlink=True, **kwargs)
+#         return plot
 
-        self.layout.addItem(self.plots[name])
-        self.layout.nextRow()
-        self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+    #     self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
+    #     self.plots[name].setXLink(self.layout.getItem(0, 0))
+    #     # self.plots[name].setYLink(self.layout.getItem(0, 0))
 
-        return self.plots[name]
+    #     self.layout.addItem(self.plots[name])
+    #     self.layout.nextRow()
+    #     self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+
+    #     return self.plots[name]
 
 
 class ParticleView(MultiPlotGraphicsView):
@@ -149,18 +157,14 @@ class ParticleView(MultiPlotGraphicsView):
     def addParticlePlot(
         self, name: str, xscale: float = 1.0, downsample: int = 1
     ) -> ParticlePlotItem:
-        self.plots[name] = ParticlePlotItem(name=name, xscale=xscale)
-        self.plots[name].setDownsampling(ds=downsample, mode="peak", auto=True)
-        self.plots[name].setXLink(self.layout.getItem(0, 0))
+        plot = ParticlePlotItem(name=name, xscale=xscale)
+        plot.setDownsampling(ds=downsample, mode="peak", auto=True)
 
-        self.plots[name].region.sigRegionChanged.connect(self.plotRegionChanged)
-        self.plots[name].region.sigRegionChangeFinished.connect(self.regionChanged)
+        plot.region.sigRegionChanged.connect(self.plotRegionChanged)
+        plot.region.sigRegionChangeFinished.connect(self.regionChanged)
 
-        self.layout.addItem(self.plots[name])
-        self.layout.nextRow()
-        self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
-
-        return self.plots[name]
+        super().addPlot(name, plot, xlink=True)
+        return plot
 
     def plotRegionChanged(self, region: pyqtgraph.LinearRegionItem) -> None:
         self.blockSignals(True)

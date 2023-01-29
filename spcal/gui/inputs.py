@@ -349,7 +349,8 @@ class InputWidget(QtWidgets.QWidget):
             pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
             pen.setCosmetic(True)
             plot.drawSignal(name, self.events, ys, pen=pen)
-
+        
+        self.graph.setDataLimits(yMax=1.05)
         region = (
             (self.events[0], self.events[-1])
             if self.last_region is None

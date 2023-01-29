@@ -14,7 +14,9 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
-from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
+from spcal.gui.graphs.base import MultiPlotGraphicsView
+from spcal.gui.graphs.views import CompositionView, ScatterView
+from spcal.gui.graphs.plots import HistogramPlotItem
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -80,7 +82,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph_hist = HistogramView()
+        self.graph_hist = MultiPlotGraphicsView()
         self.graph_composition = CompositionView()
         self.graph_scatter = ScatterView()
 
@@ -378,17 +380,18 @@ class ResultsWidget(QtWidgets.QWidget):
             if self.graph_options["histogram"]["mode"] == "overlay":
                 plot_name = "Overlay"
                 width = 1.0 / len(graph_data)
-                if len(graph_data) == 1:
-                    width /= 2.0
                 offset = i * width
             elif self.graph_options["histogram"]["mode"] == "stacked":
                 plot_name = name
-                width = 0.5
+                width = 1.0
                 offset = 0.0
             else:
                 raise ValueError("drawGraphHist: invalid draw mode")
 
-            plot = self.graph_hist.getHistogramPlot(plot_name, xlabel=label, xunit=unit)
+            if plot_name not in self.graph_hist.plots:
+                plot = HistogramPlotItem(plot_name, xlabel=label, xunit=unit)
+                self.graph_hist.addPlot(plot_name, plot, xlink=True)
+            plot = self.graph_hist.plots[plot_name]
             hist, centers = plot.drawData(  # type: ignore
                 name,
                 graph_data[name] * modifier,
@@ -434,7 +437,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 name=name,
                 visible=visible,
             )
-        self.graph_hist.zoomReset()
+        # self.graph_hist.zoomReset()
+        self.graph_hist.setDataLimits(yMax=1.05)
 
     def drawGraphCompositions(self) -> None:
         # composition view
