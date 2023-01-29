@@ -90,8 +90,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         # Edit
         self.action_clear = create_action(
             "edit-reset",
-            "Reset Inputs",
-            "Resets all the option, sample and reference inputs.",
+            "Clear Data and Inputs",
+            "Clears loaded datas and resets the option, sample and reference inputs.",
             self.resetInputs,
         )
         self.action_mass_fraction_calculator = create_action(
