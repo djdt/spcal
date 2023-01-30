@@ -116,7 +116,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.addWidget(self.scatter_widget)
 
         self.io = ResultIOStack()
-        # self.io.nameChanged.connect(self.drawGraphHist)
+        self.io.nameChanged.connect(self.updateGraphsForName)
 
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
@@ -342,8 +342,6 @@ class ResultsWidget(QtWidgets.QWidget):
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
         bin_width = self.graph_options["histogram"]["bin widths"][key]
-
-        names = list(self.results.keys())
 
         graph_data = {}
         lods = {}
@@ -597,6 +595,10 @@ class ResultsWidget(QtWidgets.QWidget):
         if method != "Manual Input" and not self.reference.isComplete():
             return False
         return True
+
+    def updateGraphsForName(self, name: str) -> None:
+        if self.graph_options["histogram"]["mode"] == "single":
+            self.drawGraphHist()
 
     def updateScatterElements(self) -> None:
         mode = self.mode.currentText()
