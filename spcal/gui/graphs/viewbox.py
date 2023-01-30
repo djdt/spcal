@@ -1,10 +1,11 @@
 from typing import List
 
-import pyqtgraph
 from PySide6 import QtCore
 
+from spcal.gui.graphs.base import SPCalViewBox
 
-class ViewBoxForceScaleAtZero(pyqtgraph.ViewBox):
+
+class ViewBoxForceScaleAtZero(SPCalViewBox):
     """Viewbox that forces the bottom to be 0."""
 
     def scaleBy(

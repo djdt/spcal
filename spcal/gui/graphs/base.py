@@ -95,9 +95,64 @@ class PlotCurveItemFix(pyqtgraph.PlotCurveItem):
         return b
 
 
+class SPCalViewBox(pyqtgraph.ViewBox):
+    # def __init__(
+    #     self,
+    #     parent=None,
+    #     border=None,
+    #     lockAspect=False,
+    #     enableMouse=True,
+    #     invertY=False,
+    #     enableMenu=False,
+    #     name=None,
+    #     invertX=False,
+    #     defaultPadding=0.02,
+    # ):
+    #     super().__init__(
+    #         parent=parent,
+    #         border=border,
+    #         lockAspect=lockAspect,
+    #         enableMouse=enableMouse,
+    #         invertY=invertY,
+    #         enableMenu=enableMenu,
+    #         name=name,
+    #         invertX=invertX,
+    #         defaultPadding=defaultPadding,
+    #     )
+
+    def raiseContextMenu(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
+        print("raiseContextMenu")
+        view = next(iter(self.scene().views()))
+        print(view)
+        view.contextMenuEvent(event)
+        # self.action_copy_image = create_action(
+        #     "insert-image",
+        #     "Copy Image to Clipboard",
+        #     "Copy an image of the plot to the clipboard.",
+        #     self.copyToClipboard,
+        # )
+
+        # # self.action_show_legend = create_action(
+        # #     "view-hidden",
+        # #     "Hide Legend",
+        # #     "Toggle visibility of the legend.",
+        # #     self.toggleLegendVisible,
+        # # )
+        # self.menu = QtWidgets.QMenu(self)
+        # self.menu.addAction(self.action_copy_image)
+
+    # def view(self) -> pyqtgraph.GraphicsView:
+    # return self.scene().view()
+
+    # def copyToClipboard(self) -> None:
+    # pass
+
+
 class SPCalGraphicsView(pyqtgraph.GraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent, background="white")
+
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
 
         self.action_copy_image = create_action(
             "insert-image",
@@ -166,7 +221,7 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
             title=title,
             name="central_plot",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            enableMenu=False,
+            viewBox=SPCalViewBox(),
             parent=parent,
         )
         self.plot.hideButtons()
@@ -199,6 +254,8 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         self.minimum_plot_height = minimum_plot_height
         self.layout = pyqtgraph.GraphicsLayout()
         self.plots: Dict[str, pyqtgraph.PlotItem] = {}
+
+        self.limits: Dict[str, float] = {}
 
         super().__init__(parent=parent)
 
@@ -243,20 +300,44 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
+    def setLimits(self, **kwargs) -> None:
+        # self.limits = limits
+        for plot in self.plots.values():
+            plot.setLimits(**kwargs)
+
+    def limitRect(self) -> QtCore.QRectF:
+        rect = self.dataRect()
+        if "xMin" in self.limits:
+            rect.setLeft(self.limits["xMin"])
+        if "xMax" in self.limits:
+            rect.setRight(self.limits["xMax"])
+        if "yMin" in self.limits:
+            rect.setBottom(self.limits["yMin"])
+        if "yMax" in self.limits:
+            rect.setTop(self.limits["yMax"])
+        return rect
+
     def setDataLimits(
-        self, xMin: float = 0.0, xMax: float = 1.0, yMin: float = 0.0, yMax: float = 1.0
+        self,
+        xMin: float | None = None,
+        xMax: float | None = None,
+        yMin: float | None = None,
+        yMax: float | None = None,
     ) -> None:
         """Set all plots limits in range 0.0 - 1.0."""
         bounds = self.dataBounds()
         dx = bounds[1] - bounds[0]
         dy = bounds[3] - bounds[2]
-        for plot in self.plots.values():
-            plot.setLimits(
-                xMin=bounds[0] + dx * xMin,
-                xMax=bounds[0] + dx * xMax,
-                yMin=bounds[2] + dy * yMin,
-                yMax=bounds[2] + dy * yMax,
-            )
+        limits = {}
+        if xMin is not None:
+            limits["xMin"] = bounds[0] + dx * xMin
+        if xMax is not None:
+            limits["xMax"] = bounds[0] + dx * xMax
+        if yMin is not None:
+            limits["yMin"] = bounds[2] + dy * yMin
+        if yMax is not None:
+            limits["yMax"] = bounds[2] + dy * yMax
+        self.setLimits(**limits)
 
     # Taken from pyqtgraph.widgets.MultiPlotWidget
     def setRange(self, *args, **kwds):
@@ -288,7 +369,14 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
     def legends(self) -> List[pyqtgraph.LegendItem]:
         return [plot.legend for plot in self.plots.values()]
 
-    def zoomReset(self) -> None:
-        rect = self.dataRect()
+    def bounds(self) -> None:
+        rect = QtCore.QRectF()
         for plot in self.plots.values():
-            plot.setRange(rect, disableAutoRange=True)
+            rect = rect.united(plot.vb.childrenBoundingRect())
+        return rect
+
+    def zoomReset(self) -> None:
+        # rect = self.bounds()
+        for plot in self.plots.values():
+            plot.autoRange()
+            # plot.vb.setRange(rect)

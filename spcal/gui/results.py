@@ -436,9 +436,10 @@ class ResultsWidget(QtWidgets.QWidget):
             pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
             pen.setCosmetic(True)
 
-            plot.drawLimit(
-                lods[name], "LOD", pos=line_pos, pen=pen, name=name, visible=visible
-            )
+            if lods[name] is not None:
+                plot.drawLimit(
+                    lods[name], "LOD", pos=line_pos, pen=pen, name=name, visible=visible
+                )
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
             plot.drawLimit(
                 np.mean(graph_data[name]),
@@ -448,8 +449,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 name=name,
                 visible=visible,
             )
-        # self.graph_hist.zoomReset()
-        self.graph_hist.setDataLimits(yMax=1.05)
+        self.graph_hist.setDataLimits(xMax=1.0, yMax=1.05)
+        self.graph_hist.zoomReset()
 
     def drawGraphCompositions(self) -> None:
         # composition view
