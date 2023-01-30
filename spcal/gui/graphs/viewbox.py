@@ -1,10 +1,23 @@
-from typing import List
+from typing import List, Tuple
 
 from pyqtgraph import ViewBox
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 
 
-class ViewBoxForceScaleAtZero(ViewBox):
+class ExtentsViewBox(ViewBox):
+    """Viewbox that autoRanges to a set value."""
+
+    def setExtents(self, rect: QtCore.QRectF) -> None:
+        self.extent = rect
+
+    def autoRange(self, *args, **kwargs) -> None:
+        if self.extent is None:
+            super().autoRange(*args, **kwargs)
+        else:
+            self.setRange(rect=self.extent)
+
+
+class ViewBoxForceScaleAtZero(ExtentsViewBox):
     """Viewbox that forces the bottom to be 0."""
 
     def scaleBy(
