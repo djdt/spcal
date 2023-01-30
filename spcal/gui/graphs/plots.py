@@ -4,7 +4,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.base import PlotCurveItemFix, SPCalViewBox
+from spcal.gui.graphs.base import PlotCurveItemFix
 from spcal.gui.graphs.legends import HistogramItemSample, MultipleItemSampleProxy
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
@@ -32,7 +32,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             name="hist",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             viewBox=ViewBoxForceScaleAtZero(),
-            # viewBox=SPCalViewBox(),
             parent=parent,
         )
         # Todo: not working
@@ -168,7 +167,6 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         super().__init__(
             name=name,
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            viewBox=SPCalViewBox(),
             parent=parent,
         )
         self.setMouseEnabled(y=False)

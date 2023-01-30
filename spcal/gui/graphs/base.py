@@ -95,64 +95,11 @@ class PlotCurveItemFix(pyqtgraph.PlotCurveItem):
         return b
 
 
-class SPCalViewBox(pyqtgraph.ViewBox):
-    # def __init__(
-    #     self,
-    #     parent=None,
-    #     border=None,
-    #     lockAspect=False,
-    #     enableMouse=True,
-    #     invertY=False,
-    #     enableMenu=False,
-    #     name=None,
-    #     invertX=False,
-    #     defaultPadding=0.02,
-    # ):
-    #     super().__init__(
-    #         parent=parent,
-    #         border=border,
-    #         lockAspect=lockAspect,
-    #         enableMouse=enableMouse,
-    #         invertY=invertY,
-    #         enableMenu=enableMenu,
-    #         name=name,
-    #         invertX=invertX,
-    #         defaultPadding=defaultPadding,
-    #     )
-
-    def raiseContextMenu(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        print("raiseContextMenu")
-        view = next(iter(self.scene().views()))
-        print(view)
-        view.contextMenuEvent(event)
-        # self.action_copy_image = create_action(
-        #     "insert-image",
-        #     "Copy Image to Clipboard",
-        #     "Copy an image of the plot to the clipboard.",
-        #     self.copyToClipboard,
-        # )
-
-        # # self.action_show_legend = create_action(
-        # #     "view-hidden",
-        # #     "Hide Legend",
-        # #     "Toggle visibility of the legend.",
-        # #     self.toggleLegendVisible,
-        # # )
-        # self.menu = QtWidgets.QMenu(self)
-        # self.menu.addAction(self.action_copy_image)
-
-    # def view(self) -> pyqtgraph.GraphicsView:
-    # return self.scene().view()
-
-    # def copyToClipboard(self) -> None:
-    # pass
-
-
 class SPCalGraphicsView(pyqtgraph.GraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent, background="white")
 
-        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
+        # self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
 
         self.action_copy_image = create_action(
             "insert-image",
@@ -180,7 +127,7 @@ class SPCalGraphicsView(pyqtgraph.GraphicsView):
                 self.action_show_legend.setText("Show Legend")
 
             menu.addAction(self.action_show_legend)
-        menu.exec(event.globalPos())
+        menu.popup(event.globalPos())
 
     def copyToClipboard(self) -> None:
         """Copy current view to system clipboard."""
@@ -221,7 +168,6 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
             title=title,
             name="central_plot",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            viewBox=SPCalViewBox(),
             parent=parent,
         )
         self.plot.hideButtons()
