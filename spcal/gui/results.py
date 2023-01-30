@@ -343,7 +343,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
         graph_data = {}
         lods = {}
-        line_pos = 0.95
         for name, result in self.results.items():
             indices = result.indicies
             if indices.size < 2 or key not in result.detections:
@@ -364,19 +363,20 @@ class ResultsWidget(QtWidgets.QWidget):
                     for name in graph_data
                 ]
             )
-        bin_width *= modifier  # convert to base unit (kg -> g)
         # Limit maximum / minimum number of bins
-        for data in graph_data.values():
-            min_bin_width = np.ptp(data) * modifier / 1024
-            if bin_width < min_bin_width:
-                logger.warning("drawGraphHist: exceeded maximum bins, setting to 1024")
-                bin_width = min_bin_width
-                break
-            max_bin_width = np.ptp(data) * modifier / 16.0
-            if bin_width > max_bin_width:
-                logger.warning("drawGraphHist: less than minimum bins, setting to 16")
-                bin_width = max_bin_width
-                break
+        data_range = np.ptp(np.concatenate(list(graph_data.values())))
+        min_bins, max_bins = 16, 1024
+        if bin_width < data_range / max_bins:
+            logger.warning(
+                f"drawGraphHist: exceeded maximum bins, setting to {max_bins}"
+            )
+            bin_width = data_range / max_bins
+        elif bin_width > data_range / min_bins:
+            logger.warning(
+                f"drawGraphHist: less than minimum bins, setting to {min_bins}"
+            )
+            bin_width = data_range / min_bins
+        bin_width *= modifier  # convert to base unit (kg -> g)
 
         scheme = color_schemes[self.graph_options["scheme"]]
         for i, name in enumerate(graph_data):
@@ -438,13 +438,18 @@ class ResultsWidget(QtWidgets.QWidget):
 
             if lods[name] is not None:
                 plot.drawLimit(
-                    lods[name], "LOD", pos=line_pos, pen=pen, name=name, visible=visible
+                    np.mean(lods[name]),
+                    "LOD",
+                    pos=0.95,
+                    pen=pen,
+                    name=name,
+                    visible=visible,
                 )
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
             plot.drawLimit(
                 np.mean(graph_data[name]),
                 "mean",
-                pos=line_pos,
+                pos=0.95,
                 pen=pen,
                 name=name,
                 visible=visible,
