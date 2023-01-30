@@ -159,7 +159,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Stacked Histograms",
             "Single histogram per result.",
             lambda: (
-                self.setHistDrawMode("stacked"),
+                self.setHistDrawMode("single"),
                 self.graph_stack.setCurrentWidget(self.graph_hist),
             ),
             checkable=True,
@@ -250,6 +250,10 @@ class ResultsWidget(QtWidgets.QWidget):
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
+
+    def colorForName(self, name: str) -> QtGui.QColor:
+        scheme = color_schemes[self.graph_options["scheme"]]
+        return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
 
     # Setters
     def setColorScheme(self, scheme: str) -> None:
@@ -344,6 +348,11 @@ class ResultsWidget(QtWidgets.QWidget):
         graph_data = {}
         lods = {}
         for name, result in self.results.items():
+            if (
+                self.graph_options["histogram"]["mode"] == "single"
+                and name != self.io.combo_name.currentText()
+            ):
+                continue
             indices = result.indicies
             if indices.size < 2 or key not in result.detections:
                 continue
@@ -352,6 +361,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph_data[name], 0.0, np.percentile(graph_data[name], 95)
             )
             lods[name] = result.convertTo(result.limits.detection_threshold, key)
+
+        if len(graph_data) == 0:
+            return
 
         # median FD bin width
         if bin_width is None:
@@ -378,20 +390,19 @@ class ResultsWidget(QtWidgets.QWidget):
             bin_width = data_range / min_bins
         bin_width *= modifier  # convert to base unit (kg -> g)
 
-        scheme = color_schemes[self.graph_options["scheme"]]
         for i, name in enumerate(graph_data):
+            color = self.colorForName(name)
             bins = np.arange(
                 graph_data[name].min() * modifier,
                 graph_data[name].max() * modifier + bin_width,
                 bin_width,
             )
             bins -= bins[0] % bin_width  # align bins
-            color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
             if self.graph_options["histogram"]["mode"] == "overlay":
                 plot_name = "Overlay"
                 width = 1.0 / len(graph_data)
                 offset = i * width
-            elif self.graph_options["histogram"]["mode"] == "stacked":
+            elif self.graph_options["histogram"]["mode"] == "single":
                 plot_name = name
                 width = 1.0
                 offset = 0.0
@@ -522,12 +533,11 @@ class ResultsWidget(QtWidgets.QWidget):
         if counts.size == 0:
             return
 
-        scheme = color_schemes[self.graph_options["scheme"]]
         brushes = []
 
         assert compositions.dtype.names is not None
         for name in compositions.dtype.names:
-            color = QtGui.QColor(scheme[names.index(name) % len(scheme)])
+            color = self.colorForName(name)
             brushes.append(QtGui.QBrush(color))
 
         self.graph_composition.drawData(compositions, counts, brushes=brushes)
@@ -609,7 +619,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
-        # key = self.mode_keys[mode]
 
         self.io.repopulate(list(self.results.keys()))
 
@@ -698,6 +707,8 @@ class ResultsWidget(QtWidgets.QWidget):
         assert self.sample.detections.dtype.names is not None
         for name in self.sample.detections.dtype.names:
             result = self.sample.asResult(name)
+            if result.number == 0:
+                continue
 
             inputs = {
                 "dwelltime": dwelltime,

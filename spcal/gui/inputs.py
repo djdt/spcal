@@ -129,6 +129,24 @@ class InputWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    @property
+    def names(self) -> Tuple[str, ...]:
+        if self.responses.dtype.names is None:
+            return tuple()
+        else:
+            return self.responses.dtype.names
+
+    @property
+    def detection_names(self) -> Tuple[str, ...]:
+        if self.detections.dtype.names is None:
+            return tuple()
+        else:
+            return self.detections.dtype.names
+
+    def colorForName(self, name: str) -> QtGui.QColor:
+        scheme = color_schemes[self.color_scheme]
+        return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
+
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
         self.drawGraph()
@@ -242,8 +260,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateDetections(self) -> None:
         d, l, r = {}, {}, {}
-        assert self.responses.dtype.names is not None
-        for name in self.responses.dtype.names:
+        for name in self.names:
             trim = self.trimRegion(name)
             responses = self.responses[name][trim[0] : trim[1]]
             if responses.size > 0 and name in self.limits:
@@ -281,8 +298,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.limits.clear()
 
-        assert self.responses.dtype.names is not None
-        for name in self.responses.dtype.names:
+        for name in self.names:
             trim = self.trimRegion(name)
             response = self.responses[name][trim[0] : trim[1]]
             if response.size == 0:
@@ -305,11 +321,9 @@ class InputWidget(QtWidgets.QWidget):
         self.limitsChanged.emit()
 
     def updateOutputs(self) -> None:
-        assert self.responses.dtype.names is not None
-        assert self.detections.dtype.names is not None
-        for name in self.responses.dtype.names:
+        for name in self.names:
             io = self.io[name]
-            if name not in self.detections.dtype.names:
+            if name not in self.detection_names:
                 io.clearOutputs()
             else:
                 trim = self.trimRegion(name)
@@ -334,9 +348,7 @@ class InputWidget(QtWidgets.QWidget):
         if self.draw_mode == "Overlay":
             plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
 
-        scheme = color_schemes[self.color_scheme]
-        assert self.responses.dtype.names is not None
-        for i, name in enumerate(self.responses.dtype.names):
+        for i, name in enumerate(self.names):
             ys = self.responses[name]
             if self.draw_mode == "Stacked":
                 plot = self.graph.addParticlePlot(name, xscale=dwell)
@@ -346,7 +358,7 @@ class InputWidget(QtWidgets.QWidget):
             else:
                 raise ValueError("drawGraph: draw_mode must be 'Stacked', 'Overlay'.")
 
-            pen = QtGui.QPen(scheme[i % len(scheme)], 1.0)
+            pen = QtGui.QPen(self.colorForName(name), 1.0)
             pen.setCosmetic(True)
             plot.drawSignal(name, self.events, ys, pen=pen)
 
@@ -364,16 +376,14 @@ class InputWidget(QtWidgets.QWidget):
         self.last_region = region
 
     def drawDetections(self) -> None:
-        scheme = color_schemes[self.color_scheme]
-
         for plot in self.graph.plots.values():
             plot.clearScatters()
 
-        if self.detections.dtype.names is None or self.detections.size == 0:
+        if self.detections.size == 0:
             return
 
-        for i, name in enumerate(self.detections.dtype.names):
-            color = scheme[i % len(scheme)]
+        for i, name in enumerate(self.detection_names):
+            color = self.colorForName(name)
             symbol = symbols[i % len(symbols)]
 
             if self.draw_mode == "Overlay":
@@ -438,11 +448,7 @@ class InputWidget(QtWidgets.QWidget):
             io.response.setEnabled(method != "Mass Response")
 
     def isComplete(self) -> bool:
-        return (
-            self.detections.size > 0
-            and self.detections.dtype.names is not None
-            and len(self.detections.dtype.names) > 0
-        )
+        return self.detections.size > 0 and len(self.detection_names) > 0
 
 
 class SampleWidget(InputWidget):
@@ -465,14 +471,13 @@ class ReferenceWidget(InputWidget):
         if self.responses.size == 0 or dwell is None:
             return
         if _name is None or _name == "Overlay":
-            names = self.responses.dtype.names
+            names = self.names
         else:
             names = (_name,)
 
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
 
-        assert names is not None
         for name in names:
             self.io[name].updateEfficiency(self.detections[name], dwell, time, uptake)
 
