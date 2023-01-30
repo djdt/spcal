@@ -1,6 +1,6 @@
 """Misc and helper calculation functions."""
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 
