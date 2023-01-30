@@ -224,20 +224,14 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
     def dataBounds(self) -> Tuple[float, float, float, float]:
-        bx = np.asarray(
-            [
-                item.dataBounds(0)
-                for plot in self.plots.values()
-                for item in plot.listDataItems()
-            ]
-        )
-        by = np.asarray(
-            [
-                item.dataBounds(1)
-                for plot in self.plots.values()
-                for item in plot.listDataItems()
-            ]
-        )
+        items = [
+            item
+            for plot in self.plots.values()
+            for item in plot.listDataItems()
+            if item.isVisible()
+        ]
+        bx = np.asarray([item.dataBounds(0) for item in items])
+        by = np.asarray([item.dataBounds(1) for item in items])
         return (
             np.amin(bx[:, 0]),
             np.amax(bx[:, 1]),
@@ -297,4 +291,4 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
     def zoomReset(self) -> None:
         rect = self.dataRect()
         for plot in self.plots.values():
-            plot.setRange(rect, disableAutoRange=False)
+            plot.setRange(rect, disableAutoRange=True)
