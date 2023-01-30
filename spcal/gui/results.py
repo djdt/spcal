@@ -15,8 +15,8 @@ from spcal.gui.dialogs.graphoptions import (
 )
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import MultiPlotGraphicsView
-from spcal.gui.graphs.views import CompositionView, ScatterView
 from spcal.gui.graphs.plots import HistogramPlotItem
+from spcal.gui.graphs.views import CompositionView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -349,23 +349,33 @@ class ResultsWidget(QtWidgets.QWidget):
             if indices.size < 2 or key not in result.detections:
                 continue
             graph_data[name] = result.detections[key][indices]
+            graph_data[name] = np.clip(  # Remove outliers
+                graph_data[name], 0.0, np.percentile(graph_data[name], 95)
+            )
             lods[name] = result.convertTo(result.limits.detection_threshold, key)
 
-        # median 'sturges' bin width
+        # median FD bin width
         if bin_width is None:
             bin_width = np.median(
                 [
-                    np.ptp(graph_data[name]) / (np.log2(graph_data[name].size) + 1)
+                    2.0
+                    * np.subtract(*np.percentile(graph_data[name], [75, 25]))
+                    / np.cbrt(graph_data[name].size)
                     for name in graph_data
                 ]
             )
         bin_width *= modifier  # convert to base unit (kg -> g)
-        # Limit maximum number of bins
+        # Limit maximum / minimum number of bins
         for data in graph_data.values():
-            min_bin_width = (data.max() - data.min()) * modifier / 1024
+            min_bin_width = np.ptp(data) * modifier / 1024
             if bin_width < min_bin_width:
                 logger.warning("drawGraphHist: exceeded maximum bins, setting to 1024")
                 bin_width = min_bin_width
+                break
+            max_bin_width = np.ptp(data) * modifier / 16.0
+            if bin_width > max_bin_width:
+                logger.warning("drawGraphHist: less than minimum bins, setting to 16")
+                bin_width = max_bin_width
                 break
 
         scheme = color_schemes[self.graph_options["scheme"]]
@@ -400,6 +410,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
             )
+
+            visible = not self.graph_options["histogram"]["mode"] == "overlay"
             if self.graph_options["histogram"]["fit"] is not None:
                 hist = hist / bin_width / graph_data[name].size
                 xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
@@ -418,13 +430,12 @@ class ResultsWidget(QtWidgets.QWidget):
                 ys = ys * bin_width * graph_data[name].size
                 pen = QtGui.QPen(color, 1.0)
                 pen.setCosmetic(True)
-                plot.drawFit(xs, ys, pen=pen, name=name)
+                plot.drawFit(xs, ys, pen=pen, name=name, visible=visible)
 
             # Draw all the limits
             pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
             pen.setCosmetic(True)
 
-            visible = not self.graph_options["histogram"]["mode"] == "overlay"
             plot.drawLimit(
                 lods[name], "LOD", pos=line_pos, pen=pen, name=name, visible=visible
             )
