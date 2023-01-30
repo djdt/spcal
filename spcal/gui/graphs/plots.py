@@ -104,8 +104,9 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        pen: QtGui.QPen | None = None,
         name: str | None = None,
+        pen: QtGui.QPen | None = None,
+        visible: bool = True,
     ) -> None:
 
         if pen is None:
@@ -115,6 +116,7 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         curve = pyqtgraph.PlotCurveItem(
             x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True
         )
+        curve.setVisible(visible)
         self.addItem(curve)
         if name is not None:
             self.legends[name].setFit(curve)
@@ -124,9 +126,9 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         self,
         limit: float,
         label: str,
+        name: str | None = None,
         pos: float = 0.95,
         pen: QtGui.QPen | None = None,
-        name: str | None = None,
         visible: bool = True,
     ) -> None:
         if pen is None:
