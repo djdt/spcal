@@ -245,6 +245,10 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
             np.amax(by[:, 1]),
         )
 
+    def dataRect(self) -> QtCore.QRectF:
+        x0, x1, y0, y1 = self.dataBounds()
+        return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
+
     def setDataLimits(
         self, xMin: float = 0.0, xMax: float = 1.0, yMin: float = 0.0, yMax: float = 1.0
     ) -> None:
@@ -291,5 +295,6 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         return [plot.legend for plot in self.plots.values()]
 
     def zoomReset(self) -> None:
+        rect = self.dataRect()
         for plot in self.plots.values():
-            plot.vb.autoRange()
+            plot.setRange(rect, disableAutoRange=False)
