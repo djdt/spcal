@@ -59,8 +59,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
-        draw_median: bool = True,
-        draw_mean: bool = True,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
