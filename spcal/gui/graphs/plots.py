@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import PlotCurveItemFix
 from spcal.gui.graphs.legends import HistogramItemSample, MultipleItemSampleProxy
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
+from spcal.gui.graphs.viewbox import LimitBoundViewBox, ViewBoxForceScaleAtZero
 
 
 class HistogramPlotItem(pyqtgraph.PlotItem):
@@ -34,11 +34,6 @@ class HistogramPlotItem(pyqtgraph.PlotItem):
             viewBox=ViewBoxForceScaleAtZero(),
             parent=parent,
         )
-        # Todo: not working
-
-        # self.setMouseEnabled(y=False)
-        # self.setAutoVisible(y=True)
-        # self.enableAutoRange(y=True)
         self.setLimits(xMin=0.0, yMin=0.0)
 
         self.hideButtons()
@@ -167,6 +162,7 @@ class ParticlePlotItem(pyqtgraph.PlotItem):
         super().__init__(
             name=name,
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            viewBox=LimitBoundViewBox(),
             parent=parent,
         )
         self.setMouseEnabled(y=False)

@@ -1,23 +1,25 @@
-from typing import List, Tuple
+from typing import List
 
 from pyqtgraph import ViewBox
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore
 
 
-class ExtentsViewBox(ViewBox):
-    """Viewbox that autoRanges to a set value."""
+class LimitBoundViewBox(ViewBox):
+    """Viewbox that autoRanges to any set limits."""
 
-    def setExtents(self, rect: QtCore.QRectF) -> None:
-        self.extent = rect
+    def childrenBounds(self, frac=None, orthoRange=(None, None), items=None):
+        bounds = super().childrenBounds(frac=frac, orthoRange=orthoRange, items=items)
+        limits = self.state["limits"]["xLimits"], self.state["limits"]["yLimits"]
+        for i in range(2):
+            if bounds[i] is not None:
+                if limits[i][0] != -1e307:  # and limits[i][0] < bounds[i][0]:
+                    bounds[i][0] = limits[i][0]
+                if limits[i][1] != +1e307:  # and limits[i][1] > bounds[i][1]:
+                    bounds[i][1] = limits[i][1]
+        return bounds
 
-    def autoRange(self, *args, **kwargs) -> None:
-        if self.extent is None:
-            super().autoRange(*args, **kwargs)
-        else:
-            self.setRange(rect=self.extent)
 
-
-class ViewBoxForceScaleAtZero(ExtentsViewBox):
+class ViewBoxForceScaleAtZero(LimitBoundViewBox):
     """Viewbox that forces the bottom to be 0."""
 
     def scaleBy(
