@@ -5,8 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs._import import ImportDialog, NuImportDialog
-from spcal.gui.graphs.plots import ResponsePlot
-from spcal.gui.graphs.views import SinglePlotGraphicsView
+from spcal.gui.graphs.views import ResponseView
 from spcal.io.nu import is_nu_directory
 from spcal.io.text import is_text_file
 
@@ -27,10 +26,10 @@ class ResponseWidget(QtWidgets.QWidget):
         self.button_reset = QtWidgets.QPushButton("Reset")
         self.button_reset.pressed.connect(self.resetInputs)
 
-        self.graph = SinglePlotGraphicsView("Response TIC", "", "")
+        self.graph = ResponseView()
 
         self.combo_method = QtWidgets.QComboBox()
-        self.combo_method.addItems("Signal Mean", "Signal Median")
+        self.combo_method.addItems(["Signal Mean", "Signal Median"])
         self.combo_method.currentTextChanged.connect(self.calculateResponses)
 
         layout_buttons = QtWidgets.QHBoxLayout()
@@ -103,9 +102,18 @@ class ResponseWidget(QtWidgets.QWidget):
         return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
-        tic = np.sum(data[name] for name in data.dtype.names)
-        self.drawGraph(tic)
-        pass
+        tic = np.sum([data[name] for name in data.dtype.names], axis=0)
+        self.graph.clear()
+        self.graph.drawData(np.arange(tic.size), tic)
 
     def resetInputs(self) -> None:
         pass
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+
+    w = ResponseWidget()
+    w.dialogLoadFile("/home/tom/Downloads/AuAg_short.csv")
+    w.show()
+    app.exec()
