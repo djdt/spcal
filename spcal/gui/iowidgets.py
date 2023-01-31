@@ -50,8 +50,8 @@ class SampleIOWidget(IOWidget):
         )
         self.action_mass_fraction = create_action(
             "folder-calculate",
-            "Calculate Molar Ratio",
-            "Calculate the molar ratio and MW for a given formula.",
+            "Calculate Mass Fraction",
+            "Calculate the mass fraction and MW for a given formula.",
             self.dialogMassFractionCalculator,
         )
 

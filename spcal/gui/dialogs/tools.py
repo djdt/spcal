@@ -37,7 +37,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
     def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Molar Ratio Calculator")
+        self.setWindowTitle("Mass Fraction Calculator")
         self.resize(300, 120)
 
         self.regex = QtCore.QRegularExpression("([A-Z][a-z]?)([0-9\\.]*)")
@@ -86,7 +86,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         return len(self.ratios) > 0
 
     def recalculate(self) -> None:
-        """Calculates the molar ratio of each valid element in the formula."""
+        """Calculates the mass fraction of each valid element in the formula."""
         self.ratios = {}
         elements = db["elements"]
         for element, number in self.searchFormula():
