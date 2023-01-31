@@ -115,7 +115,7 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
         self.inputs.layout().addRow("Ionic response:", self.response)
-        self.inputs.layout().addRow("Molar ratio:", self.massfraction)
+        self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
         self.count = QtWidgets.QLineEdit("0")
         self.count.setReadOnly(True)
