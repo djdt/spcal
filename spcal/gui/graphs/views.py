@@ -52,6 +52,63 @@ class CompositionView(SinglePlotGraphicsView):
             yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
         )
 
+class ResponsePlotItem(SinglePlotGraphicsView):
+    def __init__(
+        self,
+        parent: pyqtgraph.GraphicsWidget | None = None,
+    ):
+        super().__init__("Resonse TIC", "Time", "Intensity", parent=parent)
+        self.plot.setMouseEnabled(x=False, y=False)
+        # self.setAutoVisible(y=True)
+        self.plot.enableAutoRange(x=True, y=True)
+        self.plot.setDownsampling(ds=8, mode="peak", auto=True)
+
+        self.signal: pyqtgraph.PlotCurveItem | None = None
+
+        region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
+        region_pen.setCosmetic(True)
+
+        self.region = pyqtgraph.LinearRegionItem(
+            pen="grey",
+            hoverPen="red",
+            brush=QtGui.QBrush(QtCore.Qt.NoBrush),
+            hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
+            swapMode="block",
+        )
+        self.region.movable = False  # prevent moving of region, but not lines
+        self.region.lines[0].addMarker("|>", 0.9)
+        self.region.lines[1].addMarker("<|", 0.9)
+        self.addItem(self.region)
+
+    @property
+    def region_start(self) -> int:
+        return int(self.region.lines[0].value())  # type: ignore
+
+    @property
+    def region_end(self) -> int:
+        return int(self.region.lines[1].value())  # type: ignore
+
+    def drawData(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        # optimise by removing points with 0 change in gradient
+        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        self.signal = pyqtgraph.PlotCurveItem(
+            x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
+        )
+        self.addItem(self.signal)
+
+        self.region.blockSignals(True)
+        self.region.setBounds((x[0], x[-1]))
+        self.region.blockSignals(False)
+
 
 class ScatterView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
