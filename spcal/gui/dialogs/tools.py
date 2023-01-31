@@ -126,6 +126,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
 class ParticleDatabaseDialog(QtWidgets.QDialog):
     densitySelected = QtCore.Signal(float)
+    formulaSelected = QtCore.Signal(str)
 
     def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -187,6 +188,7 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
 
     def accept(self) -> None:
-        idx = self.table.selectedIndexes()[3]
-        self.densitySelected.emit(float(self.proxy.data(idx)))
+        idx = self.table.selectedIndexes()
+        self.densitySelected.emit(float(self.proxy.data(idx[3])))
+        self.fromulaSelected.emit(float(self.proxy.data(idx[0])))
         super().accept()
