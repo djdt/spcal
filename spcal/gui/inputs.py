@@ -305,7 +305,7 @@ class InputWidget(QtWidgets.QWidget):
                 continue
 
             if method == "Manual Input":
-                limit = float(self.options.manual.text())
+                limit = self.options.manual.baseValue() or 0.0
                 self.limits[name] = SPCalLimit(
                     np.mean(response), limit, name="Manual Input", params={}
                 )

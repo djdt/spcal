@@ -432,7 +432,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         limit_params = {
             "poisson_alpha": float(self.options.error_rate_poisson.text()),
             "gaussian_alpha": float(self.options.error_rate_gaussian.text()),
-            "manual": float(self.options.manual.text() or 0.0),
+            "manual": self.options.manual.baseValue() or 0.0,
         }
         units = {
             "mass": (

@@ -3,7 +3,7 @@ from statistics import NormalDist
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
-from spcal.siunits import time_units
+from spcal.siunits import signal_units, time_units
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
 
@@ -133,9 +133,12 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
-        self.manual = QtWidgets.QLineEdit("10.0")
+        self.manual = UnitsWidget(
+            units=signal_units,
+            value=10.0,
+            validator=QtGui.QDoubleValidator(1e-9, 1e9, 2),
+        )
         self.manual.setEnabled(False)
-        self.manual.setValidator(QtGui.QDoubleValidator(1e-9, 1e9, 2))
         self.manual.setToolTip("Limit (in counts) used when method is 'Manual Input'.")
 
         self.method.currentTextChanged.connect(self.limitMethodChanged)
@@ -146,7 +149,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
         self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
-        self.manual.editingFinished.connect(self.limitOptionsChanged)
+        self.manual.valueChanged.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
         layout_method.addWidget(self.method)
