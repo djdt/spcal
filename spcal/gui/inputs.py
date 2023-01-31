@@ -15,6 +15,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.io.nu import is_nu_directory
+from spcal.io.text import is_text_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -173,8 +174,14 @@ class InputWidget(QtWidgets.QWidget):
         if event.mimeData().hasUrls():
             # Todo, nu import check
             for url in event.mimeData().urls():
-                self.dialogLoadFile(url.toLocalFile())
-                break
+                path = Path(url.toLocalFile())
+                if (
+                    (path.is_dir() and is_nu_directory(path))
+                    or path.suffix.lower() == ".info"
+                    or is_text_file(path)
+                ):
+                    self.dialogLoadFile(path)
+                    break
             event.acceptProposedAction()
         elif event.mimeData().hasHtml():
             pass
@@ -199,26 +206,19 @@ class InputWidget(QtWidgets.QWidget):
 
         path = Path(path)
 
-        if path.suffix == ".info":
-            if not is_nu_directory(path.parent):
-                raise FileNotFoundError("dialogLoadFile: invalid Nu directory.")
-            dlg = NuImportDialog(path.parent, self)
+        if path.suffix == ".info":  # Cast down for nu
+            path = path.parent
+
+        if path.is_dir():
+            if is_nu_directory(path):
+                dlg = NuImportDialog(path, self)
+            else:
+                raise FileNotFoundError("dialogLoadFile: invalid directory.")
         else:
             dlg = ImportDialog(path, self)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
         return dlg
-
-    # def dialogLoadNuDirectory(self, dir: str | None = None) -> NuImportDialog | None:
-    #     if dir is None:
-    #         dir, _ = QtWidgets.QFileDialog.getExistingDirectory(self, "Open", "")
-    #     if dir == "" or dir is None:
-    #         return None
-
-    #     dlg = NuImportDialog(dir, self)
-    #     dlg.dataImported.connect(self.loadData)
-    #     dlg.open()
-    #     return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs

@@ -8,6 +8,13 @@ from spcal import __version__
 from spcal.result import SPCalResult
 
 
+def is_text_file(path: Path) -> bool:
+    if path.is_dir() or not path.exists():
+        return False
+    if path.suffix.lower() not in [".csv", ".txt", ".text"]:
+        return False
+    return True
+
 def import_single_particle_file(
     path: Path | str,
     delimiter: str = ",",

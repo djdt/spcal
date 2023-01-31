@@ -6,6 +6,19 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 
 
+def is_nu_directory(path: Path) -> bool:
+    """Checks path is directory containing a 'run.info' and 'integrated.index'"""
+
+    if not path.is_dir() or not path.exists():
+        return False
+    if not path.joinpath("run.info").exists():
+        return False
+    if not path.joinpath("integrated.index").exists():
+        return False
+
+    return True
+
+
 def get_masses_from_nu_data(
     data: np.ndarray, cal_coef: Tuple[float, float], segment_delays: Dict[int, float]
 ) -> np.ndarray:
@@ -28,19 +41,6 @@ def get_masses_from_nu_data(
     masses = (data["result"]["center"] * 0.5) + delays[:, None]
     # Convert from time to mass (sqrt(m/q) = a + t * b)
     return (cal_coef[0] + masses * cal_coef[1]) ** 2
-
-
-def is_nu_directory(path: Path) -> bool:
-    """Checks path is directory containing a 'run.info' and 'integrated.index'"""
-
-    if not path.is_dir():
-        return False
-    if not path.joinpath("run.info").exists():
-        return False
-    if not path.joinpath("integrated.index").exists():
-        return False
-
-    return True
 
 
 def read_nu_integ_binary(
