@@ -58,11 +58,6 @@ class SampleIOWidget(IOWidget):
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
 
-        # self.element = ValidColorLineEdit(color_bad=QtGui.QColor(255, 255, 172))
-        # self.element.setValid(False)
-        # self.element.setCompleter(QtWidgets.QCompleter(list(npdata.data.keys())))
-        # self.element.textChanged.connect(self.elementChanged)
-
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
@@ -90,9 +85,6 @@ class SampleIOWidget(IOWidget):
             self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
         )
 
-        # self.element.setToolTip(
-        #     "Input formula for density, molarmass and massfraction."
-        # )
         self.density.setToolTip("Sample particle density.")
         self.molarmass.setToolTip(
             "Molecular weight, required to calculate intracellular concentrations."
@@ -111,7 +103,6 @@ class SampleIOWidget(IOWidget):
             lambda: self.optionsChanged.emit(self.name)
         )
 
-        # self.inputs.layout().addRow("Formula:", self.element)
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
         self.inputs.layout().addRow("Ionic response:", self.response)
@@ -138,7 +129,6 @@ class SampleIOWidget(IOWidget):
 
     def clearInputs(self) -> None:
         self.blockSignals(True)
-        # self.element.setText("")
         self.density.setValue(None)
         self.molarmass.setValue(None)
         self.response.setValue(None)
@@ -168,24 +158,6 @@ class SampleIOWidget(IOWidget):
         )  # to kg/m3
         dlg.open()
         return dlg
-
-    # def elementChanged(self, text: str) -> None:
-    #     if text in npdata.data:
-    #         density, mw, mr = npdata.data[text]
-    #         # self.element.setValid(True)
-    #         self.density.setValue(density)
-    #         self.density.setUnit("g/cm³")
-    #         self.density.setEnabled(False)
-    #         self.molarmass.setValue(mw)
-    #         self.molarmass.setUnit("g/mol")
-    #         self.molarmass.setEnabled(False)
-    #         self.massfraction.setText(str(mr))
-    #         self.massfraction.setEnabled(False)
-    #     else:
-    #         # self.element.setValid(False)
-    #         self.density.setEnabled(True)
-    #         self.molarmass.setEnabled(True)
-    #         self.massfraction.setEnabled(True)
 
     def isComplete(self) -> bool:
         return (
