@@ -136,7 +136,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.manual = QtWidgets.QLineEdit("10.0")
         self.manual.setEnabled(False)
         self.manual.setValidator(QtGui.QDoubleValidator(1e-9, 1e9, 2))
-        self.manual.setToolTip("Limit used when method is 'Manual Input'.")
+        self.manual.setToolTip("Limit (in counts) used when method is 'Manual Input'.")
 
         self.method.currentTextChanged.connect(self.limitMethodChanged)
 
