@@ -4,6 +4,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 from spcal.gui.graphs.plots import ParticlePlotItem
@@ -56,14 +57,17 @@ class CompositionView(SinglePlotGraphicsView):
 class ResponseView(SinglePlotGraphicsView):
     def __init__(
         self,
+        downsample: int = 64,
         parent: pyqtgraph.GraphicsWidget | None = None,
     ):
         super().__init__("Response TIC", "Time", "Intensity", parent=parent)
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.enableAutoRange(x=True, y=True)
-        self.plot.setDownsampling(ds=8, mode="peak", auto=True)
+        self.plot.setDownsampling(ds=downsample, mode="subsample", auto=True)
 
         self.signal: pyqtgraph.PlotCurveItem | None = None
+        self.signal_mean: pyqtgraph.PlotCurveItem | None = None
+        self.mean_mode = "mean"
 
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
         region_pen.setCosmetic(True)
@@ -78,12 +82,9 @@ class ResponseView(SinglePlotGraphicsView):
         self.region.movable = False  # prevent moving of region, but not lines
         self.region.lines[0].addMarker("|>", 0.9)
         self.region.lines[1].addMarker("<|", 0.9)
-        self.region.sigRegionChanged.connect(self.updateMeanSpan)
+        self.region.sigRegionChangeFinished.connect(self.updateMean)
 
         region_pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-        self.mean_line = pyqtgraph.InfiniteLine(
-            pos=0.0, angle=0, label="mean", pen=region_pen
-        )
 
     @property
     def region_start(self) -> int:
@@ -92,6 +93,19 @@ class ResponseView(SinglePlotGraphicsView):
     @property
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
+
+    # def setData(self, data: np.ndarray) -> None:
+    #     assert data.dtype.names is not None
+
+    #     self.plot.clear()
+
+    #     self.data = data
+
+    #     x = np.arange(self.data.shape[0])
+    #     for name in self.data.dtype.names:
+    #         y = self.data[name]
+    #         # pen =
+    #         self.drawData(x, y)
 
     def drawData(
         self,
@@ -116,11 +130,35 @@ class ResponseView(SinglePlotGraphicsView):
         self.region.blockSignals(False)
         self.plot.addItem(self.region)
 
-        self.mean_line.setSpan(0, 1)
-        self.plot.addItem(self.mean_line)
+    def drawMean(self, mean: float, pen: QtGui.QPen | None = None) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.red, 2.0, QtCore.Qt.PenStyle.DashLine)
+            pen.setCosmetic(True)
 
-    # def updateMeanSpan(self) -> None:
-    #     self.mean_line.setSpan(self.region_start, self.region_end)
+        if self.signal_mean is None:
+            self.signal_mean = pyqtgraph.PlotCurveItem(
+                pen=pen,
+                connect="all",
+                skipFiniteCheck=True,
+            )
+            self.plot.addItem(self.signal_mean)
+
+        self.signal_mean.updateData(
+            x=[self.region_start, self.region_end], y=[mean, mean]
+        )
+
+    def updateMean(self) -> None:
+        if self.signal is None or self.signal_mean is None:
+            return
+
+        if self.mean_mode == "mean":
+            mean = np.mean(self.signal.yData[self.region_start:self.region_end])
+        elif self.mean_mode == "median":
+            mean = np.median(self.signal.yData[self.region_start:self.region_end])
+        else:
+            raise ValueError("updateMean: unknown mode")
+
+        self.drawMean(mean)
 
 
 class ScatterView(SinglePlotGraphicsView):

@@ -23,22 +23,33 @@ class ResponseWidget(QtWidgets.QWidget):
         self.button_open_file = QtWidgets.QPushButton("Open File")
         self.button_open_file.pressed.connect(self.dialogLoadFile)
 
-        self.button_reset = QtWidgets.QPushButton("Reset")
-        self.button_reset.pressed.connect(self.resetInputs)
+        # self.button_reset = QtWidgets.QPushButton("Reset")
+        # self.button_reset.setIcon(QtGui.QIcon.fromTheme("edit-reset"))
+        # self.button_reset.pressed.connect(self.resetInputs)
 
         self.graph = ResponseView()
 
         self.combo_method = QtWidgets.QComboBox()
         self.combo_method.addItems(["Signal Mean", "Signal Median"])
-        self.combo_method.currentTextChanged.connect(self.calculateResponses)
+        self.combo_method.currentTextChanged.connect(self.setMeanMode)
+
+        self.button_set_responses = QtWidgets.QPushButton("Set Responses")
+        self.button_set_responses.pressed.connect(self.calculateResponses)
+        self.button_set_responses.setIcon(QtGui.QIcon.fromTheme("dialog-ok-apply"))
 
         layout_buttons = QtWidgets.QHBoxLayout()
-        layout_buttons.addWidget(self.button_open_file)
         layout_buttons.addWidget(
-            self.button_reset, 0, QtCore.Qt.AlignmentFlag.AlignRight
+            self.button_open_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft
         )
+        # layout_buttons.addWidget(
+        #     self.button_reset, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        # )
 
         layout_controls = QtWidgets.QHBoxLayout()
+        layout_controls.addWidget(self.combo_method, 0)
+        layout_controls.addWidget(
+            self.button_set_responses, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_buttons, 0)
@@ -105,15 +116,25 @@ class ResponseWidget(QtWidgets.QWidget):
         tic = np.sum([data[name] for name in data.dtype.names], axis=0)
         self.graph.clear()
         self.graph.drawData(np.arange(tic.size), tic)
+        self.graph.drawMean(0.0)
+        self.graph.updateMean()
+
+    def setMeanMode(self) -> None:
+        self.graph.mean_mode = (
+            "median" if self.combo_method.currentText() == "Signal Median" else "mean"
+        )
+        self.graph.updateMean()
 
     def resetInputs(self) -> None:
-        pass
+        self.graph.clear()
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     w = ResponseWidget()
-    w.dialogLoadFile("/home/tom/Downloads/AuAg_short.csv")
+    w.dialogLoadFile(
+        "/home/tom/MEGA/Uni/Experimental/ICPMS/Mn Single Cell/20220126_mn_treatment/20220126_c_neb_eff.b/c.d/c.csv"
+    )
     w.show()
     app.exec()
