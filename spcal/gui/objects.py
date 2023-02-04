@@ -31,6 +31,15 @@ class DoublePrecisionDelegate(QtWidgets.QStyledItemDelegate):
         except (TypeError, ValueError):
             return str(super().displayText(value, locale))
 
+    def setModelData(
+        self,
+        editor: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: QtCore.QModelIndex,
+    ):
+        value = editor.text()
+        model.setData(index, float(value), QtCore.Qt.ItemDataRole.DisplayRole)
+
 
 class DragDropRedirectFilter(QtCore.QObject):
     """Redirects drag/drop events to parent."""
