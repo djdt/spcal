@@ -1,7 +1,9 @@
 import logging
 import sys
+from pathlib import Path
 from types import TracebackType
 
+import numpy as np
 from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
@@ -83,6 +85,14 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         self.action_open_batch.setEnabled(False)
 
+        self.action_export = create_action(
+            "document-save-as",
+            "E&xport Data",
+            "Save single particle signal data to various formats.",
+            self.dialogExportData,
+        )
+        self.action_export.setEnabled(False)
+
         self.action_close = create_action(
             "window-close", "Quit", "Exit SPCal.", self.close
         )
@@ -133,6 +143,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menufile.addSeparator()
         menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
+        menufile.addAction(self.action_export)
+        menufile.addSeparator()
         menufile.addAction(self.action_close)
 
         menuedit = self.menuBar().addMenu("&Edit")
@@ -181,6 +193,36 @@ class SPCalWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
+    def dialogExportData(self) -> None:
+        path, filter = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Save Data As",
+            "",
+            "Numpy Archive (*.npz);;CSV Document(*.csv);;All files(*)",
+        )
+        if path == "":
+            return
+
+        filter_suffix = filter[filter.rfind("."):-1]
+
+        path = Path(path)
+        if filter_suffix != "":  # append suffix if missing
+            path = path.with_suffix(filter_suffix)
+
+        names = self.sample.responses.dtype.names
+        if path.suffix.lower() == ".csv":
+            header = " ".join(name for name in names)
+            np.savetxt(
+                path, self.sample.responses, delimiter=" ", comments="", header=header
+            )
+        elif path.suffix.lower() == ".npz":
+            np.savez_compressed(
+                path,
+                **{name: self.sample.responses[name] for name in names},
+            )
+        else:
+            raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.open()
@@ -203,10 +245,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.readyForResults(),
         )
         self.action_open_batch.setEnabled(self.readyForResults())
+        self.action_export.setEnabled(self.readyForResults())
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            names = list(self.sample.detections.dtype.names)
+            # names = list(self.sample.detections.dtype.names)
             self.results.updateResults()
 
     def readyForResults(self) -> bool:
