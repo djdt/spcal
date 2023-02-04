@@ -60,6 +60,16 @@ class ResponseWidget(QtWidgets.QWidget):
 
     def calculateResponses(self) -> None:
         responses: Dict[str, float] = {}
+        fn = (
+            np.median if self.combo_method.currentText() == "Signal Median" else np.mean
+        )
+        if self.data.dtype.names is None:
+            return
+        for name in self.data.dtype.names:
+            responses[name] = fn(
+                self.data[name][self.graph.region_start : self.graph.region_end]
+            )
+        print(responses)
         self.responsesChanged.emit(responses)
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
@@ -113,7 +123,9 @@ class ResponseWidget(QtWidgets.QWidget):
         return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
+        self.data = data
         tic = np.sum([data[name] for name in data.dtype.names], axis=0)
+
         self.graph.clear()
         self.graph.drawData(np.arange(tic.size), tic)
         self.graph.drawMean(0.0)
@@ -133,8 +145,11 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     w = ResponseWidget()
-    w.dialogLoadFile(
-        "/home/tom/MEGA/Uni/Experimental/ICPMS/Mn Single Cell/20220126_mn_treatment/20220126_c_neb_eff.b/c.d/c.csv"
-    )
+    npz = np.load("/home/tom/Downloads/test_data.npz")
+    names = npz.files
+    data = np.empty(npz[names[0]].size, dtype=[(n, float) for n in names])
+    for n in names:
+        data[n] = npz[n]
+    w.loadData(data, {})
     w.show()
     app.exec()
