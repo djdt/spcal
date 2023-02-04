@@ -3,6 +3,35 @@ from typing import Tuple
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
+class DoublePrecisionDelegate(QtWidgets.QStyledItemDelegate):
+    """Delegate to display items with a certain number of decimals.
+
+    Item inputs are also validated using a QDoubleValidator.
+    """
+
+    def __init__(self, decimals: int, parent: QtWidgets.QWidget = None):
+        super().__init__(parent)
+        self.decimals = decimals
+
+    def createEditor(
+        self,
+        parent: QtWidgets.QWidget,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: int,
+    ) -> QtWidgets.QWidget:  # pragma: no cover
+        lineedit = QtWidgets.QLineEdit(parent)
+        lineedit.setValidator(QtGui.QDoubleValidator())
+        return lineedit
+
+    def displayText(self, value: str, locale: str) -> str:
+        """Attempts to display text as a float with 'decimal' places."""
+        try:
+            num = float(value)
+            return f"{num:.{self.decimals}f}"
+        except (TypeError, ValueError):
+            return str(super().displayText(value, locale))
+
+
 class DragDropRedirectFilter(QtCore.QObject):
     """Redirects drag/drop events to parent."""
 
