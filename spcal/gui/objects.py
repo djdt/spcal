@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
@@ -9,8 +10,16 @@ class DoublePrecisionDelegate(QtWidgets.QStyledItemDelegate):
     Item inputs are also validated using a QDoubleValidator.
     """
 
-    def __init__(self, decimals: int, parent: QtWidgets.QWidget = None):
+    def __init__(
+        self,
+        bottom: float = -np.inf,
+        top: float = np.inf,
+        decimals: int = 4,
+        parent: QtWidgets.QWidget = None,
+    ):
         super().__init__(parent)
+        self.top = top
+        self.bottom = bottom
         self.decimals = decimals
 
     def createEditor(
@@ -20,14 +29,15 @@ class DoublePrecisionDelegate(QtWidgets.QStyledItemDelegate):
         index: int,
     ) -> QtWidgets.QWidget:  # pragma: no cover
         lineedit = QtWidgets.QLineEdit(parent)
-        lineedit.setValidator(QtGui.QDoubleValidator())
+        lineedit.setValidator(DoubleOrEmptyValidator(bottom=self.bottom, top=self.top))
         return lineedit
 
-    def displayText(self, value: str, locale: str) -> str:
+    def displayText(self, value: float, locale: str) -> str:
         """Attempts to display text as a float with 'decimal' places."""
+        if np.isnan(value):
+            return ""
         try:
-            num = float(value)
-            return f"{num:.{self.decimals}f}"
+            return f"{value:.{self.decimals}f}"
         except (TypeError, ValueError):
             return str(super().displayText(value, locale))
 
@@ -37,8 +47,12 @@ class DoublePrecisionDelegate(QtWidgets.QStyledItemDelegate):
         model: QtCore.QAbstractItemModel,
         index: QtCore.QModelIndex,
     ):
-        value = editor.text()
-        model.setData(index, float(value), QtCore.Qt.ItemDataRole.DisplayRole)
+        try:
+            value = float(editor.text())
+        except ValueError:
+            value = np.nan
+
+        model.setData(index, value, QtCore.Qt.ItemDataRole.DisplayRole)
 
 
 class DragDropRedirectFilter(QtCore.QObject):
@@ -74,6 +88,13 @@ class KeepMenuOpenFilter(QtCore.QObject):
         elif event.type() in [QtCore.QEvent.Type.MouseButtonRelease]:
             return True
         return super().eventFilter(obj, event)
+
+
+class DoubleOrEmptyValidator(QtGui.QDoubleValidator):
+    def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
+        if input == "":
+            return (QtGui.QValidator.State.Acceptable, input, pos)
+        return super().validate(input, pos)
 
 
 class DoubleOrPercentValidator(QtGui.QDoubleValidator):
