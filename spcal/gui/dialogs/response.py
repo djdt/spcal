@@ -12,32 +12,43 @@ from spcal.io.text import is_text_file
 from spcal.siunits import mass_concentration_units
 
 
-class SetResponseDialog(QtWidgets.QDialog):
+class ResponseDialog(QtWidgets.QDialog):
     responsesSelected = QtCore.Signal(dict)
 
     def __init__(
-        self, responses: Dict[str, float], parent: QtWidgets.QWidget | None = None
+        self,
+        path: Path | None = None,
+        import_options: dict | None = None,
+        responses: Dict[str, float] | None = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent=parent)
-        self.setWindowTitle("Response Concentrations")
+        self.setWindowTitle("Ioinic Response Calculator")
+
+        self.data = np.array([])
+        self.responses: Dict[str, float] = {}
+
+        self.button_open_file = QtWidgets.QPushButton("Open File")
+        self.button_open_file.pressed.connect(self.dialogLoadFile)
+
+        self.graph = ResponseView()
+        self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
         self.table = QtWidgets.QTableWidget()
-
-        self.table.setColumnCount(len(responses))
         self.table.setRowCount(2)
-
-        self.table.setHorizontalHeaderLabels(list(responses.keys()))
+        self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setVerticalHeaderLabels(["Response (counts)", "Concentration"])
-        self.table.setItemDelegate(DoublePrecisionDelegate(4))
+        self.table.setItemDelegate(DoublePrecisionDelegate(bottom=1e-99, decimals=4))
 
-        for i, response in enumerate(responses.values()):
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.ItemDataRole.DisplayRole, response)
-            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            self.table.setItem(0, i, item)
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.ItemDataRole.DisplayRole, 0.0)
-            self.table.setItem(1, i, item)
+        self.table.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
+        self.table.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
+        self.table.setVerticalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
 
         self.table.itemChanged.connect(self.completeChanged)
 
@@ -63,17 +74,26 @@ class SetResponseDialog(QtWidgets.QDialog):
         layout_units.addWidget(self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.table, 1)
+        layout.addWidget(self.button_open_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(self.graph, 1)
+        layout.addWidget(self.table, 0)
         layout.addLayout(layout_units, 0)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
-    def completeChanged(self) -> None:
-        ready = any(
-            float(self.table.item(1, i).text()) != 0.0
+        if path is not None:
+            self.dialogLoadFile(path)
+
+    def isComplete(self) -> bool:
+        return any(
+            self.table.item(1, i).data(QtCore.Qt.ItemDataRole.DisplayRole) > 0.0
             for i in range(self.table.columnCount())
         )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(ready)
+
+    def completeChanged(self) -> None:
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
+            self.isComplete()
+        )
 
     def accept(self) -> None:
         responses = {}
@@ -82,73 +102,11 @@ class SetResponseDialog(QtWidgets.QDialog):
             name = self.table.horizontalHeaderItem(i).text()
             response = self.table.item(0, i).data(QtCore.Qt.ItemDataRole.DisplayRole)
             conc = self.table.item(1, i).data(QtCore.Qt.ItemDataRole.DisplayRole)
-            if conc != 0.0:
+            if conc > 0.0:
                 responses[name] = response / (conc * factor)
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
-
-
-class ResponseWidget(QtWidgets.QWidget):
-    responsesChanged = QtCore.Signal(dict)
-
-    def __init__(
-        self, file: str | Path | None = None, parent: QtWidgets.QWidget | None = None
-    ):
-        super().__init__(parent=parent)
-
-        self.data = np.array([])
-
-        self.button_open_file = QtWidgets.QPushButton("Open File")
-        self.button_open_file.pressed.connect(self.dialogLoadFile)
-
-        # self.button_reset = QtWidgets.QPushButton("Reset")
-        # self.button_reset.setIcon(QtGui.QIcon.fromTheme("edit-reset"))
-        # self.button_reset.pressed.connect(self.resetInputs)
-
-        self.graph = ResponseView()
-
-        self.combo_method = QtWidgets.QComboBox()
-        self.combo_method.addItems(["Signal Mean", "Signal Median"])
-        self.combo_method.currentTextChanged.connect(self.setMeanMode)
-
-        self.button_set_responses = QtWidgets.QPushButton("Set Concentrations")
-        self.button_set_responses.pressed.connect(self.calculateResponses)
-        self.button_set_responses.setIcon(QtGui.QIcon.fromTheme("dialog-ok-apply"))
-
-        layout_buttons = QtWidgets.QHBoxLayout()
-        layout_buttons.addWidget(
-            self.button_open_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft
-        )
-        # layout_buttons.addWidget(
-        #     self.button_reset, 0, QtCore.Qt.AlignmentFlag.AlignRight
-        # )
-
-        layout_controls = QtWidgets.QHBoxLayout()
-        layout_controls.addWidget(self.combo_method, 0)
-        layout_controls.addWidget(
-            self.button_set_responses, 1, QtCore.Qt.AlignmentFlag.AlignRight
-        )
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_buttons, 0)
-        layout.addWidget(self.graph, 1)
-        layout.addLayout(layout_controls, 0)
-
-        self.setLayout(layout)
-
-    def calculateResponses(self) -> None:
-        responses: Dict[str, float] = {}
-        fn = (
-            np.median if self.combo_method.currentText() == "Signal Median" else np.mean
-        )
-        if self.data.dtype.names is None:
-            return
-        for name in self.data.dtype.names:
-            responses[name] = fn(
-                self.data[name][self.graph.region_start : self.graph.region_end]
-            )
-        dlg = SetResponseDialog(responses, self)
-        dlg.open()
+        super().accept()
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if event.mimeData().hasUrls():
@@ -204,25 +162,43 @@ class ResponseWidget(QtWidgets.QWidget):
         self.data = data
         tic = np.sum([data[name] for name in data.dtype.names], axis=0)
 
+        self.table.setColumnCount(len(data.dtype.names))
+        self.table.setHorizontalHeaderLabels(data.dtype.names)
+
+        self.table.blockSignals(True)
+        for i in range(self.table.columnCount()):
+            item = QtWidgets.QTableWidgetItem()
+            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(0, i, item)
+            item = QtWidgets.QTableWidgetItem()
+            item.setData(QtCore.Qt.ItemDataRole.DisplayRole, np.nan)
+            self.table.setItem(1, i, item)
+        self.table.blockSignals(True)
+
         self.graph.clear()
         self.graph.drawData(np.arange(tic.size), tic)
         self.graph.drawMean(0.0)
         self.graph.updateMean()
 
-    def setMeanMode(self) -> None:
-        self.graph.mean_mode = (
-            "median" if self.combo_method.currentText() == "Signal Median" else "mean"
-        )
-        self.graph.updateMean()
+        self.updateResponses()
 
-    def resetInputs(self) -> None:
-        self.graph.clear()
+    def updateResponses(self) -> None:
+        if self.data.dtype.names is None:
+            return
+        responses = [
+            np.mean(self.data[name][self.graph.region_start : self.graph.region_end])
+            for name in self.data.dtype.names
+        ]
+        self.table.blockSignals(True)
+        for i, response in enumerate(responses):
+            self.table.item(0, i).setData(QtCore.Qt.ItemDataRole.DisplayRole, response)
+        self.table.blockSignals(False)
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
-    w = ResponseWidget()
+    w = ResponseDialog()
     npz = np.load("/home/tom/Downloads/test_data.npz")
     names = npz.files
     data = np.empty(npz[names[0]].size, dtype=[(n, float) for n in names])

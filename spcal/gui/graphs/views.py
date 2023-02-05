@@ -4,7 +4,6 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 from spcal.gui.graphs.plots import ParticlePlotItem
@@ -67,7 +66,6 @@ class ResponseView(SinglePlotGraphicsView):
 
         self.signal: pyqtgraph.PlotCurveItem | None = None
         self.signal_mean: pyqtgraph.PlotCurveItem | None = None
-        self.mean_mode = "mean"
 
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
         region_pen.setCosmetic(True)
@@ -79,7 +77,7 @@ class ResponseView(SinglePlotGraphicsView):
             hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
             swapMode="block",
         )
-        self.region.movable = False  # prevent moving of region, but not lines
+        # self.region.movable = False  # prevent moving of region, but not lines
         self.region.lines[0].addMarker("|>", 0.9)
         self.region.lines[1].addMarker("<|", 0.9)
         self.region.sigRegionChangeFinished.connect(self.updateMean)
@@ -93,19 +91,6 @@ class ResponseView(SinglePlotGraphicsView):
     @property
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
-
-    # def setData(self, data: np.ndarray) -> None:
-    #     assert data.dtype.names is not None
-
-    #     self.plot.clear()
-
-    #     self.data = data
-
-    #     x = np.arange(self.data.shape[0])
-    #     for name in self.data.dtype.names:
-    #         y = self.data[name]
-    #         # pen =
-    #         self.drawData(x, y)
 
     def drawData(
         self,
@@ -150,14 +135,7 @@ class ResponseView(SinglePlotGraphicsView):
     def updateMean(self) -> None:
         if self.signal is None or self.signal_mean is None:
             return
-
-        if self.mean_mode == "mean":
-            mean = np.mean(self.signal.yData[self.region_start:self.region_end])
-        elif self.mean_mode == "median":
-            mean = np.median(self.signal.yData[self.region_start:self.region_end])
-        else:
-            raise ValueError("updateMean: unknown mode")
-
+        mean = np.mean(self.signal.yData[self.region_start : self.region_end])
         self.drawMean(mean)
 
 
