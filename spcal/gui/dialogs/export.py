@@ -63,7 +63,7 @@ class ExportDialog(QtWidgets.QDialog):
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
         self.check_export_arrays = QtWidgets.QCheckBox(
-            "Export detected particle arrays."
+            "Export particle detection data arrays."
         )
         self.check_export_arrays.setChecked(True)
         self.check_export_compositions = QtWidgets.QCheckBox(
