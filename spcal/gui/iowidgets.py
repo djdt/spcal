@@ -4,9 +4,8 @@ from typing import Dict, Generic, Iterator, List, Type, TypeVar
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal
-
-# from spcal import npdata
+import spcal.particle
+from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
@@ -17,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class IOWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal(str)
+    request = QtCore.Signal(str)
 
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -54,6 +54,12 @@ class SampleIOWidget(IOWidget):
             "Calculate the mass fraction and MW for a given formula.",
             self.dialogMassFractionCalculator,
         )
+        self.action_ionic_response = create_action(
+            "document-open",
+            "Ionic Response Tool",
+            "Read ionic responses from a file and apply to sample and reference.",
+            lambda: self.request.emit("ionic response"),
+        )
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
@@ -79,6 +85,10 @@ class SampleIOWidget(IOWidget):
             },
             default_unit="counts/(μg/L)",
         )
+        self.response.lineedit.addAction(
+            self.action_ionic_response, QtWidgets.QLineEdit.TrailingPosition
+        )
+
         self.massfraction = ValidColorLineEdit("1.0")
         self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
         self.massfraction.addAction(
@@ -279,7 +289,7 @@ class ReferenceIOWidget(SampleIOWidget):
         if density is None or diameter is None or response is None:
             return
 
-        mass = spcal.reference_particle_mass(density, diameter)
+        mass = spcal.particle.reference_particle_mass(density, diameter)
         mass_fraction = (
             float(self.massfraction.text())
             if self.massfraction.hasAcceptableInput()
@@ -291,7 +301,7 @@ class ReferenceIOWidget(SampleIOWidget):
         # If concentration defined use conc method
         concentration = self.concentration.baseValue()
         if concentration is not None and uptake is not None:
-            efficiency = spcal.nebulisation_efficiency_from_concentration(
+            efficiency = spcal.particle.nebulisation_efficiency_from_concentration(
                 detections.size,
                 concentration=concentration,
                 mass=mass,
@@ -300,7 +310,7 @@ class ReferenceIOWidget(SampleIOWidget):
             )
             self.efficiency.setText(f"{efficiency:.4g}")
         elif mass_fraction is not None and uptake is not None and response is not None:
-            efficiency = spcal.nebulisation_efficiency_from_mass(
+            efficiency = spcal.particle.nebulisation_efficiency_from_mass(
                 detections,
                 dwell=dwell,
                 mass=mass,
@@ -494,6 +504,9 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
     def widgets(self) -> List[IOType]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
+    def handleRequest(self, request: str, value: None = None) -> None:
+        raise NotImplementedError
+
     def repopulate(self, names: List[str]) -> None:
         self.blockSignals(True)
         self.combo_name.clear()
@@ -504,6 +517,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
             self.combo_name.addItem(name)
             widget = self.io_widget_type(name)
             widget.optionsChanged.connect(self.optionsChanged)
+            widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
         self.blockSignals(False)
 
@@ -513,16 +527,33 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
 
 class SampleIOStack(IOStack[SampleIOWidget]):
+    requestIonicResponseTool = QtCore.Signal()
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(SampleIOWidget, parent=parent)
 
+    def handleRequest(self, request: str, value: None = None) -> None:
+        if request == "ionic response":
+            self.requestIonicResponseTool.emit()
+
+    def setResponses(self, responses: Dict[str, float]) -> None:
+        for name, response in responses.items():
+            if name in self:
+                self[name].response.setBaseValue(response)
+
 
 class ReferenceIOStack(IOStack[ReferenceIOWidget]):
+    requestIonicResponseTool = QtCore.Signal()
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         self.button_group_check_efficiency = QtWidgets.QButtonGroup()
         self.button_group_check_efficiency.buttonClicked.connect(self.buttonClicked)
         self.last_button_checked: QtWidgets.QAbstractButton | None = None
         super().__init__(ReferenceIOWidget, parent=parent)
+
+    def handleRequest(self, request: str, value: None = None) -> None:
+        if request == "ionic response":
+            self.requestIonicResponseTool.emit()
 
     def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
         if button == self.last_button_checked:
@@ -539,6 +570,11 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
             self.button_group_check_efficiency.addButton(
                 self[name].check_use_efficiency_for_all
             )
+
+    def setResponses(self, responses: Dict[str, float]) -> None:
+        for name, response in responses.items():
+            if name in self:
+                self[name].response.setBaseValue(response)
 
 
 class ResultIOStack(IOStack[ResultIOWidget]):

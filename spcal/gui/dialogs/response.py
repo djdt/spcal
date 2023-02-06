@@ -15,15 +15,9 @@ from spcal.siunits import mass_concentration_units
 class ResponseDialog(QtWidgets.QDialog):
     responsesSelected = QtCore.Signal(dict)
 
-    def __init__(
-        self,
-        path: Path | None = None,
-        import_options: dict | None = None,
-        responses: Dict[str, float] | None = None,
-        parent: QtWidgets.QWidget | None = None,
-    ):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
-        self.setWindowTitle("Ioinic Response Calculator")
+        self.setWindowTitle("Ionic Response Calculator")
 
         self.data = np.array([])
         self.responses: Dict[str, float] = {}
@@ -80,9 +74,6 @@ class ResponseDialog(QtWidgets.QDialog):
         layout.addLayout(layout_units, 0)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
-
-        if path is not None:
-            self.dialogLoadFile(path)
 
     def isComplete(self) -> bool:
         return any(

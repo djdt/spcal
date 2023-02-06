@@ -8,6 +8,7 @@ from PySide6 import QtGui, QtWidgets
 
 from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
@@ -35,6 +36,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample = SampleWidget(self.options)
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
+
+        self.sample.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
+        self.reference.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
 
         self.sample.dataImported.connect(self.syncSampleAndReference)
         self.reference.dataImported.connect(self.syncSampleAndReference)
@@ -116,6 +120,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Search for compound densities.",
             self.dialogParticleDatabase,
         )
+        self.action_ionic_response_tool = create_action(
+            "document-open",
+            "Ionic Response Tool",
+            "Read ionic responses from a standard file and apply to sample and reference.",
+            self.dialogIonicResponse,
+        )
 
         # View
         self.action_color_scheme = QtGui.QActionGroup(self)
@@ -152,6 +162,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menuedit.addSeparator()
         menuedit.addAction(self.action_mass_fraction_calculator)
         menuedit.addAction(self.action_particle_database)
+        menuedit.addAction(self.action_ionic_response_tool)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -203,7 +214,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         if path == "":
             return
 
-        filter_suffix = filter[filter.rfind("."):-1]
+        filter_suffix = filter[filter.rfind(".") : -1]
 
         path = Path(path)
         if filter_suffix != "":  # append suffix if missing
@@ -230,6 +241,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def dialogParticleDatabase(self) -> ParticleDatabaseDialog:
         dlg = ParticleDatabaseDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogIonicResponse(self) -> ResponseDialog:
+        dlg = ResponseDialog(parent=self)
+        dlg.responsesSelected.connect(self.sample.io.setResponses)
+        dlg.responsesSelected.connect(self.reference.io.setResponses)
         dlg.open()
         return dlg
 
