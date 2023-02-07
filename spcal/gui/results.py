@@ -539,6 +539,7 @@ class ResultsWidget(QtWidgets.QWidget):
             brushes.append(QtGui.QBrush(color))
 
         self.graph_composition.drawData(compositions, counts, brushes=brushes)
+        # self.graph_composition.drawTitle(compositions, counts, brushes=brushes)
 
     def drawGraphScatter(self) -> None:
         self.graph_scatter.clear()

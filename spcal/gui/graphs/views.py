@@ -5,10 +5,7 @@ import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.base import (
-    MultiPlotGraphicsView,
-    SinglePlotGraphicsView,
-)
+from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
 from spcal.gui.graphs.items import PieChart
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 from spcal.gui.graphs.plots import ParticlePlotItem
@@ -53,11 +50,6 @@ class CompositionView(QtWidgets.QGraphicsView):
         max_r = np.amax(counts)
         spacing = size * 3.0
 
-        self.setSceneRect(
-            -spacing / 2.0, -spacing / 2.0, counts.size * spacing, spacing
-        )
-        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-
         for i, (count, comp) in enumerate(zip(counts, compositions)):
             pie = PieChart(
                 count / max_r * size, rfn.structured_to_unstructured(comp), brushes
@@ -70,6 +62,16 @@ class CompositionView(QtWidgets.QGraphicsView):
             )
             self.scene().addItem(pie)
             self.scene().addItem(label)
+
+        self.setSceneRect(
+            self.scene()
+            .itemsBoundingRect()
+            .adjusted(-size / 2.0, -size / 2.0, size / 2.0, size / 2.0)
+        )
+        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+
+    # def setTitle(self) -> None:
+    #     text = QtWidgets.QGrap
 
 
 class ResponseView(SinglePlotGraphicsView):
