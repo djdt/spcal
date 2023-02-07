@@ -474,7 +474,7 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        self.graph_composition.plot.setTitle(f"{label} Composition")
+        # self.graph_composition.plot.setTitle(f"{label} Composition")
 
         # Save names order to preserve colors
         names = list(self.results.keys())
