@@ -91,18 +91,29 @@ class PieSlice(QtWidgets.QGraphicsEllipseItem):
     def setHoverBrush(self, brush: QtGui.QBrush) -> None:
         self.hover_brush = brush
 
-    def hoverEnterEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
+    def setHovered(self, hovered: bool = True) -> None:
         if self.label is not None:
-            self.label.setVisible(True)
+            self.label.setVisible(hovered)
         if self.hover_brush is not None:
-            super().setBrush(self.hover_brush)
+            super().setBrush(self.hover_brush if hovered else self._brush)
+
+    def hoverEnterEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
+        self.setHovered(True)
+        for item in self.scene().items():
+            if item == self:
+                continue
+            if isinstance(item, PieSlice) and item.hover_brush == self.hover_brush:
+                item.setHovered(True)
+
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
-        if self.label is not None:
-            self.label.setVisible(False)
-        if self.hover_brush is not None:
-            super().setBrush(self._brush)
+        self.setHovered(False)
+        for item in self.scene().items():
+            if item == self:
+                continue
+            if isinstance(item, PieSlice) and item.hover_brush == self.hover_brush:
+                item.setHovered(False)
         super().hoverLeaveEvent(event)
 
     def paint(
@@ -118,13 +129,13 @@ class PieSlice(QtWidgets.QGraphicsEllipseItem):
 
 
 class PieChart(QtWidgets.QGraphicsItem):
-    sectionHovered = QtCore.Signal(int)
     def __init__(
         self,
         radius: float,
         values: List[float],
-        colors: List[QtGui.QColor],
+        brushes: List[QtGui.QBrush],
         pen: QtGui.QPen | None = None,
+        label_format: str = "{:.4g}",
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
         """Pie is centered on item.pos()."""
@@ -139,24 +150,33 @@ class PieChart(QtWidgets.QGraphicsItem):
         self.radius = radius
         self.slices: List[PieSlice] = []
         self.labels: List[QtWidgets.QGraphicsSimpleTextItem] = []
+        self.label_format = label_format
 
-        self.buildPie(values, colors)
+        self.buildPie(values, brushes)
 
     def buildPie(
-        self, values: List[float], colors: List[QtGui.QColor]
+        self, values: List[float], brushes: List[QtGui.QBrush]
     ) -> List[PieSlice]:
         self.slices.clear()
 
         fractions = np.array(values) / np.sum(values)
 
         angle = 0
-        for value, frac, color in zip(values, fractions, colors):
+        for value, frac, brush in zip(values, fractions, brushes):
             span = int(360 * 16 * frac)
+            hover_brush = QtGui.QBrush(brush)
+            hover_brush.setColor(hover_brush.color().lighter())
 
-            item = PieSlice(self.radius, angle, span, label=str(value), parent=self)
+            item = PieSlice(
+                self.radius,
+                angle,
+                span,
+                label=self.label_format.format(value),
+                parent=self,
+            )
             item.setPen(self.pen)
-            item.setBrush(QtGui.QBrush(color))
-            item.setHoverBrush(QtGui.QBrush(color.lighter()))
+            item.setBrush(brush)
+            item.setHoverBrush(hover_brush)
             item.setAcceptHoverEvents(True)
 
             angle += span
@@ -182,9 +202,12 @@ if __name__ == "__main__":
     item.setPos(0.0, 0.0)
     scene.addItem(item)
 
-    item2 = PieChart(100.0, [23.0, 12.0, 12.2, 32.1], color_schemes["IBM Carbon"])
+    item2 = PieChart(100.0, [23.0, 12.0, 0.0, 32.1], color_schemes["IBM Carbon"])
     item2.setPos(300.0, 0.0)
     scene.addItem(item2)
+
+    # for s1, s2 in zip(item.slices, item2.slices):
+    #     s1.hovered.connect()
 
     view.show()
 

@@ -1,22 +1,38 @@
 from typing import List
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
+from spcal.gui.graphs.base import (
+    MultiPlotGraphicsView,
+    SinglePlotGraphicsView,
+)
+from spcal.gui.graphs.items import PieChart
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 from spcal.gui.graphs.plots import ParticlePlotItem
 
 
-class CompositionView(SinglePlotGraphicsView):
+class CompositionView(QtWidgets.QGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
+
+        self._scene = QtWidgets.QGraphicsScene(0, 0, 1, 1)
         super().__init__(
-            "Detection Compositions",
-            xlabel="Compositions",
-            ylabel="No. Events",
+            self._scene,
+            #         "Detection Compositions",
+            #         xlabel="Compositions",
+            #         ylabel="No. Events",
             parent=parent,
         )
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+
+    def clear(self) -> None:
+        if self.scene() is not None:
+            self.scene().clear()
 
     def drawData(
         self,
@@ -26,9 +42,6 @@ class CompositionView(SinglePlotGraphicsView):
         brushes: List[QtGui.QBrush] | None = None,
     ) -> None:
 
-        x = np.arange(counts.size)
-        y0 = np.zeros(counts.size)
-
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
@@ -36,21 +49,27 @@ class CompositionView(SinglePlotGraphicsView):
             brushes = [QtGui.QBrush() for _ in range(len(compositions.dtype.names))]
         assert len(brushes) >= len(compositions.dtype.names)
 
-        y0 = counts.astype(float)
-        for name, brush in zip(compositions.dtype.names, brushes):
-            height = compositions[name] * counts
-            y0 -= height
-            bars = pyqtgraph.BarGraphItem(
-                x=x, height=height, width=0.75, y0=y0, pen=pen, brush=brush
-            )
-            self.plot.addItem(bars)
-            self.plot.legend.addItem(MultipleItemSampleProxy(brush, items=[bars]), name)
+        size = 100.0
+        max_r = np.amax(counts)
+        spacing = size * 3.0
 
-        y_range = np.amax(counts)
-        self.xaxis.setTicks([[(t, str(t + 1)) for t in x]])
-        self.plot.setLimits(
-            yMin=-y_range * 0.05, yMax=y_range * 1.1, xMin=-1, xMax=compositions.size
+        self.setSceneRect(
+            -spacing / 2.0, -spacing / 2.0, counts.size * spacing, spacing
         )
+        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+
+        for i, (count, comp) in enumerate(zip(counts, compositions)):
+            pie = PieChart(
+                count / max_r * size, rfn.structured_to_unstructured(comp), brushes
+            )
+            pie.setPos(i * spacing, 0)
+            label = QtWidgets.QGraphicsSimpleTextItem(str(count))
+            label.setPos(i * spacing, spacing / 3.0)
+            label.moveBy(
+                -label.boundingRect().width() / 2.0, label.boundingRect().height()
+            )
+            self.scene().addItem(pie)
+            self.scene().addItem(label)
 
 
 class ResponseView(SinglePlotGraphicsView):
