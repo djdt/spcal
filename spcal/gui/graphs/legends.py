@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 class StaticRectItemSample(pyqtgraph.GraphicsWidget):
     def __init__(self, brush: QtGui.QBrush):
         super().__init__()
+        self.item = None
         self.brush = brush
 
     def boundingRect(self) -> QtCore.QRectF:
