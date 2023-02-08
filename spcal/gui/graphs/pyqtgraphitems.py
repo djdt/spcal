@@ -14,7 +14,8 @@ class PieChart(QtWidgets.QGraphicsObject, pyqtgraph.GraphicsItem):
         values: List[float],
         brushes: List[QtGui.QBrush],
         pen: QtGui.QPen | None = None,
-        label_format: str = "{:.4g}",
+        labels: List[str] | None = None,
+        # label_format: str = "{:.4g}",
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
         """Pie is centered on item.pos()."""
@@ -34,8 +35,16 @@ class PieChart(QtWidgets.QGraphicsObject, pyqtgraph.GraphicsItem):
 
         self.hovered_idx: int = -1
 
-        self.labels: List[QtWidgets.QGraphicsSimpleTextItem] = []
-        self.label_format = label_format
+        self.labels: List[pyqtgraph.TextItem] = []
+        # if labels is not None:
+        #     assert len(labels) == len(values)
+        #     angle = 0.0
+        #     for label in labels:
+
+        # self.label_format = label_format
+
+    def name(self) -> str:
+        return "pie"
 
     def setHoveredIdx(self, idx: int) -> None:
         if self.hovered_idx != idx:
@@ -121,8 +130,13 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication()
 
-    view = pyqtgraph.PlotWidget()
+    view = pyqtgraph.PlotWidget(background="white")
     view.setAspectLocked(1.0)
+    view.addLegend()
+    item = pyqtgraph.BarGraphItem(
+        x=[1, 2, 3], y=[4, 5, 6], width=1.0, y1=0.0, name="eggs"
+    )
+    view.addItem(item)
 
     item = PieChart(100.0, [1.0, 2.0, 3.0, 4.0], color_schemes["IBM Carbon"])
     item.setPos(0.0, 0.0)
