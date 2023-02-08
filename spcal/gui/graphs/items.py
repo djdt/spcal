@@ -4,7 +4,6 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-
 # class MarkerItem(QtWidgets.QGraphicsPathItem):
 #     def __init__(
 #         self,
@@ -96,9 +95,6 @@ class PieChart(QtWidgets.QGraphicsObject, pyqtgraph.GraphicsItem):
         #     for label in labels:
 
         # self.label_format = label_format
-
-    def name(self) -> str:
-        return "pie"
 
     def setHoveredIdx(self, idx: int) -> None:
         if self.hovered_idx != idx:
