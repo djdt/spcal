@@ -7,29 +7,23 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
 from spcal.gui.graphs.items import PieChart
-from spcal.gui.graphs.legends import MultipleItemSampleProxy
+from spcal.gui.graphs.legends import StaticRectItemSample
 from spcal.gui.graphs.plots import ParticlePlotItem
 
 
-class CompositionView(QtWidgets.QGraphicsView):
+class CompositionView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
 
-        self._scene = QtWidgets.QGraphicsScene(0, 0, 1, 1)
         super().__init__(
-            self._scene,
-            #         "Detection Compositions",
-            #         xlabel="Compositions",
-            #         ylabel="No. Events",
+            "Detection Compositions",
+            xlabel="",
+            ylabel="",
             parent=parent,
         )
+        self.plot.setMouseEnabled(x=False, y=False)
+        self.plot.setAspectLocked(1.0)
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
-        super().resizeEvent(event)
-        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
-
-    def clear(self) -> None:
-        if self.scene() is not None:
-            self.scene().clear()
+        self.pies: List[PieChart] = []
 
     def drawData(
         self,
@@ -38,6 +32,7 @@ class CompositionView(QtWidgets.QGraphicsView):
         pen: QtGui.QPen | None = None,
         brushes: List[QtGui.QBrush] | None = None,
     ) -> None:
+        self.pies.clear()
 
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
@@ -55,23 +50,21 @@ class CompositionView(QtWidgets.QGraphicsView):
                 count / max_r * size, rfn.structured_to_unstructured(comp), brushes
             )
             pie.setPos(i * spacing, 0)
-            label = QtWidgets.QGraphicsSimpleTextItem(str(count))
-            label.setPos(i * spacing, spacing / 3.0)
-            label.moveBy(
-                -label.boundingRect().width() / 2.0, label.boundingRect().height()
-            )
-            self.scene().addItem(pie)
-            self.scene().addItem(label)
+            label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+            label.setPos(i * spacing, spacing / 2.0)
+            self.plot.addItem(pie)
+            self.plot.addItem(label)
+            self.pies.append(pie)
 
-        self.setSceneRect(
-            self.scene()
-            .itemsBoundingRect()
-            .adjusted(-size / 2.0, -size / 2.0, size / 2.0, size / 2.0)
-        )
-        self.fitInView(self.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio)
+        # link all pie hovers
+        for i in range(len(self.pies)):
+            for j in range(len(self.pies)):
+                if i == j:
+                    continue
+                self.pies[i].hovered.connect(self.pies[j].setHoveredIdx)
 
-    # def setTitle(self) -> None:
-    #     text = QtWidgets.QGrap
+    def zoomReset(self) -> None:  # No plotdata
+        self.plot.autoRange()
 
 
 class ResponseView(SinglePlotGraphicsView):
