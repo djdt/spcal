@@ -1,7 +1,27 @@
 from typing import List
 
 import pyqtgraph
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
+
+
+class StaticRectItemSample(pyqtgraph.GraphicsWidget):
+    def __init__(self, brush: QtGui.QBrush):
+        super().__init__()
+        self.brush = brush
+
+    def boundingRect(self) -> QtCore.QRectF:
+        return QtCore.QRectF(0, 0, 20, 20)
+
+    def paint(
+        self,
+        painter: QtGui.QPainter,
+        option: QtWidgets.QStyleOptionGraphicsItem,
+        widget: QtWidgets.QWidget | None = None,
+    ) -> None:
+        painter.save()
+        painter.setBrush(self.brush)
+        painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
+        painter.restore()
 
 
 class HistogramItemSample(pyqtgraph.ItemSample):
@@ -53,7 +73,12 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         event.accept()
         self.update()
 
-    def paint(self, painter: QtGui.QPainter, *args):
+    def paint(
+        self,
+        painter: QtGui.QPainter,
+        option: QtWidgets.QStyleOptionGraphicsItem,
+        widget: QtWidgets.QWidget | None = None,
+    ) -> None:
         painter.setRenderHint(painter.RenderHint.Antialiasing)
 
         offset = 0.0
