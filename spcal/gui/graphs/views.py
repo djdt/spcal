@@ -22,6 +22,9 @@ class CompositionView(SinglePlotGraphicsView):
         )
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.setAspectLocked(1.0)
+        self.plot.legend.setSampleType(StaticRectItemSample)
+        self.xaxis.hide()
+        self.yaxis.hide()
 
         self.pies: List[PieChart] = []
 
@@ -42,16 +45,17 @@ class CompositionView(SinglePlotGraphicsView):
         assert len(brushes) >= len(compositions.dtype.names)
 
         size = 100.0
-        max_r = np.amax(counts)
-        spacing = size * 3.0
+        radii = np.sqrt(counts * np.pi)
+        radii = radii / np.amax(radii) * size
+        spacing = size * 2.0
 
-        for i, (count, comp) in enumerate(zip(counts, compositions)):
+        for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
             pie = PieChart(
-                count / max_r * size, rfn.structured_to_unstructured(comp), brushes
+                radius, rfn.structured_to_unstructured(comp), brushes
             )
             pie.setPos(i * spacing, 0)
             label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
-            label.setPos(i * spacing, spacing / 2.0)
+            label.setPos(i * spacing, -size)
             self.plot.addItem(pie)
             self.plot.addItem(label)
             self.pies.append(pie)
@@ -62,6 +66,10 @@ class CompositionView(SinglePlotGraphicsView):
                 if i == j:
                     continue
                 self.pies[i].hovered.connect(self.pies[j].setHoveredIdx)
+
+        for name, brush in zip(compositions.dtype.names, brushes):
+            if np.sum(compositions[name]) > 0.0:
+                self.plot.legend.addItem(StaticRectItemSample(brush), name)
 
     def zoomReset(self) -> None:  # No plotdata
         self.plot.autoRange()
