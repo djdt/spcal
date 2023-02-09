@@ -40,8 +40,8 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert not options.manual.isEnabled()
     options.method.setCurrentIndex(4)
     assert options.manual.isEnabled()
-    qtbot.keyClick(options.manual, QtCore.Qt.Key_1)
-    assert options.manual.text() == "10.01"
+    qtbot.keyClick(options.manual.lineedit, QtCore.Qt.Key_1)
+    assert options.manual.baseValue() == 101.0
 
     qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)
     assert options.celldiameter.value() == 1
