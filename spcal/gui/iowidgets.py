@@ -5,8 +5,8 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.particle
-from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.settings import default_settings
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
 from spcal.siunits import mass_concentration_units, size_units
@@ -21,6 +21,14 @@ class IOWidget(QtWidgets.QWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.name = name
+
+    def format(self) -> str:
+        sigfigs = int(
+            QtCore.QSettings().value(
+                "display/sigfigs", default_settings["display/sigfigs"]
+            )
+        )
+        return f".{sigfigs}g"
 
     def clearInputs(self) -> None:
         raise NotImplementedError
@@ -63,7 +71,6 @@ class SampleIOWidget(IOWidget):
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
         self.inputs.setLayout(QtWidgets.QFormLayout())
-
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
@@ -153,7 +160,7 @@ class SampleIOWidget(IOWidget):
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
         def set_mass_fraction(ratios: Dict[str, float]):
             first = next(iter(ratios.values()))
-            self.massfraction.setText(f"{first:.4f}")
+            self.massfraction.setText(f"{first:{self.format()}}")
 
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.ratiosSelected.connect(set_mass_fraction)
@@ -190,10 +197,14 @@ class SampleIOWidget(IOWidget):
 
         count = np.count_nonzero(detections)
 
+        format = self.format()
+
         self.count.setText(f"{count} ± {np.sqrt(count):.1f}")
-        self.background_count.setText(f"{background:.4g} ± {background_std:.4g}")
+        self.background_count.setText(
+            f"{background:{format}} ± {background_std:{format}}"
+        )
         self.lod_count.setText(
-            f"{lod:.4g} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
+            f"{lod:{format}} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
         )
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
@@ -283,6 +294,8 @@ class ReferenceIOWidget(SampleIOWidget):
         self.efficiency.setText("")
         self.massresponse.setValue("")
 
+        format = self.format()
+
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
         response = self.response.baseValue()
@@ -308,7 +321,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 flow_rate=uptake,
                 time=time,
             )
-            self.efficiency.setText(f"{efficiency:.4g}")
+            self.efficiency.setText(f"{efficiency:{format}}")
         elif mass_fraction is not None and uptake is not None and response is not None:
             efficiency = spcal.particle.nebulisation_efficiency_from_mass(
                 detections,
@@ -318,7 +331,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 response_factor=response,
                 mass_fraction=mass_fraction,
             )
-            self.efficiency.setText(f"{efficiency:.4g}")
+            self.efficiency.setText(f"{efficiency:{format}}")
 
     def isComplete(self) -> bool:
         return super().isComplete() and self.diameter.hasAcceptableInput()
@@ -332,6 +345,8 @@ class ResultIOWidget(IOWidget):
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
+        format = self.format()
+
         self.count = QtWidgets.QLineEdit()
         self.count.setReadOnly(True)
         self.number = UnitsWidget(
@@ -343,27 +358,32 @@ class ResultIOWidget(IOWidget):
         self.conc = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
+            formatter=format,
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
+            formatter=format,
         )
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
             size_units,
             default_unit="nm",
+            formatter=format,
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
             size_units,
             default_unit="nm",
+            formatter=format,
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
             size_units,
             default_unit="nm",
+            formatter=format,
         )
         self.median.setReadOnly(True)
 
