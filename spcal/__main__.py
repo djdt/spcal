@@ -56,6 +56,7 @@ def main(argv: List[str] | None = None) -> int:
 
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
+    app.setOrganizationName("SPCal")
     app.setApplicationVersion(__version__)
 
     window = SPCalWindow()

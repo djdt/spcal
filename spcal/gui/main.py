@@ -307,8 +307,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
                 io.syncOutput(ref_io, "response")
 
     def exceptHook(
-        self, etype: type, value: BaseException, tb: TracebackType
-    ) -> None:  # pragma: no cover
+        self, etype: type, value: BaseException, tb: TracebackType | None = None
+    ):  # pragma: no cover
         """Redirect errors to the log."""
         if etype == KeyboardInterrupt:
             logger.info("Keyboard interrupt, exiting.")
