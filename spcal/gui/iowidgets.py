@@ -6,7 +6,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.particle
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
-from spcal.gui.settings import default_settings
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
 from spcal.siunits import mass_concentration_units, size_units
@@ -23,11 +22,7 @@ class IOWidget(QtWidgets.QWidget):
         self.name = name
 
     def format(self) -> str:
-        sigfigs = int(
-            QtCore.QSettings().value(
-                "display/sigfigs", default_settings["display/sigfigs"]
-            )
-        )
+        sigfigs = int(QtCore.QSettings().value("sigfigs", 4))
         return f".{sigfigs}g"
 
     def clearInputs(self) -> None:

@@ -39,8 +39,6 @@ class InputWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
-        self.color_scheme = color_scheme
-
         self.import_options: dict = {}
 
         self.responses = np.array([])
@@ -145,17 +143,14 @@ class InputWidget(QtWidgets.QWidget):
             return self.detections.dtype.names
 
     def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[self.color_scheme]
+        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
-        self.drawGraph()
-        self.drawDetections()
-        self.drawLimits()
+        self.redraw()
 
-    def setColorScheme(self, scheme: str) -> None:
-        self.color_scheme = scheme
+    def redraw(self) -> None:
         self.drawGraph()
         self.drawDetections()
         self.drawLimits()

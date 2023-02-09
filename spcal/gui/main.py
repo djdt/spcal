@@ -4,7 +4,7 @@ from pathlib import Path
 from types import TracebackType
 
 import numpy as np
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
@@ -128,12 +128,25 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
 
         # View
+        current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
         self.action_color_scheme = QtGui.QActionGroup(self)
         for scheme in color_schemes.keys():
             action = self.action_color_scheme.addAction(scheme)
             action.setCheckable(True)
-        self.action_color_scheme.actions()[0].setChecked(True)
+            if scheme == current_scheme:
+                action.setChecked(True)
         self.action_color_scheme.triggered.connect(self.setColorScheme)
+
+        sb_sigfigs = QtWidgets.QSpinBox()
+        sb_sigfigs.setRange(1, 11)
+        sb_sigfigs.setValue(4)
+
+        self.action_display_sigfigs = create_action(
+            "format-precision-more",
+            "Output Sig. Figures",
+            "Set the number of significant figures shown for outputs.",
+            self.setSignificantFigures,
+        )
 
         # Help
         self.action_log = create_action(
@@ -171,6 +184,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menu_cs.setStatusTip("Change the colorscheme of the input and result graphs.")
         menu_cs.setToolTip("Change the colorscheme of the input and result graphs.")
         menu_cs.addActions(self.action_color_scheme.actions())
+
+        menuview.addAction(self.action_display_sigfigs)
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
@@ -285,9 +300,24 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def setColorScheme(self, action: QtGui.QAction) -> None:
         scheme = action.text()
-        self.sample.setColorScheme(scheme)
-        self.reference.setColorScheme(scheme)
-        self.results.setColorScheme(scheme)
+        QtCore.QSettings().setValue("colorscheme", scheme)
+
+        self.sample.redraw()
+        self.reference.redraw()
+        self.results.redraw()
+
+    def setSignificantFigures(self) -> None:
+        settings = QtCore.QSettings()
+        current = int(settings.value("sigfigs", 4))
+
+        value, ok = QtWidgets.QInputDialog.getInt(
+            self, "Set Output Sig. Fig.", "Significant Figures", current, 1, 11, 1
+        )
+        if ok:
+            settings.setValue("sigfigs", value)
+            self.sample.updateOutputs()
+            self.reference.updateOutputs()
+            self.results.updateOutputs()
 
     def syncSampleAndReference(self) -> None:
         # Sync response

@@ -51,7 +51,6 @@ class ResultsWidget(QtWidgets.QWidget):
         options: OptionsWidget,
         sample: SampleWidget,
         reference: ReferenceWidget,
-        color_scheme: str = "IBM Carbon",
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -63,7 +62,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.filters: List[Tuple[str, str, str, str, float]] = []
         # Graph default options
         self.graph_options: Dict[str, Any] = {
-            "scheme": color_scheme,
             "histogram": {
                 "mode": "overlay",
                 "fit": "log normal",
@@ -135,7 +133,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.setCurrentText("Signal")
         self.mode.currentIndexChanged.connect(self.updateOutputs)
         self.mode.currentIndexChanged.connect(self.updateScatterElements)
-        self.mode.currentIndexChanged.connect(self.drawGraph)
+        self.mode.currentIndexChanged.connect(self.redraw)
 
         self.label_file = QtWidgets.QLabel()
 
@@ -252,13 +250,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[self.graph_options["scheme"]]
+        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
-
-    # Setters
-    def setColorScheme(self, scheme: str) -> None:
-        self.graph_options["scheme"] = scheme
-        self.drawGraph()
 
     def setFilters(self, filters) -> None:
         self.filters = filters
@@ -329,7 +322,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.open()
 
     # Plotting
-    def drawGraph(self) -> None:
+    def redraw(self) -> None:
         self.drawGraphHist()
         if len(self.results) > 1:
             self.drawGraphCompositions()
@@ -760,7 +753,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updateScatterElements()
         self.updateEnabledItems()
 
-        self.drawGraph()
+        self.redraw()
 
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
