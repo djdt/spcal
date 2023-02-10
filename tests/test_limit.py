@@ -5,6 +5,7 @@ import numpy as np
 from spcal import poisson
 from spcal.limit import SPCalLimit
 
+np.random.seed(723423)
 x = np.random.poisson(lam=50.0, size=1000)
 z = NormalDist().inv_cdf(1.0 - 0.001)
 
