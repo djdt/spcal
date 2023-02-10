@@ -5,7 +5,7 @@ import numpy as np
 from spcal import poisson
 from spcal.limit import SPCalLimit
 
-np.random.seed(723423)
+np.random.seed(690244)
 x = np.random.poisson(lam=50.0, size=1000)
 z = NormalDist().inv_cdf(1.0 - 0.001)
 
@@ -31,11 +31,6 @@ def test_limit_from_gaussian():
     assert lim.detection_threshold == np.mean(x) + np.std(x) * z
 
 
-def test_limit_from_highest():
-    lim = SPCalLimit.fromHighest(x, max_iters=1)
-    assert lim.name == "Poisson"
-
-
 def test_limit_windowed():
     lim = SPCalLimit.fromPoisson(x, window_size=3, max_iters=1)
     assert lim.window_size == 3
@@ -54,6 +49,22 @@ def test_limit_from():  # Better way for normality check?
         assert lim_b.name == ("Poisson" if lam < 50.0 else "Gaussian")
 
 
+def test_limit_from_string():
+    for string, method in zip(
+        ["automatic", "highest", "gaussian", "poisson"],
+        [
+            SPCalLimit.fromBest,
+            SPCalLimit.fromHighest,
+            SPCalLimit.fromGaussian,
+            SPCalLimit.fromPoisson,
+        ],
+    ):
+        assert (
+            SPCalLimit.fromMethodString(string, x, max_iters=1).detection_threshold
+            == method(x, max_iters=1).detection_threshold
+        )
+
+
 def test_limit_iterative():
     y = x.copy()
     idx = np.random.choice(1000, size=100, replace=False)
@@ -67,7 +78,7 @@ def test_limit_iterative():
     )
 
     assert np.isclose(  # Estimates background within 1%
-        SPCalLimit.fromGaussian(y, max_iters=10).mean_background,
+        SPCalLimit.fromGaussian(y, alpha=0.001, max_iters=10).mean_background,
         50.0,
         atol=0.0,
         rtol=0.01,
