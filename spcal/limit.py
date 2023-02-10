@@ -74,7 +74,7 @@ class SPCalLimit(object):
     def fromGaussian(
         cls,
         responses: np.ndarray,
-        alpha: float = 0.001,
+        alpha: float = 1e-6,
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
