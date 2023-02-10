@@ -1,4 +1,5 @@
 """Misc and helper calculation functions."""
+import logging
 from pathlib import Path
 from typing import Dict
 
@@ -6,6 +7,8 @@ import numpy as np
 
 from spcal import particle
 from spcal.limit import SPCalLimit
+
+logger = logging.getLogger(__name__)
 
 
 class SPCalResult(object):
@@ -130,7 +133,7 @@ class SPCalResult(object):
         elif key == "cell_concentration":
             return self.asCellConcentration(value)
         else:
-            raise ValueError(f"convertTo: unknown key '{key}'.")
+            raise KeyError(f"convertTo: unknown key '{key}'.")
 
     def fromNebulisationEfficiency(
         self,
@@ -151,8 +154,8 @@ class SPCalResult(object):
                 mass_fraction=self.inputs["mass_fraction"],
             )
         )
-        if "density" not in self.inputs:
-            Warning("fromNebulisationEfficiency: missing required size input")
+        if "density" not in self.inputs:  # pragma: no cover
+            logger.warning("fromNebulisationEfficiency: missing required size input")
         else:
             self.detections["size"] = np.asarray(
                 particle.particle_size(
@@ -176,8 +179,8 @@ class SPCalResult(object):
         self.detections["mass"] = self.detections["signal"] * (
             self.inputs["mass_response"] / self.inputs["mass_fraction"]
         )
-        if "density" not in self.inputs:
-            Warning("fromMassResponse: missing required size input")
+        if "density" not in self.inputs:  # pragma: no cover
+            logger.warning("fromMassResponse: missing required size input")
         else:
             self.detections["size"] = np.asarray(
                 particle.particle_size(

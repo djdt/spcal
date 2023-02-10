@@ -39,11 +39,6 @@ def test_spcalresult():
     assert result.asMass(1.0) is None
     assert result.asSize(1.0) is None
 
-    with pytest.raises(ValueError):
-        result.fromMassResponse()
-    with pytest.raises(ValueError):
-        result.fromNebulisationEfficiency()
-
 
 def test_spcalresult_from_mass_response():
     result = SPCalResult(
@@ -52,7 +47,13 @@ def test_spcalresult_from_mass_response():
         detections=detections,
         labels=labels,
         limits=SPCalLimit(1.0, 5.0, 10.0, "Limit", {}),
-        inputs_kws={"density": 0.01, "mass_response": 1e-3, "mass_fraction": 0.5},
+        inputs_kws={
+            "density": 0.01,
+            "mass_response": 1e-3,
+            "mass_fraction": 0.5,
+            "cell_diameter": 10e-6,
+            "molar_mass": 100.0,
+        },
     )
     result.fromMassResponse()
 
@@ -65,6 +66,10 @@ def test_spcalresult_from_mass_response():
 
     assert np.all(result.detections["mass"] == result.asMass(detections))
     assert np.all(result.detections["size"] == result.asSize(detections))
+    assert np.all(
+        result.detections["cell_concentration"]
+        == result.asCellConcentration(detections)
+    )
 
 
 def test_spcalresult_from_nebulisation_efficiency():
@@ -82,6 +87,8 @@ def test_spcalresult_from_nebulisation_efficiency():
             "response": 100.0,
             "time": 1e-3 * 50,
             "mass_fraction": 0.5,
+            "cell_diameter": 10e-6,
+            "molar_mass": 100.0,
         },
     )
     result.fromNebulisationEfficiency()
@@ -92,3 +99,33 @@ def test_spcalresult_from_nebulisation_efficiency():
 
     assert np.all(result.detections["mass"] == result.asMass(detections))
     assert np.all(result.detections["size"] == result.asSize(detections))
+    assert np.all(
+        result.detections["cell_concentration"]
+        == result.asCellConcentration(detections)
+    )
+
+
+def test_spcalresult_errors():
+    with pytest.raises(ValueError):
+        SPCalResult(
+            "",
+            signal,
+            detections=np.array([]),
+            labels=np.zeros_like(signal),
+            limits=SPCalLimit(1.0, 1.0, 1.0, "", {}),
+        )
+
+    result = SPCalResult(
+        "",
+        signal,
+        detections=detections,
+        labels=labels,
+        limits=SPCalLimit(1.0, 1.0, 1.0, "", {}),
+    )
+
+    with pytest.raises(KeyError):
+        result.convertTo(1.0, "invalid")
+    with pytest.raises(ValueError):
+        result.fromMassResponse()
+    with pytest.raises(ValueError):
+        result.fromNebulisationEfficiency()
