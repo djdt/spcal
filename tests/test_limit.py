@@ -42,11 +42,16 @@ def test_limit_windowed():
     assert lim.detection_threshold.size == x.size
 
 
-def test_limit_from_best():  # Better way for normality check?
+def test_limit_from():  # Better way for normality check?
     for lam in np.linspace(1.0, 100.0, 25):
         x = np.random.poisson(size=1000, lam=lam)
-        lim = SPCalLimit.fromBest(x, max_iters=1)
-        assert lim.name == ("Poisson" if lam < 50.0 else "Gaussian")
+        lim_g = SPCalLimit.fromGaussian(x, max_iters=1)
+        lim_p = SPCalLimit.fromPoisson(x, max_iters=1)
+        lim_h = SPCalLimit.fromHighest(x, max_iters=1)
+        lim_b = SPCalLimit.fromBest(x, max_iters=1)
+
+        assert lim_h.name == max(lim_g, lim_p, key=lambda x: x.detection_threshold).name
+        assert lim_b.name == ("Poisson" if lam < 50.0 else "Gaussian")
 
 
 def test_limit_iterative():
