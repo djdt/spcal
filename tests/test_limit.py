@@ -1,6 +1,7 @@
 from statistics import NormalDist
 
 import numpy as np
+import pytest
 
 from spcal import poisson
 from spcal.limit import SPCalLimit
@@ -10,9 +11,9 @@ x = np.random.poisson(lam=50.0, size=1000)
 z = NormalDist().inv_cdf(1.0 - 0.001)
 
 
-# def test_limit_errors():
-#     with pytest.raises(ValueError):
-#         calc.calculate_limits(np.array([]), "Automatic")
+def test_limit_errors():
+    with pytest.raises(ValueError):
+        SPCalLimit.fromMethodString("Invalid", x)
 
 
 def test_limit_from_poisson():
@@ -33,6 +34,10 @@ def test_limit_from_gaussian():
 
 def test_limit_windowed():
     lim = SPCalLimit.fromPoisson(x, window_size=3, max_iters=1)
+    assert lim.window_size == 3
+    assert lim.detection_threshold.size == x.size
+
+    lim = SPCalLimit.fromGaussian(x, window_size=3, max_iters=1)
     assert lim.window_size == 3
     assert lim.detection_threshold.size == x.size
 

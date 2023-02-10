@@ -79,7 +79,7 @@ class SPCalLimit(object):
         max_iters: int = 10,
     ) -> "SPCalLimit":
 
-        if responses.size == 0:
+        if responses.size == 0:  # pragma: no cover
             raise ValueError("fromGaussian: responses is size 0")
 
         z = NormalDist().inv_cdf(1.0 - alpha)
@@ -105,7 +105,7 @@ class SPCalLimit(object):
             threshold = mu + std * z
             iters += 1
 
-        if iters == max_iters and max_iters != 1:
+        if iters == max_iters and max_iters != 1:  # pragma: no cover
             logger.warning("fromPoisson: reached max_iters")
 
         return cls(
@@ -125,7 +125,7 @@ class SPCalLimit(object):
         max_iters: int = 10,
     ) -> "SPCalLimit":
 
-        if responses.size == 0:
+        if responses.size == 0:  # pragma: no cover
             raise ValueError("fromPoisson: responses is size 0")
 
         threshold, prev_threshold = np.inf, np.inf
@@ -147,7 +147,7 @@ class SPCalLimit(object):
             threshold = mu + sc
             iters += 1
 
-        if iters == max_iters and max_iters != 1:
+        if iters == max_iters and max_iters != 1:  # pragma: no cover
             logger.warning("fromPoisson: reached max_iters")
 
         return cls(
