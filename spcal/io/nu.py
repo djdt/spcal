@@ -128,7 +128,7 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
         data[0], run_info["MassCalCoefficients"], segment_delays
     )
     signals = data["result"]["signal"] / run_info["AverageSingleIonArea"]
-    return masses, signals, run_info
+    return masses[0], signals, run_info
 
 
 def select_nu_signals(
