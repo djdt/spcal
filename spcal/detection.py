@@ -7,15 +7,19 @@ from spcal.lib.spcalext import maxima
 
 
 def accumulate_detections(
-    y: np.ndarray, limit_accumulation: float | np.ndarray
+    y: np.ndarray,
+    limit_accumulation: float | np.ndarray,
+    limit_detection: float | np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
-    Contiguous regions above `limit_accumulation` are summed.
+    Contiguous regions above `limit_accumulation` that contain at least one value above
+    `limit_detection` are integrated.
 
     Args:
         y: array
         limit_accumulation: minimum accumulation value(s)
+        limit_detection: minimum detection value(s)
 
     Returns:
         summed detection regions
@@ -34,8 +38,12 @@ def accumulate_detections(
         end_point_added = True
     regions = np.stack((starts, ends), axis=1)
 
+    # Get maximum in each region
+    detections = np.logical_or.reduceat(y > limit_detection, regions.ravel())[::2]
+    # Remove regions without a max value above detection limit
+    regions = regions[detections]
     # Sum regions
-    sums = np.add.reduceat(y, regions.ravel())[::2]
+    sums = np.add.reduceat(y - limit_accumulation, regions.ravel())[::2]
 
     # Create a label array of detections
     labels = np.zeros(y.size, dtype=np.int16)
