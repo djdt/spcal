@@ -16,6 +16,8 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     qtbot.keyClick(options.efficiency, QtCore.Qt.Key_1)
     assert options.efficiency.text() == "1"
 
+    assert options.dwelltime.lineedit.isReadOnly()
+
     assert not options.window_size.isEnabled()
     with qtbot.wait_signal(options.check_use_window.toggled, timeout=50):
         options.check_use_window.click()
