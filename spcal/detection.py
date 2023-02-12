@@ -28,6 +28,10 @@ def accumulate_detections(
         labels of regions
         regions [starts, ends]
     """
+    if limit_accumulation > limit_detection:
+        raise ValueError(
+            "accumulate_detections: limit_accumulation must be lower than limit_detection."
+        )
     # Get start and end positions of regions above accumulation limit
     diff = np.diff((y > limit_accumulation).astype(np.int8), prepend=0)
     starts = np.flatnonzero(diff == 1)

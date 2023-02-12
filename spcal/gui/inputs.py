@@ -265,6 +265,7 @@ class InputWidget(QtWidgets.QWidget):
                     responses,
                     self.limits[name].mean_background,
                     self.limits[name].detection_threshold,
+                    integrate=True,
                 )
 
         self.detections, self.labels, self.regions = combine_detections(d, l, r)

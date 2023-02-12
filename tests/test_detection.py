@@ -6,7 +6,8 @@ from spcal import detection
 
 def test_accumulate_detections():
     x = np.array([2, 1, 2, 2, 1, 0, 0, 1, 0, 2])
-    sums, labels, regions = detection.accumulate_detections(x, 1)
+    # Lc == Ld
+    sums, labels, regions = detection.accumulate_detections(x, 1, 1)
     assert np.all(sums == [2, 4, 2])
     assert np.all(labels == [1, 0, 2, 2, 0, 0, 0, 0, 0, 3])
     assert np.all(regions == [[0, 1], [2, 4], [9, 9]])
@@ -14,8 +15,30 @@ def test_accumulate_detections():
     # Test regions access
     assert np.all(sums == np.add.reduceat(x, regions.ravel())[::2])
 
-    # Ld > max
-    sums, labels, regions = detection.accumulate_detections(x, 3)
+    # Lc == Ld, integrate
+    sums, labels, regions = detection.accumulate_detections(x, 1, 1, integrate=True)
+    assert np.all(sums == [1, 2, 1])
+    assert np.all(labels == [1, 0, 2, 2, 0, 0, 0, 0, 0, 3])
+    assert np.all(regions == [[0, 1], [2, 4], [9, 9]])
+
+    # Lc < Ld
+    sums, labels, regions = detection.accumulate_detections(x, 0, 1)
+    assert np.all(sums == [8, 2])
+    assert np.all(labels == [1, 1, 1, 1, 1, 0, 0, 0, 0, 2])
+    assert np.all(regions == [[0, 5], [9, 9]])
+
+    # Lc > Ld
+    with pytest.raises(ValueError):
+        sums, labels, regions = detection.accumulate_detections(x, 1, 0)
+
+    # Lc > max
+    sums, labels, regions = detection.accumulate_detections(x, 3, 3)
+    assert np.all(sums == [])
+    assert np.all(labels == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    assert regions.size == 0
+
+    # Ld > max > Lc
+    sums, labels, regions = detection.accumulate_detections(x, 0, 3)
     assert np.all(sums == [])
     assert np.all(labels == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     assert regions.size == 0
