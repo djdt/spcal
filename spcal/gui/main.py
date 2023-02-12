@@ -123,7 +123,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.action_ionic_response_tool = create_action(
             "document-open",
             "Ionic Response Tool",
-            "Read ionic responses from a standard file and apply to sample and reference.",
+            "Read ionic responses from a standard file and apply to "
+            "sample and reference.",
             self.dialogIonicResponse,
         )
 
@@ -136,10 +137,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
             if scheme == current_scheme:
                 action.setChecked(True)
         self.action_color_scheme.triggered.connect(self.setColorScheme)
-
-        sb_sigfigs = QtWidgets.QSpinBox()
-        sb_sigfigs.setRange(1, 11)
-        sb_sigfigs.setValue(4)
 
         self.action_display_sigfigs = create_action(
             "format-precision-more",
