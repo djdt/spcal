@@ -10,16 +10,18 @@ def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
+    integrate: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above `limit_accumulation` that contain at least one value above
-    `limit_detection` are integrated.
+    `limit_detection` are summed or integrated (sum - `limit_accumulation`).
 
     Args:
         y: array
         limit_accumulation: minimum accumulation value(s)
         limit_detection: minimum detection value(s)
+        integrate: integrate, otherwise sum
 
     Returns:
         summed detection regions
@@ -43,7 +45,10 @@ def accumulate_detections(
     # Remove regions without a max value above detection limit
     regions = regions[detections]
     # Sum regions
-    sums = np.add.reduceat(y - limit_accumulation, regions.ravel())[::2]
+    if integrate:
+        sums = np.add.reduceat(y - limit_accumulation, regions.ravel())[::2]
+    else:
+        sums = np.add.reduceat(y, regions.ravel())[::2]
 
     # Create a label array of detections
     labels = np.zeros(y.size, dtype=np.int16)
