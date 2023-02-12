@@ -524,15 +524,22 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
     def repopulate(self, names: List[str]) -> None:
         self.blockSignals(True)
+        old_widgets = {
+            name: widget for name, widget in zip(self.names(), self.widgets())
+        }
+
         self.combo_name.clear()
         while self.stack.count() > 0:
             self.stack.removeWidget(self.stack.widget(0))
 
-        for name in names:
+        for i, name in enumerate(names):
             self.combo_name.addItem(name)
-            widget = self.io_widget_type(name)
-            widget.optionsChanged.connect(self.optionsChanged)
-            widget.request.connect(self.handleRequest)
+            if name in old_widgets:
+                widget = old_widgets[name]
+            else:
+                widget = self.io_widget_type(name)
+                widget.optionsChanged.connect(self.optionsChanged)
+                widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
         self.blockSignals(False)
 
