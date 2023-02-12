@@ -110,8 +110,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         self.action_mass_fraction_calculator = create_action(
             "folder-calculate",
-            "Molar Ratio Calculator",
-            "Calculate the molar ratios of elements in a compound.",
+            "Mass Fraction Calculator",
+            "Calculate the mass fraction of elements in a compound.",
             self.dialogMassFractionCalculator,
         )
         self.action_particle_database = create_action(
