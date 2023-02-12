@@ -142,6 +142,7 @@ def test_spcal_no_data(qtbot: QtBot):
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     click_though_options(qtbot, window.options)
+    assert not window.options.isComplete()
 
     # Switch to sample, attempt switch to ref
     qtbot.mouseClick(
@@ -176,6 +177,8 @@ def test_spcal_no_data(qtbot: QtBot):
 
     click_though_input(qtbot, window.reference)
 
+    window.resetInputs()
+
 
 def test_spcal_single_quad_data(qtbot: QtBot):
     window = SPCalWindow()
@@ -195,6 +198,7 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     click_though_options(qtbot, window.options)
+    assert window.options.isComplete()
 
     # Switch to sample, attempt switch to ref
     qtbot.mouseClick(
@@ -227,6 +231,7 @@ def test_spcal_single_quad_data(qtbot: QtBot):
 
     # Enable ref and switch
     window.options.efficiency_method.setCurrentIndex(1)  # Reference Particle
+    assert window.options.isComplete()
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.reference))
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
@@ -239,3 +244,10 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert window.tabs.currentIndex() == window.tabs.indexOf(window.reference)
 
     click_though_input(qtbot, window.reference)
+
+    window.options.efficiency_method.setCurrentIndex(2)  # Mass response
+    assert window.options.isComplete()
+    assert window.tabs.isTabEnabled(window.tabs.indexOf(window.reference))
+    assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
+
+    window.resetInputs()

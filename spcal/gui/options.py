@@ -200,7 +200,7 @@ class OptionsWidget(QtWidgets.QWidget):
     def updateLabelSigma(self) -> None:
         try:
             alpha = float(self.error_rate_gaussian.text())
-        except ValueError:
+        except ValueError:  # pragma: no cover
             return
         sigma = NormalDist().inv_cdf(1.0 - alpha)
         self.label_sigma_gaussian.setText(f"{sigma:.2f} σ")
@@ -233,7 +233,6 @@ class OptionsWidget(QtWidgets.QWidget):
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
-                    self.response.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                     self.efficiency.hasAcceptableInput(),
                 ]
@@ -242,7 +241,6 @@ class OptionsWidget(QtWidgets.QWidget):
             return all(
                 [
                     self.dwelltime.hasAcceptableInput(),
-                    self.response.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                 ]
             )
