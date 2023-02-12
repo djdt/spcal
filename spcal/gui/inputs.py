@@ -263,7 +263,10 @@ class InputWidget(QtWidgets.QWidget):
             if responses.size > 0 and name in self.limits:
                 (d[name], l[name], r[name],) = spcal.accumulate_detections(
                     responses,
-                    self.limits[name].mean_background,
+                    np.minimum(
+                        self.limits[name].mean_background,
+                        self.limits[name].detection_threshold,
+                    ),
                     self.limits[name].detection_threshold,
                     integrate=True,
                 )
@@ -324,7 +327,6 @@ class InputWidget(QtWidgets.QWidget):
             if name not in self.detection_names:
                 io.clearOutputs()
             else:
-                trim = self.trimRegion(name)
                 io.updateOutputs(
                     self.trimmedResponse(name),
                     self.detections[name],
