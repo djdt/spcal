@@ -461,26 +461,26 @@ class ReferenceWidget(InputWidget):
         self.io.optionsChanged.connect(self.updateEfficiency)
         self.detectionsChanged.connect(self.updateEfficiency)
 
-    def updateEfficiency(self, _name: str | None = None) -> None:
+    def updateEfficiency(self, name: str | None = None) -> None:
         dwell = self.options.dwelltime.baseValue()
         if self.responses.size == 0 or dwell is None:
             return
-        if _name is None or _name == "Overlay":
+        if name is None or name == "Overlay":
             names = self.names
         else:
-            names = (_name,)
+            names = (name,)
 
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
 
-        for name in names:
-            self.io[name].updateEfficiency(self.detections[name], dwell, time, uptake)
+        for _name in names:
+            self.io[_name].updateEfficiency(self.detections[_name], dwell, time, uptake)
 
     def getEfficiency(self, name: str) -> float | None:
         use_all = None
-        for name in self.io.names():
-            if self.io[name].check_use_efficiency_for_all.isChecked():
-                use_all = name
+        for _name in self.io.names():
+            if self.io[_name].check_use_efficiency_for_all.isChecked():
+                use_all = _name
                 break
 
         if use_all is not None:
