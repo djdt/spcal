@@ -195,7 +195,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
             (
                 "sp/scICP-MS processing.\n"
                 f"Version {__version__}\n"
-                "Developed by the Atomic Medicine Initiative.\n"
                 "https://github.com/djdt/spcal"
             ),
             parent=self,
