@@ -243,11 +243,14 @@ class InputWidget(QtWidgets.QWidget):
             plot = self.graph.plots[name]
         return plot.region_start, plot.region_end
 
-    def asResult(self, name: str) -> SPCalResult:
+    def trimmedResponse(self, name: str) -> np.ndarray:
         trim = self.trimRegion(name)
+        return self.responses[name][trim[0] : trim[1]]
+
+    def asResult(self, name: str) -> SPCalResult:
         return SPCalResult(
             self.label_file.text(),
-            self.responses[name][trim[0] : trim[1]],
+            self.trimmedResponse(name),
             self.detections[name],
             self.labels,
             self.limits[name],
@@ -256,11 +259,11 @@ class InputWidget(QtWidgets.QWidget):
     def updateDetections(self) -> None:
         d, l, r = {}, {}, {}
         for name in self.names:
-            trim = self.trimRegion(name)
-            responses = self.responses[name][trim[0] : trim[1]]
+            responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
                 (d[name], l[name], r[name],) = spcal.accumulate_detections(
                     responses,
+                    self.limits[name].mean_background,
                     self.limits[name].detection_threshold,
                 )
 
@@ -294,8 +297,7 @@ class InputWidget(QtWidgets.QWidget):
         self.limits.clear()
 
         for name in self.names:
-            trim = self.trimRegion(name)
-            response = self.responses[name][trim[0] : trim[1]]
+            response = self.trimmedResponse(name)
             if response.size == 0:
                 continue
 
@@ -323,7 +325,7 @@ class InputWidget(QtWidgets.QWidget):
             else:
                 trim = self.trimRegion(name)
                 io.updateOutputs(
-                    self.responses[name][trim[0] : trim[1]],
+                    self.trimmedResponse(name),
                     self.detections[name],
                     self.labels,
                     np.mean(self.limits[name].detection_threshold),
@@ -392,7 +394,7 @@ class InputWidget(QtWidgets.QWidget):
                 trim = self.trimRegion(name)
                 maxima = (
                     detection_maxima(
-                        self.responses[name][trim[0] : trim[1]],
+                        self.trimmedResponse(name),
                         self.regions[detected],
                     )
                     + trim[0]
