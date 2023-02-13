@@ -59,7 +59,9 @@ def click_though_input(qtbot: QtBot, input: InputWidget):
         qtbot.keyClick(io.response.lineedit, QtCore.Qt.Key_1)
         assert io.response.value() == 1
         qtbot.keyClick(io.massfraction, QtCore.Qt.Key_Backspace)
-        assert io.massfraction.text() == "1."
+        assert io.massfraction.value() is None
+        qtbot.keyClick(io.massfraction, QtCore.Qt.Key_1)
+        assert io.massfraction.value() == 1.0
 
         if isinstance(input, ReferenceWidget):
             qtbot.keyClick(io.concentration.lineedit, QtCore.Qt.Key_1)
