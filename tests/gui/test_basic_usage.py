@@ -27,12 +27,12 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert options.window_size.text() == "100"
 
     qtbot.keyClick(options.error_rate_poisson, QtCore.Qt.Key_1)
-    assert options.error_rate_poisson.text() == "0.0011"
+    assert options.error_rate_poisson.value() == 0.0011
 
     qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Backspace)
     qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_5)
     qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Enter)
-    assert options.error_rate_gaussian.text() == "1e-5"
+    assert options.error_rate_gaussian.value() == 1e-5
     assert options.label_sigma_gaussian.text() == "4.26 σ"
 
     with qtbot.wait_signal(options.check_iterative.toggled, timeout=50):

@@ -280,22 +280,13 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         method = self.options.method.currentText()
-        poisson_alpha = (
-            float(self.options.error_rate_poisson.text())
-            if self.options.error_rate_poisson.hasAcceptableInput()
-            else 0.001
-        )
-        gaussian_alpha = (
-            float(self.options.error_rate_gaussian.text())
-            if self.options.error_rate_gaussian.hasAcceptableInput()
-            else 1e-6
-        )
-        window_size = (
-            int(self.options.window_size.text())
-            if self.options.window_size.hasAcceptableInput()
-            and self.options.window_size.isEnabled()
-            else 0
-        )
+        poisson_alpha = self.options.error_rate_poisson.value() or 0.001
+        gaussian_alpha = self.options.error_rate_gaussian.value() or 1e-6
+        if self.options.window_size.isEnabled():
+            window_size = self.options.window_size.value() or 0
+        else:
+            window_size = 0
+        window_size = int(window_size or 0)
         max_iter = 10 if self.options.check_iterative.isChecked() else 1
 
         self.limits.clear()
@@ -493,9 +484,9 @@ class ReferenceWidget(InputWidget):
                 break
 
         if use_all is not None:
-            efficiency = self.io[use_all].efficiency.text()
+            efficiency = self.io[use_all].efficiency.value()
         elif name in self.io:
-            efficiency = self.io[name].efficiency.text()
+            efficiency = self.io[name].efficiency.value()
         else:
             return None
 

@@ -718,7 +718,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
             try:
                 if method == "Manual Input":
-                    inputs["efficiency"] = float(self.options.efficiency.text())
+                    inputs["efficiency"] = self.options.efficiency.value()
                 elif method == "Reference Particle":
                     inputs["efficiency"] = self.reference.getEfficiency(name)
                 elif method == "Mass Response":
@@ -727,12 +727,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     ].massresponse.baseValue()
             except ValueError:
                 pass
-            try:
-                inputs["mass_fraction"] = float(
-                    self.sample.io[name].massfraction.text()
-                )
-            except ValueError:
-                pass
+            inputs["mass_fraction"] = self.sample.io[name].massfraction.value()
 
             # No None inputs
             result.inputs.update({k: v for k, v in inputs.items() if v is not None})

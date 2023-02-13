@@ -411,15 +411,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "density": self.sample.io[name].density.baseValue(),
                 "response": self.sample.io[name].response.baseValue(),
             }
-            try:
-                inputs[name]["mass_fraction"] = float(
-                    self.sample.io[name].massfraction.text()
-                )
-            except ValueError:
-                pass
+            inputs[name]["mass_fraction"] = self.sample.io[name].massfraction.value()
             try:
                 if method == "Manual Input":
-                    inputs[name]["efficiency"] = float(self.options.efficiency.text())
+                    inputs[name]["efficiency"] = self.options.efficiency.value()
                 elif method == "Reference Particle":
                     inputs[name]["efficiency"] = self.reference.getEfficiency(name)
                 elif method == "Mass Response":
@@ -430,8 +425,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 pass
 
         limit_params = {
-            "poisson_alpha": float(self.options.error_rate_poisson.text()),
-            "gaussian_alpha": float(self.options.error_rate_gaussian.text()),
+            "poisson_alpha": self.options.error_rate_poisson.value() or 0.001,
+            "gaussian_alpha": self.options.error_rate_gaussian.value() or 1e-6,
             "manual": self.options.manual.baseValue() or 0.0,
         }
         units = {
@@ -465,7 +460,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "inputs": inputs,
                     "limit_method": self.options.method.currentText(),
                     "limit_params": limit_params.copy(),
-                    "limit_window_size": int(self.options.window_size.text())
+                    "limit_window_size": (self.options.window_size.value() or 0)
                     if self.options.window_size.isEnabled()
                     else 0,
                 },

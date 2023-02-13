@@ -2,7 +2,7 @@ from statistics import NormalDist
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
+from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.siunits import signal_units, time_units
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
@@ -15,6 +15,8 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+
+        sf = int(QtCore.QSettings().value("sigfigs", 4))
 
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
@@ -35,8 +37,9 @@ class OptionsWidget(QtWidgets.QWidget):
             uptake_units,
             default_unit="ml/min",
         )
-        self.efficiency = ValidColorLineEdit()
-        self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
+        self.efficiency = ValueWidget(
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
+        )
 
         self.dwelltime.setToolTip(
             "ICP-MS dwell-time, updated from imported files if time column exists."
@@ -62,7 +65,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # Complete Changed
         self.uptake.valueChanged.connect(self.optionsChanged)
-        self.efficiency.textChanged.connect(self.optionsChanged)
+        self.efficiency.valueChanged.connect(self.optionsChanged)
 
         self.inputs = QtWidgets.QGroupBox("Instrument Options")
         self.inputs.setLayout(QtWidgets.QFormLayout())
@@ -71,8 +74,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
-        self.window_size = ValidColorLineEdit("1000")
-        self.window_size.setValidator(QtGui.QIntValidator(3, 1000000))
+        self.window_size = ValueWidget(1000, validator=QtGui.QIntValidator(3, 1000000))
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
         self.check_use_window = QtWidgets.QCheckBox("Use window")
@@ -112,15 +114,17 @@ class OptionsWidget(QtWidgets.QWidget):
             4, "Use a manually defined limit for filtering.", QtCore.Qt.ToolTipRole
         )
 
-        self.error_rate_poisson = ValidColorLineEdit("0.001")
+        self.error_rate_poisson = ValueWidget(
+            0.001, validator=QtGui.QDoubleValidator(1e-12, 0.5, 9)
+        )
         self.error_rate_poisson.setPlaceholderText("0.001")
-        self.error_rate_poisson.setValidator(QtGui.QDoubleValidator(1e-12, 0.5, 9))
         self.error_rate_poisson.setToolTip(
             "Type I (false positive) error rate for Poisson filters."
         )
-        self.error_rate_gaussian = ValidColorLineEdit("1e-6")
+        self.error_rate_gaussian = ValueWidget(
+            1e-6, validator=QtGui.QDoubleValidator(1e-12, 0.5, 9)
+        )
         self.error_rate_gaussian.setPlaceholderText("1e-6")
-        self.error_rate_gaussian.setValidator(QtGui.QDoubleValidator(1e-12, 0.5, 9))
         self.error_rate_gaussian.setToolTip(
             "Type I (false positive) error rate for Guassian filters."
         )
@@ -157,14 +161,10 @@ class OptionsWidget(QtWidgets.QWidget):
 
         layout_gaussian = QtWidgets.QGridLayout()
         layout_gaussian.addWidget(self.error_rate_gaussian, 0, 0, 1, 1)
-        layout_gaussian.addWidget(
-            self.label_sigma_gaussian,
-            0,
-            0,
-            1,
-            1,
-            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter,
+        align = (
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
         )
+        layout_gaussian.addWidget(self.label_sigma_gaussian, 0, 0, 1, 1, align)
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
@@ -198,10 +198,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def updateLabelSigma(self) -> None:
-        try:
-            alpha = float(self.error_rate_gaussian.text())
-        except ValueError:  # pragma: no cover
-            return
+        alpha = self.error_rate_gaussian.value()
+        if alpha is None:
+            alpha = 1e-6
         sigma = NormalDist().inv_cdf(1.0 - alpha)
         self.label_sigma_gaussian.setText(f"{sigma:.2f} σ")
 
@@ -257,7 +256,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.blockSignals(True)
         self.uptake.setValue(None)
         self.dwelltime.setValue(None)
-        self.efficiency.setText("")
+        self.efficiency.setValue(None)
         self.celldiameter.setValue(None)
         self.blockSignals(False)
         self.optionsChanged.emit()
