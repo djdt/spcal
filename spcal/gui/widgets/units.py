@@ -102,10 +102,12 @@ class UnitsWidget(QtWidgets.QWidget):
         self.updateErrorFromBase()
 
     def updateValueFromBase(self) -> None:
+        self.valueChanged.disconnect(self.updateBaseFromValue)
         base = self.baseValue()
         if base is not None:
             base = base / self._units[self.unit()]
         self.setValue(base)
+        self.valueChanged.connect(self.updateBaseFromValue)
 
     def updateBaseFromValue(self) -> None:
         value = self.value()

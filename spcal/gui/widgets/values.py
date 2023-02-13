@@ -33,7 +33,8 @@ class ValueWidget(ValidColorLineEdit):
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
-        self.errorChanged.connect(self.updateTextFromValue)
+
+        self.setValue(value)
 
     def value(self) -> float | None:
         return self._value
@@ -70,6 +71,7 @@ class ValueWidget(ValidColorLineEdit):
     def updateTextFromValue(self) -> None:
         format = self.edit_format if self.hasFocus() else self.view_format
         value = self.value()
+        print(value, type(value))
         text = f"{value:{format}}" if value is not None else ""
         self.setText(text)
 
