@@ -15,7 +15,7 @@ class ValueWidget(ValidColorLineEdit):
         self,
         value: float | None = None,
         validator: QtGui.QValidator | None = None,
-        view_format: str = ".6g",
+        significant_figures: int = 6,
         color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -24,17 +24,20 @@ class ValueWidget(ValidColorLineEdit):
         self._value: float | None = None
         self._error: float | None = None
 
-        self.edit_format: str = ".16g"
-        self.view_format = view_format
-
         if validator is None:
             validator = QtGui.QDoubleValidator(0.0, 1e99, 16)
         self.setValidator(validator)
+
+        self.significant_figures = significant_figures
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
 
         self.setValue(value)
+
+    def setSignificantFigures(self, num: int) -> None:
+        self.significant_figures = num
+        self.updateTextFromValue()
 
     def value(self) -> float | None:
         return self._value
@@ -60,6 +63,9 @@ class ValueWidget(ValidColorLineEdit):
         self.updateTextFromValue()
         super().focusOutEvent(event)
 
+    def isEditMode(self) -> bool:
+        return self.hasFocus() and self.isEnabled() and not self.isReadOnly()
+
     def updateValueFromText(self) -> None:
         self.valueChanged.disconnect(self.updateTextFromValue)
         if self.text() == "":
@@ -69,32 +75,38 @@ class ValueWidget(ValidColorLineEdit):
         self.valueChanged.connect(self.updateTextFromValue)
 
     def updateTextFromValue(self) -> None:
-        format = self.edit_format if self.hasFocus() else self.view_format
+        sf = 16 if self.isEditMode() else self.significant_figures
         value = self.value()
-        text = f"{value:{format}}" if value is not None else ""
+        text = f"{value:.{sf}g}" if value is not None else ""
         self.setText(text)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         super().paintEvent(event)
 
-        if self.hasFocus() or self._error is None:  # don't draw if editing or missing
+        if self.isEditMode() or self._error is None:  # don't draw if editing or missing
             return
 
         self.ensurePolished()
 
-        rect = self.cursorRect()
-        pos = rect.topRight() - QtCore.QPoint(rect.width() / 2, 0)
+        fm = self.fontMetrics()
 
-        layout = QtGui.QTextLayout(f" ± {self._error:{self.view_format}}", self.font())
-        layout.beginLayout()
-        line = layout.createLine()
-        line.setLineWidth(self.width() - pos.x())
-        line.setPosition(pos)
-        layout.endLayout()
+        panel = QtWidgets.QStyleOptionFrame()
+        self.initStyleOption(panel)
+        rect = self.style().subElementRect(
+            QtWidgets.QStyle.SubElement.SE_LineEditContents, panel
+        )
+        rect = rect.marginsRemoved(self.textMargins())
+        rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
+
+        text = fm.elidedText(
+            f" ± {self._error:.{self.significant_figures}g}",
+            QtCore.Qt.TextElideMode.ElideRight,
+            rect.width(),
+        )
 
         painter = QtGui.QPainter(self)
-        layout.draw(painter, QtCore.QPoint(0, 0))
-        painter.end()
+        painter.setPen(self.palette().text().color())
+        painter.drawText(rect, self.alignment(), text)
 
 
 if __name__ == "__main__":

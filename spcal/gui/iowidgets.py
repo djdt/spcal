@@ -33,13 +33,14 @@ class IOWidget(QtWidgets.QWidget):
     def updateOutputs(self) -> None:
         raise NotImplementedError
 
-    def updateFormat(self) -> None:
-        sigfigs = int(QtCore.QSettings().value("sigfigs", 4))
-        format = f".{sigfigs}g"
-        for widget in self.children():
-            if hasattr(widget, "view_format"):
-                widget.view_format = format
-                widget.update()
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        if num is None:
+            num = int(QtCore.QSettings().value("sigfigs", 4))
+        for widget in self.findChildren(ValueWidget):
+            print(widget)
+            if hasattr(widget, "setSignificantFigures"):
+                print("yes")
+                widget.setSignificantFigures(num)
 
     def isComplete(self) -> bool:
         return True
@@ -48,6 +49,8 @@ class IOWidget(QtWidgets.QWidget):
 class SampleIOWidget(IOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
+
+        sf = int(QtCore.QSettings().value("sigfigs", 4))
 
         self.action_density = create_action(
             "folder-database",
@@ -73,6 +76,7 @@ class SampleIOWidget(IOWidget):
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
+            significant_figures=sf,
         )
         self.density.lineedit.addAction(
             self.action_density, QtWidgets.QLineEdit.TrailingPosition
@@ -81,6 +85,7 @@ class SampleIOWidget(IOWidget):
             {"g/mol": 1e-3, "kg/mol": 1.0},
             default_unit="g/mol",
             color_invalid=QtGui.QColor(255, 255, 172),
+            significant_figures=sf,
         )
         self.response = UnitsWidget(
             {
@@ -90,13 +95,16 @@ class SampleIOWidget(IOWidget):
                 "counts/(mg/L)": 1e6,
             },
             default_unit="counts/(μg/L)",
+            significant_figures=sf,
         )
         self.response.lineedit.addAction(
             self.action_ionic_response, QtWidgets.QLineEdit.TrailingPosition
         )
 
         self.massfraction = ValueWidget(
-            1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 16)
+            1.0,
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 16),
+            significant_figures=sf,
         )
         self.massfraction.addAction(
             self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
@@ -125,9 +133,9 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Ionic response:", self.response)
         self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.count = ValueWidget(0)
+        self.count = ValueWidget(0, significant_figures=sf)
         self.count.setReadOnly(True)
-        self.background_count = ValueWidget()
+        self.background_count = ValueWidget(significant_figures=sf)
         self.background_count.setReadOnly(True)
         self.lod_count = QtWidgets.QLineEdit()
         self.lod_count.setReadOnly(True)
@@ -216,12 +224,17 @@ class ReferenceIOWidget(SampleIOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
 
+        sf = int(QtCore.QSettings().value("sigfigs", 4))
+
         self.concentration = UnitsWidget(
             units=mass_concentration_units,
             default_unit="ng/L",
             color_invalid=QtGui.QColor(255, 255, 172),
+            significant_figures=sf,
         )
-        self.diameter = UnitsWidget(size_units, default_unit="nm")
+        self.diameter = UnitsWidget(
+            size_units, default_unit="nm", significant_figures=sf
+        )
 
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
@@ -243,7 +256,9 @@ class ReferenceIOWidget(SampleIOWidget):
             " otherwise each element is calculated individually."
         )
 
-        self.efficiency = ValueWidget(validator=QtGui.QDoubleValidator(0.0, 1.0, 10))
+        self.efficiency = ValueWidget(
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
+        )
         self.efficiency.setReadOnly(True)
 
         self.massresponse = UnitsWidget(
@@ -258,6 +273,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 "kg/count": 1.0,
             },
             default_unit="ag/count",
+            significant_figures=sf,
         )
         self.massresponse.setReadOnly(True)
 
@@ -334,41 +350,32 @@ class ResultIOWidget(IOWidget):
 
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
+
+        sf = int(QtCore.QSettings().value("sigfigs", 4))
+
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
-        self.count = ValueWidget()
+        self.count = ValueWidget(significant_figures=sf)
         self.count.setReadOnly(True)
         self.number = UnitsWidget(
-            {"#/L": 1.0, "#/ml": 1e3},
-            default_unit="#/L",
+            {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", significant_figures=sf
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
-            mass_concentration_units,
-            default_unit="ng/L",
+            mass_concentration_units, default_unit="ng/L", significant_figures=sf
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
-            mass_concentration_units,
-            default_unit="ng/L",
+            mass_concentration_units, default_unit="ng/L", significant_figures=sf
         )
         self.background.setReadOnly(True)
 
-        self.lod = UnitsWidget(
-            size_units,
-            default_unit="nm",
-        )
+        self.lod = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
         self.lod.setReadOnly(True)
-        self.mean = UnitsWidget(
-            size_units,
-            default_unit="nm",
-        )
+        self.mean = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
         self.mean.setReadOnly(True)
-        self.median = UnitsWidget(
-            size_units,
-            default_unit="nm",
-        )
+        self.median = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
         self.median.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
@@ -533,6 +540,10 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
                 widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
         self.blockSignals(False)
+
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        for widget in self.widgets():
+            widget.setSignificantFigures(num)
 
     def resetInputs(self) -> None:
         for widget in self.widgets():

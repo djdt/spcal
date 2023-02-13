@@ -311,9 +311,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         if ok:
             settings.setValue("sigfigs", value)
-            self.sample.io.updateFormat()
-            self.reference.io.updateFormat()
-            self.results.io.updateFormat()
+            self.sample.io.setSignificantFigures(value)
+            self.reference.io.setSignificantFigures(value)
+            self.results.io.setSignificantFigures(value)
 
     def syncSampleAndReference(self) -> None:
         # Sync response

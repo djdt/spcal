@@ -21,7 +21,7 @@ class UnitsWidget(QtWidgets.QWidget):
         default_unit: str | None = None,
         base_value: float | None = None,
         validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
-        view_format: str = ".6g",
+        significant_figures: int = 6,
         color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -30,7 +30,11 @@ class UnitsWidget(QtWidgets.QWidget):
         self._base_error: float | None = None
         self._units: Dict[str, float] = {}
 
-        self.lineedit = ValueWidget(color_invalid=color_invalid)
+        self.lineedit = ValueWidget(
+            validator=validator,
+            significant_figures=significant_figures,
+            color_invalid=color_invalid,
+        )
         self.valid_base_range = (
             self.lineedit.validator().bottom(),
             self.lineedit.validator().top(),
@@ -63,6 +67,9 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.lineedit, 1)
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
+
+    def setSignificantFigures(self, num: int) -> None:
+        self.lineedit.setSignificantFigures(num)
 
     def value(self) -> float | None:
         return self.lineedit.value()
