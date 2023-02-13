@@ -107,18 +107,3 @@ class ValueWidget(ValidColorLineEdit):
         painter = QtGui.QPainter(self)
         painter.setPen(self.palette().text().color())
         painter.drawText(rect, self.alignment(), text)
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    le = ValueWidget()
-    le.setError(2.232)
-
-    dlg = QtWidgets.QDialog()
-    dlg.setLayout(QtWidgets.QHBoxLayout())
-    dlg.layout().addWidget(le)
-    dlg.layout().addWidget(QtWidgets.QLineEdit("not me"))
-
-    dlg.show()
-    app.exec()
