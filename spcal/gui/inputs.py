@@ -336,6 +336,10 @@ class InputWidget(QtWidgets.QWidget):
                     self.limits[name].params,
                 )
 
+    def updateFormat(self) -> None:
+        for io in self.io:
+            io.updateFormat()
+
     def drawGraph(self) -> None:
         self.graph.clear()
         if len(self.responses) == 0:

@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal.particle
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
-from spcal.gui.widgets import UnitsWidget, ValidColorLineEdit
+from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
@@ -21,10 +21,6 @@ class IOWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.name = name
 
-    def format(self) -> str:
-        sigfigs = int(QtCore.QSettings().value("sigfigs", 4))
-        return f".{sigfigs}g"
-
     def clearInputs(self) -> None:
         raise NotImplementedError
 
@@ -36,6 +32,14 @@ class IOWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         raise NotImplementedError
+
+    def updateFormat(self) -> None:
+        sigfigs = int(QtCore.QSettings().value("sigfigs", 4))
+        format = f".{sigfigs}g"
+        for widget in self.children():
+            if hasattr(widget, "view_format"):
+                widget.view_format = format
+                widget.update()
 
     def isComplete(self) -> bool:
         return True
@@ -91,8 +95,9 @@ class SampleIOWidget(IOWidget):
             self.action_ionic_response, QtWidgets.QLineEdit.TrailingPosition
         )
 
-        self.massfraction = ValidColorLineEdit("1.0")
-        self.massfraction.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 4))
+        self.massfraction = ValueWidget(
+            1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 16)
+        )
         self.massfraction.addAction(
             self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
         )
@@ -111,7 +116,7 @@ class SampleIOWidget(IOWidget):
         self.density.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
         self.molarmass.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
         self.response.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-        self.massfraction.textChanged.connect(
+        self.massfraction.valueChanged.connect(
             lambda: self.optionsChanged.emit(self.name)
         )
 
@@ -120,9 +125,9 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Ionic response:", self.response)
         self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.count = QtWidgets.QLineEdit("0")
+        self.count = ValueWidget(0)
         self.count.setReadOnly(True)
-        self.background_count = QtWidgets.QLineEdit()
+        self.background_count = ValueWidget()
         self.background_count.setReadOnly(True)
         self.lod_count = QtWidgets.QLineEdit()
         self.lod_count.setReadOnly(True)
@@ -144,7 +149,7 @@ class SampleIOWidget(IOWidget):
         self.density.setValue(None)
         self.molarmass.setValue(None)
         self.response.setValue(None)
-        self.massfraction.setText("1.0")
+        self.massfraction.setValue(1.0)
         self.blockSignals(False)
 
     def clearOutputs(self) -> None:
@@ -155,7 +160,7 @@ class SampleIOWidget(IOWidget):
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
         def set_mass_fraction(ratios: Dict[str, float]):
             first = next(iter(ratios.values()))
-            self.massfraction.setText(f"{first:{self.format()}}")
+            self.massfraction.setValue(first)
 
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.ratiosSelected.connect(set_mass_fraction)
@@ -192,14 +197,12 @@ class SampleIOWidget(IOWidget):
 
         count = np.count_nonzero(detections)
 
-        format = self.format()
-
-        self.count.setText(f"{count} ± {np.sqrt(count):.1f}")
-        self.background_count.setText(
-            f"{background:{format}} ± {background_std:{format}}"
-        )
+        self.count.setValue(count)
+        self.count.setError(np.sqrt(count))
+        self.background_count.setValue(background)
+        self.background_count.setError(background_std)
         self.lod_count.setText(
-            f"{lod:{format}} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
+            f"{lod} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
         )
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
@@ -240,8 +243,7 @@ class ReferenceIOWidget(SampleIOWidget):
             " otherwise each element is calculated individually."
         )
 
-        self.efficiency = QtWidgets.QLineEdit()
-        self.efficiency.setValidator(QtGui.QDoubleValidator(0.0, 1.0, 10))
+        self.efficiency = ValueWidget(validator=QtGui.QDoubleValidator(0.0, 1.0, 10))
         self.efficiency.setReadOnly(True)
 
         self.massresponse = UnitsWidget(
@@ -287,10 +289,8 @@ class ReferenceIOWidget(SampleIOWidget):
         uptake: float,
     ) -> None:
         # Make these delegates
-        self.efficiency.setText("")
-        self.massresponse.setValue("")
-
-        format = self.format()
+        self.efficiency.setValue(None)
+        self.massresponse.setBaseValue(None)
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
@@ -299,11 +299,7 @@ class ReferenceIOWidget(SampleIOWidget):
             return
 
         mass = spcal.particle.reference_particle_mass(density, diameter)
-        mass_fraction = (
-            float(self.massfraction.text())
-            if self.massfraction.hasAcceptableInput()
-            else None
-        )
+        mass_fraction = self.massfraction.value()
         if mass_fraction is not None:
             self.massresponse.setBaseValue(mass * mass_fraction / np.mean(detections))
 
@@ -317,7 +313,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 flow_rate=uptake,
                 time=time,
             )
-            self.efficiency.setText(f"{efficiency:{format}}")
+            self.efficiency.setValue(efficiency)
         elif mass_fraction is not None and uptake is not None and response is not None:
             efficiency = spcal.particle.nebulisation_efficiency_from_mass(
                 detections,
@@ -327,7 +323,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 response_factor=response,
                 mass_fraction=mass_fraction,
             )
-            self.efficiency.setText(f"{efficiency:{format}}")
+            self.efficiency.setValue(efficiency)
 
     def isComplete(self) -> bool:
         return super().isComplete() and self.diameter.hasAcceptableInput()
@@ -341,45 +337,37 @@ class ResultIOWidget(IOWidget):
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
-        format = self.format()
-
-        self.count = QtWidgets.QLineEdit()
+        self.count = ValueWidget()
         self.count.setReadOnly(True)
         self.number = UnitsWidget(
             {"#/L": 1.0, "#/ml": 1e3},
             default_unit="#/L",
-            view_format=".0f",
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
-            view_format=format,
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
-            view_format=format,
         )
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
             size_units,
             default_unit="nm",
-            view_format=format,
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
             size_units,
             default_unit="nm",
-            view_format=format,
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
             size_units,
             default_unit="nm",
-            view_format=format,
         )
         self.median.setReadOnly(True)
 
@@ -408,7 +396,7 @@ class ResultIOWidget(IOWidget):
         self.median.setBaseValue(None)
         self.lod.setBaseValue(None)
 
-        self.count.setText("")
+        self.count.setValue(0)
         self.number.setBaseValue(None)
         self.number.setBaseError(None)
         self.conc.setBaseValue(None)
@@ -448,7 +436,9 @@ class ResultIOWidget(IOWidget):
         self.lod.setUnit(unit)
 
         relative_error = count / count_error
-        self.count.setText(f"{count} ± {count_error:.1f} ({count_percent:.1f} %)")
+        self.count.setValue(count)
+        self.count.setError(count_error)
+        # (f"{count} ± {count_error:.1f} ({count_percent:.1f} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)
