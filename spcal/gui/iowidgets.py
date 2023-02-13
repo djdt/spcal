@@ -286,6 +286,7 @@ class ReferenceIOWidget(SampleIOWidget):
         time: float,
         uptake: float,
     ) -> None:
+        # Make these delegates
         self.efficiency.setText("")
         self.massresponse.setValue("")
 
@@ -347,38 +348,38 @@ class ResultIOWidget(IOWidget):
         self.number = UnitsWidget(
             {"#/L": 1.0, "#/ml": 1e3},
             default_unit="#/L",
-            formatter=".0f",
+            view_format=".0f",
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
-            formatter=format,
+            view_format=format,
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
             mass_concentration_units,
             default_unit="ng/L",
-            formatter=format,
+            view_format=format,
         )
         self.background.setReadOnly(True)
 
         self.lod = UnitsWidget(
             size_units,
             default_unit="nm",
-            formatter=format,
+            view_format=format,
         )
         self.lod.setReadOnly(True)
         self.mean = UnitsWidget(
             size_units,
             default_unit="nm",
-            formatter=format,
+            view_format=format,
         )
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(
             size_units,
             default_unit="nm",
-            formatter=format,
+            view_format=format,
         )
         self.median.setReadOnly(True)
 

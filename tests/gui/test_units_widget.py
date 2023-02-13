@@ -16,7 +16,7 @@ def test_units_widget(qtbot: QtBot):
     assert w.unit() == "c"
     assert not w.hasAcceptableInput()
 
-    w.setValue("1.0")
+    w.setValue(1.0)
     assert w.baseValue() == 0.01
 
     w.setUnit("b")
@@ -28,9 +28,6 @@ def test_units_widget(qtbot: QtBot):
 
     w.setBestUnit()
     assert w.unit() == "c"
-
-    w.setValue("false")
-    assert w.baseValue() is None
 
     w.setReadOnly(True)
     assert w.lineedit.isReadOnly()
@@ -45,7 +42,7 @@ def test_units_widget(qtbot: QtBot):
 
 
 def test_units_widget_error(qtbot: QtBot):
-    w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, value=50.0)
+    w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, base_value=50.0)
     qtbot.addWidget(w)
 
     assert w.baseError() is None
@@ -57,11 +54,8 @@ def test_units_widget_error(qtbot: QtBot):
     w.setBaseError(1.0)
     assert w.error() == 10.0
 
-    w.setError("1.0")
+    w.setError(1.0)
     assert w.baseError() == 0.1
-
-    w.setError("false")
-    assert w.baseError() is None
 
 
 def test_units_signals(qtbot: QtBot):
@@ -82,8 +76,8 @@ def test_units_signals(qtbot: QtBot):
 
 
 def test_units_sync(qtbot: QtBot):
-    w = UnitsWidget({"a": 1.0, "b": 0.1}, value=1.0)
-    x = UnitsWidget({"a": 1.0, "b": 0.1}, value=1.0)
+    w = UnitsWidget({"a": 1.0, "b": 0.1}, base_value=1.0)
+    x = UnitsWidget({"a": 1.0, "b": 0.1}, base_value=1.0)
     qtbot.addWidget(w)
     qtbot.addWidget(x)
 
@@ -95,5 +89,5 @@ def test_units_sync(qtbot: QtBot):
     w.setUnit("b")
     assert x.unit() == "b"
 
-    x.setError("2.0")
+    x.setError(2.0)
     assert w.error() == 2.0

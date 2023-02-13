@@ -135,7 +135,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.manual = UnitsWidget(
             units=signal_units,
-            value=10.0,
+            base_value=10.0,
             validator=QtGui.QDoubleValidator(1e-9, 1e9, 2),
         )
         self.manual.setEnabled(False)
