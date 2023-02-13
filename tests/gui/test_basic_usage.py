@@ -14,7 +14,7 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     qtbot.keyClick(options.uptake.lineedit, QtCore.Qt.Key_1)
     assert options.uptake.value() == 1
     qtbot.keyClick(options.efficiency, QtCore.Qt.Key_1)
-    assert options.efficiency.text() == "1"
+    assert options.efficiency.value() == 1.0
 
     assert options.dwelltime.lineedit.isReadOnly()
 
@@ -24,7 +24,7 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert options.check_use_window.isChecked()
     assert options.window_size.isEnabled()
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
-    assert options.window_size.text() == "100"
+    assert options.window_size.value() == 100
 
     qtbot.keyClick(options.error_rate_poisson, QtCore.Qt.Key_1)
     assert options.error_rate_poisson.value() == 0.0011
