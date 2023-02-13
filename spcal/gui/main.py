@@ -311,6 +311,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         if ok:
             settings.setValue("sigfigs", value)
+            self.options.setSignificantFigures(value)
             self.sample.io.setSignificantFigures(value)
             self.reference.io.setSignificantFigures(value)
             self.results.io.setSignificantFigures(value)

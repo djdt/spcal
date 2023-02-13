@@ -37,10 +37,7 @@ class IOWidget(QtWidgets.QWidget):
         if num is None:
             num = int(QtCore.QSettings().value("sigfigs", 4))
         for widget in self.findChildren(ValueWidget):
-            print(widget)
-            if hasattr(widget, "setSignificantFigures"):
-                print("yes")
-                widget.setSignificantFigures(num)
+            widget.setSignificantFigures(num)
 
     def isComplete(self) -> bool:
         return True

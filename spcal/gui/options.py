@@ -30,12 +30,14 @@ class OptionsWidget(QtWidgets.QWidget):
             time_units,
             default_unit="ms",
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
+            significant_figures=sf,
         )
         self.dwelltime.setReadOnly(True)
 
         self.uptake = UnitsWidget(
             uptake_units,
             default_unit="ml/min",
+            significant_figures=sf,
         )
         self.efficiency = ValueWidget(
             validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
@@ -115,14 +117,18 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.error_rate_poisson = ValueWidget(
-            0.001, validator=QtGui.QDoubleValidator(1e-12, 0.5, 9)
+            0.001,
+            validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
+            significant_figures=sf,
         )
         self.error_rate_poisson.setPlaceholderText("0.001")
         self.error_rate_poisson.setToolTip(
             "Type I (false positive) error rate for Poisson filters."
         )
         self.error_rate_gaussian = ValueWidget(
-            1e-6, validator=QtGui.QDoubleValidator(1e-12, 0.5, 9)
+            1e-6,
+            validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
+            significant_figures=sf,
         )
         self.error_rate_gaussian.setPlaceholderText("1e-6")
         self.error_rate_gaussian.setToolTip(
@@ -141,6 +147,7 @@ class OptionsWidget(QtWidgets.QWidget):
             units=signal_units,
             base_value=10.0,
             validator=QtGui.QDoubleValidator(1e-9, 1e9, 2),
+            significant_figures=sf,
         )
         self.manual.setEnabled(False)
         self.manual.setToolTip("Limit (in counts) used when method is 'Manual Input'.")
@@ -260,3 +267,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.celldiameter.setValue(None)
         self.blockSignals(False)
         self.optionsChanged.emit()
+
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        if num is None:
+            num = int(QtCore.QSettings().value("sigfigs", 4))
+        for widget in self.findChildren(ValueWidget):
+            widget.setSignificantFigures(num)
