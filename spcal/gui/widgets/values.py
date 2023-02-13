@@ -71,7 +71,6 @@ class ValueWidget(ValidColorLineEdit):
     def updateTextFromValue(self) -> None:
         format = self.edit_format if self.hasFocus() else self.view_format
         value = self.value()
-        print(value, type(value))
         text = f"{value:{format}}" if value is not None else ""
         self.setText(text)
 
