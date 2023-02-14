@@ -11,7 +11,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
-from spcal.io.text import export_single_particle_results, import_single_particle_file
+from spcal.io.text import export_single_particle_results, read_single_particle_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
@@ -91,7 +91,7 @@ def process_text_file(
     process_kws: dict,
     output_kws: dict,
 ) -> None:
-    data, old_names = import_single_particle_file(
+    data, old_names = read_single_particle_file(
         path,
         delimiter=import_options["delimiter"],
         columns=import_options["columns"],

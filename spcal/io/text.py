@@ -15,7 +15,8 @@ def is_text_file(path: Path) -> bool:
         return False
     return True
 
-def import_single_particle_file(
+
+def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
     columns: Tuple[int] | None = None,

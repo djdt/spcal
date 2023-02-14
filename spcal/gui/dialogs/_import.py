@@ -9,7 +9,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.util import Worker
 from spcal.gui.widgets import ElidedLabel, PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
-from spcal.io.text import import_single_particle_file
+from spcal.io.text import read_single_particle_file
 from spcal.npdb import db
 from spcal.siunits import time_units
 
@@ -271,7 +271,7 @@ class ImportDialog(_ImportDialogBase):
     def accept(self) -> None:
         options = self.importOptions()
 
-        data, old_names = import_single_particle_file(
+        data, old_names = read_single_particle_file(
             options["path"],
             delimiter=options["delimiter"],
             columns=options["columns"],
