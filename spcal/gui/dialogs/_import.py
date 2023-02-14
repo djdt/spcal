@@ -415,6 +415,12 @@ class NuImportDialog(_ImportDialogBase):
         self.results.clear()
 
         for idx in self.index:
+            path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
+            if not path.exists():
+                logger.warning(
+                    f"NuImportDialog: missing integ file {idx['FileNum']}, skipping"
+                )
+                continue
             worker = Worker(
                 read_signals,
                 self.file_path.joinpath(f"{idx['FileNum']}.integ"),

@@ -1,9 +1,12 @@
 import json
+import logging
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
+
+logger = logging.getLogger(__name__)
 
 
 def is_nu_directory(path: Path) -> bool:
@@ -108,17 +111,23 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
     with path.joinpath("integrated.index").open("r") as fp:
         integ_index = json.load(fp)
 
-    data = np.concatenate(
-        [
-            read_nu_integ_binary(
-                path.joinpath(f"{idx['FileNum']}.integ"),
-                idx["FirstCycNum"],
-                idx["FirstSegNum"],
-                idx["FirstAcqNum"],
+    datas = []
+    for idx in integ_index:
+        integ_path = path.joinpath(f"{idx['FileNum']}.integ")
+        if integ_path.exists():
+            datas.append(
+                read_nu_integ_binary(
+                    integ_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
             )
-            for idx in integ_index
-        ]
-    )
+        else:
+            logger.warning(
+                f"read_integ_binary: missing integ {idx['FileNum']}, skipping"
+            )
+    data = np.concatenate(datas)
 
     segment_delays = {
         s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
