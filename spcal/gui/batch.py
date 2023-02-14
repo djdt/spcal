@@ -54,7 +54,10 @@ def process_data(
 
         # === Create detections ===
         d[name], l[name], r[name] = accumulate_detections(
-            data[name], limits[name].detection_threshold
+            data[name],
+            limits[name].mean_background,
+            limits[name].detection_threshold,
+            integrate=True,
         )
 
     detections, labels, regions = combine_detections(d, l, r)
