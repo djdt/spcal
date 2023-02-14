@@ -131,6 +131,7 @@ def click_though_results(qtbot: QtBot, results: ResultsWidget):
         QtCore.Qt.NoModifier,
         results.graph_toolbar.actionGeometry(results.action_graph_zoomout).center(),
     )
+    results.scatter_fit_degree.setValue(2)
 
 
 def test_spcal_no_data(qtbot: QtBot):
