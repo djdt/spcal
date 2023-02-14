@@ -26,8 +26,8 @@ def test_sample_with_reference(qtbot: QtBot):
         window.show()
 
     npz = np.load(Path(__file__).parent.parent.joinpath("data/agilent_au_data.npz"))
-    data = np.array(npz["au50nm"], dtype=[("Au", float), ("Ag", float)])
-    ref = np.array(npz["au15nm"], dtype=[("Au", float)])
+    data = np.array(npz["au50nm"], dtype=[("Au", np.float32), ("Ag", np.float32)])
+    ref = np.array(npz["au15nm"], dtype=[("Au", np.float32)])
 
     window.options.efficiency_method.setCurrentText("Reference Particle")
     window.options.uptake.setBaseValue(uptake)
@@ -42,7 +42,7 @@ def test_sample_with_reference(qtbot: QtBot):
     assert window.sample.io["Au"].density.baseValue() is None
     assert window.sample.io["Au"].molarmass.baseValue() is None
     assert window.sample.io["Au"].response.baseValue() is None
-    assert float(window.sample.io["Au"].massfraction.text()) == 1.0
+    assert window.sample.io["Au"].massfraction.value() == 1.0
 
     assert window.sample.detections["Au"].size == 3072
     assert np.isclose(
@@ -51,6 +51,13 @@ def test_sample_with_reference(qtbot: QtBot):
         atol=1e-4,
     )
     assert np.isclose(window.sample.limits["Au"].detection_threshold, 37.63, atol=1e-2)
+
+    assert window.sample.io["Au"].count.value() == 3072
+    assert np.isclose(
+        window.sample.io["Au"].background_count.value(), 0.3064, atol=1e-4
+    )
+    assert np.isclose(window.sample.io["Au"].lod_count.value(), 37.63, atol=1e-2)
+    assert window.sample.io["Au"].label_lod.text() == "(Poisson, alpha=0.001)"
 
     # Set values
     window.sample.io["Au"].density.setBaseValue(density)
@@ -73,7 +80,7 @@ def test_sample_with_reference(qtbot: QtBot):
     assert window.reference.io["Au"].density.baseValue() is None
     # Should be shared with sample and set
     assert window.reference.io["Au"].response.baseValue() == response
-    assert float(window.reference.io["Au"].massfraction.text()) == 1.0
+    assert window.reference.io["Au"].massfraction.value() == 1.0
 
     assert window.reference.detections["Au"].size == 9551
     assert np.isclose(
@@ -84,18 +91,18 @@ def test_sample_with_reference(qtbot: QtBot):
     assert np.isclose(
         window.reference.limits["Au"].detection_threshold, 12.94, atol=1e-2
     )
-    assert window.reference.io["Au"].efficiency.text() == ""
+    assert window.reference.io["Au"].efficiency.value() is None
     assert window.reference.io["Au"].massresponse.baseValue() is None
 
     # Set values
     window.reference.io["Au"].density.setBaseValue(density)
     window.reference.io["Au"].diameter.setBaseValue(15e-9)
+    assert np.isclose(window.reference.io["Au"].efficiency.value(), 0.05427, atol=1e-5)
     assert np.isclose(
         window.reference.io["Au"].massresponse.baseValue(),
         5.2885e-22,
         atol=1e-26,
     )
-    assert window.reference.io["Au"].efficiency.text().startswith("0.05")
 
     # Check results are ready
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.results))

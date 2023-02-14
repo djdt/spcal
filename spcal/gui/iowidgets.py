@@ -140,14 +140,24 @@ class SampleIOWidget(IOWidget):
         self.count.setReadOnly(True)
         self.background_count = ValueWidget(significant_figures=sf)
         self.background_count.setReadOnly(True)
-        self.lod_count = QtWidgets.QLineEdit()
+        self.lod_count = ValueWidget()
         self.lod_count.setReadOnly(True)
+        self.label_lod = QtWidgets.QLabel()
+        self.label_lod.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+        self.label_lod.setIndent(10)
+
+        layout_lod = QtWidgets.QGridLayout()
+        layout_lod.addWidget(self.lod_count, 0, 0, 1, 1)
+        align = (
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
+        )
+        layout_lod.addWidget(self.label_lod, 0, 0, 1, 1, align)
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
-        self.outputs.layout().addRow("LOD count:", self.lod_count)
+        self.outputs.layout().addRow("LOD count:", layout_lod)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.inputs)
@@ -164,9 +174,10 @@ class SampleIOWidget(IOWidget):
         self.blockSignals(False)
 
     def clearOutputs(self) -> None:
-        self.count.clear()
-        self.background_count.clear()
-        self.lod_count.clear()
+        self.count.setValue(None)
+        self.background_count.setValue(None)
+        self.lod_count.setValue(None)
+        self.label_lod.clear()
 
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
         def set_mass_fraction(ratios: Dict[str, float]):
@@ -212,8 +223,9 @@ class SampleIOWidget(IOWidget):
         self.count.setError(np.sqrt(count))
         self.background_count.setValue(background)
         self.background_count.setError(background_std)
-        self.lod_count.setText(
-            f"{lod} ({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
+        self.lod_count.setValue(lod)
+        self.label_lod.setText(
+            f"({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
         )
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
