@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, TextIO, Tuple
 
 import numpy as np
-import numpy.lib.recfunctions as rfn
 
 from spcal import __version__
 from spcal.result import SPCalResult
