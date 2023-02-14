@@ -1,8 +1,10 @@
+# import csv
 import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, TextIO, Tuple
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 
 from spcal import __version__
 from spcal.result import SPCalResult
@@ -19,7 +21,7 @@ def is_text_file(path: Path) -> bool:
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
-    columns: Tuple[int] | None = None,
+    columns: Tuple[int] | np.ndarray | None = None,
     first_line: int = 1,
     new_names: Tuple[str] | None = None,
     convert_cps: float | None = None,
@@ -40,23 +42,45 @@ def read_single_particle_file(
         old_names, the original names used in text file
     """
     path = Path(path)
-    with path.open("rb") as fp:
+    with path.open("r") as fp:
         if delimiter != ",":
-            gen = (x.replace(b",", b".") for x in fp)
+            gen = (x.replace(",", ".") for x in fp)
         else:
             gen = (x for x in fp)
 
-        data = np.genfromtxt(
-            gen,
-            delimiter=delimiter,
-            usecols=columns,
-            names=True,
-            skip_header=first_line - 1,
-            invalid_raise=False,
-        )
+        for i in range(first_line - 1):
+            next(gen)
+
+        header = next(gen).strip().split(delimiter)
+        if columns is None:
+            columns = np.arange(len(header))
+        columns = np.asarray(columns)
+
+        dtype = np.dtype([(header[i], np.float32) for i in columns])
+        try:  # loadtxt is faster than genfromtxt
+            data = np.loadtxt(
+                gen,
+                delimiter=delimiter,
+                usecols=columns,
+                dtype=dtype,
+            )
+        except ValueError:  # Rewind and try with genfromtxt
+            fp.seek(0)
+            for i in range(first_line):
+                next(gen)
+
+            data = np.genfromtxt(
+                gen,
+                delimiter=delimiter,
+                usecols=columns,
+                invalid_raise=False,
+                dtype=dtype,
+            )
+
     assert data.dtype.names is not None
 
     names = list(data.dtype.names)
+
     if new_names is not None:
         data.dtype.names = new_names
 
