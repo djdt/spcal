@@ -94,6 +94,11 @@ class ResultsWidget(QtWidgets.QWidget):
         self.check_scatter_logy = QtWidgets.QCheckBox("log")
         self.check_scatter_logy.clicked.connect(self.drawGraphScatter)
 
+        self.scatter_fit_degree = QtWidgets.QSpinBox()
+        self.scatter_fit_degree.setRange(1, 9)
+        self.scatter_fit_degree.setValue(1)
+        self.scatter_fit_degree.valueChanged.connect(self.drawGraphScatter)
+
         # Create simple widget with graph and two combos for x / y element selection
         scatter_layout = QtWidgets.QVBoxLayout()
         scatter_combo_layout = QtWidgets.QHBoxLayout()
@@ -103,6 +108,8 @@ class ResultsWidget(QtWidgets.QWidget):
         scatter_combo_layout.addWidget(QtWidgets.QLabel("x:"), 0)
         scatter_combo_layout.addWidget(self.combo_scatter_x, 1)
         scatter_combo_layout.addWidget(self.check_scatter_logy, 0)
+        scatter_combo_layout.addWidget(QtWidgets.QLabel("degree:"), 0)
+        scatter_combo_layout.addWidget(self.scatter_fit_degree, 1)
         scatter_layout.addWidget(self.graph_scatter)
         scatter_layout.addLayout(scatter_combo_layout)
         self.scatter_widget = QtWidgets.QWidget()
@@ -570,7 +577,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.graph_scatter.drawFit(
                 x[valid],
                 y[valid],
-                1,
+                self.scatter_fit_degree.value(),
                 logx=self.check_scatter_logx.isChecked(),
                 logy=self.check_scatter_logy.isChecked(),
             )
