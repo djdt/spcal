@@ -284,7 +284,7 @@ class ImportDialog(_ImportDialogBase):
         options["old names"] = old_names
 
         self.dataImported.emit(data, options)
-        logger.info(f"Text data loaded from {self.file_path}.")
+        logger.info(f"Text data loaded from {self.file_path} ({data.size} events).")
         super().accept()
 
 
@@ -461,7 +461,9 @@ class NuImportDialog(_ImportDialogBase):
             return
 
         self.dataImported.emit(data, options)
-        logger.info(f"Nu instruments data loaded from {self.file_path}.")
+        logger.info(
+            f"Nu instruments data loaded from {self.file_path} ({data.size} events)."
+        )
         super().accept()
 
     def reject(self) -> None:
