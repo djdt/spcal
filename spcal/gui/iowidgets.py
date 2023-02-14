@@ -76,13 +76,17 @@ class SampleIOWidget(IOWidget):
             significant_figures=sf,
         )
         self.density.lineedit.addAction(
-            self.action_density, QtWidgets.QLineEdit.TrailingPosition
+            self.action_density, QtWidgets.QLineEdit.ActionPosition.TrailingPosition
         )
         self.molarmass = UnitsWidget(
             {"g/mol": 1e-3, "kg/mol": 1.0},
             default_unit="g/mol",
             color_invalid=QtGui.QColor(255, 255, 172),
             significant_figures=sf,
+        )
+        self.molarmass.lineedit.addAction(
+            self.action_mass_fraction,
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
         )
         self.response = UnitsWidget(
             {
@@ -95,7 +99,8 @@ class SampleIOWidget(IOWidget):
             significant_figures=sf,
         )
         self.response.lineedit.addAction(
-            self.action_ionic_response, QtWidgets.QLineEdit.TrailingPosition
+            self.action_ionic_response,
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
         )
 
         self.massfraction = ValueWidget(
@@ -104,7 +109,8 @@ class SampleIOWidget(IOWidget):
             significant_figures=sf,
         )
         self.massfraction.addAction(
-            self.action_mass_fraction, QtWidgets.QLineEdit.TrailingPosition
+            self.action_mass_fraction,
+            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
         )
 
         self.density.setToolTip("Sample particle density.")
