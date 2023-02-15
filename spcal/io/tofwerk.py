@@ -64,10 +64,9 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
         data = fp["PeakData"]["PeakData"][:]
         info = fp["PeakData"]["PeakTable"][:]
         extraction_time = fp["TimingData"].attrs["TofPeriod"] * 1e-9  # in ns
-        # Needed?
-        sis = fp["FullSpectra"].attrs["Single Ion Signal"]
+        # extraction_time = fp["FullSpectra"].attrs["SampleInterval"]
 
-    data /= (extraction_time * sis)  # cps -> counts
+    data /= extraction_time  # cps -> counts
     names = [x.decode() for x in info["label"]]
     data = rfn.unstructured_to_structured(data.reshape(-1, data.shape[-1]), names=names)
 
