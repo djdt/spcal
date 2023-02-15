@@ -509,7 +509,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         self.layout_body.addWidget(self.table, 1)
         # self.layout_body.addWidget(self.progress, 0)
 
-        events = (
+        events = int(
             self.h5.attrs["NbrWrites"]
             * self.h5.attrs["NbrBufs"]
             * self.h5.attrs["NbrSegments"]
