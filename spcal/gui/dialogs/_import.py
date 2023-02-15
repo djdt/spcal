@@ -514,6 +514,7 @@ class TofwerkImportDialog(_ImportDialogBase):
             * self.h5.attrs["NbrBufs"]
             * self.h5.attrs["NbrSegments"]
         )
+        extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"]) * 1e-9
 
         # Set info and defaults
         config = self.h5.attrs["Configuration File"].decode()
@@ -525,7 +526,9 @@ class TofwerkImportDialog(_ImportDialogBase):
             "Number Integrations:", QtWidgets.QLabel(str(len(self.peaks)))
         )
         self.dwelltime.setBaseValue(
-            float(self.h5["TimingData"].attrs["TofPeriod"]) * 1e-9
+            np.around(
+                extraction_time * float(self.h5.attrs["NbrWaveforms"]), 6
+            )  # nearest us
         )
 
     def isComplete(self) -> bool:
@@ -561,27 +564,20 @@ class TofwerkImportDialog(_ImportDialogBase):
         selected_idx = np.in1d(self.peaks["label"].astype("U256"), selected_labels)
 
         data = self.h5["PeakData"]["PeakData"][..., selected_idx]
-        sis = self.h5["FullSpectra"].attrs["Single Ion Signal"]
-        data /= (self.dwelltime.baseValue() * sis)
+        data /= self.dwelltime.baseValue()
 
         data = rfn.unstructured_to_structured(
             data.reshape(-1, data.shape[-1]), names=selected_labels
         )
+
         options = self.importOptions()
         self.dataImported.emit(data, options)
 
         logger.info(
-            f"TOFWERK instruments data loaded from {self.file_path} ({data.size} events)."
+            "TOFWERK instruments data loaded from "
+            f"{self.file_path} ({data.size} events)."
         )
         super().accept()
 
     def reject(self) -> None:
         super().reject()
-
-
-# if __name__ == "__main__":
-#     app = QtWidgets.QApplication()
-
-#     dlg = TofwerkImportDialog("/home/tom/Downloads/AgAu_NPs_2022-12-07_15h47m14s.h5")
-#     dlg.show()
-#     app.exec()

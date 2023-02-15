@@ -64,7 +64,7 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
         data = fp["PeakData"]["PeakData"][:]
         info = fp["PeakData"]["PeakTable"][:]
         extraction_time = fp["TimingData"].attrs["TofPeriod"] * 1e-9  # in ns
-        # extraction_time = fp["FullSpectra"].attrs["SampleInterval"]
+        extraction_time *= fp.attrs["NbrWaveforms"]  # extractions per segment
 
     data /= extraction_time  # cps -> counts
     names = [x.decode() for x in info["label"]]
