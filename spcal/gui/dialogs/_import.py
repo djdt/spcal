@@ -1,9 +1,12 @@
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import h5py
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import Worker
@@ -471,3 +474,114 @@ class NuImportDialog(_ImportDialogBase):
             self.abort()
         else:
             super().reject()
+
+
+class TofwerkImportDialog(_ImportDialogBase):
+    def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
+
+        super().__init__(path, "SPCal TOFWERK Import", parent)
+
+        self.progress = QtWidgets.QProgressBar()
+        self.aborted = False
+        self.running = False
+
+        # Get the masses from the file
+        self.h5 = h5py.File(self.file_path, "r")
+
+        self.peaks = self.h5["PeakData"]["PeakTable"]
+
+        re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
+
+        isotopes = []
+        for label in self.peaks["label"]:
+            m = re_valid.match(label.decode())
+            if m is not None:
+                isotopes.append(
+                    db["isotopes"][
+                        (db["isotopes"]["Isotope"] == int(m.group(1)))
+                        & (db["isotopes"]["Symbol"] == m.group(2))
+                    ]
+                )
+
+        self.table = PeriodicTableSelector(enabled_isotopes=np.array(isotopes))
+        self.table.isotopesChanged.connect(self.completeChanged)
+
+        self.layout_body.addWidget(self.table, 1)
+        # self.layout_body.addWidget(self.progress, 0)
+
+        events = (
+            self.h5.attrs["NbrWrites"]
+            * self.h5.attrs["NbrBufs"]
+            * self.h5.attrs["NbrSegments"]
+        )
+
+        # Set info and defaults
+        config = self.h5.attrs["Configuration File"].decode()
+        self.box_info.layout().addRow(
+            "Configuration:", QtWidgets.QLabel(config[config.rfind("\\") + 1 :])
+        )
+        self.box_info.layout().addRow("Number Events:", QtWidgets.QLabel(str(events)))
+        self.box_info.layout().addRow(
+            "Number Integrations:", QtWidgets.QLabel(str(len(self.peaks)))
+        )
+        self.dwelltime.setBaseValue(
+            float(self.h5["TimingData"].attrs["TofPeriod"]) * 1e-9
+        )
+
+    def isComplete(self) -> bool:
+        isotopes = self.table.selectedIsotopes()
+        return isotopes is not None and self.dwelltime.hasAcceptableInput()
+
+    def importOptions(self) -> dict:
+        return {
+            "importer": "tofwerk",
+            "path": self.file_path,
+            "dwelltime": self.dwelltime.baseValue(),
+            "isotopes": self.table.selectedIsotopes(),
+        }
+
+    def setControlsEnabled(self, enabled: bool) -> None:
+        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        button.setEnabled(enabled)
+        self.table.setEnabled(enabled)
+        self.dwelltime.setEnabled(enabled)
+
+    # def abort(self) -> None:
+    #     self.aborted = True
+    #     self.threadpool.waitForDone()
+    #     self.progress.reset()
+    #     self.running = False
+
+    #     self.setControlsEnabled(True)
+
+    def accept(self) -> None:
+        isotopes = self.table.selectedIsotopes()
+        assert isotopes is not None
+        selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
+        selected_idx = np.in1d(self.peaks["label"].astype("U256"), selected_labels)
+
+        data = self.h5["PeakData"]["PeakData"][..., selected_idx]
+        sis = self.h5["FullSpectra"].attrs["Single Ion Signal"]
+        data /= (self.dwelltime.baseValue() * sis)
+
+        data = rfn.unstructured_to_structured(
+            data.reshape(-1, data.shape[-1]), names=selected_labels
+        )
+        options = self.importOptions()
+        self.dataImported.emit(data, options)
+
+        logger.info(
+            f"TOFWERK instruments data loaded from {self.file_path} ({data.size} events)."
+        )
+        super().accept()
+
+    def reject(self) -> None:
+        super().reject()
+
+
+# if __name__ == "__main__":
+#     app = QtWidgets.QApplication()
+
+#     dlg = TofwerkImportDialog("/home/tom/Downloads/AgAu_NPs_2022-12-07_15h47m14s.h5")
+#     dlg.show()
+#     app.exec()

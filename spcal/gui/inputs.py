@@ -7,7 +7,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
 from spcal.detection import combine_detections, detection_maxima
-from spcal.gui.dialogs._import import ImportDialog, NuImportDialog
+from spcal.gui.dialogs._import import (
+    ImportDialog,
+    NuImportDialog,
+    TofwerkImportDialog,
+    _ImportDialogBase,
+)
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.views import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
@@ -15,6 +20,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.io.nu import is_nu_directory
+from spcal.io.tofwerk import is_tofwerk_file
 from spcal.io.text import is_text_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
@@ -174,6 +180,7 @@ class InputWidget(QtWidgets.QWidget):
                     (path.is_dir() and is_nu_directory(path))
                     or path.suffix.lower() == ".info"
                     or is_text_file(path)
+                    or is_tofwerk_file(path)
                 ):
                     self.dialogLoadFile(path)
                     break
@@ -185,15 +192,16 @@ class InputWidget(QtWidgets.QWidget):
 
     def dialogLoadFile(
         self, path: str | Path | None = None
-    ) -> ImportDialog | NuImportDialog | None:
+    ) -> _ImportDialogBase | None:
         if path is None:
             path, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self,
                 "Open",
                 "",
                 (
-                    "NP Data Files (*.csv *.info);;CSV Documents(*.csv *.txt *.text);;"
-                    "Nu Instruments(*.info);;All files(*)"
+                    "NP Data Files (*.csv *.info *.h5);;"
+                    "CSV Documents(*.csv *.txt *.text);;Nu Instruments(*.info);;"
+                    "TOFWERK HDF5(*.h5);;All files(*)"
                 ),
             )
             if path == "":
@@ -209,6 +217,8 @@ class InputWidget(QtWidgets.QWidget):
                 dlg = NuImportDialog(path, self)
             else:
                 raise FileNotFoundError("dialogLoadFile: invalid directory.")
+        elif is_tofwerk_file(path):
+            dlg = TofwerkImportDialog(path, self)
         else:
             dlg = ImportDialog(path, self)
         dlg.dataImported.connect(self.loadData)
