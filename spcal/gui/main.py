@@ -40,8 +40,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
         self.reference.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
 
-        self.sample.dataImported.connect(self.syncSampleAndReference)
-        self.reference.dataImported.connect(self.syncSampleAndReference)
+        self.sample.dataLoaded.connect(self.syncSampleAndReference)
+        self.reference.dataLoaded.connect(self.syncSampleAndReference)
+        self.sample.dataLoaded.connect(self.updateRecentFiles)
+        self.reference.dataLoaded.connect(self.updateRecentFiles)
 
         self.options.optionsChanged.connect(self.onInputsChanged)
         self.sample.optionsChanged.connect(self.onInputsChanged)
@@ -65,6 +67,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
         self.createMenuBar()
+        self.updateRecentFiles()
 
     def createMenuBar(self) -> None:
         # File
@@ -159,6 +162,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(self.action_open_sample)
+        self.menu_recent = menufile.addMenu("Open Recent")
+        self.menu_recent.setEnabled(False)
+        menufile.addSeparator()
         menufile.addAction(self.action_open_reference)
         menufile.addSeparator()
         menufile.addAction(self.action_open_batch)
@@ -332,6 +338,33 @@ class SPCalWindow(QtWidgets.QMainWindow):
                     ref_io.setBaseValue(None)
 
                 io.syncOutput(ref_io, "response")
+
+    def updateRecentFiles(self, new_path: Path | None = None) -> None:
+        settings = QtCore.QSettings()
+        num = settings.beginReadArray("RecentFiles")
+        paths = []
+        for i in range(num):
+            settings.setArrayIndex(i)
+            path = Path(settings.value("path"))
+            if path != new_path:
+                paths.append(path)
+        settings.endArray()
+
+        if new_path is not None:
+            paths.insert(0, new_path)
+
+            settings.beginWriteArray("RecentFiles", len(paths))
+            for i, path in enumerate(paths):
+                settings.setArrayIndex(i)
+                settings.setValue("path", str(path))
+            settings.endArray()
+
+        self.menu_recent.clear()
+        self.menu_recent.setEnabled(len(paths) > 0)
+        for path in paths:
+            action = QtGui.QAction(str(path), self)
+            action.triggered.connect(lambda: self.sample.dialogLoadFile(path))
+            self.menu_recent.addAction(action)
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None

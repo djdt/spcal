@@ -20,8 +20,8 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.io.nu import is_nu_directory
-from spcal.io.tofwerk import is_tofwerk_file
 from spcal.io.text import is_text_file
+from spcal.io.tofwerk import is_tofwerk_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -33,7 +33,7 @@ class InputWidget(QtWidgets.QWidget):
     detectionsChanged = QtCore.Signal()
     limitsChanged = QtCore.Signal()
 
-    dataImported = QtCore.Signal()
+    dataLoaded = QtCore.Signal(Path)
 
     def __init__(
         self,
@@ -194,10 +194,14 @@ class InputWidget(QtWidgets.QWidget):
         self, path: str | Path | None = None
     ) -> _ImportDialogBase | None:
         if path is None:
+            # Directory of last opened file
+            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+            dir = str(Path(dir).parent) if dir is not None else ""
+
             path, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self,
                 "Open",
-                "",
+                dir,
                 (
                     "NP Data Files (*.csv *.info *.h5);;"
                     "CSV Documents(*.csv *.txt *.text);;Nu Instruments(*.info);;"
@@ -240,7 +244,7 @@ class InputWidget(QtWidgets.QWidget):
         self.drawGraph()
         self.updateLimits()
 
-        self.dataImported.emit()
+        self.dataLoaded.emit(options["path"])
 
     def saveTrimRegion(self) -> None:
         plot = next(iter(self.graph.plots.values()))
