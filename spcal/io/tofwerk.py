@@ -96,8 +96,9 @@ def integrate_tof_data(
     h5: h5py._hl.files.File, idx: np.ndarray | None = None
 ) -> np.ndarray:
     """Integrates TofData to recreate PeakData.
-    Returned data is in ions/extraction and can be divided by NbrWaveforms to
-    convert to ions/acquisition.
+    Returned data is in ions/extraction for compatibility with PeakData, it can be
+    converted to ions/acquisition by via * `factor_extraction_to_acquisition`.
+    Integration is summing from int(lower index limit) + 1 to int(upper index limit).
 
     Args:
         h5: opened h5 file
@@ -114,11 +115,9 @@ def integrate_tof_data(
     idx = np.asarray(idx)
 
     scale_factor = float(
-        (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)
-        / (
-            factor_extraction_to_acquisition(h5)
-            * h5["FullSpectra"].attrs["Single Ion Signal"]
-        )
+        (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)  # mV * index -> mV * ns
+        / h5["FullSpectra"].attrs["Single Ion Signal"]  # mV * ns -> ions
+        / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
     )
 
     lower = calibrate_mass_to_index(
@@ -127,9 +126,10 @@ def integrate_tof_data(
     upper = calibrate_mass_to_index(
         peak_table["upper integration limit"][idx], h5["FullSpectra"]
     )
-    indicies = np.stack((np.ceil(lower), np.floor(upper)), axis=1).astype(np.uint32)
+    indicies = np.stack((lower + 1, upper), axis=1).astype(np.uint32)
 
     peaks = np.empty((*tof_data.shape[:-1], lower.size), dtype=np.float32)
+    # This is slow since we need to acces many GB of info.
     for i, sample in enumerate(tof_data):
         peaks[i] = np.add.reduceat(sample, indicies.flat, axis=-1)[..., ::2]
 
@@ -143,45 +143,17 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
         path: path to .hdf archive
 
     Returns:
-        structured array of peak data in ions / acq
+        structured array of peak data in ions / acquisition
         information from the PeakTable
     """
     path = Path(path)
 
     with h5py.File(path, "r") as h5:
-        data = h5["PeakData"]["PeakData"][:]
+        data = h5["PeakData"]["PeakData"][()]
         data *= factor_extraction_to_acquisition(h5)
-        info = h5["PeakData"]["PeakTable"][:]
+        info = h5["PeakData"]["PeakTable"][()]
 
     names = [x.decode() for x in info["label"]]
     data = rfn.unstructured_to_structured(data.reshape(-1, data.shape[-1]), names=names)
 
     return data, info
-
-
-if __name__ == "__main__":
-
-    h5 = h5py.File("/home/tom/Downloads/Au_50nm NPs_2022-12-07_14h46m12s.h5", "r")
-
-    peaks = integrate_tof_data(h5, [44])
-    data, _ = read_tofwerk_file(
-        "/home/tom/Downloads/Au_50nm NPs_2022-12-07_14h46m12s.h5"
-    )
-    # np.save("peaks.npy", peaks)
-    # exit()
-
-    print(peaks.flat[:100], data.flat[:100])
-    assert np.all(np.isclose(peaks, data[0]))
-    # peaks = np.load("peaks.npy")
-    # for i, name in enumerate(data.dtype.names):
-    #     print(i, name)
-
-    import matplotlib.pyplot as plt
-
-    # print(data["[40Ar]+"] / peaks[..., 45].ravel())
-    print(np.ptp(data["[40Ar]+"] / peaks[..., 45].ravel()))
-
-    # print(peaks.shape)
-    plt.plot(peaks[..., 45].ravel()[:1000])
-    plt.plot(data["[40Ar]+"][:1000])
-    plt.show()
