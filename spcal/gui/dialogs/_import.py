@@ -13,6 +13,7 @@ from spcal.gui.util import Worker
 from spcal.gui.widgets import ElidedLabel, PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.io.text import read_single_particle_file
+from spcal.io.tofwerk import factor_extraction_to_acquisition, integrate_tof_data
 from spcal.npdb import db
 from spcal.siunits import time_units
 
@@ -488,13 +489,13 @@ class TofwerkImportDialog(_ImportDialogBase):
         # Get the masses from the file
         self.h5 = h5py.File(self.file_path, "r")
 
-        self.peaks = self.h5["PeakData"]["PeakTable"]
+        self.peak_labels = self.h5["PeakData"]["PeakTable"]["label"].astype("U256")
 
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
 
         isotopes = []
-        for label in self.peaks["label"]:
-            m = re_valid.match(label.decode())
+        for label in self.peak_labels:
+            m = re_valid.match(label)
             if m is not None:
                 isotopes.append(
                     db["isotopes"][
@@ -523,7 +524,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         )
         self.box_info.layout().addRow("Number Events:", QtWidgets.QLabel(str(events)))
         self.box_info.layout().addRow(
-            "Number Integrations:", QtWidgets.QLabel(str(len(self.peaks)))
+            "Number Integrations:", QtWidgets.QLabel(str(len(self.peak_labels)))
         )
         self.dwelltime.setBaseValue(
             np.around(
@@ -561,13 +562,17 @@ class TofwerkImportDialog(_ImportDialogBase):
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
         selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
-        selected_idx = np.in1d(self.peaks["label"].astype("U256"), selected_labels)
+        selected_idx = np.in1d(self.peak_labels, selected_labels)
 
         data = self.h5["PeakData"]["PeakData"][..., selected_idx]
-        data /= self.dwelltime.baseValue()
+        if "PeakData" not in self.h5["PeakData"]:
+            # Peaks do not exist, we must integrate ourselves.
+            data = integrate_tof_data(self.h5, selected_idx)
+
+        data *= factor_extraction_to_acquisition(self.h5)
 
         data = rfn.unstructured_to_structured(
-            data.reshape(-1, data.shape[-1]), names=selected_labels
+            data.reshape(-1, data.shape[-1]), names=self.peak_labels[selected_idx]
         )
 
         options = self.importOptions()
