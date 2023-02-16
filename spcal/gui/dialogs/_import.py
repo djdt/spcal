@@ -10,7 +10,12 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import Worker
-from spcal.gui.widgets import CheckableComboBox, ElidedLabel, PeriodicTableSelector, UnitsWidget
+from spcal.gui.widgets import (
+    CheckableComboBox,
+    ElidedLabel,
+    PeriodicTableSelector,
+    UnitsWidget,
+)
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import factor_extraction_to_acquisition, integrate_tof_data
