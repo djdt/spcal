@@ -567,6 +567,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         data = self.h5["PeakData"]["PeakData"][..., selected_idx]
         if "PeakData" not in self.h5["PeakData"]:
             # Peaks do not exist, we must integrate ourselves.
+            logger.warning("PeakData does not exist, integrating...")
             data = integrate_tof_data(self.h5, selected_idx)
 
         data *= factor_extraction_to_acquisition(self.h5)
