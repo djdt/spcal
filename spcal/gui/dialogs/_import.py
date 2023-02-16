@@ -477,14 +477,46 @@ class NuImportDialog(_ImportDialogBase):
             super().reject()
 
 
+class CheckableComboBox(QtWidgets.QComboBox):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setModel(QtGui.QStandardItemModel())
+
+        # self.model().itemChanged.connect(self.)
+
+    def addItem(self, text: str) -> None:
+        item = QtGui.QStandardItem(text)
+        item.setFlags(
+            QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsEnabled
+        )
+        item.setData(
+            QtCore.Qt.CheckState.Unchecked, QtCore.Qt.ItemDataRole.CheckStateRole
+        )
+        self.model().appendRow(item)
+
+    def addItems(self, texts: List[str]) -> None:
+        for text in texts:
+            self.addItem(text)
+
+    def checkedItems(self) -> List[str]:
+        checked = []
+        for row in range(self.model().rowCount()):
+            item = self.model().item(row)
+            if item.checkState() == QtCore.Qt.CheckState.Checked:
+                checked.append(item.text())
+        return checked
+
+
 class TofwerkImportDialog(_ImportDialogBase):
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
 
         super().__init__(path, "SPCal TOFWERK Import", parent)
 
-        self.progress = QtWidgets.QProgressBar()
-        self.aborted = False
-        self.running = False
+        # Could at some point add progress bar for redoing integration
+        # and a 'force reintegration' button.
+        # self.progress = QtWidgets.QProgressBar()
+        # self.aborted = False
+        # self.running = False
 
         # Get the masses from the file
         self.h5 = h5py.File(self.file_path, "r")
@@ -494,6 +526,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
 
         isotopes = []
+        other_peaks = []
         for label in self.peak_labels:
             m = re_valid.match(label)
             if m is not None:
@@ -503,10 +536,30 @@ class TofwerkImportDialog(_ImportDialogBase):
                         & (db["isotopes"]["Symbol"] == m.group(2))
                     ]
                 )
+            else:
+                other_peaks.append(label)
 
         self.table = PeriodicTableSelector(enabled_isotopes=np.array(isotopes))
         self.table.isotopesChanged.connect(self.completeChanged)
 
+        self.combo_other_peaks = CheckableComboBox()
+        self.combo_other_peaks.addItems(other_peaks)
+        self.other_peaks_item = QtGui.QStandardItem("0 Selected")
+
+        self.combo_other_peaks.model().itemChanged.connect(
+            lambda: self.other_peaks_item.setText(
+                f"{len(self.combo_other_peaks.checkedItems())} Selected"
+            )
+        )
+        self.combo_other_peaks.model().insertRow(0, self.other_peaks_item)
+        self.combo_other_peaks.setCurrentIndex(0)
+        if len(other_peaks) == 0:
+            self.combo_other_peaks.setEnabled(False)
+
+        self.box_options.layout().addRow(
+            "Additional Peaks:",
+            self.combo_other_peaks,
+        )
         self.layout_body.addWidget(self.table, 1)
         # self.layout_body.addWidget(self.progress, 0)
 
@@ -562,6 +615,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
         selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
+        selected_labels.extend(self.combo_other_peaks.checkedItems())
         selected_idx = np.in1d(self.peak_labels, selected_labels)
 
         data = self.h5["PeakData"]["PeakData"][..., selected_idx]
