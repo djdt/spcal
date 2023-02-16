@@ -10,7 +10,7 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import Worker
-from spcal.gui.widgets import ElidedLabel, PeriodicTableSelector, UnitsWidget
+from spcal.gui.widgets import CheckableComboBox, ElidedLabel, PeriodicTableSelector, UnitsWidget
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import factor_extraction_to_acquisition, integrate_tof_data
@@ -475,36 +475,6 @@ class NuImportDialog(_ImportDialogBase):
             self.abort()
         else:
             super().reject()
-
-
-class CheckableComboBox(QtWidgets.QComboBox):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.setModel(QtGui.QStandardItemModel())
-
-        # self.model().itemChanged.connect(self.)
-
-    def addItem(self, text: str) -> None:
-        item = QtGui.QStandardItem(text)
-        item.setFlags(
-            QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsEnabled
-        )
-        item.setData(
-            QtCore.Qt.CheckState.Unchecked, QtCore.Qt.ItemDataRole.CheckStateRole
-        )
-        self.model().appendRow(item)
-
-    def addItems(self, texts: List[str]) -> None:
-        for text in texts:
-            self.addItem(text)
-
-    def checkedItems(self) -> List[str]:
-        checked = []
-        for row in range(self.model().rowCount()):
-            item = self.model().item(row)
-            if item.checkState() == QtCore.Qt.CheckState.Checked:
-                checked.append(item.text())
-        return checked
 
 
 class TofwerkImportDialog(_ImportDialogBase):

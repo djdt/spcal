@@ -1,4 +1,5 @@
 from .adjustingtextedit import AdjustingTextEdit
+from .checkablecombobox import CheckableComboBox
 from .elidedlabel import ElidedLabel
 from .periodictable import PeriodicTableSelector
 from .units import UnitsWidget
