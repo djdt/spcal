@@ -45,25 +45,32 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         else:
             raise ValueError("HistogramOptionsDialog: unknown fit")
 
+        sf = QtCore.QSettings().value("sigfigs", 4)
         color = self.palette().color(QtGui.QPalette.Base)
+
         self.width_signal = UnitsWidget(
             signal_units,
-            value=self.bin_widths["signal"],
+            base_value=self.bin_widths["signal"],
             color_invalid=color,
             validator=QtGui.QIntValidator(0, 999999999),
         )
         self.width_mass = UnitsWidget(
             mass_units,
-            value=self.bin_widths["mass"],
+            base_value=self.bin_widths["mass"],
             color_invalid=color,
+            significant_figures=sf,
         )
         self.width_size = UnitsWidget(
-            size_units, value=self.bin_widths["size"], color_invalid=color
+            size_units,
+            base_value=self.bin_widths["size"],
+            color_invalid=color,
+            significant_figures=sf,
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
-            value=self.bin_widths["cell_concentration"],
+            base_value=self.bin_widths["cell_concentration"],
             color_invalid=color,
+            significant_figures=sf,
         )
 
         for widget in [
