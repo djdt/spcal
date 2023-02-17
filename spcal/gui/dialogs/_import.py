@@ -18,7 +18,7 @@ from spcal.gui.widgets import (
 )
 from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
 from spcal.io.text import read_single_particle_file
-from spcal.io.tofwerk import factor_extraction_to_acquisition, integrate_tof_data
+from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.npdb import db
 from spcal.siunits import time_units
 
@@ -482,21 +482,62 @@ class NuImportDialog(_ImportDialogBase):
             super().reject()
 
 
+class TofwerkIntegrationThread(QtCore.QThread):
+    integrationStarted = QtCore.Signal(int)
+    sampleIntegrated = QtCore.Signal()
+    integrationComplete = QtCore.Signal(np.ndarray)
+
+    def __init__(
+        self,
+        h5: h5py._hl.files.File,
+        idx: np.ndarray,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent=parent)
+        peak_table = h5["PeakData"]["PeakTable"]
+        lower = calibrate_mass_to_index(
+            peak_table["lower integration limit"][idx], h5["FullSpectra"]
+        )
+        upper = calibrate_mass_to_index(
+            peak_table["upper integration limit"][idx], h5["FullSpectra"]
+        )
+        self.scale_factor = float(
+            (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)  # mV * index -> mV * ns
+            / h5["FullSpectra"].attrs["Single Ion Signal"]  # mV * ns -> ions
+            / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
+        )
+
+        self.tof_data = h5["FullSpectra"]["TofData"]
+        self.indicies = np.stack((lower + 1, upper), axis=1).astype(np.uint32)
+
+    def run(self) -> None:
+        data = np.empty(
+            (*self.tof_data.shape[:-1], self.indicies.shape[0]),
+            dtype=np.float32,
+        )
+        self.integrationStarted.emit(data.shape[0])
+        for i, sample in enumerate(self.tof_data):
+            if self.isInterruptionRequested():
+                return
+            data[i] = np.add.reduceat(sample, self.indicies.flat, axis=-1)[..., ::2]
+            self.sampleIntegrated.emit()
+        data *= self.scale_factor
+        self.integrationComplete.emit(data)
+
+
 class TofwerkImportDialog(_ImportDialogBase):
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
 
         super().__init__(path, "SPCal TOFWERK Import", parent)
 
-        # Could at some point add progress bar for redoing integration
-        # and a 'force reintegration' button.
-        # self.progress = QtWidgets.QProgressBar()
-        # self.aborted = False
-        # self.running = False
+        # Worker doesn't work as h5py locks
+        self.thread: TofwerkIntegrationThread | None = None
+        self.progress = QtWidgets.QProgressBar()
 
         # Get the masses from the file
         self.h5 = h5py.File(self.file_path, "r")
-
         self.peak_labels = self.h5["PeakData"]["PeakTable"]["label"].astype("U256")
+        self.selected_idx = np.array([])
 
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
 
@@ -531,12 +572,20 @@ class TofwerkImportDialog(_ImportDialogBase):
         if len(other_peaks) == 0:
             self.combo_other_peaks.setEnabled(False)
 
+        self.check_force_integrate = QtWidgets.QCheckBox("Force peak integration")
+        self.check_force_integrate.setToolTip(
+            "Reintegrate tofdata even if peakdata exists. Slow!"
+        )
+
         self.box_options.layout().addRow(
             "Additional Peaks:",
             self.combo_other_peaks,
         )
+        self.box_options.layout().addRow(
+            self.check_force_integrate,
+        )
         self.layout_body.addWidget(self.table, 1)
-        # self.layout_body.addWidget(self.progress, 0)
+        self.layout_body.addWidget(self.progress, 0)
 
         events = int(
             self.h5.attrs["NbrWrites"]
@@ -577,34 +626,43 @@ class TofwerkImportDialog(_ImportDialogBase):
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
         self.dwelltime.setEnabled(enabled)
-
-    # def abort(self) -> None:
-    #     self.aborted = True
-    #     self.threadpool.waitForDone()
-    #     self.progress.reset()
-    #     self.running = False
-
-    #     self.setControlsEnabled(True)
+        self.combo_other_peaks.setEnabled(enabled)
 
     def accept(self) -> None:
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
         selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
         selected_labels.extend(self.combo_other_peaks.checkedItems())
-        selected_idx = np.in1d(self.peak_labels, selected_labels)
+        self.selected_idx = np.flatnonzero(np.in1d(self.peak_labels, selected_labels))
 
-        data = self.h5["PeakData"]["PeakData"][..., selected_idx]
-        if "PeakData" not in self.h5["PeakData"]:
-            # Peaks do not exist, we must integrate ourselves.
+        if (
+            "PeakData" not in self.h5["PeakData"]
+            or self.check_force_integrate.isChecked()
+        ):
             logger.warning("PeakData does not exist, integrating...")
-            data = integrate_tof_data(self.h5, selected_idx)
+            self.progress.setValue(0)
+            self.progress.setFormat("Integrating... %p%")
+            self.setControlsEnabled(False)
 
+            self.thread = TofwerkIntegrationThread(
+                self.h5, self.selected_idx, parent=self
+            )
+            self.thread.integrationStarted.connect(self.progress.setMaximum)
+            self.thread.sampleIntegrated.connect(
+                lambda: self.progress.setValue(self.progress.value() + 1)
+            )
+            self.thread.integrationComplete.connect(self.finalise)
+            self.thread.start()
+            # Peaks do not exist, we must integrate ourselves.
+        else:
+            data = self.h5["PeakData"]["PeakData"][..., self.selected_idx]
+            self.finalise(data)
+
+    def finalise(self, data: np.ndarray) -> None:
         data *= factor_extraction_to_acquisition(self.h5)
-
         data = rfn.unstructured_to_structured(
-            data.reshape(-1, data.shape[-1]), names=self.peak_labels[selected_idx]
+            data.reshape(-1, data.shape[-1]), names=self.peak_labels[self.selected_idx]
         )
-
         options = self.importOptions()
         self.dataImported.emit(data, options)
 
@@ -615,4 +673,9 @@ class TofwerkImportDialog(_ImportDialogBase):
         super().accept()
 
     def reject(self) -> None:
-        super().reject()
+        if self.thread is not None and self.thread.isRunning():
+            self.thread.requestInterruption()
+            self.progress.reset()
+            self.setControlsEnabled(True)
+        else:
+            super().reject()
