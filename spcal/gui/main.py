@@ -241,7 +241,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
         if path.suffix.lower() == ".csv":
             header = " ".join(name for name in names)
             np.savetxt(
-                path, self.sample.responses, delimiter=" ", comments="", header=header
+                path,
+                self.sample.responses,
+                delimiter="\t",
+                comments="",
+                header=header,
+                fmt="%.16g",
             )
         elif path.suffix.lower() == ".npz":
             np.savez_compressed(
