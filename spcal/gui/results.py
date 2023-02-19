@@ -14,9 +14,9 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
-from spcal.gui.graphs.base import MultiPlotGraphicsView
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.plots import HistogramPlotItem
-from spcal.gui.graphs.views import CompositionView, ScatterView
+from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -80,9 +80,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph_hist = MultiPlotGraphicsView()
+        self.graph_hist = HistogramView()
         self.graph_composition = CompositionView()
         self.graph_scatter = ScatterView()
+        # self.graph_pca = PCAView()
 
         self.combo_scatter_x = QtWidgets.QComboBox()
         self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
@@ -336,7 +337,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.drawGraphScatter()
 
     def drawGraphHist(self) -> None:
-        self.graph_hist.clear()
+        self.graph_hist.plot.clear()
         mode = self.mode.currentText()
 
         label, unit, modifier = self.mode_labels[mode]
@@ -397,21 +398,16 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             bins -= bins[0] % bin_width  # align bins
             if self.graph_options["histogram"]["mode"] == "overlay":
-                plot_name = "Overlay"
                 width = 1.0 / len(graph_data)
                 offset = i * width
             elif self.graph_options["histogram"]["mode"] == "single":
-                plot_name = name
                 width = 1.0
                 offset = 0.0
             else:
                 raise ValueError("drawGraphHist: invalid draw mode")
 
-            if plot_name not in self.graph_hist.plots:
-                plot = HistogramPlotItem(plot_name, xlabel=label, xunit=unit)
-                self.graph_hist.addPlot(plot_name, plot, xlink=True)
-            plot = self.graph_hist.plots[plot_name]
-            hist, centers = plot.drawData(  # type: ignore
+            self.graph_hist.xaxis.setLabel(text=label, units=unit)
+            hist, centers = self.graph_hist.drawData(  # type: ignore
                 name,
                 graph_data[name] * modifier,
                 bins=bins,
@@ -439,14 +435,14 @@ class ResultsWidget(QtWidgets.QWidget):
                 ys = ys * bin_width * graph_data[name].size
                 pen = QtGui.QPen(color, 1.0)
                 pen.setCosmetic(True)
-                plot.drawFit(xs, ys, pen=pen, name=name, visible=visible)
+                self.graph_hist.drawFit(xs, ys, pen=pen, name=name, visible=visible)
 
             # Draw all the limits
             pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
             pen.setCosmetic(True)
 
             if lods[name] is not None:
-                plot.drawLimit(
+                self.graph_hist.drawLimit(
                     np.mean(lods[name]),
                     "LOD",
                     pos=0.95,
@@ -455,7 +451,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     visible=visible,
                 )
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-            plot.drawLimit(
+            self.graph_hist.drawLimit(
                 np.mean(graph_data[name]),
                 "mean",
                 pos=0.95,
@@ -463,7 +459,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 name=name,
                 visible=visible,
             )
-        self.graph_hist.setDataLimits(xMax=1.0, yMax=1.05)
+        self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
         self.graph_hist.zoomReset()
 
     def drawGraphCompositions(self) -> None:

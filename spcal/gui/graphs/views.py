@@ -1,14 +1,19 @@
-from typing import List
+from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.base import MultiPlotGraphicsView, SinglePlotGraphicsView
+from spcal.gui.graphs.base import (
+    MultiPlotGraphicsView,
+    PlotCurveItemFix,
+    SinglePlotGraphicsView,
+)
 from spcal.gui.graphs.items import PieChart
-from spcal.gui.graphs.legends import StaticRectItemSample
+from spcal.gui.graphs.legends import HistogramItemSample, StaticRectItemSample
 from spcal.gui.graphs.plots import ParticlePlotItem
+from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
 class CompositionView(SinglePlotGraphicsView):
@@ -50,9 +55,7 @@ class CompositionView(SinglePlotGraphicsView):
         spacing = size * 2.0
 
         for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
-            pie = PieChart(
-                radius, rfn.structured_to_unstructured(comp), brushes
-            )
+            pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
             pie.setPos(i * spacing, 0)
             label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
             label.setPos(i * spacing, -size)
@@ -231,32 +234,114 @@ class ScatterView(SinglePlotGraphicsView):
         self.plot.addItem(curve)
 
 
-# class HistogramView(MultiPlotGraphicsView):
-#     #     def getHistogramPlot(self, name: str, **add_kws) -> HistogramPlotItem:
-#     #         if name not in self.plots:
-#     #             return self.addHistogramPlot(name, **add_kws)
-#     #         return self.plots[name]
+class HistogramView(SinglePlotGraphicsView):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(
+            "Histogram",
+            xlabel="Signal (counts)",
+            ylabel="No. Events",
+            viewbox=ViewBoxForceScaleAtZero(),
+            parent=parent,
+        )
+        self.plot.setLimits(xMin=0.0, yMin=0.0)
 
-#     def addPlot(
-#         self,
-#         name: str,
-#         xlabel: str = "",
-#         xunit: str = "",
-#         **kwargs,
-#     ) -> HistogramPlotItem:
-#         plot = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
-#         super().addPlot(name, plot, xlink=True, **kwargs)
-#         return plot
+        self.legend_items: Dict[str, HistogramItemSample] = {}
 
-#     self.plots[name] = HistogramPlotItem(name=name, xlabel=xlabel, xunit=xunit)
-#     self.plots[name].setXLink(self.layout.getItem(0, 0))
-#     # self.plots[name].setYLink(self.layout.getItem(0, 0))
+    def clear(self) -> None:
+        self.legend_items.clear()
+        super().clear()
 
-#     self.layout.addItem(self.plots[name])
-#     self.layout.nextRow()
-#     self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+    def drawData(
+        self,
+        name: str,
+        data: np.ndarray,
+        bins: str | np.ndarray = "auto",
+        bar_width: float = 0.5,
+        bar_offset: float = 0.0,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.black)
 
-#     return self.plots[name]
+        assert bar_width > 0.0 and bar_width <= 1.0
+        assert bar_offset >= 0.0 and bar_offset < 1.0
+
+        hist, edges = np.histogram(data, bins)
+        widths = np.diff(edges)
+
+        x = np.repeat(edges, 2)
+
+        # Calculate bar start and end points for width / offset
+        x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
+        x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
+
+        y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
+        y[1:-1:2] = hist
+
+        curve = PlotCurveItemFix(
+            x=x,
+            y=y,
+            stepMode="center",
+            fillLevel=0,
+            fillOutline=True,
+            pen=pen,
+            brush=brush,
+            skipFiniteCheck=True,
+        )
+
+        self.plot.addItem(curve)
+        self.legend_items[name] = HistogramItemSample(curve)
+        self.plot.legend.addItem(self.legend_items[name], name)
+
+        return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
+
+    def drawFit(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        name: str | None = None,
+        pen: QtGui.QPen | None = None,
+        visible: bool = True,
+    ) -> None:
+
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        curve = pyqtgraph.PlotCurveItem(
+            x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True
+        )
+        curve.setVisible(visible)
+        self.plot.addItem(curve)
+        if name is not None:
+            self.legend_items[name].setFit(curve)
+            self.plot.legend.updateSize()
+
+    def drawLimit(
+        self,
+        limit: float,
+        label: str,
+        name: str | None = None,
+        pos: float = 0.95,
+        pen: QtGui.QPen | None = None,
+        visible: bool = True,
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 2.0, QtCore.Qt.PenStyle.DashLine)
+            pen.setCosmetic(True)
+
+        line = pyqtgraph.InfiniteLine(
+            limit, label=label, labelOpts={"position": pos, "color": "black"}, pen=pen
+        )
+        line.setVisible(visible)
+        if name is not None:
+            self.legend_items[name].addLimit(line)
+            self.plot.legend.updateSize()
+        self.plot.addItem(line)
 
 
 class ParticleView(MultiPlotGraphicsView):

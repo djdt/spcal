@@ -151,6 +151,7 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
         title: str,
         xlabel: str,
         ylabel: str,
+        viewbox: pyqtgraph.ViewBox | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent=parent)
@@ -168,6 +169,7 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
             title=title,
             name="central_plot",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            viewBox=viewbox,
             parent=parent,
         )
         self.plot.hideButtons()
@@ -185,12 +187,53 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
     def legends(self) -> List[pyqtgraph.LegendItem]:
         return [self.plot.legend]
 
-    def zoomReset(self) -> None:
-        self.plot.setRange(
-            xRange=self.plot.vb.state["limits"]["xLimits"],
-            yRange=self.plot.vb.state["limits"]["yLimits"],
-            disableAutoRange=False,
+    def dataBounds(self) -> Tuple[float, float, float, float]:
+        items = [item for item in self.plot.listDataItems() if item.isVisible()]
+        bx = np.asarray([item.dataBounds(0) for item in items])
+        by = np.asarray([item.dataBounds(1) for item in items])
+        return (
+            np.amin(bx[:, 0]),
+            np.amax(bx[:, 1]),
+            np.amin(by[:, 0]),
+            np.amax(by[:, 1]),
         )
+
+    def dataRect(self) -> QtCore.QRectF:
+        x0, x1, y0, y1 = self.dataBounds()
+        return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
+
+    def setLimits(self, **kwargs) -> None:
+        self.plot.setLimits(**kwargs)
+
+    def setDataLimits(
+        self,
+        xMin: float | None = None,
+        xMax: float | None = None,
+        yMin: float | None = None,
+        yMax: float | None = None,
+    ) -> None:
+        """Set all plots limits in range 0.0 - 1.0."""
+        bounds = self.dataBounds()
+        dx = bounds[1] - bounds[0]
+        dy = bounds[3] - bounds[2]
+        limits = {}
+        if xMin is not None:
+            limits["xMin"] = bounds[0] + dx * xMin
+        if xMax is not None:
+            limits["xMax"] = bounds[0] + dx * xMax
+        if yMin is not None:
+            limits["yMin"] = bounds[2] + dy * yMin
+        if yMax is not None:
+            limits["yMax"] = bounds[2] + dy * yMax
+        self.setLimits(**limits)
+
+    def zoomReset(self) -> None:
+        self.plot.autoRange()
+        # self.plot.setRange(
+        #     xRange=self.plot.vb.state["limits"]["xLimits"],
+        #     yRange=self.plot.vb.state["limits"]["yLimits"],
+        #     disableAutoRange=False,
+        # )
 
 
 class MultiPlotGraphicsView(SPCalGraphicsView):
@@ -247,21 +290,8 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
     def setLimits(self, **kwargs) -> None:
-        # self.limits = limits
         for plot in self.plots.values():
             plot.setLimits(**kwargs)
-
-    def limitRect(self) -> QtCore.QRectF:
-        rect = self.dataRect()
-        if "xMin" in self.limits:
-            rect.setLeft(self.limits["xMin"])
-        if "xMax" in self.limits:
-            rect.setRight(self.limits["xMax"])
-        if "yMin" in self.limits:
-            rect.setBottom(self.limits["yMin"])
-        if "yMax" in self.limits:
-            rect.setTop(self.limits["yMax"])
-        return rect
 
     def setDataLimits(
         self,
@@ -315,14 +345,6 @@ class MultiPlotGraphicsView(SPCalGraphicsView):
     def legends(self) -> List[pyqtgraph.LegendItem]:
         return [plot.legend for plot in self.plots.values()]
 
-    def bounds(self) -> None:
-        rect = QtCore.QRectF()
-        for plot in self.plots.values():
-            rect = rect.united(plot.vb.childrenBoundingRect())
-        return rect
-
     def zoomReset(self) -> None:
-        # rect = self.bounds()
         for plot in self.plots.values():
             plot.autoRange()
-            # plot.vb.setRange(rect)
