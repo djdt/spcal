@@ -1,5 +1,6 @@
 """Misc and helper calculation functions."""
 from bisect import bisect_left, insort
+from typing import Tuple
 
 import numpy as np
 
@@ -108,3 +109,28 @@ def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> fl
 
     i = np.argmax(w1[:-1] * w2[1:] * (u1[:-1] - u2[1:]) ** 2)
     return bin_centers[i]
+
+
+def pca(
+    x: np.ndarray, trim_to_components: int = 2
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def standardise(x: np.ndarray) -> np.ndarray:
+        return (x - x.mean(axis=0)) / x.std(axis=0)
+
+    x = standardise(x)
+    # evalues, evectors = np.linalg.eig(cov)
+    u, s, v = np.linalg.svd(x, full_matrices=False)
+
+    # ensure determenistic, see scikit-learn's svd_flip
+    sign = np.sign(u[np.argmax(np.abs(u), axis=0), np.arange(u.shape[1])])
+    u *= sign
+    v *= sign[:, None]
+
+    explained_variance = s**2 / x.shape[0]
+    explained_variance = explained_variance / np.sum(explained_variance)
+
+    return (
+        u[:trim_to_components] * s[:trim_to_components],
+        v[:trim_to_components],
+        explained_variance[:trim_to_components],
+    )
