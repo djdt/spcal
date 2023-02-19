@@ -143,7 +143,7 @@ class UnitsWidget(QtWidgets.QWidget):
     def setBestUnit(self) -> str:
         base = self.baseValue()
         if base is not None:
-            idx = np.amax(np.searchsorted(list(self._units.values()), base) - 1, 0)
+            idx = max(np.searchsorted(list(self._units.values()), base) - 1, 0)
             self.combo.setCurrentIndex(idx)
         return self.combo.currentText()
 
