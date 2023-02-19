@@ -130,7 +130,7 @@ def pca(
     explained_variance = explained_variance / np.sum(explained_variance)
 
     return (
-        u[:trim_to_components] * s[:trim_to_components],
+        u[:, :trim_to_components] * s[:trim_to_components],
         v[:trim_to_components],
         explained_variance[:trim_to_components],
     )
