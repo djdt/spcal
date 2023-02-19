@@ -1,21 +1,12 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
-import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
+from spcal.calc import pca
 from spcal.gui.graphs.base import PlotCurveItemFix, SinglePlotGraphicsView
-from spcal.gui.graphs.items import PieChart
-from spcal.gui.graphs.legends import (
-    HistogramItemSample,
-    MultipleItemSampleProxy,
-    StaticRectItemSample,
-)
-
-# from spcal.gui.graphs.plots import ParticlePlotItem
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
+from spcal.gui.graphs.legends import MultipleItemSampleProxy
 
 
 class ResponseView(SinglePlotGraphicsView):
@@ -308,12 +299,21 @@ class ParticleView(SinglePlotGraphicsView):
 
 class PCAView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(xlabel="PC 1", ylabel="PC 2", parent=parent)
+        super().__init__("PCA", xlabel="PC 1", ylabel="PC 2", parent=parent)
 
-    def drawPCA(self, x: np.ndarray, y: np.ndarray) -> None:
+    def draw(self, X: np.ndarray, brush: QtGui.QBrush | None = None) -> None:
+        a, v, _ = pca(X, 2)
+
+        scatter = pyqtgraph.ScatterPlotItem(x=a[:, 0], y=a[:, 1], pen=None, brush=brush)
+        self.plot.addItem(scatter)
+
+
+    def drawPCA(
+        self, x: np.ndarray, y: np.ndarray, brush: QtGui.QBrush | None = None
+    ) -> None:
         self.plot.clear()
 
-        scatter = pyqtgraph.ScatterPlotItem(
-            x=x,
-            y=y,
-        )
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.black)
+
+        scatter = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=None, brush=brush)

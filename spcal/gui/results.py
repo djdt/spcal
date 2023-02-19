@@ -14,7 +14,7 @@ from spcal.gui.dialogs.graphoptions import (
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
-from spcal.gui.graphs.views import ScatterView
+from spcal.gui.graphs.views import PCAView, ScatterView, SinglePlotGraphicsView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -81,7 +81,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_hist = HistogramView()
         self.graph_composition = CompositionView()
         self.graph_scatter = ScatterView()
-        # self.graph_pca = PCAView()
+        self.graph_pca = PCAView()
 
         self.combo_scatter_x = QtWidgets.QComboBox()
         self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
@@ -118,6 +118,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.addWidget(self.graph_hist)
         self.graph_stack.addWidget(self.graph_composition)
         self.graph_stack.addWidget(self.scatter_widget)
+        self.graph_stack.addWidget(self.graph_pca)
 
         self.io = ResultIOStack()
         self.io.nameChanged.connect(self.updateGraphsForName)
@@ -158,7 +159,7 @@ class ResultsWidget(QtWidgets.QWidget):
             checkable=True,
         )
         self.action_graph_histogram.setChecked(True)
-        self.action_graph_histogram_stacked = create_action(
+        self.action_graph_histogram_single = create_action(
             "object-rows",
             "Stacked Histograms",
             "Single histogram per result.",
@@ -181,6 +182,13 @@ class ResultsWidget(QtWidgets.QWidget):
             "Scatter",
             "Create scatter plots of elements.",
             lambda: self.graph_stack.setCurrentWidget(self.scatter_widget),
+            checkable=True,
+        )
+        self.action_graph_pca = create_action(
+            "office-chart-pca",
+            "PCA",
+            "Create PCA plot of detections.",
+            lambda: self.graph_stack.setCurrentWidget(self.graph_pca),
             checkable=True,
         )
 
@@ -207,9 +215,10 @@ class ResultsWidget(QtWidgets.QWidget):
 
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_histogram)
-        action_group_graph_view.addAction(self.action_graph_histogram_stacked)
+        action_group_graph_view.addAction(self.action_graph_histogram_single)
         action_group_graph_view.addAction(self.action_graph_compositions)
         action_group_graph_view.addAction(self.action_graph_scatter)
+        action_group_graph_view.addAction(self.action_graph_pca)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
 
         self.graph_toolbar.addSeparator()
@@ -333,6 +342,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.results) > 1:
             self.drawGraphCompositions()
             self.drawGraphScatter()
+            self.drawGraphPCA()
 
     def drawGraphHist(self) -> None:
         self.graph_hist.plot.clear()
@@ -461,6 +471,32 @@ class ResultsWidget(QtWidgets.QWidget):
             min_size=self.graph_options["composition"]["minimum size"],
             brushes=brushes,
         )
+
+    def drawGraphPCA(self) -> None:
+        self.graph_pca.clear()
+
+        mode = self.mode.currentText()
+
+        label, unit, modifier = self.mode_labels[mode]
+        key = self.mode_keys[mode]
+        # bin_width = self.graph_options["histogram"]["bin widths"][key]
+
+        graph_data = {}
+        # X = np.empty(next(iter(self.results.values())).detections["signal"].keys, self.results.)
+        for name, result in self.results.items():
+            if key not in result.detections:
+                continue
+            graph_data[name] = result.detections[key]
+            # graph_data[name] = np.clip(  # Remove outliers
+            #     graph_data[name], 0.0, np.percentile(graph_data[name], 95)
+            # )
+
+        X = np.stack(graph_data.values(), axis=1)
+
+        brush = QtGui.QBrush(QtCore.Qt.black)
+
+        self.graph_pca.draw(X, brush=brush)
+        self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
 
     def drawGraphScatter(self) -> None:
         self.graph_scatter.clear()
@@ -694,7 +730,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # Only enable composition view and stack if more than one element
         single_result = len(self.results) == 1
         self.action_graph_compositions.setEnabled(not single_result)
-        self.action_graph_histogram_stacked.setEnabled(not single_result)
+        self.action_graph_histogram_single.setEnabled(not single_result)
         self.action_graph_scatter.setEnabled(not single_result)
         if single_result:  # Switch to histogram
             self.action_graph_histogram.trigger()
