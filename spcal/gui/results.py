@@ -479,17 +479,25 @@ class ResultsWidget(QtWidgets.QWidget):
 
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
-        # bin_width = self.graph_options["histogram"]["bin widths"][key]
+
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in self.results.values():
+            valid[result.indicies] = True
+
+        num_valid = np.count_nonzero(valid)
+        if num_valid == 0:
+            return
 
         graph_data = {}
-        # X = np.empty(next(iter(self.results.values())).detections["signal"].keys, self.results.)
         for name, result in self.results.items():
             if key not in result.detections:
                 continue
-            graph_data[name] = result.detections[key]
-            # graph_data[name] = np.clip(  # Remove outliers
-            #     graph_data[name], 0.0, np.percentile(graph_data[name], 95)
-            # )
+            graph_data[name] = result.detections[key][valid]
+            # no need to use modifier, normalised
+
+        if len(graph_data) < 2:
+            return
 
         X = np.stack(graph_data.values(), axis=1)
 
