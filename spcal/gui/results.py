@@ -5,7 +5,6 @@ from typing import Any, Callable, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
@@ -13,9 +12,9 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
-
-from spcal.gui.graphs.views import CompositionView, ScatterView
+from spcal.gui.graphs.views import ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -134,7 +133,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.mode.setItemData(
             3,
-            "Intracellular concentration, requires cell diameter and analyte molarmass.",
+            "Intracellular concentration, requires cell diameter and molarmass.",
             QtCore.Qt.ToolTipRole,
         )
         self.mode.setCurrentText("Signal")
@@ -433,13 +432,11 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        # self.graph_composition.plot.setTitle(f"{label} Composition")
+        self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        # Save names order to preserve colors
-        names = list(self.results.keys())
-
-        # Get list of any un filter detection
-        valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
+        # Get list of all unfiltered detections
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
         for result in self.results.values():
             valid[result.indicies] = True
 
@@ -457,48 +454,13 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) == 0:
             return
 
-        fractions = prepare_data_for_clustering(graph_data)
-
-        if fractions.shape[0] == 1:  # single peak
-            means, counts = fractions, np.array([1])
-        elif fractions.shape[1] == 1:  # single element
-            means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
-        else:
-            means, stds, counts = agglomerative_cluster(
-                fractions, self.graph_options["composition"]["distance"]
-            )
-
-        compositions = np.empty(
-            counts.size, dtype=[(name, np.float64) for name in graph_data]
+        brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
+        self.graph_composition.draw(
+            graph_data,
+            distance=self.graph_options["composition"]["distance"],
+            min_size=self.graph_options["composition"]["minimum size"],
+            brushes=brushes,
         )
-        for i, name in enumerate(graph_data):
-            compositions[name] = means[:, i]
-
-        size = self.graph_options["composition"]["minimum size"]
-        # Get minimum size as number
-        if isinstance(size, str) and size.endswith("%"):
-            size = fractions.shape[0] * float(size.rstrip("%")) / 100.0
-        elif isinstance(size, str | float):
-            size = float(size)
-        else:
-            raise ValueError("drawGraphFractions: size is neither float nor a % str")
-
-        mask = counts > size
-        compositions = compositions[mask]
-        counts = counts[mask]
-
-        if counts.size == 0:
-            return
-
-        brushes = []
-
-        assert compositions.dtype.names is not None
-        for name in compositions.dtype.names:
-            color = self.colorForName(name)
-            brushes.append(QtGui.QBrush(color))
-
-        self.graph_composition.drawData(compositions, counts, brushes=brushes)
-        # self.graph_composition.drawTitle(compositions, counts, brushes=brushes)
 
     def drawGraphScatter(self) -> None:
         self.graph_scatter.clear()
