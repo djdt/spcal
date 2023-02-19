@@ -6,7 +6,6 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
-from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
@@ -14,9 +13,9 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
-from spcal.gui.graphs.base import SinglePlotGraphicsView
-# from spcal.gui.graphs.plots import HistogramPlotItem
-from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
+from spcal.gui.graphs.histogram import HistogramView
+
+from spcal.gui.graphs.views import CompositionView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -345,21 +344,19 @@ class ResultsWidget(QtWidgets.QWidget):
         bin_width = self.graph_options["histogram"]["bin widths"][key]
 
         graph_data = {}
-        lods = {}
-        for name, result in self.results.items():
-            if (
-                self.graph_options["histogram"]["mode"] == "single"
-                and name != self.io.combo_name.currentText()
-            ):
+        names = (
+            [self.io.combo_name.currentText()]
+            if self.graph_options["histogram"]["mode"] == "single"
+            else self.results.keys()
+        )
+        for name in names:
+            indices = self.results[name].indicies
+            if indices.size < 2 or key not in self.results[name].detections:
                 continue
-            indices = result.indicies
-            if indices.size < 2 or key not in result.detections:
-                continue
-            graph_data[name] = result.detections[key][indices]
+            graph_data[name] = self.results[name].detections[key][indices]
             graph_data[name] = np.clip(  # Remove outliers
                 graph_data[name], 0.0, np.percentile(graph_data[name], 95)
             )
-            lods[name] = result.convertTo(result.limits.detection_threshold, key)
 
         if len(graph_data) == 0:
             return
@@ -389,12 +386,10 @@ class ResultsWidget(QtWidgets.QWidget):
             bin_width = data_range / min_bins
         bin_width *= modifier  # convert to base unit (kg -> g)
 
-        for i, name in enumerate(graph_data):
+        for i, (name, data) in enumerate(graph_data.items()):
             color = self.colorForName(name)
             bins = np.arange(
-                graph_data[name].min() * modifier,
-                graph_data[name].max() * modifier + bin_width,
-                bin_width,
+                data.min() * modifier, data.max() * modifier + bin_width, bin_width
             )
             bins -= bins[0] % bin_width  # align bins
             if self.graph_options["histogram"]["mode"] == "overlay":
@@ -406,59 +401,27 @@ class ResultsWidget(QtWidgets.QWidget):
             else:
                 raise ValueError("drawGraphHist: invalid draw mode")
 
+            lod = self.results[name].convertTo(
+                self.results[name].limits.detection_threshold, key
+            )
+
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
-            hist, centers = self.graph_hist.drawData(  # type: ignore
-                name,
-                graph_data[name] * modifier,
+            self.graph_hist.draw(
+                data * modifier,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,
                 brush=QtGui.QBrush(color),
-            )
-
-            visible = not self.graph_options["histogram"]["mode"] == "overlay"
-            if self.graph_options["histogram"]["fit"] is not None:
-                hist = hist / bin_width / graph_data[name].size
-                xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
-                if self.graph_options["histogram"]["fit"] == "normal":
-                    fit = fit_normal(centers, hist)[2]
-                    ys = normal_pdf(xs * fit[2], fit[0], fit[1])
-                elif self.graph_options["histogram"]["fit"] == "log normal":
-                    fit = fit_lognormal(centers, hist)[2]
-                    ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
-                else:
-                    raise ValueError(
-                        "drawGraphHist: unknown fit "
-                        f"{self.graph_options['histogram']['fit']}"
-                    )
-
-                ys = ys * bin_width * graph_data[name].size
-                pen = QtGui.QPen(color, 1.0)
-                pen.setCosmetic(True)
-                self.graph_hist.drawFit(xs, ys, pen=pen, name=name, visible=visible)
-
-            # Draw all the limits
-            pen = QtGui.QPen(color, 2.0, QtCore.Qt.PenStyle.DotLine)
-            pen.setCosmetic(True)
-
-            if lods[name] is not None:
-                self.graph_hist.drawLimit(
-                    np.mean(lods[name]),
-                    "LOD",
-                    pos=0.95,
-                    pen=pen,
-                    name=name,
-                    visible=visible,
-                )
-            pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-            self.graph_hist.drawLimit(
-                np.mean(graph_data[name]),
-                "mean",
-                pos=0.95,
-                pen=pen,
                 name=name,
-                visible=visible,
+                draw_fit=self.graph_options["histogram"]["fit"],
+                fit_visible=self.graph_options["histogram"]["mode"] == "single",
+                draw_limits={
+                    "mean": np.mean(data),
+                    "LOD": np.mean(lod) * modifier,  # type: ignore
+                },
+                limits_visible=self.graph_options["histogram"]["mode"] == "single",
             )
+
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
         self.graph_hist.zoomReset()
 

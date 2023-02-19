@@ -5,6 +5,7 @@ import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
 from spcal.gui.graphs.base import PlotCurveItemFix, SinglePlotGraphicsView
 from spcal.gui.graphs.items import PieChart
 from spcal.gui.graphs.legends import (
@@ -12,6 +13,7 @@ from spcal.gui.graphs.legends import (
     MultipleItemSampleProxy,
     StaticRectItemSample,
 )
+
 # from spcal.gui.graphs.plots import ParticlePlotItem
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
@@ -227,130 +229,8 @@ class ScatterView(SinglePlotGraphicsView):
         self.plot.addItem(curve)
 
 
-class HistogramView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(
-            "Histogram",
-            xlabel="Signal (counts)",
-            ylabel="No. Events",
-            viewbox=ViewBoxForceScaleAtZero(),
-            parent=parent,
-        )
-        self.plot.setLimits(xMin=0.0, yMin=0.0)
-
-        self.legend_items: Dict[str, HistogramItemSample] = {}
-
-    def clear(self) -> None:
-        self.legend_items.clear()
-        super().clear()
-
-    def drawData(
-        self,
-        name: str,
-        data: np.ndarray,
-        bins: str | np.ndarray = "auto",
-        bar_width: float = 0.5,
-        bar_offset: float = 0.0,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.black)
-
-        assert bar_width > 0.0 and bar_width <= 1.0
-        assert bar_offset >= 0.0 and bar_offset < 1.0
-
-        hist, edges = np.histogram(data, bins)
-        widths = np.diff(edges)
-
-        x = np.repeat(edges, 2)
-
-        # Calculate bar start and end points for width / offset
-        x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
-        x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
-
-        y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
-        y[1:-1:2] = hist
-
-        curve = PlotCurveItemFix(
-            x=x,
-            y=y,
-            stepMode="center",
-            fillLevel=0,
-            fillOutline=True,
-            pen=pen,
-            brush=brush,
-            skipFiniteCheck=True,
-        )
-
-        self.plot.addItem(curve)
-        self.legend_items[name] = HistogramItemSample(curve)
-        self.plot.legend.addItem(self.legend_items[name], name)
-
-        return hist, (x[1:-1:2] + x[2:-1:2]) / 2.0
-
-    def drawFit(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        name: str | None = None,
-        pen: QtGui.QPen | None = None,
-        visible: bool = True,
-    ) -> None:
-
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        curve = pyqtgraph.PlotCurveItem(
-            x=x, y=y, pen=pen, connect="all", skipFiniteCheck=True
-        )
-        curve.setVisible(visible)
-        self.plot.addItem(curve)
-        if name is not None:
-            self.legend_items[name].setFit(curve)
-            self.plot.legend.updateSize()
-
-    def drawLimit(
-        self,
-        limit: float,
-        label: str,
-        name: str | None = None,
-        pos: float = 0.95,
-        pen: QtGui.QPen | None = None,
-        visible: bool = True,
-    ) -> None:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 2.0, QtCore.Qt.PenStyle.DashLine)
-            pen.setCosmetic(True)
-
-        line = pyqtgraph.InfiniteLine(
-            limit, label=label, labelOpts={"position": pos, "color": "black"}, pen=pen
-        )
-        line.setVisible(visible)
-        if name is not None:
-            self.legend_items[name].addLimit(line)
-            self.plot.legend.updateSize()
-        self.plot.addItem(line)
-
-
 class ParticleView(SinglePlotGraphicsView):
     regionChanged = QtCore.Signal()
-
-    # def addParticlePlot(
-    #     self, name: str, xscale: float = 1.0, downsample: int = 1
-    # ) -> ParticlePlotItem:
-    #     plot = ParticlePlotItem(name=name, xscale=xscale)
-    #     plot.setDownsampling(ds=downsample, mode="peak", auto=True)
-
-    #     plot.region.sigRegionChanged.connect(self.plotRegionChanged)
-    #     plot.region.sigRegionChangeFinished.connect(self.regionChanged)
-
-    #     super().addPlot(name, plot, xlink=True)
-    #     return plot
 
     def __init__(
         self,
@@ -401,19 +281,6 @@ class ParticleView(SinglePlotGraphicsView):
     def clear(self) -> None:
         self.legend_items.clear()
         super().clear()
-
-    # def plotRegionChanged(self, region: pyqtgraph.LinearRegionItem) -> None:
-    #     self.blockSignals(True)
-    #     for plot in self.plots.values():
-    #         plot.region.blockSignals(True)
-    #         plot.region.setRegion(region.getRegion())
-    #         plot.region.blockSignals(False)
-    #     self.blockSignals(False)
-
-    # def clearSignal(self) -> None:
-    # for signal in self.signals.values():
-    #     self.removeItem(signal)
-    # self.signals.clear()
 
     def clearScatters(self) -> None:
         for item in self.plot.listDataItems():
@@ -494,3 +361,16 @@ class ParticleView(SinglePlotGraphicsView):
         )
         self.limit_items.append(curve)
         self.plot.addItem(curve)
+
+
+class PCAView(SinglePlotGraphicsView):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(xlabel="PC 1", ylabel="PC 2", parent=parent)
+
+    def drawPCA(self, x: np.ndarray, y: np.ndarray) -> None:
+        self.plot.clear()
+
+        scatter = pyqtgraph.ScatterPlotItem(
+            x=x,
+            y=y,
+        )
