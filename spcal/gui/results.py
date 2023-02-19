@@ -15,7 +15,7 @@ from spcal.gui.dialogs.graphoptions import (
 )
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.plots import HistogramPlotItem
+# from spcal.gui.graphs.plots import HistogramPlotItem
 from spcal.gui.graphs.views import CompositionView, HistogramView, ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
@@ -172,7 +172,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.action_graph_histogram.setChecked(True)
         self.action_graph_compositions = create_action(
-            "office-chart-bar-stacked",
+            "office-chart-pie",
             "Composition",
             "Show the elemental composition of peaks.",
             lambda: self.graph_stack.setCurrentWidget(self.graph_composition),

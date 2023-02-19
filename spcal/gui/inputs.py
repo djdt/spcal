@@ -54,7 +54,7 @@ class InputWidget(QtWidgets.QWidget):
         self.regions = np.array([])
         self.limits: Dict[str, SPCalLimit] = {}
 
-        self.draw_mode = "Overlay"
+        self.draw_mode = "overlay"
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -66,6 +66,7 @@ class InputWidget(QtWidgets.QWidget):
         self.last_region: Tuple[int, int] | None = None
 
         self.io = io_stack
+        self.io.nameChanged.connect(self.updateGraphsForName)
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
@@ -88,18 +89,18 @@ class InputWidget(QtWidgets.QWidget):
         # Actions
 
         self.action_graph_overlay = create_action(
-            "office-chart-line",
+            "labplot-xy-curve",
             "Overlay Signals",
             "Overlay all element signals in a single plot.",
-            lambda: self.setDrawMode("Overlay"),
+            lambda: self.setDrawMode("overlay"),
             checkable=True,
         )
         self.action_graph_overlay.setChecked(True)
-        self.action_graph_stacked = create_action(
-            "object-rows",
-            "Stacked Signals",
-            "Draw element signals in separate plots.",
-            lambda: self.setDrawMode("Stacked"),
+        self.action_graph_single = create_action(
+            "labplot-xy-curve-segments",
+            "Individual Signals",
+            "Draw the current element signal.",
+            lambda: self.setDrawMode("single"),
             checkable=True,
         )
         self.action_graph_zoomout = create_action(
@@ -110,7 +111,7 @@ class InputWidget(QtWidgets.QWidget):
         )
         action_group_graph_view = QtGui.QActionGroup(self)
         action_group_graph_view.addAction(self.action_graph_overlay)
-        action_group_graph_view.addAction(self.action_graph_stacked)
+        action_group_graph_view.addAction(self.action_graph_single)
         self.graph_toolbar.addActions(action_group_graph_view.actions())
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
@@ -247,15 +248,11 @@ class InputWidget(QtWidgets.QWidget):
         self.dataLoaded.emit(options["path"])
 
     def saveTrimRegion(self) -> None:
-        plot = next(iter(self.graph.plots.values()))
-        self.last_region = plot.region_start, plot.region_end
+        # plot = next(iter(self.graph.plots.values()))
+        self.last_region = self.graph.region_start, self.graph.region_end
 
     def trimRegion(self, name: str) -> Tuple[int, int]:
-        if self.draw_mode == "Overlay":
-            plot = self.graph.plots["Overlay"]
-        else:
-            plot = self.graph.plots[name]
-        return plot.region_start, plot.region_end
+        return self.graph.region_start, self.graph.region_end
 
     def trimmedResponse(self, name: str) -> np.ndarray:
         trim = self.trimRegion(name)
@@ -345,6 +342,10 @@ class InputWidget(QtWidgets.QWidget):
         for io in self.io:
             io.updateFormat()
 
+    def updateGraphsForName(self, name: str) -> None:
+        if self.draw_mode == "single":
+            self.redraw()
+
     def drawGraph(self) -> None:
         self.graph.clear()
         if len(self.responses) == 0:
@@ -353,23 +354,19 @@ class InputWidget(QtWidgets.QWidget):
         dwell = self.options.dwelltime.baseValue()
         if dwell is None:
             raise ValueError("dwell is None")
+        self.graph.xaxis.setScale(dwell)
 
-        if self.draw_mode == "Overlay":
-            plot = self.graph.addParticlePlot("Overlay", xscale=dwell)
+        names = (
+            [self.io.combo_name.currentText()]
+            if self.draw_mode == "single"
+            else self.names
+        )
 
-        for i, name in enumerate(self.names):
+        for i, name in enumerate(names):
             ys = self.responses[name]
-            if self.draw_mode == "Stacked":
-                plot = self.graph.addParticlePlot(name, xscale=dwell)
-                self.graph.layout.nextRow()
-            elif self.draw_mode == "Overlay":
-                pass
-            else:
-                raise ValueError("drawGraph: draw_mode must be 'Stacked', 'Overlay'.")
-
             pen = QtGui.QPen(self.colorForName(name), 1.0)
             pen.setCosmetic(True)
-            plot.drawSignal(name, self.events, ys, pen=pen)
+            self.graph.drawSignal(name, self.events, ys, pen=pen)
 
         self.graph.setDataLimits(xMin=0.0, xMax=1.0, yMax=1.05)
 
@@ -378,27 +375,25 @@ class InputWidget(QtWidgets.QWidget):
             if self.last_region is None
             else self.last_region
         )
-        for plot in self.graph.plots.values():
-            plot.region.blockSignals(True)
-            plot.region.setRegion(region)
-            plot.region.blockSignals(False)
+        self.graph.region.blockSignals(True)
+        self.graph.region.setRegion(region)
+        self.graph.region.blockSignals(False)
         self.last_region = region
 
     def drawDetections(self) -> None:
-        for plot in self.graph.plots.values():
-            plot.clearScatters()
-
+        self.graph.clearScatters()
         if self.detections.size == 0:
             return
 
-        for i, name in enumerate(self.detection_names):
+        names = (
+            [self.io.combo_name.currentText()]
+            if self.draw_mode == "single"
+            else self.detection_names
+        )
+
+        for i, name in enumerate(names):
             color = self.colorForName(name)
             symbol = symbols[i % len(symbols)]
-
-            if self.draw_mode == "Overlay":
-                plot = self.graph.plots["Overlay"]
-            else:
-                plot = self.graph.plots[name]
 
             detected = np.flatnonzero(self.detections[name])
 
@@ -411,7 +406,7 @@ class InputWidget(QtWidgets.QWidget):
                     )
                     + trim[0]
                 )
-                plot.drawMaxima(
+                self.graph.drawMaxima(
                     name,
                     self.events[maxima],
                     self.responses[name][maxima],
@@ -420,27 +415,27 @@ class InputWidget(QtWidgets.QWidget):
                 )
 
     def drawLimits(self) -> None:
-        if self.draw_mode == "Overlay":
+        if self.draw_mode != "single":
             return
 
-        for plot in self.graph.plots.values():
-            plot.clearLimits()
+        self.graph.clearLimits()
 
-        for i, (name, limits) in enumerate(self.limits.items()):
+        names = (
+            [self.io.combo_name.currentText()]
+            if self.draw_mode == "single"
+            else self.detection_names
+        )
+
+        for name in names:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
             pen.setCosmetic(True)
 
             trim = self.trimRegion(name)
 
-            if self.draw_mode == "Overlay":
-                plot = self.graph.plots["Overlay"]
-            else:
-                plot = self.graph.plots[name]
-
-            plot.drawLimits(
+            self.graph.drawLimits(
                 self.events[trim[0] : trim[1]],
                 # limits.mean_background,
-                limits.detection_threshold,
+                self.limits[name].detection_threshold,
                 pen=pen,
             )
 
