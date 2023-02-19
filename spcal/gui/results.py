@@ -504,8 +504,13 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
     def graphZoomReset(self) -> None:
-        self.graph_composition.zoomReset()
-        self.graph_hist.zoomReset()
+        widget = self.graph_stack.currentWidget()
+        if hasattr(widget, "zoomReset"):
+            widget.zoomReset()
+        else:
+            child = widget.findChild(SinglePlotGraphicsView)
+            if child is not None:
+                child.zoomReset()
 
     def readyForResults(self) -> bool:
         if not self.options.isComplete():
