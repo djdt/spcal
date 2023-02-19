@@ -60,8 +60,8 @@ class HistogramView(SinglePlotGraphicsView):
             pen = QtGui.QPen(brush.color(), 2.0)
             pen.setCosmetic(True)
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-            for name, limit in draw_limits.items():
-                limit = self.drawLimit(limit, name, pen=pen, visible=limits_visible)
+            for label, limit in draw_limits.items():
+                limit = self.drawLimit(limit, label, pen=pen, visible=limits_visible)
                 legend.addLimit(limit)
 
         self.plot.legend.addItem(legend, name)
