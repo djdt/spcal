@@ -106,7 +106,7 @@ def click_though_results(qtbot: QtBot, results: ResultsWidget):
         QtCore.Qt.LeftButton,
         QtCore.Qt.NoModifier,
         results.graph_toolbar.actionGeometry(
-            results.action_graph_histogram_stacked
+            results.action_graph_histogram_single
         ).center(),
     )
     qtbot.mouseClick(
