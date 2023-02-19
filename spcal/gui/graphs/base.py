@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import numpy as np
 import pyqtgraph
@@ -95,11 +95,42 @@ class PlotCurveItemFix(pyqtgraph.PlotCurveItem):
         return b
 
 
-class SPCalGraphicsView(pyqtgraph.GraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent=parent, background="white")
+class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
+    def __init__(
+        self,
+        title: str,
+        xlabel: str = "",
+        ylabel: str = "",
+        xunits: str | None = None,
+        yunits: str | None = None,
+        viewbox: pyqtgraph.ViewBox | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(background="white", parent=parent)
 
-        # self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
+        pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+        pen.setCosmetic(True)
+
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel(xlabel, units=xunits)
+
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel(ylabel, units=yunits)
+
+        self.plot = pyqtgraph.PlotItem(
+            title=title,
+            name="central_plot",
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            viewBox=viewbox,
+            parent=parent,
+        )
+        # Common options
+        self.plot.hideButtons()
+        self.plot.addLegend(
+            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
+        )
+
+        self.setCentralWidget(self.plot)
 
         self.action_copy_image = create_action(
             "insert-image",
@@ -112,19 +143,25 @@ class SPCalGraphicsView(pyqtgraph.GraphicsView):
             "view-hidden",
             "Hide Legend",
             "Toggle visibility of the legend.",
-            self.toggleLegendVisible,
+            lambda: None,
         )
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
-        if all(legend is not None for legend in self.legends()):
-            if any(legend.isVisible() for legend in self.legends()):
+        if self.plot.legend is not None:
+            if self.plot.legend.isVisible():
                 self.action_show_legend.setIcon(QtGui.QIcon.fromTheme("view-hidden"))
                 self.action_show_legend.setText("Hide Legend")
+                self.action_show_legend.triggered.connect(
+                    lambda: self.plot.legend.setVisible(False)
+                )
             else:
                 self.action_show_legend.setIcon(QtGui.QIcon.fromTheme("view-visible"))
                 self.action_show_legend.setText("Show Legend")
+                self.action_show_legend.triggered.connect(
+                    lambda: self.plot.legend.setVisible(True)
+                )
 
             menu.addAction(self.action_show_legend)
         menu.popup(event.globalPos())
@@ -137,55 +174,9 @@ class SPCalGraphicsView(pyqtgraph.GraphicsView):
         painter.end()
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
-    def legends(self) -> List[pyqtgraph.LegendItem]:
-        return []
-
-    def toggleLegendVisible(self) -> None:
-        for legend in self.legends():
-            legend.setVisible(not legend.isVisible())
-
-
-class SinglePlotGraphicsView(SPCalGraphicsView):
-    def __init__(
-        self,
-        title: str,
-        xlabel: str,
-        ylabel: str,
-        viewbox: pyqtgraph.ViewBox | None = None,
-        parent: QtWidgets.QWidget | None = None,
-    ):
-        super().__init__(parent=parent)
-
-        pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-        pen.setCosmetic(True)
-
-        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
-        self.xaxis.setLabel(xlabel)
-
-        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
-        self.yaxis.setLabel(ylabel)
-
-        self.plot = pyqtgraph.PlotItem(
-            title=title,
-            name="central_plot",
-            axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            viewBox=viewbox,
-            parent=parent,
-        )
-        self.plot.hideButtons()
-        # self.plot.setMouseEnabled(x=False)
-        self.plot.addLegend(
-            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
-        )
-
-        self.setCentralWidget(self.plot)
-
     def clear(self) -> None:
-        self.plot.clear()
         self.plot.legend.clear()
-
-    def legends(self) -> List[pyqtgraph.LegendItem]:
-        return [self.plot.legend]
+        self.plot.clear()
 
     def dataBounds(self) -> Tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
@@ -229,122 +220,117 @@ class SinglePlotGraphicsView(SPCalGraphicsView):
 
     def zoomReset(self) -> None:
         self.plot.autoRange()
-        # self.plot.setRange(
-        #     xRange=self.plot.vb.state["limits"]["xLimits"],
-        #     yRange=self.plot.vb.state["limits"]["yLimits"],
-        #     disableAutoRange=False,
-        # )
 
 
-class MultiPlotGraphicsView(SPCalGraphicsView):
-    def __init__(
-        self, minimum_plot_height: int = 160, parent: QtWidgets.QWidget | None = None
-    ):
-        self.minimum_plot_height = minimum_plot_height
-        self.layout = pyqtgraph.GraphicsLayout()
-        self.plots: Dict[str, pyqtgraph.PlotItem] = {}
+# class MultiPlotGraphicsView(SPCalGraphicsView):
+#     def __init__(
+#         self, minimum_plot_height: int = 160, parent: QtWidgets.QWidget | None = None
+#     ):
+#         self.minimum_plot_height = minimum_plot_height
+#         self.layout = pyqtgraph.GraphicsLayout()
+#         self.plots: Dict[str, pyqtgraph.PlotItem] = {}
 
-        self.limits: Dict[str, float] = {}
+#         self.limits: Dict[str, float] = {}
 
-        super().__init__(parent=parent)
+#         super().__init__(parent=parent)
 
-        self.setCentralWidget(self.layout)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+#         self.setCentralWidget(self.layout)
+#         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
-    def addPlot(
-        self,
-        name: str,
-        plot: pyqtgraph.PlotItem,
-        xlink: bool = False,
-        ylink: bool = False,
-        expand_limits: bool = True,
-    ) -> None:
-        if xlink:
-            plot.setXLink(self.layout.getItem(0, 0))
-        if ylink:
-            plot.setYLink(self.layout.getItem(0, 0))
+#     def addPlot(
+#         self,
+#         name: str,
+#         plot: pyqtgraph.PlotItem,
+#         xlink: bool = False,
+#         ylink: bool = False,
+#         expand_limits: bool = True,
+#     ) -> None:
+#         if xlink:
+#             plot.setXLink(self.layout.getItem(0, 0))
+#         if ylink:
+#             plot.setYLink(self.layout.getItem(0, 0))
 
-        self.plots[name] = plot
-        self.layout.addItem(plot)
-        self.layout.nextRow()
-        self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
+#         self.plots[name] = plot
+#         self.layout.addItem(plot)
+#         self.layout.nextRow()
+#         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
-    def dataBounds(self) -> Tuple[float, float, float, float]:
-        items = [
-            item
-            for plot in self.plots.values()
-            for item in plot.listDataItems()
-            if item.isVisible()
-        ]
-        bx = np.asarray([item.dataBounds(0) for item in items])
-        by = np.asarray([item.dataBounds(1) for item in items])
-        return (
-            np.amin(bx[:, 0]),
-            np.amax(bx[:, 1]),
-            np.amin(by[:, 0]),
-            np.amax(by[:, 1]),
-        )
+#     def dataBounds(self) -> Tuple[float, float, float, float]:
+#         items = [
+#             item
+#             for plot in self.plots.values()
+#             for item in plot.listDataItems()
+#             if item.isVisible()
+#         ]
+#         bx = np.asarray([item.dataBounds(0) for item in items])
+#         by = np.asarray([item.dataBounds(1) for item in items])
+#         return (
+#             np.amin(bx[:, 0]),
+#             np.amax(bx[:, 1]),
+#             np.amin(by[:, 0]),
+#             np.amax(by[:, 1]),
+#         )
 
-    def dataRect(self) -> QtCore.QRectF:
-        x0, x1, y0, y1 = self.dataBounds()
-        return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
+#     def dataRect(self) -> QtCore.QRectF:
+#         x0, x1, y0, y1 = self.dataBounds()
+#         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
-    def setLimits(self, **kwargs) -> None:
-        for plot in self.plots.values():
-            plot.setLimits(**kwargs)
+#     def setLimits(self, **kwargs) -> None:
+#         for plot in self.plots.values():
+#             plot.setLimits(**kwargs)
 
-    def setDataLimits(
-        self,
-        xMin: float | None = None,
-        xMax: float | None = None,
-        yMin: float | None = None,
-        yMax: float | None = None,
-    ) -> None:
-        """Set all plots limits in range 0.0 - 1.0."""
-        bounds = self.dataBounds()
-        dx = bounds[1] - bounds[0]
-        dy = bounds[3] - bounds[2]
-        limits = {}
-        if xMin is not None:
-            limits["xMin"] = bounds[0] + dx * xMin
-        if xMax is not None:
-            limits["xMax"] = bounds[0] + dx * xMax
-        if yMin is not None:
-            limits["yMin"] = bounds[2] + dy * yMin
-        if yMax is not None:
-            limits["yMax"] = bounds[2] + dy * yMax
-        self.setLimits(**limits)
+#     def setDataLimits(
+#         self,
+#         xMin: float | None = None,
+#         xMax: float | None = None,
+#         yMin: float | None = None,
+#         yMax: float | None = None,
+#     ) -> None:
+#         """Set all plots limits in range 0.0 - 1.0."""
+#         bounds = self.dataBounds()
+#         dx = bounds[1] - bounds[0]
+#         dy = bounds[3] - bounds[2]
+#         limits = {}
+#         if xMin is not None:
+#             limits["xMin"] = bounds[0] + dx * xMin
+#         if xMax is not None:
+#             limits["xMax"] = bounds[0] + dx * xMax
+#         if yMin is not None:
+#             limits["yMin"] = bounds[2] + dy * yMin
+#         if yMax is not None:
+#             limits["yMax"] = bounds[2] + dy * yMax
+#         self.setLimits(**limits)
 
-    # Taken from pyqtgraph.widgets.MultiPlotWidget
-    def setRange(self, *args, **kwds):
-        pyqtgraph.GraphicsView.setRange(self, *args, **kwds)
-        if self.centralWidget is not None:
-            r = self.range
-            minHeight = self.layout.currentRow * self.minimum_plot_height
-            if r.height() < minHeight:
-                r.setHeight(minHeight)
-                r.setWidth(r.width() - self.verticalScrollBar().width())
-            self.centralWidget.setGeometry(r)
+#     # Taken from pyqtgraph.widgets.MultiPlotWidget
+#     def setRange(self, *args, **kwds):
+#         pyqtgraph.GraphicsView.setRange(self, *args, **kwds)
+#         if self.centralWidget is not None:
+#             r = self.range
+#             minHeight = self.layout.currentRow * self.minimum_plot_height
+#             if r.height() < minHeight:
+#                 r.setHeight(minHeight)
+#                 r.setWidth(r.width() - self.verticalScrollBar().width())
+#             self.centralWidget.setGeometry(r)
 
-    # Taken from pyqtgraph.widgets.MultiPlotWidget
-    def resizeEvent(self, event: QtGui.QResizeEvent):
-        if self.closed:
-            return
-        if self.autoPixelRange:
-            self.range = QtCore.QRectF(0, 0, self.size().width(), self.size().height())
-        MultiPlotGraphicsView.setRange(
-            self, self.range, padding=0, disableAutoPixel=False
-        )  # we do this because some subclasses like to redefine
-        # setRange in an incompatible way.
-        self.updateMatrix()
+#     # Taken from pyqtgraph.widgets.MultiPlotWidget
+#     def resizeEvent(self, event: QtGui.QResizeEvent):
+#         if self.closed:
+#             return
+#         if self.autoPixelRange:
+#             self.range = QtCore.QRectF(0, 0, self.size().width(), self.size().height())
+#         MultiPlotGraphicsView.setRange(
+#             self, self.range, padding=0, disableAutoPixel=False
+#         )  # we do this because some subclasses like to redefine
+#         # setRange in an incompatible way.
+#         self.updateMatrix()
 
-    def clear(self) -> None:
-        self.layout.clear()
-        self.plots = {}
+#     def clear(self) -> None:
+#         self.layout.clear()
+#         self.plots = {}
 
-    def legends(self) -> List[pyqtgraph.LegendItem]:
-        return [plot.legend for plot in self.plots.values()]
+#     def legends(self) -> List[pyqtgraph.LegendItem]:
+#         return [plot.legend for plot in self.plots.values()]
 
-    def zoomReset(self) -> None:
-        for plot in self.plots.values():
-            plot.autoRange()
+#     def zoomReset(self) -> None:
+#         for plot in self.plots.values():
+#             plot.autoRange()
