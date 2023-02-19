@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -25,7 +25,7 @@ class CompositionView(SinglePlotGraphicsView):
 
     def draw(
         self,
-        data: np.ndarray,
+        data: Dict[str, np.ndarray],
         distance: float = 0.03,
         min_size: float | str = "5%",
         pen: QtGui.QPen | None = None,
@@ -35,7 +35,7 @@ class CompositionView(SinglePlotGraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
         if brushes is None:
-            brushes = [QtGui.QBrush() for _ in range(len(data.dtype.names))]
+            brushes = [QtGui.QBrush() for _ in data.keys()]
         assert len(brushes) >= len(data.keys())
 
         self.pies.clear()
