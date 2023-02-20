@@ -503,7 +503,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         brush = QtGui.QBrush(QtCore.Qt.black)
 
-        self.graph_pca.draw(X, brush=brush)
+        self.graph_pca.draw(X, brush=brush, feature_names=graph_data.keys())
         self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
 
     def drawGraphScatter(self) -> None:
