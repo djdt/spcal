@@ -339,11 +339,9 @@ class PCAArrow(QtWidgets.QGraphicsPathItem):
         if name is not None:
             self.text = QtWidgets.QGraphicsSimpleTextItem(name, self)
             rect = QtGui.QFontMetrics(self.text.font()).boundingRect(self.text.text())
-            pos = tr.map(QtCore.QPointF(0.0, -(length)))
-            pos.setX(pos.x() - rect.width() / 2.0)
-            pos.setY(pos.y() - rect.height() / 2.0)
-            # if angle_r > np.pi:  # Left side of plot
-            #     pos.setX(pos.x() - rect.width())
+            pos = tr.map(QtCore.QPointF(0.0, -(length * 1.05)))
+            pos.setX(pos.x() - rect.width() * (np.sin(angle_r + np.pi) + 1.0) / 2.0)
+            pos.setY(pos.y() - rect.height() * (np.cos(angle_r) + 1.0) / 2.0)
 
             self.text.setPos(pos)
 
@@ -379,10 +377,10 @@ class PCAView(SinglePlotGraphicsView):
             assert len(feature_names) == v.shape[1]
 
             angles = np.arctan2(v[0], v[1])
-            # for angle in np.linspace(0.0, 2.0 * np.pi, 10):
-                # arrow = PCAArrow(angle, 100.0, name=f"{angle * 180.0 / np.pi:.18f}")
-            for name, angle in zip(feature_names, angles):
-                arrow = PCAArrow(angle, 100.0, name=name)
+            for angle in np.linspace(0.0, 2.0 * np.pi, 10):
+                arrow = PCAArrow(angle, 100.0, name=f"{angle * 180.0 / np.pi:.18f}")
+                # for name, angle in zip(feature_names, angles):
+                #     arrow = PCAArrow(angle, 100.0, name=name)
                 self.plot.addItem(arrow)
 
 
