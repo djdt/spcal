@@ -149,6 +149,16 @@ class InputWidget(QtWidgets.QWidget):
         else:
             return self.detections.dtype.names
 
+    @property
+    def draw_names(self) -> Tuple[str, ...]:
+        if self.draw_mode == "single":
+            name = self.io.combo_name.currentText()
+            if name != "<element>":
+                return (name,)
+            else:
+                return tuple()
+        return self.names
+
     def colorForName(self, name: str) -> QtGui.QColor:
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
@@ -356,13 +366,7 @@ class InputWidget(QtWidgets.QWidget):
             raise ValueError("dwell is None")
         self.graph.xaxis.setScale(dwell)
 
-        names = (
-            [self.io.combo_name.currentText()]
-            if self.draw_mode == "single"
-            else self.names
-        )
-
-        for i, name in enumerate(names):
+        for i, name in enumerate(self.draw_names):
             ys = self.responses[name]
             pen = QtGui.QPen(self.colorForName(name), 1.0)
             pen.setCosmetic(True)
@@ -385,13 +389,7 @@ class InputWidget(QtWidgets.QWidget):
         if self.detections.size == 0:
             return
 
-        names = (
-            [self.io.combo_name.currentText()]
-            if self.draw_mode == "single"
-            else self.detection_names
-        )
-
-        for i, name in enumerate(names):
+        for i, name in enumerate(self.draw_names):
             color = self.colorForName(name)
             symbol = symbols[i % len(symbols)]
 
@@ -413,6 +411,7 @@ class InputWidget(QtWidgets.QWidget):
                     brush=QtGui.QBrush(color),
                     symbol=symbol,
                 )
+        self.graph.zoomReset()
 
     def drawLimits(self) -> None:
         if self.draw_mode != "single":
@@ -420,13 +419,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.graph.clearLimits()
 
-        names = (
-            [self.io.combo_name.currentText()]
-            if self.draw_mode == "single"
-            else self.detection_names
-        )
-
-        for name in names:
+        for name in self.draw_names:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
             pen.setCosmetic(True)
 
