@@ -90,4 +90,4 @@ class PCAView(SinglePlotGraphicsView):
             angles = np.arctan2(v[0], v[1])
             for name, angle in zip(feature_names, angles):
                 arrow = PCAArrow(angle, 100.0, name=name)
-            self.plot.addItem(arrow)
+                self.plot.addItem(arrow)
