@@ -14,7 +14,7 @@ from spcal.gui.dialogs._import import (
     _ImportDialogBase,
 )
 from spcal.gui.graphs import color_schemes, symbols
-from spcal.gui.graphs.views import ParticleView
+from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action

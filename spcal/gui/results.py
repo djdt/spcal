@@ -12,9 +12,11 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
-from spcal.gui.graphs.views import PCAView, ScatterView, SinglePlotGraphicsView
+from spcal.gui.graphs.pca import PCAView
+from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
@@ -503,7 +505,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         brush = QtGui.QBrush(QtCore.Qt.black)
 
-        self.graph_pca.draw(X, brush=brush, feature_names=graph_data.keys())
+        self.graph_pca.draw(X, brush=brush, feature_names=list(graph_data.keys()))
         self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
 
     def drawGraphScatter(self) -> None:

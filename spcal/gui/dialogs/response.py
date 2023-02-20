@@ -5,7 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs._import import ImportDialog, NuImportDialog
-from spcal.gui.graphs.views import ResponseView
+from spcal.gui.graphs.response import ResponseView
 from spcal.gui.objects import DoublePrecisionDelegate
 from spcal.io.nu import is_nu_directory
 from spcal.io.text import is_text_file
