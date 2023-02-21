@@ -507,6 +507,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_pca.draw(X, brush=brush, feature_names=list(graph_data.keys()))
         self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
+        self.graph_pca.zoomReset()
 
     def drawGraphScatter(self) -> None:
         self.graph_scatter.clear()

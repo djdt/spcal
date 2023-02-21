@@ -84,7 +84,8 @@ class PCAView(SinglePlotGraphicsView):
         arrow_pen: QtGui.QPen | None = None,
         text_brush: QtGui.QBrush | None = None,
     ) -> None:
-        a, v, _ = pca(X, 2)
+        """Returns explained variance."""
+        a, v, var = pca(X, 2)
 
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
@@ -101,3 +102,5 @@ class PCAView(SinglePlotGraphicsView):
                     angle, 100.0, label=name, pen=arrow_pen, label_brush=text_brush
                 )
                 self.plot.addItem(arrow)
+
+        self.plot.setTitle(f"PCA: {np.sum(var) * 100.0:.3g} % explained variance")
