@@ -41,6 +41,7 @@ def test_pca():
     x = np.sin(np.arange(16).reshape(4, 4))
     a, v, exv = calc.pca(x, trim_to_components=4)
 
+    # Values are from sklearn.decomposition.PCA (Standard scaled)
     assert np.allclose(
         exv, [6.09368614e-01, 3.90631386e-01, 4.84106293e-33, 2.03935216e-36]
     )
