@@ -141,7 +141,6 @@ class ImportDialog(_ImportDialogBase):
         self.spinbox_first_line.valueChanged.connect(self.updateTableIgnores)
 
         self.le_ignore_columns = QtWidgets.QLineEdit()
-        self.le_ignore_columns.setText("1;")
         self.le_ignore_columns.setValidator(
             QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
         )
@@ -153,6 +152,7 @@ class ImportDialog(_ImportDialogBase):
         self.box_options.layout().addRow("Ignore Columns:", self.le_ignore_columns)
 
         self.fillTable()
+        self.guessIgnoreColumnsFromTable()
 
         self.layout_body.addWidget(self.table)
 
@@ -198,7 +198,7 @@ class ImportDialog(_ImportDialogBase):
         self.updateTableIgnores()
 
         if self.dwelltime.value() is None:
-            self.readDwelltimeFromTable()
+            self.guessDwelltimeFromTable()
 
     def updateTableIgnores(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
@@ -216,7 +216,16 @@ class ImportDialog(_ImportDialogBase):
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemIsEnabled)
 
-    def readDwelltimeFromTable(self) -> None:
+    def guessIgnoreColumnsFromTable(self) -> None:
+        ignores = []
+        header_row = self.spinbox_first_line.value() - 1
+        for col in range(self.table.columnCount()):
+            text = self.table.item(header_row, col).text().lower()
+            if any(x in text for x in ["time", "index"]):
+                ignores.append(col + 1)
+        self.le_ignore_columns.setText(";".join(str(x) for x in ignores) + ";")
+
+    def guessDwelltimeFromTable(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
         for col in range(self.table.columnCount()):
             text = self.table.item(header_row, col).text().lower()
