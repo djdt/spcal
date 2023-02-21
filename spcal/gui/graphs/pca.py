@@ -13,7 +13,8 @@ class PCAArrow(QtWidgets.QGraphicsPathItem):
         self,
         angle_r: float,
         length: float,
-        name: str | None = None,
+        label: str | None = None,
+        label_brush: QtGui.QBrush | None = None,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QPen | None = None,
         parent: QtWidgets.QWidget | None = None,
@@ -47,13 +48,18 @@ class PCAArrow(QtWidgets.QGraphicsPathItem):
         path = tr.map(path)
         self.setPath(path)
 
-        if name is not None:
-            self.text = QtWidgets.QGraphicsSimpleTextItem(name, self)
+        if label is not None:
+            if label_brush is None:
+                label_brush = QtGui.QBrush(QtCore.Qt.GlobalColor.darkGray)
+
+            self.text = QtWidgets.QGraphicsSimpleTextItem(label, self)
             rect = QtGui.QFontMetrics(self.text.font()).boundingRect(self.text.text())
             pos = tr.map(QtCore.QPointF(0.0, -(length * 1.05)))
             pos.setX(pos.x() - rect.width() * (np.sin(angle_r + np.pi) + 1.0) / 2.0)
             pos.setY(pos.y() - rect.height() * (np.cos(angle_r) + 1.0) / 2.0)
 
+            # self.text.setPen(QtCore.Qt.PenStyle.NoPen)
+            self.text.setBrush(label_brush)
             self.text.setPos(pos)
 
     def paint(
@@ -75,6 +81,8 @@ class PCAView(SinglePlotGraphicsView):
         X: np.ndarray,
         feature_names: List[str] | None = None,
         brush: QtGui.QBrush | None = None,
+        arrow_pen: QtGui.QPen | None = None,
+        text_brush: QtGui.QBrush | None = None,
     ) -> None:
         a, v, _ = pca(X, 2)
 
@@ -89,5 +97,7 @@ class PCAView(SinglePlotGraphicsView):
 
             angles = np.arctan2(v[0], v[1])
             for name, angle in zip(feature_names, angles):
-                arrow = PCAArrow(angle, 100.0, name=name)
+                arrow = PCAArrow(
+                    angle, 100.0, label=name, pen=arrow_pen, label_brush=text_brush
+                )
                 self.plot.addItem(arrow)
