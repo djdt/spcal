@@ -81,7 +81,7 @@ def click_though_input(qtbot: QtBot, input: InputWidget):
         input.graph_toolbar,
         QtCore.Qt.LeftButton,
         QtCore.Qt.NoModifier,
-        input.graph_toolbar.actionGeometry(input.action_graph_stacked).center(),
+        input.graph_toolbar.actionGeometry(input.action_graph_single).center(),
     )
     qtbot.mouseClick(
         input.graph_toolbar,
