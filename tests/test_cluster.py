@@ -10,8 +10,8 @@ def test_agglomerative_cluster():
 
     means, stds, counts = agglomerative_cluster(a, 0.5)
 
-    assert np.all(np.isclose(means, [[1.1, 1.466667], [0.15, 0.25], [2.1, 2.2]]))
-    assert np.all(np.isclose(stds, [[0.08165, 0.04714], [0.05, 0.05], [0.0, 0.0]]))
+    assert np.allclose(means, [[1.1, 1.466667], [0.15, 0.25], [2.1, 2.2]])
+    assert np.allclose(stds, [[0.08165, 0.04714], [0.05, 0.05], [0.0, 0.0]])
     assert np.all(counts == [3, 2, 1])
 
 

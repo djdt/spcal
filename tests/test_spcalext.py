@@ -1,6 +1,11 @@
 import numpy as np
 
-from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclidean, maxima
+from spcal.lib.spcalext import (
+    cluster_by_distance,
+    maxima,
+    mst_linkage,
+    pairwise_euclidean,
+)
 
 
 def test_pairwise_euclidean():
@@ -17,7 +22,7 @@ def test_mst_linkage():
     dists = pairwise_euclidean(a)
     Z, ZD = mst_linkage(dists, 8)
 
-    assert np.all(np.isclose(ZD, [0.05, 0.1, 0.2, 0.25, 0.5, 1.0, 1.1]))
+    assert np.allclose(ZD, [0.05, 0.1, 0.2, 0.25, 0.5, 1.0, 1.1])
     # Only testing first pairs
     f = Z[:, 2] == 2
     assert np.all(Z[f][0] == [6, 7, 2])
