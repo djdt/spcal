@@ -235,7 +235,7 @@ class ImportDialog(_ImportDialogBase):
                 else:  # assume that value is in seconds
                     factor = 1.0
                 self.dwelltime.setBaseValue(
-                    np.round(np.mean(np.diff(times)), 6) * factor  # type: ignore
+                    np.round(np.mean(np.diff(times)) * factor, 6)  # type: ignore
                 )
                 break
 
@@ -351,7 +351,9 @@ class NuImportDialog(_ImportDialogBase):
         )
 
         self.dwelltime.setBaseValue(
-            self.info["SegmentInfo"][0]["AcquisitionPeriodNs"] * 1e-9
+            np.around(
+                self.info["SegmentInfo"][0]["AcquisitionPeriodNs"] * 1e-9, 6
+            )  # nearest us
         )
 
     def segmentDelays(self) -> Dict[int, float]:
