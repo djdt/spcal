@@ -77,6 +77,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Import SP data from a CSV file.",
             lambda: self.sample.dialogLoadFile(),
         )
+        self.action_open_recent = QtGui.QActionGroup(self)
+        self.action_open_recent.triggered.connect(
+            lambda a: self.sample.dialogLoadFile(a.text())
+        )
         self.action_open_reference = create_action(
             "document-open",
             "Open &Reference File",
@@ -162,8 +166,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         menufile = self.menuBar().addMenu("&File")
         menufile.addAction(self.action_open_sample)
+
         self.menu_recent = menufile.addMenu("Open Recent")
+        self.menu_recent.setIcon(QtGui.QIcon.fromTheme("document-open-recent"))
         self.menu_recent.setEnabled(False)
+
         menufile.addSeparator()
         menufile.addAction(self.action_open_reference)
         menufile.addSeparator()
@@ -364,11 +371,16 @@ class SPCalWindow(QtWidgets.QMainWindow):
                 settings.setValue("path", str(path))
             settings.endArray()
 
+        # Clear old actions
         self.menu_recent.clear()
+        for action in self.action_open_recent.actions():
+            self.action_open_recent.removeAction(action)
+
+        # Add new
         self.menu_recent.setEnabled(len(paths) > 0)
         for path in paths:
             action = QtGui.QAction(str(path), self)
-            action.triggered.connect(lambda: self.sample.dialogLoadFile(path))
+            self.action_open_recent.addAction(action)
             self.menu_recent.addAction(action)
 
     def exceptHook(
