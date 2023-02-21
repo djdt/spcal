@@ -501,8 +501,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) < 2:
             return
 
-        X = np.stack(graph_data.values(), axis=1)
-
+        X = np.stack(list(graph_data.values()), axis=1)
         brush = QtGui.QBrush(QtCore.Qt.black)
 
         self.graph_pca.draw(X, brush=brush, feature_names=list(graph_data.keys()))
