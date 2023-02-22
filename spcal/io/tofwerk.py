@@ -153,9 +153,9 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
     path = Path(path)
 
     with h5py.File(path, "r") as h5:
-        data = h5["PeakData"]["PeakData"][()]
+        data = h5["PeakData"]["PeakData"][:]
         data *= factor_extraction_to_acquisition(h5)
-        info = h5["PeakData"]["PeakTable"][()]
+        info = h5["PeakData"]["PeakTable"][:]
 
     names = [x.decode() for x in info["label"]]
     data = rfn.unstructured_to_structured(data.reshape(-1, data.shape[-1]), names=names)
