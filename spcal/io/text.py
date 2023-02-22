@@ -57,7 +57,7 @@ def read_single_particle_file(
 
         dtype = np.dtype([(header[i], np.float32) for i in columns])
         try:  # loadtxt is faster than genfromtxt
-            data = np.loadtxt(
+            data = np.loadtxt(  # type: ignore
                 gen,
                 delimiter=delimiter,
                 usecols=columns,
@@ -68,7 +68,7 @@ def read_single_particle_file(
             for i in range(first_line):
                 next(gen)
 
-            data = np.genfromtxt(
+            data = np.genfromtxt(  # type: ignore
                 gen,
                 delimiter=delimiter,
                 usecols=columns,
