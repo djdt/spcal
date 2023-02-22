@@ -8,7 +8,7 @@ from spcal.io.tofwerk import (
     calibrate_mass_to_index,
     integrate_tof_data,
     is_tofwerk_file,
-    read_tofwerk_file
+    read_tofwerk_file,
 )
 
 path = Path(__file__).parent.joinpath("data/tofwerk_au_50nm.h5")
@@ -44,6 +44,16 @@ def test_integrate():
 
 def test_read_tofwerk_file():
     data, info, dwell = read_tofwerk_file(path)
+
+    for label, mass in [
+        (b"[6Li]+", 6.01457),
+        (b"[40Ar]+", 39.96183),
+        (b"[138Ba]++", 68.95207),
+        (b"[197Au]+", 196.96602),
+        (b"UO+", 254.04515),
+    ]:
+        assert label in info["label"]
+        assert np.isclose(mass, info["mass"][info["label"] == label])
 
     assert np.isclose(dwell, 0.0009999)
     print(data)
