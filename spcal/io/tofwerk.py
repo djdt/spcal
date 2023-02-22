@@ -7,6 +7,8 @@ import numpy.lib.recfunctions as rfn
 
 
 def is_tofwerk_file(path: Path) -> bool:
+    if not path.exists():
+        return False
     if not path.suffix.lower() == ".h5":
         return False
     # Check for TofDAQ Version?
