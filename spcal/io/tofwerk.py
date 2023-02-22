@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import h5py
 import numpy as np
@@ -14,71 +14,63 @@ def is_tofwerk_file(path: Path) -> bool:
 
 
 def calibrate_index_to_mass(
-    indices: np.ndarray, full_spectra: h5py._hl.group.Group
+    indices: np.ndarray, mode: int, p: List[float]
 ) -> np.ndarray:
     """Calibrate sample indicies to mass / charge.
 
     Args:
         indices: array of sample incidies
-        full_spectra: '/FullSpectra' group from HDF5
+        mode: mode from "/FullSpectra/MassCalibMode"
+        ps: coefficients from "/FullSpectra/MassCalibration p_"
 
     Returns:
         calibrated masses
     """
 
-    p1 = full_spectra.attrs["MassCalibration p1"]
-    p2 = full_spectra.attrs["MassCalibration p2"]
-    mode = full_spectra.attrs["MassCalibMode"]
     match mode:
         case 0:  # i = p1 * sqrt(m) + p2
-            return np.square((indices - p2) / p1)
+            return np.square((indices - p[1]) / p[0])
         case 1:  # i = p1 / sqrt(m) + p2
-            return np.square(p1 / (indices - p2) / p1)
+            return np.square(p[0] / (indices - p[1]) / p[0])
         case 2:  # i = p1 * m ^ p3 + p2
-            p3 = full_spectra.attrs["MassCalibration p3"]
-            return np.power((indices - p2) / p1, 1.0 / p3)
+            return np.power((indices - p[1]) / p[0], 1.0 / p[2])
         case 3:  # i = p1 * sqrt(m) + p2 + p3 * (m - p4) ^ 2
             raise ValueError("perform_mass_calibration: mode 3 not supported.")
         case 4:  # i = p1 * sqrt(m) + p2 + p3 * m ^ 2 + p4 * m + p5
             raise ValueError("perform_mass_calibration: mode 4 not supported.")
         case 5:  # m = p1 * i ^ 2 + p3
-            p3 = full_spectra.attrs["MassCalibration p3"]
-            return p1 * np.square(indices) + p3
+            return p[0] * np.square(indices) + p[2]
         case _:
             raise ValueError(f"perform_mass_calibration: unknown mode {mode}.")
 
 
 def calibrate_mass_to_index(
-    masses: np.ndarray, full_spectra: h5py._hl.group.Group
+    masses: np.ndarray, mode: int, p: List[float]
 ) -> np.ndarray:
-    """Calibrate sample indicies to mass / charge.
+    """Calibrate mass / charge to sample indicies.
 
     Args:
         indices: array of sample incidies
-        full_spectra: '/FullSpectra' group from HDF5
+        mode: mode from "/FullSpectra/MassCalibMode"
+        ps: coefficients from "/FullSpectra/MassCalibration p_"
 
     Returns:
-        calibrated masses
+        sample indicies
     """
 
-    p1 = full_spectra.attrs["MassCalibration p1"]
-    p2 = full_spectra.attrs["MassCalibration p2"]
-    mode = full_spectra.attrs["MassCalibMode"]
     match mode:
         case 0:  # i = p1 * sqrt(m) + p2
-            return p1 * np.sqrt(masses) + p2
+            return p[0] * np.sqrt(masses) + p[1]
         case 1:  # i = p1 / sqrt(m) + p2
-            return p1 / np.sqrt(masses) + p2
+            return p[0] / np.sqrt(masses) + p[1]
         case 2:  # i = p1 * m ^ p3 + p2
-            p3 = full_spectra.attrs["MassCalibration p3"]
-            return p1 * np.power(masses, p3) + p2
+            return p[0] * np.power(masses, p[2]) + p[1]
         case 3:  # i = p1 * sqrt(m) + p2 + p3 * (m - p4) ^ 2
             raise ValueError("perform_mass_calibration: mode 3 not supported.")
         case 4:  # i = p1 * sqrt(m) + p2 + p3 * m ^ 2 + p4 * m + p5
             raise ValueError("perform_mass_calibration: mode 4 not supported.")
         case 5:  # m = p1 * i ^ 2 + p3
-            p3 = full_spectra.attrs["MassCalibration p3"]
-            return np.sqrt(masses - p3 / p1)
+            return np.sqrt(masses - p[2] / p[0])
         case _:
             raise ValueError(f"perform_mass_calibration: unknown mode {mode}.")
 
@@ -120,11 +112,19 @@ def integrate_tof_data(
         / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
     )
 
+    mode = h5["FullSpectra"].attrs["MassCalibMode"]
+    ps = [
+        h5["FullSpectra"].attrs["MassCalibration p1"],
+        h5["FullSpectra"].attrs["MassCalibration p2"],
+    ]
+    if mode in [2, 5]:
+        ps.append(h5["FullSpectra"].attrs["MassCalibration p3"])
+
     lower = calibrate_mass_to_index(
-        peak_table["lower integration limit"][idx], h5["FullSpectra"]
+        peak_table["lower integration limit"][idx], mode, ps
     )
     upper = calibrate_mass_to_index(
-        peak_table["upper integration limit"][idx], h5["FullSpectra"]
+        peak_table["upper integration limit"][idx], mode, ps
     )
     indicies = np.stack((lower + 1, upper), axis=1).astype(np.uint32)
 
