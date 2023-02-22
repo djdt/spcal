@@ -93,6 +93,9 @@ class ParticleView(SinglePlotGraphicsView):
         self.plot.addItem(curve)
         self.plot.legend.addItem(self.legend_items[name], name)
 
+        if self.region not in self.plot.items:
+            self.plot.addItem(self.region)
+
     def drawMaxima(
         self,
         name: str,
