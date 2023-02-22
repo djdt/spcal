@@ -246,10 +246,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         names = self.sample.responses.dtype.names
         if path.suffix.lower() == ".csv":
+            trim = self.sample.trimRegion(names[0])
             header = " ".join(name for name in names)
             np.savetxt(
                 path,
-                self.sample.responses,
+                self.sample.responses[trim[0] : trim[1]],
                 delimiter="\t",
                 comments="",
                 header=header,
@@ -258,7 +259,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         elif path.suffix.lower() == ".npz":
             np.savez_compressed(
                 path,
-                **{name: self.sample.responses[name] for name in names},
+                **{name: self.sample.trimmedResponse(name) for name in names},
             )
         else:
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
