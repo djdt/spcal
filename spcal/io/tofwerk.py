@@ -140,7 +140,7 @@ def integrate_tof_data(
     return peaks * scale_factor
 
 
-def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
+def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray, float]:
     """Reads a TOFWERK TofDaq .hdf and returns peak data and peak info.
 
     Args:
@@ -149,6 +149,7 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
     Returns:
         structured array of peak data in ions / acquisition
         information from the PeakTable
+        dwelltime
     """
     path = Path(path)
 
@@ -156,8 +157,9 @@ def read_tofwerk_file(path: Path | str) -> Tuple[np.ndarray, np.ndarray]:
         data = h5["PeakData"]["PeakData"][:]
         data *= factor_extraction_to_acquisition(h5)
         info = h5["PeakData"]["PeakTable"][:]
+        dwell = float(h5["TimingData"].attrs["TofPeriod"]) * 1e-9
 
     names = [x.decode() for x in info["label"]]
     data = rfn.unstructured_to_structured(data.reshape(-1, data.shape[-1]), names=names)
 
-    return data, info
+    return data, info, dwell
