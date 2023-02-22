@@ -616,7 +616,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         )
         self.dwelltime.setBaseValue(
             np.around(
-                extraction_time * float(self.h5.attrs["NbrWaveforms"]), 6
+                extraction_time * factor_extraction_to_acquisition(self.h5), 6
             )  # nearest us
         )
 
