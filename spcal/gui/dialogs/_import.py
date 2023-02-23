@@ -640,6 +640,7 @@ class TofwerkImportDialog(_ImportDialogBase):
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "isotopes": self.table.selectedIsotopes(),
+            "other_peaks": self.combo_other_peaks.checkedItems(),
         }
 
     def setControlsEnabled(self, enabled: bool) -> None:
