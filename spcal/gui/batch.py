@@ -39,7 +39,7 @@ def process_data(
         if limit_method == "Manual Input":
             limits[name] = SPCalLimit(
                 np.mean(data[name]),
-                inputs[name]["limit"],
+                inputs[name]["limit"] or np.inf,
                 name="Manual Input",
                 params={},
             )
@@ -499,8 +499,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
             return
 
         self.progress.setValue(self.progress.value() + 1)
-        if self.threadpool.activeThreadCount() == 0 and self.running:
+        if self.progress.value() == self.progress.maximum() and self.running:
             self.finalise()
+        # if self.threadpool.activeThreadCount() == 0 and self.running:
 
     def workerFailed(self, exception: Exception) -> None:
         if self.aborted:

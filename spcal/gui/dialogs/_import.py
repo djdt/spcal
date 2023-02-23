@@ -393,7 +393,8 @@ class NuImportDialog(_ImportDialogBase):
             return
 
         self.progress.setValue(self.progress.value() + 1)
-        if self.threadpool.activeThreadCount() == 0 and self.running:
+
+        if self.progress.value() == self.progress.maximum() and self.running:
             self.finalise()
 
     def threadFailed(self, exception: Exception) -> None:
