@@ -39,11 +39,11 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
         options.check_iterative.click()
     assert options.check_iterative.isChecked()
 
-    assert not options.manual.isEnabled()
     options.method.setCurrentIndex(4)
-    assert options.manual.isEnabled()
-    qtbot.keyClick(options.manual.lineedit, QtCore.Qt.Key_1)
-    assert options.manual.baseValue() == 101.0
+    assert not options.error_rate_gaussian.isEnabled()
+    assert not options.error_rate_poisson.isEnabled()
+    assert not options.check_iterative.isEnabled()
+    options.method.setCurrentIndex(0)
 
     qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)
     assert options.celldiameter.value() == 1
@@ -62,6 +62,8 @@ def click_though_input(qtbot: QtBot, input: InputWidget):
         assert io.massfraction.value() is None
         qtbot.keyClick(io.massfraction, QtCore.Qt.Key_1)
         assert io.massfraction.value() == 1.0
+
+        assert io.lod_count.isReadOnly()
 
         if isinstance(input, ReferenceWidget):
             qtbot.keyClick(io.concentration.lineedit, QtCore.Qt.Key_1)
@@ -182,6 +184,18 @@ def test_spcal_no_data(qtbot: QtBot):
 
     click_though_input(qtbot, window.reference)
 
+    window.options.method.setCurrentText("Manual Input")
+    for i, io in enumerate(window.sample.io):
+        assert not io.lod_count.isReadOnly()
+        with qtbot.wait_signal(window.sample.io.limitsChanged, timeout=100):
+            qtbot.keyClick(io.lod_count, QtCore.Qt.Key_1)
+            qtbot.keyClick(io.lod_count, QtCore.Qt.Key_Enter)
+    for i, io in enumerate(window.reference.io):
+        assert not io.lod_count.isReadOnly()
+        with qtbot.wait_signal(window.reference.io.limitsChanged, timeout=100):
+            qtbot.keyClick(io.lod_count, QtCore.Qt.Key_1)
+            qtbot.keyClick(io.lod_count, QtCore.Qt.Key_Enter)
+
     window.resetInputs()
 
 
@@ -256,3 +270,5 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     window.resetInputs()
+
+# def test_batch_export(qtbot: QtBot):
