@@ -507,12 +507,22 @@ class TofwerkIntegrationThread(QtCore.QThread):
     ):
         super().__init__(parent=parent)
         peak_table = h5["PeakData"]["PeakTable"]
+
+        mode = h5["FullSpectra"].attrs["MassCalibMode"]
+        ps = [
+            h5["FullSpectra"].attrs["MassCalibration p1"],
+            h5["FullSpectra"].attrs["MassCalibration p2"],
+        ]
+        if mode in [2, 5]:
+            ps.append(h5["FullSpectra"].attrs["MassCalibration p3"])
+
         lower = calibrate_mass_to_index(
-            peak_table["lower integration limit"][idx], h5["FullSpectra"]
+            peak_table["lower integration limit"][idx], mode, ps
         )
         upper = calibrate_mass_to_index(
-            peak_table["upper integration limit"][idx], h5["FullSpectra"]
+            peak_table["upper integration limit"][idx], mode, ps
         )
+        self.indicies = np.stack((lower, upper + 1), axis=1)
         self.scale_factor = float(
             (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)  # mV * index -> mV * ns
             / h5["FullSpectra"].attrs["Single Ion Signal"]  # mV * ns -> ions
@@ -520,7 +530,6 @@ class TofwerkIntegrationThread(QtCore.QThread):
         )
 
         self.tof_data = h5["FullSpectra"]["TofData"]
-        self.indicies = np.stack((lower + 1, upper), axis=1).astype(np.uint32)
 
     def run(self) -> None:
         data = np.empty(
