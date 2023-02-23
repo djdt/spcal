@@ -45,11 +45,13 @@ def test_batch_export(qtbot: QtBot):
 
         assert window.action_open_batch.isEnabled()
 
-        with tempfile.TemporaryDirectory() as tmp_odir:
-            odir = Path(tmp_odir)
+        with tempfile.NamedTemporaryFile(suffix=".csv") as tmp_out:
+            opath = Path(tmp_out.name)
             dlg = window.dialogBatchProcess()
             dlg.files.addItems([str(path)])
-            dlg.output_dir.setText(str(odir))
+            dlg.output_name.setText(opath.name)
+            dlg.output_dir.setText(str(opath.parent))
+            assert opath.stat().st_size == 0
             with qtbot.wait_signal(dlg.processingFinshed):
                 dlg.start()
-            assert odir.joinpath(path.stem + "_results.csv").exists()
+            assert opath.stat().st_size > 0
