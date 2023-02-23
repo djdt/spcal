@@ -39,7 +39,7 @@ def process_data(
         if limit_method == "Manual Input":
             limits[name] = SPCalLimit(
                 np.mean(data[name]),
-                limit_params["manual"],
+                inputs[name]["limit"],
                 name="Manual Input",
                 params={},
             )
@@ -160,7 +160,7 @@ class ImportOptionsWidget(QtWidgets.QGroupBox):
     def widgetForKey(self, key: str) -> QtWidgets.QWidget:
         value = self.options[key]
         if key == "dwelltime":
-            widget = UnitsWidget(time_units, value=value)
+            widget = UnitsWidget(time_units, base_value=value)
             widget.setBestUnit()
         elif key == "isotopes":
             widget = AdjustingTextEdit(
@@ -414,6 +414,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "density": self.sample.io[name].density.baseValue(),
                 "response": self.sample.io[name].response.baseValue(),
             }
+            # Read the limit if manual input
+            if self.options.method.currentText() == "Manual Input":
+                inputs[name]["limit"] = self.sample.io[name].lod_count.value()
+
             inputs[name]["mass_fraction"] = self.sample.io[name].massfraction.value()
             try:
                 if method == "Manual Input":
@@ -430,7 +434,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         limit_params = {
             "poisson_alpha": self.options.error_rate_poisson.value() or 0.001,
             "gaussian_alpha": self.options.error_rate_gaussian.value() or 1e-6,
-            "manual": self.options.manual.baseValue() or 0.0,
         }
         units = {
             "mass": (
