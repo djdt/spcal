@@ -635,6 +635,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def filterResults(self) -> None:
         condition = np.ones(self.sample.detections.size, dtype=bool)
+        # Clear out any old filters
+        self.filters = [f for f in self.filters if f[1] in self.results.keys()]
+
         for filt in self.filters:
             boolean, name, unit, operation, value = filt
 
