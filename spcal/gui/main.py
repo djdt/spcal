@@ -37,6 +37,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
 
+        self.options.useManualLimits.connect(self.sample.io.setLimitsEditable)
+        self.options.useManualLimits.connect(self.reference.io.setLimitsEditable)
+
         self.sample.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
         self.reference.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
 

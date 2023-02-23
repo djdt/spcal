@@ -567,6 +567,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
 
 class SampleIOStack(IOStack[SampleIOWidget]):
     requestIonicResponseTool = QtCore.Signal()
+    limitsChanged = QtCore.Signal()
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(SampleIOWidget, parent=parent)
@@ -580,9 +581,21 @@ class SampleIOStack(IOStack[SampleIOWidget]):
             if name in self:
                 self[name].response.setBaseValue(response)
 
+    def setLimitsEditable(self, editable: bool) -> None:
+        for widget in self.widgets():
+            if editable:
+                widget.lod_count.editingFinished.connect(self.limitsChanged)
+            else:
+                try:
+                    widget.lod_count.editingFinished.disconnect(self.limitsChanged)
+                except RuntimeError:
+                    pass
+            widget.lod_count.setReadOnly(not editable)
+
 
 class ReferenceIOStack(IOStack[ReferenceIOWidget]):
     requestIonicResponseTool = QtCore.Signal()
+    limitsChanged = QtCore.Signal()
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         self.button_group_check_efficiency = QtWidgets.QButtonGroup()
@@ -614,6 +627,17 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
         for name, response in responses.items():
             if name in self:
                 self[name].response.setBaseValue(response)
+
+    def setLimitsEditable(self, editable: bool) -> None:
+        for widget in self.widgets():
+            if editable:
+                widget.lod_count.editingFinished.connect(self.limitsChanged)
+            else:
+                try:
+                    widget.lod_count.editingFinished.disconnect(self.limitsChanged)
+                except RuntimeError:
+                    pass
+            widget.lod_count.setReadOnly(not editable)
 
 
 class ResultIOStack(IOStack[ResultIOWidget]):

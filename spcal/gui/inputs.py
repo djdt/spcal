@@ -67,6 +67,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
+        self.io.limitsChanged.connect(self.updateLimits)
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
@@ -318,9 +319,11 @@ class InputWidget(QtWidgets.QWidget):
                 continue
 
             if method == "Manual Input":
-                limit = self.options.manual.baseValue() or 0.0
                 self.limits[name] = SPCalLimit(
-                    np.mean(response), limit, name="Manual Input", params={}
+                    np.mean(response),
+                    self.io[name].lod_count.value(),
+                    name="Manual Input",
+                    params={},
                 )
             else:
                 self.limits[name] = SPCalLimit.fromMethodString(

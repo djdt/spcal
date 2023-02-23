@@ -12,6 +12,7 @@ class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     limitOptionsChanged = QtCore.Signal()
     elementSelected = QtCore.Signal(str, float)
+    useManualLimits = QtCore.Signal(bool)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -113,7 +114,9 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ToolTipRole,
         )
         self.method.setItemData(
-            4, "Use a manually defined limit for filtering.", QtCore.Qt.ToolTipRole
+            4,
+            "Manually defined limits in the sample / reference tab.",
+            QtCore.Qt.ToolTipRole,
         )
 
         self.error_rate_poisson = ValueWidget(
@@ -143,15 +146,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
-        self.manual = UnitsWidget(
-            units=signal_units,
-            base_value=10.0,
-            validator=QtGui.QDoubleValidator(1e-9, 1e9, 2),
-            significant_figures=sf,
-        )
-        self.manual.setEnabled(False)
-        self.manual.setToolTip("Limit (in counts) used when method is 'Manual Input'.")
-
         self.method.currentTextChanged.connect(self.limitMethodChanged)
 
         self.window_size.editingFinished.connect(self.limitOptionsChanged)
@@ -160,7 +154,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
         self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
-        self.manual.valueChanged.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
         layout_method.addWidget(self.method)
@@ -179,7 +172,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.layout().addRow("Filter method:", layout_method)
         self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
         self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
-        self.limit_inputs.layout().addRow("Manual limit:", self.manual)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -225,10 +217,10 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
 
     def limitMethodChanged(self, method: str) -> None:
-        if method == "Manual Input":
-            self.manual.setEnabled(True)
-        else:
-            self.manual.setEnabled(False)
+        self.useManualLimits.emit(method == "Manual Input")
+        self.check_iterative.setEnabled(method != "Manual Input")
+        self.error_rate_poisson.setEnabled(method != "Manual Input")
+        self.error_rate_gaussian.setEnabled(method != "Manual Input")
 
     def isComplete(self) -> bool:
         if self.window_size.isEnabled() and not self.window_size.hasAcceptableInput():
