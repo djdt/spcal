@@ -270,5 +270,3 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     window.resetInputs()
-
-# def test_batch_export(qtbot: QtBot):
