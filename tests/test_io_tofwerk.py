@@ -12,12 +12,12 @@ from spcal.io.tofwerk import (
     read_tofwerk_file,
 )
 
-path = Path(__file__).parent.joinpath("data/tofwerk_au_50nm.h5")
+path = Path(__file__).parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
 
 
 def test_is_tofwerk_file():
     assert is_tofwerk_file(path)
-    assert not is_tofwerk_file(path.parent.joinpath("text_normal.csv"))
+    assert not is_tofwerk_file(path.parent.parent.joinpath("text/text_normal.csv"))
     assert not is_tofwerk_file(path.parent.joinpath("non_existant.h5"))
 
 
