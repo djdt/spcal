@@ -70,3 +70,27 @@ def test_import_dialog_text_tofwerk(qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
+
+
+def test_import_dialog_nu(qtbot: QtBot):
+    def check_data(data: np.ndarray, options: dict):
+        if data.dtype.names != ("[197Au]+ (cts)",):
+            return False
+        if data.size != 999:
+            return False
+        return True
+
+    path = Path(__file__).parent.parent.joinpath("data/nu/run.info")
+    pass
+
+
+def test_import_dialog_tofwerk(qtbot: QtBot):
+    def check_data(data: np.ndarray, options: dict):
+        if data.dtype.names != ("[197Au]+ (cts)",):
+            return False
+        if data.size != 999:
+            return False
+        return True
+
+    path = Path(__file__).parent.parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
+    pass
