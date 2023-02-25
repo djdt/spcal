@@ -2,6 +2,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+import pytest
 
 from spcal.io.tofwerk import (
     calibrate_index_to_mass,
@@ -19,6 +20,20 @@ def test_is_tofwerk_file():
     assert is_tofwerk_file(path)
     assert not is_tofwerk_file(path.parent.parent.joinpath("text/text_normal.csv"))
     assert not is_tofwerk_file(path.parent.joinpath("non_existant.h5"))
+
+
+def test_calibration_modes():
+    x = np.arange(1, 10)
+    for mode in [0, 1, 2, 5]:
+        masses = calibrate_index_to_mass(x, mode, [1.0, -2.0, 3.0])
+        idx = calibrate_mass_to_index(masses, mode, [1.0, -2.0, 3.0])
+        assert np.all(x == idx)
+
+    for mode in [3, 4, -1]:
+        with pytest.raises(ValueError):
+            calibrate_index_to_mass(x, mode, [1.0, -2.0, 3.0])
+        with pytest.raises(ValueError):
+            calibrate_mass_to_index(x, mode, [1.0, -2.0, 3.0])
 
 
 def test_calibration():
