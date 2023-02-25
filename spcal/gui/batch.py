@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -12,6 +13,7 @@ from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, read_single_particle_file
+from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
@@ -129,6 +131,34 @@ def process_nu_file(
         f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in import_options["isotopes"]
     }
     data = select_nu_signals(masses, signals, selected_masses=selected_masses)
+
+    data = data[trim[0] : data.size - trim[1]]
+    if data.size == 0:
+        raise ValueError("data size zero")
+
+    results = process_data(path, data, **process_kws)
+
+    # === Export to file ===
+    export_single_particle_results(outpath, results, **output_kws)
+
+
+def process_tofwerk_file(
+    path: Path,
+    outpath: Path,
+    import_options: dict,
+    trim: Tuple[int, int],
+    process_kws: dict,
+    output_kws: dict,
+) -> None:
+    with h5py.File(path, "r") as h5:
+        peak_labels = h5["PeakData"]["PeakTable"]["label"].astype("U256")
+    selected_labels = [
+        f"[{i['Isotope']}{i['Symbol']}]+" for i in import_options["isotopes"]
+    ]
+    selected_labels.extend(import_options["other peaks"])
+    selected_idx = np.flatnonzero(np.in1d(peak_labels, selected_labels))
+
+    data, info, dwell = read_tofwerk_file(path, idx=selected_idx)
 
     data = data[trim[0] : data.size - trim[1]]
     if data.size == 0:
@@ -449,11 +479,16 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 molar_concentration_units[self.conc_units.currentText()],
             ),
         }
-        fn = (
-            process_text_file
-            if self.sample.import_options["importer"] == "text"
-            else process_nu_file
-        )
+        match self.sample.import_options["importer"]:
+            case "text":
+                fn = process_text_file
+            case "nu":
+                fn = process_nu_file
+            case "tofwerk":
+                fn = process_tofwerk_file
+            case default:
+                raise ValueError(f"start: no exporter for importer '{default}'")
+
         for path, outpath in zip(infiles, outfiles):
             worker = Worker(
                 fn,
