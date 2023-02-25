@@ -114,3 +114,57 @@ def test_batch_export_nu(qtbot: QtBot):
             dlg.start()
 
         assert opath.stat().st_size > 0
+
+
+def test_batch_export_tofwerk(qtbot: QtBot):
+    window = SPCalWindow()
+    qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
+
+    assert not window.action_open_batch.isEnabled()
+
+    path = Path(__file__).parent.parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
+
+    data, info, dwell = read_tofwerk_file(path, idx=np.array([293]))
+
+    with qtbot.wait_signal(window.sample.detectionsChanged):
+        window.sample.loadData(
+            data,
+            {
+                "path": path,
+                "importer": "tofwerk",
+                "dwelltime": dwell,
+                "isotopes": np.array(
+                    [(79, "Au", 197, 196.96656879, 1.0, 1)],
+                    dtype=[
+                        ("Number", np.uint16),
+                        ("Symbol", "U2"),
+                        ("Isotope", np.uint16),
+                        ("Mass", float),
+                        ("Composition", float),
+                        ("Preffered", np.uint8),
+                    ],
+                ),
+                "other peaks": [],
+            },
+        )
+
+    assert window.action_open_batch.isEnabled()
+
+    with tempfile.NamedTemporaryFile(suffix=".csv") as tmp:
+        opath = Path(tmp.name)
+
+        dlg = window.dialogBatchProcess()
+        qtbot.add_widget(dlg)
+        dlg.files.addItems([str(path)])
+
+        dlg.output_name.setText(opath.name)
+        dlg.output_dir.setText(str(opath.parent))
+
+        assert opath.stat().st_size == 0
+
+        with qtbot.wait_signal(dlg.processingFinshed):
+            dlg.start()
+
+        assert opath.stat().st_size > 0
