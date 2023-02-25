@@ -167,7 +167,7 @@ def read_tofwerk_file(
             data = integrate_tof_data(h5, idx=idx)
 
         data *= factor_extraction_to_acquisition(h5)
-        info = h5["PeakData"]["PeakTable"][..., idx]
+        info = h5["PeakData"]["PeakTable"][idx]
         dwell = (
             float(h5["TimingData"].attrs["TofPeriod"])
             * 1e-9
