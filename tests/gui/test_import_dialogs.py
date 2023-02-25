@@ -24,6 +24,7 @@ def test_import_dialog_text_nu(qtbot: QtBot):
 
     path = Path(__file__).parent.parent.joinpath("data/text/nu_export_auag.csv")
     dlg = ImportDialog(path)
+    qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
@@ -85,6 +86,7 @@ def test_import_dialog_nu(qtbot: QtBot):
 
     path = Path(__file__).parent.parent.joinpath("data/nu")
     dlg = NuImportDialog(path)
+    qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
@@ -123,6 +125,7 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
 
     path = Path(__file__).parent.parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
     dlg = TofwerkImportDialog(path)
+    qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
