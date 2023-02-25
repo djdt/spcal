@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -248,7 +248,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         if enabled_isotopes is None:
             enabled_isotopes = db["isotopes"]
 
-        self.buttons = {}
+        self.buttons: Dict[str, PeriodicTableButton] = {}
         for symbol in element_positions.keys():
             # Limit to chosen ones
             isotopes = db["isotopes"][db["isotopes"]["Symbol"] == symbol]
