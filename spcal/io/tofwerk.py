@@ -141,7 +141,7 @@ def integrate_tof_data(
 
 
 def read_tofwerk_file(
-    path: Path | str, idx: np.array | None = None
+    path: Path | str, idx: np.ndarray | None = None
 ) -> Tuple[np.ndarray, np.ndarray, float]:
     """Reads a TOFWERK TofDaq .hdf and returns peak data and peak info.
 
