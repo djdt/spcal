@@ -23,5 +23,8 @@ class OverLabel(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
+    def text(self) -> str:
+        return self.label.text()
+
     def setText(self, label: str) -> None:
         self.label.setText(label)

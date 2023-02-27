@@ -168,7 +168,7 @@ class SampleIOWidget(IOWidget):
         self.count.setValue(None)
         self.background_count.setValue(None)
         self.lod_count.setValue(None)
-        self.label_lod.clear()
+        self.lod_label.setText("")
 
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
         def set_mass_fraction(ratios: Dict[str, float]):
@@ -215,7 +215,7 @@ class SampleIOWidget(IOWidget):
         self.background_count.setValue(background)
         self.background_count.setError(background_std)
         self.lod_count.setValue(lod)
-        self.label_lod.setText(
+        self.lod_label.setText(
             f"({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
         )
 

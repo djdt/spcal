@@ -57,7 +57,7 @@ def test_sample_with_reference(qtbot: QtBot):
         window.sample.io["Au"].background_count.value(), 0.3064, atol=1e-4
     )
     assert np.isclose(window.sample.io["Au"].lod_count.value(), 37.63, atol=1e-2)
-    assert window.sample.io["Au"].label_lod.text() == "(Poisson, alpha=0.001)"
+    assert window.sample.io["Au"].lod_label.text() == "(Poisson, alpha=0.001)"
 
     # Set values
     window.sample.io["Au"].density.setBaseValue(density)
@@ -92,12 +92,14 @@ def test_sample_with_reference(qtbot: QtBot):
         window.reference.limits["Au"].detection_threshold, 12.94, atol=1e-2
     )
     assert window.reference.io["Au"].efficiency.value() is None
+    assert window.reference.io["Au"].efficiency_label.text() == ""
     assert window.reference.io["Au"].massresponse.baseValue() is None
 
     # Set values
     window.reference.io["Au"].density.setBaseValue(density)
     window.reference.io["Au"].diameter.setBaseValue(15e-9)
     assert np.isclose(window.reference.io["Au"].efficiency.value(), 0.05427, atol=1e-5)
+    assert window.reference.io["Au"].efficiency_label.text() == "(Mass)"
     assert np.isclose(
         window.reference.io["Au"].massresponse.baseValue(),
         5.2885e-22,
