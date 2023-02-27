@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal.particle
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
-from spcal.gui.widgets import UnitsWidget, ValueWidget
+from spcal.gui.widgets import OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
@@ -142,22 +142,13 @@ class SampleIOWidget(IOWidget):
         self.background_count.setReadOnly(True)
         self.lod_count = ValueWidget()
         self.lod_count.setReadOnly(True)
-        self.label_lod = QtWidgets.QLabel()
-        self.label_lod.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.label_lod.setIndent(10)
-
-        layout_lod = QtWidgets.QGridLayout()
-        layout_lod.addWidget(self.lod_count, 0, 0, 1, 1)
-        align = (
-            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
-        )
-        layout_lod.addWidget(self.label_lod, 0, 0, 1, 1, align)
+        self.lod_label = OverLabel(self.lod_count, "")
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
-        self.outputs.layout().addRow("LOD count:", layout_lod)
+        self.outputs.layout().addRow("LOD count:", self.lod_label)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.inputs)
@@ -275,6 +266,7 @@ class ReferenceIOWidget(SampleIOWidget):
             validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
         )
         self.efficiency.setReadOnly(True)
+        self.efficiency_label = OverLabel(self.efficiency, "")
 
         self.massresponse = UnitsWidget(
             {
@@ -292,7 +284,7 @@ class ReferenceIOWidget(SampleIOWidget):
         )
         self.massresponse.setReadOnly(True)
 
-        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency)
+        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency_label)
         self.outputs.layout().addRow("", self.check_use_efficiency_for_all)
         self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
@@ -321,6 +313,7 @@ class ReferenceIOWidget(SampleIOWidget):
     ) -> None:
         # Make these delegates
         self.efficiency.setValue(None)
+        self.efficiency_label.setText("")
         self.massresponse.setBaseValue(None)
 
         density = self.density.baseValue()
@@ -345,6 +338,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 time=time,
             )
             self.efficiency.setValue(efficiency)
+            self.efficiency_label.setText("(Concentration)")
         elif mass_fraction is not None and uptake is not None and response is not None:
             efficiency = spcal.particle.nebulisation_efficiency_from_mass(
                 detections,
@@ -355,6 +349,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 mass_fraction=mass_fraction,
             )
             self.efficiency.setValue(efficiency)
+            self.efficiency_label.setText("(Mass)")
 
     def isComplete(self) -> bool:
         return super().isComplete() and self.diameter.hasAcceptableInput()

@@ -2,8 +2,8 @@ from statistics import NormalDist
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import UnitsWidget, ValueWidget
-from spcal.siunits import signal_units, time_units
+from spcal.gui.widgets import UnitsWidget, ValueWidget, OverLabel
+from spcal.siunits import time_units
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
 
@@ -139,9 +139,7 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.error_rate_gaussian.editingFinished.connect(self.updateLabelSigma)
 
-        self.label_sigma_gaussian = QtWidgets.QLabel("4.75 σ")
-        self.label_sigma_gaussian.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.label_sigma_gaussian.setIndent(10)
+        self.label_sigma_gaussian = OverLabel(self.error_rate_gaussian, "4.75 σ")
 
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
@@ -159,19 +157,12 @@ class OptionsWidget(QtWidgets.QWidget):
         layout_method.addWidget(self.method)
         layout_method.addWidget(self.check_iterative)
 
-        layout_gaussian = QtWidgets.QGridLayout()
-        layout_gaussian.addWidget(self.error_rate_gaussian, 0, 0, 1, 1)
-        align = (
-            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
-        )
-        layout_gaussian.addWidget(self.label_sigma_gaussian, 0, 0, 1, 1, align)
-
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Filter method:", layout_method)
         self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
-        self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
+        self.limit_inputs.layout().addRow("Gaussian α:", self.label_sigma_gaussian)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
