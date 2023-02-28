@@ -53,6 +53,7 @@ def test_sample_with_reference(qtbot: QtBot):
     assert np.isclose(window.sample.limits["Au"].detection_threshold, 37.63, atol=1e-2)
 
     assert window.sample.io["Au"].count.value() == 3072
+    assert window.sample.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
     assert np.isclose(
         window.sample.io["Au"].background_count.value(), 0.3064, atol=1e-4
     )
@@ -112,6 +113,9 @@ def test_sample_with_reference(qtbot: QtBot):
     window.results.updateResults()
     assert "size" in window.results.results["Au"].detections
     assert "size" not in window.results.results["Ag"].detections
+    assert window.results.io["Au"].count.value() == 3072
+    assert window.results.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
+    assert window.results.io["Au"].count_label.text() == "(100 %)"
     # Should test all outputs here
     assert np.isclose(window.results.io["Au"].mean.baseValue(), 2091, atol=1)
     assert np.isclose(window.results.io["Au"].median.baseValue(), 2034, atol=1)
