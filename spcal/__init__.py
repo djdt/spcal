@@ -1,4 +1,4 @@
 from .detection import *
 from .particle import *
 
-__version__ = "0.9.5"
+__version__ = "0.9.6"
