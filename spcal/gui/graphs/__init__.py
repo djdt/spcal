@@ -1,6 +1,5 @@
 from PySide6 import QtGui
 
-
 color_schemes = {
     "IBM Carbon": [
         QtGui.QColor("#6929c4"),  # Purple 70
@@ -50,6 +49,15 @@ color_schemes = {
         QtGui.QColor("#7f7f7f"),
         QtGui.QColor("#bcbd22"),
         QtGui.QColor("#17becf"),
+    ],
+    "Tol Bright": [  # https://cran.r-project.org/web/packages/khroma/vignettes/tol.html
+        QtGui.QColor("#4477aa"),
+        QtGui.QColor("#ee6677"),
+        QtGui.QColor("#228833"),
+        QtGui.QColor("#ccbb44"),
+        QtGui.QColor("#66ccee"),
+        QtGui.QColor("#aa3377"),
+        QtGui.QColor("#bbbbbb"),
     ],
     "Okabe Ito": [  # https://jfly.uni-koeln.de/color/
         QtGui.QColor(0, 0, 0),

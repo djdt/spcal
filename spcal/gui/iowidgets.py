@@ -211,7 +211,7 @@ class SampleIOWidget(IOWidget):
         count = np.count_nonzero(detections)
 
         self.count.setValue(count)
-        self.count.setError(np.sqrt(count))
+        self.count.setError(np.round(np.sqrt(count), 0))
         self.background_count.setValue(background)
         self.background_count.setError(background_std)
         self.lod_count.setValue(lod)
@@ -368,6 +368,7 @@ class ResultIOWidget(IOWidget):
 
         self.count = ValueWidget(significant_figures=sf)
         self.count.setReadOnly(True)
+        self.count_label = OverLabel(self.count, "")
         self.number = UnitsWidget(
             {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", significant_figures=sf
         )
@@ -389,7 +390,7 @@ class ResultIOWidget(IOWidget):
         self.median.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
-        layout_outputs_left.addRow("No. Detections:", self.count)
+        layout_outputs_left.addRow("No. Detections:", self.count_label)
         layout_outputs_left.addRow("No. Concentration:", self.number)
         layout_outputs_left.addRow("Concentration:", self.conc)
         layout_outputs_left.addRow("Ionic Background:", self.background)
@@ -414,6 +415,7 @@ class ResultIOWidget(IOWidget):
         self.lod.setBaseValue(None)
 
         self.count.setValue(0)
+        self.count_label.setText("")
         self.number.setBaseValue(None)
         self.number.setBaseError(None)
         self.conc.setBaseValue(None)
@@ -454,8 +456,10 @@ class ResultIOWidget(IOWidget):
 
         relative_error = count / count_error
         self.count.setValue(count)
-        self.count.setError(count_error)
-        # (f"{count} ± {count_error:.1f} ({count_percent:.1f} %)")
+        self.count.setError(np.round(count_error, 0))
+        self.count_label.setText(
+            f"({count_percent:.{self.count.significant_figures}g} %)"
+        )
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)
