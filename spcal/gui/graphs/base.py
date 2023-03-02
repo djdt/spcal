@@ -219,7 +219,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.setLimits(**limits)
 
     def zoomReset(self) -> None:
+        x, y = self.plot.vb.state["autoRange"][0], self.plot.vb.state["autoRange"][1]
         self.plot.autoRange()
+        self.plot.enableAutoRange(x=x, y=y)
 
 
 # class MultiPlotGraphicsView(SPCalGraphicsView):
