@@ -189,6 +189,8 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
     def accept(self) -> None:
         idx = self.table.selectedIndexes()
+        for i in range(4):
+            print(self.proxy.data(idx[i]))
         self.densitySelected.emit(float(self.proxy.data(idx[3])))
-        self.formulaSelected.emit(float(self.proxy.data(idx[0])))
+        self.formulaSelected.emit(self.proxy.data(idx[0]))
         super().accept()
