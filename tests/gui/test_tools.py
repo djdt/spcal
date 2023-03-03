@@ -43,15 +43,10 @@ def test_mass_fraction_calculator(qtbot: QtBot):
             return False
         return True
 
-    def check_molarmass(mass: float):
-        if not np.isclose(mass, 178.8, atol=0.1):
-            return False
-        return True
-
     with qtbot.wait_signals(
         [dlg.ratiosSelected, dlg.molarMassSelected],
         timeout=1000,
-        check_params_cbs=[check_ratios, check_molarmass],
+        check_params_cbs=[check_ratios, lambda m: np.isclose(m, 178.8, atol=0.1)],
     ):
         dlg.accept()
 
@@ -61,3 +56,28 @@ def test_particle_database(qtbot: QtBot):
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.show()
+
+    dlg.lineedit_search.setText("AgCl")
+
+    assert dlg.proxy.data(dlg.proxy.index(0, 0)) == "AgCl"
+    assert dlg.proxy.data(dlg.proxy.index(0, 1)) == "silver (i) chloride"
+    assert dlg.proxy.data(dlg.proxy.index(0, 2)) == "7783-90-6"
+    assert dlg.proxy.data(dlg.proxy.index(0, 3)) == "5.56"
+
+    assert dlg.proxy.data(dlg.proxy.index(1, 0)) == "AgClO3"
+    assert dlg.proxy.data(dlg.proxy.index(2, 0)) == "AgClO4"
+
+    qtbot.mouseClick(
+        dlg.table,
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.NoModifier,
+        dlg.table.visualRect(dlg.proxy.buddy(dlg.proxy.index(1, 0))).center(),
+    )
+    dlg.table.selectRow(1)
+
+    with qtbot.wait_signals(
+        [dlg.densitySelected, dlg.formulaSelected],
+        timeout=1000,
+        check_params_cbs=[lambda d: d == 4.43, lambda f: f == "AgClO3"],
+    ):
+        dlg.accept()
