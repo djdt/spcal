@@ -456,7 +456,7 @@ class ResultIOWidget(IOWidget):
         relative_error = count / count_error
         self.count.setValue(count)
         self.count.setError(np.round(count_error, 0))
-        self.count_label.setText(f"({count_percent:.{self.count.view_format}} %)")
+        self.count_label.setText(f"({count_percent:{self.count.view_format}} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)
