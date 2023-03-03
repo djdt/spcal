@@ -34,9 +34,21 @@ def test_value_widget(qtbot: QtBot):
     w.clearFocus()
     assert w.text() == "0.123457"
 
-    w.setSignificantFigures(8)
+    w.setViewFormat(8)
     assert w.text() == "0.12345679"
 
     w.setError(0.123456789)
     # Don't know how to test the paint event
     assert w.error() == 0.123456789
+    w.repaint()
+
+    w.setViewFormat(".0f")
+    assert w.text() == "0"
+
+    w.setEditFormat(1)
+    w.setFocus()
+    assert w.text() == "0.1"
+    w.clearFocus()
+    w.setEditFormat(".0f")
+    w.setFocus()
+    assert w.text() == "0"

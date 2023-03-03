@@ -106,7 +106,7 @@ class ValueWidget(ValidColorLineEdit):
         rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
 
         text = fm.elidedText(
-            f" ± {self._error:.{self.view_format}}",
+            f" ± {self._error:{self.view_format}}",
             QtCore.Qt.TextElideMode.ElideRight,
             rect.width(),
         )
