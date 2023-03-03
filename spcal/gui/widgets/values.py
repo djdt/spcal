@@ -12,7 +12,7 @@ class ValueWidget(ValidColorLineEdit):
         self,
         value: float | None = None,
         validator: QtGui.QValidator | None = None,
-        significant_figures: int = 6,
+        format: str | int = 6,
         color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -25,16 +25,26 @@ class ValueWidget(ValidColorLineEdit):
             validator = QtGui.QDoubleValidator(0.0, 1e99, 16)
         self.setValidator(validator)
 
-        self.significant_figures = significant_figures
+        self.view_format = format if isinstance(format, str) else f".{format}g"
+        self.edit_format = ".16g"
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
 
         self.setValue(value)
 
-    def setSignificantFigures(self, num: int) -> None:
-        self.significant_figures = num
+    def setViewFormat(self, format: str | int) -> None:
+        if isinstance(format, str):
+            self.view_format = format
+        else:
+            self.view_format = f".{format}g"
         self.updateTextFromValue()
+
+    def setEditFormat(self, format: str | int) -> None:
+        if isinstance(format, str):
+            self.edit_format = format
+        else:
+            self.edit_format = f".{format}g"
 
     def value(self) -> float | None:
         return self._value
@@ -72,9 +82,9 @@ class ValueWidget(ValidColorLineEdit):
         self.valueChanged.connect(self.updateTextFromValue)
 
     def updateTextFromValue(self) -> None:
-        sf = 16 if self.isEditMode() else self.significant_figures
+        format = self.edit_format if self.isEditMode() else self.view_format
         value = self.value()
-        text = f"{value:.{sf}g}" if value is not None else ""
+        text = f"{value:{format}}" if value is not None else ""
         self.setText(text)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
@@ -96,7 +106,7 @@ class ValueWidget(ValidColorLineEdit):
         rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
 
         text = fm.elidedText(
-            f" ± {self._error:.{self.significant_figures}g}",
+            f" ± {self._error:.{self.view_format}}",
             QtCore.Qt.TextElideMode.ElideRight,
             rect.width(),
         )

@@ -2,7 +2,7 @@ from statistics import NormalDist
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import UnitsWidget, ValueWidget, OverLabel
+from spcal.gui.widgets import OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import time_units
 
 # Todo: add a tool to load an ionic standard and get mean / median signal
@@ -31,17 +31,17 @@ class OptionsWidget(QtWidgets.QWidget):
             time_units,
             default_unit="ms",
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
-            significant_figures=sf,
+            format=sf,
         )
         self.dwelltime.setReadOnly(True)
 
         self.uptake = UnitsWidget(
             uptake_units,
             default_unit="ml/min",
-            significant_figures=sf,
+            format=sf,
         )
         self.efficiency = ValueWidget(
-            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
         )
 
         self.dwelltime.setToolTip(
@@ -77,7 +77,10 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
         self.inputs.layout().addRow("", self.efficiency_method)
 
-        self.window_size = ValueWidget(1000, validator=QtGui.QIntValidator(3, 1000000))
+        self.window_size = ValueWidget(
+            1000, format=".0f", validator=QtGui.QIntValidator(3, 1000000)
+        )
+        self.window_size.setEditFormat(".0f")
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
         self.check_use_window = QtWidgets.QCheckBox("Use window")
@@ -122,7 +125,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_poisson = ValueWidget(
             0.001,
             validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
-            significant_figures=sf,
+            format=sf,
         )
         self.error_rate_poisson.setPlaceholderText("0.001")
         self.error_rate_poisson.setToolTip(
@@ -131,7 +134,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_gaussian = ValueWidget(
             1e-6,
             validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
-            significant_figures=sf,
+            format=sf,
         )
         self.error_rate_gaussian.setPlaceholderText("1e-6")
         self.error_rate_gaussian.setToolTip(
@@ -255,4 +258,5 @@ class OptionsWidget(QtWidgets.QWidget):
         if num is None:
             num = int(QtCore.QSettings().value("sigfigs", 4))
         for widget in self.findChildren(ValueWidget):
-            widget.setSignificantFigures(num)
+            if widget.view_format.endswith("g"):
+                widget.setViewFormat(num)

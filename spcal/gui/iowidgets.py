@@ -37,7 +37,8 @@ class IOWidget(QtWidgets.QWidget):
         if num is None:
             num = int(QtCore.QSettings().value("sigfigs", 4))
         for widget in self.findChildren(ValueWidget):
-            widget.setSignificantFigures(num)
+            if widget.view_format.endswith("g"):
+                widget.setViewFormat(num)
 
     def isComplete(self) -> bool:
         return True
@@ -73,7 +74,7 @@ class SampleIOWidget(IOWidget):
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
-            significant_figures=sf,
+            format=sf,
         )
         self.density.lineedit.addAction(
             self.action_density, QtWidgets.QLineEdit.ActionPosition.TrailingPosition
@@ -82,7 +83,7 @@ class SampleIOWidget(IOWidget):
             {"g/mol": 1e-3, "kg/mol": 1.0},
             default_unit="g/mol",
             color_invalid=QtGui.QColor(255, 255, 172),
-            significant_figures=sf,
+            format=sf,
         )
         self.molarmass.lineedit.addAction(
             self.action_mass_fraction,
@@ -96,7 +97,7 @@ class SampleIOWidget(IOWidget):
                 "counts/(mg/L)": 1e6,
             },
             default_unit="counts/(μg/L)",
-            significant_figures=sf,
+            format=sf,
         )
         self.response.lineedit.addAction(
             self.action_ionic_response,
@@ -106,7 +107,7 @@ class SampleIOWidget(IOWidget):
         self.massfraction = ValueWidget(
             1.0,
             validator=QtGui.QDoubleValidator(0.0, 1.0, 16),
-            significant_figures=sf,
+            format=sf,
         )
         self.massfraction.addAction(
             self.action_mass_fraction,
@@ -136,9 +137,9 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Ionic response:", self.response)
         self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.count = ValueWidget(0, significant_figures=sf)
+        self.count = ValueWidget(0, format="d")
         self.count.setReadOnly(True)
-        self.background_count = ValueWidget(significant_figures=sf)
+        self.background_count = ValueWidget(format=sf)
         self.background_count.setReadOnly(True)
         self.lod_count = ValueWidget()
         self.lod_count.setReadOnly(True)
@@ -236,11 +237,9 @@ class ReferenceIOWidget(SampleIOWidget):
             units=mass_concentration_units,
             default_unit="ng/L",
             color_invalid=QtGui.QColor(255, 255, 172),
-            significant_figures=sf,
+            format=sf,
         )
-        self.diameter = UnitsWidget(
-            size_units, default_unit="nm", significant_figures=sf
-        )
+        self.diameter = UnitsWidget(size_units, default_unit="nm", format=sf)
 
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
@@ -263,7 +262,7 @@ class ReferenceIOWidget(SampleIOWidget):
         )
 
         self.efficiency = ValueWidget(
-            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), significant_figures=sf
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
         )
         self.efficiency.setReadOnly(True)
         self.efficiency_label = OverLabel(self.efficiency, "")
@@ -280,7 +279,7 @@ class ReferenceIOWidget(SampleIOWidget):
                 "kg/count": 1.0,
             },
             default_unit="ag/count",
-            significant_figures=sf,
+            format=sf,
         )
         self.massresponse.setReadOnly(True)
 
@@ -366,27 +365,27 @@ class ResultIOWidget(IOWidget):
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
-        self.count = ValueWidget(significant_figures=sf)
+        self.count = ValueWidget(format=".0f")
         self.count.setReadOnly(True)
         self.count_label = OverLabel(self.count, "")
         self.number = UnitsWidget(
-            {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", significant_figures=sf
+            {"#/L": 1.0, "#/ml": 1e3}, default_unit="#/L", format=sf
         )
         self.number.setReadOnly(True)
         self.conc = UnitsWidget(
-            mass_concentration_units, default_unit="ng/L", significant_figures=sf
+            mass_concentration_units, default_unit="ng/L", format=sf
         )
         self.conc.setReadOnly(True)
         self.background = UnitsWidget(
-            mass_concentration_units, default_unit="ng/L", significant_figures=sf
+            mass_concentration_units, default_unit="ng/L", format=sf
         )
         self.background.setReadOnly(True)
 
-        self.lod = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
+        self.lod = UnitsWidget(size_units, default_unit="nm", format=sf)
         self.lod.setReadOnly(True)
-        self.mean = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
+        self.mean = UnitsWidget(size_units, default_unit="nm", format=sf)
         self.mean.setReadOnly(True)
-        self.median = UnitsWidget(size_units, default_unit="nm", significant_figures=sf)
+        self.median = UnitsWidget(size_units, default_unit="nm", format=sf)
         self.median.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
@@ -457,9 +456,7 @@ class ResultIOWidget(IOWidget):
         relative_error = count / count_error
         self.count.setValue(count)
         self.count.setError(np.round(count_error, 0))
-        self.count_label.setText(
-            f"({count_percent:.{self.count.significant_figures}g} %)"
-        )
+        self.count_label.setText(f"({count_percent:.{self.count.view_format}} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)
