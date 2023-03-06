@@ -441,6 +441,7 @@ class NuImportDialog(_ImportDialogBase):
                 logger.warning(
                     f"NuImportDialog: missing integ file {idx['FileNum']}, skipping"
                 )
+                self.progress.setValue(self.progress.value() + 1)
                 continue
             worker = Worker(
                 read_signals,
