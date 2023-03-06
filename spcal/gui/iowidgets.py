@@ -211,8 +211,8 @@ class SampleIOWidget(IOWidget):
 
         count = np.count_nonzero(detections)
 
-        self.count.setValue(count)
-        self.count.setError(np.round(np.sqrt(count), 0))
+        self.count.setValue(int(count))
+        self.count.setError(int(np.round(np.sqrt(count), 0)))
         self.background_count.setValue(background)
         self.background_count.setError(background_std)
         self.lod_count.setValue(lod)
@@ -454,8 +454,8 @@ class ResultIOWidget(IOWidget):
         self.lod.setUnit(unit)
 
         relative_error = count / count_error
-        self.count.setValue(count)
-        self.count.setError(np.round(count_error, 0))
+        self.count.setValue(int(count))
+        self.count.setError(int(np.round(count_error, 0)))
         self.count_label.setText(f"({count_percent:{self.count.view_format}} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
