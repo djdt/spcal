@@ -430,7 +430,7 @@ class InputWidget(QtWidgets.QWidget):
 
             self.graph.drawLimits(
                 self.events[trim[0] : trim[1]],
-                # limits.mean_background,
+                self.limits[name].mean_background,
                 self.limits[name].detection_threshold,
                 pen=pen,
             )
