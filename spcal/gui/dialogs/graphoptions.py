@@ -58,19 +58,19 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             mass_units,
             base_value=self.bin_widths["mass"],
             color_invalid=color,
-            significant_figures=sf,
+            format=sf,
         )
         self.width_size = UnitsWidget(
             size_units,
             base_value=self.bin_widths["size"],
             color_invalid=color,
-            significant_figures=sf,
+            format=sf,
         )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
             base_value=self.bin_widths["cell_concentration"],
             color_invalid=color,
-            significant_figures=sf,
+            format=sf,
         )
 
         for widget in [
