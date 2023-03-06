@@ -53,7 +53,9 @@ class HistogramView(SinglePlotGraphicsView):
         if draw_fit is not None:
             pen = QtGui.QPen(brush.color(), 1.0)
             pen.setCosmetic(True)
-            curve = self.drawFit(hist, edges, data.size, pen=pen, visible=fit_visible)
+            curve = self.drawFit(
+                hist, edges, data.size, fit_type=draw_fit, pen=pen, visible=fit_visible
+            )
             legend.setFit(curve)
 
         if draw_limits is not None:
