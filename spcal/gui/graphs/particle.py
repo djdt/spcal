@@ -122,15 +122,21 @@ class ParticleView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
     ) -> None:
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
 
-        for val, name in zip([mean, limit], ["Mean", "Detection Threshold"]):
+        for val, name, style in zip(
+            [limit, mean],
+            ["Detection Threshold", "Mean"],
+            [QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.SolidLine],
+        ):
             if isinstance(val, float) or val.size == 1:
                 nx, y = [x[0], x[-1]], [val, val]
             else:
                 diffs = np.diff(val, n=2, append=0, prepend=0) != 0
                 nx, y = x[diffs], val[diffs]
+
+            pen.setStyle(style)
 
             curve = pyqtgraph.PlotCurveItem(
                 x=nx,
