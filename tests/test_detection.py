@@ -10,22 +10,22 @@ def test_accumulate_detections():
     sums, labels, regions = detection.accumulate_detections(x, 1, 1)
     assert np.all(sums == [2, 4, 2])
     assert np.all(labels == [1, 0, 2, 2, 0, 0, 0, 0, 0, 3])
-    assert np.all(regions == [[0, 1], [2, 4], [9, 9]])
+    assert np.all(regions == [[0, 1], [2, 4], [9, 10]])
 
     # Test regions access
-    assert np.all(sums == np.add.reduceat(x, regions.ravel())[::2])
+    assert np.all(sums == np.add.reduceat(x, regions.ravel()[:-1])[::2])
 
     # Lc == Ld, integrate
     sums, labels, regions = detection.accumulate_detections(x, 1, 1, integrate=True)
     assert np.all(sums == [1, 2, 1])
     assert np.all(labels == [1, 0, 2, 2, 0, 0, 0, 0, 0, 3])
-    assert np.all(regions == [[0, 1], [2, 4], [9, 9]])
+    assert np.all(regions == [[0, 1], [2, 4], [9, 10]])
 
     # Lc < Ld
     sums, labels, regions = detection.accumulate_detections(x, 0, 1)
     assert np.all(sums == [8, 2])
     assert np.all(labels == [1, 1, 1, 1, 1, 0, 0, 0, 0, 2])
-    assert np.all(regions == [[0, 5], [9, 9]])
+    assert np.all(regions == [[0, 5], [9, 10]])
 
     # Lc > Ld
     with pytest.raises(ValueError):
@@ -42,6 +42,26 @@ def test_accumulate_detections():
     assert np.all(sums == [])
     assert np.all(labels == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     assert regions.size == 0
+
+
+def test_accumulate_detections_regions():
+    # To end
+    x = np.array([0, 2, 2, 0, 0, 2, 0, 0, 0, 0])
+    sums, labels, regions = detection.accumulate_detections(x, 1, 1)
+    assert np.all(labels == [0, 1, 1, 0, 0, 2, 0, 0, 0, 0])
+    assert np.all(regions == [[1, 3], [5, 6]])
+
+    # At end
+    x = np.array([0, 2, 2, 0, 0, 0, 0, 0, 2, 2])
+    sums, labels, regions = detection.accumulate_detections(x, 1, 1)
+    assert np.all(labels == [0, 1, 1, 0, 0, 0, 0, 0, 2, 2])
+    assert np.all(regions == [[1, 3], [8, 10]])
+
+    # Near end
+    x = np.array([0, 2, 2, 0, 0, 0, 0, 0, 2, 0])
+    sums, labels, regions = detection.accumulate_detections(x, 1, 1)
+    assert np.all(labels == [0, 1, 1, 0, 0, 0, 0, 0, 2, 0])
+    assert np.all(regions == [[1, 3], [8, 9]])
 
 
 def test_detection_maxima():
@@ -86,4 +106,4 @@ def test_combine_detections():
     assert np.all(csums["A"] == [3.0, 4.0, 8.0])
     assert np.all(csums["B"] == [8.0, 6.0, 8.0])
     assert np.all(clabels == [1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 2, 2, 2, 2, 0, 3, 3, 3, 3])
-    assert np.all(cregions == [[0, 6], [9, 14], [15, 18]])
+    assert np.all(cregions == [[0, 6], [9, 14], [15, 19]])

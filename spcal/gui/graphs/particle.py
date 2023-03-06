@@ -117,7 +117,7 @@ class ParticleView(SinglePlotGraphicsView):
     def drawLimits(
         self,
         x: np.ndarray,
-        # mean: float | np.ndarray,
+        mean: float | np.ndarray,
         limit: float | np.ndarray,
         pen: QtGui.QPen | None = None,
     ) -> None:
@@ -125,19 +125,20 @@ class ParticleView(SinglePlotGraphicsView):
             pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
             pen.setCosmetic(True)
 
-        if isinstance(limit, float) or limit.size == 1:
-            nx, y = [x[0], x[-1]], [limit, limit]
-        else:
-            diffs = np.diff(limit, n=2, append=0, prepend=0) != 0
-            nx, y = x[diffs], limit[diffs]
+        for val, name in zip([mean, limit], ["Mean", "Detection Threshold"]):
+            if isinstance(val, float) or val.size == 1:
+                nx, y = [x[0], x[-1]], [val, val]
+            else:
+                diffs = np.diff(val, n=2, append=0, prepend=0) != 0
+                nx, y = x[diffs], val[diffs]
 
-        curve = pyqtgraph.PlotCurveItem(
-            x=nx,
-            y=y,
-            name="Detection Threshold",
-            pen=pen,
-            connect="all",
-            skipFiniteCheck=True,
-        )
-        self.limit_items.append(curve)
-        self.plot.addItem(curve)
+            curve = pyqtgraph.PlotCurveItem(
+                x=nx,
+                y=y,
+                name=name,
+                pen=pen,
+                connect="all",
+                skipFiniteCheck=True,
+            )
+            self.limit_items.append(curve)
+            self.plot.addItem(curve)
