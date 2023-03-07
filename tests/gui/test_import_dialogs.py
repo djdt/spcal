@@ -80,7 +80,7 @@ def test_import_dialog_nu(qtbot: QtBot):
             return False
         if data.size != 30:
             return False
-        if options["dwelltime"] != 2.8e-5:
+        if options["dwelltime"] != 8.289e-5:
             return False
         return True
 
@@ -90,7 +90,7 @@ def test_import_dialog_nu(qtbot: QtBot):
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
-    assert np.isclose(dlg.dwelltime.baseValue(), 2.8e-5)  # type: ignore
+    assert np.isclose(dlg.dwelltime.baseValue(), 8.289e-5)  # type: ignore
     for symbol in ["H", "Ne", "At", "Hs", "Ac", "Am", "Lr"]:
         assert not dlg.table.buttons[symbol].isEnabled()
     for symbol in ["Na", "Au", "Po", "La", "Lu", "Th", "Pu"]:
@@ -117,7 +117,7 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
             return False
         if data.size != 200:
             return False
-        if options["dwelltime"] != 1e-3:
+        if options["dwelltime"] != 9.999e-4:
             return False
         if options["other peaks"] != ["OH+"]:
             return False
@@ -129,7 +129,7 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
-    assert np.isclose(dlg.dwelltime.baseValue(), 1e-3)  # type: ignore
+    assert np.isclose(dlg.dwelltime.baseValue(), 9.999e-4)  # type: ignore
     for symbol in [
         "H",
         "He",
