@@ -22,11 +22,11 @@ class ValueWidget(ValidColorLineEdit):
         self._error: float | None = None
 
         if validator is None:
-            validator = QtGui.QDoubleValidator(0.0, 1e99, 16)
+            validator = QtGui.QDoubleValidator(0.0, 1e99, 12)
         self.setValidator(validator)
 
         self.view_format = format if isinstance(format, str) else f".{format}g"
-        self.edit_format = ".16g"
+        self.edit_format = ".12g"
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
