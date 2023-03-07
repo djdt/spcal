@@ -295,7 +295,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.drawGraphHist()
 
     # Dialogs
-    def dialogGraphOptions(self) -> None:
+    def dialogGraphOptions(
+        self,
+    ) -> HistogramOptionsDialog | CompositionsOptionsDialog | None:
         if self.graph_stack.currentWidget() == self.graph_hist:
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
@@ -313,8 +315,9 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg.distanceChanged.connect(self.setCompDistance)
             dlg.minimumSizeChanged.connect(self.setCompSize)
         else:  # Todo: scatter
-            return
+            return None
         dlg.show()
+        return dlg
 
     def dialogExportResults(self) -> None:
         path = Path(self.sample.label_file.text())
