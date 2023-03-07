@@ -216,7 +216,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
     def apply(self) -> None:
         distance = float(self.lineedit_distance.text()) / 100.0
-        size = self.lineedit_size.text().replace(" ", "")
+        size = self.lineedit_size.text().strip().replace(" ", "")
 
         # Check for changes
         if abs(self.distance - distance) > 0.001:
@@ -227,4 +227,5 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
             self.minimumSizeChanged.emit(str(size))
 
     def reset(self) -> None:
-        self.lineedit_distance.setText(str(self.distance * 100.0))
+        self.lineedit_distance.setText("3.0")
+        self.lineedit_size.setText("5%")
