@@ -22,6 +22,22 @@ def is_nu_directory(path: Path) -> bool:
     return True
 
 
+def get_dwelltime_from_info(info: dict) -> float:
+    """Reads the dwelltime (total acquistion time) from run.info.
+    Rounds to the nearest μs.
+
+    Args:
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        dwelltime in s
+    """
+    seg = info["SegmentInfo"][0]
+    acqtime = seg["AcquisitionPeriodNs"] * 1e-9
+    accumulations = info[f"NumAccumulations{seg['Num']}"]
+    return np.around(acqtime * accumulations, 6)  # Todo: check with Lukas
+
+
 def get_masses_from_nu_data(
     data: np.ndarray, cal_coef: Tuple[float, float], segment_delays: Dict[int, float]
 ) -> np.ndarray:

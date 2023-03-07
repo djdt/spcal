@@ -16,7 +16,12 @@ from spcal.gui.widgets import (
     PeriodicTableSelector,
     UnitsWidget,
 )
-from spcal.io.nu import get_masses_from_nu_data, read_nu_integ_binary, select_nu_signals
+from spcal.io.nu import (
+    get_dwelltime_from_info,
+    get_masses_from_nu_data,
+    read_nu_integ_binary,
+    select_nu_signals,
+)
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.npdb import db
@@ -358,12 +363,8 @@ class NuImportDialog(_ImportDialogBase):
             "Number Integrations:",
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
-
-        self.dwelltime.setBaseValue(
-            np.around(
-                self.info["SegmentInfo"][0]["AcquisitionPeriodNs"] * 1e-9, 6
-            )  # nearest us
-        )
+        self.dwelltime.setBaseValue(get_dwelltime_from_info(self.info))
+        self.table.setFocus()
 
     def segmentDelays(self) -> Dict[int, float]:
         return {
