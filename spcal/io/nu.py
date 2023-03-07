@@ -24,7 +24,7 @@ def is_nu_directory(path: Path) -> bool:
 
 def get_dwelltime_from_info(info: dict) -> float:
     """Reads the dwelltime (total acquistion time) from run.info.
-    Rounds to the nearest μs.
+    Rounds to the nearest ns.
 
     Args:
         info: dict of parameters, as returned by `read_nu_directory`
@@ -35,7 +35,7 @@ def get_dwelltime_from_info(info: dict) -> float:
     seg = info["SegmentInfo"][0]
     acqtime = seg["AcquisitionPeriodNs"] * 1e-9
     accumulations = info[f"NumAccumulations{seg['Num']}"]
-    return np.around(acqtime * accumulations, 6)  # Todo: check with Lukas
+    return np.around(acqtime * accumulations, 9)  # Todo: check with Lukas
 
 
 def get_masses_from_nu_data(
