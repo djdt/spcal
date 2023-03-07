@@ -204,6 +204,7 @@ class ImportDialog(_ImportDialogBase):
 
         if self.dwelltime.value() is None:
             self.guessDwelltimeFromTable()
+            self.dwelltime.setBestUnit()
 
     def updateTableIgnores(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
@@ -364,6 +365,7 @@ class NuImportDialog(_ImportDialogBase):
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
         self.dwelltime.setBaseValue(get_dwelltime_from_info(self.info))
+        self.dwelltime.setBestUnit()
         self.table.setFocus()
 
     def segmentDelays(self) -> Dict[int, float]:
@@ -628,9 +630,11 @@ class TofwerkImportDialog(_ImportDialogBase):
         )
         self.dwelltime.setBaseValue(
             np.around(
-                extraction_time * factor_extraction_to_acquisition(self.h5), 6
+                extraction_time * factor_extraction_to_acquisition(self.h5), 9
             )  # nearest us
         )
+        self.dwelltime.setBestUnit()
+        self.table.setFocus()
 
     def isComplete(self) -> bool:
         isotopes = self.table.selectedIsotopes()
