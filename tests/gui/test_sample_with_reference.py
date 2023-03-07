@@ -1,15 +1,9 @@
 from pathlib import Path
 
 import numpy as np
-
-# from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-# from spcal.gui.inputs import InputWidget, ReferenceWidget
 from spcal.gui.main import SPCalWindow
-
-# from spcal.gui.options import OptionsWidget
-# from spcal.gui.results import ResultsWidget
 
 # Determined experimentally
 uptake = 1.567e-6
