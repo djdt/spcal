@@ -251,8 +251,16 @@ class InputWidget(QtWidgets.QWidget):
         self.events = np.arange(data.size)
 
         self.io.repopulate(data.dtype.names)
+
+        if len(data.dtype.names) < 2:
+            self.action_graph_overlay.setEnabled(False)
+            self.action_graph_single.setChecked(True)
+            self.draw_mode = "single"
+        else:
+            self.action_graph_overlay.setEnabled(True)
         # Update graph, limits and detections
         self.last_region = None
+
         self.drawGraph()
         self.updateLimits()
 
@@ -423,7 +431,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.clearLimits()
 
         for name in self.draw_names:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0, QtCore.Qt.DashLine)
+            pen = QtGui.QPen(self.colorForName(name).darker(), 1.0)
             pen.setCosmetic(True)
 
             trim = self.trimRegion(name)
