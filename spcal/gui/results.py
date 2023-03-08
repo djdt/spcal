@@ -35,15 +35,15 @@ logger = logging.getLogger(__name__)
 class ResultsWidget(QtWidgets.QWidget):
     mode_labels = {
         "Signal": ("Intensity (counts)", "", 1.0),
-        "Mass (kg)": ("Mass", "g", 1e3),
-        "Size (m)": ("Size", "m", 1.0),
-        "Conc. (mol/L)": ("Concentration", "mol/L", 1.0),
+        "Mass": ("Mass", "g", 1e3),
+        "Size": ("Size", "m", 1.0),
+        "Concentration": ("Concentration", "mol/L", 1.0),
     }
     mode_keys = {
         "Signal": "signal",
-        "Mass (kg)": "mass",
-        "Size (m)": "size",
-        "Conc. (mol/L)": "cell_concentration",
+        "Mass": "mass",
+        "Size": "size",
+        "Concentration": "cell_concentration",
     }
 
     def __init__(
@@ -126,7 +126,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.io.nameChanged.connect(self.updateGraphsForName)
 
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(["Signal", "Mass (kg)", "Size (m)", "Conc. (mol/L)"])
+        self.mode.addItems(list(self.mode_keys.keys()))
         self.mode.setItemData(0, "Accumulated detection signal.", QtCore.Qt.ToolTipRole)
         self.mode.setItemData(
             1, "Particle mass, requires calibration.", QtCore.Qt.ToolTipRole
@@ -605,15 +605,15 @@ class ResultsWidget(QtWidgets.QWidget):
             if mode == "Signal":
                 units = signal_units
                 values = result.detections["signal"]
-            elif mode == "Mass (kg)" and "mass" in result.detections:
+            elif mode == "Mass" and "mass" in result.detections:
                 units = mass_units
                 values = result.detections["mass"]
                 lod = result.asMass(lod)  # type: ignore
-            elif mode == "Size (m)" and "size" in result.detections:
+            elif mode == "Size" and "size" in result.detections:
                 units = size_units
                 values = result.detections["size"]
                 lod = result.asSize(lod)  # type: ignore
-            elif mode == "Conc. (mol/L)" and "cell_concentration" in result.detections:
+            elif mode == "Concentration" and "cell_concentration" in result.detections:
                 units = molar_concentration_units
                 values = result.detections["cell_concentration"]
                 lod = result.asCellConcentration(lod)  # type: ignore
