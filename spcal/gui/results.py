@@ -748,6 +748,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.action_graph_compositions.setEnabled(not single_result)
         self.action_graph_histogram_single.setEnabled(not single_result)
         self.action_graph_scatter.setEnabled(not single_result)
+        self.action_graph_pca.setEnabled(not single_result)
         if single_result:  # Switch to histogram
             self.action_graph_histogram.trigger()
 
