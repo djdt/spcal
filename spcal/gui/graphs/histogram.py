@@ -51,7 +51,7 @@ class HistogramView(SinglePlotGraphicsView):
         legend = HistogramItemSample(curve)
 
         if draw_fit is not None:
-            pen = QtGui.QPen(brush.color(), 1.0)
+            pen = QtGui.QPen(brush.color().darker(), 2.0)
             pen.setCosmetic(True)
             curve = self.drawFit(
                 hist, edges, data.size, fit_type=draw_fit, pen=pen, visible=fit_visible
@@ -59,7 +59,7 @@ class HistogramView(SinglePlotGraphicsView):
             legend.setFit(curve)
 
         if draw_limits is not None:
-            pen = QtGui.QPen(brush.color(), 2.0)
+            pen = QtGui.QPen(brush.color().darker(), 2.0)
             pen.setCosmetic(True)
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
             for label, limit in draw_limits.items():
@@ -143,7 +143,7 @@ class HistogramView(SinglePlotGraphicsView):
         # rescale
         ys = ys * bin_width * size
         curve = pyqtgraph.PlotCurveItem(
-            x=xs, y=ys, pen=pen, connect="all", skipFiniteCheck=True
+            x=xs, y=ys, pen=pen, connect="all", skipFiniteCheck=True, antialias=True
         )
         curve.setVisible(visible)
         self.plot.addItem(curve)
