@@ -387,7 +387,7 @@ class ResultsWidget(QtWidgets.QWidget):
             )
         # Limit maximum / minimum number of bins
         data_range = np.ptp(np.concatenate(list(graph_data.values())))
-        min_bins, max_bins = 16, 1024
+        min_bins, max_bins = 10, 1000
         if bin_width < data_range / max_bins:
             logger.warning(
                 f"drawGraphHist: exceeded maximum bins, setting to {max_bins}"
