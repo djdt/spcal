@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Tuple
 
 import numpy as np
 import pyqtgraph
@@ -125,6 +125,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             parent=parent,
         )
         # Common options
+        self.plot.setMenuEnabled(False)
         self.plot.hideButtons()
         self.plot.addLegend(
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
@@ -164,6 +165,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 )
 
             menu.addAction(self.action_show_legend)
+        event.accept()
         menu.popup(event.globalPos())
 
     def copyToClipboard(self) -> None:
