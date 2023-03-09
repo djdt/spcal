@@ -103,4 +103,6 @@ class PCAView(SinglePlotGraphicsView):
                 )
                 self.plot.addItem(arrow)
 
-        self.plot.setTitle(f"PCA: {np.sum(var) * 100.0:.3g} % explained variance")
+        self.xaxis.setLabel(f"PC 1 ({var[0] * 100.0:.1f} %)")
+        self.yaxis.setLabel(f"PC 2 ({var[1] * 100.0:.1f} %)")
+        self.plot.setTitle(f"PCA: {np.sum(var) * 100.0:.1f} % explained variance")
