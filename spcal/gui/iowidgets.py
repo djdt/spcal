@@ -141,7 +141,7 @@ class SampleIOWidget(IOWidget):
         self.count.setReadOnly(True)
         self.background_count = ValueWidget(format=sf)
         self.background_count.setReadOnly(True)
-        self.lod_count = ValueWidget()
+        self.lod_count = ValueWidget(format=sf)
         self.lod_count.setReadOnly(True)
         self.lod_label = OverLabel(self.lod_count, "")
 
@@ -578,12 +578,13 @@ class SampleIOStack(IOStack[SampleIOWidget]):
                 self[name].response.setBaseValue(response)
 
     def setLimitsEditable(self, editable: bool) -> None:
+        print('setLimitsEditable')
         for widget in self.widgets():
             if editable:
-                widget.lod_count.editingFinished.connect(self.limitsChanged)
+                widget.lod_count.valueEdited.connect(self.limitsChanged)
             else:
                 try:
-                    widget.lod_count.editingFinished.disconnect(self.limitsChanged)
+                    widget.lod_count.valueEdited.disconnect(self.limitsChanged)
                 except RuntimeError:
                     pass
             widget.lod_count.setReadOnly(not editable)
@@ -627,10 +628,10 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
     def setLimitsEditable(self, editable: bool) -> None:
         for widget in self.widgets():
             if editable:
-                widget.lod_count.editingFinished.connect(self.limitsChanged)
+                widget.lod_count.valueEdited.connect(self.limitsChanged)
             else:
                 try:
-                    widget.lod_count.editingFinished.disconnect(self.limitsChanged)
+                    widget.lod_count.valueEdited.disconnect(self.limitsChanged)
                 except RuntimeError:
                     pass
             widget.lod_count.setReadOnly(not editable)

@@ -265,6 +265,10 @@ class InputWidget(QtWidgets.QWidget):
         self.drawGraph()
         self.updateLimits()
 
+        # New widgets, set editable
+        if self.options.method.currentText() == "Manual Input":
+            self.io.setLimitsEditable(True)
+
         self.dataLoaded.emit(options["path"])
 
     def saveTrimRegion(self) -> None:
@@ -369,7 +373,6 @@ class InputWidget(QtWidgets.QWidget):
                     self.limits[name].name,
                     self.limits[name].params,
                 )
-        self.io.setLimitsEditable(self.options.method.currentText() == "Manual Input")
 
     def updateFormat(self) -> None:
         for io in self.io:
