@@ -511,7 +511,10 @@ class ReferenceWidget(InputWidget):
     def getEfficiency(self, name: str) -> float | None:
         use_all = None
         for _name in self.io.names():
-            if self.io[_name].check_use_efficiency_for_all.isChecked():
+            if (
+                self.io[_name].check_use_efficiency_for_all.checkState()
+                == QtCore.Qt.CheckState.Checked
+            ):
                 use_all = _name
                 break
 
@@ -522,7 +525,4 @@ class ReferenceWidget(InputWidget):
         else:
             return None
 
-        try:
-            return float(efficiency)
-        except ValueError:
-            return None
+        return efficiency

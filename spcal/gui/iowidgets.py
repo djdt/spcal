@@ -260,6 +260,7 @@ class ReferenceIOWidget(SampleIOWidget):
             "Use this element to calculate transport efficiency for all other elements,"
             " otherwise each element is calculated individually."
         )
+        self.check_use_efficiency_for_all.setTristate(True)
 
         self.efficiency = ValueWidget(
             validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
@@ -293,14 +294,12 @@ class ReferenceIOWidget(SampleIOWidget):
         self.diameter.setValue(None)
         self.concentration.setValue(None)
         self.massresponse.setValue(None)
+        self.check_use_efficiency_for_all.setChecked(False)
         self.blockSignals(False)
 
     def clearOutputs(self) -> None:
         super().clearOutputs()
         self.efficiency.clear()
-        self.check_use_efficiency_for_all.group().setExclusive(False)
-        self.check_use_efficiency_for_all.setChecked(False)
-        self.check_use_efficiency_for_all.group().setExclusive(True)
         self.massresponse.setValue(None)
 
     def updateEfficiency(
@@ -578,7 +577,7 @@ class SampleIOStack(IOStack[SampleIOWidget]):
                 self[name].response.setBaseValue(response)
 
     def setLimitsEditable(self, editable: bool) -> None:
-        print('setLimitsEditable')
+        print("setLimitsEditable")
         for widget in self.widgets():
             if editable:
                 widget.lod_count.valueEdited.connect(self.limitsChanged)
@@ -596,8 +595,8 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         self.button_group_check_efficiency = QtWidgets.QButtonGroup()
+        self.button_group_check_efficiency.setExclusive(False)
         self.button_group_check_efficiency.buttonClicked.connect(self.buttonClicked)
-        self.last_button_checked: QtWidgets.QAbstractButton | None = None
         super().__init__(ReferenceIOWidget, parent=parent)
 
     def handleRequest(self, request: str, value: None = None) -> None:
@@ -605,13 +604,19 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
             self.requestIonicResponseTool.emit()
 
     def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
-        if button == self.last_button_checked:
-            self.button_group_check_efficiency.setExclusive(False)
-            self.button_group_check_efficiency.checkedButton().setChecked(False)
-            self.button_group_check_efficiency.setExclusive(True)
-            self.last_button_checked = None
-        else:
-            self.last_button_checked = button
+        assert isinstance(button, QtWidgets.QCheckBox)
+        self.button_group_check_efficiency.blockSignals(True)
+        if button.checkState() == QtCore.Qt.CheckState.PartiallyChecked:
+            # Don't allow partial
+            button.setCheckState(QtCore.Qt.CheckState.Checked)
+        for b in self.button_group_check_efficiency.buttons():
+            if b == button:
+                continue
+            if button.checkState() == QtCore.Qt.CheckState.Checked:
+                b.setCheckState(QtCore.Qt.CheckState.PartiallyChecked)
+            else:
+                b.setCheckState(QtCore.Qt.CheckState.Unchecked)
+        self.button_group_check_efficiency.blockSignals(False)
 
     def repopulate(self, names: List[str]) -> None:
         super().repopulate(names)
