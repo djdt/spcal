@@ -7,6 +7,7 @@ from spcal.gui.widgets.validcolorle import ValidColorLineEdit
 class ValueWidget(ValidColorLineEdit):
     valueChanged = QtCore.Signal(object)  # object for None
     errorChanged = QtCore.Signal(object)  # object for None
+    valueEdited = QtCore.Signal(object)  # object for None
 
     def __init__(
         self,
@@ -19,6 +20,7 @@ class ValueWidget(ValidColorLineEdit):
         super().__init__(color_invalid=color_invalid, parent=parent)
 
         self._value: float | None = None
+        self._last_edit_value: float | None = None
         self._error: float | None = None
 
         if validator is None:
@@ -30,8 +32,14 @@ class ValueWidget(ValidColorLineEdit):
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
+        self.editingFinished.connect(self.checkValueEdited)
 
         self.setValue(value)
+
+    def checkValueEdited(self) -> None:
+        if self._value != self._last_edit_value:
+            self._last_edit_value = self._value
+            self.valueEdited.emit(self._value)
 
     def setViewFormat(self, format: str | int) -> None:
         if isinstance(format, str):
