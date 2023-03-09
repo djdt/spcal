@@ -68,6 +68,7 @@ class InputWidget(QtWidgets.QWidget):
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
         self.io.limitsChanged.connect(self.updateLimits)
+        self.io.limitsChanged.connect(lambda: print("limitsChanged"))
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
@@ -327,12 +328,22 @@ class InputWidget(QtWidgets.QWidget):
                 continue
 
             if method == "Manual Input":
-                self.limits[name] = SPCalLimit(
-                    np.mean(response),
-                    self.io[name].lod_count.value(),
-                    name="Manual Input",
-                    params={},
-                )
+                limit = self.io[name].lod_count.value()
+                if limit is not None:
+                    self.limits[name] = SPCalLimit(
+                        np.mean(response),
+                        limit,
+                        name="Manual Input",
+                        params={},
+                    )
+                else:  # If empty limit then fill with best estimate
+                    self.limits[name] = SPCalLimit.fromBest(
+                        response,
+                        poisson_alpha=poisson_alpha,
+                        gaussian_alpha=gaussian_alpha,
+                        window_size=window_size,
+                        max_iters=max_iter,
+                    )
             else:
                 self.limits[name] = SPCalLimit.fromMethodString(
                     method,
@@ -358,6 +369,7 @@ class InputWidget(QtWidgets.QWidget):
                     self.limits[name].name,
                     self.limits[name].params,
                 )
+        self.io.setLimitsEditable(self.options.method.currentText() == "Manual Input")
 
     def updateFormat(self) -> None:
         for io in self.io:
@@ -436,6 +448,9 @@ class InputWidget(QtWidgets.QWidget):
             pen.setCosmetic(True)
 
             trim = self.trimRegion(name)
+
+            print(name, self.limits[name].mean_background)
+            print(name, self.limits[name].detection_threshold)
 
             self.graph.drawLimits(
                 self.events[trim[0] : trim[1]],

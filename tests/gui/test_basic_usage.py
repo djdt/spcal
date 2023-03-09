@@ -269,4 +269,17 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.reference))
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
+    # Limits editable accross reload
+    window.options.method.setCurrentText("Manual Input")
+    for i, io in enumerate(window.sample.io):
+        assert not io.lod_count.isReadOnly()
+        io.lod_count.setValue(None)
+
+    window.sample.loadData(data, {"path": "test/data.csv", "dwelltime": 1e-4})
+
+    # limits default to best
+    for i, io in enumerate(window.sample.io):
+        assert not io.lod_count.isReadOnly()
+        assert io.lod_count.value() is not None
+
     window.resetInputs()
