@@ -385,6 +385,11 @@ class NuImportDialog(_ImportDialogBase):
             "isotopes": self.table.selectedIsotopes(),
         }
 
+    def setImportOptions(self, options: dict) -> None:
+        self.file_path = options["path"]
+        self.dwelltime.setBaseValue(options["dwelltime"])
+        self.table.setSelectedIsotopes(options["isotopes"])
+
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
@@ -648,6 +653,12 @@ class TofwerkImportDialog(_ImportDialogBase):
             "isotopes": self.table.selectedIsotopes(),
             "other peaks": self.combo_other_peaks.checkedItems(),
         }
+
+    def setImportOptions(self, options: dict) -> None:
+        self.file_path = options["path"]
+        self.dwelltime.setBaseValue(options["dwelltime"])
+        self.table.setSelectedIsotopes(options["isotopes"])
+        self.combo_other_peaks.setCheckedItems(options["other peaks"])
 
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)

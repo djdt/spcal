@@ -273,6 +273,17 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             return None
         return np.stack(selected)
 
+    def setSelectedIsotopes(self, isotopes: np.ndarray | None) -> None:
+        self.blockSignals(True)
+        for button in self.buttons.values():
+            for n, action in button.actions.items():
+                if isotopes is None:
+                    action.setChecked(False)
+                else:
+                    action.setChecked(n in isotopes["Isotope"])
+        self.blockSignals(False)
+        self.isotopesChanged.emit()
+
     def findCollisions(self) -> None:
         selected = self.selectedIsotopes()
 

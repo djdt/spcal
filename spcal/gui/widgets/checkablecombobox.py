@@ -29,3 +29,8 @@ class CheckableComboBox(QtWidgets.QComboBox):
             if item.checkState() == QtCore.Qt.CheckState.Checked:
                 checked.append(item.text())
         return checked
+
+    def setCheckedItems(self, items: List[str]) -> None:
+        for row in range(self.model().rowCount()):
+            item = self.model().item(row)
+            item.setChecked(item.text() in items)
