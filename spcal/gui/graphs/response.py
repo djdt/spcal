@@ -59,10 +59,7 @@ class ResponseView(SinglePlotGraphicsView):
         )
         self.plot.addItem(self.signal)
 
-        self.region.blockSignals(True)
-        self.region.setRegion((x[0], x[-1]))
         self.region.setBounds((x[0], x[-1]))
-        self.region.blockSignals(False)
         self.plot.addItem(self.region)
 
     def drawMean(self, mean: float, pen: QtGui.QPen | None = None) -> None:
@@ -85,5 +82,8 @@ class ResponseView(SinglePlotGraphicsView):
     def updateMean(self) -> None:
         if self.signal is None or self.signal_mean is None:
             return
-        mean = np.mean(self.signal.yData[self.region_start : self.region_end])
+        ds, _, _ = self.plot.downsampleMode()
+        mean = np.mean(
+            self.signal.yData[self.region_start // ds : self.region_end // ds]
+        )
         self.drawMean(mean)
