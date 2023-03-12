@@ -149,6 +149,9 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.proxy.setSourceModel(self.model)
 
         self.table = QtWidgets.QTableView()
+        self.table.setEditTriggers(
+            QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
+        )
         self.table.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContentsOnFirstShow
         )
