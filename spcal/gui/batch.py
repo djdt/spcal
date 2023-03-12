@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
+from spcal.gui.io import getOpenNanoparticleFiles
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
@@ -365,18 +366,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         return True
 
     def dialogLoadFiles(self) -> None:
-        files, _ = QtWidgets.QFileDialog.getOpenFileNames(
-            self,
-            "Batch Process Files",
-            "",
-            (
-                "NP Data Files (*.csv *.info);;CSV Documents(*.csv *.txt *.text);;"
-                "Nu Instruments(*.info);;All files(*)"
-            ),
-        )
-
-        if len(files) > 0:
-            self.files.addItems(files)
+        paths = getOpenNanoparticleFiles(self, "Batch Process Files")
+        if len(paths) > 0:
+            self.files.addItems([str(p) for p in paths])
 
     def dialogOpenOutputDir(self) -> None:
         dir = QtWidgets.QFileDialog.getExistingDirectory(

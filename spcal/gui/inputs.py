@@ -15,6 +15,7 @@ from spcal.gui.dialogs._import import (
 )
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.io import getImportDialogForPath, getOpenNanoparticleFile
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
@@ -207,37 +208,13 @@ class InputWidget(QtWidgets.QWidget):
         self, path: str | Path | None = None
     ) -> _ImportDialogBase | None:
         if path is None:
-            # Directory of last opened file
-            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
-            dir = str(Path(dir).parent) if dir is not None else ""
-
-            path, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self,
-                "Open",
-                dir,
-                (
-                    "NP Data Files (*.csv *.info *.h5);;"
-                    "CSV Documents(*.csv *.txt *.text);;Nu Instruments(*.info);;"
-                    "TOFWERK HDF5(*.h5);;All files(*)"
-                ),
-            )
-            if path == "":
-                return None
-
-        path = Path(path)
-
-        if path.suffix == ".info":  # Cast down for nu
-            path = path.parent
-
-        if path.is_dir():
-            if is_nu_directory(path):
-                dlg = NuImportDialog(path, self)
-            else:
-                raise FileNotFoundError("dialogLoadFile: invalid directory.")
-        elif is_tofwerk_file(path):
-            dlg = TofwerkImportDialog(path, self)
+            path = getOpenNanoparticleFile(self)
         else:
-            dlg = ImportDialog(path, self)
+            path = Path(path)
+        if path is None:
+            return None
+
+        dlg = getImportDialogForPath(self, path)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
         return dlg
