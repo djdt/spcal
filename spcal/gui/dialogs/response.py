@@ -1,15 +1,21 @@
+import logging
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.dialogs._import import ImportDialog, NuImportDialog
+from spcal.gui.dialogs._import import _ImportDialogBase
+from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.response import ResponseView
+from spcal.gui.io import getImportDialogForPath, getOpenNanoparticleFile
+from spcal.gui.models import NumpyRecArrayTableModel
 from spcal.gui.objects import DoublePrecisionDelegate
 from spcal.io.nu import is_nu_directory
 from spcal.io.text import is_text_file
 from spcal.siunits import mass_concentration_units
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseDialog(QtWidgets.QDialog):
@@ -20,7 +26,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setWindowTitle("Ionic Response Calculator")
 
         self.data = np.array([])
-        self.responses: Dict[str, float] = {}
+        self.import_options: dict | None = None
 
         self.button_open_file = QtWidgets.QPushButton("Open File")
         self.button_open_file.pressed.connect(self.dialogLoadFile)
@@ -28,11 +34,14 @@ class ResponseDialog(QtWidgets.QDialog):
         self.graph = ResponseView()
         self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
-        self.table = QtWidgets.QTableWidget()
-        self.table.setRowCount(2)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setVerticalHeaderLabels(["Response (counts)", "Concentration"])
-        self.table.setItemDelegate(DoublePrecisionDelegate(bottom=1e-99, decimals=4))
+        self.graph_cal = CalibrationView()
+
+        data = np.array([], dtype=[("_", np.float64)])
+        self.model = NumpyRecArrayTableModel(data)
+        self.responses = np.array([], dtype=[("_", np.float64)])
+
+        self.table = QtWidgets.QTableView()
+        self.table.setModel(self.model)
 
         self.table.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
@@ -44,7 +53,12 @@ class ResponseDialog(QtWidgets.QDialog):
             QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
 
-        self.table.itemChanged.connect(self.completeChanged)
+        self.model.dataChanged.connect(self.completeChanged)
+        self.model.dataChanged.connect(self.updateCalibration)
+
+        self.button_add_level = QtWidgets.QPushButton("Add Level")
+        self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
+        self.button_add_level.pressed.connect(self.dialogLoadFile)
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
@@ -58,46 +72,36 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        layout_units = QtWidgets.QHBoxLayout()
-        layout_units.addStretch(1)
-        layout_units.addWidget(
-            QtWidgets.QLabel("Concentration units:"),
-            0,
-            QtCore.Qt.AlignmentFlag.AlignRight,
+        box_concs = QtWidgets.QGroupBox("Concentrations")
+        box_concs.setLayout(QtWidgets.QVBoxLayout())
+        box_concs.layout().addWidget(self.table, 1)
+        box_concs.layout().addWidget(
+            self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        layout_units.addWidget(self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+
+        layout_graphs = QtWidgets.QHBoxLayout()
+        layout_graphs.addWidget(self.graph, 2)
+        layout_graphs.addWidget(self.graph_cal, 1)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.button_open_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
-        layout.addWidget(self.graph, 1)
-        layout.addWidget(self.table, 0)
-        layout.addLayout(layout_units, 0)
+        layout.addLayout(layout_graphs, 1)
+        layout.addWidget(box_concs)
+        layout.addWidget(self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        return any(
-            self.table.item(1, i).data(QtCore.Qt.ItemDataRole.DisplayRole) > 0.0
-            for i in range(self.table.columnCount())
-        )
+        if self.model.array.dtype.names is None:
+            return False
+        for name in self.model.array.dtype.names:
+            if np.count_nonzero(~np.isnan(self.model.array[name])) > 0:
+                return True
+        return False
 
     def completeChanged(self) -> None:
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
             self.isComplete()
         )
-
-    def accept(self) -> None:
-        responses = {}
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-        for i in range(self.table.columnCount()):
-            name = self.table.horizontalHeaderItem(i).text()
-            response = self.table.item(0, i).data(QtCore.Qt.ItemDataRole.DisplayRole)
-            conc = self.table.item(1, i).data(QtCore.Qt.ItemDataRole.DisplayRole)
-            if conc > 0.0:
-                responses[name] = response / (conc * factor)
-        if len(responses) > 0:
-            self.responsesSelected.emit(responses)
-        super().accept()
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if event.mimeData().hasUrls():
@@ -119,71 +123,120 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def dialogLoadFile(
         self, path: str | Path | None = None
-    ) -> ImportDialog | NuImportDialog | None:
+    ) -> _ImportDialogBase | None:
         if path is None:
-            path, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self,
-                "Open",
-                "",
-                (
-                    "NP Data Files (*.csv *.info);;CSV Documents(*.csv *.txt *.text);;"
-                    "Nu Instruments(*.info);;All files(*)"
-                ),
-            )
-            if path == "":
+            path = getOpenNanoparticleFile(self)
+            if path is None:
                 return None
-
-        path = Path(path)
-
-        if path.suffix == ".info":  # Cast down for nu
-            path = path.parent
-
-        if path.is_dir():
-            if is_nu_directory(path):
-                dlg = NuImportDialog(path, self)
-            else:
-                raise FileNotFoundError("dialogLoadFile: invalid directory.")
         else:
-            dlg = ImportDialog(path, self)
+            path = Path(path)
+
+        dlg = getImportDialogForPath(self, path)
         dlg.dataImported.connect(self.loadData)
-        dlg.open()
+
+        if self.import_options is None:
+            dlg.open()
+        else:
+            try:
+                dlg.setImportOptions(self.import_options)
+                dlg.accept()
+            except Exception:
+                self.import_options = None
+                logger.warning("dialogLoadFile: unable to set import options.")
+                dlg.open()
         return dlg
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
+        # Check the new data is compatible with current loaded
+        if self.model.array.size == 0:
+            self.model.beginResetModel()
+            self.model.array = np.full(1, np.nan, dtype=data.dtype)
+            self.model.endResetModel()
+            self.responses = self.model.array.copy()
+
+        elif data.dtype.names != self.model.array.dtype.names:
+            button = QtWidgets.QMessageBox.question(
+                self, "Warning", "New data does not match current, overwrite?"
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.Yes:
+                self.model.beginResetModel()
+                self.model.array = np.full(1, np.nan, dtype=data.dtype)
+                self.model.endResetModel()
+                self.responses = self.model.array.copy()
+            else:
+                return
+        else:
+            self.model.insertRow(self.model.rowCount())
+            self.responses = np.append(
+                self.responses, np.full(1, np.nan, self.responses.dtype)
+            )
+
+        if self.import_options is None:
+            self.import_options = options
+
+        old_size = self.data.size
         self.data = data
         tic = np.sum([data[name] for name in data.dtype.names], axis=0)
-
-        self.table.setColumnCount(len(data.dtype.names))
-        self.table.setHorizontalHeaderLabels(data.dtype.names)
-
-        self.table.blockSignals(True)
-        for i in range(self.table.columnCount()):
-            item = QtWidgets.QTableWidgetItem()
-            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-            self.table.setItem(0, i, item)
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.ItemDataRole.DisplayRole, np.nan)
-            self.table.setItem(1, i, item)
-        self.table.blockSignals(True)
+        xs = np.arange(tic.size)
 
         self.graph.clear()
-        self.graph.drawData(np.arange(tic.size), tic)
+        self.graph.plot.setTitle(f"TIC: {options['path'].name}")
+        self.graph.drawData(xs, tic)
         self.graph.drawMean(0.0)
+        if old_size != data.size:
+            self.graph.region.blockSignals(True)
+            self.graph.region.setRegion((xs[0], xs[-1]))
+            self.graph.region.blockSignals(False)
         self.graph.updateMean()
 
         self.updateResponses()
 
     def updateResponses(self) -> None:
-        if self.data.dtype.names is None:
+        if self.responses.dtype.names is None:
             return
-        responses = [
-            np.mean(self.data[name][self.graph.region_start : self.graph.region_end])
-            for name in self.data.dtype.names
-        ]
-        self.table.blockSignals(True)
-        for i, response in enumerate(responses):
-            self.table.item(0, i).setData(QtCore.Qt.ItemDataRole.DisplayRole, response)
-        self.table.blockSignals(False)
+
+        for name in self.responses.dtype.names:
+            self.responses[name][-1] = np.mean(
+                self.data[name][self.graph.region_start : self.graph.region_end]
+            )
+
+        self.updateCalibration()
+
+    def updateCalibration(self) -> None:
+        self.graph_cal.clear()
+        if self.responses.dtype.names is None:
+            return
+
+        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
+
+        for i, name in enumerate(self.responses.dtype.names):
+            x = self.model.array[name]
+            y = self.responses[name][~np.isnan(x)]
+            x = x[~np.isnan(x)]
+            if x.size == 0:
+                continue
+            brush = QtGui.QBrush(scheme[i])
+            self.graph_cal.drawPoints(x, y, trend_line=True, brush=brush)
+
+    def accept(self) -> None:
+        assert self.responses.dtype.names is not None
+
+        responses = {}
+        for name in self.responses.dtype.names:
+            x = self.model.array[name]
+            y = self.responses[name][~np.isnan(x)]
+            x = (
+                x[~np.isnan(x)]
+                * mass_concentration_units[self.combo_unit.currentText()]
+            )
+            if x.size == 0:
+                continue
+            _, m = np.polynomial.polynomial.polyfit(x, y, 1)
+            responses[name] = m
+
+        if len(responses) > 0:
+            self.responsesSelected.emit(responses)
+        super().accept()
 
 
 if __name__ == "__main__":
@@ -195,6 +248,6 @@ if __name__ == "__main__":
     data = np.empty(npz[names[0]].size, dtype=[(n, float) for n in names])
     for n in names:
         data[n] = npz[n]
-    w.loadData(data, {})
+    w.loadData(data, {"path": Path("test.csv")})
     w.show()
     app.exec()
