@@ -10,7 +10,6 @@ from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.response import ResponseView
 from spcal.gui.io import getImportDialogForPath, getOpenNanoparticleFile
 from spcal.gui.models import NumpyRecArrayTableModel
-from spcal.gui.objects import DoublePrecisionDelegate
 from spcal.io.nu import is_nu_directory
 from spcal.io.text import is_text_file
 from spcal.siunits import mass_concentration_units
