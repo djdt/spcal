@@ -17,8 +17,9 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
     def __init__(
         self,
         array: np.ndarray,
-        fill_values: Dict[Type, Any] | None = None,
+        fill_values: Dict[str, Any] | None = None,
         column_formats: Dict[str, str] | None = None,
+        column_flags: Dict[str, QtCore.Qt.ItemFlag] | None = None,
         parent: QtCore.QObject | None = None,
     ):
         assert array.ndim == 1
@@ -26,17 +27,19 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
         super().__init__(parent)
 
-        _column_formats = {}
-        if column_formats is not None:
-            _column_formats.update(column_formats)
-        _fill_values = {float: np.nan, str: "", int: -1}
-        if fill_values is not None:
-            _fill_values.update(fill_values)
-
         self.array = array
 
-        self.fill_values = _fill_values
-        self.column_formats = _column_formats
+        self.fill_values = {"f": np.nan, "U": "", "i": -1, "u": 0}
+        if fill_values is not None:
+            self.fill_values.update(fill_values)
+
+        self.column_formats = {}
+        if column_formats is not None:
+            self.column_formats.update(column_formats)
+
+        self.column_flags = {}
+        if column_flags is not None:
+            self.column_flags.update(column_flags)
 
     # Rows and Columns
     def columnCount(self, parent: QtCore.QModelIndex | None = None) -> int:
@@ -55,15 +58,32 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
             name = self.array.dtype.names[index.column()]
             value = self.array[name][index.row()]
+            if np.isreal(value) and np.isnan(value):
+                return ""
             return self.column_formats.get(name, "{}").format(value)
         else:  # pragma: no cover
             return None
+
+    def setData(
+        self, index: QtCore.QModelIndex, value: Any, role: QtCore.Qt.ItemFlag
+    ) -> bool:
+        name = self.array.dtype.names[index.column()]
+        if role == QtCore.Qt.EditRole:
+            if value == "":
+                value = self.fill_values[self.array[name].dtype.kind]
+            self.array[name][index.row()] = value
+            self.dataChanged.emit(index, index, [role])
+            return True
+        return False
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         if not index.isValid():  # pragma: no cover
             return QtCore.Qt.ItemIsEnabled
 
-        return super().flags(index)
+        name = self.array.dtype.names[index.column()]
+        return self.column_flags.get(
+            name, super().flags(index) | QtCore.Qt.ItemIsEditable
+        )
 
     # Header
     def headerData(
@@ -79,6 +99,23 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             return self.array.dtype.names[section]
         else:
             return str(section)
+
+    def insertRows(
+        self, pos: int, rows: int, parent: QtCore.QModelIndex = QtCore.QModelIndex()
+    ) -> bool:
+        self.beginInsertRows(parent, pos, pos + rows - 1)
+        empty = np.array(
+            [
+                tuple(
+                    self.fill_values[d.kind]
+                    for d, v in self.array.dtype.fields.values()
+                )
+            ],
+            dtype=self.array.dtype,
+        )
+        self.array = np.insert(self.array, pos, np.full(rows, empty))
+        self.endInsertRows()
+        return True
 
 
 class SearchColumnsProxyModel(QtCore.QSortFilterProxyModel):
