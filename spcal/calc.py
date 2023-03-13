@@ -134,3 +134,92 @@ def pca(
         v[:trim_to_components],
         explained_variance[:trim_to_components],
     )
+
+
+def weights_from_weighting(
+    x: np.ndarray, weighting: str, safe: bool = True
+) -> np.ndarray:
+    """Get weighting for `x`.
+
+    Conveience function for calculating simple weightings. If `safe` then any
+    zeros in `x` are replace with the minimum non-zero value.
+
+    Args:
+        x: 1d-array
+        weighting: weighting string {'Equal', 'x', '1/x', '1/(x^2)'}
+        safe: replace zeros with minimum
+
+    Returns:
+        weights, same size as x
+    """
+    if x.size == 0:
+        return np.empty(0, dtype=x.dtype)
+
+    if safe:
+        if np.all(x == 0):  # Impossible weighting
+            return np.ones_like(x)
+        x = x.copy()
+        x[x == 0] = np.nanmin(x[x != 0])
+
+    if weighting == "Equal":
+        return np.ones_like(x)
+    elif weighting == "x":
+        return x
+    elif weighting == "1/x":
+        return 1.0 / x
+    elif weighting == "1/(x^2)":
+        return 1.0 / (x**2.0)
+    else:
+        raise ValueError(f"Unknown weighting {weighting}.")
+
+
+def weighted_rsq(x: np.ndarray, y: np.ndarray, w: np.ndarray | None = None) -> float:
+    """Calculate r² for weighted linear regression.
+
+    Args:
+        x: 1d-array
+        y: array, same size as `x`
+        w: weights, same size as `x`
+    """
+    c = np.cov(x, y, aweights=w)
+    d = np.diag(c)
+    stddev = np.sqrt(d.real)
+    c /= stddev[:, None]
+    c /= stddev[None, :]
+
+    np.clip(c.real, -1, 1, out=c.real)
+    if np.iscomplexobj(c):  # pragma: no cover
+        np.clip(c.imag, -1, 1, out=c.imag)
+
+    return c[0, 1] ** 2.0
+
+
+def weighted_linreg(
+    x: np.ndarray, y: np.ndarray, w: np.ndarray | None = None
+) -> Tuple[float, float, float, float]:
+    """Weighted linear regression.
+
+    Uses polyfit with sqrt(weights) for intercept and gradient.
+
+    Args:
+        x: 1d-array
+        y: array, same size as `x`
+        w: weights, same size as `x`
+
+    Returns:
+       gradient
+       intercept
+       r²
+       error, S(y,x) the (unweighted) residual standard deviation
+
+    See Also:
+        :func:`pewlib.calibration.weighted_rsq`
+    """
+    coef = np.polynomial.polynomial.polyfit(x, y, 1, w=w if w is None else np.sqrt(w))
+    r2 = weighted_rsq(x, y, w)
+    if x.size > 2:
+        error = np.sqrt(np.sum(((coef[0] + x * coef[1]) - y) ** 2) / (x.size - 2))
+    else:
+        error = 0.0
+
+    return coef[1], coef[0], r2, error
