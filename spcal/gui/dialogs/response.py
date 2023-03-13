@@ -222,7 +222,7 @@ class ResponseDialog(QtWidgets.QDialog):
             x = x[~np.isnan(x)]
             if x.size == 0:
                 continue
-            brush = QtGui.QBrush(scheme[i])
+            brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
     # def exportCalibration(self) -> None:
