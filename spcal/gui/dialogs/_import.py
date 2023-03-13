@@ -276,7 +276,9 @@ class ImportDialog(_ImportDialogBase):
         elif delimiter == "\t":
             delimiter = "Tab"
         self.combo_delimiter.setCurrentText(delimiter)
-        self.le_ignore_columns.setText(";".join(i + 1) for i in options["ignores"])
+        self.le_ignore_columns.setText(
+            ";".join(str(i + 1) for i in options["ignores"])
+        )
         self.spinbox_first_line.setValue(options["first line"])
         for name, c in zip(options["names"], self.useColumns()):
             item = self.table.item(self.spinbox_first_line.value() - 1, c)

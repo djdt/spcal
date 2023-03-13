@@ -230,23 +230,12 @@ class ResponseDialog(QtWidgets.QDialog):
             )
             if x.size == 0:
                 continue
-            _, m = np.polynomial.polynomial.polyfit(x, y, 1)
+            elif x.size == 1:  # single point, force 0
+                m = y[0] / x[0]
+            else:
+                _, m = np.polynomial.polynomial.polyfit(x, y, 1)
             responses[name] = m
 
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
         super().accept()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    w = ResponseDialog()
-    npz = np.load("/home/tom/Downloads/test_data.npz")
-    names = npz.files
-    data = np.empty(npz[names[0]].size, dtype=[(n, float) for n in names])
-    for n in names:
-        data[n] = npz[n]
-    w.loadData(data, {"path": Path("test.csv")})
-    w.show()
-    app.exec()
