@@ -9,7 +9,13 @@ from spcal.gui.dialogs.response import ResponseDialog
 
 def generate_data(mean: float) -> np.ndarray:
     data = np.empty(
-        1000, dtype=[("A", np.float32), ("B", np.float32), ("C", np.float32)]
+        1000,
+        dtype=[
+            ("A", np.float32),
+            ("B", np.float32),
+            ("C", np.float32),
+            ("D", np.float32),
+        ],
     )
     assert data.dtype.names is not None
     for name in data.dtype.names:
@@ -24,7 +30,7 @@ def test_response_dialog(qtbot: QtBot):
         dlg.show()
 
     dlg.loadData(generate_data(10.0), {"path": Path("0.csv")})
-    assert dlg.model.columnCount() == 3
+    assert dlg.model.columnCount() == 4
     assert dlg.model.rowCount() == 1
     dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(0, 1), 0.0, QtCore.Qt.ItemDataRole.EditRole)
@@ -33,7 +39,7 @@ def test_response_dialog(qtbot: QtBot):
     dlg.loadData(generate_data(20.0), {"path": Path("1.csv")})
     dlg.model.setData(dlg.model.index(1, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(1, 1), 20.0, QtCore.Qt.ItemDataRole.EditRole)
-    assert dlg.model.columnCount() == 3
+    assert dlg.model.columnCount() == 4
     assert dlg.model.rowCount() == 2
 
     dlg.combo_unit.setCurrentText("mg/L")

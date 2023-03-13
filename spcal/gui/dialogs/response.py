@@ -146,7 +146,9 @@ class ResponseDialog(QtWidgets.QDialog):
             self.model.endResetModel()
             self.responses = self.model.array.copy()
 
-        elif data.dtype.names != self.model.array.dtype.names:
+        elif (
+            data.dtype.names != self.model.array.dtype.names
+        ):  # pragma: no cover, can't test msgbox
             button = QtWidgets.QMessageBox.question(
                 self, "Warning", "New data does not match current, overwrite?"
             )
@@ -184,7 +186,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.updateResponses()
 
     def updateResponses(self) -> None:
-        if self.responses.dtype.names is None:
+        if self.responses.dtype.names is None:  # pragma: no cover
             return
 
         for name in self.responses.dtype.names:
@@ -196,7 +198,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def updateCalibration(self) -> None:
         self.graph_cal.clear()
-        if self.responses.dtype.names is None:
+        if self.responses.dtype.names is None:  # pragma: no cover
             return
 
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
