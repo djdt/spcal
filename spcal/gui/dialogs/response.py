@@ -230,7 +230,10 @@ class ResponseDialog(QtWidgets.QDialog):
             )
             if x.size == 0:
                 continue
-            _, m = np.polynomial.polynomial.polyfit(x, y, 1)
+            elif x.size == 1:  # single point, force 0
+                m = y[0] / x[0]
+            else:
+                _, m = np.polynomial.polynomial.polyfit(x, y, 1)
             responses[name] = m
 
         if len(responses) > 0:
