@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+# from spcal import __version__
+from spcal.calc import weighted_linreg
 from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.calibration import CalibrationView
@@ -11,6 +13,10 @@ from spcal.gui.graphs.response import ResponseView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.models import NumpyRecArrayTableModel
 from spcal.siunits import mass_concentration_units
+
+# from typing import Tuple
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +63,12 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add_level.pressed.connect(self.dialogLoadFile)
 
+        # self.button_save = QtWidgets.QPushButton(
+        #     QtGui.QIcon.fromTheme("document-save"), "Save"
+        # )
+        # self.button_save.setEnabled(False)
+        # self.button_save.pressed.connect(self.exportCalibration)
+
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
         self.combo_unit.setCurrentText("μg/L")
@@ -66,6 +78,7 @@ class ResponseDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
+
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -212,23 +225,57 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
+    # def exportCalibration(self) -> None:
+    #     assert self.import_options is not None
+    #     dir = self.import_options["path"].parent
+    #     file, _ = QtWidgets.QFileDialog.getOpenFileName(
+    #         self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
+    #     )
+    #     if file == "":
+    #         return
+
+    #     names: Tuple[str, ...] = self.responses.dtype.names or tuple()
+    #     factor = mass_concentration_units[self.combo_unit.currentText()]
+
+    #     with open(file, "w") as fp:
+    #         fp.write(f"SPCal Calibration {__version__}\n")
+    #         fp.write("," + ",".join(name for name in names) + "\n")
+    #         fp.write("Slope," + )
+    #         fp.write("Intercept," + )
+    #         fp.write("Error," + )
+    #         fp.write("r2," + )
+    #         for i in range(self.responses.shape[0]):
+    #             row = self.responses[i]
+    #             fp.write(
+    #                 f"Level {i}" + ",".join(str(row[name]) for name in names) + "\n"
+    #             )
+    #         fp.write("Concentration (kg/L)," + ",".join(name for name in names) + "\n")
+    #         for i in range(self.model.array.shape[0]):
+    #             row = self.model.array[i]
+    #             fp.write(
+    #                 f"Level {i}"
+    #                 + ",".join(
+    #                     str(row[name] * factor if not np.isnan(row[name]) else "")
+    #                     for name in names
+    #                 )
+    #                 + "\n"
+    #             )
+
     def accept(self) -> None:
         assert self.responses.dtype.names is not None
 
         responses = {}
+        factor = mass_concentration_units[self.combo_unit.currentText()]
         for name in self.responses.dtype.names:
             x = self.model.array[name]
             y = self.responses[name][~np.isnan(x)]
-            x = (
-                x[~np.isnan(x)]
-                * mass_concentration_units[self.combo_unit.currentText()]
-            )
+            x = x[~np.isnan(x)] * factor
             if x.size == 0:
                 continue
             elif x.size == 1:  # single point, force 0
                 m = y[0] / x[0]
             else:
-                _, m = np.polynomial.polynomial.polyfit(x, y, 1)
+                m, b, r2, err = weighted_linreg(x, y)
             responses[name] = m
 
         if len(responses) > 0:
