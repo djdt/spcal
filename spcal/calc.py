@@ -114,6 +114,17 @@ def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> fl
 def pca(
     x: np.ndarray, trim_to_components: int = 2
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Perform a PCA on 'x', standard scales data.
+
+    Args:
+        x: input array of shape (samples, features)
+        trim_to_components: trim to this many dims
+
+    Returns:
+        pca data points
+        component vectors
+        explained variance per dim
+    """
     def standardise(x: np.ndarray) -> np.ndarray:
         return (x - x.mean(axis=0)) / x.std(axis=0)
 
