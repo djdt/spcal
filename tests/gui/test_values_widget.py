@@ -21,6 +21,7 @@ def test_value_widget(qtbot: QtBot):
     w.clearFocus()
     assert w.text() == "0.123457"
     w.setFocus()
+    qtbot.wait(1)  # test sometimes fails without wait
     assert w.text() == "0.123456789"
     w.clearFocus()
 
