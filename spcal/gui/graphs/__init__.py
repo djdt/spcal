@@ -71,4 +71,41 @@ color_schemes = {
     ],
 }
 
+# https://github.com/sjmgarnier/viridisLite/blob/master/data-raw/viridis_map.csv
+viridis_32 = [
+    QtGui.QColor.fromRgbF(0.27602238, 0.04416723, 0.37016418),
+    QtGui.QColor.fromRgbF(0.28192358, 0.08966622, 0.41241521),
+    QtGui.QColor.fromRgbF(0.283072, 0.13089477, 0.44924127),
+    QtGui.QColor.fromRgbF(0.27957399, 0.17059884, 0.47999675),
+    QtGui.QColor.fromRgbF(0.27182812, 0.20930306, 0.50443413),
+    QtGui.QColor.fromRgbF(0.26057103, 0.2469217, 0.52282822),
+    QtGui.QColor.fromRgbF(0.2468114, 0.28323662, 0.53594093),
+    QtGui.QColor.fromRgbF(0.2316735, 0.3181058, 0.54483444),
+    QtGui.QColor.fromRgbF(0.21620971, 0.35153548, 0.55062743),
+    QtGui.QColor.fromRgbF(0.20123854, 0.38366989, 0.55429441),
+    QtGui.QColor.fromRgbF(0.18723083, 0.41474645, 0.55654717),
+    QtGui.QColor.fromRgbF(0.17427363, 0.4450441, 0.55779216),
+    QtGui.QColor.fromRgbF(0.16214155, 0.47483821, 0.55813967),
+    QtGui.QColor.fromRgbF(0.15047605, 0.50436904, 0.55742968),
+    QtGui.QColor.fromRgbF(0.13914708, 0.53381201, 0.55529773),
+    QtGui.QColor.fromRgbF(0.12872938, 0.56326503, 0.55122927),
+    QtGui.QColor.fromRgbF(0.12114807, 0.59273889, 0.54464114),
+    QtGui.QColor.fromRgbF(0.12008079, 0.62216081, 0.53494633),
+    QtGui.QColor.fromRgbF(0.13006688, 0.65138436, 0.52160791),
+    QtGui.QColor.fromRgbF(0.15389405, 0.68020343, 0.50417217),
+    QtGui.QColor.fromRgbF(0.19109018, 0.70836635, 0.48228395),
+    QtGui.QColor.fromRgbF(0.2393739, 0.73558828, 0.45568838),
+    QtGui.QColor.fromRgbF(0.29647899, 0.76156142, 0.42422341),
+    QtGui.QColor.fromRgbF(0.36074053, 0.78596419, 0.38781353),
+    QtGui.QColor.fromRgbF(0.43098317, 0.80847343, 0.34647607),
+    QtGui.QColor.fromRgbF(0.5062713, 0.82878621, 0.30036211),
+    QtGui.QColor.fromRgbF(0.58567772, 0.84666139, 0.24989748),
+    QtGui.QColor.fromRgbF(0.66805369, 0.86199932, 0.19629307),
+    QtGui.QColor.fromRgbF(0.75188414, 0.87495143, 0.14322828),
+    QtGui.QColor.fromRgbF(0.83526959, 0.88602943, 0.1026459),
+    QtGui.QColor.fromRgbF(0.91624212, 0.89609127, 0.1007168),
+    QtGui.QColor.fromRgbF(0.99324789, 0.90615657, 0.1439362),
+]
+
+
 symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
