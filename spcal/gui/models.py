@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List
 
 import numpy as np
 from PySide6 import QtCore
