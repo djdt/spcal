@@ -9,6 +9,12 @@ import numpy.lib.recfunctions as rfn
 logger = logging.getLogger(__name__)
 
 
+def is_nu_run_info_file(path: Path) -> bool:
+    if not path.exists() or path.name != "run.info":
+        return False
+    return True
+
+
 def is_nu_directory(path: Path) -> bool:
     """Checks path is directory containing a 'run.info' and 'integrated.index'"""
 
