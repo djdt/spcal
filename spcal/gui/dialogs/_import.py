@@ -279,10 +279,12 @@ class ImportDialog(_ImportDialogBase):
                 delimiter = "Tab"
             self.combo_delimiter.setCurrentText(delimiter)
         if "ignores" in options:
-            self.le_ignore_columns.setText(";".join(i + 1) for i in options["ignores"])
+            self.le_ignore_columns.setText(
+                ";".join(str(i + 1) for i in options["ignores"])
+            )
         if "first line" in options:
             self.spinbox_first_line.setValue(options["first line"])
-        if "names" in options and len(self.table.useColumns()) == len(options["names"]):
+        if "names" in options and len(self.useColumns()) == len(options["names"]):
             for name, c in zip(options["names"], self.useColumns()):
                 item = self.table.item(self.spinbox_first_line.value() - 1, c)
                 if item is not None:
