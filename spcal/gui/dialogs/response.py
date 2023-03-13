@@ -210,7 +210,7 @@ class ResponseDialog(QtWidgets.QDialog):
             if x.size == 0:
                 continue
             brush = QtGui.QBrush(scheme[i])
-            self.graph_cal.drawPoints(x, y, trend_line=True, brush=brush)
+            self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
     def accept(self) -> None:
         assert self.responses.dtype.names is not None

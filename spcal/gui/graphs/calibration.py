@@ -18,7 +18,8 @@ class CalibrationView(SinglePlotGraphicsView):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        trend_line: bool = False,
+        name: str | None = None,
+        draw_trendline: bool = False,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QPen | None = None,
     ) -> None:
@@ -33,7 +34,10 @@ class CalibrationView(SinglePlotGraphicsView):
         )
         self.plot.addItem(scatter)
 
-        if trend_line:
+        if name is not None:
+            self.plot.legend.addItem(scatter, name)
+
+        if draw_trendline:
             tpen = QtGui.QPen(brush.color(), 1.0)
             tpen.setCosmetic(True)
             self.drawTrendline(x, y, pen=tpen)
