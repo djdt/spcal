@@ -7,22 +7,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
 from spcal.detection import combine_detections, detection_maxima
-from spcal.gui.dialogs._import import (
-    ImportDialog,
-    NuImportDialog,
-    TofwerkImportDialog,
-    _ImportDialogBase,
-)
+from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
-from spcal.gui.io import getImportDialogForPath, getOpenNanoparticleFile
+from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
-from spcal.io.nu import is_nu_directory
-from spcal.io.text import is_text_file
-from spcal.io.tofwerk import is_tofwerk_file
 from spcal.limit import SPCalLimit
 from spcal.result import SPCalResult
 
@@ -190,12 +182,7 @@ class InputWidget(QtWidgets.QWidget):
             # Todo, nu import check
             for url in event.mimeData().urls():
                 path = Path(url.toLocalFile())
-                if (
-                    (path.is_dir() and is_nu_directory(path))
-                    or path.suffix.lower() == ".info"
-                    or is_text_file(path)
-                    or is_tofwerk_file(path)
-                ):
+                if is_spcal_path(path):
                     self.dialogLoadFile(path)
                     break
             event.acceptProposedAction()
@@ -208,13 +195,13 @@ class InputWidget(QtWidgets.QWidget):
         self, path: str | Path | None = None
     ) -> _ImportDialogBase | None:
         if path is None:
-            path = getOpenNanoparticleFile(self)
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
         else:
             path = Path(path)
-        if path is None:
-            return None
 
-        dlg = getImportDialogForPath(self, path)
+        dlg = get_import_dialog_for_path(self, path)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
         return dlg

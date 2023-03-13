@@ -8,10 +8,8 @@ from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.response import ResponseView
-from spcal.gui.io import getImportDialogForPath, getOpenNanoparticleFile
+from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.models import NumpyRecArrayTableModel
-from spcal.io.nu import is_nu_directory
-from spcal.io.text import is_text_file
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
@@ -104,14 +102,9 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if event.mimeData().hasUrls():
-            # Todo, nu import check
             for url in event.mimeData().urls():
                 path = Path(url.toLocalFile())
-                if (
-                    (path.is_dir() and is_nu_directory(path))
-                    or path.suffix.lower() == ".info"
-                    or is_text_file(path)
-                ):
+                if is_spcal_path(path):
                     self.dialogLoadFile(path)
                     break
             event.acceptProposedAction()
@@ -124,13 +117,13 @@ class ResponseDialog(QtWidgets.QDialog):
         self, path: str | Path | None = None
     ) -> _ImportDialogBase | None:
         if path is None:
-            path = getOpenNanoparticleFile(self)
+            path = get_open_spcal_path(self)
             if path is None:
                 return None
         else:
             path = Path(path)
 
-        dlg = getImportDialogForPath(self, path)
+        dlg = get_import_dialog_for_path(self, path)
         dlg.dataImported.connect(self.loadData)
 
         if self.import_options is None:

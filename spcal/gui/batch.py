@@ -8,7 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
-from spcal.gui.io import getOpenNanoparticleFiles
+from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
@@ -336,7 +336,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
     def dropEvent(self, event: QtGui.QDropEvent) -> None:
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                self.files.addItem(url.toLocalFile())
+                if is_spcal_path(url.toLocalFile()):
+                    self.files.addItem(url.toLocalFile())
             event.acceptProposedAction()
         else:
             super().dropEvent(event)
@@ -366,7 +367,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         return True
 
     def dialogLoadFiles(self) -> None:
-        paths = getOpenNanoparticleFiles(self, "Batch Process Files")
+        paths = get_open_spcal_paths(self, "Batch Process Files")
         if len(paths) > 0:
             self.files.addItems([str(p) for p in paths])
 
