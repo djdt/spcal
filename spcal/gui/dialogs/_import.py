@@ -268,29 +268,21 @@ class ImportDialog(_ImportDialogBase):
         }
 
     def setImportOptions(self, options: dict) -> None:
-        if "dwelltime" in options:
-            self.dwelltime.setBaseValue(options["dwelltime"])
-            self.dwelltime.setBestUnit()
-        if "delimiter" in options:
-            delimiter = options["delimiter"]
-            if delimiter == " ":
-                delimiter = "Space"
-            elif delimiter == "\t":
-                delimiter = "Tab"
-            self.combo_delimiter.setCurrentText(delimiter)
-        if "ignores" in options:
-            self.le_ignore_columns.setText(";".join(i + 1) for i in options["ignores"])
-        if "first line" in options:
-            self.spinbox_first_line.setValue(options["first line"])
-        if "names" in options and len(self.table.useColumns()) == len(options["names"]):
-            for name, c in zip(options["names"], self.useColumns()):
-                item = self.table.item(self.spinbox_first_line.value() - 1, c)
-                if item is not None:
-                    item.setText(name)
-        if "cps" in options:
-            self.combo_intensity_units.setCurrentText(
-                "CPS" if options["cps"] else "Counts"
-            )
+        self.dwelltime.setBaseValue(options["dwelltime"])
+        self.dwelltime.setBestUnit()
+        delimiter = options["delimiter"]
+        if delimiter == " ":
+            delimiter = "Space"
+        elif delimiter == "\t":
+            delimiter = "Tab"
+        self.combo_delimiter.setCurrentText(delimiter)
+        self.le_ignore_columns.setText(";".join(i + 1) for i in options["ignores"])
+        self.spinbox_first_line.setValue(options["first line"])
+        for name, c in zip(options["names"], self.useColumns()):
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                item.setText(name)
+        self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
 
     def accept(self) -> None:
         options = self.importOptions()
