@@ -5,6 +5,7 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import pca
+from spcal.gui.graphs import viridis_32
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 
 
@@ -76,6 +77,8 @@ class PCAView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("PCA", xlabel="PC 1", ylabel="PC 2", parent=parent)
 
+        self.scatter: pyqtgraph.ScatterPlotItem | None = None
+
     def draw(
         self,
         X: np.ndarray,
@@ -90,8 +93,10 @@ class PCAView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
-        scatter = pyqtgraph.ScatterPlotItem(x=a[:, 0], y=a[:, 1], pen=None, brush=brush)
-        self.plot.addItem(scatter)
+        self.scatter = pyqtgraph.ScatterPlotItem(
+            x=a[:, 0], y=a[:, 1], pen=None, brush=brush
+        )
+        self.plot.addItem(self.scatter)
 
         if feature_names is not None:
             assert len(feature_names) == v.shape[1]
@@ -106,3 +111,40 @@ class PCAView(SinglePlotGraphicsView):
         self.xaxis.setLabel(f"PC 1 ({var[0] * 100.0:.1f} %)")
         self.yaxis.setLabel(f"PC 2 ({var[1] * 100.0:.1f} %)")
         self.plot.setTitle(f"PCA: {np.sum(var) * 100.0:.1f} % explained variance")
+
+    def colorScatter(
+        self, indicies: np.ndarray, colors: List[QtGui.QColor] | None = None
+    ) -> None:
+        if self.scatter is None:
+            return
+        if colors is None:
+            colors = viridis_32
+
+        brushes = [QtGui.QBrush(colors[i]) for i in indicies]
+        self.scatter.setBrush(brushes)
+
+    def clear(self) -> None:
+        super().clear()
+        self.scatter = None
+
+
+if __name__ == "__main__":
+
+    app = QtWidgets.QApplication()
+
+    data = np.genfromtxt("/home/tom/Downloads/eq.csv", delimiter=",", skip_header=22)
+    data = np.nan_to_num(data)
+
+    X = pca(data)
+
+    win = PCAView()
+    win.show()
+
+    win.draw(data)
+    c = np.zeros_like(data[:, 0])
+    np.divide(data[:, 2], data[:, 6], where=data[:, 6] > 0, out=c)
+    bins = np.linspace(c.min(), c.max(), 31)
+    idx = np.digitize(c, bins)
+    win.colorScatter(idx)
+
+    app.exec()
