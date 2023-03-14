@@ -1,5 +1,6 @@
 # import csv
 import datetime
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Set, TextIO, Tuple
 
@@ -7,6 +8,8 @@ import numpy as np
 
 from spcal import __version__
 from spcal.result import SPCalResult
+
+logger = logging.getLogger(__name__)
 
 
 def is_text_file(path: Path) -> bool:
@@ -40,13 +43,17 @@ def read_single_particle_file(
         data, structred array
         old_names, the original names used in text file
     """
+
+    def csv_read_lines(fp, delimiter: str = ",", count: int = 0):
+        for line in fp:
+            if delimiter != ",":
+                yield line.replace(",", ".")
+            else:
+                yield line
+
     path = Path(path)
     with path.open("r") as fp:
-        if delimiter != ",":
-            gen = (x.replace(",", ".") for x in fp)
-        else:
-            gen = (x for x in fp)
-
+        gen = csv_read_lines(fp, delimiter)
         for i in range(first_line - 1):
             next(gen)
 
@@ -64,6 +71,9 @@ def read_single_particle_file(
                 dtype=dtype,
             )
         except ValueError:  # Rewind and try with genfromtxt
+            logger.warning(
+                "read_single_particle_file: np.loadtxt failed, trying np.genfromtxt"
+            )
             fp.seek(0)
             for i in range(first_line):
                 next(gen)
@@ -72,9 +82,13 @@ def read_single_particle_file(
                 gen,
                 delimiter=delimiter,
                 usecols=columns,
-                invalid_raise=False,
                 dtype=dtype,
+                converters={c: lambda s: np.float32(s or 0) for c in columns},
+                invalid_raise=False,
+                loose=True,
             )
+            if data.dtype.names is None:
+                data.dtype = dtype
 
     assert data.dtype.names is not None
 
