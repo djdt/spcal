@@ -116,11 +116,24 @@ class ResultsWidget(QtWidgets.QWidget):
         self.scatter_widget = QtWidgets.QWidget()
         self.scatter_widget.setLayout(scatter_layout)
 
+        self.combo_pca_colour = QtWidgets.QComboBox()
+        self.combo_pca_colour.currentIndexChanged.connect(self.drawGraphPCA)
+
+        pca_layout = QtWidgets.QVBoxLayout()
+        pca_toolbar = QtWidgets.QHBoxLayout()
+        pca_toolbar.addWidget(QtWidgets.QLabel("Colour:"), 0)
+        pca_toolbar.addWidget(self.combo_pca_colour, 1)
+        pca_layout.addWidget(self.graph_pca, 1)
+        pca_layout.addLayout(pca_toolbar, 0)
+
+        self.pca_widget = QtWidgets.QWidget()
+        self.pca_widget.setLayout(pca_layout)
+
         self.graph_stack = QtWidgets.QStackedWidget()
         self.graph_stack.addWidget(self.graph_hist)
         self.graph_stack.addWidget(self.graph_composition)
         self.graph_stack.addWidget(self.scatter_widget)
-        self.graph_stack.addWidget(self.graph_pca)
+        self.graph_stack.addWidget(self.pca_widget)
 
         self.io = ResultIOStack()
         self.io.nameChanged.connect(self.updateGraphsForName)
@@ -142,6 +155,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.setCurrentText("Signal")
         self.mode.currentIndexChanged.connect(self.updateOutputs)
         self.mode.currentIndexChanged.connect(self.updateScatterElements)
+        self.mode.currentIndexChanged.connect(self.updatePCAElements)
         self.mode.currentIndexChanged.connect(self.redraw)
 
         self.label_file = QtWidgets.QLabel()
@@ -190,7 +204,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "office-chart-pca",
             "PCA",
             "Create PCA plot of detections.",
-            lambda: self.graph_stack.setCurrentWidget(self.graph_pca),
+            lambda: self.graph_stack.setCurrentWidget(self.pca_widget),
             checkable=True,
         )
 
@@ -430,7 +444,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 draw_fit=self.graph_options["histogram"]["fit"],
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_limits={
-                    "mean": np.mean(data),
+                    "mean": np.mean(data) * modifier,
                     "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
@@ -508,6 +522,16 @@ class ResultsWidget(QtWidgets.QWidget):
         brush = QtGui.QBrush(QtCore.Qt.black)
 
         self.graph_pca.draw(X, brush=brush, feature_names=list(graph_data.keys()))
+
+        colorby = self.combo_pca_colour.currentText()
+        if colorby != "None":
+            if colorby == "Total":
+                idx = np.sum(X, axis=1)
+            else:
+                idx = X[:, list(graph_data.keys()).index(colorby)]
+            idx = np.digitize(idx, np.linspace(idx.min(), idx.max(), 31))
+            self.graph_pca.colorScatter(idx)
+
         self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
         self.graph_pca.zoomReset()
 
@@ -594,6 +618,23 @@ class ResultsWidget(QtWidgets.QWidget):
             elif len(elements) > 1:
                 combo.setCurrentIndex(i)
             combo.blockSignals(False)
+
+    def updatePCAElements(self) -> None:
+        mode = self.mode.currentText()
+        key = self.mode_keys[mode]
+
+        elements = ["None", "Total"] + [
+            name for name in self.results if key in self.results[name].detections
+        ]
+        current = self.combo_pca_colour.currentText()
+        self.combo_pca_colour.blockSignals(True)
+        self.combo_pca_colour.clear()
+        self.combo_pca_colour.addItems(elements)
+        if current in elements:
+            self.combo_pca_colour.setCurrentText(current)
+        else:
+            self.combo_pca_colour.setCurrentIndex(0)
+        self.combo_pca_colour.blockSignals(False)
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
@@ -731,6 +772,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # end for name in names
         self.updateOutputs()
         self.updateScatterElements()
+        self.updatePCAElements()
         self.updateEnabledItems()
 
         self.redraw()
