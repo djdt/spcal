@@ -83,18 +83,21 @@ class PCAView(SinglePlotGraphicsView):
         self,
         X: np.ndarray,
         feature_names: List[str] | None = None,
+        pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
         arrow_pen: QtGui.QPen | None = None,
         text_brush: QtGui.QBrush | None = None,
     ) -> None:
-        """Returns explained variance."""
-        a, v, var = pca(X, 2)
-
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
+        a, v, var = pca(X, 2)
+
         self.scatter = pyqtgraph.ScatterPlotItem(
-            x=a[:, 0], y=a[:, 1], pen=None, brush=brush
+            x=a[:, 0], y=a[:, 1], pen=pen, brush=brush
         )
         self.plot.addItem(self.scatter)
 
@@ -142,7 +145,8 @@ if __name__ == "__main__":
 
     win.draw(data)
     c = np.zeros_like(data[:, 0])
-    np.divide(data[:, 2], data[:, 6], where=data[:, 6] > 0, out=c)
+    c = np.sum(data, axis=1)
+    # np.divide(data[:, 2], data[:, 6], where=data[:, 6] > 0, out=c)
     bins = np.linspace(c.min(), c.max(), 31)
     idx = np.digitize(c, bins)
     win.colorScatter(idx)
