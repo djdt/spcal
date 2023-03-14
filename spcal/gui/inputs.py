@@ -416,9 +416,6 @@ class InputWidget(QtWidgets.QWidget):
 
             trim = self.trimRegion(name)
 
-            print(name, self.limits[name].mean_background)
-            print(name, self.limits[name].detection_threshold)
-
             self.graph.drawLimits(
                 self.events[trim[0] : trim[1]],
                 self.limits[name].mean_background,
