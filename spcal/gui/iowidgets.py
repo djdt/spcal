@@ -452,7 +452,7 @@ class ResultIOWidget(IOWidget):
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
 
-        relative_error = count / count_error
+        relative_error = count_error / count
         self.count.setValue(int(count))
         self.count.setError(int(np.round(count_error, 0)))
         self.count_label.setText(f"({count_percent:{self.count.view_format}} %)")
