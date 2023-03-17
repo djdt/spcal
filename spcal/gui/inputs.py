@@ -450,7 +450,7 @@ class ReferenceWidget(InputWidget):
         super().__init__(ReferenceIOStack(), options, parent=parent)
 
         # dwelltime covered by detectionsChanged
-        self.options.uptake.valueChanged.connect(lambda: self.updateEfficiency(None))
+        self.options.uptake.baseValueChanged.connect(lambda: self.updateEfficiency(None))
         self.io.optionsChanged.connect(self.updateEfficiency)
         self.detectionsChanged.connect(self.updateEfficiency)
 
@@ -458,14 +458,15 @@ class ReferenceWidget(InputWidget):
         dwell = self.options.dwelltime.baseValue()
         if self.responses.size == 0 or dwell is None:
             return
-        if name is None or name == "Overlay":
+
+        if name is None:
             names = self.names
         else:
             names = (name,)
 
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
-
+        print(names)
         for _name in names:
             self.io[_name].updateEfficiency(self.detections[_name], dwell, time, uptake)
 

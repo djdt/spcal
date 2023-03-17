@@ -67,7 +67,7 @@ class OptionsWidget(QtWidgets.QWidget):
             self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
 
         # Complete Changed
-        self.uptake.valueChanged.connect(self.optionsChanged)
+        self.uptake.baseValueChanged.connect(self.optionsChanged)
         self.efficiency.valueChanged.connect(self.optionsChanged)
 
         self.inputs = QtWidgets.QGroupBox("Instrument Options")

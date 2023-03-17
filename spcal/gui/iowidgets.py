@@ -125,9 +125,15 @@ class SampleIOWidget(IOWidget):
             "Ratio of the mass of the analyte over the mass of the particle."
         )
 
-        self.density.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-        self.molarmass.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
-        self.response.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.density.baseValueChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
+        self.molarmass.baseValueChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
+        self.response.baseValueChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
         self.massfraction.valueChanged.connect(
             lambda: self.optionsChanged.emit(self.name)
         )
@@ -244,10 +250,10 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
 
-        self.concentration.valueChanged.connect(
+        self.concentration.baseValueChanged.connect(
             lambda: self.optionsChanged.emit(self.name)
         )
-        self.diameter.valueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.diameter.baseValueChanged.connect(lambda: self.optionsChanged.emit(self.name))
 
         self.inputs.layout().setRowVisible(self.molarmass, False)
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
@@ -316,8 +322,7 @@ class ReferenceIOWidget(SampleIOWidget):
 
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
-        response = self.response.baseValue()
-        if density is None or diameter is None or response is None:
+        if density is None or diameter is None:
             return
 
         mass = spcal.particle.reference_particle_mass(density, diameter)
@@ -327,6 +332,7 @@ class ReferenceIOWidget(SampleIOWidget):
 
         # If concentration defined use conc method
         concentration = self.concentration.baseValue()
+        response = self.response.baseValue()
         if concentration is not None and uptake is not None:
             efficiency = spcal.particle.nebulisation_efficiency_from_concentration(
                 detections.size,

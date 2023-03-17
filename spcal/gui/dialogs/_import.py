@@ -47,7 +47,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
             default_unit="ms",
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
-        self.dwelltime.valueChanged.connect(self.completeChanged)
+        self.dwelltime.baseValueChanged.connect(self.completeChanged)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
