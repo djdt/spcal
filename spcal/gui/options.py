@@ -11,7 +11,6 @@ from spcal.siunits import time_units
 class OptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     limitOptionsChanged = QtCore.Signal()
-    elementSelected = QtCore.Signal(str, float)
     useManualLimits = QtCore.Signal(bool)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -189,6 +188,45 @@ class OptionsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_left)
 
         self.setLayout(layout)
+
+    def asDict(self) -> dict:
+        return {
+            "uptake": self.uptake.baseValue(),
+            "dwelltime": self.dwelltime.baseValue(),
+            "efficiency": self.efficiency.value(),
+            "efficiency method": self.efficiency_method.currentText(),
+            "threshold": {
+                "window size": self.window_size.value(),
+                "use window": self.check_use_window.isChecked(),
+                "method": self.method.currentText(),
+                "iterative": self.check_iterative.isChecked(),
+                "poisson alpha": self.error_rate_poisson.value(),
+                "gaussian alpha": self.error_rate_gaussian.value(),
+            },
+            "cell diameter": self.celldiameter.baseValue(),
+        }
+
+    def fromDict(self, options: dict) -> None:
+        self.blockSignals(True)
+        self.uptake.setBaseValue(float(options["uptake"]))
+        self.uptake.setBestUnit()
+        self.dwelltime.setBaseValue(float(options["dwelltime"]))
+        self.dwelltime.setBestUnit()
+        self.efficiency.setValue(float(options["efficiency"]))
+        self.efficiency_method.setCurrentText(options["method"])
+
+        self.window_size.setValue(int(options["threshold"]["window size"]))
+        self.check_use_window.setChecked(bool(options["threshold"]["use window"]))
+        self.check_iterative.setChecked(bool(options["threshold"]["iterative"]))
+        self.error_rate_poisson.setValue(float(options["threshold"]["poisson alpha"]))
+        self.error_rate_gaussian.setValue(float(options["threshold"]["gaussian alpha"]))
+        self.celldiameter.setBaseValue(float(options["cell diameter"]))
+        self.celldiameter.setBestUnit()
+        self.blockSignals(False)
+
+        self.method.setCurrentText(options["threshold"]["method"])
+        self.optionsChanged.emit()
+        self.limitOptionsChanged.emit()
 
     def updateLabelSigma(self) -> None:
         alpha = self.error_rate_gaussian.value()
