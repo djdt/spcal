@@ -583,7 +583,6 @@ class SampleIOStack(IOStack[SampleIOWidget]):
                 self[name].response.setBaseValue(response)
 
     def setLimitsEditable(self, editable: bool) -> None:
-        print("setLimitsEditable")
         for widget in self.widgets():
             if editable:
                 widget.lod_count.valueEdited.connect(self.limitsChanged)

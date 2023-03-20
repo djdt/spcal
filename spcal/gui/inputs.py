@@ -61,7 +61,6 @@ class InputWidget(QtWidgets.QWidget):
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
         self.io.limitsChanged.connect(self.updateLimits)
-        self.io.limitsChanged.connect(lambda: print("limitsChanged"))
 
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
@@ -466,7 +465,6 @@ class ReferenceWidget(InputWidget):
 
         time = self.events.size * dwell
         uptake = self.options.uptake.baseValue()
-        print(names)
         for _name in names:
             self.io[_name].updateEfficiency(self.detections[_name], dwell, time, uptake)
 
