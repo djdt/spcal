@@ -89,8 +89,8 @@ class OptionsWidget(QtWidgets.QWidget):
         layout_window_size.addWidget(self.window_size, 1)
         layout_window_size.addWidget(self.check_use_window)
 
-        self.method = QtWidgets.QComboBox()
-        self.method.addItems(
+        self.limit_method = QtWidgets.QComboBox()
+        self.limit_method.addItems(
             [
                 "Automatic",
                 "Highest",
@@ -99,23 +99,23 @@ class OptionsWidget(QtWidgets.QWidget):
                 "Manual Input",
             ]
         )
-        self.method.setItemData(
+        self.limit_method.setItemData(
             0,
             "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
             QtCore.Qt.ToolTipRole,
         )
-        self.method.setItemData(
+        self.limit_method.setItemData(
             1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
         )
-        self.method.setItemData(
+        self.limit_method.setItemData(
             2, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
         )
-        self.method.setItemData(
+        self.limit_method.setItemData(
             3,
             "Threshold using Formula C from the MARLAP manual.",
             QtCore.Qt.ToolTipRole,
         )
-        self.method.setItemData(
+        self.limit_method.setItemData(
             4,
             "Manually defined limits in the sample / reference tab.",
             QtCore.Qt.ToolTipRole,
@@ -146,17 +146,17 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
-        self.method.currentTextChanged.connect(self.limitMethodChanged)
+        self.limit_method.currentTextChanged.connect(self.limitMethodChanged)
 
         self.window_size.editingFinished.connect(self.limitOptionsChanged)
         self.check_use_window.toggled.connect(self.limitOptionsChanged)
-        self.method.currentTextChanged.connect(self.limitOptionsChanged)
+        self.limit_method.currentTextChanged.connect(self.limitOptionsChanged)
         self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
         self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
-        layout_method.addWidget(self.method)
+        layout_method.addWidget(self.limit_method)
         layout_method.addWidget(self.check_iterative)
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
@@ -198,7 +198,7 @@ class OptionsWidget(QtWidgets.QWidget):
             "threshold": {
                 "window size": self.window_size.value(),
                 "use window": self.check_use_window.isChecked(),
-                "method": self.method.currentText(),
+                "method": self.limit_method.currentText(),
                 "iterative": self.check_iterative.isChecked(),
                 "poisson alpha": self.error_rate_poisson.value(),
                 "gaussian alpha": self.error_rate_gaussian.value(),
@@ -224,7 +224,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.celldiameter.setBestUnit()
         self.blockSignals(False)
 
-        self.method.setCurrentText(options["threshold"]["method"])
+        self.limit_method.setCurrentText(options["threshold"]["method"])
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
 

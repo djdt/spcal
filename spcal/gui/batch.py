@@ -438,7 +438,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 "response": self.sample.io[name].response.baseValue(),
             }
             # Read the limit if manual input
-            if self.options.method.currentText() == "Manual Input":
+            if self.options.limit_method.currentText() == "Manual Input":
                 inputs[name]["limit"] = self.sample.io[name].lod_count.value()
 
             inputs[name]["mass_fraction"] = self.sample.io[name].massfraction.value()
@@ -492,7 +492,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 process_kws={
                     "method": method,
                     "inputs": inputs,
-                    "limit_method": self.options.method.currentText(),
+                    "limit_method": self.options.limit_method.currentText(),
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (self.options.window_size.value() or 0)
                     if self.options.window_size.isEnabled()

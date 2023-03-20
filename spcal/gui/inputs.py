@@ -229,7 +229,7 @@ class InputWidget(QtWidgets.QWidget):
         self.updateLimits()
 
         # New widgets, set editable
-        if self.options.method.currentText() == "Manual Input":
+        if self.options.limit_method.currentText() == "Manual Input":
             self.io.setLimitsEditable(True)
 
         self.dataLoaded.emit(options["path"])
@@ -277,7 +277,7 @@ class InputWidget(QtWidgets.QWidget):
         if self.responses.size == 0:
             return
 
-        method = self.options.method.currentText()
+        method = self.options.limit_method.currentText()
         poisson_alpha = self.options.error_rate_poisson.value() or 0.001
         gaussian_alpha = self.options.error_rate_gaussian.value() or 1e-6
         if self.options.window_size.isEnabled():
@@ -449,9 +449,16 @@ class ReferenceWidget(InputWidget):
         super().__init__(ReferenceIOStack(), options, parent=parent)
 
         # dwelltime covered by detectionsChanged
-        self.options.uptake.baseValueChanged.connect(lambda: self.updateEfficiency(None))
+        self.options.uptake.baseValueChanged.connect(
+            lambda: self.updateEfficiency(None)
+        )
         self.io.optionsChanged.connect(self.updateEfficiency)
         self.detectionsChanged.connect(self.updateEfficiency)
+        self.dataLoaded.connect(self.onDataLoaded)
+
+    def onDataLoaded(self) -> None:
+        if len(self.names) == 1:  # Default to use if only element
+            self.io[self.names[0]].check_use_efficiency_for_all.setChecked(True)
 
     def updateEfficiency(self, name: str | None = None) -> None:
         dwell = self.options.dwelltime.baseValue()

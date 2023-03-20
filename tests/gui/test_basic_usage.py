@@ -39,11 +39,11 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
         options.check_iterative.click()
     assert options.check_iterative.isChecked()
 
-    options.method.setCurrentIndex(4)
+    options.limit_method.setCurrentIndex(4)
     assert not options.error_rate_gaussian.isEnabled()
     assert not options.error_rate_poisson.isEnabled()
     assert not options.check_iterative.isEnabled()
-    options.method.setCurrentIndex(0)
+    options.limit_method.setCurrentIndex(0)
 
     qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)
     assert options.celldiameter.value() == 1
@@ -184,7 +184,7 @@ def test_spcal_no_data(qtbot: QtBot):
 
     click_though_input(qtbot, window.reference)
 
-    window.options.method.setCurrentText("Manual Input")
+    window.options.limit_method.setCurrentText("Manual Input")
     for i, io in enumerate(window.sample.io):
         assert not io.lod_count.isReadOnly()
         with qtbot.wait_signal(window.sample.io.limitsChanged, timeout=100):
@@ -270,7 +270,7 @@ def test_spcal_single_quad_data(qtbot: QtBot):
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     # Limits editable accross reload
-    window.options.method.setCurrentText("Manual Input")
+    window.options.limit_method.setCurrentText("Manual Input")
     for i, io in enumerate(window.sample.io):
         assert not io.lod_count.isReadOnly()
         io.lod_count.setValue(None)

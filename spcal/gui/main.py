@@ -216,6 +216,14 @@ class SPCalWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         dlg.open()
+        from spcal.io.session import saveSession
+
+        saveSession(
+            "/home/tom/Downloads/session.spcal",
+            self.options,
+            self.sample,
+            self.reference,
+        )
         return dlg
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
