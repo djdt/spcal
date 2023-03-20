@@ -189,42 +189,51 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def asDict(self) -> dict:
-        return {
+    def state(self) -> dict:
+        state_dict = {
             "uptake": self.uptake.baseValue(),
             "dwelltime": self.dwelltime.baseValue(),
             "efficiency": self.efficiency.value(),
             "efficiency method": self.efficiency_method.currentText(),
-            "threshold": {
-                "window size": self.window_size.value(),
-                "use window": self.check_use_window.isChecked(),
-                "method": self.limit_method.currentText(),
-                "iterative": self.check_iterative.isChecked(),
-                "poisson alpha": self.error_rate_poisson.value(),
-                "gaussian alpha": self.error_rate_gaussian.value(),
-            },
+            "window size": self.window_size.value(),
+            "use window": self.check_use_window.isChecked(),
+            "limit method": self.limit_method.currentText(),
+            "iterative": self.check_iterative.isChecked(),
+            "poisson alpha": self.error_rate_poisson.value(),
+            "gaussian alpha": self.error_rate_gaussian.value(),
             "cell diameter": self.celldiameter.baseValue(),
         }
+        return {k: v for k, v in state_dict.items() if v is not None}
 
-    def fromDict(self, options: dict) -> None:
+    def setState(self, state: dict) -> None:
         self.blockSignals(True)
-        self.uptake.setBaseValue(float(options["uptake"]))
-        self.uptake.setBestUnit()
-        self.dwelltime.setBaseValue(float(options["dwelltime"]))
-        self.dwelltime.setBestUnit()
-        self.efficiency.setValue(float(options["efficiency"]))
-        self.efficiency_method.setCurrentText(options["method"])
+        if "uptake" in state:
+            self.uptake.setBaseValue(state["uptake"])
+            self.uptake.setBestUnit()
+        if "dwelltime" in state:
+            self.dwelltime.setBaseValue(state["dwelltime"])
+            self.dwelltime.setBestUnit()
+        if "efficiency" in state:
+            self.efficiency.setValue(state["efficiency"])
 
-        self.window_size.setValue(int(options["threshold"]["window size"]))
-        self.check_use_window.setChecked(bool(options["threshold"]["use window"]))
-        self.check_iterative.setChecked(bool(options["threshold"]["iterative"]))
-        self.error_rate_poisson.setValue(float(options["threshold"]["poisson alpha"]))
-        self.error_rate_gaussian.setValue(float(options["threshold"]["gaussian alpha"]))
-        self.celldiameter.setBaseValue(float(options["cell diameter"]))
-        self.celldiameter.setBestUnit()
+        self.efficiency_method.setCurrentText(state["efficiency method"])
+
+        if "window size" in state:
+            self.window_size.setValue(state["window size"])
+        self.check_use_window.setChecked(state["use window"])
+        self.check_iterative.setChecked(state["iterative"])
+        if "poisson alpha" in state:
+            self.error_rate_poisson.setValue(state["poisson alpha"])
+        if "gaussian alpha" in state:
+            self.error_rate_gaussian.setValue(state["gaussian alpha"])
+        if "cell diameter" in state:
+            self.celldiameter.setBaseValue(state["cell diameter"])
+            self.celldiameter.setBestUnit()
         self.blockSignals(False)
 
-        self.limit_method.setCurrentText(options["threshold"]["method"])
+        # Separate for useManualLimits signal
+        self.limit_method.setCurrentText(state["limit method"])
+
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
 

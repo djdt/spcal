@@ -163,6 +163,30 @@ class SampleIOWidget(IOWidget):
 
         self.setLayout(layout)
 
+    def state(self) -> dict:
+        state_dict = {
+            "density": self.density.baseValue(),
+            "molar mass": self.molarmass.baseValue(),
+            "response": self.response.baseValue(),
+            "mass fraction": self.massfraction.value(),
+        }
+        if not self.lod_count.isReadOnly():  # Editable lod, save
+            state_dict["lod"] = self.lod_count.value()
+        return {k: v for k, v in state_dict.items() if v is not None}
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "density" in state:
+            self.density.setBaseValue(state["density"])
+        if "molar mass" in state:
+            self.molarmass.setBaseValue(state["molar mass"])
+        if "response" in state:
+            self.response.setBaseValue(state["response"])
+        if "mass fraction" in state:
+            self.massfraction.setValue(state["mass fraction"])
+        self.blockSignals(False)
+        self.optionsChanged.emit(self.name)
+
     def clearInputs(self) -> None:
         self.blockSignals(True)
         self.density.setValue(None)
@@ -253,7 +277,9 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration.baseValueChanged.connect(
             lambda: self.optionsChanged.emit(self.name)
         )
-        self.diameter.baseValueChanged.connect(lambda: self.optionsChanged.emit(self.name))
+        self.diameter.baseValueChanged.connect(
+            lambda: self.optionsChanged.emit(self.name)
+        )
 
         self.inputs.layout().setRowVisible(self.molarmass, False)
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
@@ -294,12 +320,37 @@ class ReferenceIOWidget(SampleIOWidget):
         self.outputs.layout().addRow("", self.check_use_efficiency_for_all)
         self.outputs.layout().addRow("Mass Response:", self.massresponse)
 
+    def state(self) -> dict:
+        state_dict = super().state()
+        state_dict.update(
+            {
+                "diameter": self.diameter.baseValue(),
+                "concentration": self.concentration.baseValue(),
+                "efficiency for all": self.check_use_efficiency_for_all.checkState()
+                == QtCore.Qt.CheckState.Checked,
+            }
+        )
+        return {k: v for k, v in state_dict.items() if v is not None}
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "diameter" in state:
+            self.diameter.setBaseValue(state["diameter"])
+        if "concentration" in state:
+            self.concentration.setBaseValue(state["concentration"])
+        self.blockSignals(False)
+        # Outside for external signals
+        if state["efficiency for all"]:
+            self.check_use_efficiency_for_all.setCheckState(
+                QtCore.Qt.CheckState.Checked
+            )
+        super().setState(state)
+
     def clearInputs(self) -> None:
         super().clearInputs()
         self.blockSignals(True)
         self.diameter.setValue(None)
         self.concentration.setValue(None)
-        self.massresponse.setValue(None)
         self.check_use_efficiency_for_all.setChecked(False)
         self.blockSignals(False)
 
