@@ -16,6 +16,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
+from spcal.io.session import restoreSession, saveSession
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,21 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         self.action_open_batch.setEnabled(False)
 
+        self.action_save_session = create_action(
+            "system-save-session",
+            "Save Session",
+            "Save the current options, inputs and data to a session file.",
+            self.dialogSaveSession,
+        )
+
+        self.action_load_session = create_action(
+            "system-load-session",
+            "Restore Session",
+            "Restore the saved session.",
+            self.dialogLoadSession,
+        )
+
+        # Todo move to right click menu
         self.action_export = create_action(
             "document-save-as",
             "E&xport Data",
@@ -182,7 +198,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menufile.addSeparator()
         menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
-        menufile.addAction(self.action_export)
+        # menufile.addAction(self.action_export)
+        menufile.addAction(self.action_save_session)
+        menufile.addAction(self.action_load_session)
         menufile.addSeparator()
         menufile.addAction(self.action_close)
 
@@ -219,14 +237,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         dlg.open()
-        from spcal.io.session import saveSession
-
-        saveSession(
-            "/home/tom/Downloads/session.spcal",
-            self.options,
-            self.sample,
-            self.reference,
-        )
         return dlg
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
@@ -294,6 +304,38 @@ class SPCalWindow(QtWidgets.QMainWindow):
         dlg.responsesSelected.connect(self.reference.io.setResponses)
         dlg.open()
         return dlg
+
+    def dialogSaveSession(self) -> None:
+        def onFileSelected(file: str) -> None:
+            path = Path(file).with_suffix(".spcal")
+            saveSession(path, self.options, self.sample, self.reference)
+            QtCore.QSettings().setValue("LastSession", str(path))
+
+        dir = Path(QtCore.QSettings().value("LastSession", ""))
+        if dir.is_file():
+            dir = dir.parent
+
+        # Dont use getSaveFileName as it doesn't have setDefaultSuffix
+        dlg = QtWidgets.QFileDialog(
+            self, "Save Session", str(dir), "SPCal Sessions(*.spcal);;All Files(*)"
+        )
+        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        dlg.setDefaultSuffix(".spcal")
+
+        dlg.fileSelected.connect(onFileSelected)
+        dlg.exec()
+
+    def dialogLoadSession(self) -> None:
+        settings = QtCore.QSettings()
+        dir = Path(settings.value("LastSession", ""))
+        if dir.is_file():
+            dir = dir.parent
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Session", str(dir), "SPCal Sessions(*.spcal);;All Files(*)"
+        )
+        if file == "":
+            return
+        restoreSession(Path(file), self.options, self.sample, self.reference)
 
     def onInputsChanged(self) -> None:
         # Reference tab is neb method requires
