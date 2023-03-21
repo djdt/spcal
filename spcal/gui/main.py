@@ -20,6 +20,9 @@ from spcal.gui.util import create_action
 logger = logging.getLogger(__name__)
 
 
+MAX_RECENT_FILES = 10
+
+
 class SPCalWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -376,7 +379,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         if new_path is not None:
             paths.insert(0, new_path)
+            paths = paths[:MAX_RECENT_FILES]
 
+            settings.remove("RecentFiles")
             settings.beginWriteArray("RecentFiles", len(paths))
             for i, path in enumerate(paths):
                 settings.setArrayIndex(i)
