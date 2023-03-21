@@ -45,29 +45,23 @@ def saveSession(
         for key, val in options.state().items():
             options_group.attrs[key] = val
 
-        if sample.responses.dtype.names is not None:
-            h5.create_group("sample", track_order=True)
-            dset = h5["sample"].create_dataset(
-                "data", data=sample.responses, compression="gzip"
-            )
-            for key, val in sanitiseImportOptions(sample.import_options).items():
-                dset.attrs[key] = val
-            for name in sample.responses.dtype.names:
-                group = h5["sample"].create_group(name)
-                for key, val in sample.io[name].state().items():
+        for key, input in zip(["sample", "reference"], [sample, reference]):
+            if input.responses.dtype.names is not None:
+                h5.create_group(key)
+                dset = h5[key].create_dataset(
+                    "data", data=input.responses, compression="gzip"
+                )
+                dset.attrs["trim"] = input.trimRegion("")
+
+                group = h5[key].create_group("import options")
+                for key, val in sanitiseImportOptions(input.import_options).items():
                     group.attrs[key] = val
 
-        if reference.responses.dtype.names is not None:
-            h5.create_group("reference", track_order=True)
-            dset = h5["reference"].create_dataset(
-                "data", data=reference.responses, compression="gzip"
-            )
-            for key, val in sanitiseImportOptions(reference.import_options).items():
-                dset.attrs[key] = val
-            for name in reference.responses.dtype.names:
-                group = h5["reference"].create_group(name)
-                for key, val in reference.io[name].state().items():
-                    group.attrs[key] = val
+                element_group = h5[key].create_group("elements")
+                for name in input.responses.dtype.names:
+                    group = element_group.create_group(name)
+                    for key, val in input.io[name].state().items():
+                        group.attrs[key] = val
 
         # Results - filters
 
@@ -81,22 +75,13 @@ def restoreSession(
 
         options.setState(h5["options"].attrs)
 
-        if "sample" in h5:
-            data = h5["sample"]["data"][:]
-            import_options = restoreImportOptions(h5["sample"]["data"].attrs)
-            sample.loadData(data, import_options)
-            for name in h5["sample"].keys():
-                if name == "data":
-                    continue
-                sample.io[name].setState(h5["sample"][name].attrs)
-
-        if "reference" in h5:
-            data = h5["reference"]["data"][:]
-            import_options = restoreImportOptions(h5["reference"]["data"].attrs)
-            reference.loadData(data, import_options)
-            for name in h5["reference"].keys():
-                if name == "data":
-                    continue
-                reference.io[name].setState(h5["reference"][name].attrs)
+        for key, input in zip(["sample", "reference"], [sample, reference]):
+            if key in h5:
+                data = h5[key]["data"][:]
+                import_options = restoreImportOptions(h5[key]["import options"].attrs)
+                input.loadData(data, import_options)
+                input.graph.region.setRegion(h5[key]["data"].attrs["trim"])
+                for name in h5[key]["elements"].keys():
+                    input.io[name].setState(h5[key]["elements"][name].attrs)
 
         # Results - filters
