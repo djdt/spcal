@@ -1,4 +1,5 @@
-from typing import Tuple
+from pathlib import Path
+from typing import Dict, Tuple
 
 import numpy as np
 import pyqtgraph
@@ -151,10 +152,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "document-export",
             "Export Data",
             "Save currently loaded data to file.",
-            lambda: None,
+            self.exportData,
         )
-        # Needs to be enabled externally
-        self.action_export_data.setVisible(False)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         menu = QtWidgets.QMenu(self)
@@ -174,7 +173,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 )
 
             menu.addAction(self.action_show_legend)
-            menu.addAction(self.action_export_data)
+            if self.readyForExport():
+                menu.addSeparator()
+                menu.addAction(self.action_export_data)
         event.accept()
         menu.popup(event.globalPos())
 
@@ -204,6 +205,47 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def dataRect(self) -> QtCore.QRectF:
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
+
+    def exportData(self) -> None:
+        dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+        dir = str(Path(dir).parent) if dir is not None else ""
+        path, filter = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export Data",
+            dir,
+            "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
+        )
+        if path == "":
+            return
+
+        path = Path(path)
+
+        filter_suffix = filter[filter.rfind(".") : -1]
+        if filter_suffix != "":  # append suffix if missing
+            path = path.with_suffix(filter_suffix)
+
+        data = self.dataForExport()
+        names = list(data.keys())
+
+        if path.suffix.lower() == ".csv":
+            header = "\t".join(name for name in names)
+            stack = np.stack(list(data.values()), axis=-1)
+            np.savetxt(
+                path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
+            )
+        elif path.suffix.lower() == ".npz":
+            np.savez_compressed(
+                path,
+                **{k: v for k, v in data.items()},
+            )
+        else:
+            raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+
+    def dataForExport(self) -> Dict[str, np.ndarray]:
+        raise NotImplementedError
+
+    def readyForExport(self) -> bool:
+        return False
 
     def setLimits(self, **kwargs) -> None:
         self.plot.setLimits(**kwargs)

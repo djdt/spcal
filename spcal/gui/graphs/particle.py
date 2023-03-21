@@ -25,6 +25,8 @@ class ParticleView(SinglePlotGraphicsView):
         )
         self.xaxis.setScale(xscale)
 
+        self.raw_signals: Dict[str, np.ndarray] = {}  # for export
+
         self.plot.setMouseEnabled(y=False)
         self.plot.setAutoVisible(y=True)
         self.plot.enableAutoRange(y=True)
@@ -57,8 +59,16 @@ class ParticleView(SinglePlotGraphicsView):
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
 
+    def dataForExport(self) -> Dict[str, np.ndarray]:
+        start, end = self.region_start, self.region_end
+        return {k: v[start:end] for k, v in self.raw_signals.items()}
+
+    def readyForExport(self) -> bool:
+        return len(self.raw_signals) > 0
+
     def clear(self) -> None:
         self.legend_items.clear()
+        self.raw_signals.clear()
         super().clear()
 
     def clearScatters(self) -> None:
@@ -95,6 +105,8 @@ class ParticleView(SinglePlotGraphicsView):
 
         if self.region not in self.plot.items:
             self.plot.addItem(self.region)
+
+        self.raw_signals[name] = y
 
     def drawMaxima(
         self,
