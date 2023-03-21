@@ -147,6 +147,15 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             lambda: None,
         )
 
+        self.action_export_data = create_action(
+            "document-export",
+            "Export Data",
+            "Save currently loaded data to file.",
+            lambda: None,
+        )
+        # Needs to be enabled externally
+        self.action_export_data.setVisible(False)
+
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
@@ -165,6 +174,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 )
 
             menu.addAction(self.action_show_legend)
+            menu.addAction(self.action_export_data)
         event.accept()
         menu.popup(event.globalPos())
 

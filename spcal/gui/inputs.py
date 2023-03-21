@@ -54,6 +54,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
         self.graph = ParticleView()
+        self.graph.action_export_data.triggered.connect(self.dialogExportData)
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.last_region: Tuple[int, int] | None = None
@@ -205,6 +206,42 @@ class InputWidget(QtWidgets.QWidget):
         dlg.open()
         return dlg
 
+    def dialogExportData(self) -> None:
+        dir = self.import_options.get("path", Path()).parent
+        path, filter = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export Data",
+            str(dir),
+            "Numpy archives(*.npz);;CSV Documents(*.csv);;All Files(*)",
+        )
+        if path == "":
+            return
+        path = Path(path)
+
+        filter_suffix = filter[filter.rfind(".") : -1]
+        if filter_suffix != "":  # append suffix if missing
+            path = path.with_suffix(filter_suffix)
+
+        names = self.draw_names
+        if path.suffix.lower() == ".csv":
+            trim = self.trimRegion(names[0])
+            header = " ".join(name for name in names)
+            np.savetxt(
+                path,
+                self.responses[trim[0] : trim[1]],
+                delimiter="\t",
+                comments="",
+                header=header,
+                fmt="%.16g",
+            )
+        elif path.suffix.lower() == ".npz":
+            np.savez_compressed(
+                path,
+                **{name: self.trimmedResponse(name) for name in names},
+            )
+        else:
+            raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
@@ -231,6 +268,7 @@ class InputWidget(QtWidgets.QWidget):
         # New widgets, set editable
         if self.options.limit_method.currentText() == "Manual Input":
             self.io.setLimitsEditable(True)
+        self.graph.action_export_data.setVisible(True)
 
         self.dataLoaded.emit(options["path"])
 
