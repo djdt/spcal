@@ -112,6 +112,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
 
+        self.export_data: Dict[str, np.ndarray] = {}
+
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
 
@@ -190,6 +192,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def clear(self) -> None:
         self.plot.legend.clear()
         self.plot.clear()
+        self.export_data.clear()
 
     def dataBounds(self) -> Tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
@@ -229,7 +232,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         if path.suffix.lower() == ".csv":
             header = "\t".join(name for name in names)
-            stack = np.stack(list(data.values()), axis=-1)
+            stack = np.full(
+                (max(d.size for d in data.values()), len(data)),
+                np.nan,
+                dtype=np.float32,
+            )
+            for i, x in enumerate(data.values()):
+                stack[: x.size, i] = x
             np.savetxt(
                 path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
             )
@@ -242,10 +251,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def dataForExport(self) -> Dict[str, np.ndarray]:
-        raise NotImplementedError
+        return self.export_data
 
     def readyForExport(self) -> bool:
-        return False
+        return len(self.export_data) > 0
 
     def setLimits(self, **kwargs) -> None:
         self.plot.setLimits(**kwargs)

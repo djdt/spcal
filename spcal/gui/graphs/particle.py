@@ -61,14 +61,10 @@ class ParticleView(SinglePlotGraphicsView):
 
     def dataForExport(self) -> Dict[str, np.ndarray]:
         start, end = self.region_start, self.region_end
-        return {k: v[start:end] for k, v in self.raw_signals.items()}
-
-    def readyForExport(self) -> bool:
-        return len(self.raw_signals) > 0
+        return {k: v[start:end] for k, v in self.export_data.items()}
 
     def clear(self) -> None:
         self.legend_items.clear()
-        self.raw_signals.clear()
         super().clear()
 
     def clearScatters(self) -> None:
@@ -106,7 +102,7 @@ class ParticleView(SinglePlotGraphicsView):
         if self.region not in self.plot.items:
             self.plot.addItem(self.region)
 
-        self.raw_signals[name] = y
+        self.export_data[name] = y
 
     def drawMaxima(
         self,

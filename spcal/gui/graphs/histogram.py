@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import pyqtgraph
@@ -20,6 +20,9 @@ class HistogramView(SinglePlotGraphicsView):
             parent=parent,
         )
         self.plot.setLimits(xMin=0.0, yMin=0.0)
+
+    # def exportData(self) -> Dict[str, np.ndarray]:
+    #     bins = 
 
     def draw(
         self,
@@ -67,6 +70,9 @@ class HistogramView(SinglePlotGraphicsView):
                 legend.addLimit(limit)
 
         self.plot.legend.addItem(legend, name)
+        if name is not None:
+            self.export_data[name] = hist
+            self.export_data[name + "_bins"] = edges[1:]
 
     def drawData(
         self,
