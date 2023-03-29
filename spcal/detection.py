@@ -6,6 +6,54 @@ import numpy as np
 from spcal.lib.spcalext import maxima
 
 
+def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
+    """Returns start and end points of regions in x that are greater than limit.
+    Indexs to the start point and point after region.
+
+    Args:
+        x: array
+        limit: minium value in regions
+
+    Returns:
+        regions [start, end]
+    """
+
+    # Get start and end positions of regions above accumulation limit
+    diff = np.diff((x > limit).astype(np.int8), prepend=0)
+    starts = np.flatnonzero(diff == 1)
+    ends = np.flatnonzero(diff == -1)
+    # Stack into pairs of start, end. If no final end position set it as end of array.
+    if starts.size != ends.size:
+        # -1 for reduceat
+        ends = np.concatenate((ends, [diff.size]))  # type: ignore
+    return np.stack((starts, ends), axis=1)
+
+
+def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
+    """Label regions 1 ... regions.size. Unlabled areas are 0.
+
+    Args:
+        regions: from `get_contiguous_regions`
+        size: size of array
+    Returns:
+        labeled regions
+    """
+    labels = np.zeros(size, dtype=np.int16)
+    if regions.size == 0:
+        return labels
+
+    ix = np.arange(1, regions.shape[0] + 1)
+
+    starts, ends = regions[:, 0], regions[:, 1]
+    ends = ends[ends < size]
+    # Set start, end pairs to +i, -i.
+    labels[starts] = ix
+    labels[ends] = -ix[: ends.size]  # possible over end
+    # Cumsum to label
+    labels = np.cumsum(labels)
+    return labels
+
+
 def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: float | np.ndarray,
@@ -31,7 +79,7 @@ def accumulate_detections(
     if np.any(limit_accumulation > limit_detection):
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
 
-    regions = get_contiguous_regions(y, limit_accumulation)
+    regions = _contiguous_regions(y, limit_accumulation)
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
@@ -51,79 +99,9 @@ def accumulate_detections(
         sums = np.add.reduceat(y, indicies)[::2]
 
     # Create a label array of detections
-    labels = label_regions(regions, y.size)
+    labels = _label_regions(regions, y.size)
 
     return sums, labels, regions
-
-
-def get_contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
-    """Returns start and end points of regions in x that are greater than limit.
-    Indexs to the start point and point after region.
-
-    Args:
-        x: array
-        limit: minium value in regions
-
-    Returns:
-        regions [start, end]
-    """
-
-    # Get start and end positions of regions above accumulation limit
-    diff = np.diff((x > limit).astype(np.int8), prepend=0)
-    starts = np.flatnonzero(diff == 1)
-    ends = np.flatnonzero(diff == -1)
-    # Stack into pairs of start, end. If no final end position set it as end of array.
-    if starts.size != ends.size:
-        # -1 for reduceat
-        ends = np.concatenate((ends, [diff.size]))  # type: ignore
-    return np.stack((starts, ends), axis=1)
-
-
-def label_regions(regions: np.ndarray, size: int) -> np.ndarray:
-    """Label regions 1 ... regions.size. Unlabled areas are 0.
-
-    Args:
-        regions: from `get_contiguous_regions`
-        size: size of array
-    Returns:
-        labeled regions
-    """
-    labels = np.zeros(size, dtype=np.int16)
-    if regions.size == 0:
-        return labels
-
-    ix = np.arange(1, regions.shape[0] + 1)
-
-    starts, ends = regions[:, 0], regions[:, 1]
-    ends = ends[ends < size]
-    # Set start, end pairs to +i, -i.
-    labels[starts] = ix
-    labels[ends] = -ix[: ends.size]  # possible over end
-    # Cumsum to label
-    labels = np.cumsum(labels)
-    return labels
-
-
-def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
-    """Calculates the maxima of each region.
-    Does not work with overlapping regions.
-
-    Args:
-        y: array
-        regions: regions from `accumulate_detections`
-
-    Returns:
-        idx of maxima
-    """
-
-    # def maxima(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    #     idx = np.zeros(a.size, dtype=int)
-    #     idx[b[1:]] = 1
-    #     shift = (a.max() + 1) * np.cumsum(idx)
-    #     sortidx = np.argsort(a + shift)
-    #     return sortidx[np.append(b[1:], a.size) - 1] - b
-    idx = maxima(y, regions)
-    return idx
 
 
 def combine_detections(
@@ -158,8 +136,8 @@ def combine_detections(
     for name in names:
         any_label[labels[name] > 0] = 1
 
-    all_regions = get_contiguous_regions(any_label, 0)
-    any_label = label_regions(all_regions, any_label.size)
+    all_regions = _contiguous_regions(any_label, 0)
+    any_label = _label_regions(all_regions, any_label.size)
 
     # Init empty
     combined = np.empty(
@@ -173,3 +151,25 @@ def combine_detections(
         combined[name] = np.sum(np.where(idx, sums[name], 0), axis=1)
 
     return combined, any_label, all_regions
+
+
+def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
+    """Calculates the maxima of each region.
+    Does not work with overlapping regions.
+
+    Args:
+        y: array
+        regions: regions from `accumulate_detections`
+
+    Returns:
+        idx of maxima
+    """
+
+    # def maxima(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    #     idx = np.zeros(a.size, dtype=int)
+    #     idx[b[1:]] = 1
+    #     shift = (a.max() + 1) * np.cumsum(idx)
+    #     sortidx = np.argsort(a + shift)
+    #     return sortidx[np.append(b[1:], a.size) - 1] - b
+    idx = maxima(y, regions)
+    return idx
