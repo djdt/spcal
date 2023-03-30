@@ -108,7 +108,9 @@ def read_nu_integ_binary(
         return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
 
 
-def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
+def read_nu_directory(
+    path: str | Path, max_integ_files: int = None
+) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
@@ -117,6 +119,7 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
 
     Args:
         path: path to data directory
+        max_integ_files: maximum number of files to read
 
     Returns:
         masses from first acquistion
@@ -132,6 +135,9 @@ def read_nu_directory(path: str | Path) -> Tuple[np.ndarray, np.ndarray, dict]:
         run_info = json.load(fp)
     with path.joinpath("integrated.index").open("r") as fp:
         integ_index = json.load(fp)
+
+    if max_integ_files is not None:
+        integ_index = integ_index[:max_integ_files]
 
     datas = []
     for idx in integ_index:
