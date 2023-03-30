@@ -170,7 +170,7 @@ class SPCalLimit(object):
         mean = np.mean(responses)
 
         # Todo check for normality
-        if mean > 50.0:
+        if mean > 10.0:
             return SPCalLimit.fromGaussian(
                 responses,
                 alpha=gaussian_alpha,
