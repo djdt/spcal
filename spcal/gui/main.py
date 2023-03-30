@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
@@ -137,6 +138,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Clears loaded datas and resets the option, sample and reference inputs.",
             self.resetInputs,
         )
+        self.action_calculator = create_action(
+            "folder-calculate",
+            "Signal Calculator",
+            "Perform arbitrary calculations on signal data.",
+            self.dialogCalculator,
+        )
         self.action_mass_fraction_calculator = create_action(
             "folder-calculate",
             "Mass Fraction Calculator",
@@ -207,6 +214,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menuedit = self.menuBar().addMenu("&Edit")
         menuedit.addAction(self.action_clear)
         menuedit.addSeparator()
+        menuedit.addAction(self.action_calculator)
         menuedit.addAction(self.action_mass_fraction_calculator)
         menuedit.addAction(self.action_particle_database)
         menuedit.addAction(self.action_ionic_response_tool)
@@ -249,6 +257,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.results.bestUnitsForResults(),
             parent=self,
         )
+        dlg.open()
+        return dlg
+
+    def dialogCalculator(self) -> CalculatorDialog:
+        dlg = CalculatorDialog(self.sample, self.reference, parent=self)
         dlg.open()
         return dlg
 
