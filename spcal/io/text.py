@@ -27,6 +27,7 @@ def read_single_particle_file(
     first_line: int = 1,
     new_names: Tuple[str] | None = None,
     convert_cps: float | None = None,
+    max_rows: int | None = None,
 ) -> Tuple[np.ndarray, List[str]]:
     """Imports data stored as text with elements in columns.
 
@@ -69,6 +70,7 @@ def read_single_particle_file(
                 delimiter=delimiter,
                 usecols=columns,
                 dtype=dtype,
+                max_rows=max_rows,
             )
         except ValueError:  # Rewind and try with genfromtxt
             logger.warning(
@@ -83,6 +85,7 @@ def read_single_particle_file(
                 delimiter=delimiter,
                 usecols=columns,
                 dtype=dtype,
+                max_rows=max_rows,
                 converters={c: lambda s: np.float32(s or 0) for c in columns},
                 invalid_raise=False,
                 loose=True,
