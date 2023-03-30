@@ -4,7 +4,11 @@ import numpy as np
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.dialogs._import import ImportDialog, NuImportDialog, TofwerkImportDialog
+from spcal.gui.dialogs._import import (
+    NuImportDialog,
+    TextImportDialog,
+    TofwerkImportDialog,
+)
 
 
 def test_import_dialog_text_nu(qtbot: QtBot):
@@ -23,7 +27,7 @@ def test_import_dialog_text_nu(qtbot: QtBot):
         return True
 
     path = Path(__file__).parent.parent.joinpath("data/text/nu_export_auag.csv")
-    dlg = ImportDialog(path)
+    dlg = TextImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
@@ -59,7 +63,7 @@ def test_import_dialog_text_tofwerk(qtbot: QtBot):
         return True
 
     path = Path(__file__).parent.parent.joinpath("data/text/tofwerk_export_au.csv")
-    dlg = ImportDialog(path)
+    dlg = TextImportDialog(path)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 

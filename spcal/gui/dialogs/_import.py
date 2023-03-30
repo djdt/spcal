@@ -93,7 +93,8 @@ class _ImportDialogBase(QtWidgets.QDialog):
         raise NotImplementedError
 
 
-class ImportDialog(_ImportDialogBase):
+
+class TextImportDialog(_ImportDialogBase):
     dataImported = QtCore.Signal(np.ndarray, dict)
 
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
