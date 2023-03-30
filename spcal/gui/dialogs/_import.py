@@ -189,6 +189,11 @@ class TextImportDialog(_ImportDialogBase):
 
         self.layout_body.addWidget(self.table)
 
+    def completeChanged(self) -> None:
+        complete = self.isComplete()
+        self.button_screen.setEnabled(complete)
+        super().completeChanged()
+
     def isComplete(self) -> bool:
         return self.dwelltime.hasAcceptableInput() and not any(
             x in self.forbidden_names for x in self.names()
@@ -295,9 +300,6 @@ class TextImportDialog(_ImportDialogBase):
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
 
-    def screenData(self) -> None:
-        raise NotImplementedError
-
     def setImportOptions(self, options: dict) -> None:
         self.dwelltime.setBaseValue(options["dwelltime"])
         self.dwelltime.setBestUnit()
@@ -314,6 +316,27 @@ class TextImportDialog(_ImportDialogBase):
             if item is not None:
                 item.setText(name)
         self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
+
+    def screenData(self) -> None:
+        ppm = self.screening_ppm.value()
+        if ppm is None:
+            return
+
+        options = self.importOptions()
+        data, _ = read_single_particle_file(
+            options["path"],
+            delimiter=options["delimiter"],
+            columns=options["columns"],
+            first_line=options["first line"],
+            convert_cps=options["dwelltime"] if options["cps"] else None,
+            max_rows=100000,
+        )
+        data = rfn.structured_to_unstructured(data)
+        idx = non_target_screen(data, ppm)  # Todo: get alphas
+        mask = np.ones(data.shape[1], dtype=bool)
+        mask[idx] = 0
+        ignores = options["ignores"] + list(np.array(options["columns"])[mask])
+        self.le_ignore_columns.setText(";".join(str(i + 1) for i in ignores) + ";")
 
     def accept(self) -> None:
         options = self.importOptions()
