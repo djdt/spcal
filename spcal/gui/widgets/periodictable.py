@@ -175,6 +175,10 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         action.toggled.connect(self.isotopesChanged)
         return action
 
+    def enabledIsotopes(self) -> np.ndarray:
+        nums = np.array([n for n, action in self.actions.items() if action.isEnabled()])
+        return self.isotopes[np.in1d(self.isotopes["Isotope"], nums)]
+
     def selectedIsotopes(self) -> np.ndarray:
         nums = np.array([n for n, action in self.actions.items() if action.isChecked()])
         return self.isotopes[np.in1d(self.isotopes["Isotope"], nums)]
@@ -264,6 +268,12 @@ class PeriodicTableSelector(QtWidgets.QWidget):
 
         self.isotopesChanged.connect(self.findCollisions)
         self.setLayout(layout)
+
+    def enabledIsotopes(self) -> np.ndarray:
+        enabled: List[np.ndarray] = []
+        for button in self.buttons.values():
+            enabled.extend(button.enabledIsotopes())
+        return np.stack(enabled)
 
     def selectedIsotopes(self) -> np.ndarray | None:
         selected: List[np.ndarray] = []
