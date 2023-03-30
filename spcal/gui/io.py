@@ -74,6 +74,8 @@ def get_import_dialog_for_path(
             return NuImportDialog(path, parent)
         else:
             raise FileNotFoundError("getImportDialogForPath: invalid directory.")
+    elif is_nu_run_info_file(path):
+        return NuImportDialog(path.parent, parent)
     elif is_tofwerk_file(path):
         return TofwerkImportDialog(path, parent)
     elif is_text_file(path):
