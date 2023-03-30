@@ -9,12 +9,13 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.util import Worker
+from spcal.gui.util import Worker, create_action
 from spcal.gui.widgets import (
     CheckableComboBox,
     ElidedLabel,
     PeriodicTableSelector,
     UnitsWidget,
+    ValueWidget,
 )
 from spcal.io.nu import (
     get_dwelltime_from_info,
@@ -24,6 +25,7 @@ from spcal.io.nu import (
 )
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
+from spcal.nontarget import non_target_screen
 from spcal.npdb import db
 from spcal.siunits import time_units
 
@@ -39,6 +41,14 @@ class _ImportDialogBase(QtWidgets.QDialog):
     ):
         super().__init__(parent)
 
+        self.action_nontarget_screen = create_action(
+            "view-filter",
+            "Screen",
+            "Select isotopes using a non-targetted screening approach. "
+            "Those with signals above the chosen ppm are selected.",
+            self.screenData,
+        )
+
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
 
@@ -48,6 +58,13 @@ class _ImportDialogBase(QtWidgets.QDialog):
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.dwelltime.baseValueChanged.connect(self.completeChanged)
+
+        self.screening_ppm = ValueWidget(
+            1000, validator=QtGui.QIntValidator(0, 1000000), format=".0f"
+        )
+
+        self.button_screen = QtWidgets.QToolButton()
+        self.button_screen.setDefaultAction(self.action_nontarget_screen)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -63,9 +80,17 @@ class _ImportDialogBase(QtWidgets.QDialog):
             "File Path:", ElidedLabel(str(self.file_path.absolute()))
         )
 
+        screen_layout = QtWidgets.QHBoxLayout()
+        screen_layout.addWidget(self.screening_ppm, 1)
+        screen_layout.addWidget(QtWidgets.QLabel("ppm"), 0)
+        screen_layout.addWidget(
+            self.button_screen, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+
         self.box_options = QtWidgets.QGroupBox("Import Options")
         self.box_options.setLayout(QtWidgets.QFormLayout())
         self.box_options.layout().addRow("Dwelltime:", self.dwelltime)
+        self.box_options.layout().addRow("Non-target screen:", screen_layout)
 
         box_layout = QtWidgets.QHBoxLayout()
         box_layout.addWidget(self.box_info, 1)
@@ -92,6 +117,8 @@ class _ImportDialogBase(QtWidgets.QDialog):
     def setImportOptions(self, options: dict) -> None:
         raise NotImplementedError
 
+    def screenData(self) -> None:
+        raise NotImplementedError
 
 
 class TextImportDialog(_ImportDialogBase):
@@ -268,6 +295,9 @@ class TextImportDialog(_ImportDialogBase):
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
 
+    def screenData(self) -> None:
+        raise NotImplementedError
+
     def setImportOptions(self, options: dict) -> None:
         self.dwelltime.setBaseValue(options["dwelltime"])
         self.dwelltime.setBestUnit()
@@ -277,9 +307,7 @@ class TextImportDialog(_ImportDialogBase):
         elif delimiter == "\t":
             delimiter = "Tab"
         self.combo_delimiter.setCurrentText(delimiter)
-        self.le_ignore_columns.setText(
-            ";".join(str(i + 1) for i in options["ignores"])
-        )
+        self.le_ignore_columns.setText(";".join(str(i + 1) for i in options["ignores"]))
         self.spinbox_first_line.setValue(options["first line"])
         for name, c in zip(options["names"], self.useColumns()):
             item = self.table.item(self.spinbox_first_line.value() - 1, c)
@@ -331,6 +359,7 @@ class NuImportDialog(_ImportDialogBase):
             self.index[0]["FirstAcqNum"],
         )
 
+        self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
         self.masses = get_masses_from_nu_data(
             data[0],
             self.info["MassCalCoefficients"],
@@ -359,9 +388,23 @@ class NuImportDialog(_ImportDialogBase):
             "Number Integrations:",
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
+
         self.dwelltime.setBaseValue(get_dwelltime_from_info(self.info))
         self.dwelltime.setBestUnit()
+
         self.table.setFocus()
+
+    def screenData(self) -> None:
+        ppm = self.screening_ppm.value()
+        if ppm is None:
+            return
+
+        idx = non_target_screen(self.signals, ppm)  # Todo: get alphas
+        masses = self.masses[idx]
+        unit_masses = np.round(masses).astype(int)
+        isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
+        isotopes = isotopes[isotopes["Preferred"] > 0]  # limit to best isotopes
+        self.table.setSelectedIsotopes(isotopes)
 
     def segmentDelays(self) -> Dict[int, float]:
         return {
@@ -609,6 +652,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         self.box_options.layout().addRow(
             self.check_force_integrate,
         )
+
         self.layout_body.addWidget(self.table, 1)
         self.layout_body.addWidget(self.progress, 0)
 
@@ -648,6 +692,31 @@ class TofwerkImportDialog(_ImportDialogBase):
             "isotopes": self.table.selectedIsotopes(),
             "other peaks": self.combo_other_peaks.checkedItems(),
         }
+
+    def screenData(self) -> None:
+        ppm = self.screening_ppm.value()
+        if ppm is None:
+            return
+
+        data = self.h5["PeakData"]["PeakData"][:10]
+        data = np.reshape(data, (-1, data.shape[-1]))
+        data *= factor_extraction_to_acquisition(self.h5)
+        idx = non_target_screen(data, ppm)  # Todo alpha
+
+        _isotopes = []
+        re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
+        for label in self.peak_labels[idx]:
+            m = re_valid.match(label)
+            if m is not None:
+                _isotopes.append(
+                    db["isotopes"][
+                        (db["isotopes"]["Isotope"] == int(m.group(1)))
+                        & (db["isotopes"]["Symbol"] == m.group(2))
+                    ]
+                )
+        isotopes = np.array(_isotopes)
+        isotopes = isotopes[isotopes["Preferred"] > 0]
+        self.table.setSelectedIsotopes(isotopes)
 
     def setImportOptions(self, options: dict) -> None:
         self.file_path = options["path"]
