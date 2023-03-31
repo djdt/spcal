@@ -87,6 +87,7 @@ def read_single_particle_file(
                 dtype=dtype,
                 max_rows=max_rows,
                 converters={c: lambda s: np.float32(s or 0) for c in columns},
+                replace_space="_",
                 invalid_raise=False,
                 loose=True,
             )
@@ -99,6 +100,8 @@ def read_single_particle_file(
 
     if new_names is not None:
         data.dtype.names = new_names
+
+    data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
 
     if convert_cps is not None:
         for name in data.dtype.names:
