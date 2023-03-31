@@ -51,7 +51,7 @@ def test_limit_from():  # Better way for normality check?
         lim_b = SPCalLimit.fromBest(x, max_iters=1)
 
         assert lim_h.name == max(lim_g, lim_p, key=lambda x: x.detection_threshold).name
-        assert lim_b.name == ("Poisson" if lam < 50.0 else "Gaussian")
+        assert lim_b.name == ("Poisson" if lam < 10.0 else "Gaussian")
 
 
 def test_limit_from_string():

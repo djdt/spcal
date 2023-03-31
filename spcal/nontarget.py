@@ -32,5 +32,5 @@ def non_target_screen(
     limits = np.where(means > 10.0, gaussian_limits, poisson_limits)
 
     counts = np.count_nonzero(x > limits, axis=0)
-    idx = counts * 1e5 / x.shape[1] > minimum_count_ppm
+    idx = counts * 1e6 / x.shape[0] > minimum_count_ppm
     return np.flatnonzero(idx)

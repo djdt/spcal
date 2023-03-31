@@ -106,7 +106,7 @@ def test_sample_with_reference(qtbot: QtBot):
 
     window.results.updateResults()
     assert "size" in window.results.results["Au"].detections
-    assert "size" not in window.results.results["Ag"].detections
+    assert "size" in window.results.results["Ag"].detections
     assert window.results.io["Au"].count.value() == 3072
     assert window.results.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
     assert window.results.io["Au"].count_label.text() == "(100 %)"
@@ -121,7 +121,7 @@ def test_sample_with_reference(qtbot: QtBot):
     )
 
     # Check all
-    window.reference.io["Au"].check_use_efficiency_for_all.setChecked(True)
+    window.reference.io["Au"].check_use_efficiency_for_all.setChecked(False)
 
     window.results.updateResults()
-    assert "size" in window.results.results["Ag"].detections
+    assert "size" not in window.results.results["Ag"].detections

@@ -167,20 +167,19 @@ class SPCalLimit(object):
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
-        mean = np.mean(responses)
-
-        # Todo check for normality
-        if mean > 10.0:
+        # Check that the non-detection region is normalish (λ > 10)
+        poisson = SPCalLimit.fromPoisson(
+            responses,
+            alpha=poisson_alpha,
+            window_size=window_size,
+            max_iters=max_iters,
+        )
+        if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
+            return poisson
+        else:
             return SPCalLimit.fromGaussian(
                 responses,
                 alpha=gaussian_alpha,
-                window_size=window_size,
-                max_iters=max_iters,
-            )
-        else:
-            return SPCalLimit.fromPoisson(
-                responses,
-                alpha=poisson_alpha,
                 window_size=window_size,
                 max_iters=max_iters,
             )

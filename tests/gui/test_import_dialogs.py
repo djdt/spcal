@@ -56,7 +56,7 @@ def test_import_dialog_text_nu(qtbot: QtBot):
 
 def test_import_dialog_text_tofwerk(qtbot: QtBot):
     def check_data(data: np.ndarray, options: dict):
-        if data.dtype.names != ("[197Au]+ (cts)",):
+        if data.dtype.names != ("[197Au]+_(cts)",):
             return False
         if data.size != 999:
             return False

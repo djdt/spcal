@@ -100,6 +100,8 @@ def read_single_particle_file(
     if new_names is not None:
         data.dtype.names = new_names
 
+    data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
+
     if convert_cps is not None:
         for name in data.dtype.names:
             data[name] = data[name] * convert_cps  # type: ignore
