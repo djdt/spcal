@@ -265,7 +265,6 @@ class CalculatorDialog(QtWidgets.QDialog):
             pass
 
         super().accept()
-        # self.initialise()
 
     def initialise(self) -> None:
         self.combo_element.clear()
