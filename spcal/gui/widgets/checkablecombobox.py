@@ -33,4 +33,5 @@ class CheckableComboBox(QtWidgets.QComboBox):
     def setCheckedItems(self, items: List[str]) -> None:
         for row in range(self.model().rowCount()):
             item = self.model().item(row)
-            item.setChecked(item.text() in items)
+            if item.text() in items:
+                item.setCheckState(QtCore.Qt.CheckState.Checked)
