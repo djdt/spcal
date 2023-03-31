@@ -114,7 +114,9 @@ class _ImportDialogBase(QtWidgets.QDialog):
     def importOptions(self) -> dict:
         raise NotImplementedError
 
-    def setImportOptions(self, options: dict) -> None:
+    def setImportOptions(
+        self, options: dict, path: bool = False, dwelltime: bool = True
+    ) -> None:
         raise NotImplementedError
 
     def screenData(self) -> None:
@@ -300,9 +302,14 @@ class TextImportDialog(_ImportDialogBase):
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
 
-    def setImportOptions(self, options: dict) -> None:
-        self.dwelltime.setBaseValue(options["dwelltime"])
-        self.dwelltime.setBestUnit()
+    def setImportOptions(
+        self, options: dict, path: bool = False, dwelltime: bool = True
+    ) -> None:
+        if path:
+            self.file_path.setText(str(options["path"]))
+        if dwelltime:
+            self.dwelltime.setBaseValue(options["dwelltime"])
+            self.dwelltime.setBestUnit()
         delimiter = options["delimiter"]
         if delimiter == " ":
             delimiter = "Space"
@@ -446,9 +453,14 @@ class NuImportDialog(_ImportDialogBase):
             "isotopes": self.table.selectedIsotopes(),
         }
 
-    def setImportOptions(self, options: dict) -> None:
-        self.file_path = options["path"]
-        self.dwelltime.setBaseValue(options["dwelltime"])
+    def setImportOptions(
+        self, options: dict, path: bool = False, dwelltime: bool = True
+    ) -> None:
+        if path:
+            self.file_path.setText(str(options["path"]))
+        if dwelltime:
+            self.dwelltime.setBaseValue(options["dwelltime"])
+            self.dwelltime.setBestUnit()
         self.table.setSelectedIsotopes(options["isotopes"])
 
     def setControlsEnabled(self, enabled: bool) -> None:
@@ -741,9 +753,13 @@ class TofwerkImportDialog(_ImportDialogBase):
         isotopes = isotopes[isotopes["Preferred"] > 0]
         self.table.setSelectedIsotopes(isotopes)
 
-    def setImportOptions(self, options: dict) -> None:
-        self.file_path = options["path"]
-        self.dwelltime.setBaseValue(options["dwelltime"])
+    def setImportOptions(
+        self, options: dict, path: bool = False, dwelltime: bool = True
+    ) -> None:
+        if path:
+            self.file_path.setText(str(options["path"]))
+        if dwelltime:
+            self.dwelltime.setBaseValue(options["dwelltime"])
         self.table.setSelectedIsotopes(options["isotopes"])
         self.combo_other_peaks.setCheckedItems(options["other peaks"])
 

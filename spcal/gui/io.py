@@ -4,8 +4,8 @@ from typing import List
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.dialogs._import import (
-    TextImportDialog,
     NuImportDialog,
+    TextImportDialog,
     TofwerkImportDialog,
     _ImportDialogBase,
 )
@@ -67,18 +67,27 @@ def get_open_spcal_paths(
 
 
 def get_import_dialog_for_path(
-    parent: QtWidgets.QWidget, path: Path
+    parent: QtWidgets.QWidget,
+    path: Path,
+    import_options: dict | None = None,
 ) -> _ImportDialogBase:
     if path.is_dir():
         if is_nu_directory(path):
-            return NuImportDialog(path, parent)
+            dlg = NuImportDialog(path, parent)
         else:
             raise FileNotFoundError("getImportDialogForPath: invalid directory.")
     elif is_nu_run_info_file(path):
-        return NuImportDialog(path.parent, parent)
+        dlg = NuImportDialog(path.parent, parent)
     elif is_tofwerk_file(path):
-        return TofwerkImportDialog(path, parent)
+        dlg = TofwerkImportDialog(path, parent)
     elif is_text_file(path):
-        return TextImportDialog(path, parent)
+        dlg = TextImportDialog(path, parent)
     else:
         raise FileNotFoundError("getImportDialogForPath: invalid file.")
+
+    if import_options is not None:
+        try:
+            dlg.setImportOptions(import_options, path=False, dwelltime=False)
+        except (ValueError, KeyError):
+            pass
+    return dlg

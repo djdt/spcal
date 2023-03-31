@@ -136,7 +136,7 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             path = Path(path)
 
-        dlg = get_import_dialog_for_path(self, path)
+        dlg = get_import_dialog_for_path(self, path)  # import_options managed below
         dlg.dataImported.connect(self.loadData)
 
         if self.import_options is None:

@@ -200,7 +200,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             path = Path(path)
 
-        dlg = get_import_dialog_for_path(self, path)
+        dlg = get_import_dialog_for_path(self, path, self.import_options)
         dlg.dataImported.connect(self.loadData)
         dlg.open()
         return dlg
