@@ -415,9 +415,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
                     ref_io.response.setBaseValue(sample_value)
                 elif sample_value is None and ref_value is not None:
                     io.response.setBaseValue(ref_value)
-                elif sample_value is not None and ref_value is not None:
-                    io.setBaseValue(None)
-                    ref_io.setBaseValue(None)
 
                 io.syncOutput(ref_io, "response")
 
