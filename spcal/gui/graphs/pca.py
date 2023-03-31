@@ -105,9 +105,14 @@ class PCAView(SinglePlotGraphicsView):
             assert len(feature_names) == v.shape[1]
 
             angles = np.arctan2(v[0], v[1])
-            for name, angle in zip(feature_names, angles):
+            lengths = np.sqrt(v[0] ** 2 + v[1] ** 2)
+            for name, angle, length in zip(feature_names, angles, lengths):
                 arrow = PCAArrow(
-                    angle, 100.0, label=name, pen=arrow_pen, label_brush=text_brush
+                    angle,
+                    length * 100.0,
+                    label=name,
+                    pen=arrow_pen,
+                    label_brush=text_brush,
                 )
                 self.plot.addItem(arrow)
 
@@ -129,26 +134,3 @@ class PCAView(SinglePlotGraphicsView):
     def clear(self) -> None:
         super().clear()
         self.scatter = None
-
-
-if __name__ == "__main__":
-
-    app = QtWidgets.QApplication()
-
-    data = np.genfromtxt("/home/tom/Downloads/eq.csv", delimiter=",", skip_header=22)
-    data = np.nan_to_num(data)
-
-    X = pca(data)
-
-    win = PCAView()
-    win.show()
-
-    win.draw(data)
-    c = np.zeros_like(data[:, 0])
-    c = np.sum(data, axis=1)
-    # np.divide(data[:, 2], data[:, 6], where=data[:, 6] > 0, out=c)
-    bins = np.linspace(c.min(), c.max(), 31)
-    idx = np.digitize(c, bins)
-    win.colorScatter(idx)
-
-    app.exec()
