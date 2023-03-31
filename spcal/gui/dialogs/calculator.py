@@ -225,7 +225,11 @@ class CalculatorDialog(QtWidgets.QDialog):
         )
 
     def accept(self) -> None:
-        new_name = "{" + self.formula.toPlainText().replace(" ", "") + "}"
+        new_name = (
+            "{"
+            + self.formula.toPlainText().translate(str.maketrans("", "", " \n\t"))
+            + "}"
+        )
         data = self.reducer.reduce(self.formula.expr)
         new_data = rfn.append_fields(
             self.sample.responses, new_name, data, usemask=False
