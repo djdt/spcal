@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import numpy as np
@@ -7,6 +8,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import pca
 from spcal.gui.graphs import viridis_32
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+
+logger = logging.getLogger(__name__)
 
 
 class PCAArrow(QtWidgets.QGraphicsPathItem):
@@ -94,7 +97,12 @@ class PCAView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
-        a, v, var = pca(X, 2)
+        try:
+            a, v, var = pca(X, 2)
+        except np.linalg.LinAlgError:
+            logger.warning("draw: SVD did not converge.")
+            self.clear()
+            return
 
         self.scatter = pyqtgraph.ScatterPlotItem(
             x=a[:, 0], y=a[:, 1], pen=pen, brush=brush
