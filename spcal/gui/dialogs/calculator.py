@@ -250,7 +250,10 @@ class CalculatorDialog(QtWidgets.QDialog):
             self.reducer.variables = {
                 name: self.reference.responses[name] for name in self.reference.names
             }
-            new_data = self.reducer.reduce(self.formula.expr)
+            data = self.reducer.reduce(self.formula.expr)
+            new_data = rfn.append_fields(
+                self.reference.responses, new_name, data, usemask=False
+            )
             self.reference.loadData(new_data, self.reference.import_options)
             try:
                 self.reducer.variables = {
