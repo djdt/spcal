@@ -139,7 +139,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.resetInputs,
         )
         self.action_calculator = create_action(
-            "folder-calculate",
+            "inset-math-expression",
             "Signal Calculator",
             "Perform arbitrary calculations on signal data.",
             self.dialogCalculator,
