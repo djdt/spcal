@@ -40,8 +40,8 @@ def get_dwelltime_from_info(info: dict) -> float:
     """
     seg = info["SegmentInfo"][0]
     acqtime = seg["AcquisitionPeriodNs"] * 1e-9
-    accumulations = info[f"NumAccumulations{seg['Num']}"]
-    return np.around(acqtime * accumulations, 9)  # Todo: check with Lukas
+    accumulations = info["NumAccumulations1"] * info["NumAccumulations2"]
+    return np.around(acqtime * accumulations, 9)
 
 
 def get_masses_from_nu_data(
