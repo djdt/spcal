@@ -144,7 +144,7 @@ class SPCalLimit(object):
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
             sc, _ = poisson_limits(mu, alpha=alpha)
-            threshold = mu + sc
+            threshold = int(mu + sc) + 1.0
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
