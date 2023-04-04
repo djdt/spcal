@@ -5,7 +5,7 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
-from spcal.gui.graphs.base import PlotCurveItemFix, SinglePlotGraphicsView
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import HistogramItemSample
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
@@ -20,9 +20,6 @@ class HistogramView(SinglePlotGraphicsView):
             parent=parent,
         )
         self.plot.setLimits(xMin=0.0, yMin=0.0)
-
-    # def exportData(self) -> Dict[str, np.ndarray]:
-    #     bins = 
 
     def draw(
         self,
@@ -104,7 +101,7 @@ class HistogramView(SinglePlotGraphicsView):
         y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
         y[1:-1:2] = hist
 
-        curve = PlotCurveItemFix(
+        curve = pyqtgraph.PlotCurveItem(
             x=x,
             y=y,
             stepMode="center",

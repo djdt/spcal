@@ -4,7 +4,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.graphs.base import PlotCurveItemFix, SinglePlotGraphicsView
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 
 
@@ -90,7 +90,7 @@ class ParticleView(SinglePlotGraphicsView):
 
         # optimise by removing points with 0 change in gradient
         diffs = np.diff(y, n=2, append=0, prepend=0) != 0
-        curve = PlotCurveItemFix(
+        curve = pyqtgraph.PlotCurveItem(
             x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
         )
 
