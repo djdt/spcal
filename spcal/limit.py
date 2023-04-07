@@ -27,6 +27,9 @@ class SPCalLimit(object):
         self.params = params
         self.window_size = window_size
 
+    def __str__(self) -> str:
+        return f"{self.name}: {self.detection_threshold}"
+
     @classmethod
     def fromMethodString(
         cls,
@@ -78,7 +81,6 @@ class SPCalLimit(object):
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
-
         if responses.size == 0:  # pragma: no cover
             raise ValueError("fromGaussian: responses is size 0")
 
@@ -103,7 +105,7 @@ class SPCalLimit(object):
                 std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
 
             # Consistency with Poisson
-            threshold = int(mu + std * z) + 1.0
+            threshold = (mu + std * z).astype(np.int32) + 1
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
@@ -125,7 +127,6 @@ class SPCalLimit(object):
         window_size: int = 0,
         max_iters: int = 10,
     ) -> "SPCalLimit":
-
         if responses.size == 0:  # pragma: no cover
             raise ValueError("fromPoisson: responses is size 0")
 
@@ -145,7 +146,7 @@ class SPCalLimit(object):
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
             sc, _ = poisson_limits(mu, alpha=alpha)
-            threshold = int(mu + sc) + 1.0
+            threshold = (mu + sc).astype(np.int32) + 1
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover

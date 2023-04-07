@@ -11,6 +11,9 @@ x = np.random.poisson(lam=50.0, size=1000)
 z = NormalDist().inv_cdf(1.0 - 0.001)
 
 
+UPPER_INTEGER = True
+
+
 def test_limit_errors():
     with pytest.raises(ValueError):
         SPCalLimit.fromMethodString("Invalid", x)
@@ -20,16 +23,20 @@ def test_limit_from_poisson():
     lim = SPCalLimit.fromPoisson(x, alpha=0.001, max_iters=1)  # ld ~= 87
     assert lim.name == "Poisson"
     assert lim.params == {"alpha": 0.001}
-    assert lim.detection_threshold == poisson.formula_c(np.mean(x), alpha=0.001)[
-        0
-    ] + np.mean(x)
+    limit = poisson.formula_c(np.mean(x), alpha=0.001)[0] + np.mean(x)
+    if UPPER_INTEGER:
+        limit = int(limit) + 1.0
+    assert lim.detection_threshold == limit
 
 
 def test_limit_from_gaussian():
     lim = SPCalLimit.fromGaussian(x, alpha=0.001, max_iters=1)  # ld ~= 87
     assert lim.name == "Gaussian"
     assert lim.params == {"alpha": 0.001}
-    assert lim.detection_threshold == np.mean(x) + np.std(x) * z
+    limit = np.mean(x) + np.std(x) * z
+    if UPPER_INTEGER:
+        limit = int(limit) + 1.0
+    assert lim.detection_threshold == limit
 
 
 def test_limit_windowed():
@@ -50,7 +57,7 @@ def test_limit_from():  # Better way for normality check?
         lim_h = SPCalLimit.fromHighest(x, max_iters=1)
         lim_b = SPCalLimit.fromBest(x, max_iters=1)
 
-        assert lim_h.name == max(lim_g, lim_p, key=lambda x: x.detection_threshold).name
+        assert lim_h.name == max(lim_p, lim_g, key=lambda x: x.detection_threshold).name
         assert lim_b.name == ("Poisson" if lam < 10.0 else "Gaussian")
 
 
