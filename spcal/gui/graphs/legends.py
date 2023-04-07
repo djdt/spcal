@@ -178,7 +178,16 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
         if isinstance(brush, QtGui.QColor):
             brush = QtGui.QBrush(brush)
 
-        super().__init__(pyqtgraph.BarGraphItem(brush=brush))
+        super().__init__(
+            pyqtgraph.BarGraphItem(
+                pen=QtGui.QPen(QtCore.Qt.PenStyle.NoPen),
+                brush=brush,
+                x=0,
+                y=0,
+                width=0,
+                height=0,
+            )
+        )
         self.items = []
         if items is not None:
             self.items.extend(items)
