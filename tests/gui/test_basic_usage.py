@@ -33,7 +33,10 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_5)
     qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Enter)
     assert options.error_rate_gaussian.value() == 1e-5
-    assert options.label_sigma_gaussian.text() == "4.26 σ"
+    assert options.sigma_gaussian.value() == 4.2649
+
+    options.sigma_gaussian.setValue(5.0)
+    assert options.error_rate_gaussian.value() == 2.867e-7
 
     with qtbot.wait_signal(options.check_iterative.toggled, timeout=50):
         options.check_iterative.click()
