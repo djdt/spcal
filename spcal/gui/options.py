@@ -143,7 +143,6 @@ class OptionsWidget(QtWidgets.QWidget):
             4.75, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
         )
         self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
-        self.sigma_gaussian.editingFinished.connect(self.limitOptionsChanged)
 
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
@@ -155,6 +154,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_method.currentTextChanged.connect(self.limitOptionsChanged)
         self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
         self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
+        self.sigma_gaussian.editingFinished.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
