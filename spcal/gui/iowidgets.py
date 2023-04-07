@@ -155,7 +155,7 @@ class SampleIOWidget(IOWidget):
         self.outputs.setLayout(QtWidgets.QFormLayout())
         self.outputs.layout().addRow("Particle count:", self.count)
         self.outputs.layout().addRow("Background count:", self.background_count)
-        self.outputs.layout().addRow("LOD count:", self.lod_label)
+        self.outputs.layout().addRow("Detection threshold:", self.lod_label)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.inputs)
