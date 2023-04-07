@@ -2,10 +2,8 @@ from statistics import NormalDist
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import OverLabel, UnitsWidget, ValueWidget
+from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.siunits import time_units
-
-# Todo: add a tool to load an ionic standard and get mean / median signal
 
 
 class OptionsWidget(QtWidgets.QWidget):
@@ -123,7 +121,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.error_rate_poisson = ValueWidget(
             0.001,
-            validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
+            validator=QtGui.QDoubleValidator(1e-16, 0.5, 9),
             format=sf,
         )
         self.error_rate_poisson.setPlaceholderText("0.001")
@@ -132,16 +130,20 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.error_rate_gaussian = ValueWidget(
             1e-6,
-            validator=QtGui.QDoubleValidator(1e-12, 0.5, 9),
+            validator=QtGui.QDoubleValidator(1e-16, 0.5, 9),
             format=sf,
         )
         self.error_rate_gaussian.setPlaceholderText("1e-6")
         self.error_rate_gaussian.setToolTip(
             "Type I (false positive) error rate for Guassian filters."
         )
-        self.error_rate_gaussian.editingFinished.connect(self.updateLabelSigma)
+        self.error_rate_gaussian.valueChanged.connect(self.updateGaussianSigma)
 
-        self.label_sigma_gaussian = OverLabel(self.error_rate_gaussian, "4.75 σ")
+        self.sigma_gaussian = ValueWidget(
+            4.75, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
+        )
+        self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
+        self.sigma_gaussian.editingFinished.connect(self.limitOptionsChanged)
 
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
@@ -159,12 +161,17 @@ class OptionsWidget(QtWidgets.QWidget):
         layout_method.addWidget(self.limit_method)
         layout_method.addWidget(self.check_iterative)
 
+        layout_gaussian = QtWidgets.QHBoxLayout()
+        layout_gaussian.addWidget(self.error_rate_gaussian)
+        layout_gaussian.addWidget(QtWidgets.QLabel("σ:"))
+        layout_gaussian.addWidget(self.sigma_gaussian)
+
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Filter method:", layout_method)
         self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
-        self.limit_inputs.layout().addRow("Gaussian α:", self.label_sigma_gaussian)
+        self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -237,12 +244,21 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
 
-    def updateLabelSigma(self) -> None:
+    def updateGaussianAlpha(self) -> None:
+        sigma = self.sigma_gaussian.value()
+        if sigma is None:
+            return
+        alpha = 1.0 - NormalDist().cdf(sigma)
+        self.error_rate_gaussian.valueChanged.disconnect(self.updateGaussianSigma)
+        self.error_rate_gaussian.setValue(float(f"{alpha:.4g}"))
+        self.error_rate_gaussian.valueChanged.connect(self.updateGaussianSigma)
+
+    def updateGaussianSigma(self) -> None:
         alpha = self.error_rate_gaussian.value()
         if alpha is None:
             alpha = 1e-6
         sigma = NormalDist().inv_cdf(1.0 - alpha)
-        self.label_sigma_gaussian.setText(f"{sigma:.2f} σ")
+        self.sigma_gaussian.setValue(round(sigma, 4))
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
