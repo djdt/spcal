@@ -12,6 +12,15 @@ response = 16.08e9
 efficiency = 0.062
 density = 19.32e3
 
+UPPER_INTEGER = True
+
+limit = 37.63
+if UPPER_INTEGER:
+    limit = int(limit) + 1
+ref_limit = 12.94
+if UPPER_INTEGER:
+    ref_limit = int(ref_limit) + 1
+
 
 def test_sample_with_reference(qtbot: QtBot):
     window = SPCalWindow()
@@ -44,14 +53,14 @@ def test_sample_with_reference(qtbot: QtBot):
         0.3064,
         atol=1e-4,
     )
-    assert np.isclose(window.sample.limits["Au"].detection_threshold, 37.63, atol=1e-2)
+    assert np.isclose(window.sample.limits["Au"].detection_threshold, limit, atol=1e-2)
 
     assert window.sample.io["Au"].count.value() == 3072
     assert window.sample.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
     assert np.isclose(
         window.sample.io["Au"].background_count.value(), 0.3064, atol=1e-4
     )
-    assert np.isclose(window.sample.io["Au"].lod_count.value(), 37.63, atol=1e-2)
+    assert np.isclose(window.sample.io["Au"].lod_count.value(), limit, atol=1e-2)
     assert window.sample.io["Au"].lod_label.text() == "(Poisson, alpha=0.001)"
 
     # Set values
@@ -84,7 +93,7 @@ def test_sample_with_reference(qtbot: QtBot):
         atol=1e-4,
     )
     assert np.isclose(
-        window.reference.limits["Au"].detection_threshold, 12.94, atol=1e-2
+        window.reference.limits["Au"].detection_threshold, ref_limit, atol=1e-2
     )
     assert window.reference.io["Au"].efficiency.value() is None
     assert window.reference.io["Au"].efficiency_label.text() == ""
@@ -113,7 +122,7 @@ def test_sample_with_reference(qtbot: QtBot):
     # Should test all outputs here
     assert np.isclose(window.results.io["Au"].mean.baseValue(), 2091, atol=1)
     assert np.isclose(window.results.io["Au"].median.baseValue(), 2034, atol=1)
-    assert np.isclose(window.results.io["Au"].lod.baseValue(), 37.63, atol=0.1)
+    assert np.isclose(window.results.io["Au"].lod.baseValue(), limit, atol=0.1)
     assert np.isclose(window.results.io["Au"].number.baseValue(), 7.945e8, rtol=1e-4)
     assert np.isclose(window.results.io["Au"].conc.baseValue(), 8.788e-10, rtol=1e-4)
     assert np.isclose(
