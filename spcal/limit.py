@@ -102,7 +102,8 @@ class SPCalLimit(object):
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
                 std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
 
-            threshold = mu + std * z
+            # Consistency with Poisson
+            threshold = int(mu + std * z) + 1.0
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
