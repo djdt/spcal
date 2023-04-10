@@ -109,7 +109,7 @@ def read_nu_integ_binary(
 
 
 def read_nu_directory(
-    path: str | Path, max_integ_files: int = None
+    path: str | Path, max_integ_files: int | None = None
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
