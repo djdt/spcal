@@ -117,7 +117,13 @@ class _ImportDialogBase(QtWidgets.QDialog):
     def setImportOptions(
         self, options: dict, path: bool = False, dwelltime: bool = True
     ) -> None:
-        raise NotImplementedError
+        if path:
+            self.file_path = options["path"]
+            title = self.windowTitle()[self.windowTitle().find(":")]
+            self.setWindowTitle(f"{title}: {self.file_path.name}")
+        if dwelltime:
+            self.dwelltime.setBaseValue(options["dwelltime"])
+            self.dwelltime.setBestUnit()
 
     def screenData(self) -> None:
         raise NotImplementedError
@@ -305,11 +311,7 @@ class TextImportDialog(_ImportDialogBase):
     def setImportOptions(
         self, options: dict, path: bool = False, dwelltime: bool = True
     ) -> None:
-        if path:
-            self.file_path.setText(str(options["path"]))
-        if dwelltime:
-            self.dwelltime.setBaseValue(options["dwelltime"])
-            self.dwelltime.setBestUnit()
+        super().setImportOptions(options, path, dwelltime)
         delimiter = options["delimiter"]
         if delimiter == " ":
             delimiter = "Space"
@@ -456,11 +458,7 @@ class NuImportDialog(_ImportDialogBase):
     def setImportOptions(
         self, options: dict, path: bool = False, dwelltime: bool = True
     ) -> None:
-        if path:
-            self.file_path.setText(str(options["path"]))
-        if dwelltime:
-            self.dwelltime.setBaseValue(options["dwelltime"])
-            self.dwelltime.setBestUnit()
+        super().setImportOptions(options, path, dwelltime)
         self.table.setSelectedIsotopes(options["isotopes"])
 
     def setControlsEnabled(self, enabled: bool) -> None:
@@ -630,7 +628,6 @@ class TofwerkIntegrationThread(QtCore.QThread):
 
 class TofwerkImportDialog(_ImportDialogBase):
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
-
         super().__init__(path, "SPCal TOFWERK Import", parent)
 
         # Worker doesn't work as h5py locks
