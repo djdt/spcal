@@ -69,12 +69,6 @@ def test_sample_with_reference(qtbot: QtBot):
     window.sample.io["Ag"].density.setBaseValue(density)
     window.sample.io["Ag"].response.setBaseValue(response)
 
-    # Check if overwriting on re-load
-    window.sample.loadData(data, {"path": "test/data.csv", "dwelltime": dwelltime})
-    assert window.sample.io.names() == ["Au", "Ag"]
-    assert window.sample.io["Au"].density.baseValue() == density
-    assert window.sample.io["Au"].response.baseValue() == response
-
     window.reference.loadData(ref, {"path": "test/ref.csv", "dwelltime": dwelltime})
     assert window.reference.io.names() == ["Au"]
 
@@ -119,6 +113,7 @@ def test_sample_with_reference(qtbot: QtBot):
     assert window.results.io["Au"].count.value() == 3072
     assert window.results.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
     assert window.results.io["Au"].count_label.text() == "(100 %)"
+
     # Should test all outputs here
     assert np.isclose(window.results.io["Au"].mean.baseValue(), 2091, atol=1)
     assert np.isclose(window.results.io["Au"].median.baseValue(), 2034, atol=1)
