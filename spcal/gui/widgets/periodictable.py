@@ -286,11 +286,13 @@ class PeriodicTableSelector(QtWidgets.QWidget):
     def setSelectedIsotopes(self, isotopes: np.ndarray | None) -> None:
         self.blockSignals(True)
         for button in self.buttons.values():
-            for n, action in button.actions.items():
-                if isotopes is None:
-                    action.setChecked(False)
-                else:
-                    action.setChecked(n in isotopes["Isotope"])
+            for action in button.actions.values():
+                action.setChecked(False)
+        if isotopes is not None:
+            for isotope in isotopes:
+                self.buttons[isotope["Symbol"]].actions[isotope["Isotope"]].setChecked(
+                    True
+                )
         self.blockSignals(False)
         self.isotopesChanged.emit()
 
