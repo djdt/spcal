@@ -18,8 +18,10 @@ from spcal.gui.widgets import (
     ValueWidget,
 )
 from spcal.io.nu import (
+    blank_nu_integ_data,
     get_dwelltime_from_info,
     get_masses_from_nu_data,
+    read_nu_autob_binary,
     read_nu_integ_binary,
     select_nu_signals,
 )
@@ -382,6 +384,8 @@ class NuImportDialog(_ImportDialogBase):
             self.info = json.load(fp)
         with self.file_path.joinpath("integrated.index").open("r") as fp:
             self.index = json.load(fp)
+        with self.file_path.joinpath("autob.index").open("r") as fp:
+            self.autob_index = json.load(fp)
 
         # read first integ
         data = read_nu_integ_binary(
@@ -503,8 +507,7 @@ class NuImportDialog(_ImportDialogBase):
 
     def accept(self) -> None:
         def read_signals(path: Path):
-            data = read_nu_integ_binary(path)
-            return data["result"]["signal"]
+            return read_nu_integ_binary(path)
 
         self.setControlsEnabled(False)
 
@@ -528,9 +531,7 @@ class NuImportDialog(_ImportDialogBase):
             )
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
-            worker.signals.result.connect(
-                lambda r: self.results.append((idx["FileNum"], r))
-            )
+            worker.signals.result.connect(self.results.append)
             self.threadpool.start(worker)
 
     def finalise(self) -> None:
@@ -539,8 +540,54 @@ class NuImportDialog(_ImportDialogBase):
 
         options = self.importOptions()
         try:
-            signals = np.concatenate(
-                [result[1] for result in sorted(self.results, key=lambda r: r[0])]
+            data = np.concatenate(
+                sorted(self.results, key=lambda r: r["acq_number"][0])
+            )
+
+            if not np.all(data[0]["cyc_number"] == data[1:]["cyc_number"]):
+                logger.warning("read_nu_directory: multiple cycles not supported.")
+                data = data[data["cyc_number"] == data[0]["cyc_number"]]
+            if not np.all(data[0]["seg_number"] == data[1:]["seg_number"]):
+                logger.warning("read_nu_directory: multiple segments not supported.")
+                data = data[data["seg_number"] == data[0]["seg_number"]]
+
+            accumulations = (
+                self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+            )
+
+            if True:  # autoblank
+                autobs = []
+                for idx in self.autob_index:
+                    autob_path = self.file_path.joinpath(f"{idx['FileNum']}.autob")
+                    if autob_path.exists():
+                        autobs.extend(
+                            read_nu_autob_binary(
+                                autob_path,
+                                idx["FirstCycNum"],
+                                idx["FirstSegNum"],
+                                idx["FirstAcqNum"],
+                            )
+                        )
+                    else:
+                        logger.warning(
+                            f"read_nu_directory: missing autob {idx['FileNum']}, skipping"
+                        )
+
+                data = blank_nu_integ_data(
+                    autobs,
+                    data,
+                    masses[0],
+                    accumulations,
+                    run_info["BlMassCalStartCoef"],
+                    run_info["BlMassCalEndCoef"],
+                )
+            signals = np.full(
+                (
+                    self.results[-1]["acq_number"][-1] // accumulations,
+                    self.results[0]["result"]["signal"].shape[0],
+                ),
+                np.nan,
+                dtype=np.float32,
             )
             signals = signals / self.info["AverageSingleIonArea"]
 

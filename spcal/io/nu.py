@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import BinaryIO, Dict, Generator, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -26,6 +26,61 @@ def is_nu_directory(path: Path) -> bool:
         return False
 
     return True
+
+
+def blank_nu_integ_data(
+    autob_events: List[np.ndarray],
+    integ_data: np.ndarray,
+    masses: np.ndarray,
+    num_acc: int,
+    start_coef: Tuple[float, float],
+    end_coef: Tuple[float, float],
+) -> np.ndarray:
+    """Apply the auto-blanking to the integrated data.
+    There must be one cycle / segment and no missing acquisitions / data!
+
+    Args:
+        autob: list of events from `read_nu_autob_binary`
+        integ_data: concatenated data from `read_nu_integ_data_binary`
+        masses: 1d array of masses, from `get_masses_from_nu_data`
+        num_acc: number of accumulations per acquisition
+        start_coef: blanker open coefs 'BlMassCalStartCoef'
+        end_coef: blanker close coefs 'BlMassCalEndCoef'
+
+    Returns:
+        blanked data
+    """
+    cycle, seg = integ_data[0]["cyc_number"], integ_data[0]["seg_number"]
+
+    start = None
+    for ab in autob_events:
+        if ab["cyc_number"] != cycle or ab["seg_number"] != seg:
+            continue
+        if ab["type"] == 0 and start is None:
+            start = ab
+        elif ab["type"] == 1 and start is not None:
+            idx = np.searchsorted(
+                integ_data["acq_number"], (start["acq_number"], ab["acq_number"])
+            ).ravel()
+
+            start_masses = (
+                start_coef[0] + start_coef[1] * start["edges"][0][::2] * 1.25
+            ) ** 2
+            end_masses = (
+                end_coef[0] + end_coef[1] * start["edges"][0][1::2] * 1.25
+            ) ** 2
+            mass_idx = np.searchsorted(masses, (start_masses, end_masses))
+            # There are a bunch of useless blanking regions
+            mass_idx = mass_idx[:, mass_idx[0] != mass_idx[1]]
+
+            for s, e in mass_idx.T:
+                integ_data["result"]["signal"][idx[0] : idx[1], s:e] = np.nan
+
+            # Slower
+            # slices = tuple(slice(s, e) for s, e in mass_idx.T)
+            # integ_data["result"]["signal"][idx[0] : idx[1], np.r_[slices]] = np.nan
+            start = None
+    return integ_data
 
 
 def get_dwelltime_from_info(info: dict) -> float:
@@ -66,6 +121,44 @@ def get_masses_from_nu_data(
     masses = (data["result"]["center"] * 0.5) + delays[:, None]
     # Convert from time to mass (sqrt(m/q) = a + t * b)
     return (cal_coef[0] + masses * cal_coef[1]) ** 2
+
+
+def read_nu_autob_binary(
+    path: Path,
+    first_cyc_number: int | None = None,
+    first_seg_number: int | None = None,
+    first_acq_number: int | None = None,
+) -> List[np.ndarray]:
+    def autob_dtype(size: int) -> np.dtype:
+        return np.dtype(
+            [
+                ("cyc_number", np.uint32),
+                ("seg_number", np.uint32),
+                ("acq_number", np.uint32),
+                ("trig_start_time", np.uint32),
+                ("trig_end_time", np.uint32),
+                ("type", np.uint8),
+                ("num_edges", np.int32),
+                ("edges", np.uint32, size),
+            ]
+        )
+
+    def read_autob_events(fp: BinaryIO) -> Generator[np.ndarray, None, None]:
+        while fp:
+            data = fp.read(4 + 4 + 4 + 4 + 4 + 1 + 4)
+            if not data:
+                return
+            size = int.from_bytes(data[-4:], "little")
+            autob = np.empty(1, dtype=autob_dtype(size))
+            autob.data.cast("B")[: len(data)] = data
+            if size > 0:
+                autob["edges"] = np.frombuffer(fp.read(size * 4), dtype=np.uint32)
+            yield autob
+
+    with path.open("rb") as fp:
+        autob_events = list(read_autob_events(fp))
+
+    return autob_events
 
 
 def read_nu_integ_binary(
@@ -109,7 +202,7 @@ def read_nu_integ_binary(
 
 
 def read_nu_directory(
-    path: str | Path, max_integ_files: int | None = None
+    path: str | Path, max_integ_files: int | None = None, autoblank: bool = True
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
@@ -120,6 +213,7 @@ def read_nu_directory(
     Args:
         path: path to data directory
         max_integ_files: maximum number of files to read
+        autoblank: apply autoblanking to overrange regions
 
     Returns:
         masses from first acquistion
@@ -133,13 +227,23 @@ def read_nu_directory(
 
     with path.joinpath("run.info").open("r") as fp:
         run_info = json.load(fp)
+    with path.joinpath("autob.index").open("r") as fp:
+        autob_index = json.load(fp)
     with path.joinpath("integrated.index").open("r") as fp:
         integ_index = json.load(fp)
 
     if max_integ_files is not None:
         integ_index = integ_index[:max_integ_files]
 
+    segment_delays = {
+        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
+    }
+
+    accumulations = run_info["NumAccumulations1"] * run_info["NumAccumulations2"]
+
+    # Collect integrated data
     datas = []
+    missing_integ = False
     for idx in integ_index:
         integ_path = path.joinpath(f"{idx['FileNum']}.integ")
         if integ_path.exists():
@@ -152,19 +256,68 @@ def read_nu_directory(
                 )
             )
         else:
+            missing_integ = True
             logger.warning(
                 f"read_integ_binary: missing integ {idx['FileNum']}, skipping"
             )
     data = np.concatenate(datas)
 
-    segment_delays = {
-        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
-    }
+    if not np.all(data[0]["cyc_number"] == data[1:]["cyc_number"]):
+        logger.warning("read_nu_directory: multiple cycles not supported.")
+        data = data[data["cyc_number"] == data[0]["cyc_number"]]
+    if not np.all(data[0]["seg_number"] == data[1:]["seg_number"]):
+        logger.warning("read_nu_directory: multiple segments not supported.")
+        data = data[data["seg_number"] == data[0]["seg_number"]]
 
+    # Get masses from data
     masses = get_masses_from_nu_data(
         data[0], run_info["MassCalCoefficients"], segment_delays
     )
-    signals = data["result"]["signal"] / run_info["AverageSingleIonArea"]
+
+    # Blank out overrange regions
+    if autoblank:
+        autobs = []
+        for idx in autob_index:
+            autob_path = path.joinpath(f"{idx['FileNum']}.autob")
+            if autob_path.exists():
+                autobs.extend(
+                    read_nu_autob_binary(
+                        autob_path,
+                        idx["FirstCycNum"],
+                        idx["FirstSegNum"],
+                        idx["FirstAcqNum"],
+                    )
+                )
+            else:
+                logger.warning(
+                    f"read_nu_directory: missing autob {idx['FileNum']}, skipping"
+                )
+
+        data = blank_nu_integ_data(
+            autobs,
+            data,
+            masses[0],
+            accumulations,
+            run_info["BlMassCalStartCoef"],
+            run_info["BlMassCalEndCoef"],
+        )
+
+    # Account for any missing integ files
+    if missing_integ:
+        signals = np.full(
+            (
+                data[-1]["acq_number"] // accumulations,
+                data[-1]["result"]["signal"].shape[0],
+            ),
+            np.nan,
+            dtype=np.float32,
+        )
+        signals[(data["acq_number"] // accumulations) - 1] = (
+            data["result"]["signal"] / run_info["AverageSingleIonArea"]
+        )
+    else:
+        signals = data["result"]["signal"] / run_info["AverageSingleIonArea"]
+
     return masses[0], signals, run_info
 
 
