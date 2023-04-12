@@ -21,6 +21,8 @@ def test_io_nu_import():
     path = Path(__file__).parent.joinpath("data/nu")
     masses, signals, info = read_nu_directory(path)
     assert masses.size == 194
+    assert signals.shape == (15474, 194)
+    signals = signals[np.all(~np.isnan(signals), axis=1), :]
     assert signals.shape == (30, 194)
     assert np.isclose(masses[0], 22.98582197)
     assert np.isclose(masses[-1], 240.02343301)
