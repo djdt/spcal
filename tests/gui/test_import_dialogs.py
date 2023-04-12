@@ -82,7 +82,7 @@ def test_import_dialog_nu(qtbot: QtBot):
     def check_data(data: np.ndarray, options: dict):
         if data.dtype.names != ("Ag107", "Au197"):
             return False
-        if data.size != 30:
+        if data.size != 15474:
             return False
         if options["dwelltime"] != 8.289e-5:
             return False
