@@ -94,6 +94,11 @@ def test_import_dialog_nu(qtbot: QtBot):
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
+    assert dlg.cycle_number.minimum() == 1
+    assert dlg.cycle_number.maximum() == 1
+    assert dlg.segment_number.minimum() == 1
+    assert dlg.segment_number.maximum() == 1
+
     assert np.isclose(dlg.dwelltime.baseValue(), 8.289e-5)  # type: ignore
     for symbol in ["H", "Ne", "At", "Hs", "Ac", "Am", "Lr"]:
         assert not dlg.table.buttons[symbol].isEnabled()
