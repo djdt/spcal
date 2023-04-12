@@ -92,8 +92,8 @@ class SPCalLimit(object):
             prev_threshold = threshold
 
             if window_size == 0:  # No window
-                mu = np.mean(responses[responses < threshold])
-                std = np.std(responses[responses < threshold])
+                mu = bn.nanmean(responses[responses < threshold])
+                std = bn.nanstd(responses[responses < threshold])
             else:
                 halfwin = window_size // 2
                 pad = np.pad(
@@ -135,7 +135,7 @@ class SPCalLimit(object):
         while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
-                mu = np.mean(responses[responses < threshold])
+                mu = bn.nanmean(responses[responses < threshold])
             else:
                 halfwin = window_size // 2
                 pad = np.pad(

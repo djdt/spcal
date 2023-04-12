@@ -236,8 +236,8 @@ class SampleIOWidget(IOWidget):
         limit_name: str,
         limit_params: Dict[str, float],
     ) -> None:
-        background = np.mean(responses[labels == 0])
-        background_std = np.std(responses[labels == 0])
+        background = np.nanmean(responses[labels == 0])
+        background_std = np.nanstd(responses[labels == 0])
 
         count = np.count_nonzero(detections)
 
@@ -491,7 +491,6 @@ class ResultIOWidget(IOWidget):
         background_conc: float | None = None,
         background_error: float | None = None,
     ) -> None:
-
         mean = np.mean(values)
         median = np.median(values)
         std = np.std(values)
