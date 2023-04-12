@@ -17,14 +17,7 @@ from spcal.gui.widgets import (
     UnitsWidget,
     ValueWidget,
 )
-from spcal.io.nu import (
-    blank_nu_integ_data,
-    get_dwelltime_from_info,
-    get_masses_from_nu_data,
-    read_nu_autob_binary,
-    read_nu_integ_binary,
-    select_nu_signals,
-)
+from spcal.io import nu
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.nontarget import non_target_screen
@@ -378,7 +371,7 @@ class NuImportDialog(_ImportDialogBase):
         self.running = False
 
         self.threadpool = QtCore.QThreadPool()
-        self.results: List[Tuple[int, np.ndarray]] = []
+        self.results: List[np.ndarray] = []
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -388,7 +381,7 @@ class NuImportDialog(_ImportDialogBase):
             self.autob_index = json.load(fp)
 
         # read first integ
-        data = read_nu_integ_binary(
+        data = nu.read_nu_integ_binary(
             self.file_path.joinpath(f"{self.index[0]['FileNum']}.integ"),
             self.index[0]["FirstCycNum"],
             self.index[0]["FirstSegNum"],
@@ -396,7 +389,7 @@ class NuImportDialog(_ImportDialogBase):
         )
 
         self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
-        self.masses = get_masses_from_nu_data(
+        self.masses = nu.get_masses_from_nu_data(
             data[0],
             self.info["MassCalCoefficients"],
             self.segmentDelays(),
@@ -425,7 +418,22 @@ class NuImportDialog(_ImportDialogBase):
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
 
-        self.dwelltime.setBaseValue(get_dwelltime_from_info(self.info))
+        self.cycle_number = QtWidgets.QSpinBox()
+        self.cycle_number.setValue(1)
+        self.cycle_number.setRange(1, self.info["CyclesWritten"])
+
+        self.segment_number = QtWidgets.QSpinBox()
+        self.segment_number.setValue(1)
+        self.segment_number.setRange(1, len(self.info["SegmentInfo"]))
+
+        self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
+        self.checkbox_blanking.setChecked(True)
+
+        self.box_options.layout().addRow("Cycle:", self.cycle_number)
+        self.box_options.layout().addRow("Segment:", self.segment_number)
+        self.box_options.layout().addRow(self.checkbox_blanking)
+
+        self.dwelltime.setBaseValue(nu.get_dwelltime_from_info(self.info))
         self.dwelltime.setBestUnit()
 
         self.table.setFocus()
@@ -457,6 +465,9 @@ class NuImportDialog(_ImportDialogBase):
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "isotopes": self.table.selectedIsotopes(),
+            "cycle": self.cycle_number.value(),
+            "segment": self.segment_number.value(),
+            "blanking": self.checkbox_blanking.isChecked(),
         }
 
     def setImportOptions(
@@ -464,6 +475,9 @@ class NuImportDialog(_ImportDialogBase):
     ) -> None:
         super().setImportOptions(options, path, dwelltime)
         self.table.setSelectedIsotopes(options["isotopes"])
+        self.cycle_number.setValue(options["cycle"])
+        self.segment_number.setValue(options["segment"])
+        self.checkbox_blanking.setChecked(options["blanking"])
 
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
@@ -506,8 +520,18 @@ class NuImportDialog(_ImportDialogBase):
         self.setControlsEnabled(True)
 
     def accept(self) -> None:
-        def read_signals(path: Path):
-            return read_nu_integ_binary(path)
+        def read_signals(
+            root: Path, idx: dict, cyc_number: int | None, seg_number: int | None
+        ):
+            path = root.joinpath(f"{idx['FileNum']}.integ")
+            data = nu.read_nu_integ_binary(
+                path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
+            )
+            if cyc_number is not None:
+                data = data[data["cyc_number"] == cyc_number]
+            if seg_number is not None:
+                data = data[data["seg_number"] == seg_number]
+            return data
 
         self.setControlsEnabled(False)
 
@@ -527,7 +551,10 @@ class NuImportDialog(_ImportDialogBase):
                 continue
             worker = Worker(
                 read_signals,
-                self.file_path.joinpath(f"{idx['FileNum']}.integ"),
+                self.file_path,
+                idx,
+                self.cycle_number.value(),
+                self.segment_number.value(),
             )
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
@@ -540,63 +567,35 @@ class NuImportDialog(_ImportDialogBase):
 
         options = self.importOptions()
         try:
-            data = np.concatenate(
-                sorted(self.results, key=lambda r: r["acq_number"][0])
+            num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+            signals = nu.get_signals_from_nu_data(
+                self.results, num_acc, self.info["AverageSingleIonArea"]
             )
 
-            if not np.all(data[0]["cyc_number"] == data[1:]["cyc_number"]):
-                logger.warning("read_nu_directory: multiple cycles not supported.")
-                data = data[data["cyc_number"] == data[0]["cyc_number"]]
-            if not np.all(data[0]["seg_number"] == data[1:]["seg_number"]):
-                logger.warning("read_nu_directory: multiple segments not supported.")
-                data = data[data["seg_number"] == data[0]["seg_number"]]
-
-            accumulations = (
-                self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-            )
-
-            if True:  # autoblank
-                autobs = []
-                for idx in self.autob_index:
-                    autob_path = self.file_path.joinpath(f"{idx['FileNum']}.autob")
-                    if autob_path.exists():
-                        autobs.extend(
-                            read_nu_autob_binary(
-                                autob_path,
-                                idx["FirstCycNum"],
-                                idx["FirstSegNum"],
-                                idx["FirstAcqNum"],
-                            )
-                        )
-                    else:
-                        logger.warning(
-                            f"read_nu_directory: missing autob {idx['FileNum']}, skipping"
-                        )
-
-                data = blank_nu_integ_data(
-                    autobs,
-                    data,
-                    masses[0],
-                    accumulations,
-                    run_info["BlMassCalStartCoef"],
-                    run_info["BlMassCalEndCoef"],
+            if self.checkbox_blanking.isChecked():  # autoblank
+                autob_events = nu.collect_nu_autob_data(
+                    self.file_path,
+                    self.autob_index,
+                    cyc_number=self.cycle_number.value(),
+                    seg_number=self.segment_number.value(),
                 )
-            signals = np.full(
-                (
-                    self.results[-1]["acq_number"][-1] // accumulations,
-                    self.results[0]["result"]["signal"].shape[0],
-                ),
-                np.nan,
-                dtype=np.float32,
-            )
-            signals = signals / self.info["AverageSingleIonArea"]
+                signals = nu.blank_nu_signal_data(
+                    autob_events,
+                    signals,
+                    self.masses,
+                    num_acc,
+                    self.info["BlMassCalStartCoef"],
+                    self.info["BlMassCalEndCoef"],
+                )
 
             isotopes = self.table.selectedIsotopes()
             assert isotopes is not None
+
             selected_masses = {
                 f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes
             }
-            data = select_nu_signals(self.masses, signals, selected_masses)
+            data = nu.select_nu_signals(self.masses, signals, selected_masses)
+
         except Exception as e:
             msg = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Warning,
