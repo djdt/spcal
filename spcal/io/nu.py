@@ -50,30 +50,31 @@ def blank_nu_signal_data(
     Returns:
         blanked data
     """
-    start = None
-    for ab in autob_events:
-        if ab["type"] == 0 and start is None:
-            start = ab
-        elif ab["type"] == 1 and start is not None:
+    start_event = None
+    for event in autob_events:
+        if event["type"] == 0 and start_event is None:
+            start_event = event
+        elif event["type"] == 1 and start_event is not None:
             start_masses = (
-                start_coef[0] + start_coef[1] * start["edges"][0][::2] * 1.25
+                start_coef[0] + start_coef[1] * start_event["edges"][0][::2] * 1.25
             ) ** 2
             end_masses = (
-                end_coef[0] + end_coef[1] * start["edges"][0][1::2] * 1.25
+                end_coef[0] + end_coef[1] * start_event["edges"][0][1::2] * 1.25
             ) ** 2
             mass_idx = np.searchsorted(masses, (start_masses, end_masses))
             # There are a bunch of useless blanking regions
             mass_idx = mass_idx[:, mass_idx[0] != mass_idx[1]]
 
-            idx = start["acq_number"] // num_acc - 1, ab["acq_number"] // num_acc - 1
+            acq_start, acq_end = (
+                int(start_event["acq_number"] // num_acc) - 1,
+                int(event["acq_number"] // num_acc) - 1,
+            )
 
             for s, e in mass_idx.T:
-                signals[idx[0] : idx[1], s:e] = np.nan
+                signals[acq_start:acq_end, s:e] = np.nan
 
-            # Slower
-            # slices = tuple(slice(s, e) for s, e in mass_idx.T)
-            # integ_data["result"]["signal"][idx[0] : idx[1], np.r_[slices]] = np.nan
-            start = None
+            start_event = None
+
     return signals
 
 
