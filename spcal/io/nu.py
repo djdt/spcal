@@ -28,9 +28,9 @@ def is_nu_directory(path: Path) -> bool:
     return True
 
 
-def blank_nu_integ_data(
+def blank_nu_signal_data(
     autob_events: List[np.ndarray],
-    integ_data: np.ndarray,
+    signals: np.ndarray,
     masses: np.ndarray,
     num_acc: int,
     start_coef: Tuple[float, float],
@@ -50,19 +50,11 @@ def blank_nu_integ_data(
     Returns:
         blanked data
     """
-    cycle, seg = integ_data[0]["cyc_number"], integ_data[0]["seg_number"]
-
     start = None
     for ab in autob_events:
-        if ab["cyc_number"] != cycle or ab["seg_number"] != seg:
-            continue
         if ab["type"] == 0 and start is None:
             start = ab
         elif ab["type"] == 1 and start is not None:
-            idx = np.searchsorted(
-                integ_data["acq_number"], (start["acq_number"], ab["acq_number"])
-            ).ravel()
-
             start_masses = (
                 start_coef[0] + start_coef[1] * start["edges"][0][::2] * 1.25
             ) ** 2
@@ -73,14 +65,72 @@ def blank_nu_integ_data(
             # There are a bunch of useless blanking regions
             mass_idx = mass_idx[:, mass_idx[0] != mass_idx[1]]
 
+            idx = start["acq_number"] // num_acc - 1, ab["acq_number"] // num_acc - 1
+
             for s, e in mass_idx.T:
-                integ_data["result"]["signal"][idx[0] : idx[1], s:e] = np.nan
+                signals[idx[0] : idx[1], s:e] = np.nan
 
             # Slower
             # slices = tuple(slice(s, e) for s, e in mass_idx.T)
             # integ_data["result"]["signal"][idx[0] : idx[1], np.r_[slices]] = np.nan
             start = None
-    return integ_data
+    return signals
+
+
+def collect_nu_autob_data(
+    root: Path,
+    index: List[dict],
+    cyc_number: int | None = None,
+    seg_number: int | None = None,
+) -> List[np.ndarray]:
+    autobs = []
+    for idx in index:
+        autob_path = root.joinpath(f"{idx['FileNum']}.autob")
+        if autob_path.exists():
+            events = read_nu_autob_binary(
+                autob_path,
+                idx["FirstCycNum"],
+                idx["FirstSegNum"],
+                idx["FirstAcqNum"],
+            )
+            if cyc_number is not None:
+                events = [ev for ev in events if ev["cyc_number"] == cyc_number]
+            if seg_number is not None:
+                events = [ev for ev in events if ev["seg_number"] == seg_number]
+            autobs.extend(events)
+        else:
+            logger.warning(
+                f"collect_nu_autob_data: missing autob {idx['FileNum']}, skipping"
+            )
+    return autobs
+
+
+def collect_nu_integ_data(
+    root: Path,
+    index: List[dict],
+    cyc_number: int | None = None,
+    seg_number: int | None = None,
+) -> List[np.ndarray]:
+    integs = []
+    for idx in index:
+        integ_path = root.joinpath(f"{idx['FileNum']}.integ")
+        if integ_path.exists():
+            data = read_nu_integ_binary(
+                integ_path,
+                idx["FirstCycNum"],
+                idx["FirstSegNum"],
+                idx["FirstAcqNum"],
+            )
+            if cyc_number is not None:
+                data = data[data["cyc_number"] == cyc_number]
+            if seg_number is not None:
+                data = data[data["seg_number"] == seg_number]
+            integs.append(data)
+        else:
+            logger.warning(
+                f"collect_nu_integ_data: missing integ {idx['FileNum']}, skipping"
+            )
+    return integs
 
 
 def get_dwelltime_from_info(info: dict) -> float:
@@ -99,8 +149,23 @@ def get_dwelltime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
+def get_signals_from_nu_data(
+    integs: List[np.ndarray], num_acc: int, single_ion_area: float
+) -> np.ndarray:
+    max_acq = max(integ["acq_number"][-1] for integ in integs)
+    signals = np.full(
+        (max_acq // num_acc, integs[0]["result"]["signal"].shape[1]),
+        np.nan,
+        dtype=np.float32,
+    )
+    for integ in integs:
+        signals[(integ["acq_number"] // num_acc) - 1] = integ["result"]["signal"]
+
+    return signals / single_ion_area
+
+
 def get_masses_from_nu_data(
-    data: np.ndarray, cal_coef: Tuple[float, float], segment_delays: Dict[int, float]
+    integ: np.ndarray, cal_coef: Tuple[float, float], segment_delays: Dict[int, float]
 ) -> np.ndarray:
     """Converts Nu peak centers into masses.
 
@@ -116,9 +181,9 @@ def get_masses_from_nu_data(
     delays = np.zeros(max(segment_delays.keys()))
     for k, v in segment_delays.items():
         delays[k - 1] = v
-    delays = np.atleast_1d(delays[data["seg_number"] - 1])
+    delays = np.atleast_1d(delays[integ["seg_number"] - 1])
 
-    masses = (data["result"]["center"] * 0.5) + delays[:, None]
+    masses = (integ["result"]["center"] * 0.5) + delays[:, None]
     # Convert from time to mass (sqrt(m/q) = a + t * b)
     return (cal_coef[0] + masses * cal_coef[1]) ** 2
 
@@ -242,83 +307,30 @@ def read_nu_directory(
     accumulations = run_info["NumAccumulations1"] * run_info["NumAccumulations2"]
 
     # Collect integrated data
-    datas = []
-    missing_integ = False
-    for idx in integ_index:
-        integ_path = path.joinpath(f"{idx['FileNum']}.integ")
-        if integ_path.exists():
-            datas.append(
-                read_nu_integ_binary(
-                    integ_path,
-                    idx["FirstCycNum"],
-                    idx["FirstSegNum"],
-                    idx["FirstAcqNum"],
-                )
-            )
-        else:
-            missing_integ = True
-            logger.warning(
-                f"read_integ_binary: missing integ {idx['FileNum']}, skipping"
-            )
-    data = np.concatenate(datas)
-
-    if not np.all(data[0]["cyc_number"] == data[1:]["cyc_number"]):
-        logger.warning("read_nu_directory: multiple cycles not supported.")
-        data = data[data["cyc_number"] == data[0]["cyc_number"]]
-    if not np.all(data[0]["seg_number"] == data[1:]["seg_number"]):
-        logger.warning("read_nu_directory: multiple segments not supported.")
-        data = data[data["seg_number"] == data[0]["seg_number"]]
+    integs = collect_nu_integ_data(path, integ_index)
 
     # Get masses from data
     masses = get_masses_from_nu_data(
-        data[0], run_info["MassCalCoefficients"], segment_delays
+        integs[0], run_info["MassCalCoefficients"], segment_delays
+    )[0]
+    signals = get_signals_from_nu_data(
+        integs, accumulations, run_info["AverageSingleIonArea"]
     )
 
     # Blank out overrange regions
     if autoblank:
-        autobs = []
-        for idx in autob_index:
-            autob_path = path.joinpath(f"{idx['FileNum']}.autob")
-            if autob_path.exists():
-                autobs.extend(
-                    read_nu_autob_binary(
-                        autob_path,
-                        idx["FirstCycNum"],
-                        idx["FirstSegNum"],
-                        idx["FirstAcqNum"],
-                    )
-                )
-            else:
-                logger.warning(
-                    f"read_nu_directory: missing autob {idx['FileNum']}, skipping"
-                )
-
-        data = blank_nu_integ_data(
+        autobs = collect_nu_autob_data(path, autob_index)
+        signals = blank_nu_signal_data(
             autobs,
-            data,
-            masses[0],
+            signals,
+            masses,
             accumulations,
             run_info["BlMassCalStartCoef"],
             run_info["BlMassCalEndCoef"],
         )
 
     # Account for any missing integ files
-    if missing_integ:
-        signals = np.full(
-            (
-                data[-1]["acq_number"] // accumulations,
-                data[-1]["result"]["signal"].shape[0],
-            ),
-            np.nan,
-            dtype=np.float32,
-        )
-        signals[(data["acq_number"] // accumulations) - 1] = (
-            data["result"]["signal"] / run_info["AverageSingleIonArea"]
-        )
-    else:
-        signals = data["result"]["signal"] / run_info["AverageSingleIonArea"]
-
-    return masses[0], signals, run_info
+    return masses, signals, run_info
 
 
 def select_nu_signals(
