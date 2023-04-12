@@ -105,11 +105,7 @@ class SPCalLimit(object):
                 std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
 
             # Consistency with Poisson
-            threshold = mu + std * z
-            if isinstance(threshold, np.ndarray):
-                threshold = threshold.astype(np.int32) + 1
-            else:
-                threshold = int(threshold) + 1
+            threshold = np.ceil(mu + std * z)
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
@@ -150,11 +146,7 @@ class SPCalLimit(object):
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
             sc, _ = poisson_limits(mu, alpha=alpha)
-            threshold = mu + sc
-            if isinstance(threshold, np.ndarray):
-                threshold = threshold.astype(np.int32) + 1
-            else:
-                threshold = int(threshold) + 1
+            threshold = np.ceil(mu + sc)
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
