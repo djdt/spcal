@@ -62,8 +62,8 @@ class HistogramView(SinglePlotGraphicsView):
             pen = QtGui.QPen(brush.color().darker(), 2.0)
             pen.setCosmetic(True)
             pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-            for label, limit in draw_limits.items():
-                limit = self.drawLimit(limit, label, pen=pen, visible=limits_visible)
+            for label, lim in draw_limits.items():
+                limit = self.drawLimit(lim, label, pen=pen, visible=limits_visible)
                 legend.addLimit(limit)
 
         self.plot.legend.addItem(legend, name)
@@ -175,3 +175,14 @@ class HistogramView(SinglePlotGraphicsView):
         line.setVisible(visible)
         self.plot.addItem(line)
         return line
+
+
+if __name__ == "__main__":
+    i = QtWidgets.QGraphicsLineItem()
+    p = QtCore.QPointF(1e-12, 1e-12)
+    p2 = QtCore.QPointF()
+    i.setPos(p)
+    print(p.x())
+    print(i.pos().x())
+    print(i.pos().x())
+    print(i.scenePos().x())
