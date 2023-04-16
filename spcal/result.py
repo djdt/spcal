@@ -29,8 +29,8 @@ class SPCalResult(object):
         self.detections = {"signal": detections}
         self.indicies = np.flatnonzero(detections)
 
-        self.background = np.mean(responses[labels == 0])
-        self.background_error = np.std(responses[labels == 0])
+        self.background = np.nanmean(responses[labels == 0])
+        self.background_error = np.nanstd(responses[labels == 0])
 
         self.limits = limits
 
@@ -40,7 +40,7 @@ class SPCalResult(object):
 
     @property
     def events(self) -> int:
-        return self.responses.size
+        return np.count_nonzero(~np.isnan(self.responses))
 
     @property
     def ionic_background(self) -> float | None:
