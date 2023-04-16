@@ -445,7 +445,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_limits={
                     "mean": np.mean(data) * modifier,
-                    "LOD": np.mean(lod) * modifier,  # type: ignore
+                    "threshold": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
             )
