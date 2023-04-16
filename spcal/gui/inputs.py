@@ -56,6 +56,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph = ParticleView()
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
+        self.graph.requestPeakProperties.connect(self.dialogDataProperties)
         self.last_region: Tuple[int, int] | None = None
 
         self.io = io_stack
@@ -205,6 +206,30 @@ class InputWidget(QtWidgets.QWidget):
         dlg.open()
         return dlg
 
+    def dialogDataProperties(self) -> QtWidgets.QDialog:
+        if len(self.detection_names) == 0:
+            return
+        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+        dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
+        dlg.exec()
+        # name = self.io.combo_name.currentText()
+        # if name not in self.detection_names:
+        #     return
+
+        # detected = np.flatnonzero(self.detections[name])
+        # trim = self.trimRegion(name)
+        # response = self.trimmedResponse(name)
+
+        # # widths converted to seconds
+        # widths = self.regions[detected][:, 1] - self.regions[detected][:, 0]
+        # widths = widths.astype(np.float64) * self.options.dwelltime.baseValue()
+
+        # heights = response[detection_maxima(response, self.regions[detected]) + trim[0]]
+        # heights = heights - self.limits[name].mean_background  # to baseline
+
+        # print(np.mean(widths), np.std(widths))
+        # print(np.mean(heights), np.std(heights))
+
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
@@ -260,7 +285,11 @@ class InputWidget(QtWidgets.QWidget):
         for name in self.names:
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
-                (d[name], l[name], r[name],) = spcal.accumulate_detections(
+                (
+                    d[name],
+                    l[name],
+                    r[name],
+                ) = spcal.accumulate_detections(
                     responses,
                     np.minimum(
                         self.limits[name].mean_background,

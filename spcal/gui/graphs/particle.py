@@ -6,10 +6,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
+from spcal.gui.util import create_action
 
 
 class ParticleView(SinglePlotGraphicsView):
     regionChanged = QtCore.Signal()
+    requestPeakProperties = QtCore.Signal()
 
     def __init__(
         self,
@@ -50,6 +52,14 @@ class ParticleView(SinglePlotGraphicsView):
         self.region.lines[0].addMarker("|>", 0.9)
         self.region.lines[1].addMarker("<|", 0.9)
         self.plot.addItem(self.region)
+
+        self.action_peak_properties = create_action(
+            "office-chart-area-focus-peak-node",
+            "Peak Properties",
+            "Show peak widths, heights and other properties.",
+            self.requestPeakProperties,
+        )
+        self.context_menu_actions.append(self.action_peak_properties)
 
     @property
     def region_start(self) -> int:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pyqtgraph
@@ -69,6 +69,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.exportData,
         )
 
+        self.context_menu_actions: List[QtGui.QAction] = []
+
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
@@ -90,6 +92,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             if self.readyForExport():
                 menu.addSeparator()
                 menu.addAction(self.action_export_data)
+
+            if len(self.context_menu_actions) > 0:
+                menu.addSeparator()
+            for action in self.context_menu_actions:
+                menu.addAction(action)
+
         event.accept()
         menu.popup(event.globalPos())
 
