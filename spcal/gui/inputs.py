@@ -203,6 +203,8 @@ class InputWidget(QtWidgets.QWidget):
 
         dlg = get_import_dialog_for_path(self, path, self.import_options)
         dlg.dataImported.connect(self.loadData)
+        dlg.screening_poisson_alpha = self.options.error_rate_poisson.value() or 1e-3
+        dlg.screening_gaussian_alpha = self.options.error_rate_gaussian.value() or 1e-6
         dlg.open()
         return dlg
 
@@ -210,6 +212,7 @@ class InputWidget(QtWidgets.QWidget):
         if len(self.detection_names) == 0:
             return
         from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
         # name = self.io.combo_name.currentText()

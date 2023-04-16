@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import h5py
 import numpy as np
@@ -43,6 +43,8 @@ class _ImportDialogBase(QtWidgets.QDialog):
             "Those with signals above the chosen ppm are selected.",
             self.screenData,
         )
+        self.screening_poisson_alpha = 1e-3
+        self.screening_gaussian_alpha = 1e-7
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -55,7 +57,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
         self.dwelltime.baseValueChanged.connect(self.completeChanged)
 
         self.screening_ppm = ValueWidget(
-            1000, validator=QtGui.QIntValidator(0, 1000000), format=".0f"
+            1000.0, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=".1f"
         )
 
         self.button_screen = QtWidgets.QToolButton()
@@ -336,7 +338,12 @@ class TextImportDialog(_ImportDialogBase):
             max_rows=100000,
         )
         data = rfn.structured_to_unstructured(data)
-        idx = non_target_screen(data, ppm)  # Todo: get alphas
+        idx = non_target_screen(
+            data,
+            ppm,
+            poisson_alpha=self.screening_poisson_alpha,
+            gaussian_alpha=self.screening_gaussian_alpha,
+        )
         mask = np.ones(data.shape[1], dtype=bool)
         mask[idx] = 0
         ignores = options["ignores"] + list(np.array(options["columns"])[mask])
@@ -381,12 +388,19 @@ class NuImportDialog(_ImportDialogBase):
             self.autob_index = json.load(fp)
 
         # read first integ
-        data = nu.read_nu_integ_binary(
-            self.file_path.joinpath(f"{self.index[0]['FileNum']}.integ"),
-            self.index[0]["FirstCycNum"],
-            self.index[0]["FirstSegNum"],
-            self.index[0]["FirstAcqNum"],
-        )
+        data: np.ndarray | None = None
+        for idx in self.index:
+            first_path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
+            if first_path.exists():
+                data = nu.read_nu_integ_binary(
+                    first_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
+                break
+        if data is None:
+            raise ValueError("NuImportDialog: no valid integ files found.")
 
         self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
         self.masses = nu.get_masses_from_nu_data(
@@ -443,7 +457,12 @@ class NuImportDialog(_ImportDialogBase):
         if ppm is None:
             return
 
-        idx = non_target_screen(self.signals, ppm)  # Todo: get alphas
+        idx = non_target_screen(
+            self.signals,
+            ppm,
+            poisson_alpha=self.screening_poisson_alpha,
+            gaussian_alpha=self.screening_gaussian_alpha,
+        )
         masses = self.masses[idx]
         unit_masses = np.round(masses).astype(int)
         isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
@@ -779,7 +798,12 @@ class TofwerkImportDialog(_ImportDialogBase):
         data = self.h5["PeakData"]["PeakData"][:10]
         data = np.reshape(data, (-1, data.shape[-1]))
         data *= factor_extraction_to_acquisition(self.h5)
-        idx = non_target_screen(data, ppm)  # Todo alpha
+        idx = non_target_screen(
+            data,
+            ppm,
+            poisson_alpha=self.screening_poisson_alpha,
+            gaussian_alpha=self.screening_gaussian_alpha,
+        )
 
         _isotopes = []
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
