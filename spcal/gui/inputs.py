@@ -215,23 +215,6 @@ class InputWidget(QtWidgets.QWidget):
 
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
-        # name = self.io.combo_name.currentText()
-        # if name not in self.detection_names:
-        #     return
-
-        # detected = np.flatnonzero(self.detections[name])
-        # trim = self.trimRegion(name)
-        # response = self.trimmedResponse(name)
-
-        # # widths converted to seconds
-        # widths = self.regions[detected][:, 1] - self.regions[detected][:, 0]
-        # widths = widths.astype(np.float64) * self.options.dwelltime.baseValue()
-
-        # heights = response[detection_maxima(response, self.regions[detected]) + trim[0]]
-        # heights = heights - self.limits[name].mean_background  # to baseline
-
-        # print(np.mean(widths), np.std(widths))
-        # print(np.mean(heights), np.std(heights))
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
         # Load any values that need to be set from the import dialog inputs
