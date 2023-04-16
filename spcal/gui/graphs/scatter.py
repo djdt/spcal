@@ -52,12 +52,14 @@ class ScatterView(SinglePlotGraphicsView):
         degree: int = 1,
         logx: bool = False,
         logy: bool = False,
+        set_title: bool = True,
         pen: QtGui.QPen | None = None,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.red, 1.0)
             pen.setCosmetic(True)
         poly = np.polynomial.Polynomial.fit(x, y, degree)
+        poly = poly.convert()
 
         xmin, xmax = np.amin(x), np.amax(x)
         sx = np.linspace(xmin, xmax, 1000)
@@ -73,3 +75,6 @@ class ScatterView(SinglePlotGraphicsView):
             x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True
         )
         self.plot.addItem(curve)
+
+        if set_title:
+            self.plot.setTitle("y = " + str(poly))
