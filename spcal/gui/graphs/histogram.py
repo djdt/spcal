@@ -124,7 +124,6 @@ class HistogramView(SinglePlotGraphicsView):
         visible: bool = True,
         pen: QtGui.QPen | None = None,
     ) -> pyqtgraph.PlotCurveItem:
-
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
@@ -146,7 +145,12 @@ class HistogramView(SinglePlotGraphicsView):
         # rescale
         ys = ys * bin_width * size
         curve = pyqtgraph.PlotCurveItem(
-            x=xs, y=ys, pen=pen, connect="all", skipFiniteCheck=True, antialias=True
+            x=xs,
+            y=np.nan_to_num(ys),
+            pen=pen,
+            connect="all",
+            skipFiniteCheck=True,
+            antialias=True,
         )
         curve.setVisible(visible)
         self.plot.addItem(curve)
