@@ -170,7 +170,7 @@ class HistogramView(SinglePlotGraphicsView):
             pen.setCosmetic(True)
 
         line = pyqtgraph.InfiniteLine(
-            (limit, 1.0),  # This bypasses the error in QGraphicsItem
+            (limit, 1.0),  # This bypasses the fuzzy comparision in QGraphicsItem
             label=label,
             labelOpts={"position": pos, "color": "black"},
             pen=pen,
