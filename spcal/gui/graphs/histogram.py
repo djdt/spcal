@@ -170,19 +170,11 @@ class HistogramView(SinglePlotGraphicsView):
             pen.setCosmetic(True)
 
         line = pyqtgraph.InfiniteLine(
-            limit, label=label, labelOpts={"position": pos, "color": "black"}, pen=pen
+            (limit, 1.0),  # This bypasses the error in QGraphicsItem
+            label=label,
+            labelOpts={"position": pos, "color": "black"},
+            pen=pen,
         )
         line.setVisible(visible)
         self.plot.addItem(line)
         return line
-
-
-if __name__ == "__main__":
-    i = QtWidgets.QGraphicsLineItem()
-    p = QtCore.QPointF(1e-12, 1e-12)
-    p2 = QtCore.QPointF()
-    i.setPos(p)
-    print(p.x())
-    print(i.pos().x())
-    print(i.pos().x())
-    print(i.scenePos().x())
