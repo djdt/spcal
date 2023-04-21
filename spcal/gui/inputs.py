@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
@@ -16,6 +17,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.limit import SPCalLimit
+from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,7 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.import_options: dict = {}
+        self.calculated_elements: Dict[str, str] = {}
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -216,7 +219,32 @@ class InputWidget(QtWidgets.QWidget):
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-    def loadData(self, data: np.ndarray, options: dict) -> None:
+    def addCalculatedData(self, data: np.ndarray) -> np.ndarray:
+        reducer = Reducer(variables={name: data[name] for name in data.dtype.names})
+        invalid = []
+        for name, expr in self.calculated_elements.items():
+            if name in data.dtype.names:
+                continue  # already calculated
+            try:
+                new_data = reducer.reduce(expr)
+                data = rfn.append_fields(data, name, new_data, usemask=False)
+            except ReducerException:
+                invalid.append(name)
+
+        for name in invalid:
+            self.calculated_elements.pop(name)
+
+        return data
+
+    def loadData(
+        self, data: np.ndarray, options: dict, clear_calculations: bool = False
+    ) -> None:
+        # Calculate any existing and valid expr
+        if clear_calculations:
+            self.calculated_elements.clear()
+        else:
+            data = self.addCalculatedData(data)
+
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
         self.options.dwelltime.setBaseValue(options["dwelltime"])

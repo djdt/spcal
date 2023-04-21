@@ -230,11 +230,8 @@ class CalculatorDialog(QtWidgets.QDialog):
             + self.formula.toPlainText().translate(str.maketrans("", "", " \n\t"))
             + "}"
         )
-        data = self.reducer.reduce(self.formula.expr)
-        new_data = rfn.append_fields(
-            self.sample.responses, new_name, data, usemask=False
-        )
-        self.sample.loadData(new_data, self.sample.import_options)
+        self.sample.calculated_elements[new_name] = self.formula.expr
+        self.sample.loadData(self.sample.responses, self.sample.import_options)
 
         try:
             self.reducer.variables = {
@@ -246,15 +243,11 @@ class CalculatorDialog(QtWidgets.QDialog):
         except ReducerException:
             pass
 
-        try:  # Attempt to update the reference too
-            self.reducer.variables = {
-                name: self.reference.responses[name] for name in self.reference.names
-            }
-            data = self.reducer.reduce(self.formula.expr)
-            new_data = rfn.append_fields(
-                self.reference.responses, new_name, data, usemask=False
+        if len(self.reference.names) > 0:
+            self.reference.calculated_elements[new_name] = self.formula.expr
+            self.reference.loadData(
+                self.reference.responses, self.reference.import_options
             )
-            self.reference.loadData(new_data, self.reference.import_options)
             try:
                 self.reducer.variables = {
                     name: self.reference.io[name].response.baseValue()
@@ -264,8 +257,6 @@ class CalculatorDialog(QtWidgets.QDialog):
                 self.reference.io[new_name].response.setBaseValue(data)
             except ReducerException:
                 pass
-        except ReducerException:
-            pass
 
         super().accept()
 
