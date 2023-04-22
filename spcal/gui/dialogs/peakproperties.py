@@ -2,6 +2,7 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.detection import detection_maxima
+from spcal.gui.modelviews import BasicTable
 from spcal.gui.inputs import InputWidget
 from spcal.siunits import time_units
 
@@ -25,7 +26,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             self.combo_names.setCurrentText(current_name)
         self.combo_names.currentTextChanged.connect(self.updateValues)
 
-        self.table = QtWidgets.QTableWidget()
+        self.table = BasicTable()
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setColumnCount(5)
         self.table.setRowCount(3)
@@ -33,6 +34,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         for i in range(3):
             for j in range(5):
                 item = QtWidgets.QTableWidgetItem()
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(i, j, item)
 
         self.table.setHorizontalHeaderLabels(["min", "max", "mean", "std", "median"])
