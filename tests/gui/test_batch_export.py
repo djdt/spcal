@@ -93,6 +93,9 @@ def test_batch_export_nu(qtbot: QtBot):
                         ("Preffered", np.uint8),
                     ],
                 ),
+                "cycle": 1,
+                "segment": 1,
+                "blanking": True,
             },
         )
 
