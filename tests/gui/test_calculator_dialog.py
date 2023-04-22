@@ -41,3 +41,6 @@ def test_calculator_dialog(qtbot: QtBot):
 
     assert window.sample.io["{Ag+Au}"].response.baseValue() == 300.0
     assert window.reference.io["{Ag+Au}"].response.baseValue() == 300.0
+
+    # Prevent altering further tests
+    CalculatorDialog.current_expressions.clear()
