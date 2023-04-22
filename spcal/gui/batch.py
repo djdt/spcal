@@ -7,6 +7,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import accumulate_detections, combine_detections
+from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
@@ -33,6 +34,8 @@ def process_data(
     limit_params: Dict[str, float],
     limit_window_size: int = 0,
 ) -> Dict[str, SPCalResult]:
+    # === Add any valid expressions
+    data = CalculatorDialog.reduceForData(data)
 
     # === Calculate Limits ===
     limits: Dict[str, SPCalLimit] = {}
@@ -126,7 +129,12 @@ def process_nu_file(
     process_kws: dict,
     output_kws: dict,
 ) -> None:
-    masses, signals, info = read_nu_directory(path)
+    masses, signals, info = read_nu_directory(
+        path,
+        autoblank=import_options["blanking"],
+        cycle=import_options["cycle"],
+        segment=import_options["segment"],
+    )
 
     selected_masses = {
         f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in import_options["isotopes"]
