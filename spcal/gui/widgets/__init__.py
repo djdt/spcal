@@ -6,5 +6,6 @@ from .periodictable import PeriodicTableSelector
 from .units import UnitsWidget
 from .validcolorle import ValidColorLineEdit
 from .values import ValueWidget
+from .collapsablewidget import CollapsableWidget
 
 # from .rangeslider import RangeSlider  # unused

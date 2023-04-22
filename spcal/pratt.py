@@ -252,7 +252,7 @@ class Parser(object):
     operator_token = "[+\\-\\*/^!=<>?:]+"
     base_tokens = "|".join([function_token, null_token, number_token, operator_token])
 
-    def __init__(self, variables: List[str] = None):
+    def __init__(self, variables: List[str] | None = None):
         self.regexp_number = re.compile(Parser.number_token)
         self.regexp_tokenise = re.compile(f"\\s*({Parser.base_tokens})\\s*")
 
@@ -347,7 +347,7 @@ class Reducer(object):
         `:func:pewpew.lib.pratt.Reducer`
     """
 
-    def __init__(self, variables: dict = None):
+    def __init__(self, variables: dict | None = None):
         self._variables: Dict[str, Union[float, np.ndarray]] = {}
 
         if variables is not None:

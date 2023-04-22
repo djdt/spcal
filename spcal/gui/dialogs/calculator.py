@@ -1,10 +1,11 @@
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
+from spcal.gui.widgets import CollapsableWidget
 from spcal.pratt import (
     BinaryFunction,
     Parser,
@@ -118,6 +119,21 @@ class CalculatorFormula(QtWidgets.QTextEdit):
             self.completer.complete(rect)
 
 
+class CalculatorExprList(QtWidgets.QListWidget):
+    exprRemoved = QtCore.Signal(str)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.matches(QtGui.QKeySequence.StandardKey.Backspace) or event.matches(
+            QtGui.QKeySequence.StandardKey.Delete
+        ):
+            for index in self.selectedIndexes():
+                item = self.takeItem(index.row())
+                self.exprRemoved.emit(item.text())
+                del item
+
+        super().keyPressEvent(event)
+
+
 class CalculatorDialog(QtWidgets.QDialog):
     """Calculator for element data operations."""
 
@@ -151,6 +167,8 @@ class CalculatorDialog(QtWidgets.QDialog):
             (np.nanpercentile, 2),
         ),
     }
+
+    current_expressions: Dict[str, str] = {}
 
     def __init__(
         self,
@@ -198,23 +216,37 @@ class CalculatorDialog(QtWidgets.QDialog):
         layout_controls.addRow("Formula:", self.formula)
         layout_controls.addRow("Result:", self.output)
 
+        self.expressions = CalculatorExprList()
+        self.expressions.exprRemoved.connect(self.removeExpr)
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
-            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Close
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        # CollapsableWidget needs layout to be defined
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_controls, 1)
-        layout.addWidget(self.button_box, 0)
-
         self.setLayout(layout)
+
+        expr_layout = QtWidgets.QVBoxLayout()
+        expr_layout.addWidget(self.expressions, 1)
+        collapse = CollapsableWidget("Current Expressions", parent=self)
+        collapse.area.setLayout(expr_layout)
+
+        layout.addLayout(layout_controls, 1)
+        layout.addWidget(collapse, 0)
+        layout.addWidget(self.button_box, 0)
 
         self.initialise()  # refreshes
 
     def isComplete(self) -> bool:
         if not self.formula.hasAcceptableInput():
+            return False
+        if len(self.formula.expr.split(" ")) < 2:
+            return False
+        if self.formula.expr in CalculatorDialog.current_expressions.values():
             return False
         return True
 
@@ -224,16 +256,29 @@ class CalculatorDialog(QtWidgets.QDialog):
             complete
         )
 
+    def removeExpr(self, expr: str) -> None:
+        name = next(
+            k for k, v in CalculatorDialog.current_expressions.items() if v == expr
+        )
+        CalculatorDialog.current_expressions.pop(name)
+        if name in self.sample.names:
+            data = rfn.drop_fields(self.sample.responses, name)
+            self.sample.loadData(data, self.sample.import_options)
+        if name in self.reference.names:
+            data = rfn.drop_fields(self.reference.responses, name)
+            self.reference.loadData(data, self.reference.import_options)
+
     def accept(self) -> None:
         new_name = (
             "{"
             + self.formula.toPlainText().translate(str.maketrans("", "", " \n\t"))
             + "}"
         )
-        self.sample.calculated_elements[new_name] = self.formula.expr
+
+        CalculatorDialog.current_expressions[new_name] = self.formula.expr
         self.sample.loadData(self.sample.responses, self.sample.import_options)
 
-        try:
+        try:  # attempt to set response of new variable
             self.reducer.variables = {
                 name: self.sample.io[name].response.baseValue()
                 for name in self.sample.names
@@ -244,11 +289,10 @@ class CalculatorDialog(QtWidgets.QDialog):
             pass
 
         if len(self.reference.names) > 0:
-            self.reference.calculated_elements[new_name] = self.formula.expr
             self.reference.loadData(
                 self.reference.responses, self.reference.import_options
             )
-            try:
+            try:  # attempt to set response of new variable
                 self.reducer.variables = {
                     name: self.reference.io[name].response.baseValue()
                     for name in self.reference.names
@@ -258,7 +302,9 @@ class CalculatorDialog(QtWidgets.QDialog):
             except ReducerException:
                 pass
 
-        super().accept()
+        self.expressions.addItem(self.formula.expr)
+        self.completeChanged()
+        # super().accept()
 
     def initialise(self) -> None:
         self.combo_element.clear()
@@ -274,6 +320,10 @@ class CalculatorDialog(QtWidgets.QDialog):
         )
         self.formula.valid = True
         self.formula.setText(self.sample.names[0])  # refreshes
+
+        self.expressions.clear()
+        for name, expr in self.current_expressions.items():
+            self.expressions.addItem(expr)
 
     def insertFunction(self, index: int) -> None:
         if index == 0:
@@ -298,8 +348,23 @@ class CalculatorDialog(QtWidgets.QDialog):
         try:
             result = self.reducer.reduce(self.formula.expr)
             if np.isscalar(result):
-                self.output.setText(f"{result:.6g}")
+                self.output.setText(f"{result:.6g}")  # type: ignore
             elif isinstance(result, np.ndarray):
                 self.output.setText(f"Events: {result.size}, mean: {result.mean():.6g}")
         except (ReducerException, ValueError) as e:
             self.output.setText(str(e))
+
+    @staticmethod
+    def reduceForData(data: np.ndarray) -> np.ndarray:
+        reducer = Reducer(variables={name: data[name] for name in data.dtype.names})
+
+        for name, expr in CalculatorDialog.current_expressions.items():
+            if name in data.dtype.names:
+                continue  # already calculated
+            try:
+                new_data = reducer.reduce(expr)
+                data = rfn.append_fields(data, name, new_data, usemask=False)
+            except ReducerException:
+                pass
+
+        return data

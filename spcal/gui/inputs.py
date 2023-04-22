@@ -17,7 +17,6 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.limit import SPCalLimit
-from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
@@ -219,31 +218,11 @@ class InputWidget(QtWidgets.QWidget):
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-    def addCalculatedData(self, data: np.ndarray) -> np.ndarray:
-        reducer = Reducer(variables={name: data[name] for name in data.dtype.names})
-        invalid = []
-        for name, expr in self.calculated_elements.items():
-            if name in data.dtype.names:
-                continue  # already calculated
-            try:
-                new_data = reducer.reduce(expr)
-                data = rfn.append_fields(data, name, new_data, usemask=False)
-            except ReducerException:
-                invalid.append(name)
+    def loadData(self, data: np.ndarray, options: dict) -> None:
+        from spcal.gui.dialogs.calculator import CalculatorDialog
 
-        for name in invalid:
-            self.calculated_elements.pop(name)
-
-        return data
-
-    def loadData(
-        self, data: np.ndarray, options: dict, clear_calculations: bool = False
-    ) -> None:
         # Calculate any existing and valid expr
-        if clear_calculations:
-            self.calculated_elements.clear()
-        else:
-            data = self.addCalculatedData(data)
+        data = CalculatorDialog.reduceForData(data)
 
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
@@ -273,6 +252,10 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.action_export_data.setVisible(True)
 
         self.dataLoaded.emit(options["path"])
+
+    def reloadData(self) -> None:
+        if self.responses.size > 0:
+            self.loadData(self.responses, self.import_options)
 
     def saveTrimRegion(self) -> None:
         # plot = next(iter(self.graph.plots.values()))
