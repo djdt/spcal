@@ -105,14 +105,14 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.action_open_batch.setEnabled(False)
 
         self.action_save_session = create_action(
-            "system-save-session",
+            "cloud-upload",
             "Save Session",
             "Save the current options, inputs and data to a session file.",
             self.dialogSaveSession,
         )
 
         self.action_load_session = create_action(
-            "system-load-session",
+            "cloud-download",
             "Restore Session",
             "Restore the saved session.",
             self.dialogLoadSession,
@@ -139,7 +139,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.resetInputs,
         )
         self.action_calculator = create_action(
-            "inset-math-expression",
+            "insert-math-expression",
             "Signal Calculator",
             "Perform arbitrary calculations on signal data.",
             self.dialogCalculator,

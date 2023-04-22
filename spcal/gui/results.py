@@ -165,7 +165,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         # Actions
         self.action_graph_histogram = create_action(
-            "view-object-histogram-linear",
+            "view-object-histogram-logarithmic",
             "Histogram",
             "Overlay of results histograms.",
             lambda: (
@@ -176,7 +176,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.action_graph_histogram.setChecked(True)
         self.action_graph_histogram_single = create_action(
-            "object-rows",
+            "view-object-histogram-linear",
             "Stacked Histograms",
             "Single histogram per result.",
             lambda: (
@@ -201,7 +201,7 @@ class ResultsWidget(QtWidgets.QWidget):
             checkable=True,
         )
         self.action_graph_pca = create_action(
-            "office-chart-pca",
+            "skg-chart-bubble",
             "PCA",
             "Create PCA plot of detections.",
             lambda: self.graph_stack.setCurrentWidget(self.pca_widget),
