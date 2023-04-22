@@ -268,7 +268,11 @@ def read_nu_integ_binary(
 
 
 def read_nu_directory(
-    path: str | Path, max_integ_files: int | None = None, autoblank: bool = True
+    path: str | Path,
+    max_integ_files: int | None = None,
+    autoblank: bool = True,
+    cycle: int | None = None,
+    segment: int | None = None,
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
@@ -280,6 +284,8 @@ def read_nu_directory(
         path: path to data directory
         max_integ_files: maximum number of files to read
         autoblank: apply autoblanking to overrange regions
+        cycle: limit import to cycle
+        segment: limit import to segment
 
     Returns:
         masses from first acquistion
@@ -308,7 +314,9 @@ def read_nu_directory(
     accumulations = run_info["NumAccumulations1"] * run_info["NumAccumulations2"]
 
     # Collect integrated data
-    integs = collect_nu_integ_data(path, integ_index)
+    integs = collect_nu_integ_data(
+        path, integ_index, cyc_number=cycle, seg_number=segment
+    )
 
     # Get masses from data
     masses = get_masses_from_nu_data(
@@ -320,7 +328,9 @@ def read_nu_directory(
 
     # Blank out overrange regions
     if autoblank:
-        autobs = collect_nu_autob_data(path, autob_index)
+        autobs = collect_nu_autob_data(
+            path, autob_index, cyc_number=cycle, seg_number=segment
+        )
         signals = blank_nu_signal_data(
             autobs,
             signals,
