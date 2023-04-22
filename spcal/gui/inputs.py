@@ -450,6 +450,14 @@ class InputWidget(QtWidgets.QWidget):
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
+        self.import_options = {}
+        self.responses = np.array([])
+        self.events = np.array([])
+        self.detections = np.array([])
+        self.labels = np.array([])
+        self.regions = np.array([])
+        self.limits = {}
+
         self.graph.clear()
         for i in range(self.io.stack.count()):
             self.io.stack.widget(i).clearInputs()
