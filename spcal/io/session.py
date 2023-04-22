@@ -2,6 +2,7 @@
 
 
 from pathlib import Path
+from distutils.version import StrictVersion
 
 import h5py
 
@@ -76,7 +77,7 @@ def restoreSession(
     path: Path, options: OptionsWidget, sample: SampleWidget, reference: ReferenceWidget
 ) -> None:
     with h5py.File(path, "r") as h5:
-        if h5.attrs["version"] < "0.9.9":
+        if StrictVersion(h5.attrs["version"]) < StrictVersion("0.9.11"):
             raise ValueError("Unsupported version.")
 
         options.setState(h5["options"].attrs)
