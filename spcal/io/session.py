@@ -6,6 +6,7 @@ from pathlib import Path
 import h5py
 
 from spcal import __version__
+from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 
@@ -45,8 +46,12 @@ def saveSession(
         for key, val in options.state().items():
             options_group.attrs[key] = val
 
+        expressions_group = h5.create_group("expressions")
+        for key, val in CalculatorDialog.current_expressions.items():
+            expressions_group.attrs[key] = val
+
         input: InputWidget
-        for input_key, input in zip(["sample", "reference"], [sample, reference]):  # type: ignore
+        for input_key, input in zip(["sample", "reference"], [sample, reference]):
             if input.responses.dtype.names is not None:
                 input_group = h5.create_group(input_key)
                 dset = input_group.create_dataset(
@@ -75,9 +80,11 @@ def restoreSession(
             raise ValueError("Unsupported version.")
 
         options.setState(h5["options"].attrs)
+        for key, val in h5["expressions"].attrs.items():
+            CalculatorDialog.current_expressions[key] = val
 
         input: InputWidget
-        for key, input in zip(["sample", "reference"], [sample, reference]):  # type: ignore
+        for key, input in zip(["sample", "reference"], [sample, reference]):
             if key in h5:
                 data = h5[key]["data"][:]
                 import_options = restoreImportOptions(h5[key]["import options"].attrs)
