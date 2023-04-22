@@ -823,10 +823,7 @@ class TofwerkImportDialog(_ImportDialogBase):
     def setImportOptions(
         self, options: dict, path: bool = False, dwelltime: bool = True
     ) -> None:
-        if path:
-            self.file_path.setText(str(options["path"]))
-        if dwelltime:
-            self.dwelltime.setBaseValue(options["dwelltime"])
+        super().setImportOptions(options, path, dwelltime)
         self.table.setSelectedIsotopes(options["isotopes"])
         self.combo_other_peaks.setCheckedItems(options["other peaks"])
 
