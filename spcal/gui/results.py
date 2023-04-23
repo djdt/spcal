@@ -10,6 +10,7 @@ from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
+    ScatterOptionsDialog,
 )
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import SinglePlotGraphicsView
@@ -73,6 +74,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 },
             },
             "composition": {"distance": 0.03, "minimum size": "5%"},
+            "scatter": {"weighting": "none"},
         }
         self.results: Dict[str, SPCalResult] = {}
 
@@ -308,6 +310,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
+    def setScatterWeighting(self, weighting: str) -> None:
+        self.graph_options["scatter"]["weighting"] = weighting
+        self.drawGraphScatter()
+
     # Dialogs
     def dialogGraphOptions(
         self,
@@ -328,6 +334,11 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             dlg.distanceChanged.connect(self.setCompDistance)
             dlg.minimumSizeChanged.connect(self.setCompSize)
+        elif self.graph_stack.currentWidget() == self.scatter_widget:
+            dlg = ScatterOptionsDialog(
+                self.graph_options["scatter"]["weighting"], parent=self
+            )
+            dlg.weightingChanged.connect(self.setScatterWeighting)
         else:  # Todo: scatter
             return None
         dlg.show()
@@ -574,6 +585,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 self.scatter_fit_degree.value(),
                 logx=self.check_scatter_logx.isChecked(),
                 logy=self.check_scatter_logy.isChecked(),
+                weighting=self.graph_options["scatter"]["weighting"],
             )
 
     def graphZoomReset(self) -> None:

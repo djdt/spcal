@@ -184,8 +184,8 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
         box = QtWidgets.QGroupBox("Clustering")
         box.setLayout(QtWidgets.QFormLayout())
-        box.layout().addRow("Distance threshold", layout_dist)
-        box.layout().addRow("Minimum cluster size", self.lineedit_size)
+        box.layout().addRow("Distance threshold:", layout_dist)
+        box.layout().addRow("Minimum cluster size:", self.lineedit_size)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
@@ -229,3 +229,62 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
     def reset(self) -> None:
         self.lineedit_distance.setText("3.0")
         self.lineedit_size.setText("5%")
+
+
+class ScatterOptionsDialog(QtWidgets.QDialog):
+    weightingChanged = QtCore.Signal(str)
+
+    def __init__(
+        self,
+        weighting: str = "equal",
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Scatter Options")
+
+        self.weighting = weighting
+
+        self.combo_weighting = QtWidgets.QComboBox()
+        self.combo_weighting.addItems(["none", "1/x", "1/x²", "1/y", "1/y²"])
+
+        box = QtWidgets.QGroupBox("")
+        box.setLayout(QtWidgets.QFormLayout())
+        box.layout().addRow("Weighting:", self.combo_weighting)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.RestoreDefaults
+            | QtWidgets.QDialogButtonBox.Apply
+            | QtWidgets.QDialogButtonBox.Ok
+            | QtWidgets.QDialogButtonBox.Cancel
+        )
+        self.button_box.clicked.connect(self.buttonBoxClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(box)
+        layout.addWidget(self.button_box)
+
+        self.setLayout(layout)
+
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+        sbutton = self.button_box.standardButton(button)
+        if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
+            self.reset()
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.Apply:
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.Ok:
+            self.apply()
+            self.accept()
+        else:
+            self.reject()
+
+    def apply(self) -> None:
+        weighting = self.combo_weighting.currentText()
+
+        # Check for changes
+        if weighting != self.weighting:
+            self.weighting = weighting
+            self.weightingChanged.emit(weighting)
+
+    def reset(self) -> None:
+        self.combo_weighting.setCurrentText("none")
