@@ -51,25 +51,23 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         self, event: QtGui.QMouseEvent
     ):  # Dumb pyqtgraph class, use pos()
         """Use the mouseClick event to toggle the visibility of the plotItem"""
-        if event.button() != QtCore.Qt.MouseButton.LeftButton:
-            return
-
-        if len(self.item_limits) > 0 and QtCore.QRectF(
-            0, 0, self.size, self.size
-        ).contains(event.pos()):
-            visible = any(limit.isVisible() for limit in self.item_limits)
-            for limit in self.item_limits:
-                limit.setVisible(not visible)
-        elif self.item_fit is not None and QtCore.QRectF(
-            self.size + self.pad, 0, self.size, self.size
-        ).contains(event.pos()):
-            visible = self.item_fit.isVisible()
-            self.item_fit.setVisible(not visible)
-        elif QtCore.QRectF(
-            (self.size + self.pad) * 2.0, 0, self.size, self.size
-        ).contains(event.pos()):
-            visible = self.item.isVisible()
-            self.item.setVisible(not visible)
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            if len(self.item_limits) > 0 and QtCore.QRectF(
+                0, 0, self.size, self.size
+            ).contains(event.pos()):
+                visible = any(limit.isVisible() for limit in self.item_limits)
+                for limit in self.item_limits:
+                    limit.setVisible(not visible)
+            elif self.item_fit is not None and QtCore.QRectF(
+                self.size + self.pad, 0, self.size, self.size
+            ).contains(event.pos()):
+                visible = self.item_fit.isVisible()
+                self.item_fit.setVisible(not visible)
+            elif QtCore.QRectF(
+                (self.size + self.pad) * 2.0, 0, self.size, self.size
+            ).contains(event.pos()):
+                visible = self.item.isVisible()
+                self.item.setVisible(not visible)
 
         event.accept()
         self.update()
@@ -192,6 +190,12 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
         if items is not None:
             self.items.extend(items)
 
+    def setItemsVisible(self, visible: bool) -> None:
+        self.item.setVisible(visible)
+        for item in self.items:
+            item.setVisible(visible)
+        self.update()
+
     def addItem(self, item: pyqtgraph.PlotDataItem) -> None:
         self.items.append(item)
         item.setVisible(self.item.isVisible())
@@ -199,7 +203,14 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
 
     def mouseClickEvent(self, event: QtGui.QMouseEvent):
         """Use the mouseClick event to toggle the visibility of the plotItem"""
-        visible = self.item.isVisible()
-        for item in self.items:
-            item.setVisible(not visible)
-        super().mouseClickEvent(event)
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            visible = self.item.isVisible()
+            if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
+                self.setItemsVisible(True)
+                for item in self.parentItem().childItems():
+                    if isinstance(item, MultipleItemSampleProxy) and item != self:
+                        item.setItemsVisible(False)
+            else:
+                self.setItemsVisible(not visible)
+
+            event.accept()
