@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterator, List, Type, TypeVar
+from typing import Dict, Iterator, List, Type
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
