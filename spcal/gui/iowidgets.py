@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generic, Iterator, List, Type, TypeVar
+from typing import Dict, Iterator, List, Type, TypeVar
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -534,16 +534,13 @@ class ResultIOWidget(IOWidget):
         self.background.setUnit(unit)
 
 
-IOType = TypeVar("IOType", bound=IOWidget)
-
-
-class IOStack(QtWidgets.QWidget, Generic[IOType]):
+class IOStack(QtWidgets.QWidget):
     nameChanged = QtCore.Signal(str)
     optionsChanged = QtCore.Signal(str)
 
     def __init__(
         self,
-        io_widget_type: Type[IOType],
+        io_widget_type: Type[IOWidget],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -570,17 +567,17 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
     def __contains__(self, name: str) -> bool:
         return self.combo_name.findText(name) != -1
 
-    def __getitem__(self, name: str) -> IOType:
+    def __getitem__(self, name: str) -> IOWidget:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore
 
-    def __iter__(self) -> Iterator[IOType]:
+    def __iter__(self) -> Iterator[IOWidget]:
         for i in range(self.stack.count()):
             yield self.stack.widget(i)
 
     def names(self) -> List[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
 
-    def widgets(self) -> List[IOType]:
+    def widgets(self) -> List[IOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
     def handleRequest(self, request: str, value: None = None) -> None:
@@ -616,7 +613,7 @@ class IOStack(QtWidgets.QWidget, Generic[IOType]):
             widget.resetInputs()
 
 
-class SampleIOStack(IOStack[SampleIOWidget]):
+class SampleIOStack(IOStack):
     requestIonicResponseTool = QtCore.Signal()
     limitsChanged = QtCore.Signal()
 
@@ -644,7 +641,7 @@ class SampleIOStack(IOStack[SampleIOWidget]):
             widget.lod_count.setReadOnly(not editable)
 
 
-class ReferenceIOStack(IOStack[ReferenceIOWidget]):
+class ReferenceIOStack(IOStack):
     requestIonicResponseTool = QtCore.Signal()
     limitsChanged = QtCore.Signal()
 
@@ -697,6 +694,6 @@ class ReferenceIOStack(IOStack[ReferenceIOWidget]):
             widget.lod_count.setReadOnly(not editable)
 
 
-class ResultIOStack(IOStack[ResultIOWidget]):
+class ResultIOStack(IOStack):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(ResultIOWidget, parent=parent)
