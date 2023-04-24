@@ -2,7 +2,20 @@
 
 SPCal in an spICP-MS calculator with an interactive GUI.
 
-<img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_0.8.2_splash.png" width=500>
+Both quadrupole and ToF data is supported, with native import from Nu Instruments and TOFWERK ICPs.
+
+<img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_0_9_13_sample_window.png" width=600>
+
+## Processing
+
+SPCal has basic data processing and export functions including:
+- histograms and distribution fitting
+- particle composition by heirachical clustering
+- scatter plots and PCAs
+- particle filtering by signal / mass / size
+
+
+<img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_0_9_13_histogram.png" width=300><img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_0_9_13_composition.png" width=300>
 
 ## Installation
 
@@ -16,8 +29,8 @@ cd spcal
 pip install -e .
 ```
 
-The program can then be run from the command line.
+The program can then be run from the command line. See the help for extended usage.
 
 ```bash
-spcal
+spcal --help
 ```
