@@ -62,6 +62,14 @@ class OptionsWidget(QtWidgets.QWidget):
             ]
         ):
             self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        self.efficiency_method.setToolTip(
+            self.efficiency_method.currentData(QtCore.Qt.ToolTipRole)
+        )
+        self.efficiency_method.currentIndexChanged.connect(
+            lambda i: self.efficiency_method.setToolTip(
+                self.efficiency_method.itemData(i, QtCore.Qt.ToolTipRole)
+            )
+        )
 
         # Complete Changed
         self.uptake.baseValueChanged.connect(self.optionsChanged)
