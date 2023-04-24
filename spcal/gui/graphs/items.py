@@ -58,7 +58,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         super().paint(painter, option, widget)
 
 
-class PieChart(QtWidgets.QGraphicsObject, pyqtgraph.GraphicsItem):
+class PieChart(pyqtgraph.GraphicsObject):
     hovered = QtCore.Signal(int)
 
     def __init__(
@@ -72,7 +72,7 @@ class PieChart(QtWidgets.QGraphicsObject, pyqtgraph.GraphicsItem):
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
         """Pie is centered on item.pos()."""
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.setAcceptHoverEvents(True)
 
         if pen is None:
@@ -195,7 +195,6 @@ class StaticRectItemSample(pyqtgraph.GraphicsWidget):
 
 
 if __name__ == "__main__":
-
     from spcal.gui.graphs import color_schemes
 
     app = QtWidgets.QApplication()
