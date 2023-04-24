@@ -115,8 +115,16 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.limit_method.setItemData(
             4,
-            "Manually defined limits in the sample / reference tab.",
+            "Manually define limits in the sample and reference tabs.",
             QtCore.Qt.ToolTipRole,
+        )
+        self.limit_method.setToolTip(
+            self.limit_method.currentData(QtCore.Qt.ToolTipRole)
+        )
+        self.limit_method.currentIndexChanged.connect(
+            lambda i: self.limit_method.setToolTip(
+                self.limit_method.itemData(i, QtCore.Qt.ToolTipRole)
+            )
         )
 
         self.error_rate_poisson = ValueWidget(
@@ -169,7 +177,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
-        self.limit_inputs.layout().addRow("Filter method:", layout_method)
+        self.limit_inputs.layout().addRow("Threshold method:", layout_method)
         self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
         self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
 
@@ -275,9 +283,11 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def limitMethodChanged(self, method: str) -> None:
         self.useManualLimits.emit(method == "Manual Input")
+
         self.check_iterative.setEnabled(method != "Manual Input")
         self.error_rate_poisson.setEnabled(method != "Manual Input")
         self.error_rate_gaussian.setEnabled(method != "Manual Input")
+        self.sigma_gaussian.setEnabled(method != "Manual Input")
 
     def isComplete(self) -> bool:
         if self.window_size.isEnabled() and not self.window_size.hasAcceptableInput():
