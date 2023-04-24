@@ -243,8 +243,8 @@ class OptionsWidget(QtWidgets.QWidget):
 
         if "window size" in state:
             self.window_size.setValue(state["window size"])
-        self.check_use_window.setChecked(state["use window"])
-        self.check_iterative.setChecked(state["iterative"])
+        self.check_use_window.setChecked(bool(state["use window"]))
+        self.check_iterative.setChecked(bool(state["iterative"]))
         if "poisson alpha" in state:
             self.error_rate_poisson.setValue(state["poisson alpha"])
         if "gaussian alpha" in state:
