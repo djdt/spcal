@@ -317,10 +317,11 @@ class TextImportDialog(_ImportDialogBase):
         self.combo_delimiter.setCurrentText(delimiter)
         self.le_ignore_columns.setText(";".join(str(i + 1) for i in options["ignores"]))
         self.spinbox_first_line.setValue(options["first line"])
-        for name, c in zip(options["names"], self.useColumns()):
-            item = self.table.item(self.spinbox_first_line.value() - 1, c)
-            if item is not None:
-                item.setText(name)
+        for name, oldname in zip(options["names"], options["old names"]):
+            for col in range(self.table.columnCount()):
+                item = self.table.item(self.spinbox_first_line.value() - 1, col)
+                if item is not None and item.text() == oldname:
+                    item.setText(name)
         self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
 
     def screenData(self) -> None:
