@@ -1,4 +1,4 @@
-import tempfile
+from pathlib import Path
 
 import numpy as np
 
@@ -38,154 +38,159 @@ results = {
 results["b"].fromNebulisationEfficiency()
 
 
-def test_export_singleparticle_inputs():
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name, results, output_results=False, output_arrays=False
-        )
+def test_export_singleparticle_inputs(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_inputs.csv")
+    export_single_particle_results(
+        tmp, results, output_results=False, output_arrays=False
+    )
 
-        assert tmp.readline().startswith("# SPCal Export")
-        assert tmp.readline().startswith("# Date")
-        assert tmp.readline() == "# File,a.csv\n"
-        assert tmp.readline() == "# Acquisition events,100\n"
-        tmp.readline()
-        assert tmp.readline() == "# Options and inputs,a,b\n"
-        assert tmp.readline() == "# Cell diameter,,10,μm\n"
-        assert tmp.readline() == "# Density,,0.01,g/cm3\n"
-        assert tmp.readline() == "# Dwelltime,0.001,0.001,ms\n"
-        assert tmp.readline() == "# Efficiency,,0.1,\n"
-        assert tmp.readline() == "# Mass fraction,,1,\n"
-        assert tmp.readline() == "# Molar mass,,20000,g/mol\n"
-        assert tmp.readline() == "# Not a kw,10,10,\n"
-        assert tmp.readline() == "# Response,,2,counts/(μg/L)\n"
-        assert tmp.readline() == "# Time,100,100,s\n"
-        assert tmp.readline() == "# Uptake,60,60,ml/min\n"
-        tmp.readline()
-        assert tmp.readline() == "# Limit method,Limit (kw1=1;window=9),Limit\n"
-        tmp.readline()
-        assert tmp.readline() == "# End of export"
+    with tmp.open("r") as fp:
+        assert fp.readline().startswith("# SPCal Export")
+        assert fp.readline().startswith("# Date")
+        assert fp.readline() == "# File,a.csv\n"
+        assert fp.readline() == "# Acquisition events,100\n"
+        fp.readline()
+        assert fp.readline() == "# Options and inputs,a,b\n"
+        assert fp.readline() == "# Cell diameter,,10,μm\n"
+        assert fp.readline() == "# Density,,0.01,g/cm3\n"
+        assert fp.readline() == "# Dwelltime,0.001,0.001,ms\n"
+        assert fp.readline() == "# Efficiency,,0.1,\n"
+        assert fp.readline() == "# Mass fraction,,1,\n"
+        assert fp.readline() == "# Molar mass,,20000,g/mol\n"
+        assert fp.readline() == "# Not a kw,10,10,\n"
+        assert fp.readline() == "# Response,,2,counts/(μg/L)\n"
+        assert fp.readline() == "# Time,100,100,s\n"
+        assert fp.readline() == "# Uptake,60,60,ml/min\n"
+        fp.readline()
+        assert fp.readline() == "# Limit method,Limit (kw1=1;window=9),Limit\n"
+        fp.readline()
+        assert fp.readline() == "# End of export"
 
     units = {
         "cell_diameter": ("m", 1.0),
     }
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name,
-            results,
-            output_results=False,
-            output_arrays=False,
-            units_for_inputs=units,
-        )
+    tmp = tmp_path.joinpath("test_export_inputs_units.csv")
+    export_single_particle_results(
+        tmp, results, output_results=False, output_arrays=False, units_for_inputs=units
+    )
 
+    with tmp.open("r") as fp:
         for i in range(5):
-            tmp.readline()
-        assert tmp.readline() == "# Options and inputs,a,b\n"
-        assert tmp.readline() == "# Cell diameter,,1e-05,m\n"
+            fp.readline()
+        assert fp.readline() == "# Options and inputs,a,b\n"
+        assert fp.readline() == "# Cell diameter,,1e-05,m\n"
 
 
-def test_export_singleparticle_results():
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name, results, output_inputs=False, output_arrays=False
-        )
+def test_export_singleparticle_results(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_results.csv")
+
+    export_single_particle_results(
+        tmp, results, output_inputs=False, output_arrays=False
+    )
+    with tmp.open("r") as fp:
         for i in range(5):
-            tmp.readline()
-        assert tmp.readline() == "# Detection results,a,b\n"
-        assert tmp.readline() == "# Particle number,1,1\n"
-        assert tmp.readline() == "# Number error,1,1\n"
-        assert tmp.readline() == "# Number concentration,,100,#/L\n"
-        assert tmp.readline() == "# Mass concentration,,4.5e-17,kg/L\n"
-        tmp.readline()
-        assert tmp.readline() == "# Background,1,0.5,counts\n"
-        assert tmp.readline() == "#,,1.6838903e-07,m\n"
-        assert tmp.readline() == "# Background error,0,0,counts\n"
-        assert tmp.readline() == "# Ionic background,,2.5e-10,kg/L\n"
-        tmp.readline()
-        assert tmp.readline() == "# Mean,a,b\n"
-        assert tmp.readline() == "#,5,9,counts\n"
-        assert tmp.readline() == "#,,4.5e-19,kg\n"
-        assert tmp.readline() == "#,,4.413041e-07,m\n"
-        assert tmp.readline() == "#,,4.2971835e-08,mol/L\n"
+            fp.readline()
+        assert fp.readline() == "# Detection results,a,b\n"
+        assert fp.readline() == "# Particle number,1,1\n"
+        assert fp.readline() == "# Number error,1,1\n"
+        assert fp.readline() == "# Number concentration,,100,#/L\n"
+        assert fp.readline() == "# Mass concentration,,4.5e-17,kg/L\n"
+        fp.readline()
+        assert fp.readline() == "# Background,1,0.5,counts\n"
+        assert fp.readline() == "#,,1.6838903e-07,m\n"
+        assert fp.readline() == "# Background error,0,0,counts\n"
+        assert fp.readline() == "# Ionic background,,2.5e-10,kg/L\n"
+        fp.readline()
+        assert fp.readline() == "# Mean,a,b\n"
+        assert fp.readline() == "#,5,9,counts\n"
+        assert fp.readline() == "#,,4.5e-19,kg\n"
+        assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
-        assert tmp.readline() == "# Median,a,b\n"
-        assert tmp.readline() == "#,5,9,counts\n"
-        assert tmp.readline() == "#,,4.5e-19,kg\n"
-        assert tmp.readline() == "#,,4.413041e-07,m\n"
-        assert tmp.readline() == "#,,4.2971835e-08,mol/L\n"
+        assert fp.readline() == "# Median,a,b\n"
+        assert fp.readline() == "#,5,9,counts\n"
+        assert fp.readline() == "#,,4.5e-19,kg\n"
+        assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
-        assert tmp.readline() == "# Limits of detection,a,b\n"
-        assert tmp.readline() == "#,8 - 10,9,counts\n"
-        assert tmp.readline() == "#,,4.5e-19,kg\n"
-        assert tmp.readline() == "#,,4.413041e-07,m\n"
-        assert tmp.readline() == "#,,4.2971835e-08,mol/L\n"
-        tmp.readline()
-        assert tmp.readline() == "# End of export"
+        assert fp.readline() == "# Limits of detection,a,b\n"
+        assert fp.readline() == "#,8 - 10,9,counts\n"
+        assert fp.readline() == "#,,4.5e-19,kg\n"
+        assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
+        fp.readline()
+        assert fp.readline() == "# End of export"
 
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name,
-            results,
-            output_inputs=False,
-            output_arrays=False,
-            units_for_results={"mass": ("fg", 1e-18)},
-        )
+    tmp = tmp_path.joinpath("test_export_results_units.csv")
+    export_single_particle_results(
+        tmp,
+        results,
+        output_inputs=False,
+        output_arrays=False,
+        units_for_results={"mass": ("fg", 1e-18)},
+    )
+    with tmp.open("r") as fp:
         for i in range(9):
-            tmp.readline()
-        assert tmp.readline() == "# Mass concentration,,45,fg/L\n"
+            fp.readline()
+        assert fp.readline() == "# Mass concentration,,45,fg/L\n"
         for i in range(4):
-            tmp.readline()
-        assert tmp.readline() == "# Ionic background,,2.5e+08,fg/L\n"
+            fp.readline()
+        assert fp.readline() == "# Ionic background,,2.5e+08,fg/L\n"
         for i in range(3):
-            tmp.readline()
-        assert tmp.readline() == "#,,0.45,fg\n"
+            fp.readline()
+        assert fp.readline() == "#,,0.45,fg\n"
 
 
-def test_export_singleparticle_arrays():
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name, results, output_inputs=False, output_results=False
-        )
+def test_export_singleparticle_arrays(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_arrays.csv")
 
+    export_single_particle_results(
+        tmp, results, output_inputs=False, output_results=False
+    )
+
+    with tmp.open("r") as fp:
         for i in range(5):
-            tmp.readline()
-        tmp.readline()
-        assert tmp.readline() == "a,b,b,b,b\n"
-        assert tmp.readline() == "counts,counts,kg,m,mol/L\n"
+            fp.readline()
+        fp.readline()
+        assert fp.readline() == "a,b,b,b,b\n"
+        assert fp.readline() == "counts,counts,kg,m,mol/L\n"
         # Todo, compute these
-        assert tmp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
-        tmp.readline()
-        assert tmp.readline() == "# End of export"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
+        fp.readline()
+        assert fp.readline() == "# End of export"
 
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name,
-            results,
-            output_inputs=False,
-            output_results=False,
-            units_for_results={"signal": ("cts", 1.0), "mass": ("fg", 1e-18)},
-        )
+    tmp = tmp_path.joinpath("test_export_arrays_units.csv")
+    export_single_particle_results(
+        tmp,
+        results,
+        output_inputs=False,
+        output_results=False,
+        units_for_results={"signal": ("cts", 1.0), "mass": ("fg", 1e-18)},
+    )
+    with tmp.open("r") as fp:
         for i in range(7):
-            tmp.readline()
-        assert tmp.readline().startswith("cts,cts,fg")
-        assert tmp.readline().startswith("5,9,0.45")
+            fp.readline()
+        assert fp.readline().startswith("cts,cts,fg")
+        assert fp.readline().startswith("5,9,0.45")
 
 
-def test_export_singleparticle_compositions():
-    with tempfile.NamedTemporaryFile(mode="w+") as tmp:
-        export_single_particle_results(
-            tmp.name,
-            results,
-            output_inputs=False,
-            output_results=False,
-            output_arrays=False,
-            output_compositions=True,
-        )
+def test_export_singleparticle_compositions(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_arrays.csv")
+    export_single_particle_results(
+        tmp,
+        results,
+        output_inputs=False,
+        output_results=False,
+        output_arrays=False,
+        output_compositions=True,
+    )
 
+    with tmp.open("r") as fp:
         for i in range(5):
-            tmp.readline()
-        # tmp.readline()
-        assert tmp.readline() == "# Peak composition,count,a,error,b,error\n"
-        assert tmp.readline() == "# Signal,1,0.3571,0,0.6429,0\n"
-        assert tmp.readline() == "# Mass,1,0,0,1,0\n"
-        assert tmp.readline() == "# Size,1,0,0,1,0\n"
-        assert tmp.readline() == "# Cell concentration,1,0,0,1,0\n"
+            fp.readline()
+        # fp.readline()
+        assert fp.readline() == "# Peak composition,count,a,error,b,error\n"
+        assert fp.readline() == "# Signal,1,0.3571,0,0.6429,0\n"
+        assert fp.readline() == "# Mass,1,0,0,1,0\n"
+        assert fp.readline() == "# Size,1,0,0,1,0\n"
+        assert fp.readline() == "# Cell concentration,1,0,0,1,0\n"
