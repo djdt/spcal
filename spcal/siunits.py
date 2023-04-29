@@ -1,3 +1,5 @@
+"""Multipliers for various SI units."""
+
 mass_units = {
     "ag": 1e-21,
     "fg": 1e-18,

@@ -12,7 +12,7 @@ def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
 
     Args:
         x: array
-        limit: minium value in regions
+        limit: minimum value in regions
 
     Returns:
         regions [start, end]
@@ -35,6 +35,7 @@ def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
     Args:
         regions: from `get_contiguous_regions`
         size: size of array
+
     Returns:
         labeled regions
     """
@@ -62,8 +63,8 @@ def accumulate_detections(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
-    Contiguous regions above `limit_accumulation` that contain at least one value above
-    `limit_detection` are summed or integrated (sum - `limit_accumulation`).
+    Contiguous regions above ``limit_accumulation`` that contain at least one value
+    above ``limit_detection`` are summed or integrated (sum - ``limit_accumulation``).
 
     Args:
         y: array
@@ -122,6 +123,8 @@ def combine_detections(
 
     Returns:
         dict of total sum per peak
+        combined labels
+        combined regions
 
     """
     if not all(k in regions.keys() for k in sums.keys()):  # pragma: no cover
@@ -155,6 +158,7 @@ def combine_detections(
 
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     """Calculates the maxima of each region.
+
     Does not work with overlapping regions.
 
     Args:
@@ -165,11 +169,5 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         idx of maxima
     """
 
-    # def maxima(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    #     idx = np.zeros(a.size, dtype=int)
-    #     idx[b[1:]] = 1
-    #     shift = (a.max() + 1) * np.cumsum(idx)
-    #     sortidx = np.argsort(a + shift)
-    #     return sortidx[np.append(b[1:], a.size) - 1] - b
     idx = maxima(y, regions)
     return idx

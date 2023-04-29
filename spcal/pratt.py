@@ -1,11 +1,11 @@
 """Pratt parsing.
 
-Based on https://www.engr.mun.ca/~theo/Misc/pratt_parsing.htm
+Based on `<https://www.engr.mun.ca/~theo/Misc/pratt_parsing.html>`_.
 """
-import numpy as np
 import re
-
 from typing import Dict, List, Union
+
+import numpy as np
 
 
 class ParserException(Exception):
@@ -17,9 +17,14 @@ class ReducerException(Exception):
 
 
 class Expr(object):
-    """Stores expressions for conversion to string."""
+    """Stores expressions for conversion to string.
 
-    def __init__(self, value: str, children: List["Expr"] = None):
+    Attributes:
+        value: token value
+        children: list of any child expressions
+    """
+
+    def __init__(self, value: str, children: List["Expr"] | None = None):
         self.value = value
         self.children = children
 
@@ -237,13 +242,10 @@ class Parser(object):
     Args:
         variables: tokens to consider as values
 
-    Parameters:
+    Attributes:
         variables: list of value tokens
         nulls: dict of non-binding tokens
         lefts: dict of left-binding tokens
-
-    See Also:
-        `:func:pewpew.lib.pratt.Reducer`
     """
 
     function_token = "[a-z]+[a-zA-Z0-9_]*"
@@ -339,12 +341,9 @@ class Reducer(object):
     Args:
         variables: dict mapping tokens to values
 
-    Parameters:
+    Attributes:
         variables: dict of tokens and values
         operations: dict of (operation, number of inputs)
-
-    See Also:
-        `:func:pewpew.lib.pratt.Reducer`
     """
 
     def __init__(self, variables: dict | None = None):

@@ -1,3 +1,4 @@
+"""Agglomerative clustering."""
 from typing import Dict, Tuple
 
 import numpy as np
@@ -6,6 +7,17 @@ from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclid
 
 
 def prepare_data_for_clustering(data: np.ndarray | Dict[str, np.ndarray]) -> np.ndarray:
+    """Prepare data by stacking into 2D array.
+
+    Takes a dictionary or structured array and creates an NxM array, where M is the
+    number of names / keys and N the length of each array.
+
+    Args:
+        data: dictionary of names: array or structured array
+
+    Returns:
+        2D array, ready for ``agglomerative_cluster``
+    """
     names = list(data.dtype.names if isinstance(data, np.ndarray) else data.keys())
 
     X = np.empty((len(data[names[0]]), len(names)), dtype=np.float64)
@@ -19,6 +31,21 @@ def prepare_data_for_clustering(data: np.ndarray | Dict[str, np.ndarray]) -> np.
 def agglomerative_cluster(
     X: np.ndarray, max_dist: float
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Cluster data.
+
+    Performs agglomerative clustering by merging close clusters until none are
+    closer than ``max_dist``. Distance is measured as euclidean distance.
+    Clusters are sorted by size, largest to smallest.
+
+    Args:
+        X: 2D array (samples, features)
+        max_dist: maximum distance between clusters
+
+    Returns:
+        cluster means
+        cluster stds
+        cluster counts
+    """
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
     T = cluster_by_distance(Z, ZD, max_dist) - 1  # start ids at 0

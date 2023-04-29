@@ -1,19 +1,21 @@
+"""Distribution fitting calculations."""
 from typing import Callable, Tuple
 
 import numpy as np
 
-# _s2 = np.sqrt(2.0)
-_s2pi = np.sqrt(2.0 * np.pi)
-
 
 def normal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     """Probabilty density function of a normal distribution."""
-    return 1.0 / (sigma * _s2pi) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+    return 1.0 / (sigma * np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
 def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     """Probabilty density function of a log-normal distribution."""
-    return 1.0 / (x * sigma * _s2pi) * np.exp(-0.5 * ((np.log(x) - mu) / sigma) ** 2)
+    return (
+        1.0
+        / (x * sigma * np.sqrt(2.0 * np.pi))
+        * np.exp(-0.5 * ((np.log(x) - mu) / sigma) ** 2)
+    )
 
 
 def nelder_mead(
@@ -29,7 +31,28 @@ def nelder_mead(
     stol: float = 1e-3,
     ftol: float = 1e-3,
 ) -> np.ndarray:
+    """Function optimisation.
 
+    Optimises parameters of ``func`` to fit ``func(x, params)`` to ``y``. The
+    ``simplex`` is an array of best guesses and maximums for all params. The
+    shape should be (n+1, n) for n params.
+
+    Args:
+        func: function to optimise
+        x: x values (passed to func)
+        y: `truth` values
+        simplex: array of parameters
+        alpha: reflection coefficient
+        gamma: expansion coefficient
+        rho: contraction coefficient
+        sigma: shrink coefficient
+        max_iterations: maximum fit attempts
+        stol: minimum simplex difference
+        ftol: minimum fit distance
+
+    Return:
+        optimal parameters for ``func``
+    """
     # Calculate the values at each point in simplex
     fx = np.array([func(x, y, *s) for s in simplex])
 
@@ -89,6 +112,16 @@ def nelder_mead(
 
 
 def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
+    """Fit a normal distribution to data.
+
+    Args:
+        x: x values
+        y: y values
+
+    Returns:
+        values of fit for ``x``
+    """
+
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, scale: float
     ) -> float:
@@ -108,6 +141,16 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndar
 
 
 def fit_lognormal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
+    """Fit a log-normal distribution to data.
+
+    Args:
+        x: x values
+        y: y values
+
+    Returns:
+        values of fit for ``x``
+    """
+
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, loc: float = 0.0
     ) -> float:

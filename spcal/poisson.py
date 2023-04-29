@@ -1,8 +1,11 @@
-"""Poission limits of detection.
+"""Poission limits of criticality and detection.
 
-See:
-https://www.epa.gov/radiation/marlap-manual-and-supporting-documents
-https://academic.oup.com/biomet/article/28/3-4/437/220104
+Formulas used here are taken from the `MARLAP manual<https://www.epa.gov/
+radiation/marlap-manual-and-supporting-documents>`_.
+
+The limit of crticality should be used for all particle detection descisions,
+not the limit of detection. For an explaination of why, see the manual linked above.
+
 """
 from statistics import NormalDist
 from typing import Tuple
@@ -58,7 +61,7 @@ def formula_a(
 
     Uses the equations from the MARLAP manual, 20.48, 20.73.
     Reccomended for mean backgrounds > 100.
-    Sc equivilent to 'currie(ub=Nb)' if t_sample = t_blank.
+    Sc equivilent to ``currie(ub=Nb)`` if t_sample = t_blank.
 
     Args:
         nb: mean of background

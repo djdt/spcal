@@ -21,7 +21,8 @@ def cell_concentration(
     masses: float | np.ndarray, diameter: float, molar_mass: float
 ) -> float | np.ndarray:
     """Calculates intracellular concentrations.
-    c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3)) / M (kg/mol)
+    c (mol/L) = m (kg) / (V[4.0 / 3.0 * pi * (d (m) / 2) ^ 3] (m^3) * 1000 (L/m^3))
+        / M (kg/mol)
 
     Args:
         masses: array of material masses (kg)
@@ -96,7 +97,7 @@ def particle_mass(
 def particle_number_concentration(
     count: int, efficiency: float, flow_rate: float, time: float
 ) -> float:
-    """Number concentratioe total volume of the industrial chemical introduced in a registration year bythe person does not excn of particles.
+    """Number concentration.
     PNC (/L) = N / (η * V (L/s) * T (s))
 
     Args:
@@ -144,13 +145,3 @@ def reference_particle_mass(density: float, diameter: float) -> float:
         diameter: reference diameter (m)
     """
     return 4.0 / 3.0 * np.pi * (diameter / 2.0) ** 3 * density
-
-
-# def reference_particle_size(mass_std: float, density_std: float) -> float:
-#     """Calculates particle diameter in m.
-
-#     Args:
-#         mass: particle mass (kg)
-#         density: reference density (kg/m3)
-#     """
-#     return np.cbrt(6.0 / np.pi * mass_std / density_std)

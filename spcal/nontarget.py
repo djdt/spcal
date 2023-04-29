@@ -1,3 +1,4 @@
+"""Functions for screening data for interesting signals."""
 from statistics import NormalDist
 
 import numpy as np
@@ -12,8 +13,8 @@ def non_target_screen(
     gaussian_alpha: float = 1e-6,
 ) -> np.ndarray:
     """Screen data for potential NP signals.
-    Finds signals with `minimum_count_ppm` ppm points greater than LOD.
-    The LOD is calcualted as per `SPCalLimit.fromBest
+    Finds signals with ``minimum_count_ppm`` ppm points greater than LOD.
+    The LOD is calcualted as per ``SPCalLimit.fromBest``.
 
     Args:
         x: input data shape (events, elements)
