@@ -1,3 +1,5 @@
+"""Loading data from Nu Instruments ICP-ToF."""
+
 import json
 import logging
 from pathlib import Path
@@ -10,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def is_nu_run_info_file(path: Path) -> bool:
+    """Checks file exists and is called 'run.info'."""
     if not path.exists() or path.name != "run.info":
         return False
     return True
@@ -153,6 +156,17 @@ def get_dwelltime_from_info(info: dict) -> float:
 def get_signals_from_nu_data(
     integs: List[np.ndarray], num_acc: int, single_ion_area: float
 ) -> np.ndarray:
+    """Converts signals from integ data to counts.
+
+    Args:
+        integ: from `read_integ_binary`
+        num_acc: number of accumulations per acquisition
+        single_ion_area: from run.info 'AverageSingleIonArea'
+
+    Returns:
+        signals in counts
+    """
+
     max_acq = max(integ["acq_number"][-1] for integ in integs)
     signals = np.full(
         (max_acq // num_acc, integs[0]["result"]["signal"].shape[1]),
@@ -171,7 +185,7 @@ def get_masses_from_nu_data(
     """Converts Nu peak centers into masses.
 
     Args:
-        data: from `read_integ_binary`
+        integ: from `read_integ_binary`
         cal_coef: from run.info 'MassCalCoefficients'
         segment_delays: dict of segment nums and delays from `SegmentInfo`
 
