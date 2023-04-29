@@ -5,7 +5,6 @@ from typing import Dict
 import bottleneck as bn
 import numpy as np
 
-from spcal.calc import moving_mean, moving_median, moving_std
 from spcal.poisson import formula_c as poisson_limits
 
 logger = logging.getLogger(__name__)
