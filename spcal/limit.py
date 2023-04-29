@@ -1,3 +1,4 @@
+"""Helper class for SPCal limits and thresholding."""
 import logging
 from statistics import NormalDist
 from typing import Dict
@@ -11,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalLimit(object):
+    """Limit and threshold class.
+
+    Attributes:
+        mean_background: """
     def __init__(
         self,
         mean_background: float | np.ndarray,
@@ -19,7 +24,7 @@ class SPCalLimit(object):
         params: Dict[str, float],
         window_size: int = 0,
     ):
-        self.mean_background = mean_background
+        self.mean_signal = mean_background
         self.detection_threshold = detection_threshold
 
         self.name = name

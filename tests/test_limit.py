@@ -83,15 +83,16 @@ def test_limit_iterative():
     y[idx] = y[idx] * 1000.0
 
     assert np.isclose(  # Estimates background within 1%
-        SPCalLimit.fromPoisson(y, max_iters=10).mean_background,
+        SPCalLimit.fromPoisson(y, max_iters=10).mean_signal,
         50.0,
         atol=0.0,
         rtol=0.01,
     )
 
     assert np.isclose(  # Estimates background within 1%
-        SPCalLimit.fromGaussian(y, alpha=0.001, max_iters=10).mean_background,
+        SPCalLimit.fromGaussian(y, alpha=0.001, max_iters=10).mean_signal,
         50.0,
         atol=0.0,
         rtol=0.01,
     )
+

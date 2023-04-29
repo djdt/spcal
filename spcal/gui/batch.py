@@ -61,7 +61,7 @@ def process_data(
         # === Create detections ===
         d[name], l[name], r[name] = accumulate_detections(
             data[name],
-            limits[name].mean_background,
+            limits[name].mean_signal,
             limits[name].detection_threshold,
             integrate=True,
         )

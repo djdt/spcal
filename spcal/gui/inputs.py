@@ -288,7 +288,7 @@ class InputWidget(QtWidgets.QWidget):
                 ) = spcal.accumulate_detections(
                     responses,
                     np.minimum(
-                        self.limits[name].mean_background,
+                        self.limits[name].mean_signal,
                         self.limits[name].detection_threshold,
                     ),
                     self.limits[name].detection_threshold,
@@ -443,7 +443,7 @@ class InputWidget(QtWidgets.QWidget):
 
             self.graph.drawLimits(
                 self.events[trim[0] : trim[1]],
-                self.limits[name].mean_background,
+                self.limits[name].mean_signal,
                 self.limits[name].detection_threshold,
                 pen=pen,
             )

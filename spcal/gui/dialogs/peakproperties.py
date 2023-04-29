@@ -71,7 +71,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         maxima = detection_maxima(response, regions) + trim[0]
 
         # heights from peak maxima to baseline
-        heights = response[maxima] - self.input.limits[name].mean_background
+        heights = response[maxima] - self.input.limits[name].mean_signal
 
         widths = regions[:, 1] - regions[:, 0]
         # symmetry as how offcenter peak maxima is
