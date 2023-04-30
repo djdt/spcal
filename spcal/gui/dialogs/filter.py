@@ -173,3 +173,132 @@ class FilterDialog(QtWidgets.QDialog):
     def accept(self) -> None:
         self.filtersChanged.emit(self.rows.asList())
         super().accept()
+
+
+class FilterItem(QtWidgets.QWidget):
+    closeRequested = QtCore.Signal(QtWidgets.QWidget)
+
+    def __init__(
+        self,
+        elements: List[str],
+        filter: Tuple[str, str, str, float] | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+
+        self.elements = QtWidgets.QComboBox()
+        self.elements.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.AdjustToContentsOnFirstShow
+        )
+        self.elements.addItems(elements)
+
+        self.unit = QtWidgets.QComboBox()
+        self.unit.addItems(["Intensity", "Mass", "Size"])
+        self.unit.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContentsOnFirstShow)
+        self.unit.currentTextChanged.connect(self.changeUnits)
+
+        self.operation = QtWidgets.QComboBox()
+        self.operation.addItems([">", "<", ">=", "<=", "=="])
+
+        self.value = UnitsWidget(units=signal_units)
+        self.value.combo.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+
+        if filter is not None:
+            self.elements.setCurrentText(filter[0])
+            self.unit.setCurrentText(filter[1])
+            self.operation.setCurrentText(filter[2])
+            self.value.setBaseValue(filter[3])
+            self.value.setBestUnit()
+
+        self.action_close = create_action(
+            "list-remove", "Remove", "Remove the filter.", self.close
+        )
+
+        self.button_close = QtWidgets.QToolButton()
+        self.button_close.setAutoRaise(True)
+        self.button_close.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.button_close.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
+        self.button_close.setDefaultAction(self.action_close)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.elements, 0)
+        layout.addWidget(self.unit, 0)
+        layout.addWidget(self.operation, 0)
+        layout.addWidget(self.value, 1)
+        layout.addWidget(self.button_close, 0, QtCore.Qt.AlignRight)
+        self.setLayout(layout)
+
+    def asTuple(self) -> Tuple[str, str, str, str, float | None]:
+        return (
+            self.boolean.currentText(),
+            self.elements.currentText(),
+            self.unit.currentText(),
+            self.operation.currentText(),
+            self.value.baseValue(),
+        )
+
+    def close(self) -> None:
+        self.closeRequested.emit(self)
+        super().close()
+
+    def changeUnits(self, unit: str) -> None:
+        if unit == "Intensity":
+            units = signal_units
+        elif unit == "Mass":
+            units = mass_units
+        elif unit == "Size":
+            units = size_units
+        else:
+            raise ValueError("changeUnits: unknown unit")
+
+        self.value.setUnits(units)
+
+
+class _FilterDialog(QtWidgets.QDialog):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Particle Composition Filters")
+
+        self.list = QtWidgets.QListWidget()
+        self.list.setDragEnabled(True)
+        self.list.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Close
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.list, 1)
+        layout.addWidget(self.button_box, 0)
+        self.setLayout(layout)
+
+    def addFilter(self):
+        item = QtWidgets.QListWidgetItem()
+        widget = FilterItem(["a", "b", "c"])
+        self.list.insertItem(self.list.count(), item)
+        self.list.setItemWidget(item, widget)
+        item.setSizeHint(widget.sizeHint())
+
+    def addBooleanOr(self):
+        item = QtWidgets.QListWidgetItem()
+        widget = QtWidgets.QFrame()
+        widget.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        self.list.insertItem(self.list.count(), item)
+        self.list.setItemWidget(item, widget)
+        item.setSizeHint(widget.sizeHint())
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+
+    dlg = _FilterDialog()
+    dlg.addFilter()
+    dlg.addFilter()
+    dlg.addBooleanOr()
+    dlg.addFilter()
+    dlg.show()
+    app.exec()

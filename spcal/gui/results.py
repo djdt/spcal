@@ -694,6 +694,21 @@ class ResultsWidget(QtWidgets.QWidget):
         # Clear out any old filters
         self.filters = [f for f in self.filters if f[1] in self.results.keys()]
 
+        # valid = np.ones(next(iter(results.values())).number)
+
+        # for filter_group in self.filters:
+        #     group_valid = np.ones(next(iter(results.values())).number)
+        #     for name, unit_label, opstr, value in filter_group:
+        #         oper = self.operations[opstr]
+        #         unit = self.unit_labels[unit_label]
+
+        #         if unit in results[name].detections:
+        #             data = results[name].detections[unit]
+        #             group_valid = np.logical_and(oper(data, value), group_valid)
+        #     valid = np.logical_or(group_valid, valid)
+
+        # valid_indicies = np.flatnonzero(valid)
+
         for filt in self.filters:
             boolean, name, unit, operation, value = filt
 
