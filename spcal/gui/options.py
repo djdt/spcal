@@ -274,7 +274,9 @@ class OptionsWidget(QtWidgets.QWidget):
         if alpha is None:
             alpha = 1e-6
         sigma = NormalDist().inv_cdf(1.0 - alpha)
+        self.sigma_gaussian.valueChanged.disconnect(self.updateGaussianAlpha)
         self.sigma_gaussian.setValue(round(sigma, 4))
+        self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
