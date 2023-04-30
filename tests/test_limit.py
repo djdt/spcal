@@ -96,3 +96,24 @@ def test_limit_iterative():
         rtol=0.01,
     )
 
+
+def test_gaussian_error_rates():
+    for mean in [20.0, 50.0, 100.0]:
+        x = np.random.normal(mean, mean, size=10000)
+        for alpha in [0.01, 0.05, 0.1]:
+            limit = SPCalLimit.fromGaussian(x, alpha=alpha, max_iters=0)
+            error_rate = np.count_nonzero(x > limit.detection_threshold) / x.size
+            assert np.isclose(error_rate, alpha, atol=0.01)
+
+
+# def test_poisson_error_rates():
+#     for mean in [5.0, 10.0]:
+#         x = np.random.normal(mean, mean, size=100000)
+#         x[x < 0] = 0.0
+#         # x = x[x >= 0.0]
+#         for alpha in [0.01, 0.05, 0.1]:
+#             print(mean, alpha)
+#             limit = SPCalLimit.fromPoisson(x, alpha=alpha, max_iters=0)
+#             print(limit.detection_threshold)
+#             error_rate = np.count_nonzero(x > limit.detection_threshold) / x.size
+#             assert np.isclose(error_rate, alpha, rtol=0.2)
