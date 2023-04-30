@@ -1,3 +1,4 @@
+"""Loading data from TOFWERK ICP-ToF."""
 from pathlib import Path
 from typing import List, Tuple
 
