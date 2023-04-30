@@ -88,6 +88,18 @@ def formula_a(
     return Sc, Sd
 
 
+def formula_b(
+    Nb: float | np.ndarray,
+    alpha: float = 0.05,
+    beta: float = 0.05,
+    t_sample: float = 1.0,
+    t_blank: float = 1.0,
+) -> Tuple[float | np.ndarray, float | np.ndarray]:
+    raise NotImplementedError(
+        "formula_b is not reccomended and is therefore not implemented"
+    )
+
+
 def formula_c(
     Nb: float | np.ndarray,
     alpha: float = 0.05,
