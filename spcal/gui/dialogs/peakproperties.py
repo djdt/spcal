@@ -2,8 +2,8 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.detection import detection_maxima
-from spcal.gui.modelviews import BasicTable
 from spcal.gui.inputs import InputWidget
+from spcal.gui.modelviews import BasicTable
 from spcal.siunits import time_units
 
 
@@ -61,10 +61,19 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
+    def clear(self) -> None:
+        for i in range(3):
+            for j in range(5):
+                self.table.item(i, j).setText("")
+
     def updateValues(self) -> None:
         name = self.combo_names.currentText()
 
         detected = np.flatnonzero(self.input.detections[name])
+        if detected.size == 0:
+            self.clear()
+            return
+
         regions = self.input.regions[detected]
         trim = self.input.trimRegion(name)
         response = self.input.trimmedResponse(name)
