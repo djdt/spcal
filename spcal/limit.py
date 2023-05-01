@@ -6,12 +6,14 @@ from typing import Dict
 import bottleneck as bn
 import numpy as np
 
-from spcal.poisson import formula_c as poisson_limits
+from spcal.poisson import formula_c
 
 logger = logging.getLogger(__name__)
 
 
 class SPCalLimit(object):
+    poisson_formula = formula_c
+
     """Limit and threshold class.
 
     Limits should be created through the class methods ``fromMethodString``,
@@ -197,7 +199,7 @@ class SPCalLimit(object):
                 )
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
-            sc, _ = poisson_limits(mu, alpha=alpha)
+            sc, _ = SPCalLimit.poisson_formula(mu, alpha=alpha)
             threshold = np.ceil(mu + sc)
             iters += 1
 
