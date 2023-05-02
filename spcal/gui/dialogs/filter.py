@@ -91,8 +91,13 @@ class FilterItemWidget(QtWidgets.QWidget):
         index = self.names.findText(filter.name)
         if index == -1:
             raise KeyError(f"names combo has no name {filter.name}")
+        label = next(
+            lbl
+            for lbl, unit in FilterItemWidget.unit_labels.items()
+            if unit == filter.unit
+        )
         self.names.setCurrentIndex(index)
-        self.unit.setCurrentText(filter.unit)
+        self.unit.setCurrentText(label)
         self.operation.setCurrentText(filter.operation)
         self.value.setBaseValue(filter.value)
         self.value.setBestUnit()
