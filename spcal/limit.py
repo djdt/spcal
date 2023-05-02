@@ -117,6 +117,24 @@ class SPCalLimit(object):
         alpha: float = 0.001,
         size: int = 10000,
     ) -> "SPCalLimit":
+        """Calculate threshold from simulated compound distribution.
+
+        ToF data is a the sum of multiple Poisson accumulation events,
+        each of which are an independant sample of a near Gaussian SIS distribution.
+        This function will simulate the expected background and calculate the
+        appropriate quantile for a given alpha value.
+
+        Args:
+            responses: single-particle data
+            sis: single ion signal as average or distribution
+            size: size of simulation
+            alpha: type I error rate
+
+        References:
+            Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
+                for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
+                https://doi.org/10.1021/acs.analchem.2c05243
+        """
         lam = responses.mean()
 
         if isinstance(sis, float):  # passed average, give an estiamtion
