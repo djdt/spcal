@@ -32,6 +32,7 @@ class SPCalLimit(object):
         params: filter / method parameters
         window_size: size of window used or 0 if unwindowed
     """
+
     def __init__(
         self,
         mean_background: float | np.ndarray,
@@ -104,6 +105,38 @@ class SPCalLimit(object):
             )
         else:
             raise ValueError("fromMethodString: unknown method")
+
+    @classmethod
+    def fromCompoundPoisson(
+        cls,
+        responses: np.ndarray,
+        sis: float | np.ndarray,
+        n_accumulations: int,
+        alpha: float = 0.001,
+        size: int = 10000,
+    ) -> "SPCalLimit":
+        lam = responses.mean()
+
+        if isinstance(sis, float):  # passed average, give an estiamtion
+            sis = np.random.normal(sis, sis, size=100)
+
+        sim = np.zeros(size)
+        for _ in range(n_accumulations):
+            poi = np.random.poisson(lam / n_accumulations, size=size)
+            unique, idx, counts = np.unique(
+                poi, return_counts=True, return_inverse=True
+            )
+            for i, (u, c) in enumerate(zip(unique, counts)):
+                sim[idx == i] += np.sum(np.random.choice(sis, size=(u, c)), axis=0)
+
+        sim /= np.mean(sis)
+        return SPCalLimit(
+            lam,
+            float(np.quantile(sim, alpha)),
+            name="CompoundPoisson",
+            params={"alpha": alpha},
+            window_size=0,
+        )
 
     @classmethod
     def fromGaussian(
