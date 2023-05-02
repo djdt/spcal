@@ -324,7 +324,7 @@ class InputWidget(QtWidgets.QWidget):
                 limit = self.io[name].lod_count.value()
                 if limit is not None:
                     self.limits[name] = SPCalLimit(
-                        np.mean(response),
+                        np.nanmean(response),
                         limit,
                         name="Manual Input",
                         params={},
