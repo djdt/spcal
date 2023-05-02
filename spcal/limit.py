@@ -112,7 +112,7 @@ class SPCalLimit(object):
     def fromCompoundPoisson(
         cls,
         responses: np.ndarray,
-        sis: float | np.ndarray,
+        single_ion_signal: float | np.ndarray,
         n_accumulations: int,
         alpha: float = 0.001,
         size: int = 10000,
@@ -126,8 +126,9 @@ class SPCalLimit(object):
 
         Args:
             responses: single-particle data
-            sis: single ion signal as average or distribution
+            single_ion_signal: as average or distribution
             size: size of simulation
+            n_accumulations: number of accumulation per acquisition
             alpha: type I error rate
 
         References:
@@ -137,22 +138,32 @@ class SPCalLimit(object):
         """
         lam = responses.mean()
 
-        if isinstance(sis, float):  # passed average, give an estiamtion
-            sis = np.random.normal(sis, sis, size=100)
+        if isinstance(single_ion_signal, float):  # passed average, give an estiamtion
+            single_ion_signal = np.random.normal(
+                single_ion_signal, single_ion_signal, size=100
+            )
 
-        sim = np.zeros(size)
+        comp = np.zeros(size)
+        # Simulates every poisson count, but no difference in simulations to algo below
+        # for _ in range(n_accumulations):
+        #     poi = np.random.poisson(lam / n_accumulations, size=size)
+        #     unique, idx, counts = np.unique(
+        #         poi, return_counts=True, return_inverse=True
+        #     )
+        #     for i, (u, c) in enumerate(zip(unique, counts)):  # Sample for every count
+        #         comp[idx == i] += np.sum(
+        #             np.random.choice(single_ion_signal, size=(u, c)), axis=0
+        #         )
+        # faster, but valid?
         for _ in range(n_accumulations):
             poi = np.random.poisson(lam / n_accumulations, size=size)
-            unique, idx, counts = np.unique(
-                poi, return_counts=True, return_inverse=True
-            )
-            for i, (u, c) in enumerate(zip(unique, counts)):
-                sim[idx == i] += np.sum(np.random.choice(sis, size=(u, c)), axis=0)
+            comp += poi * np.random.choice(single_ion_signal, size=size)
 
-        sim /= np.mean(sis)
+        comp /= np.mean(single_ion_signal)
+
         return SPCalLimit(
             lam,
-            float(np.quantile(sim, alpha)),
+            float(np.quantile(comp, alpha)),
             name="CompoundPoisson",
             params={"alpha": alpha},
             window_size=0,
