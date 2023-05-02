@@ -690,6 +690,14 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
     def filterResults(self) -> None:
+        """Filters the current results.
+
+        Filters are slected in the ``spcal.gui.dialogs.FilterDialog``. Filters are
+        stored as a list of groups where each filters are combined by && (logical and).
+        Each group is || (logical or'd) together.
+
+        If no filters are selected then this does nothing.
+        """
         if len(self.filters) == 0:
             return
 
