@@ -93,7 +93,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         layout_window_size = QtWidgets.QHBoxLayout()
         layout_window_size.addWidget(self.window_size, 1)
-        layout_window_size.addWidget(self.check_use_window)
+        layout_window_size.addWidget(self.check_use_window, 1)
 
         self.limit_method = QtWidgets.QComboBox()
         self.limit_method.addItems(
@@ -174,8 +174,8 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
-        layout_method.addWidget(self.limit_method)
-        layout_method.addWidget(self.check_iterative)
+        layout_method.addWidget(self.limit_method, 1)
+        layout_method.addWidget(self.check_iterative, 1)
 
         layout_gaussian = QtWidgets.QHBoxLayout()
         layout_gaussian.addWidget(self.error_rate_gaussian)

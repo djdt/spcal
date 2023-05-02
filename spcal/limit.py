@@ -6,12 +6,14 @@ from typing import Dict
 import bottleneck as bn
 import numpy as np
 
-from spcal.poisson import formula_c as poisson_limits
+from spcal.poisson import formula_c
 
 logger = logging.getLogger(__name__)
 
 
 class SPCalLimit(object):
+    poisson_formula = formula_c
+
     """Limit and threshold class.
 
     Limits should be created through the class methods ``fromMethodString``,
@@ -110,29 +112,72 @@ class SPCalLimit(object):
     def fromCompoundPoisson(
         cls,
         responses: np.ndarray,
-        sis: float | np.ndarray,
+        single_ion_signal: float | np.ndarray,
         n_accumulations: int,
         alpha: float = 0.001,
         size: int = 10000,
     ) -> "SPCalLimit":
+        """Calculate threshold from simulated compound distribution.
+
+        ToF data is a the sum of multiple Poisson accumulation events, each of which are
+        an independant sample of a near Gaussian SIS distribution. This function will
+        simulate the expected background and calculate the appropriate quantile for a
+        given alpha value.
+
+        Args:
+            responses: single-particle data
+            single_ion_signal: as average or distribution
+            size: size of simulation
+            n_accumulations: number of accumulation per acquisition
+            alpha: type I error rate
+
+        References:
+            Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
+                for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
+                https://doi.org/10.1021/acs.analchem.2c05243
+        """
+        # Estimate the mean of the underlying Poisson distribution
         lam = responses.mean()
 
-        if isinstance(sis, float):  # passed average, give an estiamtion
-            sis = np.random.normal(sis, sis, size=100)
-
-        sim = np.zeros(size)
-        for _ in range(n_accumulations):
-            poi = np.random.poisson(lam / n_accumulations, size=size)
-            unique, idx, counts = np.unique(
-                poi, return_counts=True, return_inverse=True
+        # Ensure the single ion signal is a distribution
+        # by estimating one from the average if not passed
+        if isinstance(single_ion_signal, float):  # passed average, give an estiamtion
+            single_ion_signal = np.random.normal(
+                single_ion_signal, single_ion_signal, size=100
             )
-            for i, (u, c) in enumerate(zip(unique, counts)):
-                sim[idx == i] += np.sum(np.random.choice(sis, size=(u, c)), axis=0)
 
-        sim /= np.mean(sis)
+        # Create an empty array to store calculations
+        comp = np.zeros(size)
+
+        # ===== Old code =====
+        # Simulates every poisson count, but no difference in simulations to algo below
+        # for _ in range(n_accumulations):
+        #     poi = np.random.poisson(lam / n_accumulations, size=size)
+        #     unique, idx, counts = np.unique(
+        #         poi, return_counts=True, return_inverse=True
+        #     )
+        #     for i, (u, c) in enumerate(zip(unique, counts)):  # Sample for every count
+        #         comp[idx == i] += np.sum(
+        #             np.random.choice(single_ion_signal, size=(u, c)), axis=0
+        #         )
+        # ===== Old code =====
+
+        # For each accumulation...
+        for _ in range(n_accumulations):
+            # Create a distribution with mean / number of accumulations
+            poi = np.random.poisson(lam / n_accumulations, size=size)
+            # For each entry in the new Poisson distribution, multiply by a random
+            # sample from the SIS distribution
+            comp += poi * np.random.choice(single_ion_signal, size=size)
+
+        # Divide everything by the average SIS to convert to counts / acq
+        comp /= np.mean(single_ion_signal)
+
+        # Return a limit with mean == lambda (signal mean)
+        # limit == Xth percentile of the calculated distribution
         return SPCalLimit(
             lam,
-            float(np.quantile(sim, alpha)),
+            float(np.quantile(comp, alpha)),
             name="CompoundPoisson",
             params={"alpha": alpha},
             window_size=0,
@@ -230,7 +275,7 @@ class SPCalLimit(object):
                 )
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
-            sc, _ = poisson_limits(mu, alpha=alpha)
+            sc, _ = SPCalLimit.poisson_formula(mu, alpha=alpha)
             threshold = np.ceil(mu + sc)
             iters += 1
 
