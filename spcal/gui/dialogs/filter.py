@@ -206,7 +206,8 @@ class FilterDialog(QtWidgets.QDialog):
         # add the filters
         for i in range(len(filters)):
             for filter in filters[i]:
-                self.addFilter(filter)
+                if filter.name in self.names:
+                    self.addFilter(filter)
             if i < len(filters) - 1:
                 self.addBooleanOr()
 
