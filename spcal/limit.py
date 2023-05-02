@@ -119,10 +119,10 @@ class SPCalLimit(object):
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
 
-        ToF data is a the sum of multiple Poisson accumulation events,
-        each of which are an independant sample of a near Gaussian SIS distribution.
-        This function will simulate the expected background and calculate the
-        appropriate quantile for a given alpha value.
+        ToF data is a the sum of multiple Poisson accumulation events, each of which are
+        an independant sample of a near Gaussian SIS distribution. This function will
+        simulate the expected background and calculate the appropriate quantile for a
+        given alpha value.
 
         Args:
             responses: single-particle data
@@ -136,14 +136,20 @@ class SPCalLimit(object):
                 for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
                 https://doi.org/10.1021/acs.analchem.2c05243
         """
+        # Estimate the mean of the underlying Poisson distribution
         lam = responses.mean()
 
+        # Ensure the single ion signal is a distribution
+        # by estimating one from the average if not passed
         if isinstance(single_ion_signal, float):  # passed average, give an estiamtion
             single_ion_signal = np.random.normal(
                 single_ion_signal, single_ion_signal, size=100
             )
 
+        # Create an empty array to store calculations
         comp = np.zeros(size)
+
+        # ===== Old code =====
         # Simulates every poisson count, but no difference in simulations to algo below
         # for _ in range(n_accumulations):
         #     poi = np.random.poisson(lam / n_accumulations, size=size)
@@ -154,13 +160,21 @@ class SPCalLimit(object):
         #         comp[idx == i] += np.sum(
         #             np.random.choice(single_ion_signal, size=(u, c)), axis=0
         #         )
-        # faster, but valid?
+        # ===== Old code =====
+
+        # For each accumulation...
         for _ in range(n_accumulations):
+            # Create a distribution with mean / number of accumulations
             poi = np.random.poisson(lam / n_accumulations, size=size)
+            # For each entry in the new Poisson distribution, multiply by a random
+            # sample from the SIS distribution
             comp += poi * np.random.choice(single_ion_signal, size=size)
 
+        # Divide everything by the average SIS to convert to counts / acq
         comp /= np.mean(single_ion_signal)
 
+        # Return a limit with mean == lambda (signal mean)
+        # limit == Xth percentile of the calculated distribution
         return SPCalLimit(
             lam,
             float(np.quantile(comp, alpha)),
