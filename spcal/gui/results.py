@@ -6,7 +6,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.export import ExportDialog
-from spcal.gui.dialogs.filter import FilterDialog
+from spcal.gui.dialogs.filter import Filter, FilterDialog
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
@@ -60,7 +60,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.sample = sample
         self.reference = reference
 
-        self.filters: List[Tuple[str, str, str, str, float]] = []
+        self.filters: List[List[Filter]] = []
         # Graph default options
         self.graph_options: Dict[str, Any] = {
             "histogram": {
@@ -286,7 +286,7 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
 
-    def setFilters(self, filters) -> None:
+    def setFilters(self, filters: List[List[Filter]]) -> None:
         self.filters = filters
         self.updateResults()
 
@@ -690,54 +690,27 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
     def filterResults(self) -> None:
-        condition = np.ones(self.sample.detections.size, dtype=bool)
-        # Clear out any old filters
-        self.filters = [f for f in self.filters if f[1] in self.results.keys()]
+        if len(self.filters) == 0:
+            return
 
-        # valid = np.ones(next(iter(results.values())).number)
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
 
-        # for filter_group in self.filters:
-        #     group_valid = np.ones(next(iter(results.values())).number)
-        #     for name, unit_label, opstr, value in filter_group:
-        #         oper = self.operations[opstr]
-        #         unit = self.unit_labels[unit_label]
+        for filter_group in self.filters:
+            group_valid = np.ones(size, dtype=bool)
+            for filter in filter_group:
+                if (
+                    filter.name in self.results
+                    and filter.unit in self.results[filter.name].detections
+                ):
+                    data = self.results[filter.name].detections[filter.unit]
+                    group_valid = np.logical_and(
+                        filter.ufunc(data, filter.value), group_valid
+                    )
+            valid = np.logical_or(group_valid, valid)
 
-        #         if unit in results[name].detections:
-        #             data = results[name].detections[unit]
-        #             group_valid = np.logical_and(oper(data, value), group_valid)
-        #     valid = np.logical_or(group_valid, valid)
+        valid_indicies = np.flatnonzero(valid)
 
-        # valid_indicies = np.flatnonzero(valid)
-
-        for filt in self.filters:
-            boolean, name, unit, operation, value = filt
-
-            ops: Dict[str, Callable[[np.ndarray, float], np.ndarray]] = {
-                ">": np.greater,
-                "<": np.less,
-                ">=": np.greater_equal,
-                "<=": np.less_equal,
-                "==": np.equal,
-            }
-            bool_ops: Dict[str, Callable[[np.ndarray, np.ndarray], np.ndarray]] = {
-                "And": np.logical_and,
-                "Or": np.logical_or,
-            }
-
-            indicies = self.results[name].indicies
-            if unit == "Intensity":
-                data = self.results[name].detections["signal"]
-            elif unit == "Mass" and "mass" in self.results[name].detections:
-                data = self.results[name].detections["mass"]
-            elif unit == "Size" and "size" in self.results[name].detections:
-                data = self.results[name].detections["size"]
-            else:
-                continue
-
-            valid = ops[operation](data, value)
-            condition = bool_ops[boolean](condition, valid)
-
-        valid_indicies = np.flatnonzero(condition)
         for name in self.results:
             indicies = self.results[name].indicies
             self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
