@@ -11,16 +11,20 @@ def non_target_screen(
     minimum_count_ppm: float,
     poisson_alpha: float = 0.001,
     gaussian_alpha: float = 1e-6,
+    gaussian_mean: float = 10.0,
 ) -> np.ndarray:
     """Screen data for potential NP signals.
-    Finds signals with ``minimum_count_ppm`` ppm points greater than LOD.
-    The LOD is calcualted as per ``SPCalLimit.fromBest``.
+
+    Finds signals with ``minimum_count_ppm`` ppm points greater than threshold.
+    The detection thresholds are calculated using Formula C from the MARLAP
+    manual or Gaussian statistics if the signal mean is above ``gaussian_mean``.
 
     Args:
-        x: input data shape (events, elements)
+        x: data of shape (events, elements)
         minimum_count_ppm: minimum number of points above limit
-        poisson_alpha: alpha for poisson limit
-        gaussian_alpha: alpha for gaussian limit
+        poisson_alpha: alpha for Poisson limit
+        gaussian_alpha: alpha for Gaussian limit
+        gaussian_mean: mean signal above which to switch to Gaussian limit
 
     Returns:
         indices of elements with potential signals
@@ -28,9 +32,10 @@ def non_target_screen(
     z = NormalDist().inv_cdf(1.0 - gaussian_alpha)
 
     means = np.mean(x, axis=0)
-    poisson_limits = means + formula_c(means, alpha=poisson_alpha)[0]
+    sc, _ = formula_c(means, alpha=poisson_alpha)
+    poisson_limits = (means + sc).astype(int) + 1.0
     gaussian_limits = means + np.std(x, axis=0) * z
-    limits = np.where(means > 10.0, gaussian_limits, poisson_limits)
+    limits = np.where(means > gaussian_mean, gaussian_limits, poisson_limits)
 
     counts = np.count_nonzero(x > limits, axis=0)
     idx = counts * 1e6 / x.shape[0] > minimum_count_ppm
