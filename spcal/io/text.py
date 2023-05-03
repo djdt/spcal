@@ -393,13 +393,20 @@ def export_single_particle_results(
                     unit, factor = result_units[key]
                     header_name += f",{name}"
                     header_unit += f",{unit}"
-                    data.append(result.detections[key] / factor)
+                    # Make sure filters are applied
+                    detections = np.zeros(result.detections[key].size)
+                    detections[result.indicies] = result.detections[key][
+                        result.indicies
+                    ]
+                    data.append(detections / factor)
 
         data = np.stack(data, axis=1)
 
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
+            if np.all(line == 0.0):  # Don't write line if all filterd
+                continue
             fp.write(
                 ",".join("" if x == 0.0 else "{:.8g}".format(x) for x in line) + "\n"
             )

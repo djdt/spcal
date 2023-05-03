@@ -9,6 +9,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
+from spcal.gui.results import ResultsWidget
 from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import Worker
@@ -17,7 +18,7 @@ from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, read_single_particle_file
 from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
-from spcal.result import SPCalResult
+from spcal.result import Filter, SPCalResult, filter_results
 from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ def process_data(
     data: np.ndarray,
     method: str,
     inputs: Dict[str, Dict[str, float | None]],
-    filters: List[List[Filter]]
+    filters: List[List[Filter]],
     limit_method: str,
     limit_params: Dict[str, float],
     limit_window_size: int = 0,
@@ -89,6 +90,13 @@ def process_data(
                 result.fromMassResponse()
         except ValueError:
             pass
+
+    # Filter results
+    if len(filters) > 0:
+        valid_indicies = filter_results(filters, results)
+        for name in results:
+            indicies = results[name].indicies
+            results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
 
     return results
 
@@ -225,7 +233,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
-        best_units: Dict[str, Tuple[str, float]],
+        results: ResultsWidget,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -236,6 +244,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.sample = sample
         self.reference = reference
         self.options = options
+        self.results = results
 
         self.button_files = QtWidgets.QPushButton("Open Files")
         self.button_files.pressed.connect(self.dialogLoadFiles)
@@ -284,6 +293,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
+
+        best_units = self.results.bestUnitsForResults()
 
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(mass_units.keys())
@@ -501,6 +512,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 process_kws={
                     "method": method,
                     "inputs": inputs,
+                    "filters": self.results.filters,
                     "limit_method": self.options.limit_method.currentText(),
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (self.options.window_size.value() or 0)

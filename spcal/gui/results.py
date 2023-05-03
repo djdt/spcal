@@ -22,7 +22,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import Filter, SPCalResult
+from spcal.result import Filter, SPCalResult, filter_results
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
@@ -701,23 +701,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.filters) == 0:
             return
 
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-
-        for filter_group in self.filters:
-            group_valid = np.ones(size, dtype=bool)
-            for filter in filter_group:
-                if (
-                    filter.name in self.results
-                    and filter.unit in self.results[filter.name].detections
-                ):
-                    data = self.results[filter.name].detections[filter.unit]
-                    group_valid = np.logical_and(
-                        filter.ufunc(data, filter.value), group_valid
-                    )
-            valid = np.logical_or(group_valid, valid)
-
-        valid_indicies = np.flatnonzero(valid)
+        valid_indicies = filter_results(self.filters, self.results)
 
         for name in self.results:
             indicies = self.results[name].indicies

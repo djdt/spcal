@@ -254,7 +254,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.sample,
             self.reference,
             self.options,
-            self.results.bestUnitsForResults(),
+            self.results,
             parent=self,
         )
         dlg.open()
