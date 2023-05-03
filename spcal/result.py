@@ -11,6 +11,29 @@ from spcal.limit import SPCalLimit
 logger = logging.getLogger(__name__)
 
 
+class Filter(object):
+    operations: Dict[str, np.ufunc] = {
+        ">": np.greater,
+        "<": np.less,
+        ">=": np.greater_equal,
+        "<=": np.less_equal,
+        "==": np.equal,
+    }
+
+    def __init__(self, name: str, unit: str, operation: str, value: float):
+        self.name = name
+        self.unit = unit
+        self.operation = operation
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Filter({self.name}::{self.unit} {self.operation!r} {self.value!r})"
+
+    @property
+    def ufunc(self) -> np.ufunc:
+        return Filter.operations[self.operation]
+
+
 class SPCalResult(object):
     """Calculates results from single particle detections.
 

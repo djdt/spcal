@@ -2,17 +2,17 @@
 
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import h5py
 import numpy as np
 
 from spcal import __version__
 from spcal.gui.dialogs.calculator import CalculatorDialog
-from spcal.gui.dialogs.filter import Filter
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
+from spcal.result import Filter
 
 
 def sanitiseImportOptions(options: dict) -> dict:

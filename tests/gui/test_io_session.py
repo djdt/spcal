@@ -6,7 +6,7 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.dialogs.calculator import CalculatorDialog
-from spcal.gui.dialogs.filter import Filter
+from spcal.result import Filter
 from spcal.gui.main import SPCalWindow
 from spcal.io.session import restoreSession, saveSession
 

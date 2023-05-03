@@ -3,7 +3,7 @@ import numpy.lib.recfunctions as rfn
 import pytest
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.dialogs.filter import Filter
+from spcal.result import Filter
 from spcal.gui.main import SPCalWindow
 
 

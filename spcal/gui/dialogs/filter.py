@@ -1,34 +1,11 @@
-from typing import Dict, List
+from typing import List
 
-import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
+from spcal.result import Filter
 from spcal.siunits import mass_units, signal_units, size_units
-
-
-class Filter(object):
-    operations: Dict[str, np.ufunc] = {
-        ">": np.greater,
-        "<": np.less,
-        ">=": np.greater_equal,
-        "<=": np.less_equal,
-        "==": np.equal,
-    }
-
-    def __init__(self, name: str, unit: str, operation: str, value: float):
-        self.name = name
-        self.unit = unit
-        self.operation = operation
-        self.value = value
-
-    def __repr__(self) -> str:
-        return f"Filter({self.name}::{self.unit} {self.operation!r} {self.value!r})"
-
-    @property
-    def ufunc(self) -> np.ufunc:
-        return Filter.operations[self.operation]
 
 
 class FilterItemWidget(QtWidgets.QWidget):

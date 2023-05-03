@@ -30,6 +30,7 @@ def process_data(
     data: np.ndarray,
     method: str,
     inputs: Dict[str, Dict[str, float | None]],
+    filters: List[List[Filter]]
     limit_method: str,
     limit_params: Dict[str, float],
     limit_window_size: int = 0,

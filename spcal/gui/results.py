@@ -1,12 +1,12 @@
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.export import ExportDialog
-from spcal.gui.dialogs.filter import Filter, FilterDialog
+from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
@@ -22,7 +22,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import SPCalResult
+from spcal.result import Filter, SPCalResult
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
