@@ -145,7 +145,7 @@ class OptionsWidget(QtWidgets.QWidget):
             "Type I (false positive) error rate for Poisson filters."
         )
         self.error_rate_gaussian = ValueWidget(
-            1e-6,
+            1.0 - NormalDist().cdf(5.0),
             validator=QtGui.QDoubleValidator(1e-16, 0.5, 9),
             format=sf,
         )
@@ -156,7 +156,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.error_rate_gaussian.valueChanged.connect(self.updateGaussianSigma)
 
         self.sigma_gaussian = ValueWidget(
-            4.75, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
+            5.0, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
         )
         self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
 
