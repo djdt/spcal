@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
@@ -40,6 +41,9 @@ def test_units_widget(qtbot: QtBot):
     assert w.lineedit.toolTip() == "tip"
     assert w.combo.toolTip() == "tip"
 
+    # Make sure this does not cause a RecursionError
+    w.setValue(np.nan)
+
 
 def test_units_widget_error(qtbot: QtBot):
     w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, base_value=50.0)
@@ -56,6 +60,9 @@ def test_units_widget_error(qtbot: QtBot):
 
     w.setError(1.0)
     assert w.baseError() == 0.1
+
+    # Make sure this does not cause a RecursionError
+    w.setError(np.nan)
 
 
 def test_units_signals(qtbot: QtBot):

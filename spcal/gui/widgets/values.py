@@ -58,6 +58,8 @@ class ValueWidget(ValidColorLineEdit):
         return self._value
 
     def setValue(self, value: float | None) -> None:
+        if value != value:  # Check for NaN
+            value = None
         if self._value != value:
             self._value = value
             self.valueChanged.emit(value)
@@ -66,6 +68,8 @@ class ValueWidget(ValidColorLineEdit):
         return self._error
 
     def setError(self, error: float | None) -> None:
+        if error != error:  # Check for NaN
+            error = None
         if self._error != error:
             self._error = error
             self.errorChanged.emit(error)
