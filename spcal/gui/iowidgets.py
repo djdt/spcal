@@ -685,10 +685,10 @@ class ReferenceIOStack(IOStack):
     def setLimitsEditable(self, editable: bool) -> None:
         for widget in self.widgets():
             if editable:
-                widget.lod_count.valueEdited.connect(self.limitsChanged)
+                widget.lod_count.valueChanged.connect(self.limitsChanged)
             else:
                 try:
-                    widget.lod_count.valueEdited.disconnect(self.limitsChanged)
+                    widget.lod_count.valueChanged.disconnect(self.limitsChanged)
                 except RuntimeError:
                     pass
             widget.lod_count.setReadOnly(not editable)
