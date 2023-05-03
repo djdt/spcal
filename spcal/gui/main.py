@@ -321,7 +321,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
     def dialogSaveSession(self) -> None:
         def onFileSelected(file: str) -> None:
             path = Path(file).with_suffix(".spcal")
-            saveSession(path, self.options, self.sample, self.reference)
+            saveSession(path, self.options, self.sample, self.reference, self.results)
             QtCore.QSettings().setValue("LastSession", str(path))
 
         dir = Path(QtCore.QSettings().value("LastSession", ""))
@@ -348,7 +348,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         if file == "":
             return
-        restoreSession(Path(file), self.options, self.sample, self.reference)
+        restoreSession(
+            Path(file), self.options, self.sample, self.reference, self.results
+        )
 
     def onInputsChanged(self) -> None:
         # Reference tab is neb method requires

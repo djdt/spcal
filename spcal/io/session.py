@@ -2,13 +2,17 @@
 
 
 from pathlib import Path
+from typing import List, Tuple
 
 import h5py
+import numpy as np
 
 from spcal import __version__
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.filter import Filter
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
+from spcal.gui.results import ResultsWidget
 
 
 def sanitiseImportOptions(options: dict) -> dict:
@@ -22,6 +26,49 @@ def sanitiseImportOptions(options: dict) -> dict:
             )
         safe[key] = val
     return safe
+
+
+def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
+    dtype = np.dtype(
+        [
+            ("name", "S64"),
+            ("unit", "S64"),
+            ("operation", "S2"),
+            ("value", float),
+            ("id", int),
+        ]
+    )
+
+    size = sum(len(f) for f in filters)
+    data = np.empty(size, dtype=dtype)
+    i = 0
+    for group in filters:
+        for id, filter in enumerate(group):
+            data[i] = (filter.name, filter.unit, filter.operation, filter.value, id)
+            i += 1
+    return data
+
+
+def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
+    filters, group = [], []
+    prev_id = -1
+    for x in data:
+        group.append(
+            Filter(
+                x["name"].decode(),
+                x["unit"].decode(),
+                x["operation"].decode(),
+                x["value"],
+            )
+        )
+        if x["id"] <= prev_id:
+            filters.append(group)
+            group = []
+        prev_id = x["id"]
+    if len(group) > 0:
+        filters.append(group)
+
+    return filters
 
 
 def restoreImportOptions(options: dict) -> dict:
@@ -38,7 +85,11 @@ def restoreImportOptions(options: dict) -> dict:
 
 
 def saveSession(
-    path: Path, options: OptionsWidget, sample: SampleWidget, reference: ReferenceWidget
+    path: Path,
+    options: OptionsWidget,
+    sample: SampleWidget,
+    reference: ReferenceWidget,
+    results: ResultsWidget,
 ) -> None:
     with h5py.File(path, "w") as h5:
         h5.attrs["version"] = __version__
@@ -49,6 +100,8 @@ def saveSession(
         expressions_group = h5.create_group("expressions")
         for key, val in CalculatorDialog.current_expressions.items():
             expressions_group.attrs[key] = val
+
+        h5.create_dataset("filters", data=sanitiseFilters(results.filters))
 
         input: InputWidget
         for input_key, input in zip(["sample", "reference"], [sample, reference]):
@@ -73,7 +126,11 @@ def saveSession(
 
 
 def restoreSession(
-    path: Path, options: OptionsWidget, sample: SampleWidget, reference: ReferenceWidget
+    path: Path,
+    options: OptionsWidget,
+    sample: SampleWidget,
+    reference: ReferenceWidget,
+    results: ResultsWidget,
 ) -> None:
     with h5py.File(path, "r") as h5:
         if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 11):
@@ -82,6 +139,8 @@ def restoreSession(
         options.setState(h5["options"].attrs)
         for key, val in h5["expressions"].attrs.items():
             CalculatorDialog.current_expressions[key] = val
+
+        results.setFilters(restoreFilters(h5["filters"]))
 
         input: InputWidget
         for key, input in zip(["sample", "reference"], [sample, reference]):
@@ -92,5 +151,3 @@ def restoreSession(
                 input.graph.region.setRegion(h5[key]["data"].attrs["trim"])
                 for name in h5[key]["elements"].keys():
                     input.io[name].setState(h5[key]["elements"][name].attrs)
-
-        # Results - filters
