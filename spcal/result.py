@@ -119,6 +119,9 @@ class SPCalResult(object):
             )
         )
 
+    def __repr__(self) -> str:
+        return f"SPCalResult({self.number})"
+
     def asCellConcentration(
         self, value: float | np.ndarray
     ) -> float | np.ndarray | None:
