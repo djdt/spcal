@@ -24,7 +24,7 @@ class Filter(object):
         self.value = value
 
     def __repr__(self) -> str:
-        return f"({self.name}::{self.unit} {self.operation!r} {self.value!r})"
+        return f"Filter({self.name}::{self.unit} {self.operation!r} {self.value!r})"
 
     @property
     def ufunc(self) -> np.ufunc:
