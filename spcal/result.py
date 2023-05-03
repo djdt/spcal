@@ -1,7 +1,7 @@
 """Class for calculating results."""
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 
@@ -318,3 +318,37 @@ class SPCalResult(object):
                     molar_mass=self.inputs["molar_mass"],
                 )
             )
+
+
+def filter_results(
+    filters: List[List[Filter]], results: Dict[str, SPCalResult]
+) -> np.ndarray:
+    """Filter a dictionary of results.
+
+    Filters are stored as a list of groups where filters  within groups
+    are combined by && (logical and) and each group is combined by || (logical or).
+
+    Args:
+        filters: list of filter groups
+        results: dict of name: result
+
+    Returns:
+        indicies of filtered detections
+    """
+    size = next(iter(results.values())).detections["signal"].size
+    valid = np.zeros(size, dtype=bool)
+
+    for filter_group in filters:
+        group_valid = np.ones(size, dtype=bool)
+        for filter in filter_group:
+            if (
+                filter.name in results
+                and filter.unit in results[filter.name].detections
+            ):
+                data = results[filter.name].detections[filter.unit]
+                group_valid = np.logical_and(
+                    filter.ufunc(data, filter.value), group_valid
+                )
+        valid = np.logical_or(group_valid, valid)
+
+    return np.flatnonzero(valid)
