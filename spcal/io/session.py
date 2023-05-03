@@ -50,9 +50,13 @@ def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
 
 
 def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
-    filters, group = [], []
-    prev_id = -1
+    filters: List[List[Filter]] = []
+    group: List[Filter] = []
     for x in data:
+        if x["id"] == 0:
+            if len(group) > 0:
+                filters.append(group)
+            group = []
         group.append(
             Filter(
                 x["name"].decode(),
@@ -61,10 +65,6 @@ def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
                 x["value"],
             )
         )
-        if x["id"] <= prev_id:
-            filters.append(group)
-            group = []
-        prev_id = x["id"]
     if len(group) > 0:
         filters.append(group)
 
@@ -122,8 +122,6 @@ def saveSession(
                     for key, val in input.io[name].state().items():
                         name_group.attrs[key] = val
 
-        # Results - filters
-
 
 def restoreSession(
     path: Path,
@@ -140,8 +138,6 @@ def restoreSession(
         for key, val in h5["expressions"].attrs.items():
             CalculatorDialog.current_expressions[key] = val
 
-        results.setFilters(restoreFilters(h5["filters"]))
-
         input: InputWidget
         for key, input in zip(["sample", "reference"], [sample, reference]):
             if key in h5:
@@ -151,3 +147,5 @@ def restoreSession(
                 input.graph.region.setRegion(h5[key]["data"].attrs["trim"])
                 for name in h5[key]["elements"].keys():
                     input.io[name].setState(h5[key]["elements"][name].attrs)
+
+        results.setFilters(restoreFilters(h5["filters"]))
