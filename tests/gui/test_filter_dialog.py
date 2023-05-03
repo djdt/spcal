@@ -8,6 +8,15 @@ from spcal.gui.dialogs.filter import BooleanItemWidget, Filter, FilterDialog
 names = ["a", "b", "c"]
 
 
+def test_filter():
+    filter = Filter("a", "signal", "<=", 1.0)
+    assert filter.name == "a"
+    assert filter.unit == "signal"
+    assert filter.operation == "<="
+    assert filter.value == 1.0
+    assert filter.ufunc == np.less_equal
+
+
 def test_filter_dialog_empty(qtbot: QtBot):
     dlg = FilterDialog(names, [])
     qtbot.addWidget(dlg)
@@ -69,37 +78,3 @@ def test_filter_dialog_filters(qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.filtersChanged, check_params_cb=check_filters):
         dlg.accept()
-
-    # def filterResults(self) -> None:
-    #     """Filters the current results.
-
-    #     Filters are slected in the ``spcal.gui.dialogs.FilterDialog``. Filters are
-    #     stored as a list of groups where each filters are combined by && (logical and).
-    #     Each group is || (logical or'd) together.
-
-    #     If no filters are selected then this does nothing.
-    #     """
-    #     if len(self.filters) == 0:
-    #         return
-
-    #     size = next(iter(self.results.values())).detections["signal"].size
-    #     valid = np.zeros(size, dtype=bool)
-
-    #     for filter_group in self.filters:
-    #         group_valid = np.ones(size, dtype=bool)
-    #         for filter in filter_group:
-    #             if (
-    #                 filter.name in self.results
-    #                 and filter.unit in self.results[filter.name].detections
-    #             ):
-    #                 data = self.results[filter.name].detections[filter.unit]
-    #                 group_valid = np.logical_and(
-    #                     filter.ufunc(data, filter.value), group_valid
-    #                 )
-    #         valid = np.logical_or(group_valid, valid)
-
-    #     valid_indicies = np.flatnonzero(valid)
-
-    #     for name in self.results:
-    #         indicies = self.results[name].indicies
-    #         self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
