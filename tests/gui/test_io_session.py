@@ -6,6 +6,7 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.filter import Filter
 from spcal.gui.main import SPCalWindow
 from spcal.io.session import restoreSession, saveSession
 
@@ -38,12 +39,23 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
     window.reference.loadData(data.copy(), {"path": "test/ref.csv", "dwelltime": 0.1})
     window.reference.io["Au"].density.setBaseValue(4.0)
 
+    window.results.filters = [
+        [Filter("Au", "signal", ">", 1.0)],
+        [Filter("Ag", "mass", "<", 100.0)],
+    ]
+
     dlg = CalculatorDialog(window.sample, window.reference, parent=window)
     qtbot.add_widget(dlg)
     dlg.formula.setPlainText("Ag + Au")
     dlg.accept()
 
-    saveSession(tmp_session_path, window.options, window.sample, window.reference)
+    saveSession(
+        tmp_session_path,
+        window.options,
+        window.sample,
+        window.reference,
+        window.results,
+    )
 
     CalculatorDialog.current_expressions.clear()
 
@@ -52,7 +64,13 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     window = SPCalWindow()
     qtbot.addWidget(window)
 
-    restoreSession(tmp_session_path, window.options, window.sample, window.reference)
+    restoreSession(
+        tmp_session_path,
+        window.options,
+        window.sample,
+        window.reference,
+        window.results,
+    )
 
     assert window.options.efficiency_method.currentText() == "Reference Particle"
     assert window.options.dwelltime.baseValue() == 0.1
@@ -69,6 +87,16 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     assert window.reference.names == ("Au", "Ag", "{Ag+Au}")
     assert str(window.reference.import_options["path"]) == "test/ref.csv"
     assert window.reference.io["Au"].density.baseValue() == 4.0
+
+    assert len(window.results.filters) == 2
+    assert window.results.filters[0][0].name == "Au"
+    assert window.results.filters[0][0].unit == "signal"
+    assert window.results.filters[0][0].operation == ">"
+    assert window.results.filters[0][0].value == 1.0
+    assert window.results.filters[1][0].name == "Ag"
+    assert window.results.filters[1][0].unit == "mass"
+    assert window.results.filters[1][0].operation == "<"
+    assert window.results.filters[1][0].value == 100.0
 
     assert CalculatorDialog.current_expressions["{Ag+Au}"] == "+ Ag Au"
 
