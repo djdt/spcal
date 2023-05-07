@@ -24,8 +24,15 @@ class LimitOptions(QtWidgets.QGroupBox):
         layout.addRow("α (Type I):", self.alpha)
         self.setLayout(layout)
 
-    def asDict(self) -> dict:
+    def state(self) -> dict:
         return {"alpha": self.alpha.value()}
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "alpha" in state:
+            self.alpha.setValue(state["alpha"])
+        self.blockSignals(False)
+        self.limitOptionsChanged.emit()
 
 
 class CompoundPoissonOptions(LimitOptions):
@@ -79,12 +86,23 @@ class CompoundPoissonOptions(LimitOptions):
             self.single_ion_average.setValue(np.mean(sia))
             self.single_ion_average.setEnabled(False)
 
-    def asDict(self) -> dict:
+    def state(self) -> dict:
         return {
             "alpha": self.alpha.value(),
             "sia": self.getSingleIon(),
             "accumulations": int(self.accumulations.value() or 1),
         }
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "alpha" in state:
+            self.alpha.setValue(state["alpha"])
+        if "sia" in state:
+            self.setSingleIon(state["sia"])
+        if "accumulations" in state:
+            self.accumulations.setValue(state["accumulations"])
+        self.blockSignals(False)
+        self.limitOptionsChanged.emit()
 
 
 class GaussianOptions(LimitOptions):
@@ -131,6 +149,7 @@ class PoissonOptions(LimitOptions):
             self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
         )
         self.layout().addRow(button_layout)
+        self.button_advanced.setEnabled(False)
 
 
 class AdvancedPoissonOptions(QtWidgets.QWidget):

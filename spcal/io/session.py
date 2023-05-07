@@ -15,17 +15,27 @@ from spcal.gui.results import ResultsWidget
 from spcal.result import Filter
 
 
-def sanitiseImportOptions(options: dict) -> dict:
+def sanitiseOptions(options: dict) -> dict:
     safe = {}
-    for key, val in options.items():
-        if key == "path":  # convert Path to str
-            val = str(val)
-        elif key == "isotopes":  # hdf5 can't store 'U' arrays
-            val = val.astype(
-                [(d[0], "S2") if d[0] == "Symbol" else d for d in val.dtype.descr]
-            )
-        safe[key] = val
+    for k, v in options.items():
+        if isinstance(v, dict):
+            safe.update({f"{k}/{vk}": vv for vk, vv in v.items()})
+        else:
+            safe[k] = v
     return safe
+
+
+def restoreOptions(options: dict) -> dict:
+    restored: dict = {}
+    for k, v in options.items():
+        if "/" in k:
+            sep = k.find("/")
+            d = restored.get(k[:sep], {})
+            d[k[sep + 1 :]] = v
+            restored[k[:sep]] = d
+        else:
+            restored[k] = v
+    return restored
 
 
 def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
@@ -71,6 +81,19 @@ def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
     return filters
 
 
+def sanitiseImportOptions(options: dict) -> dict:
+    safe = {}
+    for key, val in options.items():
+        if key == "path":  # convert Path to str
+            val = str(val)
+        elif key == "isotopes":  # hdf5 can't store 'U' arrays
+            val = val.astype(
+                [(d[0], "S2") if d[0] == "Symbol" else d for d in val.dtype.descr]
+            )
+        safe[key] = val
+    return safe
+
+
 def restoreImportOptions(options: dict) -> dict:
     restored = {}
     for key, val in options.items():
@@ -94,7 +117,7 @@ def saveSession(
     with h5py.File(path, "w") as h5:
         h5.attrs["version"] = __version__
         options_group = h5.create_group("options")
-        for key, val in options.state().items():
+        for key, val in sanitiseOptions(options.state()).items():
             options_group.attrs[key] = val
 
         expressions_group = h5.create_group("expressions")
@@ -134,7 +157,7 @@ def restoreSession(
         if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 11):
             raise ValueError("Unsupported version.")
 
-        options.setState(h5["options"].attrs)
+        options.setState(restoreOptions(h5["options"].attrs))
         for key, val in h5["expressions"].attrs.items():
             CalculatorDialog.current_expressions[key] = val
 

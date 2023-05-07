@@ -478,9 +478,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 pass
 
         limit_params = {
-            "compound_kws": self.options.compound_poisson.asDict(),
-            "poisson_kws": self.options.poisson.asDict(),
-            "gaussian_kws": self.options.gaussian.asDict(),
+            "compound_kws": self.options.compound_poisson.state(),
+            "poisson_kws": self.options.poisson.state(),
+            "gaussian_kws": self.options.gaussian.state(),
         }
         units = {
             "mass": (

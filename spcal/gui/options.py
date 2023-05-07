@@ -211,12 +211,10 @@ class OptionsWidget(QtWidgets.QWidget):
             "use window": self.check_window.isChecked(),
             "limit method": self.limit_method.currentText(),
             "iterative": self.check_iterative.isChecked(),
-            "compound alpha": self.compound_poisson.alpha.value(),
-            "compound sia": self.compound_poisson.getSingleIon(),
-            "compound accumulations": self.compound_poisson.accumulations.value(),
-            "poisson alpha": self.poisson.alpha.value(),
-            "gaussian alpha": self.gaussian.alpha.value(),
             "cell diameter": self.celldiameter.baseValue(),
+            "compound poisson": self.compound_poisson.state(),
+            "gaussian": self.gaussian.state(),
+            "poisson": self.poisson.state(),
         }
         return {k: v for k, v in state_dict.items() if v is not None}
 
@@ -237,21 +235,14 @@ class OptionsWidget(QtWidgets.QWidget):
             self.window_size.setValue(state["window size"])
         self.check_window.setChecked(bool(state["use window"]))
         self.check_iterative.setChecked(bool(state["iterative"]))
-        if "compound alpha" in state:
-            self.compound_poisson.alpha.setValue(state["compound alpha"])
-        if "compound sia" in state:
-            self.compound_poisson.setSingleIon(state["compound sia"])
-        if "compound accumulations" in state:
-            self.compound_poisson.accumulations.setValue(
-                state["compound accumulations"]
-            )
-        if "poisson alpha" in state:
-            self.poisson.alpha.setValue(state["poisson alpha"])
-        if "gaussian alpha" in state:
-            self.gaussian.alpha.setValue(state["gaussian alpha"])
         if "cell diameter" in state:
             self.celldiameter.setBaseValue(state["cell diameter"])
             self.celldiameter.setBestUnit()
+
+        self.compound_poisson.setState(state["compound poisson"])
+        self.gaussian.setState(state["gaussian"])
+        self.poisson.setState(state["poisson"])
+
         self.blockSignals(False)
 
         # Separate for useManualLimits signal

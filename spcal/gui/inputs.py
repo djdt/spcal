@@ -323,9 +323,9 @@ class InputWidget(QtWidgets.QWidget):
 
         self.limits.clear()
 
-        compound_kws = self.options.compound_poisson.asDict()
-        gaussian_kws = self.options.gaussian.asDict()
-        poisson_kws = self.options.poisson.asDict()
+        compound_kws = self.options.compound_poisson.state()
+        gaussian_kws = self.options.gaussian.state()
+        poisson_kws = self.options.poisson.state()
 
         for name in self.names:
             response = self.trimmedResponse(name)
