@@ -58,10 +58,11 @@ class SPCalLimit(object):
         cls,
         method: str,
         responses: np.ndarray,
-        poisson_alpha: float = 0.001,
-        gaussian_alpha: float = 1e-6,
+        poisson_kws: dict,
+        gaussian_kws: dict,
+        compound_kws: dict,
         window_size: int = 0,
-        max_iters: int = 10,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Takes a string and returns limit class.
 
@@ -79,31 +80,37 @@ class SPCalLimit(object):
         if method in ["automatic", "best"]:
             return SPCalLimit.fromBest(
                 responses,
-                poisson_alpha=poisson_alpha,
-                gaussian_alpha=gaussian_alpha,
+                poisson_kws=poisson_kws,
+                gaussian_kws=gaussian_kws,
                 window_size=window_size,
                 max_iters=max_iters,
             )
         elif method == "highest":
             return SPCalLimit.fromHighest(
                 responses,
-                poisson_alpha=poisson_alpha,
-                gaussian_alpha=gaussian_alpha,
+                poisson_kws=poisson_kws,
+                gaussian_kws=gaussian_kws,
                 window_size=window_size,
+            )
+        elif method.startswith("compound"):
+            return SPCalLimit.fromCompoundPoisson(
+                responses,
+                max_iters=max_iters,
+                **compound_kws,
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
                 responses,
-                alpha=gaussian_alpha,
                 window_size=window_size,
                 max_iters=max_iters,
+                **gaussian_kws,
             )
         elif method.startswith("poisson"):
             return SPCalLimit.fromPoisson(
                 responses,
-                alpha=poisson_alpha,
                 window_size=window_size,
                 max_iters=max_iters,
+                **poisson_kws,
             )
         else:
             raise ValueError("fromMethodString: unknown method")
@@ -112,10 +119,11 @@ class SPCalLimit(object):
     def fromCompoundPoisson(
         cls,
         responses: np.ndarray,
-        single_ion_signal: float | np.ndarray,
-        n_accumulations: int,
+        sia: float | np.ndarray,
+        accumulations: int,
         alpha: float = 0.001,
         size: int = 10000,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
 
@@ -126,58 +134,43 @@ class SPCalLimit(object):
 
         Args:
             responses: single-particle data
-            single_ion_signal: as average or distribution
+            sia: single ion area as an average or distribution
             size: size of simulation
-            n_accumulations: number of accumulation per acquisition
+            accumulations: number of accumulation per acquisition
             alpha: type I error rate
+            max_iters: number of iterations, set to 1 for no iters
 
         References:
             Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
                 for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
                 https://doi.org/10.1021/acs.analchem.2c05243
         """
-        # Estimate the mean of the underlying Poisson distribution
-        lam = responses.mean()
-
         # Ensure the single ion signal is a distribution
-        # by estimating one from the average if not passed
-        if isinstance(single_ion_signal, float):  # passed average, give an estiamtion
-            single_ion_signal = np.random.normal(
-                single_ion_signal, single_ion_signal, size=100
-            )
+        if isinstance(sia, float):  # passed average, give an estiamtion
+            sia = np.random.normal(sia, sia, size=1000)
 
-        # Create an empty array to store calculations
-        comp = np.zeros(size)
+        threshold, prev_threshold = np.inf, np.inf
+        iters = 0
+        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+            prev_threshold = threshold
 
-        # ===== Old code =====
-        # Simulates every poisson count, but no difference in simulations to algo below
-        # for _ in range(n_accumulations):
-        #     poi = np.random.poisson(lam / n_accumulations, size=size)
-        #     unique, idx, counts = np.unique(
-        #         poi, return_counts=True, return_inverse=True
-        #     )
-        #     for i, (u, c) in enumerate(zip(unique, counts)):  # Sample for every count
-        #         comp[idx == i] += np.sum(
-        #             np.random.choice(single_ion_signal, size=(u, c)), axis=0
-        #         )
-        # ===== Old code =====
+            lam = bn.nanmean(responses[responses < threshold])
 
-        # For each accumulation...
-        for _ in range(n_accumulations):
-            # Create a distribution with mean / number of accumulations
-            poi = np.random.poisson(lam / n_accumulations, size=size)
-            # For each entry in the new Poisson distribution, multiply by a random
-            # sample from the SIS distribution
-            comp += poi * np.random.choice(single_ion_signal, size=size)
+            comp = np.zeros(size)
+            for _ in range(accumulations):
+                poi = np.random.poisson(lam / accumulations, size=size)
+                comp += poi * np.random.choice(sia, size=size)
 
-        # Divide everything by the average SIS to convert to counts / acq
-        comp /= np.mean(single_ion_signal)
+            comp /= np.mean(sia)
+            threshold = float(np.quantile(comp, 1.0 - alpha))
+            iters += 1
 
-        # Return a limit with mean == lambda (signal mean)
-        # limit == Xth percentile of the calculated distribution
+        if iters == max_iters and max_iters != 1:  # pragma: no cover
+            logger.warning("fromCompoundPoisson: reached max_iters")
+
         return SPCalLimit(
             lam,
-            float(np.quantile(comp, alpha)),
+            threshold,
             name="CompoundPoisson",
             params={"alpha": alpha},
             window_size=0,
@@ -294,10 +287,10 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
-        poisson_alpha: float = 0.001,
-        gaussian_alpha: float = 1e-6,
+        poisson_kws: dict,
+        gaussian_kws: dict,
         window_size: int = 0,
-        max_iters: int = 10,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Returns 'best' threshold.
 
@@ -307,36 +300,36 @@ class SPCalLimit(object):
 
         Args:
             responses: single-particle data
-            poisson_alpha: type I error rate for Poisson
-            gaussian_alpha: type I error rate for Gaussian
+            poisson_kws: keywords for Poisson
+            gaussian_kws: keywords for Gaussian
             window_size: size of window, 0 for no window
             max_iters: max iterations, 0 for no iteration
         """
         # Check that the non-detection region is normalish (λ > 10)
         poisson = SPCalLimit.fromPoisson(
             responses,
-            alpha=poisson_alpha,
             window_size=window_size,
             max_iters=max_iters,
+            **poisson_kws,
         )
         if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
             return poisson
         else:
             return SPCalLimit.fromGaussian(
                 responses,
-                alpha=gaussian_alpha,
                 window_size=window_size,
                 max_iters=max_iters,
+                **gaussian_kws,
             )
 
     @classmethod
     def fromHighest(
         cls,
         responses: np.ndarray,
-        poisson_alpha: float = 0.001,
-        gaussian_alpha: float = 1e-6,
+        poisson_kws: dict,
+        gaussian_kws: dict,
         window_size: int = 0,
-        max_iters: int = 10,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Returns highest threshold.
 
@@ -345,19 +338,22 @@ class SPCalLimit(object):
 
         Args:
             responses: single-particle data
-            poisson_alpha: type I error rate for Poisson
-            gaussian_alpha: type I error rate for Gaussian
+            poisson_kws: keywords for Poisson
+            gaussian_kws: keywords for Gaussian
             window_size: size of window, 0 for no window
             max_iters: max iterations, 0 for no iteration
         """
         gaussian = SPCalLimit.fromGaussian(
             responses,
-            alpha=gaussian_alpha,
             window_size=window_size,
             max_iters=max_iters,
+            **gaussian_kws,
         )
         poisson = SPCalLimit.fromPoisson(
-            responses, alpha=poisson_alpha, window_size=window_size, max_iters=max_iters
+            responses,
+            window_size=window_size,
+            max_iters=max_iters,
+            **poisson_kws,
         )
         if np.mean(gaussian.detection_threshold) > np.mean(poisson.detection_threshold):
             return gaussian
