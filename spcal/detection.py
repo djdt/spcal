@@ -142,16 +142,13 @@ def combine_detections(
     all_regions = _contiguous_regions(any_label, 0)
     any_label = _label_regions(all_regions, any_label.size)
 
-    # Init empty
-    combined = np.empty(
+    # Init to zero, summed later
+    combined = np.zeros(
         all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
     )
     for name in names:
-        # Positions in name's region that corresponds to the combined regions
-        idx = (regions[name][:, 0] >= all_regions[:, 0, None]) & (
-            regions[name][:, 1] <= all_regions[:, 1, None]
-        )
-        combined[name] = np.sum(np.where(idx, sums[name], 0), axis=1)
+        idx = np.searchsorted(all_regions[:, 0], regions[name][:, 0], side="right") - 1
+        np.add.at(combined[name], idx, sums[name])
 
     return combined, any_label, all_regions
 
