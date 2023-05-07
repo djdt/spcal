@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from numpy.lib import stride_tricks
 
 from spcal.limit import SPCalLimit
 from spcal.particle import particle_size
@@ -22,7 +21,7 @@ def test_spcalresult():
         signal,
         detections=detections,
         labels=labels,
-        limits=SPCalLimit(1.0, 5.0, 10.0, "Limit", {}),
+        limits=SPCalLimit(1.0, 5.0, "Limit", {}),
     )
     assert np.all(result.indicies == [0, 1, 2])
     assert result.events == 50
@@ -46,7 +45,7 @@ def test_spcalresult_from_mass_response():
         signal,
         detections=detections,
         labels=labels,
-        limits=SPCalLimit(1.0, 5.0, 10.0, "Limit", {}),
+        limits=SPCalLimit(1.0, 5.0, "Limit", {}),
         inputs_kws={
             "density": 0.01,
             "mass_response": 1e-3,
@@ -78,7 +77,7 @@ def test_spcalresult_from_nebulisation_efficiency():
         signal,
         detections=detections,
         labels=labels,
-        limits=SPCalLimit(1.0, 5.0, 10.0, "Limit", {}),
+        limits=SPCalLimit(1.0, 5.0, "Limit", {}),
         inputs_kws={
             "density": 0.01,
             "dwelltime": 1e-3,
@@ -112,7 +111,7 @@ def test_spcalresult_errors():
             signal,
             detections=np.array([]),
             labels=np.zeros_like(signal),
-            limits=SPCalLimit(1.0, 1.0, 1.0, "", {}),
+            limits=SPCalLimit(1.0, 1.0, "", {}),
         )
 
     result = SPCalResult(
@@ -120,7 +119,7 @@ def test_spcalresult_errors():
         signal,
         detections=detections,
         labels=labels,
-        limits=SPCalLimit(1.0, 1.0, 1.0, "", {}),
+        limits=SPCalLimit(1.0, 1.0, "", {}),
     )
 
     with pytest.raises(KeyError):

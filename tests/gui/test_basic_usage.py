@@ -26,26 +26,31 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
     assert options.window_size.value() == 100
 
-    qtbot.keyClick(options.error_rate_poisson, QtCore.Qt.Key_1)
-    assert options.error_rate_poisson.value() == 0.0011
+    qtbot.keyClick(options.poisson.alpha, QtCore.Qt.Key_1)
+    assert options.poisson.alpha.value() == 0.0011
 
-    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Backspace)
-    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_5)
-    qtbot.keyClick(options.error_rate_gaussian, QtCore.Qt.Key_Enter)
-    assert options.error_rate_gaussian.value() == 1e-5
-    assert options.sigma_gaussian.value() == 4.2649
+    qtbot.keyClick(options.gaussian.alpha, QtCore.Qt.Key_Backspace)
+    qtbot.keyClick(options.gaussian.alpha, QtCore.Qt.Key_5)
+    qtbot.keyClick(options.gaussian.alpha, QtCore.Qt.Key_Enter)
+    assert options.gaussian.alpha.value() == 2.867e-5
+    assert options.gaussian.sigma.value() == 4.0235
 
-    options.sigma_gaussian.setValue(5.0)
-    assert options.error_rate_gaussian.value() == 2.867e-7
+    options.gaussian.sigma.setValue(4.2649)
+    assert options.gaussian.alpha.value() == 1e-5
 
     with qtbot.wait_signal(options.check_iterative.toggled, timeout=50):
         options.check_iterative.click()
     assert options.check_iterative.isChecked()
 
-    options.limit_method.setCurrentIndex(4)
-    assert not options.error_rate_gaussian.isEnabled()
-    assert not options.error_rate_poisson.isEnabled()
+    options.limit_method.setCurrentText("Manual Input")
+    assert not options.compound_poisson.isEnabled()
+    assert not options.gaussian.isEnabled()
+    assert not options.poisson.isEnabled()
     assert not options.check_iterative.isEnabled()
+    assert not options.check_window.isEnabled()
+    options.limit_method.setCurrentText("Compound Poisson")
+    assert options.check_iterative.isEnabled()
+    assert not options.check_window.isEnabled()
     options.limit_method.setCurrentIndex(0)
 
     qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)

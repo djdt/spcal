@@ -56,59 +56,71 @@ class SPCalLimit(object):
         cls,
         method: str,
         responses: np.ndarray,
-        poisson_kws: dict,
-        gaussian_kws: dict,
-        compound_kws: dict,
+        poisson_kws: dict | None = None,
+        gaussian_kws: dict | None = None,
+        compound_kws: dict | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
         """Takes a string and returns limit class.
 
-        Valid stings are 'automatic', 'best', 'highest', 'gaussian', 'poisson'.
+        Valid stings are 'automatic', 'best', 'highest', 'compound', gaussian' and
+        'poisson'.
 
         Args:
             method: method to use
             responses: single particle data
-            poisson_alpha: error rate for Poisson thresholding
-            gaussian_alpha: error rate for Gaussian thresholding
+            compound_kws: key words for Compound Poisson thresholding
+            poisson_kws: key words for Poisson thresholding
+            gaussian_kws: key words for Gaussian thresholding
             window_size: size of window to use, 0 for no window
             max_iters: maximum iterations to try
         """
+        if compound_kws is None:
+            compound_kws = {}
+        if gaussian_kws is None:
+            gaussian_kws = {}
+        if poisson_kws is None:
+            poisson_kws = {}
+
         method = method.lower()
         if method in ["automatic", "best"]:
             return SPCalLimit.fromBest(
                 responses,
-                poisson_kws=poisson_kws,
-                gaussian_kws=gaussian_kws,
+                poisson_alpha=poisson_kws.get("alpha", 0.001),
+                gaussian_alpha=gaussian_kws.get("alpha", 1e-6),
                 window_size=window_size,
                 max_iters=max_iters,
             )
         elif method == "highest":
             return SPCalLimit.fromHighest(
                 responses,
-                poisson_kws=poisson_kws,
-                gaussian_kws=gaussian_kws,
+                poisson_alpha=poisson_kws.get("alpha", 0.001),
+                gaussian_alpha=gaussian_kws.get("alpha", 1e-6),
                 window_size=window_size,
+                max_iters=max_iters,
             )
         elif method.startswith("compound"):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
+                alpha=compound_kws.get("alpha", 1e-6),
+                sia=compound_kws.get("sia", 1.0),
+                accumulations=compound_kws.get("accumulations", 1),
                 max_iters=max_iters,
-                **compound_kws,
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
                 responses,
+                alpha=gaussian_kws.get("alpha", 1e-6),
                 window_size=window_size,
                 max_iters=max_iters,
-                **gaussian_kws,
             )
         elif method.startswith("poisson"):
             return SPCalLimit.fromPoisson(
                 responses,
+                alpha=poisson_kws.get("alpha", 0.001),
                 window_size=window_size,
                 max_iters=max_iters,
-                **poisson_kws,
             )
         else:
             raise ValueError("fromMethodString: unknown method")
@@ -282,8 +294,8 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
-        poisson_kws: dict,
-        gaussian_kws: dict,
+        poisson_alpha: float = 0.001,
+        gaussian_alpha: float = 1e-6,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -303,26 +315,26 @@ class SPCalLimit(object):
         # Check that the non-detection region is normalish (λ > 10)
         poisson = SPCalLimit.fromPoisson(
             responses,
+            alpha=poisson_alpha,
             window_size=window_size,
             max_iters=max_iters,
-            **poisson_kws,
         )
         if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
             return poisson
         else:
             return SPCalLimit.fromGaussian(
                 responses,
+                alpha=gaussian_alpha,
                 window_size=window_size,
                 max_iters=max_iters,
-                **gaussian_kws,
             )
 
     @classmethod
     def fromHighest(
         cls,
         responses: np.ndarray,
-        poisson_kws: dict,
-        gaussian_kws: dict,
+        poisson_alpha: float = 0.001,
+        gaussian_alpha: float = 1e-6,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -340,15 +352,15 @@ class SPCalLimit(object):
         """
         gaussian = SPCalLimit.fromGaussian(
             responses,
+            alpha=gaussian_alpha,
             window_size=window_size,
             max_iters=max_iters,
-            **gaussian_kws,
         )
         poisson = SPCalLimit.fromPoisson(
             responses,
+            alpha=poisson_alpha,
             window_size=window_size,
             max_iters=max_iters,
-            **poisson_kws,
         )
         if np.mean(gaussian.detection_threshold) > np.mean(poisson.detection_threshold):
             return gaussian

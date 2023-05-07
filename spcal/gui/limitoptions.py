@@ -48,7 +48,7 @@ class CompoundPoissonOptions(LimitOptions):
             1, validator=QtGui.QIntValidator(1, 100), format=".0f"
         )
         self.accumulations.setToolTip(
-            "The number of ion extracion events per acquisition."
+            "The number of ion extraction events per acquisition."
         )
         self.accumulations.valueChanged.connect(self.limitOptionsChanged)
 

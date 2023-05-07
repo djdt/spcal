@@ -1,5 +1,3 @@
-from statistics import NormalDist
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.limitoptions import (
@@ -243,8 +241,10 @@ class OptionsWidget(QtWidgets.QWidget):
             self.compound_poisson.alpha.setValue(state["compound alpha"])
         if "compound sia" in state:
             self.compound_poisson.setSingleIon(state["compound sia"])
-        if "compound alpha" in state:
-            self.compound_poisson.alpha.setValue(state["compound alpha"])
+        if "compound accumulations" in state:
+            self.compound_poisson.accumulations.setValue(
+                state["compound accumulations"]
+            )
         if "poisson alpha" in state:
             self.poisson.alpha.setValue(state["poisson alpha"])
         if "gaussian alpha" in state:

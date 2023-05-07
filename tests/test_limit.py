@@ -16,13 +16,13 @@ UPPER_INTEGER = True
 
 def test_limit_errors():
     with pytest.raises(ValueError):
-        SPCalLimit.fromMethodString("Invalid", x)
+        SPCalLimit.fromMethodString("Invalid", x, {}, {}, {})
 
 
 def test_limit_from_poisson():
     lim = SPCalLimit.fromPoisson(x, alpha=0.001, max_iters=1)  # ld ~= 87
     assert lim.name == "Poisson"
-    assert lim.params == {"alpha": 0.001}
+    assert lim.params["alpha"] == 0.001
     limit = poisson.formula_c(np.mean(x), alpha=0.001)[0] + np.mean(x)
     if UPPER_INTEGER:
         limit = int(limit) + 1.0
@@ -32,7 +32,7 @@ def test_limit_from_poisson():
 def test_limit_from_gaussian():
     lim = SPCalLimit.fromGaussian(x, alpha=0.001, max_iters=1)  # ld ~= 87
     assert lim.name == "Gaussian"
-    assert lim.params == {"alpha": 0.001}
+    assert lim.params["alpha"] == 0.001
     limit = np.mean(x) + np.std(x) * z
     if UPPER_INTEGER:
         limit = int(limit) + 1.0

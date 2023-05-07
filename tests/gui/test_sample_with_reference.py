@@ -61,7 +61,7 @@ def test_sample_with_reference(qtbot: QtBot):
         window.sample.io["Au"].background_count.value(), 0.3064, atol=1e-4
     )
     assert np.isclose(window.sample.io["Au"].lod_count.value(), limit, atol=1e-2)
-    assert window.sample.io["Au"].lod_label.text() == "(Poisson, alpha=0.001)"
+    assert window.sample.io["Au"].lod_label.text() == "Poisson (alpha=0.001)"
 
     # Set values
     window.sample.io["Au"].density.setBaseValue(density)
