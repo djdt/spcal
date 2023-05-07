@@ -154,7 +154,7 @@ def restoreSession(
     results: ResultsWidget,
 ) -> None:
     with h5py.File(path, "r") as h5:
-        if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 11):
+        if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 14):
             raise ValueError("Unsupported version.")
 
         options.setState(restoreOptions(h5["options"].attrs))
