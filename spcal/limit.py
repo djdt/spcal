@@ -48,8 +48,8 @@ class SPCalLimit(object):
         self.params = params
 
     def __str__(self) -> str:
-        pstring = ",".join(f"{k}={v}" for k, v in self.params.items() if v != 0)
-        return f"{self.name} ({pstring})"
+        pstring = ";".join(f"{k}={v}" for k, v in self.params.items() if v != 0)
+        return f"{self.name} ({pstring})" if len(pstring) > 0 else self.name
 
     @classmethod
     def fromMethodString(

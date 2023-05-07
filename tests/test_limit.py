@@ -41,11 +41,11 @@ def test_limit_from_gaussian():
 
 def test_limit_windowed():
     lim = SPCalLimit.fromPoisson(x, window_size=3, max_iters=1)
-    assert lim.window_size == 3
+    assert lim.params["window"] == 3
     assert lim.detection_threshold.size == x.size
 
     lim = SPCalLimit.fromGaussian(x, window_size=3, max_iters=1)
-    assert lim.window_size == 3
+    assert lim.params["window"] == 3
     assert lim.detection_threshold.size == x.size
 
 

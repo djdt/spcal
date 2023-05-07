@@ -200,18 +200,8 @@ def export_single_particle_results(
             )
         fp.write("#\n")
 
-        def limit_name_and_params(r: SPCalResult):
-            params = ";".join(f"{k}={v:.4g}" for k, v in r.limits.params.items())
-            if r.limits.window_size != 0:
-                if len(params) > 0:
-                    params += ";"
-                params += f"window={r.limits.window_size}"
-            if len(params) == 0:
-                return r.limits.name
-            return r.limits.name + " (" + params + ")"
-
         write_if_exists(
-            fp, results, limit_name_and_params, "# Limit method,", format="{}"
+            fp, results, lambda r: str(r.limits), "# Limit method,", format="{}"
         )
 
         fp.write("#\n")

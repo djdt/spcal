@@ -12,7 +12,7 @@ results = {
         np.ones(100),
         np.array([5]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
-        SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0}, window_size=9),
+        SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
         inputs_kws={"dwelltime": 1e-6, "uptake": 1e-3, "not_a_kw": 10.0, "time": 100.0},
     ),
     "b": SPCalResult(
@@ -62,7 +62,7 @@ def test_export_singleparticle_inputs(tmp_path: Path):
         assert fp.readline() == "# Time,100,100,s\n"
         assert fp.readline() == "# Uptake,60,60,ml/min\n"
         fp.readline()
-        assert fp.readline() == "# Limit method,Limit (kw1=1;window=9),Limit\n"
+        assert fp.readline() == "# Limit method,Limit (kw1=1.0;window=9),Limit\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
