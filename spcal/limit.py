@@ -189,7 +189,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 1e-6,
         window_size: int = 0,
-        max_iters: int = 10,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Gaussian thresholding.
 
@@ -199,7 +199,7 @@ class SPCalLimit(object):
             responses: single-particle data
             alpha: type I error rate
             window_size: size of window, 0 for no window
-            max_iters: max iterations, 0 for no iteration
+            max_iters: max iterations, 1 for no iteration
         """
         if responses.size == 0:  # pragma: no cover
             raise ValueError("fromGaussian: responses is size 0")
@@ -245,7 +245,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         window_size: int = 0,
-        max_iters: int = 10,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Poisson thresholding.
 
@@ -255,7 +255,7 @@ class SPCalLimit(object):
             responses: single-particle data
             alpha: type I error rate
             window_size: size of window, 0 for no window
-            max_iters: max iterations, 0 for no iteration
+            max_iters: max iterations, 1 for no iteration
         """
         if responses.size == 0:  # pragma: no cover
             raise ValueError("fromPoisson: responses is size 0")
