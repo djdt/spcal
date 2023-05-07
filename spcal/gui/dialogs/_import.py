@@ -488,9 +488,10 @@ class NuImportDialog(_ImportDialogBase):
             "cycle": self.cycle_number.value(),
             "segment": self.segment_number.value(),
             "blanking": self.checkbox_blanking.isChecked(),
-            "sia": self.info["AverageSingleIonArea"],
-            "accumulations": self.info["NumAccumulations1"]
-            * self.info["NumAccumulations2"],
+            "sia": float(self.info["AverageSingleIonArea"]),
+            "accumulations": int(
+                self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+            ),
         }
 
     def setImportOptions(
@@ -792,7 +793,7 @@ class TofwerkImportDialog(_ImportDialogBase):
             "dwelltime": self.dwelltime.baseValue(),
             "isotopes": self.table.selectedIsotopes(),
             "other peaks": self.combo_other_peaks.checkedItems(),
-            "sia": self.h5["FullSpectra"].attrs["Single Ion Signal"],
+            "sia": float(self.h5["FullSpectra"].attrs["Single Ion Signal"]),
             "accumulations": factor_extraction_to_acquisition(self.h5),
         }
 
