@@ -138,16 +138,20 @@ class TextImportDialog(_ImportDialogBase):
             x for _, x in zip(range(header_row_count), self.file_path.open("r"))
         ]
 
+        # Guess the delimitier, skip rows and count from header
         first_data_line = 0
+
+        delimiter = "\t"
         for line in self.file_header:
             try:
-                float(line.split(",")[-1])
+                delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
+                float(line.split(delimiter)[-1])
                 break
-            except ValueError:
+            except (ValueError, StopIteration):
                 pass
             first_data_line += 1
 
-        column_count = max([line.count(",") for line in self.file_header]) + 1
+        column_count = max([line.count(delimiter) for line in self.file_header]) + 1
 
         with self.file_path.open("rb") as fp:
             line_count = 0
@@ -171,6 +175,7 @@ class TextImportDialog(_ImportDialogBase):
 
         self.combo_delimiter = QtWidgets.QComboBox()
         self.combo_delimiter.addItems([",", ";", "Space", "Tab"])
+        self.combo_delimiter.setCurrentIndex([",", ";", " ", "\t"].index(delimiter))
         self.combo_delimiter.currentIndexChanged.connect(self.fillTable)
 
         self.spinbox_first_line = QtWidgets.QSpinBox()
@@ -488,7 +493,7 @@ class NuImportDialog(_ImportDialogBase):
             "cycle": self.cycle_number.value(),
             "segment": self.segment_number.value(),
             "blanking": self.checkbox_blanking.isChecked(),
-            "sia": float(self.info["AverageSingleIonArea"]),
+            "single ion": float(self.info["AverageSingleIonArea"]),
             "accumulations": int(
                 self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
             ),
@@ -787,13 +792,17 @@ class TofwerkImportDialog(_ImportDialogBase):
         return isotopes is not None and self.dwelltime.hasAcceptableInput()
 
     def importOptions(self) -> dict:
+        if "SingleIon" in self.h5 and "Data" in self.h5["SingleIon"]:
+            single_ion = self.h5["SingleIon"]["Data"][:]
+        else:
+            single_ion = float(self.h5["FullSpectra"].attrs["Single Ion Signal"])
         return {
             "importer": "tofwerk",
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "isotopes": self.table.selectedIsotopes(),
             "other peaks": self.combo_other_peaks.checkedItems(),
-            "sia": float(self.h5["FullSpectra"].attrs["Single Ion Signal"]),
+            "single ion": single_ion,
             "accumulations": factor_extraction_to_acquisition(self.h5),
         }
 

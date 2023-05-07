@@ -64,10 +64,45 @@ class CompoundPoissonOptions(LimitOptions):
         button_layout.addWidget(
             self.button_single_ion, 1, QtCore.Qt.AlignmentFlag.AlignRight
         )
+        self.button_single_ion.pressed.connect(self.dialogSingleIon)
 
         self.layout().addRow("Average SIA:", self.single_ion_average)
         self.layout().addRow("Accumulations:", self.accumulations)
         self.layout().addRow(button_layout)
+
+    def dialogSingleIon(self) -> QtWidgets.QDialog:
+        dlg = QtWidgets.QFileDialog()
+    #     dlg = SingleIonDialog(self.single_ion_dist, parent=self)
+    #     dlg.distributionSelected.connect(self.setSingleIon)
+        dlg.open()
+        return dlg
+
+    def loadSingleIonData(self, file: str) -> None:
+        with open(file, "r") as fp:
+            delimiter = "\t"
+            skip_rows = 0
+            for line in fp.readlines(1024):
+                try:
+                    delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
+                    float(line.split(delimiter)[-1])
+                    break
+                except (ValueError, StopIteration):
+                    pass
+                skip_rows += 1
+            count = line.count(delimiter) + 1
+
+        if count == 1:  # raw points from dist
+            data = np.genfromtxt(  # type: ignore
+                file,
+                delimiter=delimiter,
+                skip_header=skip_rows,
+                dtype=np.float64,
+                invalid_raise=False,
+                loose=True,
+            )
+            self.setSingleIon(data)
+        elif count == 2:  # hist as bin, count
+            pass
 
     def getSingleIon(self) -> float | None | np.ndarray:
         return (
@@ -89,7 +124,7 @@ class CompoundPoissonOptions(LimitOptions):
     def state(self) -> dict:
         return {
             "alpha": self.alpha.value(),
-            "sia": self.getSingleIon(),
+            "single ion": self.getSingleIon(),
             "accumulations": int(self.accumulations.value() or 1),
         }
 
@@ -97,8 +132,8 @@ class CompoundPoissonOptions(LimitOptions):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
-        if "sia" in state:
-            self.setSingleIon(state["sia"])
+        if "single ion" in state:
+            self.setSingleIon(state["single ion"])
         if "accumulations" in state:
             self.accumulations.setValue(state["accumulations"])
         self.blockSignals(False)
@@ -151,67 +186,54 @@ class PoissonOptions(LimitOptions):
         self.layout().addRow(button_layout)
         self.button_advanced.setEnabled(False)
 
+        # class AdvancedPoissonOptions(QtWidgets.QWidget):
+        #     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
+        #         super().__init__(parent)
 
-class AdvancedPoissonOptions(QtWidgets.QWidget):
-    def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
+        #         pixmap = QtGui.QPixmap(image)
 
-        pixmap = QtGui.QPixmap(image)
+        #         label = QtWidgets.QLabel()
+        #         label.setPixmap(pixmap)
+        #         label.setFixedSize(pixmap.size())
 
-        label = QtWidgets.QLabel()
-        label.setPixmap(pixmap)
-        label.setFixedSize(pixmap.size())
+        #         layout = QtWidgets.QVBoxLayout()
+        #         layout.addWidget(label)
+        #         self.setLayout(layout)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(label)
-        self.setLayout(layout)
+        # class CurrieOptions(AdvancedPoissonOptions):
+        #     def __init__(self, parent: QtWidgets.QWidget | None = None):
+        #         super().__init__(":img/currie2008.png", parent)
 
+        #         self.eta = ValueWidget(2.0, validator=QtGui.QDoubleValidator(1.0, 2.0, 2))
+        #         self.epsilon = ValueWidget(0.5, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
 
-class CurrieOptions(AdvancedPoissonOptions):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(":img/currie2008.png", parent)
+        #         layout = QtWidgets.QFormLayout()
+        #         layout.addRow("η", self.eta)
+        #         layout.addRow("ε", self.epsilon)
 
-        self.eta = ValueWidget(2.0, validator=QtGui.QDoubleValidator(1.0, 2.0, 2))
-        self.epsilon = ValueWidget(0.5, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
+        #         self.layout().insertLayout(0, layout)
 
-        layout = QtWidgets.QFormLayout()
-        layout.addRow("η", self.eta)
-        layout.addRow("ε", self.epsilon)
+        # class MARLAPFormulaOptions(AdvancedPoissonOptions):
+        #     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
+        #         super().__init__(image, parent)
 
-        self.layout().insertLayout(0, layout)
+        #         self.t_sample = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
+        #         self.t_blank = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
 
+        #         layout = QtWidgets.QFormLayout()
+        #         layout.addRow("t sample", self.t_sample)
+        #         layout.addRow("t blank", self.t_blank)
 
-class MARLAPFormulaOptions(AdvancedPoissonOptions):
-    def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(image, parent)
+        #         self.layout().insertLayout(0, layout)
 
-        self.t_sample = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
-        self.t_blank = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
+        # class AdvancedLimitOptions(QtWidgets.QDialog):
+        #     def __init__(self, parent: QtWidgets.QWidget | None = None):
+        #         super().__init__(parent)
+        #         self.setWindowTitle("Advanced Options")
 
-        layout = QtWidgets.QFormLayout()
-        layout.addRow("t sample", self.t_sample)
-        layout.addRow("t blank", self.t_blank)
+        #         self.poisson_formula = QtWidgets.QComboBox()
+        #         self.poisson_formula.addItems(["Currie", "Formula A", "Formula C", "Stapleton"])
 
-        self.layout().insertLayout(0, layout)
-
-
-class AdvancedLimitOptions(QtWidgets.QDialog):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.setWindowTitle("Advanced Options")
-
-        self.poisson_formula = QtWidgets.QComboBox()
-        self.poisson_formula.addItems(["Currie", "Formula A", "Formula C", "Stapleton"])
-
-        self.poisson_stack = QtWidgets.QStackedWidget()
+        #         self.poisson_stack = QtWidgets.QStackedWidget()
 
         layout = QtWidgets.QVBoxLayout()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    w = CurrieOptions()
-
-    w.show()
-    app.exec()

@@ -67,6 +67,9 @@ class SPCalLimit(object):
         Valid stings are 'automatic', 'best', 'highest', 'compound', gaussian' and
         'poisson'.
 
+        The CompoundPoisson method is seeded with a set number so will always give
+        the same results.
+
         Args:
             method: method to use
             responses: single particle data
@@ -104,9 +107,10 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                sia=compound_kws.get("sia", 1.0),
+                single_ion=compound_kws.get("single ion", 1.0),
                 accumulations=compound_kws.get("accumulations", 1),
                 max_iters=max_iters,
+                seed=294879019,  # use a seed for consitent results
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
@@ -129,11 +133,12 @@ class SPCalLimit(object):
     def fromCompoundPoisson(
         cls,
         responses: np.ndarray,
-        sia: float | np.ndarray,
+        single_ion: float | np.ndarray,
         accumulations: int,
         alpha: float = 0.001,
-        size: int = 10000,
         max_iters: int = 1,
+        size: int = 100000,
+        seed: int | None = None,
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
 
@@ -144,20 +149,31 @@ class SPCalLimit(object):
 
         Args:
             responses: single-particle data
-            sia: single ion area as an average or distribution
+            single_ion: single ion area as an average, distribution or histogram of
+                stacked bins and counts
             size: size of simulation
             accumulations: number of accumulation per acquisition
             alpha: type I error rate
             max_iters: number of iterations, set to 1 for no iters
+            size: size of simulation, larger values will give more consistent quantiles
+            seed: seed for random number generator
 
         References:
             Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
                 for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
                 https://doi.org/10.1021/acs.analchem.2c05243
         """
+
+        rng = np.random.default_rng(seed=seed)
+
         # Ensure the single ion signal is a distribution
-        if isinstance(sia, float):  # passed average, give an estiamtion
-            sia = np.random.normal(sia, sia, size=1000)
+        if isinstance(single_ion, float):  # passed average, give an estiamtion
+            single_ion = rng.normal(single_ion, single_ion, size=10000)
+        weights = None
+
+        if single_ion.ndim == 2:  # histogram of (bins, counts)
+            weights = single_ion[:, 1] / single_ion[:, 1].sum()
+            single_ion = single_ion[:, 0]
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
@@ -168,10 +184,10 @@ class SPCalLimit(object):
 
             comp = np.zeros(size)
             for _ in range(accumulations):
-                poi = np.random.poisson(lam / accumulations, size=size)
-                comp += poi * np.random.choice(sia, size=size)
+                poi = rng.poisson(lam / accumulations, size=size)
+                comp += poi * rng.choice(single_ion, size=size, p=weights)
 
-            comp /= np.mean(sia)
+            comp /= np.average(single_ion, weights=weights)
             threshold = float(np.quantile(comp, 1.0 - alpha))
             iters += 1
 

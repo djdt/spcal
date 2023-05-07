@@ -230,8 +230,8 @@ class InputWidget(QtWidgets.QWidget):
         self.options.blockSignals(True)
         self.options.dwelltime.setBaseValue(options["dwelltime"])
 
-        if "sia" in options:
-            self.options.compound_poisson.single_ion_average.setValue(options["sia"])
+        if "single ion" in options:
+            self.options.compound_poisson.setSingleIon(options["single ion"])
         if "accumulations" in options:
             self.options.compound_poisson.accumulations.setValue(
                 options["accumulations"]
