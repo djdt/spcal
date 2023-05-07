@@ -19,9 +19,9 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert options.dwelltime.lineedit.isReadOnly()
 
     assert not options.window_size.isEnabled()
-    with qtbot.wait_signal(options.check_use_window.toggled, timeout=50):
-        options.check_use_window.click()
-    assert options.check_use_window.isChecked()
+    with qtbot.wait_signal(options.check_window.toggled, timeout=50):
+        options.check_window.click()
+    assert options.check_window.isChecked()
     assert options.window_size.isEnabled()
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
     assert options.window_size.value() == 100

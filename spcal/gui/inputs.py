@@ -204,8 +204,8 @@ class InputWidget(QtWidgets.QWidget):
 
         dlg = get_import_dialog_for_path(self, path, self.import_options)
         dlg.dataImported.connect(self.loadData)
-        dlg.screening_poisson_alpha = self.options.error_rate_poisson.value() or 1e-3
-        dlg.screening_gaussian_alpha = self.options.error_rate_gaussian.value() or 1e-6
+        dlg.screening_poisson_alpha = self.options.poisson.alpha.value() or 1e-3
+        dlg.screening_gaussian_alpha = self.options.gaussian.alpha.value() or 1e-6
         dlg.open()
         return dlg
 
@@ -225,8 +225,18 @@ class InputWidget(QtWidgets.QWidget):
 
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
-        self.options.dwelltime.setBaseValue(options["dwelltime"])
         self.label_file.setText(str(options["path"]))
+
+        self.options.blockSignals(True)
+        self.options.dwelltime.setBaseValue(options["dwelltime"])
+
+        if "sia" in options:
+            self.options.compound_poisson.single_ion_average.setValue(options["sia"])
+        if "accumulations" in options:
+            self.options.compound_poisson.accumulations.setValue(
+                options["accumulations"]
+            )
+        self.options.blockSignals(False)
 
         self.responses = data
         self.events = np.arange(data.size)
@@ -304,8 +314,6 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         method = self.options.limit_method.currentText()
-        poisson_alpha = self.options.error_rate_poisson.value() or 0.001
-        gaussian_alpha = self.options.error_rate_gaussian.value() or 1e-6
         if self.options.window_size.isEnabled():
             window_size = self.options.window_size.value() or 0
         else:
@@ -314,6 +322,10 @@ class InputWidget(QtWidgets.QWidget):
         max_iter = 10 if self.options.check_iterative.isChecked() else 1
 
         self.limits.clear()
+
+        compound_kws = self.options.compound_poisson.asDict()
+        gaussian_kws = self.options.gaussian.asDict()
+        poisson_kws = self.options.poisson.asDict()
 
         for name in self.names:
             response = self.trimmedResponse(name)
@@ -332,8 +344,8 @@ class InputWidget(QtWidgets.QWidget):
                 else:  # If empty limit then fill with best estimate
                     self.limits[name] = SPCalLimit.fromBest(
                         response,
-                        poisson_alpha=poisson_alpha,
-                        gaussian_alpha=gaussian_alpha,
+                        poisson_kws=poisson_kws,
+                        gaussian_kws=gaussian_kws,
                         window_size=window_size,
                         max_iters=max_iter,
                     )
@@ -341,8 +353,9 @@ class InputWidget(QtWidgets.QWidget):
                 self.limits[name] = SPCalLimit.fromMethodString(
                     method,
                     response,
-                    poisson_alpha=poisson_alpha,
-                    gaussian_alpha=gaussian_alpha,
+                    compound_kws=compound_kws,
+                    poisson_kws=poisson_kws,
+                    gaussian_kws=gaussian_kws,
                     window_size=window_size,
                     max_iters=max_iter,
                 )
@@ -359,8 +372,7 @@ class InputWidget(QtWidgets.QWidget):
                     self.detections[name],
                     self.labels,
                     np.mean(self.limits[name].detection_threshold),
-                    self.limits[name].name,
-                    self.limits[name].params,
+                    str(self.limits[name]),
                 )
 
     def updateFormat(self) -> None:

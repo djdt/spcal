@@ -9,9 +9,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
-from spcal.gui.results import ResultsWidget
 from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
+from spcal.gui.results import ResultsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
@@ -33,8 +33,9 @@ def process_data(
     inputs: Dict[str, Dict[str, float | None]],
     filters: List[List[Filter]],
     limit_method: str,
-    limit_params: Dict[str, float],
+    limit_params: Dict[str, dict],
     limit_window_size: int = 0,
+    limit_iterations: int = 1,
 ) -> Dict[str, SPCalResult]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data)
@@ -55,9 +56,11 @@ def process_data(
             limits[name] = SPCalLimit.fromMethodString(
                 limit_method,
                 data[name],
-                gaussian_alpha=limit_params["gaussian_alpha"],
-                poisson_alpha=limit_params["poisson_alpha"],
+                compound_kws=limit_params["compound_kws"],
+                gaussian_kws=limit_params["gaussian_kws"],
+                poisson_kws=limit_params["poisson_kws"],
                 window_size=limit_window_size,
+                max_iters=limit_iterations,
             )
 
         # === Create detections ===
@@ -475,8 +478,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 pass
 
         limit_params = {
-            "poisson_alpha": self.options.error_rate_poisson.value() or 0.001,
-            "gaussian_alpha": self.options.error_rate_gaussian.value() or 1e-6,
+            "compound_kws": self.options.compound_poisson.asDict(),
+            "poisson_kws": self.options.poisson.asDict(),
+            "gaussian_kws": self.options.gaussian.asDict(),
         }
         units = {
             "mass": (

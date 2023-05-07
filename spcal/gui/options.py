@@ -2,6 +2,11 @@ from statistics import NormalDist
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.limitoptions import (
+    CompoundPoissonOptions,
+    GaussianOptions,
+    PoissonOptions,
+)
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.siunits import time_units
 
@@ -88,18 +93,22 @@ class OptionsWidget(QtWidgets.QWidget):
         self.window_size.setEditFormat(".0f")
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
-        self.check_use_window = QtWidgets.QCheckBox("Use window")
-        self.check_use_window.toggled.connect(self.window_size.setEnabled)
+        self.check_window = QtWidgets.QCheckBox("Use window")
+        self.check_window.setToolTip(
+            "Calculate threhold for each point using data from surrounding points."
+        )
+        self.check_window.toggled.connect(self.window_size.setEnabled)
 
         layout_window_size = QtWidgets.QHBoxLayout()
         layout_window_size.addWidget(self.window_size, 1)
-        layout_window_size.addWidget(self.check_use_window, 1)
+        layout_window_size.addWidget(self.check_window, 1)
 
         self.limit_method = QtWidgets.QComboBox()
         self.limit_method.addItems(
             [
                 "Automatic",
                 "Highest",
+                "Compound Poisson",
                 "Gaussian",
                 "Poisson",
                 "Manual Input",
@@ -107,22 +116,29 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.limit_method.setItemData(
             0,
-            "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
+            # "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
+            "",  # Todo
             QtCore.Qt.ToolTipRole,
         )
         self.limit_method.setItemData(
             1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
         )
         self.limit_method.setItemData(
-            2, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
+            2,
+            "Estimate ToF limits using a compound distribution based on the "
+            "number of accumulations and the single ion distribution..",
+            QtCore.Qt.ToolTipRole,
         )
         self.limit_method.setItemData(
-            3,
+            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
+        )
+        self.limit_method.setItemData(
+            4,
             "Threshold using Formula C from the MARLAP manual.",
             QtCore.Qt.ToolTipRole,
         )
         self.limit_method.setItemData(
-            4,
+            5,
             "Manually define limits in the sample and reference tabs.",
             QtCore.Qt.ToolTipRole,
         )
@@ -135,59 +151,34 @@ class OptionsWidget(QtWidgets.QWidget):
             )
         )
 
-        self.error_rate_poisson = ValueWidget(
-            0.001,
-            validator=QtGui.QDoubleValidator(1e-16, 0.5, 9),
-            format=sf,
-        )
-        self.error_rate_poisson.setPlaceholderText("0.001")
-        self.error_rate_poisson.setToolTip(
-            "Type I (false positive) error rate for Poisson filters."
-        )
-        self.error_rate_gaussian = ValueWidget(
-            1.0 - NormalDist().cdf(5.0),
-            validator=QtGui.QDoubleValidator(1e-16, 0.5, 9),
-            format=sf,
-        )
-        self.error_rate_gaussian.setPlaceholderText("1e-6")
-        self.error_rate_gaussian.setToolTip(
-            "Type I (false positive) error rate for Guassian filters."
-        )
-        self.error_rate_gaussian.valueChanged.connect(self.updateGaussianSigma)
-
-        self.sigma_gaussian = ValueWidget(
-            5.0, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
-        )
-        self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
-
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
         self.limit_method.currentTextChanged.connect(self.limitMethodChanged)
 
         self.window_size.editingFinished.connect(self.limitOptionsChanged)
-        self.check_use_window.toggled.connect(self.limitOptionsChanged)
+        self.check_window.toggled.connect(self.limitOptionsChanged)
         self.limit_method.currentTextChanged.connect(self.limitOptionsChanged)
-        self.error_rate_poisson.editingFinished.connect(self.limitOptionsChanged)
-        self.error_rate_gaussian.editingFinished.connect(self.limitOptionsChanged)
-        self.sigma_gaussian.editingFinished.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
+
+        self.compound_poisson = CompoundPoissonOptions()
+        self.compound_poisson.limitOptionsChanged.connect(self.limitOptionsChanged)
+        self.poisson = PoissonOptions()
+        self.poisson.limitOptionsChanged.connect(self.limitOptionsChanged)
+        self.gaussian = GaussianOptions()
+        self.gaussian.limitOptionsChanged.connect(self.limitOptionsChanged)
 
         layout_method = QtWidgets.QHBoxLayout()
         layout_method.addWidget(self.limit_method, 1)
         layout_method.addWidget(self.check_iterative, 1)
 
-        layout_gaussian = QtWidgets.QHBoxLayout()
-        layout_gaussian.addWidget(self.error_rate_gaussian)
-        layout_gaussian.addWidget(QtWidgets.QLabel("σ:"))
-        layout_gaussian.addWidget(self.sigma_gaussian)
-
-        self.limit_inputs = QtWidgets.QGroupBox("Threshold inputs")
+        self.limit_inputs = QtWidgets.QGroupBox("Threshold Options")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Threshold method:", layout_method)
-        self.limit_inputs.layout().addRow("Poisson α:", self.error_rate_poisson)
-        self.limit_inputs.layout().addRow("Gaussian α:", layout_gaussian)
+        self.limit_inputs.layout().addRow(self.compound_poisson)
+        self.limit_inputs.layout().addRow(self.gaussian)
+        self.limit_inputs.layout().addRow(self.poisson)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -219,11 +210,14 @@ class OptionsWidget(QtWidgets.QWidget):
             "efficiency": self.efficiency.value(),
             "efficiency method": self.efficiency_method.currentText(),
             "window size": self.window_size.value(),
-            "use window": self.check_use_window.isChecked(),
+            "use window": self.check_window.isChecked(),
             "limit method": self.limit_method.currentText(),
             "iterative": self.check_iterative.isChecked(),
-            "poisson alpha": self.error_rate_poisson.value(),
-            "gaussian alpha": self.error_rate_gaussian.value(),
+            "compound alpha": self.compound_poisson.alpha.value(),
+            "compound sia": self.compound_poisson.getSingleIon(),
+            "compound accumulations": self.compound_poisson.accumulations.value(),
+            "poisson alpha": self.poisson.alpha.value(),
+            "gaussian alpha": self.gaussian.alpha.value(),
             "cell diameter": self.celldiameter.baseValue(),
         }
         return {k: v for k, v in state_dict.items() if v is not None}
@@ -243,12 +237,18 @@ class OptionsWidget(QtWidgets.QWidget):
 
         if "window size" in state:
             self.window_size.setValue(state["window size"])
-        self.check_use_window.setChecked(bool(state["use window"]))
+        self.check_window.setChecked(bool(state["use window"]))
         self.check_iterative.setChecked(bool(state["iterative"]))
+        if "compound alpha" in state:
+            self.compound_poisson.alpha.setValue(state["compound alpha"])
+        if "compound sia" in state:
+            self.compound_poisson.setSingleIon(state["compound sia"])
+        if "compound alpha" in state:
+            self.compound_poisson.alpha.setValue(state["compound alpha"])
         if "poisson alpha" in state:
-            self.error_rate_poisson.setValue(state["poisson alpha"])
+            self.poisson.alpha.setValue(state["poisson alpha"])
         if "gaussian alpha" in state:
-            self.error_rate_gaussian.setValue(state["gaussian alpha"])
+            self.gaussian.alpha.setValue(state["gaussian alpha"])
         if "cell diameter" in state:
             self.celldiameter.setBaseValue(state["cell diameter"])
             self.celldiameter.setBestUnit()
@@ -259,24 +259,6 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
-
-    def updateGaussianAlpha(self) -> None:
-        sigma = self.sigma_gaussian.value()
-        if sigma is None:
-            return
-        alpha = 1.0 - NormalDist().cdf(sigma)
-        self.error_rate_gaussian.valueChanged.disconnect(self.updateGaussianSigma)
-        self.error_rate_gaussian.setValue(float(f"{alpha:.4g}"))
-        self.error_rate_gaussian.valueChanged.connect(self.updateGaussianSigma)
-
-    def updateGaussianSigma(self) -> None:
-        alpha = self.error_rate_gaussian.value()
-        if alpha is None:
-            alpha = 1e-6
-        sigma = NormalDist().inv_cdf(1.0 - alpha)
-        self.sigma_gaussian.valueChanged.disconnect(self.updateGaussianAlpha)
-        self.sigma_gaussian.setValue(round(sigma, 4))
-        self.sigma_gaussian.valueChanged.connect(self.updateGaussianAlpha)
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
@@ -292,12 +274,23 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
 
     def limitMethodChanged(self, method: str) -> None:
-        self.useManualLimits.emit(method == "Manual Input")
+        manual = method == "Manual Input"
+        compound = method == "Compound Poisson"
 
-        self.check_iterative.setEnabled(method != "Manual Input")
-        self.error_rate_poisson.setEnabled(method != "Manual Input")
-        self.error_rate_gaussian.setEnabled(method != "Manual Input")
-        self.sigma_gaussian.setEnabled(method != "Manual Input")
+        self.useManualLimits.emit(manual)
+        self.compound_poisson.setEnabled(not manual)
+        self.gaussian.setEnabled(not manual)
+        self.poisson.setEnabled(not manual)
+
+        self.check_iterative.setEnabled(not manual)
+        self.check_window.setEnabled(not manual and not compound)
+
+        self.blockSignals(True)
+        if manual or compound:
+            self.check_window.setChecked(False)
+        if manual:
+            self.check_iterative.setChecked(False)
+        self.blockSignals(False)
 
     def isComplete(self) -> bool:
         if self.window_size.isEnabled() and not self.window_size.hasAcceptableInput():
