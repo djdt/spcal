@@ -233,8 +233,7 @@ class SampleIOWidget(IOWidget):
         detections: np.ndarray,
         labels: np.ndarray,
         lod: float,
-        limit_name: str,
-        limit_params: Dict[str, float],
+        limit_str: str,
     ) -> None:
         background = np.nanmean(responses[labels == 0])
         background_std = np.nanstd(responses[labels == 0])
@@ -246,9 +245,7 @@ class SampleIOWidget(IOWidget):
         self.background_count.setValue(background)
         self.background_count.setError(background_std)
         self.lod_count.setValue(lod)
-        self.lod_label.setText(
-            f"({limit_name}, {','.join(f'{k}={v}' for k,v in limit_params.items())})"
-        )
+        self.lod_label.setText(limit_str)
 
     def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
         widget = getattr(self, output)

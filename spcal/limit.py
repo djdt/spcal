@@ -32,7 +32,6 @@ class SPCalLimit(object):
         detection_threshold: threshold for particle detection
         name: name of the filter / method
         params: filter / method parameters
-        window_size: size of window used or 0 if unwindowed
     """
 
     def __init__(
@@ -41,17 +40,16 @@ class SPCalLimit(object):
         detection_threshold: float | np.ndarray,
         name: str,
         params: Dict[str, float],
-        window_size: int = 0,
     ):
         self.mean_signal = mean_background
         self.detection_threshold = detection_threshold
 
         self.name = name
         self.params = params
-        self.window_size = window_size
 
     def __str__(self) -> str:
-        return f"{self.name}: {self.detection_threshold}"
+        pstring = ",".join(f"{k}={v}" for k, v in self.params.items() if v != 0)
+        return f"{self.name} ({pstring})"
 
     @classmethod
     def fromMethodString(
@@ -168,12 +166,11 @@ class SPCalLimit(object):
         if iters == max_iters and max_iters != 1:  # pragma: no cover
             logger.warning("fromCompoundPoisson: reached max_iters")
 
-        return SPCalLimit(
+        return cls(
             lam,
             threshold,
             name="CompoundPoisson",
-            params={"alpha": alpha},
-            window_size=0,
+            params={"alpha": alpha, "iters": iters - 1},
         )
 
     @classmethod
@@ -228,8 +225,7 @@ class SPCalLimit(object):
             mu,
             threshold,
             name="Gaussian",
-            params={"alpha": alpha},
-            window_size=window_size,
+            params={"alpha": alpha, "window": window_size, "iters": iters - 1},
         )
 
     @classmethod
@@ -279,8 +275,7 @@ class SPCalLimit(object):
             mu,
             threshold,
             name="Poisson",
-            params={"alpha": alpha},
-            window_size=window_size,
+            params={"alpha": alpha, "window": window_size, "iters": iters - 1},
         )
 
     @classmethod
