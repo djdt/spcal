@@ -143,7 +143,7 @@ class SPCalLimit(object):
         """Calculate threshold from simulated compound distribution.
 
         ToF data is a the sum of multiple Poisson accumulation events, each of which are
-        an independant sample of a near Gaussian SIS distribution. This function will
+        an independant sample of a Gamma like SIS distribution. This function will
         simulate the expected background and calculate the appropriate quantile for a
         given alpha value.
 
@@ -162,13 +162,19 @@ class SPCalLimit(object):
             Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
                 for Particle Finding in Single-Particle ICP-TOFMS, Anal. Chem 2023
                 https://doi.org/10.1021/acs.analchem.2c05243
+            Gershman, D.; Gliese, U.; Dorelli, J.; Avanov, L.; Barrie, A.; Chornay, D.;
+                MacDonald, E.; Hooland, M.l Giles, B.; Pollock, C. The parameterization
+                of microchannel-plate-based detection systems, J. Geo. R. 2018
+                https://doi.org/10.1002/2016JA022563
         """
 
         rng = np.random.default_rng(seed=seed)
 
-        # Ensure the single ion signal is a distribution
-        if isinstance(single_ion, float):  # passed average, give an estiamtion
-            single_ion = rng.normal(single_ion, single_ion, size=10000)
+        # If given a float then generate a Gamma distribution with estimated params
+        if isinstance(single_ion, float):
+            y = 1.1
+            Q = single_ion / y
+            single_ion = rng.gamma(Q, y, size=10000)
         weights = None
 
         if single_ion.ndim == 2:  # histogram of (bins, counts)
