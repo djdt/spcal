@@ -597,9 +597,8 @@ class NuImportDialog(_ImportDialogBase):
         options = self.importOptions()
         try:
             num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-            signals = nu.get_signals_from_nu_data(
-                self.results, num_acc, self.info["AverageSingleIonArea"]
-            )
+            signals = nu.get_signals_from_nu_data(self.results, num_acc)
+            signals /= self.info["AverageSingleIonArea"]
 
             if self.checkbox_blanking.isChecked():  # autoblank
                 autob_events = nu.collect_nu_autob_data(

@@ -153,15 +153,12 @@ def get_dwelltime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
-def get_signals_from_nu_data(
-    integs: List[np.ndarray], num_acc: int, single_ion_area: float
-) -> np.ndarray:
+def get_signals_from_nu_data(integs: List[np.ndarray], num_acc: int) -> np.ndarray:
     """Converts signals from integ data to counts.
 
     Args:
         integ: from `read_integ_binary`
         num_acc: number of accumulations per acquisition
-        single_ion_area: from run.info 'AverageSingleIonArea'
 
     Returns:
         signals in counts
@@ -176,7 +173,7 @@ def get_signals_from_nu_data(
     for integ in integs:
         signals[(integ["acq_number"] // num_acc) - 1] = integ["result"]["signal"]
 
-    return signals / single_ion_area
+    return signals
 
 
 def get_masses_from_nu_data(
@@ -287,6 +284,7 @@ def read_nu_directory(
     autoblank: bool = True,
     cycle: int | None = None,
     segment: int | None = None,
+    raw: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
@@ -300,6 +298,7 @@ def read_nu_directory(
         autoblank: apply autoblanking to overrange regions
         cycle: limit import to cycle
         segment: limit import to segment
+        raw: return raw ADC counts
 
     Returns:
         masses from first acquistion
@@ -336,9 +335,10 @@ def read_nu_directory(
     masses = get_masses_from_nu_data(
         integs[0], run_info["MassCalCoefficients"], segment_delays
     )[0]
-    signals = get_signals_from_nu_data(
-        integs, accumulations, run_info["AverageSingleIonArea"]
-    )
+    signals = get_signals_from_nu_data(integs, accumulations)
+
+    if not raw:
+        signals /= run_info["AverageSingleIonArea"]
 
     # Blank out overrange regions
     if autoblank:
