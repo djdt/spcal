@@ -129,7 +129,8 @@ def collect_nu_integ_data(
                 data = data[data["cyc_number"] == cyc_number]
             if seg_number is not None:
                 data = data[data["seg_number"] == seg_number]
-            integs.append(data)
+            if data.size > 0:
+                integs.append(data)
         else:
             logger.warning(
                 f"collect_nu_integ_data: missing integ {idx['FileNum']}, skipping"
