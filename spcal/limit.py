@@ -190,7 +190,6 @@ class SPCalLimit(object):
 
             lam = bn.nanmean(responses[responses < threshold])
 
-            comp = np.zeros(size)
             comp = rng.poisson(lam, size=size) * rng.choice(
                 single_ion, size=size, p=weights
             )
@@ -250,8 +249,7 @@ class SPCalLimit(object):
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
                 std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
 
-            # Consistency with Poisson
-            threshold = np.ceil(mu + std * z)
+            threshold = mu + std * z
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
