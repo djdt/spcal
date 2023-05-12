@@ -172,9 +172,7 @@ class SPCalLimit(object):
 
         # If given a float then generate a Gamma distribution with estimated params
         if isinstance(single_ion, float):
-            y = 1.1
-            Q = single_ion / y
-            single_ion = rng.gamma(Q, y, size=10000)
+            single_ion = rng.lognormal(np.log(single_ion), 0.45, size=10000)
         weights = None
 
         if single_ion.ndim == 2:  # histogram of (bins, counts)
