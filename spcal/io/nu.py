@@ -2,6 +2,7 @@
 
 import json
 import logging
+from math import gamma
 from pathlib import Path
 from typing import BinaryIO, Dict, Generator, List, Tuple
 
@@ -79,6 +80,46 @@ def blank_nu_signal_data(
             start_event = None
 
     return signals
+
+
+def calculate_single_ion_area(
+    counts: np.ndarray, size: int | None = None
+) -> np.ndarray | float:
+    """Calculates the single ion distribution from calibration data.
+
+    SIA is calculated as an average of all isotopes with a >1e05 and <1e-3
+    chance of containing a two ion event.
+
+    Args:
+        counts: raw ADC counts
+        size: size of returned distribution, None for an average
+
+    Returns:
+        array of stacked bin centers and counts
+    """
+
+    def incgamma(a: float, x: float) -> float:
+        xs = np.linspace(0, x, 100)
+        return 1.0 / gamma(a) * np.trapz(np.exp(-xs) * xs ** (a - 1), x=xs)
+
+    def get_scale(x: np.ndarray, axis: int | None = None):
+        mu = np.log(np.nanmedian(x, axis=axis))
+        mean = np.nanmean(x, axis=axis)
+        sigma = np.sqrt(2.0 * (np.log(mean) - mu))
+        return mu, sigma
+
+    pzeros = np.count_nonzero(counts, axis=0) / counts.shape[0]
+    poi2 = np.array([incgamma(2 + 1, pz) for pz in pzeros])
+    x = counts[:, (poi2 > 1e-5) & (poi2 < 1e-3)]
+    x[x == 0] = np.nan
+
+    if isinstance(size, int):
+        hist, bins = np.histogram(x[x > 0], bins="auto")
+        return np.stack(((bins[1:] + bins[:-1]) / 2.0, hist), axis=1)
+    else:
+        mu, sigma = get_scale(x, axis=0)
+        modes = np.exp(mu - sigma**2)
+        return np.mean(modes)
 
 
 def collect_nu_autob_data(
