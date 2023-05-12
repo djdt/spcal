@@ -1,9 +1,12 @@
 from statistics import NormalDist
 
+import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.io import get_open_spcal_path
 from spcal.gui.widgets import ValueWidget
+from spcal.io import nu, tofwerk
 
 
 class LimitOptions(QtWidgets.QGroupBox):
@@ -64,45 +67,59 @@ class CompoundPoissonOptions(LimitOptions):
         button_layout.addWidget(
             self.button_single_ion, 1, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        self.button_single_ion.pressed.connect(self.dialogSingleIon)
+        self.button_single_ion.pressed.connect(self.loadSingleIonData)
 
         self.layout().addRow("Average SIA:", self.single_ion_average)
         self.layout().addRow("Accumulations:", self.accumulations)
         self.layout().addRow(button_layout)
 
-    def dialogSingleIon(self) -> QtWidgets.QDialog:
-        dlg = QtWidgets.QFileDialog()
-    #     dlg = SingleIonDialog(self.single_ion_dist, parent=self)
-    #     dlg.distributionSelected.connect(self.setSingleIon)
-        dlg.open()
-        return dlg
+    def loadSingleIonData(self) -> None:
+        path = get_open_spcal_path(self, "Single Ion Data")
+        if path is None:
+            return
 
-    def loadSingleIonData(self, file: str) -> None:
-        with open(file, "r") as fp:
-            delimiter = "\t"
-            skip_rows = 0
-            for line in fp.readlines(1024):
-                try:
-                    delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
-                    float(line.split(delimiter)[-1])
-                    break
-                except (ValueError, StopIteration):
-                    pass
-                skip_rows += 1
-            count = line.count(delimiter) + 1
+        if tofwerk.is_tofwerk_file(path):
+            data = h5py.File(path)["SingleIon"]["Data"]
+        elif nu.is_nu_directory(path):
+            _, counts, _ = nu.read_nu_directory(path, cycle=1, raw=True)
+            data = nu.single_ion_distribution(counts)
+        else:
+            with path.open("r") as fp:
+                delimiter = "\t"
+                skip_rows = 0
+                for line in fp.readlines(1024):
+                    try:
+                        delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
+                        float(line.split(delimiter)[-1])
+                        break
+                    except (ValueError, StopIteration):
+                        pass
+                    skip_rows += 1
+                count = line.count(delimiter) + 1
 
-        if count == 1:  # raw points from dist
-            data = np.genfromtxt(  # type: ignore
-                file,
-                delimiter=delimiter,
-                skip_header=skip_rows,
-                dtype=np.float64,
-                invalid_raise=False,
-                loose=True,
-            )
-            self.setSingleIon(data)
-        elif count == 2:  # hist as bin, count
-            pass
+            if count == 1:  # raw points from dist
+                data = np.genfromtxt(  # type: ignore
+                    path,
+                    delimiter=delimiter,
+                    skip_header=skip_rows,
+                    dtype=np.float64,
+                    usecols=(0),
+                    invalid_raise=False,
+                    loose=True,
+                )
+            elif count == 2:  # hist as bin, count
+                bins, counts = np.genfromtxt(  # type: ignore
+                    path,
+                    delimiter=delimiter,
+                    skip_header=skip_rows,
+                    dtype=np.float64,
+                    usecolss=(0, 1),
+                    unpack=True,
+                    invalid_raise=False,
+                    loose=True,
+                )
+                data = np.stack((bins, counts), axis=1)
+        self.setSingleIon(data)
 
     def getSingleIon(self) -> float | None | np.ndarray:
         return (
@@ -118,8 +135,12 @@ class CompoundPoissonOptions(LimitOptions):
             self.single_ion_average.setEnabled(True)
         else:
             self.single_ion_dist = sia
-            self.single_ion_average.setValue(np.mean(sia))
             self.single_ion_average.setEnabled(False)
+            if sia.ndim == 2:  # hist of bins, counts
+                mean = np.average(sia[:, 0], weights=sia[:, 1])
+            else:
+                mean = np.mean(sia)
+            self.single_ion_average.setValue(mean)
 
     def state(self) -> dict:
         return {
