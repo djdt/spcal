@@ -137,13 +137,13 @@ class SPCalLimit(object):
         accumulations: int,
         alpha: float = 0.001,
         max_iters: int = 1,
-        size: int = 100000,
+        size: int | None = None,
         seed: int | None = None,
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
 
         ToF data is a the sum of multiple Poisson accumulation events, each of which are
-        an independant sample of a Lognormal like SIS distribution. This function will
+        an independant sample of lognormal like SIS distribution. This function will
         simulate the expected background and calculate the appropriate quantile for a
         given alpha value.
 
@@ -169,15 +169,19 @@ class SPCalLimit(object):
         """
 
         rng = np.random.default_rng(seed=seed)
+        if size is None:
+            size = responses.size
 
-        # If given a float then generate a Gamma distribution with estimated params
-        if isinstance(single_ion, float):
-            single_ion = rng.lognormal(np.log(single_ion), 0.45, size=10000)
+        # If given a float then generate a distribution with estimated params
         weights = None
-
-        if single_ion.ndim == 2:  # histogram of (bins, counts)
-            weights = single_ion[:, 1] / single_ion[:, 1].sum()
-            single_ion = single_ion[:, 0]
+        if isinstance(single_ion, float):
+            average_single_ion = single_ion
+            single_ion = rng.lognormal(np.log(single_ion), 0.5, size=10000)
+        else:
+            if single_ion.ndim == 2:  # histogram of (bins, counts)
+                weights = single_ion[:, 1] / single_ion[:, 1].sum()
+                single_ion = single_ion[:, 0]
+            average_single_ion = np.average(single_ion, weights=weights)
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
@@ -187,11 +191,11 @@ class SPCalLimit(object):
             lam = bn.nanmean(responses[responses < threshold])
 
             comp = np.zeros(size)
-            for _ in range(accumulations):
-                poi = rng.poisson(lam / accumulations, size=size)
-                comp += poi * rng.choice(single_ion, size=size, p=weights)
+            comp = rng.poisson(lam, size=size) * rng.choice(
+                single_ion, size=size, p=weights
+            )
 
-            comp /= np.average(single_ion, weights=weights)
+            comp /= average_single_ion
             threshold = float(np.quantile(comp, 1.0 - alpha))
             iters += 1
 
