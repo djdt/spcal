@@ -143,7 +143,7 @@ class SPCalLimit(object):
         """Calculate threshold from simulated compound distribution.
 
         ToF data is a the sum of multiple Poisson accumulation events, each of which are
-        an independant sample of a Gamma like SIS distribution. This function will
+        an independant sample of a Lognormal like SIS distribution. This function will
         simulate the expected background and calculate the appropriate quantile for a
         given alpha value.
 
