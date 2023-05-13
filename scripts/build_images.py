@@ -39,7 +39,7 @@ def create_formula_images(path: Path) -> List[Path]:
             viewer="file",
             filename=path.joinpath(name),
             euler=True,
-            dvioptions=["-D", "100"],
+            dvioptions=["-D", "150"],
         )
     return paths
 
