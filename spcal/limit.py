@@ -121,7 +121,7 @@ class SPCalLimit(object):
             return SPCalLimit.fromPoisson(
                 responses,
                 alpha=poisson_kws.get("alpha", 0.001),
-                formula=poisson_kws.get("formula", "formula_c"),
+                formula=poisson_kws.get("formula", "formula c"),
                 formula_kws=poisson_kws.get("params", None),
                 window_size=window_size,
                 max_iters=max_iters,
@@ -364,7 +364,7 @@ class SPCalLimit(object):
         poisson = SPCalLimit.fromPoisson(
             responses,
             alpha=poisson_kws.get("alpha", 0.001),
-            formula=poisson_kws.get("formula", "formula_c"),
+            formula=poisson_kws.get("formula", "formula c"),
             formula_kws=poisson_kws.get("params", None),
             window_size=window_size,
             max_iters=max_iters,
@@ -407,7 +407,7 @@ class SPCalLimit(object):
         poisson = SPCalLimit.fromPoisson(
             responses,
             alpha=poisson_kws.get("alpha", 0.001),
-            formula=poisson_kws.get("formula", "formula_c"),
+            formula=poisson_kws.get("formula", "formula c"),
             formula_kws=poisson_kws.get("params", None),
             window_size=window_size,
             max_iters=max_iters,
