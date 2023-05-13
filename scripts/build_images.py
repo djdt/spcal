@@ -39,7 +39,7 @@ def create_formula_images(path: Path) -> List[Path]:
             viewer="file",
             filename=path.joinpath(name),
             euler=True,
-            dvioptions=["-D", "200"],
+            dvioptions=["-D", "100"],
         )
     return paths
 
@@ -58,6 +58,7 @@ def build_image_resource(qrc: Path, output: Path, rcc: str):
     cmd = [rcc, "-g", "python", "-o", str(output), str(qrc)]
     print(f"running {' '.join(cmd[:-1])} <{qrc.name}>")
     proc = subprocess.run(cmd, capture_output=True)
+    print(proc)
     proc.check_returncode()
 
 
@@ -83,6 +84,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmp_dir, tempfile.NamedTemporaryFile() as qrc_tmp:
         images = create_formula_images(Path(tmp_dir))
+        images.append(Path(__file__).parent.parent.joinpath("app.ico"))
 
         write_qrc(Path(qrc_tmp.name), images)
         build_image_resource(Path(qrc_tmp.name), args.output, args.rcc)
