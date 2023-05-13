@@ -4,7 +4,9 @@ import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.graphs.singleion import SingleIonView
 from spcal.gui.io import get_open_spcal_path
+from spcal.gui.util import create_action
 from spcal.gui.widgets import ValueWidget
 from spcal.io import nu, tofwerk
 
@@ -48,9 +50,10 @@ class CompoundPoissonOptions(LimitOptions):
         self.single_ion_average = ValueWidget(
             1.0, validator=QtGui.QDoubleValidator(1e-6, 1e99, 9), format=sf
         )
+        self.single_ion_average.setPlaceholderText("1.0")
         self.single_ion_average.setToolTip(
             "The average single ion area, this is used "
-            "as the mean and stddev to simulate a SIA distribution."
+            "to simulate a SIA distribution if none is provided."
         )
         self.single_ion_average.valueChanged.connect(self.limitOptionsChanged)
 
@@ -62,16 +65,42 @@ class CompoundPoissonOptions(LimitOptions):
         )
         self.accumulations.valueChanged.connect(self.limitOptionsChanged)
 
-        self.button_single_ion = QtWidgets.QPushButton("Set SIA Distribution...")
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(
-            self.button_single_ion, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        self.action_open_si = create_action(
+            "document-open",
+            "Open SIA",
+            "Load a single-ion distribution from a file.",
+            self.loadSingleIonData,
         )
-        self.button_single_ion.pressed.connect(self.loadSingleIonData)
+        self.action_show_si = create_action(
+            "view-object-histogram-linear",
+            "Show SIA",
+            "Show the single-ion distribution as a histogram.",
+            self.showSingleIonData,
+        )
+        self.action_clear_si = create_action(
+            "edit-clear-history",
+            "Clear SIA",
+            "Clear single ion distribution.",
+            self.clearSingleIon,
+        )
+        self.toolbar = QtWidgets.QToolBar()
+        self.toolbar.addActions(
+            [self.action_open_si, self.action_show_si, self.action_clear_si]
+        )
+        # self.button_single_ion = QtWidgets.QPushButton("Set SIA Distribution...")
+        # button_layout = QtWidgets.QHBoxLayout()
+        # button_layout.addWidget(
+        #     self.button_single_ion, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        # )
+        # self.button_single_ion.pressed.connect(self.loadSingleIonData)
+        layout_sia = QtWidgets.QHBoxLayout()
+        layout_sia.setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
+        layout_sia.addWidget(self.single_ion_average)
+        layout_sia.addWidget(self.toolbar)
 
-        self.layout().addRow("Average SIA:", self.single_ion_average)
+        self.layout().addRow("Single Ion Area:", layout_sia)
         self.layout().addRow("Accumulations:", self.accumulations)
-        self.layout().addRow(button_layout)
+        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
 
     def loadSingleIonData(self) -> None:
         path = get_open_spcal_path(self, "Single Ion Data")
@@ -121,15 +150,34 @@ class CompoundPoissonOptions(LimitOptions):
                 data = np.stack((bins, counts), axis=1)
         self.setSingleIon(data)
 
+    def showSingleIonData(self) -> QtWidgets.QDialog:
+        sia = self.getSingleIon()
+        if sia is None:
+            return
+
+        view = SingleIonView()
+        view.draw(sia)
+
+        dlg = QtWidgets.QDialog(self)
+        dlg.setWindowTitle("Single Ion Distribution")
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(view)
+        dlg.setLayout(layout)
+        dlg.open()
+        return dlg
+
+    def clearSingleIon(self) -> None:
+        self.setSingleIon(self.single_ion_average.value())
+
     def getSingleIon(self) -> float | None | np.ndarray:
         return (
             self.single_ion_dist
             if self.single_ion_dist is not None
-            else self.single_ion_average.value()
+            else self.single_ion_average.value() or 1.0
         )
 
-    def setSingleIon(self, sia: float | np.ndarray) -> None:
-        if isinstance(sia, float):
+    def setSingleIon(self, sia: float | None | np.ndarray) -> None:
+        if sia is None or isinstance(sia, float):
             self.single_ion_average.setValue(sia)
             self.single_ion_dist = None
             self.single_ion_average.setEnabled(True)
