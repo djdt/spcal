@@ -1,19 +1,17 @@
 """Helper class for SPCal limits and thresholding."""
 import logging
 from statistics import NormalDist
-from typing import Dict
+from typing import Callable, Dict, Tuple
 
 import bottleneck as bn
 import numpy as np
 
-from spcal.poisson import formula_c
+from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
 logger = logging.getLogger(__name__)
 
 
 class SPCalLimit(object):
-    poisson_formula = formula_c
-
     """Limit and threshold class.
 
     Limits should be created through the class methods ``fromMethodString``,
@@ -90,16 +88,16 @@ class SPCalLimit(object):
         if method in ["automatic", "best"]:
             return SPCalLimit.fromBest(
                 responses,
-                poisson_alpha=poisson_kws.get("alpha", 0.001),
-                gaussian_alpha=gaussian_kws.get("alpha", 1e-6),
+                poisson_kws=poisson_kws,
+                gaussian_kws=gaussian_kws,
                 window_size=window_size,
                 max_iters=max_iters,
             )
         elif method == "highest":
             return SPCalLimit.fromHighest(
                 responses,
-                poisson_alpha=poisson_kws.get("alpha", 0.001),
-                gaussian_alpha=gaussian_kws.get("alpha", 1e-6),
+                poisson_kws=poisson_kws,
+                gaussian_kws=gaussian_kws,
                 window_size=window_size,
                 max_iters=max_iters,
             )
@@ -123,6 +121,8 @@ class SPCalLimit(object):
             return SPCalLimit.fromPoisson(
                 responses,
                 alpha=poisson_kws.get("alpha", 0.001),
+                formula=poisson_kws.get("formula", "formula_c"),
+                formula_kws=poisson_kws.get("params", None),
                 window_size=window_size,
                 max_iters=max_iters,
             )
@@ -267,21 +267,43 @@ class SPCalLimit(object):
         cls,
         responses: np.ndarray,
         alpha: float = 0.001,
+        formula: str = "formula c",
+        formula_kws: Dict[str, float] | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
         """Poisson thresholding.
 
-        Uses Formula C from the MARLAP manual to calculate the limit of criticality.
+        Calculate the limit of criticality using the supplied formula and params.
 
         Args:
             responses: single-particle data
             alpha: type I error rate
+            formula: formula to use, {currie, formula a, formula c, stapleton}
+            formula_kws: kws for formula
             window_size: size of window, 0 for no window
             max_iters: max iterations, 1 for no iteration
         """
         if responses.size == 0:  # pragma: no cover
             raise ValueError("fromPoisson: responses is size 0")
+
+        formula = formula.lower()
+        if formula == "currie":
+            poisson_fn: Callable[
+                [...], Tuple[float | np.ndarray, float | np.ndarray]
+            ] = currie
+        elif formula == "formula a":
+            poisson_fn = formula_a
+        elif formula == "formula c":
+            poisson_fn = formula_c
+        elif formula.startswith("stapleton"):
+            poisson_fn = stapleton_approximation
+        else:
+            raise ValueError(f"unknown poisson limit formula: {formula}")
+
+        if formula_kws is None:
+            formula_kws = {}
+        formula_kws["alpha"] = alpha
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
@@ -298,7 +320,7 @@ class SPCalLimit(object):
                 )
                 mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
 
-            sc, _ = SPCalLimit.poisson_formula(mu, alpha=alpha)
+            sc, _ = poisson_fn(mu, **formula_kws)
             threshold = np.ceil(mu + sc)
             iters += 1
 
@@ -316,8 +338,8 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
-        poisson_alpha: float = 0.001,
-        gaussian_alpha: float = 1e-6,
+        poisson_kws: dict | None = None,
+        gaussian_kws: dict | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -334,10 +356,16 @@ class SPCalLimit(object):
             window_size: size of window, 0 for no window
             max_iters: max iterations, 0 for no iteration
         """
+        if poisson_kws is None:
+            poisson_kws = {}
+        if gaussian_kws is None:
+            gaussian_kws = {}
         # Check that the non-detection region is normalish (λ > 10)
         poisson = SPCalLimit.fromPoisson(
             responses,
-            alpha=poisson_alpha,
+            alpha=poisson_kws.get("alpha", 0.001),
+            formula=poisson_kws.get("formula", "formula_c"),
+            formula_kws=poisson_kws.get("params", None),
             window_size=window_size,
             max_iters=max_iters,
         )
@@ -346,7 +374,7 @@ class SPCalLimit(object):
         else:
             return SPCalLimit.fromGaussian(
                 responses,
-                alpha=gaussian_alpha,
+                alpha=gaussian_kws.get("alpha", 1e-6),
                 window_size=window_size,
                 max_iters=max_iters,
             )
@@ -355,8 +383,8 @@ class SPCalLimit(object):
     def fromHighest(
         cls,
         responses: np.ndarray,
-        poisson_alpha: float = 0.001,
-        gaussian_alpha: float = 1e-6,
+        poisson_kws: dict | None = None,
+        gaussian_kws: dict | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -372,15 +400,21 @@ class SPCalLimit(object):
             window_size: size of window, 0 for no window
             max_iters: max iterations, 0 for no iteration
         """
-        gaussian = SPCalLimit.fromGaussian(
+        if poisson_kws is None:
+            poisson_kws = {}
+        if gaussian_kws is None:
+            gaussian_kws = {}
+        poisson = SPCalLimit.fromPoisson(
             responses,
-            alpha=gaussian_alpha,
+            alpha=poisson_kws.get("alpha", 0.001),
+            formula=poisson_kws.get("formula", "formula_c"),
+            formula_kws=poisson_kws.get("params", None),
             window_size=window_size,
             max_iters=max_iters,
         )
-        poisson = SPCalLimit.fromPoisson(
+        gaussian = SPCalLimit.fromGaussian(
             responses,
-            alpha=poisson_alpha,
+            alpha=gaussian_kws.get("alpha", 1e-6),
             window_size=window_size,
             max_iters=max_iters,
         )

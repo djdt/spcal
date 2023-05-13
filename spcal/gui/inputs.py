@@ -344,8 +344,8 @@ class InputWidget(QtWidgets.QWidget):
                 else:  # If empty limit then fill with best estimate
                     self.limits[name] = SPCalLimit.fromBest(
                         response,
-                        poisson_alpha=poisson_kws["alpha"],
-                        gaussian_alpha=gaussian_kws["alpha"],
+                        poisson_alpha=poisson_kws,
+                        gaussian_alpha=gaussian_kws,
                         window_size=window_size,
                         max_iters=max_iter,
                     )
