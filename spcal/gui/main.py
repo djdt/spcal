@@ -426,7 +426,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         paths = []
         for i in range(num):
             settings.setArrayIndex(i)
-            path = Path(settings.value("path"))
+            path = Path(settings.value("Path"))
             if path != new_path:
                 paths.append(path)
         settings.endArray()
@@ -439,7 +439,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             settings.beginWriteArray("RecentFiles", len(paths))
             for i, path in enumerate(paths):
                 settings.setArrayIndex(i)
-                settings.setValue("path", str(path))
+                settings.setValue("Path", str(path))
             settings.endArray()
 
         # Clear old actions

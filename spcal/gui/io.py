@@ -34,7 +34,7 @@ def is_spcal_path(path: str | Path) -> bool:
 def get_open_spcal_path(
     parent: QtWidgets.QWidget, title: str = "Open File"
 ) -> Path | None:
-    dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+    dir = QtCore.QSettings().value("RecentFiles/1/Path", None)
     dir = str(Path(dir).parent) if dir is not None else ""
 
     path, _ = QtWidgets.QFileDialog.getOpenFileName(parent, title, dir, np_file_filters)
@@ -50,7 +50,7 @@ def get_open_spcal_path(
 def get_open_spcal_paths(
     parent: QtWidgets.QWidget, title: str = "Open Files"
 ) -> List[Path]:
-    dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+    dir = QtCore.QSettings().value("RecentFiles/1/Path", None)
     dir = str(Path(dir).parent) if dir is not None else ""
 
     files, _ = QtWidgets.QFileDialog.getOpenFileNames(
