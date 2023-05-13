@@ -35,7 +35,7 @@ class IOWidget(QtWidgets.QWidget):
 
     def setSignificantFigures(self, num: int | None = None) -> None:
         if num is None:
-            num = int(QtCore.QSettings().value("sigfigs", 4))
+            num = int(QtCore.QSettings().value("SigFigs", 4))
         for widget in self.findChildren(ValueWidget):
             if widget.view_format.endswith("g"):
                 widget.setViewFormat(num)
@@ -48,7 +48,7 @@ class SampleIOWidget(IOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent)
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         self.action_density = create_action(
             "folder-database",
@@ -258,7 +258,7 @@ class ReferenceIOWidget(SampleIOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         self.concentration = UnitsWidget(
             units=mass_concentration_units,
@@ -413,7 +413,7 @@ class ResultIOWidget(IOWidget):
     def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(name, parent=parent)
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())

@@ -394,13 +394,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def setSignificantFigures(self) -> None:
         settings = QtCore.QSettings()
-        current = int(settings.value("sigfigs", 4))
+        current = int(settings.value("SigFigs", 4))
 
         value, ok = QtWidgets.QInputDialog.getInt(
             self, "Set Output Sig. Fig.", "Significant Figures", current, 1, 11, 1
         )
         if ok:
-            settings.setValue("sigfigs", value)
+            settings.setValue("SigFigs", value)
             self.options.setSignificantFigures(value)
             self.sample.io.setSignificantFigures(value)
             self.reference.io.setSignificantFigures(value)

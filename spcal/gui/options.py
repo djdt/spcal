@@ -17,7 +17,7 @@ class OptionsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
@@ -323,7 +323,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def setSignificantFigures(self, num: int | None = None) -> None:
         if num is None:
-            num = int(QtCore.QSettings().value("sigfigs", 4))
+            num = int(QtCore.QSettings().value("SigFigs", 4))
         for widget in self.findChildren(ValueWidget):
             if widget.view_format.endswith("g"):
                 widget.setViewFormat(num)

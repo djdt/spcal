@@ -89,7 +89,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         widths = widths.astype(np.float64) * self.input.options.dwelltime.baseValue()
         widths /= time_units[self.width_units.currentText()]
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         for i, x in enumerate([widths, heights, skews]):
             self.table.item(i, 0).setText(f"{np.min(x):.{sf}g}")

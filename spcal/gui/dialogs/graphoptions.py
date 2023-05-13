@@ -45,7 +45,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         else:
             raise ValueError("HistogramOptionsDialog: unknown fit")
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
         color = self.palette().color(QtGui.QPalette.Base)
 
         self.width_signal = UnitsWidget(

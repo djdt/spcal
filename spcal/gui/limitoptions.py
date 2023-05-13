@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.graphs.singleion import SingleIonView
 from spcal.gui.io import get_open_spcal_path
 from spcal.gui.util import create_action
@@ -18,7 +19,7 @@ class LimitOptions(QtWidgets.QGroupBox):
         self, name: str, alpha: float = 0.001, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(name, parent=parent)
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
         self.alpha = ValueWidget(
             alpha, validator=QtGui.QDoubleValidator(1e-16, 0.5, 9), format=sf
         )
@@ -43,7 +44,7 @@ class LimitOptions(QtWidgets.QGroupBox):
 class CompoundPoissonOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("Compound Poisson", 1e-6, parent=parent)
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
 
         self.single_ion_dist: np.ndarray | None = None
 
@@ -87,12 +88,7 @@ class CompoundPoissonOptions(LimitOptions):
         self.toolbar.addActions(
             [self.action_open_si, self.action_show_si, self.action_clear_si]
         )
-        # self.button_single_ion = QtWidgets.QPushButton("Set SIA Distribution...")
-        # button_layout = QtWidgets.QHBoxLayout()
-        # button_layout.addWidget(
-        #     self.button_single_ion, 1, QtCore.Qt.AlignmentFlag.AlignRight
-        # )
-        # self.button_single_ion.pressed.connect(self.loadSingleIonData)
+
         layout_sia = QtWidgets.QHBoxLayout()
         layout_sia.setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
         layout_sia.addWidget(self.single_ion_average)
@@ -100,7 +96,6 @@ class CompoundPoissonOptions(LimitOptions):
 
         self.layout().addRow("Single Ion Area:", layout_sia)
         self.layout().addRow("Accumulations:", self.accumulations)
-        self.layout().setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
 
     def loadSingleIonData(self) -> None:
         path = get_open_spcal_path(self, "Single Ion Data")
@@ -148,6 +143,11 @@ class CompoundPoissonOptions(LimitOptions):
                     loose=True,
                 )
                 data = np.stack((bins, counts), axis=1)
+            else:
+                raise ValueError(
+                    "Text data must consist of either a column of values "
+                    "or 2 columns of bins and counts."
+                )
         self.setSingleIon(data)
 
     def showSingleIonData(self) -> QtWidgets.QDialog:
@@ -214,7 +214,7 @@ class GaussianOptions(LimitOptions):
         super().__init__("Gaussian", 2.867e-7, parent=parent)  # 5.0 sigma
         self.alpha.valueChanged.connect(self.updateSigma)
 
-        sf = int(QtCore.QSettings().value("sigfigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))
         self.sigma = ValueWidget(
             5.0, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
         )
@@ -248,61 +248,46 @@ class PoissonOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("Poisson", 0.001, parent=parent)
         self.button_advanced = QtWidgets.QPushButton("Advanced Options...")
+        self.button_advanced.pressed.connect(self.dialogAdvancedOptions)
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addWidget(
             self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
         )
         self.layout().addRow(button_layout)
-        self.button_advanced.setEnabled(False)
 
-        # class AdvancedPoissonOptions(QtWidgets.QWidget):
-        #     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
-        #         super().__init__(parent)
+        settings = QtCore.QSettings()
+        self.formula = settings.value("Poisson/Formula", "Formula C")
+        self.eta = float(settings.value("Poisson/Eta", 1.0))
+        self.epsilon = float(settings.value("Poisson/Epsilon", 0.5))
+        self.t_sample = float(settings.value("Poisson/Tsample", 1.0))
+        self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
 
-        #         pixmap = QtGui.QPixmap(image)
+        # self.button_advanced.setEnabled(False)
 
-        #         label = QtWidgets.QLabel()
-        #         label.setPixmap(pixmap)
-        #         label.setFixedSize(pixmap.size())
+    def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
+        dlg = AdvancedPoissonDialog(
+            self.formula,
+            self.eta,
+            self.epsilon,
+            self.t_sample,
+            self.t_blank,
+            parent=self,
+        )
+        dlg.optionsSelected.connect(self.setOptions)
+        dlg.open()
+        return dlg
 
-        #         layout = QtWidgets.QVBoxLayout()
-        #         layout.addWidget(label)
-        #         self.setLayout(layout)
+    def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
+        settings = QtCore.QSettings()
+        if formula == "Currie":
+            self.eta = opt1 or 1.0
+            self.epsilon = opt2 or 0.5
+            settings.setValue("Poisson/Eta", self.eta)
+            settings.setValue("Poisson/Epsilon", self.epsilon)
+        else:
+            self.t_sample = opt1 or 1.0
+            self.t_blank = opt2 or 1.0
+            settings.setValue("Poisson/Tsample", self.t_sample)
+            settings.setValue("Poisson/Tblank", self.t_blank)
 
-        # class CurrieOptions(AdvancedPoissonOptions):
-        #     def __init__(self, parent: QtWidgets.QWidget | None = None):
-        #         super().__init__(":img/currie2008.png", parent)
-
-        #         self.eta = ValueWidget(2.0, validator=QtGui.QDoubleValidator(1.0, 2.0, 2))
-        #         self.epsilon = ValueWidget(0.5, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
-
-        #         layout = QtWidgets.QFormLayout()
-        #         layout.addRow("η", self.eta)
-        #         layout.addRow("ε", self.epsilon)
-
-        #         self.layout().insertLayout(0, layout)
-
-        # class MARLAPFormulaOptions(AdvancedPoissonOptions):
-        #     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
-        #         super().__init__(image, parent)
-
-        #         self.t_sample = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
-        #         self.t_blank = ValueWidget(1.0, validator=QtGui.QDoubleValidator(0.0, 1.0, 2))
-
-        #         layout = QtWidgets.QFormLayout()
-        #         layout.addRow("t sample", self.t_sample)
-        #         layout.addRow("t blank", self.t_blank)
-
-        #         self.layout().insertLayout(0, layout)
-
-        # class AdvancedLimitOptions(QtWidgets.QDialog):
-        #     def __init__(self, parent: QtWidgets.QWidget | None = None):
-        #         super().__init__(parent)
-        #         self.setWindowTitle("Advanced Options")
-
-        #         self.poisson_formula = QtWidgets.QComboBox()
-        #         self.poisson_formula.addItems(["Currie", "Formula A", "Formula C", "Stapleton"])
-
-        #         self.poisson_stack = QtWidgets.QStackedWidget()
-
-        layout = QtWidgets.QVBoxLayout()
+        self.limitOptionsChanged.emit()
