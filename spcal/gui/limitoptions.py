@@ -260,12 +260,17 @@ class PoissonOptions(LimitOptions):
         )
         self.layout().addRow(button_layout)
 
-        settings = QtCore.QSettings()
-        self.formula = settings.value("Poisson/Formula", "Formula C")
-        self.eta = float(settings.value("Poisson/Eta", 2.0))
-        self.epsilon = float(settings.value("Poisson/Epsilon", 0.5))
-        self.t_sample = float(settings.value("Poisson/Tsample", 1.0))
-        self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
+        self.formula = "Formula C"
+        self.eta = 2.0
+        self.epsilon = 0.5
+        self.t_sample = 1.0
+        self.t_blank = 1.0
+        # settings = QtCore.QSettings()
+        # self.formula = settings.value("Poisson/Formula", "Formula C")
+        # self.eta = float(settings.value("Poisson/Eta", 2.0))
+        # self.epsilon = float(settings.value("Poisson/Epsilon", 0.5))
+        # self.t_sample = float(settings.value("Poisson/Tsample", 1.0))
+        # self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
 
     def state(self) -> dict:
         if self.formula == "Currie":
@@ -306,18 +311,18 @@ class PoissonOptions(LimitOptions):
         return dlg
 
     def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
-        settings = QtCore.QSettings()
         self.formula = formula
-        settings.value("Poisson/Formula", formula)
+        # settings = QtCore.QSettings()
+        # settings.value("Poisson/Formula", formula)
         if formula == "Currie":
             self.eta = opt1 or 2.0
             self.epsilon = opt2 or 0.5
-            settings.setValue("Poisson/Eta", self.eta)
-            settings.setValue("Poisson/Epsilon", self.epsilon)
+            # settings.setValue("Poisson/Eta", self.eta)
+            # settings.setValue("Poisson/Epsilon", self.epsilon)
         else:
             self.t_sample = opt1 or 1.0
             self.t_blank = opt2 or 1.0
-            settings.setValue("Poisson/Tsample", self.t_sample)
-            settings.setValue("Poisson/Tblank", self.t_blank)
+            # settings.setValue("Poisson/Tsample", self.t_sample)
+            # settings.setValue("Poisson/Tblank", self.t_blank)
 
         self.limitOptionsChanged.emit()
