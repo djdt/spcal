@@ -102,53 +102,58 @@ class CompoundPoissonOptions(LimitOptions):
         if path is None:
             return
 
-        if tofwerk.is_tofwerk_file(path):
-            data = h5py.File(path)["SingleIon"]["Data"]
-        elif nu.is_nu_directory(path):
-            _, counts, _ = nu.read_nu_directory(path, cycle=1, raw=True)
-            data = nu.single_ion_distribution(counts)
-        else:
-            with path.open("r") as fp:
-                delimiter = "\t"
-                skip_rows = 0
-                for line in fp.readlines(1024):
-                    try:
-                        delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
-                        float(line.split(delimiter)[-1])
-                        break
-                    except (ValueError, StopIteration):
-                        pass
-                    skip_rows += 1
-                count = line.count(delimiter) + 1
-
-            if count == 1:  # raw points from dist
-                data = np.genfromtxt(  # type: ignore
-                    path,
-                    delimiter=delimiter,
-                    skip_header=skip_rows,
-                    dtype=np.float64,
-                    usecols=(0),
-                    invalid_raise=False,
-                    loose=True,
-                )
-            elif count == 2:  # hist as bin, count
-                bins, counts = np.genfromtxt(  # type: ignore
-                    path,
-                    delimiter=delimiter,
-                    skip_header=skip_rows,
-                    dtype=np.float64,
-                    usecolss=(0, 1),
-                    unpack=True,
-                    invalid_raise=False,
-                    loose=True,
-                )
-                data = np.stack((bins, counts), axis=1)
+        try:
+            if tofwerk.is_tofwerk_file(path):
+                data = h5py.File(path)["SingleIon"]["Data"]
+            elif nu.is_nu_directory(path):
+                _, counts, _ = nu.read_nu_directory(path, cycle=1, raw=True)
+                data = nu.single_ion_distribution(counts)
             else:
-                raise ValueError(
-                    "Text data must consist of either a column of values "
-                    "or 2 columns of bins and counts."
-                )
-        self.setSingleIon(data)
+                with path.open("r") as fp:
+                    delimiter = "\t"
+                    skip_rows = 0
+                    for line in fp.readlines(1024):
+                        try:
+                            delimiter = next(
+                                d for d in ["\t", ";", ",", " "] if d in line
+                            )
+                            float(line.split(delimiter)[-1])
+                            break
+                        except (ValueError, StopIteration):
+                            pass
+                        skip_rows += 1
+                    count = line.count(delimiter) + 1
+
+                if count == 1:  # raw points from dist
+                    data = np.genfromtxt(  # type: ignore
+                        path,
+                        delimiter=delimiter,
+                        skip_header=skip_rows,
+                        dtype=np.float64,
+                        usecols=(0),
+                        invalid_raise=False,
+                        loose=True,
+                    )
+                elif count == 2:  # hist as bin, count
+                    bins, counts = np.genfromtxt(  # type: ignore
+                        path,
+                        delimiter=delimiter,
+                        skip_header=skip_rows,
+                        dtype=np.float64,
+                        usecolss=(0, 1),
+                        unpack=True,
+                        invalid_raise=False,
+                        loose=True,
+                    )
+                    data = np.stack((bins, counts), axis=1)
+                else:
+                    raise ValueError(
+                        "Text data must consist of either one column of distribution "
+                        "values or 2 columns of bins and counts."
+                    )
+            self.setSingleIon(data)
+        except ValueError as e:
+            QtWidgets.QMessageBox.warning(self, "Unable to load SIA data", str(e))
 
     def showSingleIonData(self) -> QtWidgets.QDialog:
         sia = self.getSingleIon()
@@ -257,12 +262,35 @@ class PoissonOptions(LimitOptions):
 
         settings = QtCore.QSettings()
         self.formula = settings.value("Poisson/Formula", "Formula C")
-        self.eta = float(settings.value("Poisson/Eta", 1.0))
+        self.eta = float(settings.value("Poisson/Eta", 2.0))
         self.epsilon = float(settings.value("Poisson/Epsilon", 0.5))
         self.t_sample = float(settings.value("Poisson/Tsample", 1.0))
         self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
 
-        # self.button_advanced.setEnabled(False)
+    def state(self) -> dict:
+        if self.formula == "Currie":
+            params = {"eta": self.eta, "epsilon": self.epsilon}
+        else:
+            params = {"t_sample": self.t_sample, "t_blank": self.t_blank}
+        return {"alpha": self.alpha.value(), "formula": self.formula, "params": params}
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "alpha" in state:
+            self.alpha.setValue(state["alpha"])
+        if "formula" in state:
+            self.formula = state["formula"]
+        if "params" in state:
+            if "eta" in state["params"]:
+                self.eta = state["params"]["eta"]
+            if "epsilon" in state["params"]:
+                self.epsilon = state["params"]["epsilon"]
+            if "t_sample" in state["params"]:
+                self.t_sample = state["params"]["t_sample"]
+            if "t_blank" in state["params"]:
+                self.t_blank = state["params"]["t_blank"]
+        self.blockSignals(False)
+        self.limitOptionsChanged.emit()
 
     def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
         dlg = AdvancedPoissonDialog(
@@ -279,8 +307,10 @@ class PoissonOptions(LimitOptions):
 
     def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
         settings = QtCore.QSettings()
+        self.formula = formula
+        settings.value("Poisson/Formula", formula)
         if formula == "Currie":
-            self.eta = opt1 or 1.0
+            self.eta = opt1 or 2.0
             self.epsilon = opt2 or 0.5
             settings.setValue("Poisson/Eta", self.eta)
             settings.setValue("Poisson/Epsilon", self.epsilon)
