@@ -6,7 +6,7 @@ from typing import List
 
 import numpy
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from spcal import __version__
 import spcal.resources
 from spcal.gui.main import SPCalWindow
@@ -58,6 +58,7 @@ def main(argv: List[str] | None = None) -> int:
     app.setApplicationName("SPCal")
     app.setOrganizationName("SPCal")
     app.setApplicationVersion(__version__)
+    app.setWindowIcon(QtGui.QIcon(":img/app.ico"))
 
     window = SPCalWindow()
 

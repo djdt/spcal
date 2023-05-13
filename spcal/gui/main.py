@@ -244,6 +244,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
             ),
             parent=self,
         )
+        if self.windowIcon() is not None:
+            dlg.setIconPixmap(self.windowIcon().pixmap(64, 64))
         dlg.open()
         return dlg
 

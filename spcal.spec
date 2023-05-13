@@ -36,5 +36,5 @@ exe = EXE(
     strip=False,
     upx_exclude=["Qt*.dll", "PySide*.pyd"],
     console=False,
-    # icon="app.ico",
+    icon="app.ico",
 )
