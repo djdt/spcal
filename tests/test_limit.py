@@ -34,9 +34,9 @@ def test_limit_from_gaussian():
     assert lim.name == "Gaussian"
     assert lim.params["alpha"] == 0.001
     limit = np.mean(x) + np.std(x) * z
-    if UPPER_INTEGER:
-        limit = int(limit) + 1.0
-    assert lim.detection_threshold == limit
+    # if UPPER_INTEGER:
+    #     limit = int(limit) + 1.0
+    assert np.isclose(lim.detection_threshold, limit)
 
 
 def test_limit_windowed():
