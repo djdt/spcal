@@ -4,6 +4,89 @@ from typing import Tuple
 import numpy as np
 
 
+def erf(x: float) -> float:
+    """Error function approximation.
+
+    The maximum error is 5e-4 [1].
+
+    Args:
+        x: value
+
+    Returns:
+        approximation of error function
+
+    References:
+        .. [1] Abramowitz, Milton, and Irene A. Stegun, eds. Handbook of mathematical
+            functions with formulas, graphs, and mathematical tables.
+            Vol. 55. US Government printing office, 1970.
+    """
+    assert x >= 0.0
+    # Maximum error: 2.5e-5
+    a = np.array([0.278393, 0.230389, 0.000972, 0.078108])
+
+    return 1.0 - 1.0 / (1.0 + np.sum(a * np.power(x, [1, 2, 3, 4]))) ** 4
+
+
+def erfinv(x: float) -> float:
+    """Inverse error function approximation.
+
+    The maximum error is 6e-3 [2].
+
+    Args:
+        x: value
+
+    Returns:
+        approximation of inverse error function
+
+    References:
+        .. [2] Winitzki, S. A handy approximation for the error function and its inverse
+            2008
+    """
+    sign = np.sign(x)
+    x = np.log((1.0 - x) * (1.0 + x))
+
+    tt1 = 2.0 / (np.pi * 0.14) + 0.5 * x
+    tt2 = 1.0 / 0.14 * x
+
+    return sign * np.sqrt(-tt1 + np.sqrt(tt1 * tt1 - tt2))
+
+
+def gamma(x: float) -> float:
+    """Gamma function approximation.
+
+    Maximum error of 3e-7 [3].
+
+    Args:
+        x: value
+
+    Returns:
+        approximation of error function
+
+    References:
+        .. [3] Abramowitz, Milton, and Irene A. Stegun, eds. Handbook of mathematical
+            functions with formulas, graphs, and mathematical tables.
+            Vol. 55. US Government printing office, 1970.
+    """
+    assert x >= 0.0
+    # Use recursion
+    b = np.array(
+        [
+            1.0,
+            -0.577191652,
+            0.988205891,
+            -0.897056937,
+            0.918206857,
+            -0.756704078,
+            0.482199394,
+            -0.193527818,
+            0.035868343,
+        ]
+    )
+    z = x % 1.0
+    n = 1.0 / x if x < 1.0 else np.prod(z + np.arange(1, int(x - z)))
+    return n * np.sum(b * np.power(z, np.arange(9)))
+
+
 def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> float:
     """Calculates the otsu threshold.
 
@@ -48,6 +131,7 @@ def pca(
         component vectors
         explained variance per dim
     """
+
     def standardise(x: np.ndarray) -> np.ndarray:
         return (x - x.mean(axis=0)) / x.std(axis=0)
 
