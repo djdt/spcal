@@ -15,27 +15,39 @@ from spcal.gui.results import ResultsWidget
 from spcal.result import Filter
 
 
-def sanitiseOptions(options: dict) -> dict:
-    safe = {}
-    for k, v in options.items():
+def flatten_dict(d: dict, prefix: str = "", sep: str = "/") -> dict:
+    flat = {}
+    for k, v in d.items():
+        newk = prefix + sep + k if prefix else k
         if isinstance(v, dict):
-            safe.update({f"{k}/{vk}": vv for vk, vv in v.items()})
+            flat.update(flatten_dict(v, newk, sep))
         else:
-            safe[k] = v
-    return safe
+            flat[newk] = v
+    return flat
+
+
+def unflatten_dict(d: dict, base: dict | None = None, sep: str = "/") -> dict:
+    if base is None:
+        base = {}
+    for k, v in d.items():
+        root = base
+        if sep in k:
+            *tokens, k = k.split("/")
+            for token in tokens:
+                root.setdefault(token, {})
+                root = root[token]
+        if isinstance(v, dict):
+            v = unflatten_dict(v, root.get(k, {}))
+        root[k] = v
+    return base
+
+
+def sanitiseOptions(options: dict) -> dict:
+    return flatten_dict(options)
 
 
 def restoreOptions(options: dict) -> dict:
-    restored: dict = {}
-    for k, v in options.items():
-        if "/" in k:
-            sep = k.find("/")
-            d = restored.get(k[:sep], {})
-            d[k[sep + 1 :]] = v
-            restored[k[:sep]] = d
-        else:
-            restored[k] = v
-    return restored
+    return unflatten_dict(options)
 
 
 def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
