@@ -22,6 +22,7 @@ class SingleIonView(SinglePlotGraphicsView):
     def draw(
         self,
         data: np.ndarray | float,
+        sigma: float = 0.50,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
         draw_fit: str | None = None,
@@ -33,12 +34,12 @@ class SingleIonView(SinglePlotGraphicsView):
             brush = QtGui.QBrush(QtCore.Qt.black)
 
         if isinstance(data, float):
-            mu = np.log(data) + 0.45**2
-            p95 = np.exp(mu + np.sqrt(2.0 * 0.45**2) * erfinv(2.0 * 0.99 - 1.0))
+            mu = np.log(data) + sigma**2
+            p99 = np.exp(mu + np.sqrt(2.0 * sigma**2) * erfinv(2.0 * 0.99 - 1.0))
 
-            xs = np.linspace(0.0, p95, 1000)
+            xs = np.linspace(0.0, p99, 1000)
 
-            ys = lognormal_pdf(xs, mu, 0.45)
+            ys = lognormal_pdf(xs, mu, sigma)
             curve = pyqtgraph.PlotCurveItem(
                 x=xs,
                 y=np.nan_to_num(ys),

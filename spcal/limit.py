@@ -135,7 +135,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         single_ion: float | np.ndarray,
         accumulations: int,
-        alpha: float = 0.001,
+        alpha: float = 1e-6,
         max_iters: int = 1,
         size: int | None = None,
         seed: int | None = None,
@@ -167,6 +167,7 @@ class SPCalLimit(object):
                 of microchannel-plate-based detection systems, J. Geo. R. 2018
                 https://doi.org/10.1002/2016JA022563
         """
+        sigma = 0.50
 
         rng = np.random.default_rng(seed=seed)
         if size is None:
@@ -176,7 +177,7 @@ class SPCalLimit(object):
         weights = None
         if isinstance(single_ion, float):
             average_single_ion = single_ion
-            single_ion = rng.lognormal(np.log(single_ion), 0.5, size=10000)
+            single_ion = rng.lognormal(np.log(single_ion), sigma, size=10000)
         else:
             if single_ion.ndim == 2:  # histogram of (bins, counts)
                 weights = single_ion[:, 1] / single_ion[:, 1].sum()
@@ -338,6 +339,7 @@ class SPCalLimit(object):
     def fromBest(
         cls,
         responses: np.ndarray,
+        compound_kws: dict | None = None,
         poisson_kws: dict | None = None,
         gaussian_kws: dict | None = None,
         window_size: int = 0,
@@ -356,19 +358,35 @@ class SPCalLimit(object):
             window_size: size of window, 0 for no window
             max_iters: max iterations, 0 for no iteration
         """
+        if compound_kws is None:
+            compound_kws = {}
         if poisson_kws is None:
             poisson_kws = {}
         if gaussian_kws is None:
             gaussian_kws = {}
+
+        mod = np.mod(responses[(responses > 0.0) & (responses < 5.0)], 1.0)
+        fint = np.count_nonzero(mod == 0) / responses.size
         # Check that the non-detection region is normalish (λ > 10)
-        poisson = SPCalLimit.fromPoisson(
-            responses,
-            alpha=poisson_kws.get("alpha", 0.001),
-            formula=poisson_kws.get("formula", "formula c"),
-            formula_kws=poisson_kws.get("params", None),
-            window_size=window_size,
-            max_iters=max_iters,
-        )
+        if fint > 0.1:
+            poisson = SPCalLimit.fromPoisson(
+                responses,
+                alpha=poisson_kws.get("alpha", 0.001),
+                formula=poisson_kws.get("formula", "formula c"),
+                formula_kws=poisson_kws.get("params", None),
+                window_size=window_size,
+                max_iters=max_iters,
+            )
+        else:
+            poisson = SPCalLimit.fromCompoundPoisson(
+                responses,
+                alpha=compound_kws.get("alpha", 1e-6),
+                single_ion=compound_kws.get("single ion", 1.0),
+                accumulations=compound_kws.get("accumulations", 1),
+                max_iters=max_iters,
+                seed=294879019,  # use a seed for consitent results
+            )
+
         if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
             return poisson
         else:
