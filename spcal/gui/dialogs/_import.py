@@ -319,9 +319,23 @@ class TextImportDialog(_ImportDialogBase):
             delimiter = "Space"
         elif delimiter == "\t":
             delimiter = "Tab"
+
+        # Check that the new file contains the same names (same file type)
+        same = True
+        spinbox_first_line = self.spinbox_first_line.value()
+        self.spinbox_first_line.setValue(options["first line"])
+        for col in range(self.table.columnCount()):
+            item = self.table.item(self.spinbox_first_line.value() - 1, col)
+            if item is not None and item.text() not in options["old names"]:
+                same = False
+                break
+
+        if not same:
+            self.spinbox_first_line.setValue(spinbox_first_line)
+            return
+
         self.combo_delimiter.setCurrentText(delimiter)
         self.le_ignore_columns.setText(";".join(str(i + 1) for i in options["ignores"]))
-        self.spinbox_first_line.setValue(options["first line"])
         for name, oldname in zip(options["names"], options["old names"]):
             for col in range(self.table.columnCount()):
                 item = self.table.item(self.spinbox_first_line.value() - 1, col)
