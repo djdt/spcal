@@ -344,6 +344,7 @@ class InputWidget(QtWidgets.QWidget):
                 else:  # If empty limit then fill with best estimate
                     self.limits[name] = SPCalLimit.fromBest(
                         response,
+                        compound_kws=compound_kws,
                         poisson_kws=poisson_kws,
                         gaussian_kws=gaussian_kws,
                         window_size=window_size,

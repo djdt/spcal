@@ -88,6 +88,7 @@ class SPCalLimit(object):
         if method in ["automatic", "best"]:
             return SPCalLimit.fromBest(
                 responses,
+                compound_kws=compound_kws,
                 poisson_kws=poisson_kws,
                 gaussian_kws=gaussian_kws,
                 window_size=window_size,
@@ -350,9 +351,12 @@ class SPCalLimit(object):
         Uses a Poisson threshold to calculate the mean of the background (signal below
         the limit of criticality). If this is above 10.0 then Gaussian thresholding is
         used instead.
+        If data contains a significant fraction of non-integer values, it is treated as
+        ToF data and a Compound Poisson limit is used instead of Poisson.
 
         Args:
             responses: single-particle data
+            compound_kws: keywords for CompoundPoisson
             poisson_kws: keywords for Poisson
             gaussian_kws: keywords for Gaussian
             window_size: size of window, 0 for no window
