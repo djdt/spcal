@@ -168,7 +168,7 @@ class SPCalLimit(object):
                 of microchannel-plate-based detection systems, J. Geo. R. 2018
                 https://doi.org/10.1002/2016JA022563
         """
-        sigma = 0.50
+        sigma = 0.45  # Matches both Nu Instruments and TOFWERK SIAs
 
         rng = np.random.default_rng(seed=seed)
         if size is None:
@@ -192,9 +192,10 @@ class SPCalLimit(object):
 
             lam = bn.nanmean(responses[responses < threshold])
 
-            comp = rng.poisson(lam, size=size) * rng.choice(
-                single_ion, size=size, p=weights
-            )
+            comp = np.zeros(size)
+            for _ in range(accumulations):
+                poi = rng.poisson(lam / accumulations, size=size)
+                comp += poi * rng.choice(single_ion, size=size, p=weights)
 
             comp /= average_single_ion
             threshold = float(np.quantile(comp, 1.0 - alpha))
