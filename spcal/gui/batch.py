@@ -482,6 +482,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
             "poisson_kws": self.options.poisson.state(),
             "gaussian_kws": self.options.gaussian.state(),
         }
+        if not limit_params["compound_kws"]["simulate"]:
+            limit_params["compound_kws"]["single ion"] = None
         units = {
             "mass": (
                 self.mass_units.currentText(),

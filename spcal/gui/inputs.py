@@ -232,10 +232,6 @@ class InputWidget(QtWidgets.QWidget):
 
         if "single ion" in options:
             self.options.compound_poisson.setSingleIon(options["single ion"])
-        if "accumulations" in options:
-            self.options.compound_poisson.accumulations.setValue(
-                options["accumulations"]
-            )
         self.options.blockSignals(False)
 
         self.responses = data
@@ -324,6 +320,8 @@ class InputWidget(QtWidgets.QWidget):
         self.limits.clear()
 
         compound_kws = self.options.compound_poisson.state()
+        if not compound_kws["simulate"]:
+            compound_kws["single ion"] = None
         gaussian_kws = self.options.gaussian.state()
         poisson_kws = self.options.poisson.state()
 
