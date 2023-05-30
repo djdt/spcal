@@ -110,7 +110,7 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                single_ion=compound_kws.get("single ion", None),
+                single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 max_iters=max_iters,
             )
@@ -390,7 +390,7 @@ class SPCalLimit(object):
             poisson = SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                single_ion=compound_kws.get("single ion", None),
+                single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 max_iters=max_iters,
             )
