@@ -6,6 +6,10 @@ from typing import Callable, Dict, Tuple
 import bottleneck as bn
 import numpy as np
 
+from spcal.dists.util import (
+    compound_poisson_lognormal_quantile,
+    simulate_compound_poisson,
+)
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
 logger = logging.getLogger(__name__)
@@ -106,10 +110,9 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                single_ion=compound_kws.get("single ion", 1.0),
-                accumulations=compound_kws.get("accumulations", 1),
+                single_ion=compound_kws.get("single ion", None),
+                sigma=compound_kws.get("sigma", 0.45),
                 max_iters=max_iters,
-                seed=294879019,  # use a seed for consitent results
             )
         elif method.startswith("gaussian"):
             return SPCalLimit.fromGaussian(
@@ -134,12 +137,11 @@ class SPCalLimit(object):
     def fromCompoundPoisson(
         cls,
         responses: np.ndarray,
-        single_ion: float | np.ndarray,
-        accumulations: int,
         alpha: float = 1e-6,
-        max_iters: int = 1,
+        single_ion_dist: np.ndarray | None = None,
+        sigma: float = 0.45,
         size: int | None = None,
-        seed: int | None = None,
+        max_iters: int = 1,
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
 
@@ -148,16 +150,21 @@ class SPCalLimit(object):
         simulate the expected background and calculate the appropriate quantile for a
         given alpha value.
 
+        Two methods are available, depending on the presence of ``single_ion_dist``. If
+        passed, the background is simulated as a compound poisson using the SIS
+        distribution. Otherwise an approximation is made that assumes the underlying SIS
+        distribution is log-normal with a log stdev of ``sigma``. The approximation is
+        much faster, but may be less accurate.
+
+        A good value for ``sigma`` is 0.45, for both Nu Instruments and TOFWERK ToFs.
+
         Args:
             responses: single-particle data
-            single_ion: single ion area as an average, distribution or histogram of
-                stacked bins and counts
-            size: size of simulation
-            accumulations: number of accumulation per acquisition
             alpha: type I error rate
-            max_iters: number of iterations, set to 1 for no iters
+            single_ion: single ion distribution
+            sigma: sigma of SIS, used for compound log-normal approx
             size: size of simulation, larger values will give more consistent quantiles
-            seed: seed for random number generator
+            max_iters: number of iterations, set to 1 for no iters
 
         References:
             Gundlach-Graham, A.; Lancaster, R. Mass-Dependent Critical Value Expressions
@@ -168,22 +175,17 @@ class SPCalLimit(object):
                 of microchannel-plate-based detection systems, J. Geo. R. 2018
                 https://doi.org/10.1002/2016JA022563
         """
-        sigma = 0.45  # Matches both Nu Instruments and TOFWERK SIAs
-
-        rng = np.random.default_rng(seed=seed)
+        # sigma = 0.45  # Matches both Nu Instruments and TOFWERK SIAs
         if size is None:
             size = responses.size
 
-        # If given a float then generate a distribution with estimated params
+        # Make sure weights are set correctly
         weights = None
-        if isinstance(single_ion, float):
-            average_single_ion = single_ion
-            single_ion = rng.lognormal(np.log(single_ion), sigma, size=10000)
-        else:
-            if single_ion.ndim == 2:  # histogram of (bins, counts)
-                weights = single_ion[:, 1] / single_ion[:, 1].sum()
-                single_ion = single_ion[:, 0]
-            average_single_ion = np.average(single_ion, weights=weights)
+        if single_ion_dist is not None:
+            if single_ion_dist.ndim == 2:  # histogram of (bins, counts)
+                weights = single_ion_dist[:, 1] / single_ion_dist[:, 1].sum()
+                single_ion_dist = single_ion_dist[:, 0]
+            average_single_ion = np.average(single_ion_dist, weights=weights)
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
@@ -191,14 +193,16 @@ class SPCalLimit(object):
             prev_threshold = threshold
 
             lam = bn.nanmean(responses[responses < threshold])
-
-            comp = np.zeros(size)
-            for _ in range(accumulations):
-                poi = rng.poisson(lam / accumulations, size=size)
-                comp += poi * rng.choice(single_ion, size=size, p=weights)
-
-            comp /= average_single_ion
-            threshold = float(np.quantile(comp, 1.0 - alpha))
+            if single_ion_dist is not None:  # Simulate
+                sim = simulate_compound_poisson(
+                    lam, single_ion_dist, weights=weights, size=size
+                )
+                sim /= average_single_ion
+                threshold = float(np.quantile(sim, 1.0 - alpha))
+            else:
+                threshold = compound_poisson_lognormal_quantile(
+                    (1.0 - alpha), lam, np.log(1.0) - 0.5 * sigma**2, sigma
+                )
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
@@ -386,10 +390,9 @@ class SPCalLimit(object):
             poisson = SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                single_ion=compound_kws.get("single ion", 1.0),
-                accumulations=compound_kws.get("accumulations", 1),
+                single_ion=compound_kws.get("single ion", None),
+                sigma=compound_kws.get("sigma", 0.45),
                 max_iters=max_iters,
-                seed=294879019,  # use a seed for consitent results
             )
 
         if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:

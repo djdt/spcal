@@ -1,3 +1,4 @@
+import logging
 from statistics import NormalDist
 
 import h5py
@@ -10,6 +11,8 @@ from spcal.gui.io import get_open_spcal_path
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValueWidget
 from spcal.io import nu, tofwerk
+
+logger = logging.getLogger(__name__)
 
 
 class LimitOptions(QtWidgets.QGroupBox):
@@ -48,23 +51,23 @@ class CompoundPoissonOptions(LimitOptions):
 
         self.single_ion_dist: np.ndarray | None = None
 
-        self.single_ion_average = ValueWidget(
-            1.0, validator=QtGui.QDoubleValidator(1e-6, 1e99, 9), format=sf
+        self.lognormal_sigma = ValueWidget(
+            0.45, validator=QtGui.QDoubleValidator(1e-9, 10.0, 9), format=sf
         )
-        self.single_ion_average.setPlaceholderText("1.0")
-        self.single_ion_average.setToolTip(
-            "The average single ion area, this is used "
-            "to simulate a SIA distribution if none is provided."
+        self.lognormal_sigma.setPlaceholderText("0.45")
+        self.lognormal_sigma.setToolTip(
+            "Shape parameter for the log-normal approximation of the SIA. "
+            "Used if a SIA distribution is not passed."
         )
-        self.single_ion_average.valueChanged.connect(self.limitOptionsChanged)
+        self.lognormal_sigma.valueChanged.connect(self.limitOptionsChanged)
 
-        self.accumulations = ValueWidget(
-            1, validator=QtGui.QIntValidator(1, 100), format=".0f"
-        )
-        self.accumulations.setToolTip(
-            "The number of ion extraction events per acquisition."
-        )
-        self.accumulations.valueChanged.connect(self.limitOptionsChanged)
+        self.method = QtWidgets.QComboBox()
+        self.method.addItems(["LN Approximation", "Simulation"])
+        self.method.currentIndexChanged.connect(self.limitOptionsChanged)
+        item = self.method.model().item(1)
+        item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+        self.label_sis = QtWidgets.QLabel("Not loaded.")
 
         self.action_open_si = create_action(
             "document-open",
@@ -91,11 +94,12 @@ class CompoundPoissonOptions(LimitOptions):
 
         layout_sia = QtWidgets.QHBoxLayout()
         layout_sia.setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
-        layout_sia.addWidget(self.single_ion_average)
-        layout_sia.addWidget(self.toolbar)
+        layout_sia.addWidget(self.label_sis, 1)
+        layout_sia.addWidget(self.toolbar, 0)
 
-        self.layout().addRow("Single Ion Area:", layout_sia)
-        self.layout().addRow("Accumulations:", self.accumulations)
+        self.layout().addRow("Method:", self.method)
+        self.layout().addRow("SIA σ:", self.lognormal_sigma)
+        self.layout().addRow("SIA Dist:", layout_sia)
 
     def loadSingleIonData(self) -> None:
         path = get_open_spcal_path(self, "Single Ion Data")
@@ -153,15 +157,15 @@ class CompoundPoissonOptions(LimitOptions):
                     )
             self.setSingleIon(data)
         except ValueError as e:
+            logger.exception(e)
             QtWidgets.QMessageBox.warning(self, "Unable to load SIA data", str(e))
 
     def showSingleIonData(self) -> QtWidgets.QDialog:
-        sia = self.getSingleIon()
-        if sia is None:
+        if self.single_ion_dist is None:
             return
 
         view = SingleIonView()
-        view.draw(sia)
+        view.draw(self.single_ion_dist)
 
         dlg = QtWidgets.QDialog(self)
         dlg.setWindowTitle("Single Ion Distribution")
@@ -172,44 +176,41 @@ class CompoundPoissonOptions(LimitOptions):
         return dlg
 
     def clearSingleIon(self) -> None:
-        self.setSingleIon(self.single_ion_average.value())
+        self.setSingleIon(None)
 
-    def getSingleIon(self) -> float | None | np.ndarray:
-        return (
-            self.single_ion_dist
-            if self.single_ion_dist is not None
-            else self.single_ion_average.value() or 1.0
-        )
-
-    def setSingleIon(self, sia: float | None | np.ndarray) -> None:
-        if sia is None or isinstance(sia, float):
-            self.single_ion_average.setValue(sia)
-            self.single_ion_dist = None
-            self.single_ion_average.setEnabled(True)
-        else:
+    def setSingleIon(self, sia: None | np.ndarray) -> None:
+        if np.any(self.single_ion_dist != sia):
             self.single_ion_dist = sia
-            self.single_ion_average.setEnabled(False)
-            if sia.ndim == 2:  # hist of bins, counts
-                mean = np.average(sia[:, 0], weights=sia[:, 1])
+            self.limitOptionsChanged.emit()
+            item = self.method.model().item(1)
+            if self.single_ion_dist is None:
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
+                self.label_sis.setText("Not loaded.")
             else:
-                mean = np.mean(sia)
-            self.single_ion_average.setValue(mean)
+                item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
+                self.label_sis.setText(f"{self.single_ion_dist.size} points")
 
     def state(self) -> dict:
         return {
             "alpha": self.alpha.value(),
-            "single ion": self.getSingleIon(),
-            "accumulations": int(self.accumulations.value() or 1),
+            "sigma": self.lognormal_sigma.value(),
+            "single ion": self.single_ion_dist,
+            "simulate": self.method.currentIndex() == 1,
         }
 
     def setState(self, state: dict) -> None:
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
+        if "sigma" in state:
+            self.lognormal_sigma.setValue(state["sigma"])
         if "single ion" in state:
             self.setSingleIon(state["single ion"])
-        if "accumulations" in state:
-            self.accumulations.setValue(state["accumulations"])
+        if "simulate" in state:
+            if state["simulate"]:
+                self.method.setCurrentIndex(1)
+            else:
+                self.method.setCurrentIndex(0)
         self.blockSignals(False)
         self.limitOptionsChanged.emit()
 
