@@ -20,6 +20,7 @@ from spcal.gui.widgets import (
 from spcal.io import nu
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
+from spcal.limit import SPCalLimit
 from spcal.nontarget import non_target_screen
 from spcal.npdb import db
 from spcal.siunits import time_units
@@ -43,8 +44,9 @@ class _ImportDialogBase(QtWidgets.QDialog):
             "Those with signals above the chosen ppm are selected.",
             self.screenData,
         )
-        self.screening_poisson_alpha = 1e-3
-        self.screening_gaussian_alpha = 1e-7
+        self.screening_poisson_kws = {"alpha": 1e-3}
+        self.screening_gaussian_kws = {"alpha": 1e-7}
+        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45}
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -358,12 +360,21 @@ class TextImportDialog(_ImportDialogBase):
             max_rows=100000,
         )
         data = rfn.structured_to_unstructured(data)
-        idx = non_target_screen(
-            data,
-            ppm,
-            poisson_alpha=self.screening_poisson_alpha,
-            gaussian_alpha=self.screening_gaussian_alpha,
+
+        # Need to make this on a separate thread so can cancel
+        limits_for_screening = np.array(
+            [
+                SPCalLimit.fromBest(
+                    data[:, i],
+                    poisson_kws=self.screening_poisson_kws,
+                    gaussian_kws=self.screening_gaussian_kws,
+                    compound_kws=self.screening_compound_kws,
+                ).detection_threshold
+                for i in range(data.shape[1])
+            ]
         )
+
+        idx = non_target_screen(data, ppm, limits_for_screening)
         mask = np.ones(data.shape[1], dtype=bool)
         mask[idx] = 0
         ignores = options["ignores"] + list(np.array(options["columns"])[mask])
@@ -477,12 +488,20 @@ class NuImportDialog(_ImportDialogBase):
         if ppm is None:
             return
 
-        idx = non_target_screen(
-            self.signals,
-            ppm,
-            poisson_alpha=self.screening_poisson_alpha,
-            gaussian_alpha=self.screening_gaussian_alpha,
+        # Need to make this on a separate thread so can cancel
+        limits_for_screening = np.array(
+            [
+                SPCalLimit.fromBest(
+                    self.signals[:, i],
+                    poisson_kws=self.screening_poisson_kws,
+                    gaussian_kws=self.screening_gaussian_kws,
+                    compound_kws=self.screening_compound_kws,
+                ).detection_threshold
+                for i in range(self.signals.shape[1])
+            ]
         )
+
+        idx = non_target_screen(self.signals, ppm, limits_for_screening)
         masses = self.masses[idx]
         unit_masses = np.round(masses).astype(int)
         isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
@@ -827,12 +846,19 @@ class TofwerkImportDialog(_ImportDialogBase):
         data = self.h5["PeakData"]["PeakData"][:10]
         data = np.reshape(data, (-1, data.shape[-1]))
         data *= factor_extraction_to_acquisition(self.h5)
-        idx = non_target_screen(
-            data,
-            ppm,
-            poisson_alpha=self.screening_poisson_alpha,
-            gaussian_alpha=self.screening_gaussian_alpha,
+
+        limits_for_screening = np.array(
+            [
+                SPCalLimit.fromBest(
+                    data[:, i],
+                    poisson_kws=self.screening_poisson_kws,
+                    gaussian_kws=self.screening_gaussian_kws,
+                    compound_kws=self.screening_compound_kws,
+                ).detection_threshold
+                for i in range(data.shape[1])
+            ]
         )
+        idx = non_target_screen(data, ppm, limits_for_screening)
 
         _isotopes = []
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
