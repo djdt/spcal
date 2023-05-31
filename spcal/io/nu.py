@@ -413,7 +413,9 @@ def select_nu_signals(
     return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
 
 
-def single_ion_distribution(counts: np.ndarray) -> np.ndarray | float:
+def single_ion_distribution(
+    counts: np.ndarray, bins: str | int | np.ndarray = "auto"
+) -> np.ndarray:
     """Calculates the single ion distribution from calibration data.
 
     SIA is calculated as an average of all isotopes with a >1e05 and <1e-3
@@ -421,6 +423,7 @@ def single_ion_distribution(counts: np.ndarray) -> np.ndarray | float:
 
     Args:
         counts: raw ADC counts
+        bins: binning of histogram, see np.histogram_bin_edges
 
     Returns:
         array of stacked bin centers and counts
@@ -430,16 +433,9 @@ def single_ion_distribution(counts: np.ndarray) -> np.ndarray | float:
         xs = np.linspace(0, x, 100)
         return 1.0 / gamma(a) * np.trapz(np.exp(-xs) * xs ** (a - 1), x=xs)
 
-    def get_scale(x: np.ndarray, axis: int | None = None):
-        mu = np.log(np.nanmedian(x, axis=axis))
-        mean = np.nanmean(x, axis=axis)
-        sigma = np.sqrt(2.0 * (np.log(mean) - mu))
-        return mu, sigma
-
     pzeros = np.count_nonzero(counts, axis=0) / counts.shape[0]
     poi2 = np.array([incgamma(2 + 1, pz) for pz in pzeros])
     x = counts[:, (poi2 > 1e-5) & (poi2 < 1e-3)]
-    x[x == 0] = np.nan
 
-    hist, bins = np.histogram(x[x > 0], bins="auto")
+    hist, bins = np.histogram(x[x > 0], bins=bins)
     return np.stack(((bins[1:] + bins[:-1]) / 2.0, hist), axis=1)
