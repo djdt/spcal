@@ -71,6 +71,7 @@ def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
 
     window.options.poisson.alpha.setValue(0.1)
 
+    # Todo: need to make a better (more data) Nu test data file
     with qtbot.wait_signal(window.sample.detectionsChanged):
         window.sample.loadData(
             data,

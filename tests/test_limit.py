@@ -60,6 +60,11 @@ def test_limit_from():  # Better way for normality check?
         assert lim_h.name == max(lim_p, lim_g, key=lambda x: x.detection_threshold).name
         assert lim_b.name == ("Poisson" if lam < 10.0 else "Gaussian")
 
+    # Make sure CompoundPoisson works
+    x = np.random.poisson(size=1000, lam=10.0) / 10.0
+    lim_c = SPCalLimit.fromBest(x, max_iters=1)
+    assert lim_c.name == "CompoundPoisson"
+
 
 def test_limit_from_string():
     for string, method in zip(
