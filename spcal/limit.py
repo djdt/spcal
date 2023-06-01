@@ -374,10 +374,17 @@ class SPCalLimit(object):
         if gaussian_kws is None:
             gaussian_kws = {}
 
-        mod = np.mod(responses[(responses > 0.0) & (responses < 5.0)], 1.0)
-        fint = np.count_nonzero(mod == 0) / responses.size
-        # Check that the non-detection region is normalish (λ > 10)
-        if fint > 0.1:
+        # Find if data is Poisson distributed
+        # Limit to < 5 to stay out of analouge region
+        mod = np.mod(responses[(responses > 0.0) & (responses <= 5.0)], 1.0)
+        if mod.size == 0:  # No values less than 5.0, Gaussian
+            return SPCalLimit.fromGaussian(
+                responses,
+                alpha=gaussian_kws.get("alpha", 1e-6),
+                window_size=window_size,
+                max_iters=max_iters,
+            )
+        elif np.count_nonzero(mod > 1e-3) / mod.size < 0.5:  # Not Poisson
             poisson = SPCalLimit.fromPoisson(
                 responses,
                 alpha=poisson_kws.get("alpha", 0.001),
