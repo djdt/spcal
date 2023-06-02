@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from scipy.special import erf, erfinv
+from spcal.calc import erf, erfinv
 
 
 def cdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:

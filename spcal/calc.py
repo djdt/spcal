@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 
 
-def erf(x: float) -> float:
+def erf(x: float | np.ndarray) -> float | np.ndarray:
     """Error function approximation.
 
     The maximum error is 5e-4 [1].
@@ -20,14 +20,14 @@ def erf(x: float) -> float:
             functions with formulas, graphs, and mathematical tables.
             Vol. 55. US Government printing office, 1970.
     """
-    assert x >= 0.0
+    assert np.all(x >= 0.0)
     # Maximum error: 2.5e-5
     a = np.array([0.278393, 0.230389, 0.000972, 0.078108])
 
     return 1.0 - 1.0 / (1.0 + np.sum(a * np.power(x, [1, 2, 3, 4]))) ** 4
 
 
-def erfinv(x: float) -> float:
+def erfinv(x: float | np.ndarray) -> float | np.ndarray:
     """Inverse error function approximation.
 
     The maximum error is 6e-3 [2].
