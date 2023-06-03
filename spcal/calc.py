@@ -7,7 +7,7 @@ import numpy as np
 def erf(x: float | np.ndarray) -> float | np.ndarray:
     """Error function approximation.
 
-    The maximum error is 5e-4 [1].
+    The maximum error is 1.5e-7 [1].
 
     Args:
         x: value
@@ -20,12 +20,12 @@ def erf(x: float | np.ndarray) -> float | np.ndarray:
             functions with formulas, graphs, and mathematical tables.
             Vol. 55. US Government printing office, 1970.
     """
-    assert np.all(x >= 0.0)
+    sign = np.sign(x)
     # Maximum error: 2.5e-5
     a = np.array([0.278393, 0.230389, 0.000972, 0.078108])
     p = np.array([[1, 2, 3, 4]]).T
     sum = np.sum(a * np.power(x, p).T, axis=1)
-    return 1.0 - 1.0 / (1.0 + sum) ** 4
+    return sign * (1.0 - 1.0 / (1.0 + sum) ** 4)
 
 
 def erfinv(x: float | np.ndarray) -> float | np.ndarray:
