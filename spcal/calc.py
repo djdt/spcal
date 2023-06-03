@@ -23,8 +23,9 @@ def erf(x: float | np.ndarray) -> float | np.ndarray:
     assert np.all(x >= 0.0)
     # Maximum error: 2.5e-5
     a = np.array([0.278393, 0.230389, 0.000972, 0.078108])
-
-    return 1.0 - 1.0 / (1.0 + np.sum(a * np.power(x, [1, 2, 3, 4]))) ** 4
+    p = np.array([[1, 2, 3, 4]]).T
+    sum = np.sum(a * np.power(x, p).T, axis=1)
+    return 1.0 - 1.0 / (1.0 + sum) ** 4
 
 
 def erfinv(x: float | np.ndarray) -> float | np.ndarray:
@@ -45,8 +46,8 @@ def erfinv(x: float | np.ndarray) -> float | np.ndarray:
     sign = np.sign(x)
     x = np.log((1.0 - x) * (1.0 + x))
 
-    tt1 = 2.0 / (np.pi * 0.14) + 0.5 * x
-    tt2 = 1.0 / 0.14 * x
+    tt1 = 2.0 / (np.pi * 0.147) + 0.5 * x
+    tt2 = 1.0 / 0.147 * x
 
     return sign * np.sqrt(-tt1 + np.sqrt(tt1 * tt1 - tt2))
 
