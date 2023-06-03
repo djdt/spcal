@@ -11,6 +11,7 @@ def test_erf():
     assert np.allclose(calc.erf(x), erf_sp(x), atol=5e-4)
     assert np.allclose(calc.erf(1.0), erf_sp(1.0), atol=5e-4)
 
+
 def test_erfinv():
     x = np.random.random(1000)
     assert np.allclose(calc.erfinv(x), erfinv_sp(x), atol=6e-3)
