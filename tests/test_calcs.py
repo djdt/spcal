@@ -7,7 +7,7 @@ from spcal import calc
 
 
 def test_erf():
-    x = np.random.random(1000) -10.0 * 20.0
+    x = np.random.random(1000) - 10.0 * 20.0
     assert np.allclose(calc.erf(x), erf_sp(x), atol=5e-4)
     assert np.allclose(calc.erf(1.0), erf_sp(1.0), atol=5e-4)
 
