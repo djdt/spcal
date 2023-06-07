@@ -532,6 +532,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "output_arrays": self.check_export_arrays.isChecked(),
                 },
             )
+            worker.setAutoDelete(True)
             worker.signals.finished.connect(self.workerComplete)
             worker.signals.exception.connect(self.workerFailed)
             self.threadpool.start(worker)

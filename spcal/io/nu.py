@@ -158,6 +158,8 @@ def get_dwelltime_from_info(info: dict) -> float:
 def get_signals_from_nu_data(integs: List[np.ndarray], num_acc: int) -> np.ndarray:
     """Converts signals from integ data to counts.
 
+    Preserves run length when missing data is present.
+
     Args:
         integ: from `read_integ_binary`
         num_acc: number of accumulations per acquisition
@@ -292,7 +294,7 @@ def read_nu_directory(
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
     file. Data is read from '.integ' files listed in the 'integrated.index' and
-    are checked for correct starting cyle, segment and acquistion numbers.
+    are checked for correct starting cycle, segment and acquisition numbers.
 
     Args:
         path: path to data directory
@@ -303,7 +305,7 @@ def read_nu_directory(
         raw: return raw ADC counts
 
     Returns:
-        masses from first acquistion
+        masses from first acquisition
         signals in counts
         dict of parameters from run.info
     """

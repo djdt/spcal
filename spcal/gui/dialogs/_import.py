@@ -140,7 +140,7 @@ class TextImportDialog(_ImportDialogBase):
             x for _, x in zip(range(header_row_count), self.file_path.open("r"))
         ]
 
-        # Guess the delimitier, skip rows and count from header
+        # Guess the delimiter, skip rows and count from header
         first_data_line = 0
 
         delimiter = "\t"
@@ -618,22 +618,23 @@ class NuImportDialog(_ImportDialogBase):
                 self.cycle_number.value(),
                 self.segment_number.value(),
             )
+            worker.setAutoDelete(True)
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
             worker.signals.result.connect(self.results.append)
             self.threadpool.start(worker)
 
     def finalise(self) -> None:
-        self.threadpool.waitForDone(1000)
+        if not self.threadpool.waitForDone(1000):
+            logger.warning("could not remove all threads at finalise")
         self.running = False
 
-        options = self.importOptions()
         try:
             num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
             signals = nu.get_signals_from_nu_data(self.results, num_acc)
             signals /= self.info["AverageSingleIonArea"]
 
-            if self.checkbox_blanking.isChecked():  # autoblank
+            if self.checkbox_blanking.isChecked():  # auto-blank
                 autob_events = nu.collect_nu_autob_data(
                     self.file_path,
                     self.autob_index,
@@ -658,6 +659,7 @@ class NuImportDialog(_ImportDialogBase):
             data = nu.select_nu_signals(self.masses, signals, selected_masses)
 
         except Exception as e:
+            logger.exception(e)
             msg = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Warning,
                 "Import Failed",
@@ -668,6 +670,7 @@ class NuImportDialog(_ImportDialogBase):
             self.abort()
             return
 
+        options = self.importOptions()
         self.dataImported.emit(data, options)
         logger.info(
             f"Nu instruments data loaded from {self.file_path} ({data.size} events)."
