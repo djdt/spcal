@@ -9,6 +9,7 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.dialogs.nontarget import NonTargetScreeningDialog
 from spcal.gui.util import Worker, create_action
 from spcal.gui.widgets import (
     CheckableComboBox,
@@ -20,8 +21,6 @@ from spcal.gui.widgets import (
 from spcal.io import nu
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
-from spcal.limit import SPCalLimit
-from spcal.nontarget import non_target_screen
 from spcal.npdb import db
 from spcal.siunits import time_units
 
@@ -42,8 +41,10 @@ class _ImportDialogBase(QtWidgets.QDialog):
             "Screen",
             "Select isotopes using a non-targetted screening approach. "
             "Those with signals above the chosen ppm are selected.",
-            self.screenData,
+            self.dialogScreenData,
         )
+        self.screening_ppm = 100.0
+        self.screening_data_size = 1_000_000
         self.screening_poisson_kws = {"alpha": 1e-3}
         self.screening_gaussian_kws = {"alpha": 1e-7}
         self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45}
@@ -57,10 +58,6 @@ class _ImportDialogBase(QtWidgets.QDialog):
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.dwelltime.baseValueChanged.connect(self.completeChanged)
-
-        self.screening_ppm = ValueWidget(
-            1000.0, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=".1f"
-        )
 
         self.button_screen = QtWidgets.QToolButton()
         self.button_screen.setDefaultAction(self.action_nontarget_screen)
@@ -80,8 +77,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
         )
 
         screen_layout = QtWidgets.QHBoxLayout()
-        screen_layout.addWidget(self.screening_ppm, 1)
-        screen_layout.addWidget(QtWidgets.QLabel("ppm"), 0)
+        screen_layout.addWidget(QtWidgets.QLabel("Non-targetted screening:"), 0)
         screen_layout.addWidget(
             self.button_screen, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
@@ -89,7 +85,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
         self.box_options = QtWidgets.QGroupBox("Import Options")
         self.box_options.setLayout(QtWidgets.QFormLayout())
         self.box_options.layout().addRow("Dwelltime:", self.dwelltime)
-        self.box_options.layout().addRow("Non-target screen:", screen_layout)
+        self.box_options.layout().addRow(screen_layout)
 
         box_layout = QtWidgets.QHBoxLayout()
         box_layout.addWidget(self.box_info, 1)
@@ -124,7 +120,32 @@ class _ImportDialogBase(QtWidgets.QDialog):
             self.dwelltime.setBaseValue(options["dwelltime"])
             self.dwelltime.setBestUnit()
 
-    def screenData(self) -> None:
+    def dialogScreenData(self) -> NonTargetScreeningDialog:
+        dlg = NonTargetScreeningDialog(
+            get_data_function=self.dataForScreening,
+            screening_ppm=self.screening_ppm,
+            minimum_data_size=self.screening_data_size,
+            screening_compound_kws=self.screening_compound_kws,
+            screening_gaussian_kws=self.screening_gaussian_kws,
+            screening_poisson_kws=self.screening_poisson_kws,
+            parent=self,
+        )
+        dlg.ppmSelected.connect(self.setScreeningPpm)
+        dlg.dataSizeSelected.connect(self.setScreeningDataSize)
+        dlg.screeningComplete.connect(self.screenData)
+        dlg.open()
+        return dlg
+
+    def setScreeningPpm(self, ppm: float) -> None:
+        self.screening_ppm = ppm
+
+    def setScreeningDataSize(self, size: int) -> None:
+        self.screening_data_size = size
+
+    def dataForScreening(self, size: int) -> np.ndarray:
+        raise NotImplementedError
+
+    def screenData(self, idx: np.ndarray) -> None:
         raise NotImplementedError
 
 
@@ -345,11 +366,7 @@ class TextImportDialog(_ImportDialogBase):
                     item.setText(name)
         self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
 
-    def screenData(self) -> None:
-        ppm = self.screening_ppm.value()
-        if ppm is None:
-            return
-
+    def dataForScreening(self, size: int) -> np.ndarray:
         options = self.importOptions()
         data, _ = read_single_particle_file(
             options["path"],
@@ -357,25 +374,14 @@ class TextImportDialog(_ImportDialogBase):
             columns=options["columns"],
             first_line=options["first line"],
             convert_cps=options["dwelltime"] if options["cps"] else None,
-            max_rows=100000,
+            max_rows=size,
         )
-        data = rfn.structured_to_unstructured(data)
+        return data
 
-        # Need to make this on a separate thread so can cancel
-        limits_for_screening = np.array(
-            [
-                SPCalLimit.fromBest(
-                    data[:, i],
-                    poisson_kws=self.screening_poisson_kws,
-                    gaussian_kws=self.screening_gaussian_kws,
-                    compound_kws=self.screening_compound_kws,
-                ).detection_threshold
-                for i in range(data.shape[1])
-            ]
-        )
+    def screenData(self, idx: np.ndarray) -> None:
+        options = self.importOptions()
 
-        idx = non_target_screen(data, ppm, limits_for_screening)
-        mask = np.ones(data.shape[1], dtype=bool)
+        mask = np.ones(len(options["columns"]), dtype=bool)
         mask[idx] = 0
         ignores = options["ignores"] + list(np.array(options["columns"])[mask])
         self.le_ignore_columns.setText(";".join(str(i + 1) for i in ignores) + ";")
@@ -483,25 +489,19 @@ class NuImportDialog(_ImportDialogBase):
 
         self.table.setFocus()
 
-    def screenData(self) -> None:
-        ppm = self.screening_ppm.value()
-        if ppm is None:
-            return
-
-        # Need to make this on a separate thread so can cancel
-        limits_for_screening = np.array(
-            [
-                SPCalLimit.fromBest(
-                    self.signals[:, i],
-                    poisson_kws=self.screening_poisson_kws,
-                    gaussian_kws=self.screening_gaussian_kws,
-                    compound_kws=self.screening_compound_kws,
-                ).detection_threshold
-                for i in range(self.signals.shape[1])
-            ]
+    def dataForScreening(self, size: int) -> np.ndarray:
+        options = self.importOptions()
+        integ_size = self.signals.shape[0]
+        _, data, _ = nu.read_nu_directory(
+            options["path"],
+            max_integ_files=int(size / integ_size) + 1,
+            autoblank=False,
+            cycle=options["cycle"],
+            segment=options["segment"],
         )
+        return data
 
-        idx = non_target_screen(self.signals, ppm, limits_for_screening)
+    def screenData(self, idx: np.ndarray) -> None:
         masses = self.masses[idx]
         unit_masses = np.round(masses).astype(int)
         isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
@@ -841,28 +841,14 @@ class TofwerkImportDialog(_ImportDialogBase):
             "accumulations": factor_extraction_to_acquisition(self.h5),
         }
 
-    def screenData(self) -> None:
-        ppm = self.screening_ppm.value()
-        if ppm is None:
-            return
-
-        data = self.h5["PeakData"]["PeakData"][:10]
+    def dataForScreening(self, size: int) -> np.ndarray:
+        dim_size = np.sum(self.h5["PeakData"]["PeakData"].shape[1:3])
+        data = self.h5["PeakData"]["PeakData"][: int(size / dim_size) + 1]
         data = np.reshape(data, (-1, data.shape[-1]))
         data *= factor_extraction_to_acquisition(self.h5)
+        return data
 
-        limits_for_screening = np.array(
-            [
-                SPCalLimit.fromBest(
-                    data[:, i],
-                    poisson_kws=self.screening_poisson_kws,
-                    gaussian_kws=self.screening_gaussian_kws,
-                    compound_kws=self.screening_compound_kws,
-                ).detection_threshold
-                for i in range(data.shape[1])
-            ]
-        )
-        idx = non_target_screen(data, ppm, limits_for_screening)
-
+    def screenData(self, idx: np.ndarray) -> None:
         _isotopes = []
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
         for label in self.peak_labels[idx]:
@@ -874,7 +860,7 @@ class TofwerkImportDialog(_ImportDialogBase):
                         & (db["isotopes"]["Symbol"] == m.group(2))
                     ]
                 )
-        isotopes = np.array(_isotopes)
+        isotopes = np.array(_isotopes, dtype=db["isotopes"].dtype)
         isotopes = isotopes[isotopes["Preferred"] > 0]
         self.table.setSelectedIsotopes(isotopes)
 
