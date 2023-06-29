@@ -376,6 +376,7 @@ class TextImportDialog(_ImportDialogBase):
             convert_cps=options["dwelltime"] if options["cps"] else None,
             max_rows=size,
         )
+        data = rfn.structured_to_unstructured(data)
         return data
 
     def screenData(self, idx: np.ndarray) -> None:
