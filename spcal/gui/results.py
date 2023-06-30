@@ -717,6 +717,10 @@ class ResultsWidget(QtWidgets.QWidget):
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
 
+        import time
+
+        t0 = time.time()
+
         assert dwelltime is not None
         assert self.sample.detections.dtype.names is not None
         for name in self.sample.detections.dtype.names:
@@ -759,9 +763,54 @@ class ResultsWidget(QtWidgets.QWidget):
                 pass
 
             self.results[name] = result
+        # end for name in names
+
+        t1 = time.time()
+        print("Normal result time:", t1 - t0)
+
+        from spcal.cluster import prepare_data_for_clustering
+        from spcal.lib.spcalext import (
+            cluster_by_distance,
+            mst_linkage,
+            pairwise_euclidean,
+        )
+
+        t0 = time.time()
+
+        # Calc clusters
+        self.clusters: Dict[str, np.ndarray] = {}
+
+        mode = self.mode.currentText()
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in self.results.values():
+            valid[result.indicies] = True
+
+        key = self.mode_keys[mode]
+        for key in self.mode_keys.values():
+            data = {}
+            for name, result in self.results.items():
+                if key not in result.detections:
+                    continue
+                data[name] = result.detections[key][valid]
+            if len(data) == 0:
+                self.clusters[key] = np.ndarray([])
+                continue
+            X = prepare_data_for_clustering(data)
+            dists = pairwise_euclidean(X)
+            Z, ZD = mst_linkage(dists, X.shape[0])
+            T = (
+                cluster_by_distance(
+                    Z, ZD, self.graph_options["composition"]["distance"]
+                )
+                - 1
+            )  # start ids at 0
+            self.clusters[key] = T
+
+        t1 = time.time()
+        print("Clustering time:", t1 - t0)
 
         self.filterResults()
-        # end for name in names
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
