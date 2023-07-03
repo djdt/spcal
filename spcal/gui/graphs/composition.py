@@ -5,7 +5,7 @@ import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
+from spcal.cluster import prepare_data_for_clustering, cluster_information
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
@@ -13,7 +13,6 @@ from spcal.gui.graphs.legends import StaticRectItemSample
 
 class CompositionView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
-
         super().__init__("Detection Compositions", parent=parent)
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.setAspectLocked(1.0)
@@ -26,7 +25,7 @@ class CompositionView(SinglePlotGraphicsView):
     def draw(
         self,
         data: Dict[str, np.ndarray],
-        distance: float = 0.03,
+        T: np.ndarray,
         min_size: float | str = "5%",
         pen: QtGui.QPen | None = None,
         brushes: List[QtGui.QBrush] | None = None,
@@ -40,18 +39,12 @@ class CompositionView(SinglePlotGraphicsView):
 
         self.pies.clear()
 
-        fractions = prepare_data_for_clustering(data)
-
-        if fractions.shape[0] == 1:  # single peak
-            means, counts = fractions, np.array([1])
-        elif fractions.shape[1] == 1:  # single element
-            means, counts = np.array([[1.0]]), np.array([np.count_nonzero(fractions)])
-        else:
-            means, stds, counts = agglomerative_cluster(fractions, distance)
+        X = prepare_data_for_clustering(data)
+        means, stds, counts = cluster_information(X, T)
 
         # Get minimum size as number
         if isinstance(min_size, str) and min_size.endswith("%"):
-            min_size = fractions.shape[0] * float(min_size.rstrip("%")) / 100.0
+            min_size = X.shape[0] * float(min_size.rstrip("%")) / 100.0
         elif isinstance(min_size, str | float):
             min_size = float(min_size)
         else:

@@ -5,6 +5,11 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.cluster import (
+    agglomerative_cluster,
+    cluster_information,
+    prepare_data_for_clustering,
+)
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
@@ -77,6 +82,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "scatter": {"weighting": "none"},
         }
         self.results: Dict[str, SPCalResult] = {}
+        self.clusters: Dict[str, np.ndarray] = {}
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -282,6 +288,24 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
+    def validResultsForMode(self, mode: str) -> Dict[str, np.ndarray] | None:
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in self.results.values():
+            valid[result.indicies] = True
+        if not np.any(valid):
+            return None
+
+        key = self.mode_keys[mode]
+        data = {}
+        for name, result in self.results.items():
+            if key not in result.detections:
+                continue
+            data[name] = result.detections[key][valid]
+        if len(data) == 0:
+            return None
+        return data
+
     def colorForName(self, name: str) -> QtGui.QColor:
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
@@ -470,34 +494,16 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         label, _, _ = self.mode_labels[mode]
-        key = self.mode_keys[mode]
-
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        # Get list of all unfiltered detections
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-
-        num_valid = np.count_nonzero(valid)
-        if num_valid == 0:
-            return
-
-        graph_data = {}
-        for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            graph_data[name] = result.detections[key][valid]
-            # no need to use modifier, normalised
-
-        if len(graph_data) == 0:
+        graph_data = self.validResultsForMode(mode)
+        if graph_data is None:
             return
 
         brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
         self.graph_composition.draw(
             graph_data,
-            distance=self.graph_options["composition"]["distance"],
+            self.clusters[self.mode_keys[mode]],
             min_size=self.graph_options["composition"]["minimum size"],
             brushes=brushes,
         )
@@ -508,25 +514,9 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         label, unit, modifier = self.mode_labels[mode]
-        key = self.mode_keys[mode]
+        graph_data = self.validResultsForMode(mode)
 
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-
-        num_valid = np.count_nonzero(valid)
-        if num_valid == 0:
-            return
-
-        graph_data = {}
-        for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            graph_data[name] = result.detections[key][valid]
-            # no need to use modifier, normalised
-
-        if len(graph_data) < 2:
+        if graph_data is None or len(graph_data) < 2:
             return
 
         X = np.stack(list(graph_data.values()), axis=1)
@@ -689,6 +679,17 @@ class ResultsWidget(QtWidgets.QWidget):
                 background_error=result.background / result.background_error,
             )
 
+    def clusterResults(self) -> None:
+        self.clusters = {}
+
+        for mode, key in self.mode_keys.items():
+            data = self.validResultsForMode(mode)
+            if data is None:
+                continue
+            X = prepare_data_for_clustering(data)
+            T = agglomerative_cluster(X, self.graph_options["composition"]["distance"])
+            self.clusters[key] = T
+
     def filterResults(self) -> None:
         """Filters the current results.
 
@@ -716,10 +717,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
         dwelltime = self.options.dwelltime.baseValue()
         uptake = self.options.uptake.baseValue()
-
-        import time
-
-        t0 = time.time()
 
         assert dwelltime is not None
         assert self.sample.detections.dtype.names is not None
@@ -765,52 +762,8 @@ class ResultsWidget(QtWidgets.QWidget):
             self.results[name] = result
         # end for name in names
 
-        t1 = time.time()
-        print("Normal result time:", t1 - t0)
-
-        from spcal.cluster import prepare_data_for_clustering
-        from spcal.lib.spcalext import (
-            cluster_by_distance,
-            mst_linkage,
-            pairwise_euclidean,
-        )
-
-        t0 = time.time()
-
-        # Calc clusters
-        self.clusters: Dict[str, np.ndarray] = {}
-
-        mode = self.mode.currentText()
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-
-        key = self.mode_keys[mode]
-        for key in self.mode_keys.values():
-            data = {}
-            for name, result in self.results.items():
-                if key not in result.detections:
-                    continue
-                data[name] = result.detections[key][valid]
-            if len(data) == 0:
-                self.clusters[key] = np.ndarray([])
-                continue
-            X = prepare_data_for_clustering(data)
-            dists = pairwise_euclidean(X)
-            Z, ZD = mst_linkage(dists, X.shape[0])
-            T = (
-                cluster_by_distance(
-                    Z, ZD, self.graph_options["composition"]["distance"]
-                )
-                - 1
-            )  # start ids at 0
-            self.clusters[key] = T
-
-        t1 = time.time()
-        print("Clustering time:", t1 - t0)
-
         self.filterResults()
+        self.clusterResults()
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
