@@ -316,6 +316,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def setCompDistance(self, distance: float) -> None:
         self.graph_options["composition"]["distance"] = distance
+        self.clusterResults()
         self.drawGraphCompositions()
 
     def setCompSize(self, size: float | str) -> None:
