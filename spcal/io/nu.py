@@ -168,7 +168,7 @@ def get_signals_from_nu_data(integs: List[np.ndarray], num_acc: int) -> np.ndarr
         signals in counts
     """
 
-    max_acq = max(integ["acq_number"][-1] for integ in integs)
+    max_acq = max(integ["acq_number"][-1] for integ in integs if integ.size > 0)
     signals = np.full(
         (max_acq // num_acc, integs[0]["result"]["signal"].shape[1]),
         np.nan,
