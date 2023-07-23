@@ -116,8 +116,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def dataBounds(self) -> Tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
-        bx = np.asarray([item.dataBounds(0) for item in items])
-        by = np.asarray([item.dataBounds(1) for item in items])
+        bx = np.array([item.dataBounds(0) for item in items], dtype=float)
+        by = np.array([item.dataBounds(1) for item in items], dtype=float)
+        bx, by = np.nan_to_num(bx), np.nan_to_num(by)
         return (
             np.amin(bx[:, 0]),
             np.amax(bx[:, 1]),
