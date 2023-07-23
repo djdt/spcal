@@ -59,6 +59,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.reference.optionsChanged.connect(self.onInputsChanged)
         self.reference.detectionsChanged.connect(self.onInputsChanged)
 
+        self.options.optionsChanged.connect(self.results.requestUpdate)
+        self.sample.detectionsChanged.connect(self.results.requestUpdate)
+        self.reference.detectionsChanged.connect(self.results.requestUpdate)
+
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")
@@ -370,8 +374,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            # names = list(self.sample.detections.dtype.names)
-            self.results.updateResults()
+            if self.results.isUpdateRequired():
+                self.results.updateResults()
 
     def readyForResults(self) -> bool:
         return self.sample.isComplete() and (

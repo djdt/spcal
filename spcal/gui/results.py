@@ -81,8 +81,10 @@ class ResultsWidget(QtWidgets.QWidget):
             "composition": {"distance": 0.03, "minimum size": "5%"},
             "scatter": {"weighting": "none"},
         }
+
         self.results: Dict[str, SPCalResult] = {}
         self.clusters: Dict[str, np.ndarray] = {}
+        self.update_required = True
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -772,6 +774,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.redraw()
 
+        self.update_required = False
+
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
         for key, index in zip(["mass", "size", "cell_concentration"], [1, 2, 3]):
@@ -811,3 +815,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         best_units["signal"] = ("counts", 1.0)
         return best_units
+
+    def requestUpdate(self) -> None:
+        self.update_required = True
+
+    def isUpdateRequired(self) -> bool:
+        return self.update_required
