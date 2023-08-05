@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
-from spcal.result import Filter
+from spcal.result import ClusterFilter, Filter
 from spcal.siunits import mass_units, signal_units, size_units
 
 
@@ -104,6 +104,86 @@ class FilterItemWidget(QtWidgets.QWidget):
         self.value.setUnits(units)
 
 
+class ClusterFilterItemWidget(QtWidgets.QWidget):
+    closeRequested = QtCore.Signal(QtWidgets.QWidget)
+
+    def __init__(
+        self,
+        filter: ClusterFilter | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+
+        self.index = QtWidgets.QSpinBox()
+        self.index.setPrefix("Cluster index:    ")
+        self.index.setMinimum(1)
+        self.index.setMaximum(99)
+
+        self.unit = QtWidgets.QComboBox()
+        self.unit.addItems(list(FilterItemWidget.unit_labels.keys()))
+        self.unit.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContentsOnFirstShow)
+
+        self.action_close = create_action(
+            "list-remove", "Remove", "Remove the filter.", self.close
+        )
+
+        self.button_close = QtWidgets.QToolButton()
+        self.button_close.setAutoRaise(True)
+        self.button_close.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.button_close.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
+        self.button_close.setDefaultAction(self.action_close)
+
+        layout = QtWidgets.QVBoxLayout()
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(self.unit, 0)
+        hlayout.addWidget(self.index, 0)
+        hlayout.addStretch(1)
+        hlayout.addWidget(self.button_close, 0, QtCore.Qt.AlignRight)
+
+        layout.addLayout(hlayout, 1)
+
+        frame = QtWidgets.QFrame()
+        frame.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+
+        frame2 = QtWidgets.QFrame()
+        frame2.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+
+        orlayout = QtWidgets.QHBoxLayout()
+        orlayout.addWidget(frame, 1)
+        orlayout.addWidget(
+            QtWidgets.QLabel("Or"), 0, QtCore.Qt.AlignmentFlag.AlignCenter
+        )
+        orlayout.addWidget(frame2, 1)
+
+        layout.addLayout(orlayout, 0)
+
+        self.setLayout(layout)
+
+        if filter is not None:
+            self.setFilter(filter)
+
+    def setFilter(self, filter: ClusterFilter) -> None:
+        label = next(
+            lbl
+            for lbl, unit in FilterItemWidget.unit_labels.items()
+            if unit == filter.unit
+        )
+        self.unit.setCurrentText(label)
+        self.index.setValue(filter.idx + 1)
+
+    def asFilter(self) -> ClusterFilter:
+        return ClusterFilter(
+            self.index.value() - 1,
+            FilterItemWidget.unit_labels[self.unit.currentText()],
+        )
+
+    def close(self) -> None:
+        self.closeRequested.emit(self)
+        super().close()
+
+
 class BooleanItemWidget(QtWidgets.QWidget):
     closeRequested = QtCore.Signal(QtWidgets.QWidget)
 
@@ -141,23 +221,30 @@ class BooleanItemWidget(QtWidgets.QWidget):
 
 
 class FilterDialog(QtWidgets.QDialog):
-    filtersChanged = QtCore.Signal(list)
+    filtersChanged = QtCore.Signal(list, list)
 
     def __init__(
         self,
         names: List[str],
         filters: List[List[Filter]],
+        cluster_filters: List[ClusterFilter],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Compositional Filters")
-        self.setMinimumSize(600, 600)
+        self.setWindowTitle("Particle Filtering")
+        self.setMinimumSize(800, 800)
 
         self.names = names
 
         self.list = QtWidgets.QListWidget()
         self.list.setDragEnabled(True)
         self.list.setDragDropMode(QtWidgets.QAbstractItemView.DragDropMode.InternalMove)
+
+        self.cluster_list = QtWidgets.QListWidget()
+        self.cluster_list.setDragEnabled(True)
+        self.cluster_list.setDragDropMode(
+            QtWidgets.QAbstractItemView.DragDropMode.InternalMove
+        )
 
         self.action_add = create_action(
             "list-add", "Add Filter", "Add a new filter.", lambda: self.addFilter(None)
@@ -169,9 +256,19 @@ class FilterDialog(QtWidgets.QDialog):
             lambda: self.addBooleanOr(),
         )
 
+        self.action_cluster_add = create_action(
+            "list-add",
+            "Add Filter",
+            "Add a new filter.",
+            lambda: self.addClusterFilter(None),
+        )
         self.button_bar = QtWidgets.QToolBar()
         self.button_bar.addAction(self.action_add)
         self.button_bar.addAction(self.action_or)
+
+        self.cluster_bar = QtWidgets.QToolBar()
+        self.cluster_bar.addAction(self.action_cluster_add)
+        # self.cluster_bar.addAction(self.action_cluster_or)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Close
@@ -179,9 +276,20 @@ class FilterDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        gbox_comp = QtWidgets.QGroupBox("Composition Filters")
+        gbox_comp.setLayout(QtWidgets.QVBoxLayout())
+        gbox_comp.layout().addWidget(self.button_bar, 0)
+        gbox_comp.layout().addWidget(self.list, 1)
+
+        gbox_cluster = QtWidgets.QGroupBox("Cluster Filters")
+        gbox_cluster.setLayout(QtWidgets.QVBoxLayout())
+        gbox_cluster.layout().addWidget(self.cluster_bar, 0)
+        gbox_cluster.layout().addWidget(self.cluster_list, 1)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.button_bar, 0)
-        layout.addWidget(self.list, 1)
+        layout.addWidget(gbox_comp, 2)
+        layout.addWidget(gbox_cluster, 1)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
@@ -192,6 +300,8 @@ class FilterDialog(QtWidgets.QDialog):
                     self.addFilter(filter)
             if i < len(filters) - 1:
                 self.addBooleanOr()
+        for filter in cluster_filters:
+            self.addClusterFilter(filter)
 
     def addFilter(self, filter: Filter | None = None):
         widget = FilterItemWidget(self.names, filter=filter)
@@ -215,6 +325,24 @@ class FilterDialog(QtWidgets.QDialog):
                 self.list.takeItem(i)
                 break
 
+    def addClusterFilter(self, filter: Filter | None = None):
+        widget = ClusterFilterItemWidget()
+        self.addClusterWidget(widget)
+
+    def addClusterWidget(self, widget: QtWidgets.QWidget) -> None:
+        widget.closeRequested.connect(self.removeClusterItem)
+        item = QtWidgets.QListWidgetItem()
+        self.cluster_list.insertItem(self.cluster_list.count(), item)
+        self.cluster_list.setItemWidget(item, widget)
+        item.setSizeHint(widget.sizeHint())
+
+    def removeClusterItem(self, widget: FilterItemWidget) -> None:
+        for i in range(self.cluster_list.count()):
+            item = self.cluster_list.item(i)
+            if self.cluster_list.itemWidget(item) == widget:
+                self.cluster_list.takeItem(i)
+                break
+
     def accept(self) -> None:
         filters = []
         group = []
@@ -230,5 +358,10 @@ class FilterDialog(QtWidgets.QDialog):
         if len(group) > 0:
             filters.append(group)
 
-        self.filtersChanged.emit(filters)
+        cluster_filters = []
+        for i in range(self.cluster_list.count()):
+            widget = self.cluster_list.itemWidget(self.cluster_list.item(i))
+            cluster_filters.append(widget.asFilter())
+
+        self.filtersChanged.emit(filters, cluster_filters)
         super().accept()

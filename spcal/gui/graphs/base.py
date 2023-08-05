@@ -119,6 +119,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         bx = np.array([item.dataBounds(0) for item in items], dtype=float)
         by = np.array([item.dataBounds(1) for item in items], dtype=float)
         bx, by = np.nan_to_num(bx), np.nan_to_num(by)
+        # Just in case
+        if len(bx) == 0 or len(by) == 0:
+            return (0, 1, 0, 1)
         return (
             np.amin(bx[:, 0]),
             np.amax(bx[:, 1]),

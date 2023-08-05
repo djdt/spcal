@@ -27,7 +27,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult, filter_results
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
@@ -66,6 +66,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.filters: List[List[Filter]] = []
+        self.cluster_filters: List[ClusterFilter] = []
         # Graph default options
         self.graph_options: Dict[str, Any] = {
             "histogram": {
@@ -312,8 +313,11 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
 
-    def setFilters(self, filters: List[List[Filter]]) -> None:
+    def setFilters(
+        self, filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
+    ) -> None:
         self.filters = filters
+        self.cluster_filters = cluster_filters
         self.updateResults()
 
     def setCompDistance(self, distance: float) -> None:
@@ -389,7 +393,9 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
-        dlg = FilterDialog(list(self.results.keys()), self.filters, parent=self)
+        dlg = FilterDialog(
+            list(self.results.keys()), self.filters, self.cluster_filters, parent=self
+        )
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
 
@@ -711,6 +717,24 @@ class ResultsWidget(QtWidgets.QWidget):
             indicies = self.results[name].indicies
             self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
 
+    def filterClusters(self) -> None:
+        if len(self.cluster_filters) == 0:
+            return
+
+        size = next(iter(self.clusters.values())).size
+        valid_indicies = np.zeros(size, dtype=bool)
+        for filter in self.cluster_filters:
+            valid_indicies = np.logical_or(valid_indicies, filter.filter(self.clusters))
+
+        valid_indicies = np.flatnonzero(valid_indicies)
+
+        for name in self.results:
+            indicies = self.results[name].indicies
+            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+
+        for key in self.clusters.keys():
+            self.clusters[key] = self.clusters[key][valid_indicies]
+
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
@@ -767,6 +791,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.filterResults()
         self.clusterResults()
+        self.filterClusters()
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
@@ -785,12 +810,12 @@ class ResultsWidget(QtWidgets.QWidget):
             self.mode.model().item(index).setEnabled(enabled)
 
         # Only enable composition view and stack if more than one element
-        single_result = len(self.results) == 1
-        self.action_graph_compositions.setEnabled(not single_result)
-        self.action_graph_histogram.setEnabled(not single_result)
-        self.action_graph_scatter.setEnabled(not single_result)
-        self.action_graph_pca.setEnabled(not single_result)
-        if single_result:  # Switch to histogram
+        nresults = sum(result.indicies.size > 0 for result in self.results.values())
+        self.action_graph_compositions.setEnabled(nresults > 1)
+        self.action_graph_histogram.setEnabled(nresults > 1)
+        self.action_graph_scatter.setEnabled(nresults > 1)
+        self.action_graph_pca.setEnabled(nresults > 1)
+        if nresults == 1:  # Switch to histogram
             self.action_graph_histogram_single.trigger()
 
     def bestUnitsForResults(self) -> Dict[str, Tuple[str, float]]:

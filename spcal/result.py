@@ -39,12 +39,17 @@ class Filter(object):
         return self.ufunc(results[self.name].detections[self.unit], self.value)
 
 
-# class IndexFilter(Filter):
-#     def __init__(self, idx: np.ndarray):
-#         self.idx = idx
+class ClusterFilter(object):
+    def __init__(self, idx: int, unit: str):
+        self.idx = idx
+        self.unit = unit
 
-#     def filter(self, results: Dict[str, "SPCalResult"]) -> np.ndarray | None:
-#         return self.detections.
+    def filter(self, cluster_results: Dict[str, np.ndarray]) -> np.ndarray | None:
+        if self.unit not in cluster_results:
+            return None
+        counts = np.bincount(cluster_results[self.unit])
+        idx = np.argsort(counts)[::-1]
+        return cluster_results[self.unit] == idx[self.idx]
 
 
 class SPCalResult(object):
