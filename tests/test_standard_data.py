@@ -75,7 +75,8 @@ def test_standard_compositions():
             data[name] = data[name] / response_cps[name] / molar_mass[name]
         X = cluster.prepare_data_for_clustering(data)
         X = X[np.all(X != 0, axis=1)]  # Remove particles with all elements
-        means, stds, _ = cluster.agglomerative_cluster(X, 0.03)
+        T = cluster.agglomerative_cluster(X, 0.03)
+        means, stds, _ = cluster.cluster_information(X, T)
 
         # mean +- std contains theoretical value
         for a, s, b in zip(means[0], stds[0], value):

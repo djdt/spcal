@@ -12,7 +12,7 @@ from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
-from spcal.result import Filter
+from spcal.result import ClusterFilter, Filter
 
 
 def flatten_dict(d: dict, prefix: str = "", sep: str = "/") -> dict:
@@ -93,6 +93,20 @@ def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
     return filters
 
 
+def sanitiseClusterFilters(filters: List[ClusterFilter]) -> np.ndarray:
+    data = np.empty(len(filters), dtype=[("unit", "S64"), ("index", int)])
+    data["unit"] = [filter.unit for filter in filters]
+    data["index"] = [filter.idx for filter in filters]
+    return data
+
+
+def restoreClusterFilters(data: np.ndarray) -> List[ClusterFilter]:
+    filters: List[ClusterFilter] = []
+    for x in data:
+        filters.append(ClusterFilter(unit=x["unit"].decode(), idx=x["index"]))
+    return filters
+
+
 def sanitiseImportOptions(options: dict) -> dict:
     safe = {}
     for key, val in options.items():
@@ -130,6 +144,7 @@ def saveSession(
         h5.attrs["version"] = __version__
         options_group = h5.create_group("options")
         for key, val in sanitiseOptions(options.state()).items():
+            print(key, val)
             options_group.attrs[key] = val
 
         expressions_group = h5.create_group("expressions")
@@ -137,6 +152,9 @@ def saveSession(
             expressions_group.attrs[key] = val
 
         h5.create_dataset("filters", data=sanitiseFilters(results.filters))
+        h5.create_dataset(
+            "cluster filters", data=sanitiseClusterFilters(results.cluster_filters)
+        )
 
         input: InputWidget
         for input_key, input in zip(["sample", "reference"], [sample, reference]):
@@ -183,4 +201,6 @@ def restoreSession(
                 for name in h5[key]["elements"].keys():
                     input.io[name].setState(h5[key]["elements"][name].attrs)
 
-        results.setFilters(restoreFilters(h5["filters"]))
+        results.setFilters(
+            restoreFilters(h5["filters"]), restoreClusterFilters(h5["cluster filters"])
+        )

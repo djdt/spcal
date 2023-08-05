@@ -3,8 +3,8 @@ import numpy.lib.recfunctions as rfn
 import pytest
 from pytestqt.qtbot import QtBot
 
-from spcal.result import Filter
 from spcal.gui.main import SPCalWindow
+from spcal.result import Filter
 
 
 # Clustering doesn't like the fake data
@@ -46,16 +46,16 @@ def test_results_filters(qtbot: QtBot):
     for result in window.results.results.values():
         assert result.number == 100
 
-    window.results.setFilters([[Filter("A", "signal", ">=", 149.0)]])
+    window.results.setFilters([[Filter("A", "signal", ">=", 149.0)]], [])
     for result in window.results.results.values():
         assert result.number == 50
 
-    window.results.setFilters([[Filter("A", "signal", ">", 159.0)]])
+    window.results.setFilters([[Filter("A", "signal", ">", 159.0)]], [])
     for result in window.results.results.values():
         assert result.number == 40
 
     window.results.setFilters(
-        [[Filter("A", "signal", ">", 149.0), Filter("B", "signal", "<", 239.0)]]
+        [[Filter("A", "signal", ">", 149.0), Filter("B", "signal", "<", 239.0)]], []
     )
     for result in window.results.results.values():
         assert result.number == 20
@@ -64,15 +64,16 @@ def test_results_filters(qtbot: QtBot):
         [
             [Filter("A", "signal", ">", 149.0), Filter("B", "signal", "<", 239.0)],
             [Filter("C", "signal", ">", 110.0)],
-        ]
+        ],
+        [],
     )
     for result in window.results.results.values():
         assert result.number == 90
 
-    window.results.setFilters([[Filter("A", "mass", ">", 0.019)]])
+    window.results.setFilters([[Filter("A", "mass", ">", 0.019)]], [])
     for result in window.results.results.values():
         assert result.number == 9
 
-    window.results.setFilters([])
+    window.results.setFilters([], [])
     for result in window.results.results.values():
         assert result.number == 100

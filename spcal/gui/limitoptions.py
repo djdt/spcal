@@ -194,7 +194,9 @@ class CompoundPoissonOptions(LimitOptions):
         return {
             "alpha": self.alpha.value(),
             "sigma": self.lognormal_sigma.value(),
-            "single ion": self.single_ion_dist,
+            "single ion": self.single_ion_dist
+            if self.single_ion_dist is not None
+            else np.array([]),  # No None
             "simulate": self.method.currentIndex() == 1,
         }
 
@@ -205,7 +207,9 @@ class CompoundPoissonOptions(LimitOptions):
         if "sigma" in state:
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion" in state:
-            self.setSingleIon(state["single ion"])
+            self.setSingleIon(
+                state["single ion"] if state["single ion"].size > 0 else None
+            )
         if "simulate" in state:
             if state["simulate"]:
                 self.method.setCurrentIndex(1)

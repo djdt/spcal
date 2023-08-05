@@ -8,7 +8,7 @@ from pytestqt.qtbot import QtBot
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.main import SPCalWindow
 from spcal.io.session import restoreSession, saveSession
-from spcal.result import Filter
+from spcal.result import ClusterFilter, Filter
 
 npz = np.load(Path(__file__).parent.parent.joinpath("data/tofwerk_auag.npz"))
 data = rfn.unstructured_to_structured(
@@ -46,6 +46,7 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
         [Filter("Au", "signal", ">", 1.0)],
         [Filter("Ag", "mass", "<", 100.0)],
     ]
+    window.results.cluster_filters = [ClusterFilter(5, "signal")]
 
     dlg = CalculatorDialog(window.sample, window.reference, parent=window)
     qtbot.add_widget(dlg)
@@ -103,6 +104,9 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     assert window.results.filters[1][0].unit == "mass"
     assert window.results.filters[1][0].operation == "<"
     assert window.results.filters[1][0].value == 100.0
+    assert len(window.results.cluster_filters) == 1
+    assert window.results.cluster_filters[0].unit == "signal"
+    assert window.results.cluster_filters[0].idx == 5
 
     assert CalculatorDialog.current_expressions["{Ag+Au}"] == "+ Ag Au"
 
