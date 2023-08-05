@@ -144,7 +144,6 @@ def saveSession(
         h5.attrs["version"] = __version__
         options_group = h5.create_group("options")
         for key, val in sanitiseOptions(options.state()).items():
-            print(key, val)
             options_group.attrs[key] = val
 
         expressions_group = h5.create_group("expressions")
