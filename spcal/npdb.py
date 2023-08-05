@@ -40,8 +40,11 @@ refs:
     ID: DOI / ISBN or other ID
 
 """
-from importlib.resources import open_binary
+from importlib.resources import files
 
 import numpy as np
 
-db = np.load(open_binary("spcal.resources", "npdb.npz"), allow_pickle=False)
+db = np.load(
+    files("spcal.resources").joinpath("npdb.npz").open("rb"), allow_pickle=False
+)
+

@@ -699,13 +699,13 @@ class TofwerkIntegrationThread(QtCore.QThread):
         super().__init__(parent=parent)
         peak_table = h5["PeakData"]["PeakTable"]
 
-        mode = h5["FullSpectra"].attrs["MassCalibMode"]
+        mode = h5["FullSpectra"].attrs["MassCalibMode"][0]
         ps = [
-            h5["FullSpectra"].attrs["MassCalibration p1"],
-            h5["FullSpectra"].attrs["MassCalibration p2"],
+            h5["FullSpectra"].attrs["MassCalibration p1"][0],
+            h5["FullSpectra"].attrs["MassCalibration p2"][0],
         ]
         if mode in [2, 5]:
-            ps.append(h5["FullSpectra"].attrs["MassCalibration p3"])
+            ps.append(h5["FullSpectra"].attrs["MassCalibration p3"][0])
 
         lower = calibrate_mass_to_index(
             peak_table["lower integration limit"][idx], mode, ps
@@ -715,8 +715,8 @@ class TofwerkIntegrationThread(QtCore.QThread):
         )
         self.indicies = np.stack((lower, upper + 1), axis=1)
         self.scale_factor = float(
-            (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)  # mV * index -> mV * ns
-            / h5["FullSpectra"].attrs["Single Ion Signal"]  # mV * ns -> ions
+            (h5["FullSpectra"].attrs["SampleInterval"][0] * 1e9)  # mV * index -> mV * ns
+            / h5["FullSpectra"].attrs["Single Ion Signal"][0]  # mV * ns -> ions
             / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
         )
 
@@ -800,11 +800,11 @@ class TofwerkImportDialog(_ImportDialogBase):
         self.layout_body.addWidget(self.progress, 0)
 
         events = int(
-            self.h5.attrs["NbrWrites"]
-            * self.h5.attrs["NbrBufs"]
-            * self.h5.attrs["NbrSegments"]
+            self.h5.attrs["NbrWrites"][0]
+            * self.h5.attrs["NbrBufs"][0]
+            * self.h5.attrs["NbrSegments"][0]
         )
-        extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"]) * 1e-9
+        extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"][0]) * 1e-9
 
         # Set info and defaults
         config = self.h5.attrs["Configuration File"].decode()
@@ -831,7 +831,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         if "SingleIon" in self.h5 and "Data" in self.h5["SingleIon"]:
             single_ion = self.h5["SingleIon"]["Data"][:]
         else:
-            single_ion = float(self.h5["FullSpectra"].attrs["Single Ion Signal"])
+            single_ion = float(self.h5["FullSpectra"].attrs["Single Ion Signal"][0])
         return {
             "importer": "tofwerk",
             "path": self.file_path,

@@ -82,10 +82,10 @@ def calibrate_mass_to_index(
 
 def factor_extraction_to_acquisition(h5: h5py._hl.files.File) -> float:
     return float(
-        h5.attrs["NbrWaveforms"]
-        * h5.attrs["NbrBlocks"]
-        * h5.attrs["NbrMemories"]
-        * h5.attrs["NbrCubes"]
+        h5.attrs["NbrWaveforms"][0]
+        * h5.attrs["NbrBlocks"][0]
+        * h5.attrs["NbrMemories"][0]
+        * h5.attrs["NbrCubes"][0]
     )
 
 
@@ -111,13 +111,13 @@ def integrate_tof_data(
         idx = np.arange(peak_table.shape[0])
     idx = np.asarray(idx)
 
-    mode = h5["FullSpectra"].attrs["MassCalibMode"]
+    mode = h5["FullSpectra"].attrs["MassCalibMode"][0]
     ps = [
-        h5["FullSpectra"].attrs["MassCalibration p1"],
-        h5["FullSpectra"].attrs["MassCalibration p2"],
+        h5["FullSpectra"].attrs["MassCalibration p1"][0],
+        h5["FullSpectra"].attrs["MassCalibration p2"][0],
     ]
     if mode in [2, 5]:
-        ps.append(h5["FullSpectra"].attrs["MassCalibration p3"])
+        ps.append(h5["FullSpectra"].attrs["MassCalibration p3"][0])
 
     lower = calibrate_mass_to_index(
         peak_table["lower integration limit"][idx], mode, ps
@@ -133,8 +133,8 @@ def integrate_tof_data(
         peaks[i] = np.add.reduceat(sample, indicies.flat, axis=-1)[..., ::2]
 
     scale_factor = float(
-        (h5["FullSpectra"].attrs["SampleInterval"] * 1e9)  # mV * index -> mV * ns
-        / h5["FullSpectra"].attrs["Single Ion Signal"]  # mV * ns -> ions
+        (h5["FullSpectra"].attrs["SampleInterval"][0] * 1e9)  # mV * index -> mV * ns
+        / h5["FullSpectra"].attrs["Single Ion Signal"][0]  # mV * ns -> ions
         / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
     )
 
@@ -170,7 +170,7 @@ def read_tofwerk_file(
         data *= factor_extraction_to_acquisition(h5)
         info = h5["PeakData"]["PeakTable"][idx]
         dwell = (
-            float(h5["TimingData"].attrs["TofPeriod"])
+            float(h5["TimingData"].attrs["TofPeriod"][0])
             * 1e-9
             * factor_extraction_to_acquisition(h5)
         )
