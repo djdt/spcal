@@ -2,6 +2,8 @@ from typing import Dict, List
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.util import create_action
+
 
 class EnableTextDialog(QtWidgets.QDialog):
     enabledSelected = QtCore.Signal(dict)
@@ -70,6 +72,13 @@ class EditableComboBox(QtWidgets.QComboBox):
         self.lineEdit().editingFinished.connect(self.editingFinished)
         self.currentIndexChanged.connect(self.saveCurrentName)
 
+        self.action_enable_names = create_action(
+            "font-enable",
+            "Set Enabled Items",
+            "Open a dialog to enable or disable items.",
+            self.openEnableDialog,
+        )
+
         self.previous_name = ""
 
     def saveCurrentName(self, index: int) -> None:
@@ -81,11 +90,18 @@ class EditableComboBox(QtWidgets.QComboBox):
             self.textsEdited.emit({self.previous_name: new_name})
             self.previous_name = new_name
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> QtWidgets.QDialog:
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(self.action_enable_names)
+        menu.popup(event.globalPos())
+        event.accept()
+
+    def openEnableDialog(self) -> EnableTextDialog:
         items = [self.model().item(i) for i in range(self.count())]
         dlg = EnableTextDialog(items, self)
         dlg.enabledSelected.connect(self.setEnabled)
         dlg.open()
+        return dlg
 
     def setEnabled(self, enabled: Dict[str, bool]) -> None:
         for text, state in enabled.items():

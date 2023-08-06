@@ -310,8 +310,7 @@ class ResultsWidget(QtWidgets.QWidget):
         return data
 
     def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
-        return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
+        return self.sample.colorForName(name)
 
     def updateNames(self, names: Dict[str, str]) -> None:
         for old, new in names.items():
@@ -324,6 +323,11 @@ class ResultsWidget(QtWidgets.QWidget):
             if old in self.io:
                 index = self.io.combo_name.findText(old)
                 self.io.combo_name.setItemText(index, new)
+
+            for group in self.filters:
+                for filter in group:
+                    if filter.name == old:
+                        filter.name = new
 
         self.updateScatterElements()
         self.updatePCAElements()
