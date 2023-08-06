@@ -313,6 +313,21 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
 
+    def changeName(self, old_name: str, new_name: str) -> None:
+        if old_name == new_name:
+            return
+        if old_name in self.results:
+            self.results[new_name] = self.results.pop(old_name)
+        if old_name in self.clusters:
+            self.clusters[new_name] = self.clusters.pop(old_name)
+        if old_name in self.io:
+            index = self.io.combo_name.findText(old_name)
+            self.io.combo_name.setItemText(index, new_name)
+
+        self.updateScatterElements()
+        self.updatePCAElements()
+        self.redraw()
+
     def setFilters(
         self, filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
     ) -> None:

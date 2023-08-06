@@ -1,8 +1,9 @@
 import logging
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
@@ -27,6 +28,7 @@ class InputWidget(QtWidgets.QWidget):
     limitsChanged = QtCore.Signal()
 
     dataLoaded = QtCore.Signal(Path)
+    nameEdited = QtCore.Signal(str, str)
 
     def __init__(
         self,
@@ -40,6 +42,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.import_options: dict = {}
         self.calculated_elements: Dict[str, str] = {}
+        self.filtered_elements: List[str] = []
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -62,6 +65,8 @@ class InputWidget(QtWidgets.QWidget):
 
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
+        self.io.nameEdited.connect(self.changeName)
+        self.io.nameEdited.connect(self.nameEdited)
         self.io.limitsChanged.connect(self.updateLimits)
 
         self.limitsChanged.connect(self.updateDetections)
@@ -158,6 +163,28 @@ class InputWidget(QtWidgets.QWidget):
     def colorForName(self, name: str) -> QtGui.QColor:
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
+
+    def changeName(self, old_name: str, new_name: str) -> None:
+        if old_name == new_name:
+            return
+
+        if (
+            self.responses.dtype.names is not None
+            and old_name in self.responses.dtype.names
+        ):
+            self.responses = rfn.rename_fields(self.responses, {old_name: new_name})
+        if (
+            self.detections.dtype.names is not None
+            and old_name in self.detections.dtype.names
+        ):
+            self.detections = rfn.rename_fields(self.detections, {old_name: new_name})
+        if old_name in self.limits:
+            self.limits[new_name] = self.limits.pop(old_name)
+        if old_name in self.io:
+            index = self.io.combo_name.findText(old_name)
+            self.io.combo_name.setItemText(index, new_name)
+
+        self.redraw()
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode

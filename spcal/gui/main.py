@@ -63,6 +63,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.detectionsChanged.connect(self.results.requestUpdate)
         self.reference.detectionsChanged.connect(self.results.requestUpdate)
 
+        self.sample.nameEdited.connect(self.reference.changeName)
+        self.sample.nameEdited.connect(self.results.changeName)
+        self.reference.nameEdited.connect(self.sample.changeName)
+        self.reference.nameEdited.connect(self.results.changeName)
+
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")
