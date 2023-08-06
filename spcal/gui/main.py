@@ -18,6 +18,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
+from spcal.gui.widgets.editablecombobox import EnableTextDialog
 from spcal.io.session import restoreSession, saveSession
 
 logger = logging.getLogger(__name__)
@@ -158,6 +159,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Perform arbitrary calculations on signal data.",
             self.dialogCalculator,
         )
+
+        # Tools
         self.action_mass_fraction_calculator = create_action(
             "folder-calculate",
             "Mass Fraction Calculator",
@@ -229,9 +232,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menuedit.addAction(self.action_clear)
         menuedit.addSeparator()
         menuedit.addAction(self.action_calculator)
+        menuedit.addAction(self.action_ionic_response_tool)
+        menuedit.addSeparator()
         menuedit.addAction(self.action_mass_fraction_calculator)
         menuedit.addAction(self.action_particle_database)
-        menuedit.addAction(self.action_ionic_response_tool)
 
         menuview = self.menuBar().addMenu("&View")
 
