@@ -1,6 +1,10 @@
 import numpy as np
 
-from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
+from spcal.cluster import (
+    agglomerative_cluster,
+    cluster_information,
+    prepare_data_for_clustering,
+)
 
 
 def test_agglomerative_cluster():
@@ -8,7 +12,8 @@ def test_agglomerative_cluster():
         [[0.1, 0.2], [0.2, 0.3], [1.0, 1.4], [1.1, 1.5], [1.2, 1.5], [2.1, 2.2]]
     )
 
-    means, stds, counts = agglomerative_cluster(a, 0.5)
+    T = agglomerative_cluster(a, 0.5)
+    means, stds, counts = cluster_information(a, T)
 
     assert np.allclose(means, [[1.1, 1.466667], [0.15, 0.25], [2.1, 2.2]])
     assert np.allclose(stds, [[0.08165, 0.04714], [0.05, 0.05], [0.0, 0.0]])

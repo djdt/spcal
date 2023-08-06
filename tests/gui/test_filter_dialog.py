@@ -3,7 +3,8 @@ from typing import List
 import numpy as np
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.dialogs.filter import BooleanItemWidget, Filter, FilterDialog
+from spcal.gui.dialogs.filter import BooleanItemWidget, FilterDialog
+from spcal.result import ClusterFilter, Filter
 
 names = ["a", "b", "c"]
 
@@ -18,7 +19,7 @@ def test_filter():
 
 
 def test_filter_dialog_empty(qtbot: QtBot):
-    dlg = FilterDialog(names, [])
+    dlg = FilterDialog(names, [], [])
     qtbot.addWidget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.show()
@@ -29,14 +30,22 @@ def test_filter_dialog_empty(qtbot: QtBot):
     dlg.action_or.trigger()
     dlg.action_add.trigger()
     dlg.action_add.trigger()
+    dlg.action_cluster_add.trigger()
     dlg.list.itemWidget(dlg.list.item(0)).value.setBaseValue(1.0)
+    dlg.cluster_list.itemWidget(dlg.cluster_list.item(0)).index.setValue(10)
 
-    def check_filters(filters: List[List[Filter]]) -> bool:
+    def check_filters(
+        filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
+    ) -> bool:
         if len(filters) != 1:
             return False
         if len(filters[0]) != 1:
             return False
         if filters[0][0].value != 1.0:
+            return False
+        if len(cluster_filters) != 1:
+            return False
+        if cluster_filters[0].idx != 9:
             return False
         return True
 
@@ -49,7 +58,7 @@ def test_filter_dialog_filters(qtbot: QtBot):
         [Filter("a", "mass", ">", 1.0), Filter("b", "mass", ">", 2.0)],
         [Filter("c", "mass", "<", 3.0)],
     ]
-    dlg = FilterDialog(names, filters)
+    dlg = FilterDialog(names, filters, [])
     qtbot.addWidget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.show()
@@ -66,7 +75,7 @@ def test_filter_dialog_filters(qtbot: QtBot):
     # Remove the or
     dlg.list.itemWidget(dlg.list.item(2)).close()
 
-    def check_filters(filters: List[List[Filter]]) -> bool:
+    def check_filters(filters: List[List[Filter]], cluster_filters: List) -> bool:
         if len(filters) != 1:
             return False
         if len(filters[0]) != 3:

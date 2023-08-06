@@ -2,6 +2,7 @@ import logging
 import sys
 from pathlib import Path
 from types import TracebackType
+from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -17,6 +18,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
+from spcal.gui.widgets.editablecombobox import EnableTextDialog
 from spcal.io.session import restoreSession, saveSession
 
 logger = logging.getLogger(__name__)
@@ -59,6 +61,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.reference.optionsChanged.connect(self.onInputsChanged)
         self.reference.detectionsChanged.connect(self.onInputsChanged)
 
+        self.options.optionsChanged.connect(self.results.requestUpdate)
+        self.sample.detectionsChanged.connect(self.results.requestUpdate)
+        self.reference.detectionsChanged.connect(self.results.requestUpdate)
+
+        self.sample.namesEdited.connect(self.updateNames)
+        self.reference.namesEdited.connect(self.updateNames)
+
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
         self.tabs.addTab(self.reference, "Reference")
@@ -76,6 +85,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+    def updateNames(self, names: Dict[str, str]) -> None:
+        self.sample.updateNames(names)
+        self.reference.updateNames(names)
+        self.results.updateNames(names)
+        CalculatorDialog.updateNames(names)
 
     def createMenuBar(self) -> None:
         # File
@@ -144,6 +159,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Perform arbitrary calculations on signal data.",
             self.dialogCalculator,
         )
+
+        # Tools
         self.action_mass_fraction_calculator = create_action(
             "folder-calculate",
             "Mass Fraction Calculator",
@@ -215,9 +232,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menuedit.addAction(self.action_clear)
         menuedit.addSeparator()
         menuedit.addAction(self.action_calculator)
+        menuedit.addAction(self.action_ionic_response_tool)
+        menuedit.addSeparator()
         menuedit.addAction(self.action_mass_fraction_calculator)
         menuedit.addAction(self.action_particle_database)
-        menuedit.addAction(self.action_ionic_response_tool)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -370,8 +388,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def onTabChanged(self, index: int) -> None:
         if index == self.tabs.indexOf(self.results):
-            # names = list(self.sample.detections.dtype.names)
-            self.results.updateResults()
+            if self.results.isUpdateRequired():
+                self.results.updateResults()
 
     def readyForResults(self) -> bool:
         return self.sample.isComplete() and (

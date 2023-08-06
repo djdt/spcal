@@ -44,6 +44,11 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         self.pad = 2.0
         self.setFixedWidth(self.size * 2 + self.pad)
 
+    def setLimitsVisible(self, visible: bool):
+        for limit in self.item_limits:
+            limit.setVisible(visible)
+        self.update()
+
     def boundingRect(self):
         return QtCore.QRectF(0, 0, self.size * 3 + self.pad * 2, self.size)
 
@@ -55,19 +60,38 @@ class HistogramItemSample(pyqtgraph.ItemSample):
             if len(self.item_limits) > 0 and QtCore.QRectF(
                 0, 0, self.size, self.size
             ).contains(event.pos()):
-                visible = any(limit.isVisible() for limit in self.item_limits)
-                for limit in self.item_limits:
-                    limit.setVisible(not visible)
+                if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
+                    self.setLimitsVisible(True)
+                    for item in self.parentItem().childItems():
+                        if isinstance(item, HistogramItemSample) and item != self:
+                            item.setLimitsVisible(False)
+                else:
+                    visible = any(limit.isVisible() for limit in self.item_limits)
+                    self.setLimitsVisible(not visible)
+                self.update()
             elif self.item_fit is not None and QtCore.QRectF(
                 self.size + self.pad, 0, self.size, self.size
             ).contains(event.pos()):
-                visible = self.item_fit.isVisible()
-                self.item_fit.setVisible(not visible)
+                if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
+                    self.item_fit.setVisible(True)
+                    for item in self.parentItem().childItems():
+                        if isinstance(item, HistogramItemSample) and item != self:
+                            item.item_fit.setVisible(False)
+                            item.update()
+                else:
+                    self.item_fit.setVisible(not self.item_fit.isVisible())
             elif QtCore.QRectF(
                 (self.size + self.pad) * 2.0, 0, self.size, self.size
             ).contains(event.pos()):
-                visible = self.item.isVisible()
-                self.item.setVisible(not visible)
+                if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
+                    self.item.setVisible(True)
+                    for item in self.parentItem().childItems():
+                        if isinstance(item, HistogramItemSample) and item != self:
+                            item.item.setVisible(False)
+                            item.update()
+                else:
+                    self.item.setVisible(not self.item.isVisible())
+                self.update()
 
         event.accept()
         self.update()

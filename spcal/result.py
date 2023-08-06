@@ -33,6 +33,24 @@ class Filter(object):
     def ufunc(self) -> np.ufunc:
         return Filter.operations[self.operation]
 
+    def filter(self, results: Dict[str, "SPCalResult"]) -> np.ndarray | None:
+        if self.name not in results or self.unit not in results[self.name].detections:
+            return None
+        return self.ufunc(results[self.name].detections[self.unit], self.value)
+
+
+class ClusterFilter(object):
+    def __init__(self, idx: int, unit: str):
+        self.idx = idx
+        self.unit = unit
+
+    def filter(self, cluster_results: Dict[str, np.ndarray]) -> np.ndarray | None:
+        if self.unit not in cluster_results:
+            return None
+        counts = np.bincount(cluster_results[self.unit])
+        idx = np.argsort(counts)[::-1]
+        return cluster_results[self.unit] == idx[self.idx]
+
 
 class SPCalResult(object):
     """Calculates results from single particle detections.
@@ -341,14 +359,9 @@ def filter_results(
     for filter_group in filters:
         group_valid = np.ones(size, dtype=bool)
         for filter in filter_group:
-            if (
-                filter.name in results
-                and filter.unit in results[filter.name].detections
-            ):
-                data = results[filter.name].detections[filter.unit]
-                group_valid = np.logical_and(
-                    filter.ufunc(data, filter.value), group_valid
-                )
+            filter_valid = filter.filter(results)
+            if filter_valid is not None:
+                group_valid = np.logical_and(group_valid, filter_valid)
         valid = np.logical_or(group_valid, valid)
 
     return np.flatnonzero(valid)

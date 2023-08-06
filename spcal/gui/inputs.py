@@ -1,8 +1,9 @@
 import logging
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal
@@ -27,6 +28,7 @@ class InputWidget(QtWidgets.QWidget):
     limitsChanged = QtCore.Signal()
 
     dataLoaded = QtCore.Signal(Path)
+    namesEdited = QtCore.Signal(dict)
 
     def __init__(
         self,
@@ -62,6 +64,12 @@ class InputWidget(QtWidgets.QWidget):
 
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
+        self.io.namesEdited.connect(self.updateNames)
+        self.io.enabledNamesChanged.connect(self.redraw)
+        self.io.enabledNamesChanged.connect(
+            self.detectionsChanged
+        )  # force results update
+        self.io.namesEdited.connect(self.namesEdited)  # re-emit
         self.io.limitsChanged.connect(self.updateLimits)
 
         self.limitsChanged.connect(self.updateDetections)
@@ -146,6 +154,10 @@ class InputWidget(QtWidgets.QWidget):
             return self.detections.dtype.names
 
     @property
+    def enabled_names(self) -> List[str]:
+        return self.io.enabledNames()
+
+    @property
     def draw_names(self) -> Tuple[str, ...]:
         if self.draw_mode == "single":
             name = self.io.combo_name.currentText()
@@ -153,11 +165,28 @@ class InputWidget(QtWidgets.QWidget):
                 return (name,)
             else:
                 return tuple()
-        return self.names
+        return self.enabled_names
 
     def colorForName(self, name: str) -> QtGui.QColor:
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
+
+    def updateNames(self, names: Dict[str, str]) -> None:
+        if self.responses.dtype.names is not None:
+            self.responses = rfn.rename_fields(self.responses, names)
+        if self.detections.dtype.names is not None:
+            self.detections = rfn.rename_fields(self.detections, names)
+
+        for old, new in names.items():
+            if old == new:
+                continue
+            if old in self.limits:
+                self.limits[new] = self.limits.pop(old)
+            if old in self.io:
+                index = self.io.combo_name.findText(old)
+                self.io.combo_name.setItemText(index, new)
+
+        self.redraw()
 
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode

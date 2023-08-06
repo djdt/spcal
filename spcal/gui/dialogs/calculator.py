@@ -256,6 +256,14 @@ class CalculatorDialog(QtWidgets.QDialog):
             complete
         )
 
+    @staticmethod
+    def updateNames(names: Dict[str, str]) -> None:
+        for old, new in names.items():
+            if old in CalculatorDialog.current_expressions:
+                CalculatorDialog.current_expressions[
+                    new
+                ] = CalculatorDialog.current_expressions.pop(old)
+
     def removeExpr(self, expr: str) -> None:
         name = next(
             k for k, v in CalculatorDialog.current_expressions.items() if v == expr

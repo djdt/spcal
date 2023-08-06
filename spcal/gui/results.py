@@ -5,6 +5,11 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.cluster import (
+    agglomerative_cluster,
+    cluster_information,
+    prepare_data_for_clustering,
+)
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
@@ -22,7 +27,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult, filter_results
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
@@ -61,6 +66,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.reference = reference
 
         self.filters: List[List[Filter]] = []
+        self.cluster_filters: List[ClusterFilter] = []
         # Graph default options
         self.graph_options: Dict[str, Any] = {
             "histogram": {
@@ -76,7 +82,10 @@ class ResultsWidget(QtWidgets.QWidget):
             "composition": {"distance": 0.03, "minimum size": "5%"},
             "scatter": {"weighting": "none"},
         }
+
         self.results: Dict[str, SPCalResult] = {}
+        self.clusters: Dict[str, np.ndarray] = {}
+        self.update_required = True
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -282,16 +291,58 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
-    def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
-        return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
+    def validResultsForMode(self, mode: str) -> Dict[str, np.ndarray] | None:
+        size = next(iter(self.results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in self.results.values():
+            valid[result.indicies] = True
+        if not np.any(valid):
+            return None
 
-    def setFilters(self, filters: List[List[Filter]]) -> None:
+        key = self.mode_keys[mode]
+        data = {}
+        for name, result in self.results.items():
+            if key not in result.detections:
+                continue
+            data[name] = result.detections[key][valid]
+        if len(data) == 0:
+            return None
+        return data
+
+    def colorForName(self, name: str) -> QtGui.QColor:
+        return self.sample.colorForName(name)
+
+    def updateNames(self, names: Dict[str, str]) -> None:
+        for old, new in names.items():
+            if old == new:
+                continue
+            if old in self.results:
+                self.results[new] = self.results.pop(old)
+            if old in self.clusters:
+                self.clusters[new] = self.clusters.pop(old)
+            if old in self.io:
+                index = self.io.combo_name.findText(old)
+                self.io.combo_name.setItemText(index, new)
+
+            for group in self.filters:
+                for filter in group:
+                    if filter.name == old:
+                        filter.name = new
+
+        self.updateScatterElements()
+        self.updatePCAElements()
+        self.redraw()
+
+    def setFilters(
+        self, filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
+    ) -> None:
         self.filters = filters
+        self.cluster_filters = cluster_filters
         self.updateResults()
 
     def setCompDistance(self, distance: float) -> None:
         self.graph_options["composition"]["distance"] = distance
+        self.clusterResults()
         self.drawGraphCompositions()
 
     def setCompSize(self, size: float | str) -> None:
@@ -362,7 +413,9 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
-        dlg = FilterDialog(list(self.results.keys()), self.filters, parent=self)
+        dlg = FilterDialog(
+            list(self.results.keys()), self.filters, self.cluster_filters, parent=self
+        )
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
 
@@ -470,34 +523,16 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         label, _, _ = self.mode_labels[mode]
-        key = self.mode_keys[mode]
-
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        # Get list of all unfiltered detections
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-
-        num_valid = np.count_nonzero(valid)
-        if num_valid == 0:
-            return
-
-        graph_data = {}
-        for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            graph_data[name] = result.detections[key][valid]
-            # no need to use modifier, normalised
-
-        if len(graph_data) == 0:
+        graph_data = self.validResultsForMode(mode)
+        if graph_data is None:
             return
 
         brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
         self.graph_composition.draw(
             graph_data,
-            distance=self.graph_options["composition"]["distance"],
+            self.clusters[self.mode_keys[mode]],
             min_size=self.graph_options["composition"]["minimum size"],
             brushes=brushes,
         )
@@ -508,25 +543,9 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         label, unit, modifier = self.mode_labels[mode]
-        key = self.mode_keys[mode]
+        graph_data = self.validResultsForMode(mode)
 
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-
-        num_valid = np.count_nonzero(valid)
-        if num_valid == 0:
-            return
-
-        graph_data = {}
-        for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            graph_data[name] = result.detections[key][valid]
-            # no need to use modifier, normalised
-
-        if len(graph_data) < 2:
+        if graph_data is None or len(graph_data) < 2:
             return
 
         X = np.stack(list(graph_data.values()), axis=1)
@@ -689,6 +708,17 @@ class ResultsWidget(QtWidgets.QWidget):
                 background_error=result.background / result.background_error,
             )
 
+    def clusterResults(self) -> None:
+        self.clusters = {}
+
+        for mode, key in self.mode_keys.items():
+            data = self.validResultsForMode(mode)
+            if data is None:
+                continue
+            X = prepare_data_for_clustering(data)
+            T = agglomerative_cluster(X, self.graph_options["composition"]["distance"])
+            self.clusters[key] = T
+
     def filterResults(self) -> None:
         """Filters the current results.
 
@@ -707,6 +737,24 @@ class ResultsWidget(QtWidgets.QWidget):
             indicies = self.results[name].indicies
             self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
 
+    def filterClusters(self) -> None:
+        if len(self.cluster_filters) == 0:
+            return
+
+        size = next(iter(self.clusters.values())).size
+        valid_indicies = np.zeros(size, dtype=bool)
+        for filter in self.cluster_filters:
+            valid_indicies = np.logical_or(valid_indicies, filter.filter(self.clusters))
+
+        valid_indicies = np.flatnonzero(valid_indicies)
+
+        for name in self.results:
+            indicies = self.results[name].indicies
+            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+
+        for key in self.clusters.keys():
+            self.clusters[key] = self.clusters[key][valid_indicies]
+
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
 
@@ -718,8 +766,12 @@ class ResultsWidget(QtWidgets.QWidget):
         uptake = self.options.uptake.baseValue()
 
         assert dwelltime is not None
-        assert self.sample.detections.dtype.names is not None
-        for name in self.sample.detections.dtype.names:
+        names = [
+            name
+            for name in self.sample.detection_names
+            if name in self.sample.enabled_names
+        ]
+        for name in names:
             result = self.sample.asResult(name)
             if result.number == 0:
                 continue
@@ -759,15 +811,19 @@ class ResultsWidget(QtWidgets.QWidget):
                 pass
 
             self.results[name] = result
+        # end for name in names
 
         self.filterResults()
-        # end for name in names
+        self.clusterResults()
+        self.filterClusters()
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
         self.updateEnabledItems()
 
         self.redraw()
+
+        self.update_required = False
 
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
@@ -778,12 +834,12 @@ class ResultsWidget(QtWidgets.QWidget):
             self.mode.model().item(index).setEnabled(enabled)
 
         # Only enable composition view and stack if more than one element
-        single_result = len(self.results) == 1
-        self.action_graph_compositions.setEnabled(not single_result)
-        self.action_graph_histogram.setEnabled(not single_result)
-        self.action_graph_scatter.setEnabled(not single_result)
-        self.action_graph_pca.setEnabled(not single_result)
-        if single_result:  # Switch to histogram
+        nresults = sum(result.indicies.size > 0 for result in self.results.values())
+        self.action_graph_compositions.setEnabled(nresults > 1)
+        self.action_graph_histogram.setEnabled(nresults > 1)
+        self.action_graph_scatter.setEnabled(nresults > 1)
+        self.action_graph_pca.setEnabled(nresults > 1)
+        if nresults == 1:  # Switch to histogram
             self.action_graph_histogram_single.trigger()
 
     def bestUnitsForResults(self) -> Dict[str, Tuple[str, float]]:
@@ -808,3 +864,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         best_units["signal"] = ("counts", 1.0)
         return best_units
+
+    def requestUpdate(self) -> None:
+        self.update_required = True
+
+    def isUpdateRequired(self) -> bool:
+        return self.update_required

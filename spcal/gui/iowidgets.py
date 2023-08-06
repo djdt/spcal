@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal.particle
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
-from spcal.gui.widgets import OverLabel, UnitsWidget, ValueWidget
+from spcal.gui.widgets import EditableComboBox, OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
@@ -533,6 +533,9 @@ class ResultIOWidget(IOWidget):
 
 class IOStack(QtWidgets.QWidget):
     nameChanged = QtCore.Signal(str)
+    namesEdited = QtCore.Signal(dict)
+    enabledNamesChanged = QtCore.Signal()
+
     optionsChanged = QtCore.Signal(str)
 
     def __init__(
@@ -544,14 +547,19 @@ class IOStack(QtWidgets.QWidget):
 
         self.io_widget_type = io_widget_type
 
-        self.combo_name = QtWidgets.QComboBox()
+        self.combo_name = EditableComboBox(self)
         self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]*"))
 
         self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
-        self.combo_name.currentTextChanged.connect(self.nameChanged)
+        self.combo_name.currentIndexChanged.connect(  # Otherwise emitted when 1 item and edit
+            lambda i: self.nameChanged.emit(self.combo_name.itemText(i))
+        )
+        self.combo_name.enabledTextsChanged.connect(self.enabledNamesChanged)
+        self.combo_name.textsEdited.connect(self.namesEdited)
 
-        self.repopulate(["<element>"])
+        self.repopulate([""])
 
         self.layout_top = QtWidgets.QHBoxLayout()
         self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
@@ -573,6 +581,13 @@ class IOStack(QtWidgets.QWidget):
 
     def names(self) -> List[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
+
+    def enabledNames(self) -> List[str]:
+        return [
+            self.combo_name.itemText(i)
+            for i in range(self.combo_name.count())
+            if self.combo_name.model().item(i).isEnabled()
+        ]
 
     def widgets(self) -> List[IOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
