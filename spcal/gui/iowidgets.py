@@ -549,14 +549,17 @@ class IOStack(QtWidgets.QWidget):
 
         self.combo_name = EditableComboBox(self)
         self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]*"))
 
         self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
-        self.combo_name.currentTextChanged.connect(self.nameChanged)
+        self.combo_name.currentIndexChanged.connect(  # Otherwise emitted when 1 item and edit
+            lambda i: self.nameChanged.emit(self.combo_name.itemText(i))
+        )
         self.combo_name.enabledTextsChanged.connect(self.enabledNamesChanged)
         self.combo_name.textsEdited.connect(self.namesEdited)
 
-        self.repopulate(["<element>"])
+        self.repopulate([""])
 
         self.layout_top = QtWidgets.QHBoxLayout()
         self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)

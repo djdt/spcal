@@ -2,6 +2,7 @@ import logging
 import sys
 from pathlib import Path
 from types import TracebackType
+from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -63,10 +64,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.detectionsChanged.connect(self.results.requestUpdate)
         self.reference.detectionsChanged.connect(self.results.requestUpdate)
 
-        self.sample.namesEdited.connect(self.reference.updateNames)
-        self.sample.namesEdited.connect(self.results.updateNames)
-        self.reference.namesEdited.connect(self.sample.updateNames)
-        self.reference.namesEdited.connect(self.results.updateNames)
+        self.sample.namesEdited.connect(self.updateNames)
+        self.reference.namesEdited.connect(self.updateNames)
 
         self.tabs.addTab(self.options, "Options")
         self.tabs.addTab(self.sample, "Sample")
@@ -85,6 +84,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+    def updateNames(self, names: Dict[str, str]) -> None:
+        self.sample.updateNames(names)
+        self.reference.updateNames(names)
+        self.results.updateNames(names)
+        CalculatorDialog.updateNames(names)
 
     def createMenuBar(self) -> None:
         # File
