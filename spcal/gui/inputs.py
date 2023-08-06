@@ -28,7 +28,7 @@ class InputWidget(QtWidgets.QWidget):
     limitsChanged = QtCore.Signal()
 
     dataLoaded = QtCore.Signal(Path)
-    nameEdited = QtCore.Signal(str, str)
+    namesEdited = QtCore.Signal(dict)
 
     def __init__(
         self,
@@ -42,7 +42,6 @@ class InputWidget(QtWidgets.QWidget):
 
         self.import_options: dict = {}
         self.calculated_elements: Dict[str, str] = {}
-        self.filtered_elements: List[str] = []
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -65,8 +64,12 @@ class InputWidget(QtWidgets.QWidget):
 
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
-        self.io.nameEdited.connect(self.changeName)
-        self.io.nameEdited.connect(self.nameEdited)
+        self.io.namesEdited.connect(self.updateNames)
+        self.io.enabledNamesChanged.connect(self.redraw)
+        self.io.enabledNamesChanged.connect(
+            self.detectionsChanged
+        )  # force results update
+        self.io.namesEdited.connect(self.namesEdited)  # re-emit
         self.io.limitsChanged.connect(self.updateLimits)
 
         self.limitsChanged.connect(self.updateDetections)
@@ -151,6 +154,10 @@ class InputWidget(QtWidgets.QWidget):
             return self.detections.dtype.names
 
     @property
+    def enabled_names(self) -> List[str]:
+        return self.io.enabledNames()
+
+    @property
     def draw_names(self) -> Tuple[str, ...]:
         if self.draw_mode == "single":
             name = self.io.combo_name.currentText()
@@ -158,31 +165,26 @@ class InputWidget(QtWidgets.QWidget):
                 return (name,)
             else:
                 return tuple()
-        return self.names
+        return self.enabled_names
 
     def colorForName(self, name: str) -> QtGui.QColor:
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
-    def changeName(self, old_name: str, new_name: str) -> None:
-        if old_name == new_name:
-            return
+    def updateNames(self, names: Dict[str, str]) -> None:
+        if self.responses.dtype.names is not None:
+            self.responses = rfn.rename_fields(self.responses, names)
+        if self.detections.dtype.names is not None:
+            self.detections = rfn.rename_fields(self.detections, names)
 
-        if (
-            self.responses.dtype.names is not None
-            and old_name in self.responses.dtype.names
-        ):
-            self.responses = rfn.rename_fields(self.responses, {old_name: new_name})
-        if (
-            self.detections.dtype.names is not None
-            and old_name in self.detections.dtype.names
-        ):
-            self.detections = rfn.rename_fields(self.detections, {old_name: new_name})
-        if old_name in self.limits:
-            self.limits[new_name] = self.limits.pop(old_name)
-        if old_name in self.io:
-            index = self.io.combo_name.findText(old_name)
-            self.io.combo_name.setItemText(index, new_name)
+        for old, new in names.items():
+            if old == new:
+                continue
+            if old in self.limits:
+                self.limits[new] = self.limits.pop(old)
+            if old in self.io:
+                index = self.io.combo_name.findText(old)
+                self.io.combo_name.setItemText(index, new)
 
         self.redraw()
 

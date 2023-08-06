@@ -313,16 +313,17 @@ class ResultsWidget(QtWidgets.QWidget):
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.sample.names.index(name) % len(scheme)])
 
-    def changeName(self, old_name: str, new_name: str) -> None:
-        if old_name == new_name:
-            return
-        if old_name in self.results:
-            self.results[new_name] = self.results.pop(old_name)
-        if old_name in self.clusters:
-            self.clusters[new_name] = self.clusters.pop(old_name)
-        if old_name in self.io:
-            index = self.io.combo_name.findText(old_name)
-            self.io.combo_name.setItemText(index, new_name)
+    def updateNames(self, names: Dict[str, str]) -> None:
+        for old, new in names.items():
+            if old == new:
+                continue
+            if old in self.results:
+                self.results[new] = self.results.pop(old)
+            if old in self.clusters:
+                self.clusters[new] = self.clusters.pop(old)
+            if old in self.io:
+                index = self.io.combo_name.findText(old)
+                self.io.combo_name.setItemText(index, new)
 
         self.updateScatterElements()
         self.updatePCAElements()
@@ -761,8 +762,12 @@ class ResultsWidget(QtWidgets.QWidget):
         uptake = self.options.uptake.baseValue()
 
         assert dwelltime is not None
-        assert self.sample.detections.dtype.names is not None
-        for name in self.sample.detections.dtype.names:
+        names = [
+            name
+            for name in self.sample.detection_names
+            if name in self.sample.enabled_names
+        ]
+        for name in names:
             result = self.sample.asResult(name)
             if result.number == 0:
                 continue

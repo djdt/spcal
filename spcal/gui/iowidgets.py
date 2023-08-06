@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal.particle
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
-from spcal.gui.widgets import CheckableComboBox, OverLabel, UnitsWidget, ValueWidget
+from spcal.gui.widgets import EditableComboBox, OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
 
 logger = logging.getLogger(__name__)
@@ -531,37 +531,11 @@ class ResultIOWidget(IOWidget):
         self.background.setUnit(unit)
 
 
-class EditableNameComboBox(QtWidgets.QComboBox):
-    nameChanged = QtCore.Signal(str)
-    nameEdited = QtCore.Signal(str, str)
-
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.setEditable(True)
-        self.setDuplicatesEnabled(False)
-        self.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.InsertAtCurrent)
-        self.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-
-        self.lineEdit().editingFinished.connect(self.editingFinished)
-        self.currentIndexChanged.connect(self.saveCurrentName)
-        self.currentTextChanged.connect(self.nameChanged)
-
-        self.previous_name = ""
-
-    def saveCurrentName(self, index: int) -> None:
-        self.previous_name = self.itemText(index)
-
-    def editingFinished(self):
-        new_name = self.currentText()
-        if new_name != self.previous_name:
-            print(self.previous_name, new_name)
-            self.nameEdited.emit(self.previous_name, new_name)
-            self.previous_name = new_name
-
-
 class IOStack(QtWidgets.QWidget):
     nameChanged = QtCore.Signal(str)
-    nameEdited = QtCore.Signal(str, str)
+    namesEdited = QtCore.Signal(dict)
+    enabledNamesChanged = QtCore.Signal()
+
     optionsChanged = QtCore.Signal(str)
 
     def __init__(
@@ -573,13 +547,14 @@ class IOStack(QtWidgets.QWidget):
 
         self.io_widget_type = io_widget_type
 
-        self.combo_name = EditableNameComboBox(self)
+        self.combo_name = EditableComboBox(self)
         self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
         self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
-        self.combo_name.nameEdited.connect(self.nameEdited)
-        self.combo_name.nameChanged.connect(self.nameChanged)
+        self.combo_name.currentTextChanged.connect(self.nameChanged)
+        self.combo_name.enabledTextsChanged.connect(self.enabledNamesChanged)
+        self.combo_name.textsEdited.connect(self.namesEdited)
 
         self.repopulate(["<element>"])
 
@@ -603,6 +578,13 @@ class IOStack(QtWidgets.QWidget):
 
     def names(self) -> List[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
+
+    def enabledNames(self) -> List[str]:
+        return [
+            self.combo_name.itemText(i)
+            for i in range(self.combo_name.count())
+            if self.combo_name.model().item(i).isEnabled()
+        ]
 
     def widgets(self) -> List[IOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
