@@ -709,3 +709,4 @@ class ReferenceIOStack(IOStack):
 class ResultIOStack(IOStack):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(ResultIOWidget, parent=parent)
+        self.combo_name.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
