@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 
 import sympy
+from PIL import Image
 
 currie = "$$S_C = z_{1-\\alpha} \\sqrt{\\eta b + \\epsilon}$$"
 
@@ -42,6 +43,11 @@ def create_formula_images(path: Path) -> List[Path]:
             dvioptions=["-D", "150"],
         )
     return paths
+
+
+def create_png_app_ico(ico: Path, output: Path) -> Path:
+    img = Image.open(ico)
+    img.save(output, "PNG")
 
 
 def write_qrc(qrc: Path, images: List[Path]):
@@ -83,7 +89,11 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmp_dir, tempfile.NamedTemporaryFile() as qrc_tmp:
         images = create_formula_images(Path(tmp_dir))
-        images.append(Path(__file__).parent.parent.joinpath("app.ico"))
+        create_png_app_ico(
+            Path(__file__).parent.parent.joinpath("app.ico"),
+            Path(tmp_dir).joinpath("app.ico"),
+        )
+        images.append(Path(tmp_dir).joinpath("app.ico"))
 
         write_qrc(Path(qrc_tmp.name), images)
         build_image_resource(Path(qrc_tmp.name), args.output, args.rcc)
