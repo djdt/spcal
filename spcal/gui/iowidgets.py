@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterator, List, Type
+from typing import Dict, Iterator, List, Tuple, Type
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -202,9 +202,8 @@ class SampleIOWidget(IOWidget):
         self.lod_label.setText("")
 
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
-        def set_mass_fraction(ratios: Dict[str, float]):
-            first = next(iter(ratios.values()))
-            self.massfraction.setValue(first)
+        def set_mass_fraction(ratios: List[Tuple[str, float]]):
+            self.massfraction.setValue(ratios[0][1])
 
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.ratiosSelected.connect(set_mass_fraction)
