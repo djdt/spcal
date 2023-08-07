@@ -19,7 +19,7 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
 
     path = Path(__file__).parent.parent.joinpath("data/text/tofwerk_export_au.csv")
 
-    data, old_names = read_single_particle_file(path, columns=(2,), new_names=("Au",))
+    data = read_single_particle_file(path, columns=(2,))
 
     with qtbot.wait_signal(window.sample.detectionsChanged):
         window.sample.loadData(
@@ -29,8 +29,7 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
                 "columns": [2],
                 "ignores": [0, 1],
                 "first line": 0,
-                "names": ["Au"],
-                "old names": old_names,
+                "names": {data.dtype.names[0]: data.dtype.names[0]},
                 "cps": False,
                 "delimiter": ",",
                 "importer": "text",

@@ -117,12 +117,12 @@ def sanitiseImportOptions(options: dict) -> dict:
                 [(d[0], "S2") if d[0] == "Symbol" else d for d in val.dtype.descr]
             )
         safe[key] = val
-    return safe
+    return flatten_dict(safe)
 
 
 def restoreImportOptions(options: dict) -> dict:
     restored = {}
-    for key, val in options.items():
+    for key, val in unflatten_dict(options).items():
         if key == "path":  # convert str to Path
             val = Path(val)
         elif key == "isotopes":  # restore 'U' array

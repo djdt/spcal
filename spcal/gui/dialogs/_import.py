@@ -16,7 +16,6 @@ from spcal.gui.widgets import (
     ElidedLabel,
     PeriodicTableSelector,
     UnitsWidget,
-    ValueWidget,
 )
 from spcal.io import nu
 from spcal.io.text import read_single_particle_file
@@ -262,7 +261,7 @@ class TextImportDialog(_ImportDialogBase):
         for row, line in enumerate(lines):
             line.extend([""] * (col_count - len(line)))
             for col, text in enumerate(line):
-                item = QtWidgets.QTableWidgetItem(text.strip())
+                item = QtWidgets.QTableWidgetItem(text.strip().replace(" ", "_"))
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
@@ -321,6 +320,7 @@ class TextImportDialog(_ImportDialogBase):
                 break
 
     def importOptions(self) -> dict:
+        # key names added at import
         return {
             "importer": "text",
             "path": self.file_path,
@@ -329,7 +329,6 @@ class TextImportDialog(_ImportDialogBase):
             "ignores": self.ignoreColumns(),
             "columns": self.useColumns(),
             "first line": self.spinbox_first_line.value(),
-            "names": self.names(),
             "cps": self.combo_intensity_units.currentText() == "CPS",
         }
 
@@ -349,7 +348,7 @@ class TextImportDialog(_ImportDialogBase):
         self.spinbox_first_line.setValue(options["first line"])
         for col in range(self.table.columnCount()):
             item = self.table.item(self.spinbox_first_line.value() - 1, col)
-            if item is not None and item.text() not in options["old names"]:
+            if item is not None and item.text() not in options["names"]:
                 same = False
                 break
 
@@ -359,7 +358,7 @@ class TextImportDialog(_ImportDialogBase):
 
         self.combo_delimiter.setCurrentText(delimiter)
         self.le_ignore_columns.setText(";".join(str(i + 1) for i in options["ignores"]))
-        for name, oldname in zip(options["names"], options["old names"]):
+        for oldname, name in options["names"].items():
             for col in range(self.table.columnCount()):
                 item = self.table.item(self.spinbox_first_line.value() - 1, col)
                 if item is not None and item.text() == oldname:
@@ -390,17 +389,17 @@ class TextImportDialog(_ImportDialogBase):
     def accept(self) -> None:
         options = self.importOptions()
 
-        data, old_names = read_single_particle_file(
+        data = read_single_particle_file(
             options["path"],
             delimiter=options["delimiter"],
             columns=options["columns"],
             first_line=options["first line"],
-            new_names=options["names"],
             convert_cps=options["dwelltime"] if options["cps"] else None,
         )
-        # Save original names
         assert data.dtype.names is not None
-        options["old names"] = old_names
+        new_names = self.names()
+        options["names"] = {old: new for old, new in zip(data.dtype.names, new_names)}
+        data = rfn.rename_fields(data, options["names"])
 
         self.dataImported.emit(data, options)
         logger.info(f"Text data loaded from {self.file_path} ({data.size} events).")
@@ -715,7 +714,9 @@ class TofwerkIntegrationThread(QtCore.QThread):
         )
         self.indicies = np.stack((lower, upper + 1), axis=1)
         self.scale_factor = float(
-            (h5["FullSpectra"].attrs["SampleInterval"][0] * 1e9)  # mV * index -> mV * ns
+            (
+                h5["FullSpectra"].attrs["SampleInterval"][0] * 1e9
+            )  # mV * index -> mV * ns
             / h5["FullSpectra"].attrs["Single Ion Signal"][0]  # mV * ns -> ions
             / factor_extraction_to_acquisition(h5)  # ions -> ions/extraction
         )

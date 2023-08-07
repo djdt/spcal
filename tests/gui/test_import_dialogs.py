@@ -17,9 +17,9 @@ def test_import_dialog_text_nu(qtbot: QtBot):
             return False
         if data.size != 999:
             return False
-        if options["old names"] != [
-            "106.905 - seg Full mass spectrum att 1",
-            "196.967 - seg Full mass spectrum att 1",
+        if list(options["names"].keys()) != [
+            "106.905_-_seg_Full_mass_spectrum_att_1",
+            "196.967_-_seg_Full_mass_spectrum_att_1",
         ]:
             return False
         if options["dwelltime"] != 1e-5:

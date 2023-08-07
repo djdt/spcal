@@ -27,10 +27,9 @@ def read_single_particle_file(
     delimiter: str = ",",
     columns: Tuple[int] | np.ndarray | None = None,
     first_line: int = 1,
-    new_names: Tuple[str] | None = None,
     convert_cps: float | None = None,
     max_rows: int | None = None,
-) -> Tuple[np.ndarray, List[str]]:
+) -> np.ndarray:
     """Imports data stored as text with elements in columns.
 
     Args:
@@ -38,13 +37,11 @@ def read_single_particle_file(
         delimiter: delimiting character between columns
         columns: which columns to import, deafults to all
         first_line: the first data (not header) line
-        new_names: rename columns
         convert_cps: the dwelltime (in s) if data is stored as counts per second,
             else None
 
     Returns:
         data, structred array
-        old_names, the original names used in text file
     """
 
     def csv_read_lines(fp, delimiter: str = ",", count: int = 0):
@@ -96,19 +93,13 @@ def read_single_particle_file(
                 data.dtype = dtype
 
     assert data.dtype.names is not None
-
-    names = list(data.dtype.names)
-
-    if new_names is not None:
-        data.dtype.names = new_names
-
     data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
 
     if convert_cps is not None:
         for name in data.dtype.names:
             data[name] = data[name] * convert_cps  # type: ignore
 
-    return data, names
+    return data
 
 
 def export_single_particle_results(

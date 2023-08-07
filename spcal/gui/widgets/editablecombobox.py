@@ -69,7 +69,7 @@ class EditableComboBox(QtWidgets.QComboBox):
         self.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.InsertAtCurrent)
         self.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
 
-        self.lineEdit().returnPressed.connect(self.editingFinished)
+        self.lineEdit().editingFinished.connect(self.editingFinished)
         self.currentIndexChanged.connect(self.saveCurrentName)
 
         self.action_enable_names = create_action(

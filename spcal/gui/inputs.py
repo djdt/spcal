@@ -185,6 +185,12 @@ class InputWidget(QtWidgets.QWidget):
             if old in self.io:
                 index = self.io.combo_name.findText(old)
                 self.io.combo_name.setItemText(index, new)
+            if "names" in self.import_options:
+                if old in self.import_options["names"].values():
+                    key = next(
+                        k for k, v in self.import_options["names"].items() if v == old
+                    )
+                    self.import_options["names"][key] = new
 
         self.redraw()
 
@@ -257,6 +263,8 @@ class InputWidget(QtWidgets.QWidget):
 
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
+        if "names" not in self.import_options:
+            self.import_options["names"] = {n: n for n in data.dtype.names}
         self.label_file.setText(str(options["path"]))
 
         self.options.blockSignals(True)

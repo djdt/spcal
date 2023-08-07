@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 
 import h5py
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import accumulate_detections, combine_detections
@@ -112,16 +113,14 @@ def process_text_file(
     process_kws: dict,
     output_kws: dict,
 ) -> None:
-    data, old_names = read_single_particle_file(
+    data = read_single_particle_file(
         path,
         delimiter=import_options["delimiter"],
         columns=import_options["columns"],
         first_line=import_options["first line"],
-        new_names=import_options["names"],
         convert_cps=import_options["dwelltime"] if import_options["cps"] else None,
     )
-    if old_names != import_options["old names"] or data.dtype.names is None:
-        raise ValueError("different elements from sample")
+    data = rfn.rename_fields(data, import_options["names"])
 
     data = data[trim[0] : data.size - trim[1]]
     if data.size == 0:
@@ -152,6 +151,7 @@ def process_nu_file(
         f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in import_options["isotopes"]
     }
     data = select_nu_signals(masses, signals, selected_masses=selected_masses)
+    data = rfn.rename_fields(data, import_options["names"])
 
     data = data[trim[0] : data.size - trim[1]]
     if data.size == 0:
@@ -180,6 +180,7 @@ def process_tofwerk_file(
     selected_idx = np.flatnonzero(np.in1d(peak_labels, selected_labels))
 
     data, info, dwell = read_tofwerk_file(path, idx=selected_idx)
+    data = rfn.rename_fields(data, import_options["names"])
 
     data = data[trim[0] : data.size - trim[1]]
     if data.size == 0:
