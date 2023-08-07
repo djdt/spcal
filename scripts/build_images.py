@@ -91,9 +91,9 @@ if __name__ == "__main__":
         images = create_formula_images(Path(tmp_dir))
         create_png_app_ico(
             Path(__file__).parent.parent.joinpath("app.ico"),
-            Path(tmp_dir).joinpath("app.ico"),
+            Path(tmp_dir).joinpath("app.png"),
         )
-        images.append(Path(tmp_dir).joinpath("app.ico"))
+        images.append(Path(tmp_dir).joinpath("app.png"))
 
         write_qrc(Path(qrc_tmp.name), images)
         build_image_resource(Path(qrc_tmp.name), args.output, args.rcc)
