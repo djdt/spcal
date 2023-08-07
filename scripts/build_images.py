@@ -58,7 +58,6 @@ def build_image_resource(qrc: Path, output: Path, rcc: str):
     cmd = [rcc, "-g", "python", "-o", str(output), str(qrc)]
     print(f"running {' '.join(cmd[:-1])} <{qrc.name}>")
     proc = subprocess.run(cmd, capture_output=True)
-    print(proc)
     proc.check_returncode()
 
 
