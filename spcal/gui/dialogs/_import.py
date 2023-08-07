@@ -248,10 +248,12 @@ class TextImportDialog(_ImportDialogBase):
         ]
 
     def names(self) -> List[str]:
-        return [
-            self.table.item(self.spinbox_first_line.value() - 1, c).text()
-            for c in self.useColumns()
-        ]
+        names = []
+        for c in self.useColumns():
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                names.append(item.text())
+        return names
 
     def fillTable(self) -> None:
         lines = [line.split(self.delimiter()) for line in self.file_header]
