@@ -36,16 +36,22 @@ def test_mass_fraction_calculator(qtbot: QtBot):
     assert np.isclose(dlg.ratios["Ag"], 0.6034, atol=1e-4)
     assert np.isclose(dlg.ratios["Cl"], 0.3966, atol=1e-4)
 
-    def check_ratios(ratios: dict):
-        if not np.isclose(ratios["Ag"], 0.6034, atol=1e-4):
+    def check_ratios(ratios: list):
+        if len(ratios) != 2:
             return False
-        if not np.isclose(ratios["Cl"], 0.3966, atol=1e-4):
+        if ratios[0][0] != "Ag":
+            return False
+        if not np.isclose(ratios[0][1], 0.6034, atol=1e-4):
+            return False
+        if ratios[1][0] != "Cl":
+            return False
+        if not np.isclose(ratios[1][1], 0.3966, atol=1e-4):
             return False
         return True
 
     with qtbot.wait_signals(
         [dlg.ratiosSelected, dlg.molarMassSelected],
-        timeout=1000,
+        timeout=100,
         check_params_cbs=[check_ratios, lambda m: np.isclose(m, 178.8, atol=0.1)],
     ):
         dlg.accept()

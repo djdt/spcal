@@ -32,7 +32,7 @@ class FormulaValidator(QtGui.QValidator):
 
 class MassFractionCalculatorDialog(QtWidgets.QDialog):
     ratiosChanged = QtCore.Signal()
-    ratiosSelected = QtCore.Signal(dict)
+    ratiosSelected = QtCore.Signal(list)
     molarMassSelected = QtCore.Signal(float)
 
     def __init__(self, formula: str = "", parent: QtWidgets.QWidget | None = None):
@@ -74,7 +74,9 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.completeChanged()
 
     def accept(self) -> None:
-        self.ratiosSelected.emit(self.ratios)
+        # Dict order messed up during signal, send as list of tuples
+        ratios = [(k, v) for k, v in self.ratios.items()]
+        self.ratiosSelected.emit(ratios)
         self.molarMassSelected.emit(self.mw)
         super().accept()
 
