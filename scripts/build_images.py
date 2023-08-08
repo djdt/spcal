@@ -45,11 +45,6 @@ def create_formula_images(path: Path) -> List[Path]:
     return paths
 
 
-def create_png_app_ico(ico: Path, output: Path) -> Path:
-    img = Image.open(ico)
-    img.save(output, "PNG")
-
-
 def write_qrc(qrc: Path, images: List[Path]):
     with qrc.open("w") as fp:
         fp.write('<RCC version="1.0">\n')
@@ -89,11 +84,7 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmp_dir, tempfile.NamedTemporaryFile() as qrc_tmp:
         images = create_formula_images(Path(tmp_dir))
-        create_png_app_ico(
-            Path(__file__).parent.parent.joinpath("app.ico"),
-            Path(tmp_dir).joinpath("app.png"),
-        )
-        images.append(Path(tmp_dir).joinpath("app.png"))
+        images.append(Path(__file__).parent.parent.joinpath("app.ico"))
 
         write_qrc(Path(qrc_tmp.name), images)
         build_image_resource(Path(qrc_tmp.name), args.output, args.rcc)
