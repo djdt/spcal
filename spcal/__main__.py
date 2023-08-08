@@ -1,14 +1,15 @@
 import argparse
 import logging
 import sys
+from importlib.resources import files
 from pathlib import Path
 from typing import List
 
 import numpy
-
 from PySide6 import QtCore, QtGui, QtWidgets
-from spcal import __version__
+
 import spcal.resources
+from spcal import __version__
 from spcal.gui.main import SPCalWindow
 
 import pyqtgraph  # isort:skip
@@ -58,7 +59,7 @@ def main(argv: List[str] | None = None) -> int:
     app.setApplicationName("SPCal")
     app.setOrganizationName("SPCal")
     app.setApplicationVersion(__version__)
-    app.setWindowIcon(QtGui.QIcon(":img/app.ico"))
+    app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
     window = SPCalWindow()
 

@@ -84,7 +84,6 @@ if __name__ == "__main__":
 
     with tempfile.TemporaryDirectory() as tmp_dir, tempfile.NamedTemporaryFile() as qrc_tmp:
         images = create_formula_images(Path(tmp_dir))
-        images.append(Path(__file__).parent.parent.joinpath("app.ico"))
 
         write_qrc(Path(qrc_tmp.name), images)
         build_image_resource(Path(qrc_tmp.name), args.output, args.rcc)
