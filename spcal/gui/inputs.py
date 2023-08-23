@@ -324,6 +324,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateDetections(self) -> None:
         d, l, r = {}, {}, {}
+        acc_method = self.options.limit_accumulation.currentText()
         for name in self.names:
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
@@ -333,10 +334,7 @@ class InputWidget(QtWidgets.QWidget):
                     r[name],
                 ) = spcal.accumulate_detections(
                     responses,
-                    np.minimum(
-                        self.limits[name].mean_signal,
-                        self.limits[name].detection_threshold,
-                    ),
+                    self.limits[name].accumulationLimit(acc_method),
                     self.limits[name].detection_threshold,
                     integrate=True,
                 )
