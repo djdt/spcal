@@ -153,6 +153,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_accumulation.addItems(
             ["Detection Threshold", "Half Detection Threshold", "Signal Mean"]
         )
+        self.limit_accumulation.setCurrentText("Signal Mean")
         self.limit_accumulation.setItemData(
             0,
             "Sum contiguous regions above the detection threshold.",
