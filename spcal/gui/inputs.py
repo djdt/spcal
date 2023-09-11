@@ -242,7 +242,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg.screening_poisson_kws = dict(self.options.poisson.state())
         dlg.screening_gaussian_alpha = dict(self.options.gaussian.state())
         dlg.screening_compound_kws = dict(self.options.compound_poisson.state())
-        if dlg.screening_compound_kws["simulate"]:
+        if not dlg.screening_compound_kws["simulate"]:  # Keep as None
             dlg.screening_compound_kws["single ion"] = None
         dlg.open()
         return dlg

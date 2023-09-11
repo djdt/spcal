@@ -208,7 +208,7 @@ class SPCalLimit(object):
             prev_threshold = threshold
 
             lam = bn.nanmean(responses[responses < threshold])
-            if single_ion_dist is not None:  # Simulate
+            if single_ion_dist is not None and single_ion_dist.size > 0:  # Simulate
                 sim = simulate_compound_poisson(
                     lam, single_ion_dist, weights=weights, size=size
                 )

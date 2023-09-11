@@ -99,7 +99,10 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
 
         logger.exception(exception)
         msg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Warning, "Screening Failed", parent=self
+            QtWidgets.QMessageBox.Warning,
+            "Screening Failed",
+            str(exception),
+            parent=self,
         )
         msg.exec()
 
