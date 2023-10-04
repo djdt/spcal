@@ -34,6 +34,7 @@ def process_data(
     inputs: Dict[str, Dict[str, float | None]],
     filters: List[List[Filter]],
     limit_method: str,
+    acc_method: str,
     limit_params: Dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
@@ -67,7 +68,7 @@ def process_data(
         # === Create detections ===
         d[name], l[name], r[name] = accumulate_detections(
             data[name],
-            limits[name].mean_signal,
+            limits[name].accumulationLimit(acc_method),
             limits[name].detection_threshold,
             integrate=True,
         )
@@ -521,6 +522,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "inputs": inputs,
                     "filters": self.results.filters,
                     "limit_method": self.options.limit_method.currentText(),
+                    "acc_method": self.options.limit_accumulation.currentText(),
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (self.options.window_size.value() or 0)
                     if self.options.window_size.isEnabled()

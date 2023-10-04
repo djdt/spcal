@@ -114,8 +114,7 @@ class OptionsWidget(QtWidgets.QWidget):
         )
         self.limit_method.setItemData(
             0,
-            # "Use Gaussian if signal mean is greater than 50, otherwise Poisson.",
-            "",  # Todo
+            "Automatically determine the best method.",
             QtCore.Qt.ToolTipRole,
         )
         self.limit_method.setItemData(
@@ -149,6 +148,34 @@ class OptionsWidget(QtWidgets.QWidget):
             )
         )
 
+        # Controllable limit
+        self.limit_accumulation = QtWidgets.QComboBox()
+        self.limit_accumulation.addItems(
+            ["Detection Threshold", "Half Detection Threshold", "Signal Mean"]
+        )
+        self.limit_accumulation.setCurrentText("Signal Mean")
+        self.limit_accumulation.setItemData(
+            0,
+            "Sum contiguous regions above the detection threshold.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_accumulation.setItemData(
+            1,
+            "Sum contiguous regions above the midpoint of the threshold and mean.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_accumulation.setItemData(
+            2, "Sum contiguous regions above the signal mean.", QtCore.Qt.ToolTipRole
+        )
+        self.limit_accumulation.setToolTip(
+            self.limit_accumulation.currentData(QtCore.Qt.ToolTipRole)
+        )
+        self.limit_accumulation.currentIndexChanged.connect(
+            lambda i: self.limit_accumulation.setToolTip(
+                self.limit_accumulation.itemData(i, QtCore.Qt.ToolTipRole)
+            )
+        )
+
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
 
@@ -157,6 +184,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.window_size.editingFinished.connect(self.limitOptionsChanged)
         self.check_window.toggled.connect(self.limitOptionsChanged)
         self.limit_method.currentTextChanged.connect(self.limitOptionsChanged)
+        self.limit_accumulation.currentTextChanged.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         self.compound_poisson = CompoundPoissonOptions()
@@ -174,6 +202,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Threshold method:", layout_method)
+        self.limit_inputs.layout().addRow(
+            "Accumulation method:", self.limit_accumulation
+        )
         self.limit_inputs.layout().addRow(self.compound_poisson)
         self.limit_inputs.layout().addRow(self.gaussian)
         self.limit_inputs.layout().addRow(self.poisson)
@@ -210,6 +241,7 @@ class OptionsWidget(QtWidgets.QWidget):
             "window size": self.window_size.value(),
             "use window": self.check_window.isChecked(),
             "limit method": self.limit_method.currentText(),
+            "accumulation method": self.limit_accumulation.currentText(),
             "iterative": self.check_iterative.isChecked(),
             "cell diameter": self.celldiameter.baseValue(),
             "compound poisson": self.compound_poisson.state(),
@@ -247,6 +279,8 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # Separate for useManualLimits signal
         self.limit_method.setCurrentText(state["limit method"])
+        if "accumulation method" in state:
+            self.limit_accumulation.setCurrentText(state["accumulation method"])
 
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()

@@ -28,6 +28,13 @@ def test_limit_from_poisson():
         limit = int(limit) + 1.0
     assert lim.detection_threshold == limit
 
+    assert lim.accumulationLimit("signal mean") == lim.mean_signal
+    assert lim.accumulationLimit("detection threshold") == lim.detection_threshold
+    assert np.isclose(
+        lim.accumulationLimit("half detection threshold"),
+        (lim.mean_signal + lim.detection_threshold) / 2.0,
+    )
+
 
 def test_limit_from_gaussian():
     lim = SPCalLimit.fromGaussian(x, alpha=0.001, max_iters=1)  # ld ~= 87

@@ -53,6 +53,21 @@ class SPCalLimit(object):
         pstring = ";".join(f"{k}={v}" for k, v in self.params.items() if v != 0)
         return f"{self.name} ({pstring})" if len(pstring) > 0 else self.name
 
+    def accumulationLimit(self, method: str) -> float | np.ndarray:
+        method = method.lower()
+        if method not in [
+            "detection threshold",
+            "half detection threshold",
+            "signal mean",
+        ]:
+            raise ValueError(f"invalid accumulation method '{method}'.")
+        if method == "detection threshold":
+            return self.detection_threshold
+        elif method == "half detection threshold":
+            return (self.mean_signal + self.detection_threshold) / 2.0
+        else:
+            return self.mean_signal
+
     @classmethod
     def fromMethodString(
         cls,
@@ -193,7 +208,7 @@ class SPCalLimit(object):
             prev_threshold = threshold
 
             lam = bn.nanmean(responses[responses < threshold])
-            if single_ion_dist is not None:  # Simulate
+            if single_ion_dist is not None and single_ion_dist.size > 0:  # Simulate
                 sim = simulate_compound_poisson(
                     lam, single_ion_dist, weights=weights, size=size
                 )

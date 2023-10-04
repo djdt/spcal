@@ -72,6 +72,8 @@ class InputWidget(QtWidgets.QWidget):
         self.io.namesEdited.connect(self.namesEdited)  # re-emit
         self.io.limitsChanged.connect(self.updateLimits)
 
+        self.io.optionsChanged.connect(self.optionsChanged)
+
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
 
@@ -242,7 +244,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg.screening_poisson_kws = dict(self.options.poisson.state())
         dlg.screening_gaussian_alpha = dict(self.options.gaussian.state())
         dlg.screening_compound_kws = dict(self.options.compound_poisson.state())
-        if dlg.screening_compound_kws["simulate"]:
+        if not dlg.screening_compound_kws["simulate"]:  # Keep as None
             dlg.screening_compound_kws["single ion"] = None
         dlg.open()
         return dlg
@@ -324,21 +326,16 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateDetections(self) -> None:
         d, l, r = {}, {}, {}
+        acc_method = self.options.limit_accumulation.currentText()
         for name in self.names:
+            limit_accumulation = self.limits[name].accumulationLimit(acc_method)
+            limit_detection = self.limits[name].detection_threshold
+            # Ensure limit of accumulation is never greater than the detection limit
+            limit_accumulation = np.minimum(limit_accumulation, limit_detection)
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
-                (
-                    d[name],
-                    l[name],
-                    r[name],
-                ) = spcal.accumulate_detections(
-                    responses,
-                    np.minimum(
-                        self.limits[name].mean_signal,
-                        self.limits[name].detection_threshold,
-                    ),
-                    self.limits[name].detection_threshold,
-                    integrate=True,
+                d[name], l[name], r[name] = spcal.accumulate_detections(
+                    responses, limit_accumulation, limit_detection, integrate=True
                 )
 
         self.detections, self.labels, self.regions = combine_detections(d, l, r)
