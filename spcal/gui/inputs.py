@@ -72,6 +72,8 @@ class InputWidget(QtWidgets.QWidget):
         self.io.namesEdited.connect(self.namesEdited)  # re-emit
         self.io.limitsChanged.connect(self.updateLimits)
 
+        self.io.optionsChanged.connect(self.optionsChanged)
+
         self.limitsChanged.connect(self.updateDetections)
         self.limitsChanged.connect(self.drawLimits)
 
