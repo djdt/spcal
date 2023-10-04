@@ -18,7 +18,6 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
-from spcal.gui.widgets.editablecombobox import EnableTextDialog
 from spcal.io.session import restoreSession, saveSession
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.reference.detectionsChanged.connect(self.onInputsChanged)
 
         self.options.optionsChanged.connect(self.results.requestUpdate)
+        self.sample.optionsChanged.connect(self.results.requestUpdate)
         self.sample.detectionsChanged.connect(self.results.requestUpdate)
+        self.reference.optionsChanged.connect(self.results.requestUpdate)
         self.reference.detectionsChanged.connect(self.results.requestUpdate)
 
         self.sample.namesEdited.connect(self.updateNames)
