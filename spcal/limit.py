@@ -63,7 +63,7 @@ class SPCalLimit(object):
             raise ValueError(f"invalid accumulation method '{method}'.")
         if method == "detection threshold":
             return self.detection_threshold
-        elif method == "half detection_threshold":
+        elif method == "half detection threshold":
             return (self.mean_signal + self.detection_threshold) / 2.0
         else:
             return self.mean_signal
