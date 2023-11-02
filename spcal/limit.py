@@ -401,14 +401,14 @@ class SPCalLimit(object):
                 max_iters=max_iters,
             )
         # Quad data sometimes has a small offset from integer, almost always less than
-        # 0.05 counts. If 80% of the data is near integer we consider it Poisson, for ToF
+        # 0.05 counts. If 80% of data is near integer we consider it Poisson, for ToF
         # data only ~ 10% will be.
         elif (
             np.count_nonzero(is_integer_or_near(low_responses, 0.05))
             / low_responses.size
             < 0.8
-        ):  # Not Poisson
-            poisson = SPCalLimit.fromPoisson(
+        ):
+            return SPCalLimit.fromPoisson(
                 responses,
                 alpha=poisson_kws.get("alpha", 0.001),
                 formula=poisson_kws.get("formula", "formula c"),
@@ -417,21 +417,11 @@ class SPCalLimit(object):
                 max_iters=max_iters,
             )
         else:
-            poisson = SPCalLimit.fromCompoundPoisson(
+            return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
-                max_iters=max_iters,
-            )
-
-        if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
-            return poisson
-        else:
-            return SPCalLimit.fromGaussian(
-                responses,
-                alpha=gaussian_kws.get("alpha", 1e-6),
-                window_size=window_size,
                 max_iters=max_iters,
             )
 
