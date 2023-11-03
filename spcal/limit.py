@@ -401,12 +401,12 @@ class SPCalLimit(object):
                 max_iters=max_iters,
             )
         # Quad data sometimes has a small offset from integer, almost always less than
-        # 0.05 counts. If 80% of data is near integer we consider it Poisson, for ToF
+        # 0.05 counts. If 75% of data is near integer we consider it Poisson, for ToF
         # data only ~ 10% will be.
         elif (
             np.count_nonzero(is_integer_or_near(low_responses, 0.05))
             / low_responses.size
-            < 0.8
+            < 0.75
         ):
             return SPCalLimit.fromPoisson(
                 responses,
