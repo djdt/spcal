@@ -65,11 +65,13 @@ def test_limit_from():  # Better way for normality check?
         lim_b = SPCalLimit.fromBest(x, max_iters=1)
 
         assert lim_h.name == max(lim_p, lim_g, key=lambda x: x.detection_threshold).name
-        assert lim_b.name == ("Poisson" if lam < 10.0 else "Gaussian")
+        assert lim_b.name == ("Poisson" if np.min(x) < 5.0 else "Gaussian")
 
-    # Make sure CompoundPoisson works
-    x = np.random.poisson(size=1000, lam=10.0) / 10.0
+    # Make sure quad / tof detection works
+    x = np.random.poisson(size=1000, lam=10.0)
     lim_c = SPCalLimit.fromBest(x, max_iters=1)
+    assert lim_c.name == "Poisson"
+    lim_c = SPCalLimit.fromBest(x / 10.0, max_iters=1)
     assert lim_c.name == "CompoundPoisson"
 
 
@@ -116,16 +118,3 @@ def test_gaussian_error_rates():
             limit = SPCalLimit.fromGaussian(x, alpha=alpha, max_iters=0)
             error_rate = np.count_nonzero(x > limit.detection_threshold) / x.size
             assert np.isclose(error_rate, alpha, atol=0.01)
-
-
-# def test_poisson_error_rates():
-#     for mean in [5.0, 10.0]:
-#         x = np.random.normal(mean, mean, size=100000)
-#         x[x < 0] = 0.0
-#         # x = x[x >= 0.0]
-#         for alpha in [0.01, 0.05, 0.1]:
-#             print(mean, alpha)
-#             limit = SPCalLimit.fromPoisson(x, alpha=alpha, max_iters=0)
-#             print(limit.detection_threshold)
-#             error_rate = np.count_nonzero(x > limit.detection_threshold) / x.size
-#             assert np.isclose(error_rate, alpha, rtol=0.2)

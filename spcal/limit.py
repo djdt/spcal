@@ -6,6 +6,7 @@ from typing import Callable, Dict, Tuple
 import bottleneck as bn
 import numpy as np
 
+from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
     compound_poisson_lognormal_quantile,
     simulate_compound_poisson,
@@ -391,16 +392,23 @@ class SPCalLimit(object):
 
         # Find if data is Poisson distributed
         # Limit to < 5 to stay out of analouge region
-        mod = np.mod(responses[(responses > 0.0) & (responses <= 5.0)], 1.0)
-        if mod.size == 0:  # No values less than 5.0, Gaussian
+        low_responses = responses[(responses > 0.0) & (responses <= 5.0)]
+        if low_responses.size == 0:  # No values less than 5.0, Gaussian
             return SPCalLimit.fromGaussian(
                 responses,
                 alpha=gaussian_kws.get("alpha", 1e-6),
                 window_size=window_size,
                 max_iters=max_iters,
             )
-        elif np.count_nonzero(mod > 1e-3) / mod.size < 0.5:  # Not Poisson
-            poisson = SPCalLimit.fromPoisson(
+        # Quad data sometimes has a small offset from integer, almost always less than
+        # 0.05 counts. If 75% of data is near integer we consider it Poisson, for ToF
+        # data only ~ 10% will be.
+        elif (
+            np.count_nonzero(is_integer_or_near(low_responses, 0.05))
+            / low_responses.size
+            > 0.75
+        ):
+            return SPCalLimit.fromPoisson(
                 responses,
                 alpha=poisson_kws.get("alpha", 0.001),
                 formula=poisson_kws.get("formula", "formula c"),
@@ -409,21 +417,11 @@ class SPCalLimit(object):
                 max_iters=max_iters,
             )
         else:
-            poisson = SPCalLimit.fromCompoundPoisson(
+            return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
-                max_iters=max_iters,
-            )
-
-        if np.mean(responses[responses < poisson.detection_threshold]) < 10.0:
-            return poisson
-        else:
-            return SPCalLimit.fromGaussian(
-                responses,
-                alpha=gaussian_kws.get("alpha", 1e-6),
-                window_size=window_size,
                 max_iters=max_iters,
             )
 

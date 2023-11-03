@@ -18,6 +18,20 @@ def test_erfinv():
     assert np.allclose(calc.erfinv(0.5), erfinv_sp(0.5), atol=6e-3)
 
 
+def test_is_integer_or_near():
+    assert calc.is_integer_or_near(1.05, max_deviation=0.1)
+    assert calc.is_integer_or_near(0.95, max_deviation=0.1)
+    assert calc.is_integer_or_near(100.01, max_deviation=0.1)
+    assert not calc.is_integer_or_near(1.25, max_deviation=0.1)
+
+    assert np.all(
+        calc.is_integer_or_near(np.array([0.96, 1.97, 2.98, 3.99]), max_deviation=0.1)
+    )
+
+    with pytest.raises(ValueError):
+        calc.is_integer_or_near(1.0, max_deviation=-0.1)
+
+
 def test_otsu():
     x = np.cos(np.linspace(0, np.pi, 1000, endpoint=True))
     t = calc.otsu(x, nbins=256)
