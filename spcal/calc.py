@@ -101,7 +101,7 @@ def is_integer_or_near(x: np.ndarray, max_deviation: float = 1e-3) -> np.ndarray
     """
     if max_deviation < 0.0 or max_deviation >= 1.0:
         raise ValueError("'max_deviation' must be in the range [0-1).")
-    return np.abs(x - np.round(x)) < max_deviation
+    return np.abs(x - np.round(x)) <= max_deviation
 
 
 def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> float:
