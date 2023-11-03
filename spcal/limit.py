@@ -406,7 +406,7 @@ class SPCalLimit(object):
         elif (
             np.count_nonzero(is_integer_or_near(low_responses, 0.05))
             / low_responses.size
-            < 0.75
+            > 0.75
         ):
             return SPCalLimit.fromPoisson(
                 responses,
