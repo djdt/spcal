@@ -79,7 +79,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "cell_concentration": None,
                 },
             },
-            "composition": {"distance": 0.03, "minimum size": "5%"},
+            "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
             "scatter": {"weighting": "none"},
         }
 
@@ -345,6 +345,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.clusterResults()
         self.drawGraphCompositions()
 
+    def setCompMode(self, mode: str) -> None:
+        self.graph_options["composition"]["mode"] = mode
+        self.drawGraphCompositions()
+
     def setCompSize(self, size: float | str) -> None:
         self.graph_options["composition"]["minimum size"] = size
         self.drawGraphCompositions()
@@ -381,10 +385,12 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg = CompositionsOptionsDialog(
                 self.graph_options["composition"]["distance"],
                 self.graph_options["composition"]["minimum size"],
+                self.graph_options["composition"]["mode"],
                 parent=self,
             )
             dlg.distanceChanged.connect(self.setCompDistance)
             dlg.minimumSizeChanged.connect(self.setCompSize)
+            dlg.modeChanged.connect(self.setCompMode)
         elif self.graph_stack.currentWidget() == self.scatter_widget:
             dlg = ScatterOptionsDialog(
                 self.graph_options["scatter"]["weighting"], parent=self
@@ -534,6 +540,7 @@ class ResultsWidget(QtWidgets.QWidget):
             graph_data,
             self.clusters[self.mode_keys[mode]],
             min_size=self.graph_options["composition"]["minimum size"],
+            mode=self.graph_options["composition"]["mode"],
             brushes=brushes,
         )
 

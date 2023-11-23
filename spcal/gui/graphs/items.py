@@ -58,43 +58,21 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         super().paint(painter, option, widget)
 
 
-class PieChart(pyqtgraph.GraphicsObject):
+class HoverableChartItem(pyqtgraph.GraphicsObject):
     hovered = QtCore.Signal(int)
 
-    def __init__(
-        self,
-        radius: float,
-        values: List[float],
-        brushes: List[QtGui.QBrush],
-        pen: QtGui.QPen | None = None,
-        labels: List[str] | None = None,
-        # label_format: str = "{:.4g}",
-        parent: QtWidgets.QGraphicsItem | None = None,
-    ):
-        """Pie is centered on item.pos()."""
+    def __init__(self, parent: QtWidgets.QGraphicsItem | None = None):
+        """Item with multiple hoverable sections.
+        Sections are defined by self.path and by default are highlighted on
+        hover."""
         super().__init__(parent)
         self.setAcceptHoverEvents(True)
 
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
+        self.hovered_idx = -1
 
-        self.pen = pen
-        self.brushes = brushes
-
-        self.radius = radius
-        self.values = values
-        self._paths: List[QtGui.QPainterPath] = []
-
-        self.hovered_idx: int = -1
-
-        self.labels: List[pyqtgraph.TextItem] = []
-        # if labels is not None:
-        #     assert len(labels) == len(values)
-        #     angle = 0.0
-        #     for label in labels:
-
-        # self.label_format = label_format
+    @property
+    def paths(self) -> List[QtGui.QPainterPath]:
+        raise NotImplementedError
 
     def setHoveredIdx(self, idx: int) -> None:
         if self.hovered_idx != idx:
@@ -104,7 +82,7 @@ class PieChart(pyqtgraph.GraphicsObject):
     def hoverEvent(self, event):
         hovered_idx = -1
         if not event.exit:
-            for i, path in enumerate(self._paths):
+            for i, path in enumerate(self.paths):
                 if path.contains(event.pos()):
                     hovered_idx = i
                     break
@@ -114,20 +92,11 @@ class PieChart(pyqtgraph.GraphicsObject):
             self.update()
         self.hovered_idx = hovered_idx
 
-    @property
-    def paths(self) -> List[QtGui.QPainterPath]:
-        if len(self._paths) == 0:
-            rect = self.boundingRect()
-            total = np.sum(self.values)
-            angle = 0.0
-            for value in self.values:
-                span = 360.0 * value / total
-                path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
-                path.arcTo(rect, angle, span)
-                self._paths.append(path)
-                angle += span
+    def boundingRect(self) -> QtCore.QRectF:
+        raise NotImplementedError
 
-        return self._paths
+    def shape(self) -> QtGui.QPainterPath:
+        raise NotImplementedError
 
     def paint(
         self,
@@ -146,17 +115,8 @@ class PieChart(pyqtgraph.GraphicsObject):
             painter.drawPath(path)
         painter.restore()
 
-    def boundingRect(self) -> QtCore.QRectF:
-        return QtCore.QRectF(
-            -self.radius, -self.radius, self.radius * 2, self.radius * 2
-        )
-
-    def shape(self) -> QtGui.QPainterPath:
-        path = QtGui.QPainterPath()
-        path.addEllipse(self.boundingRect())
-        return path
-
     def dataBounds(self, ax, frac, orthoRange=None):
+        """Pad by pen width"""
         if self.pen.isCosmetic():
             pw = 0.0
         else:
@@ -168,10 +128,129 @@ class PieChart(pyqtgraph.GraphicsObject):
             return [br.top() - pw, br.bottom() + pw]
 
     def pixelPadding(self):
+        """Pad by pen width"""
         if self.pen.isCosmetic():
             return max(1, self.pen.width()) * 0.7072
         else:
             return 0.0
+
+
+class BarChart(HoverableChartItem):
+    def __init__(
+        self,
+        height: float,
+        width: float,
+        values: List[float],
+        brushes: List[QtGui.QBrush],
+        pen: QtGui.QPen | None = None,
+        labels: List[str] | None = None,
+        # label_format: str = "{:.4g}",
+        parent: QtWidgets.QGraphicsItem | None = None,
+    ):
+        """Pie is centered on item.pos()."""
+        super().__init__(parent)
+
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        self.pen = pen
+        self.brushes = brushes
+
+        self.height = height
+        self.width = width
+        self.values = values
+        self._paths: List[QtGui.QPainterPath] = []
+
+        self.labels: List[pyqtgraph.TextItem] = []
+        # if labels is not None:
+        #     assert len(labels) == len(values)
+        #     angle = 0.0
+        #     for label in labels:
+
+        # self.label_format = label_format
+
+    @property
+    def paths(self) -> List[QtGui.QPainterPath]:
+        if len(self._paths) == 0:
+            rect = self.boundingRect()
+            total = np.sum(self.values)
+            top = rect.height()
+            for value in self.values:
+                path = QtGui.QPainterPath()
+                height = value / total * rect.height()
+                path.addRect(0, top - height, rect.width(), height)
+                self._paths.append(path)
+                top -= height
+
+        return self._paths
+
+    def boundingRect(self) -> QtCore.QRectF:
+        return QtCore.QRectF(0, 0, self.width, self.height)
+
+    def shape(self) -> QtGui.QPainterPath:
+        path = QtGui.QPainterPath()
+        path.addRect(self.boundingRect())
+        return path
+
+
+class PieChart(HoverableChartItem):
+    def __init__(
+        self,
+        radius: float,
+        values: List[float],
+        brushes: List[QtGui.QBrush],
+        pen: QtGui.QPen | None = None,
+        labels: List[str] | None = None,
+        # label_format: str = "{:.4g}",
+        parent: QtWidgets.QGraphicsItem | None = None,
+    ):
+        """Pie is centered on item.pos()."""
+        super().__init__(parent)
+
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen.setCosmetic(True)
+
+        self.pen = pen
+        self.brushes = brushes
+
+        self.radius = radius
+        self.values = values
+        self._paths: List[QtGui.QPainterPath] = []
+
+        self.labels: List[pyqtgraph.TextItem] = []
+        # if labels is not None:
+        #     assert len(labels) == len(values)
+        #     angle = 0.0
+        #     for label in labels:
+
+        # self.label_format = label_format
+
+    @property
+    def paths(self) -> List[QtGui.QPainterPath]:
+        if len(self._paths) == 0:
+            rect = self.boundingRect()
+            total = np.sum(self.values)
+            angle = 0.0
+            for value in self.values:
+                span = 360.0 * value / total
+                path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
+                path.arcTo(rect, angle, span)
+                self._paths.append(path)
+                angle += span
+
+        return self._paths
+
+    def boundingRect(self) -> QtCore.QRectF:
+        return QtCore.QRectF(
+            -self.radius, -self.radius, self.radius * 2, self.radius * 2
+        )
+
+    def shape(self) -> QtGui.QPainterPath:
+        path = QtGui.QPainterPath()
+        path.addEllipse(self.boundingRect())
+        return path
 
 
 class StaticRectItemSample(pyqtgraph.GraphicsWidget):

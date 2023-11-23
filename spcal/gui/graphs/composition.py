@@ -5,9 +5,9 @@ import numpy.lib.recfunctions as rfn
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import prepare_data_for_clustering, cluster_information
+from spcal.cluster import cluster_information, prepare_data_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.items import PieChart
+from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
 
 
@@ -27,6 +27,7 @@ class CompositionView(SinglePlotGraphicsView):
         data: Dict[str, np.ndarray],
         T: np.ndarray,
         min_size: float | str = "5%",
+        mode: str = "pie",
         pen: QtGui.QPen | None = None,
         brushes: List[QtGui.QBrush] | None = None,
     ) -> None:
@@ -64,20 +65,40 @@ class CompositionView(SinglePlotGraphicsView):
             return
 
         size = 100.0
-        radii = np.sqrt(counts * np.pi)
-        radii = radii / np.amax(radii) * size
         spacing = size * 2.0
 
-        for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
-            pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
-            pie.setPos(i * spacing, 0)
-            label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
-            label.setPos(i * spacing, -size)
-            self.plot.addItem(pie)
-            self.plot.addItem(label)
-            self.pies.append(pie)
+        if mode == "pie":
+            radii = np.sqrt(counts * np.pi)
+            radii = radii / np.amax(radii) * size
 
-        # link all pie hovers
+            for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
+                pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
+                pie.setPos(i * spacing, 0)
+                label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+                label.setPos(i * spacing, -size)
+                self.plot.addItem(pie)
+                self.plot.addItem(label)
+                self.pies.append(pie)
+        elif mode == "bar":
+            heights = counts / np.amax(counts) * size
+            width = spacing / 2.0
+
+            for i, (count, height, comp) in enumerate(
+                zip(counts, heights, compositions)
+            ):
+                pie = BarChart(
+                    height, width, rfn.structured_to_unstructured(comp), brushes
+                )
+                pie.setPos(i * spacing - width / 2.0, -size)
+                label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+                label.setPos(i * spacing, -size)
+                self.plot.addItem(pie)
+                self.plot.addItem(label)
+                self.pies.append(pie)
+        else:
+            raise ValueError("Composition mode must be 'pie' or 'bar'.")
+
+        # link all hovers
         for i in range(len(self.pies)):
             for j in range(len(self.pies)):
                 if i == j:

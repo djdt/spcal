@@ -159,11 +159,13 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 class CompositionsOptionsDialog(QtWidgets.QDialog):
     distanceChanged = QtCore.Signal(float)
     minimumSizeChanged = QtCore.Signal(str)
+    modeChanged = QtCore.Signal(str)
 
     def __init__(
         self,
         distance: float = 0.03,
         minimum_size: str | float = "5%",
+        mode: str = "pie",
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -171,12 +173,18 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
         self.distance = distance
         self.minimum_size = minimum_size
+        self.mode = mode
 
         self.lineedit_distance = QtWidgets.QLineEdit(str(distance * 100.0))
         self.lineedit_distance.setValidator(QtGui.QDoubleValidator(0.1, 99.9, 1))
 
         self.lineedit_size = QtWidgets.QLineEdit(str(minimum_size))
         self.lineedit_size.setValidator(DoubleOrPercentValidator(0.0, 1e99, 3, 0, 100))
+
+        self.combo_mode = QtWidgets.QComboBox()
+        self.combo_mode.addItems(["Pie", "Bar"])
+        if mode == "bar":
+            self.combo_mode.setCurrentIndex(1)
 
         layout_dist = QtWidgets.QHBoxLayout()
         layout_dist.addWidget(self.lineedit_distance, 1)
@@ -186,6 +194,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
         box.setLayout(QtWidgets.QFormLayout())
         box.layout().addRow("Distance threshold:", layout_dist)
         box.layout().addRow("Minimum cluster size:", self.lineedit_size)
+        box.layout().addRow("Display mode:", self.combo_mode)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
@@ -217,6 +226,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
     def apply(self) -> None:
         distance = float(self.lineedit_distance.text()) / 100.0
         size = self.lineedit_size.text().strip().replace(" ", "")
+        mode = self.combo_mode.currentText().lower()
 
         # Check for changes
         if abs(self.distance - distance) > 0.001:
@@ -225,10 +235,13 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
         if size != self.minimum_size:
             self.minimum_size == size
             self.minimumSizeChanged.emit(str(size))
+        if mode != self.mode:
+            self.modeChanged.emit(mode)
 
     def reset(self) -> None:
         self.lineedit_distance.setText("3.0")
         self.lineedit_size.setText("5%")
+        self.combo_mode.setCurrentIndex(0)
 
 
 class ScatterOptionsDialog(QtWidgets.QDialog):
