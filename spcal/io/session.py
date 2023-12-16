@@ -182,6 +182,11 @@ def restoreSession(
     reference: ReferenceWidget,
     results: ResultsWidget,
 ) -> None:
+    # Clear old session
+    options.resetInputs()
+    sample.resetInputs()
+    reference.resetInputs()
+
     with h5py.File(path, "r") as h5:
         if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 14):
             raise ValueError("Unsupported version.")
