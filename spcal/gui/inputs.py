@@ -510,6 +510,7 @@ class InputWidget(QtWidgets.QWidget):
         for i in range(self.io.stack.count()):
             self.io.stack.widget(i).clearInputs()
             self.io.stack.widget(i).clearOutputs()
+        self.io.combo_name.clear()
         self.blockSignals(False)
 
     def onEfficiencyMethodChanged(self, method: str) -> None:
