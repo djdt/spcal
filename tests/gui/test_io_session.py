@@ -53,6 +53,9 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
     dlg.formula.setPlainText("Ag + Au")
     dlg.accept()
 
+    window.sample.io.combo_name.setCurrentText("Au_mod")
+    window.sample.io.combo_name.editingFinished()
+
     saveSession(
         tmp_session_path,
         window.options,
@@ -85,18 +88,18 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     assert np.all(window.options.compound_poisson.single_ion_dist == np.arange(10))
     assert window.options.compound_poisson.lognormal_sigma.value() == 0.567
 
-    assert window.sample.names == ("Au", "Ag", "{Ag+Au}")
+    assert window.sample.names == ("Au_mod", "Ag", "{Ag+Au}")
     assert str(window.sample.import_options["path"]) == "test/data.csv"
     assert window.sample.io["Ag"].response.baseValue() == 1.0
-    assert window.sample.io["Au"].response.baseValue() == 2.0
-    assert window.sample.io["Au"].density.baseValue() == 3.0
+    assert window.sample.io["Au_mod"].response.baseValue() == 2.0
+    assert window.sample.io["Au_mod"].density.baseValue() == 3.0
 
-    assert window.reference.names == ("Au", "Ag", "{Ag+Au}")
+    assert window.reference.names == ("Au_mod", "Ag", "{Ag+Au}")
     assert str(window.reference.import_options["path"]) == "test/ref.csv"
-    assert window.reference.io["Au"].density.baseValue() == 4.0
+    assert window.reference.io["Au_mod"].density.baseValue() == 4.0
 
     assert len(window.results.filters) == 2
-    assert window.results.filters[0][0].name == "Au"
+    assert window.results.filters[0][0].name == "Au_mod"
     assert window.results.filters[0][0].unit == "signal"
     assert window.results.filters[0][0].operation == ">"
     assert window.results.filters[0][0].value == 1.0
