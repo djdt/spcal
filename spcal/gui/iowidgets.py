@@ -548,7 +548,7 @@ class IOStack(QtWidgets.QWidget):
 
         self.combo_name = EditableComboBox(self)
         self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
-        self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]*"))
+        self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]+"))
 
         self.stack = QtWidgets.QStackedWidget()
         self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
