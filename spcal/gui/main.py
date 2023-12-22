@@ -402,9 +402,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
     def resetInputs(self) -> None:
         self.tabs.setCurrentIndex(0)
 
-        self.options.resetInputs()
+        self.results.resetInputs()
         self.sample.resetInputs()
         self.reference.resetInputs()
+        self.options.resetInputs()
 
     def setColorScheme(self, action: QtGui.QAction) -> None:
         scheme = action.text()

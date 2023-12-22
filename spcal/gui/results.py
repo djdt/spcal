@@ -5,10 +5,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import (
-    agglomerative_cluster,
-    prepare_data_for_clustering,
-)
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.graphoptions import (
@@ -875,3 +872,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def isUpdateRequired(self) -> bool:
         return self.update_required
+
+    def resetInputs(self) -> None:
+        self.filters.clear()
+        self.cluster_filters.clear()
+        self.results.clear()
+        self.clusters.clear()
