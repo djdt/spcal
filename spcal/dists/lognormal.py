@@ -15,12 +15,6 @@ def pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     )
 
 
-def shifted_pdf(
-    x: np.ndarray, mu: float, sigma: float, theta: float = 0.0
-) -> np.ndarray:
-    return pdf(x - theta, mu, sigma)
-
-
 def moments(mu: float, sigma: float) -> tuple[float, float]:
     ex = np.exp(mu + 0.5 * sigma * sigma)
     vx = ex * ex * (np.exp(sigma * sigma) - 1.0)
