@@ -498,6 +498,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
+        self.io.blockSignals(True)
         self.import_options = {}
         self.responses = np.array([])
         self.events = np.array([])
@@ -511,6 +512,7 @@ class InputWidget(QtWidgets.QWidget):
             self.io.stack.widget(i).clearInputs()
             self.io.stack.widget(i).clearOutputs()
         self.io.combo_name.clear()
+        self.io.blockSignals(False)
         self.blockSignals(False)
 
     def onEfficiencyMethodChanged(self, method: str) -> None:
