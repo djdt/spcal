@@ -7,9 +7,9 @@ from spcal import calc
 
 
 def test_erf():
-    x = np.random.random(1000) - 10.0 * 20.0
-    assert np.allclose(calc.erf(x), erf_sp(x), atol=5e-4)
-    assert np.allclose(calc.erf(1.0), erf_sp(1.0), atol=5e-4)
+    x = np.linspace(0, 10.0, 1000)
+    assert np.allclose(calc.erf(x), erf_sp(x), atol=1.5e-7)
+    assert np.allclose(calc.erf(1.0), erf_sp(1.0), atol=1.5e-7)
 
 
 def test_erfinv():

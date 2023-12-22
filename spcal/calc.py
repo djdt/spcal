@@ -19,12 +19,11 @@ def erf(x: float | np.ndarray) -> float | np.ndarray:
             functions with formulas, graphs, and mathematical tables.
             Vol. 55. US Government printing office, 1970.
     """
-    sign = np.sign(x)
-    # Maximum error: 2.5e-5
-    a = np.array([0.278393, 0.230389, 0.000972, 0.078108])
-    p = np.array([[1, 2, 3, 4]]).T
-    sum = np.sum(a * np.power(x, p).T, axis=1)
-    return sign * (1.0 - 1.0 / (1.0 + sum) ** 4)
+    t = 1.0 / (1.0 + 0.3275911 * x)
+    a = np.array([0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429])
+    p = np.array([[1, 2, 3, 4, 5]]).T
+    e = 1.0 - np.sum(a * np.power(t, p).T, axis=1) * np.exp(-(x**2))
+    return np.clip(e, -1.0, 1.0)
 
 
 def erfinv(x: float | np.ndarray) -> float | np.ndarray:
