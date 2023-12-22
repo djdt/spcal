@@ -41,7 +41,7 @@ setup(
         "bottleneck",
         "h5py",
     ],
-    extras_require={"tests": ["pytest"]},
+    extras_require={"tests": ["pytest", "scipy"]},
     entry_points={"console_scripts": ["spcal=spcal.__main__:main"]},
     ext_modules=[spcalext],
 )
