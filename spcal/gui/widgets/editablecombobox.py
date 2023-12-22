@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -9,7 +8,7 @@ class EnableTextDialog(QtWidgets.QDialog):
     enabledSelected = QtCore.Signal(dict)
 
     def __init__(
-        self, items: List[QtGui.QStandardItem], parent: QtWidgets.QWidget | None = None
+        self, items: list[QtGui.QStandardItem], parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent)
         self.setWindowTitle("Set Enabled Items")
@@ -103,7 +102,7 @@ class EditableComboBox(QtWidgets.QComboBox):
         dlg.open()
         return dlg
 
-    def setEnabled(self, enabled: Dict[str, bool]) -> None:
+    def setEnabled(self, enabled: dict[str, bool]) -> None:
         for text, state in enabled.items():
             i = self.findText(text)
             if i != -1:

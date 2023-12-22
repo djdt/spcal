@@ -1,6 +1,5 @@
 """Loading data from TOFWERK ICP-ToF."""
 from pathlib import Path
-from typing import List, Tuple
 
 import h5py
 import numpy as np
@@ -17,7 +16,7 @@ def is_tofwerk_file(path: Path) -> bool:
 
 
 def calibrate_index_to_mass(
-    indices: np.ndarray, mode: int, p: List[float]
+    indices: np.ndarray, mode: int, p: list[float]
 ) -> np.ndarray:
     """Calibrate sample indicies to mass / charge.
 
@@ -48,7 +47,7 @@ def calibrate_index_to_mass(
 
 
 def calibrate_mass_to_index(
-    masses: np.ndarray, mode: int, p: List[float]
+    masses: np.ndarray, mode: int, p: list[float]
 ) -> np.ndarray:
     """Calibrate mass / charge to sample indicies.
 
@@ -143,7 +142,7 @@ def integrate_tof_data(
 
 def read_tofwerk_file(
     path: Path | str, idx: np.ndarray | None = None
-) -> Tuple[np.ndarray, np.ndarray, float]:
+) -> tuple[np.ndarray, np.ndarray, float]:
     """Reads a TOFWERK TofDaq .hdf and returns peak data and peak info.
 
     Args:

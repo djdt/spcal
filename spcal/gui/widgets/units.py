@@ -1,7 +1,6 @@
 """Widget that displays a value with a coresponding unit.
 [ line edit ] [combo box]
 """
-from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -15,7 +14,7 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        units: Dict[str, float],
+        units: dict[str, float],
         default_unit: str | None = None,
         base_value: float | None = None,
         validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
@@ -26,7 +25,7 @@ class UnitsWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self._base_value: float | None = None
         self._base_error: float | None = None
-        self._units: Dict[str, float] = {}
+        self._units: dict[str, float] = {}
 
         self.lineedit = ValueWidget(
             validator=validator,

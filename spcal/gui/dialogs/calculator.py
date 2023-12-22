@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -26,7 +25,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
     def __init__(
         self,
         text: str,
-        variables: List[str],
+        variables: list[str],
         parent: QtWidgets.QWidget = None,
     ):
         super().__init__(text, parent)
@@ -168,7 +167,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         ),
     }
 
-    current_expressions: Dict[str, str] = {}
+    current_expressions: dict[str, str] = {}
 
     def __init__(
         self,
@@ -257,7 +256,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         )
 
     @staticmethod
-    def updateNames(names: Dict[str, str]) -> None:
+    def updateNames(names: dict[str, str]) -> None:
         for old, new in names.items():
             if old in CalculatorDialog.current_expressions:
                 CalculatorDialog.current_expressions[

@@ -2,7 +2,6 @@ import logging
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Dict
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -88,7 +87,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def updateNames(self, names: Dict[str, str]) -> None:
+    def updateNames(self, names: dict[str, str]) -> None:
         self.sample.updateNames(names)
         self.reference.updateNames(names)
         self.results.updateNames(names)

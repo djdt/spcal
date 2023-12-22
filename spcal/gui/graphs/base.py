@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pyqtgraph
@@ -24,7 +23,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
 
-        self.export_data: Dict[str, np.ndarray] = {}
+        self.export_data: dict[str, np.ndarray] = {}
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
@@ -69,7 +68,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.exportData,
         )
 
-        self.context_menu_actions: List[QtGui.QAction] = []
+        self.context_menu_actions: list[QtGui.QAction] = []
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         menu = QtWidgets.QMenu(self)
@@ -114,7 +113,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.clear()
         self.export_data.clear()
 
-    def dataBounds(self) -> Tuple[float, float, float, float]:
+    def dataBounds(self) -> tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
         bx = np.array([item.dataBounds(0) for item in items], dtype=float)
         by = np.array([item.dataBounds(1) for item in items], dtype=float)
@@ -174,7 +173,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
-    def dataForExport(self) -> Dict[str, np.ndarray]:
+    def dataForExport(self) -> dict[str, np.ndarray]:
         return self.export_data
 
     def readyForExport(self) -> bool:
@@ -217,9 +216,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 #     ):
 #         self.minimum_plot_height = minimum_plot_height
 #         self.layout = pyqtgraph.GraphicsLayout()
-#         self.plots: Dict[str, pyqtgraph.PlotItem] = {}
+#         self.plots: dict[str, pyqtgraph.PlotItem] = {}
 
-#         self.limits: Dict[str, float] = {}
+#         self.limits: dict[str, float] = {}
 
 #         super().__init__(parent=parent)
 
@@ -244,7 +243,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 #         self.layout.nextRow()
 #         self.resizeEvent(QtGui.QResizeEvent(QtCore.QSize(0, 0), QtCore.QSize(0, 0)))
 
-#     def dataBounds(self) -> Tuple[float, float, float, float]:
+#     def dataBounds(self) -> tuple[float, float, float, float]:
 #         items = [
 #             item
 #             for plot in self.plots.values()
@@ -317,7 +316,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 #         self.layout.clear()
 #         self.plots = {}
 
-#     def legends(self) -> List[pyqtgraph.LegendItem]:
+#     def legends(self) -> list[pyqtgraph.LegendItem]:
 #         return [plot.legend for plot in self.plots.values()]
 
 #     def zoomReset(self) -> None:

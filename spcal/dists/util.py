@@ -1,5 +1,4 @@
 from statistics import NormalDist
-from typing import Tuple
 
 import numpy as np
 
@@ -93,7 +92,7 @@ def simulate_compound_poisson(
 
 def sum_iid_lognormals(
     n: int | np.ndarray, mu: float, sigma: float, method: str = "FW"
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Sum of ``n`` identical independant log-normal distributions.
 
     The sum is approximated by another log-normal distribution, defined by

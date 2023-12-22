@@ -1,12 +1,11 @@
 """Agglomerative clustering."""
-from typing import Dict, Tuple
 
 import numpy as np
 
 from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclidean
 
 
-def prepare_data_for_clustering(data: np.ndarray | Dict[str, np.ndarray]) -> np.ndarray:
+def prepare_data_for_clustering(data: np.ndarray | dict[str, np.ndarray]) -> np.ndarray:
     """Prepare data by stacking into 2D array.
 
     Takes a dictionary or structured array and creates an NxM array, where M is the
@@ -48,7 +47,7 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
 
 def cluster_information(
     X: np.ndarray, T: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Get information about a clustering result.
 
     Clusters are sorted by size, largest to smallest.

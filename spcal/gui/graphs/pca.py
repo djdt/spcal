@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 import numpy as np
 import pyqtgraph
@@ -85,7 +84,7 @@ class PCAView(SinglePlotGraphicsView):
     def draw(
         self,
         X: np.ndarray,
-        feature_names: List[str] | None = None,
+        feature_names: list[str] | None = None,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
         arrow_pen: QtGui.QPen | None = None,
@@ -129,7 +128,7 @@ class PCAView(SinglePlotGraphicsView):
         self.plot.setTitle(f"PCA: {np.sum(var) * 100.0:.1f} % explained variance")
 
     def colorScatter(
-        self, indicies: np.ndarray, colors: List[QtGui.QColor] | None = None
+        self, indicies: np.ndarray, colors: list[QtGui.QColor] | None = None
     ) -> None:
         if self.scatter is None:
             return

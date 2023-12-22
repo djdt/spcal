@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 from PySide6 import QtCore, QtWidgets
 
@@ -49,7 +48,7 @@ def get_open_spcal_path(
 
 def get_open_spcal_paths(
     parent: QtWidgets.QWidget, title: str = "Open Files"
-) -> List[Path]:
+) -> list[Path]:
     dir = QtCore.QSettings().value("RecentFiles/1/Path", None)
     dir = str(Path(dir).parent) if dir is not None else ""
 

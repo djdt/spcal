@@ -1,7 +1,7 @@
 """Helper class for SPCal limits and thresholding."""
 import logging
 from statistics import NormalDist
-from typing import Callable, Dict, Tuple
+from typing import Callable
 
 import bottleneck as bn
 import numpy as np
@@ -42,7 +42,7 @@ class SPCalLimit(object):
         mean_background: float | np.ndarray,
         detection_threshold: float | np.ndarray,
         name: str,
-        params: Dict[str, float],
+        params: dict[str, float],
     ):
         self.mean_signal = mean_background
         self.detection_threshold = detection_threshold
@@ -291,7 +291,7 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 0.001,
         formula: str = "formula c",
-        formula_kws: Dict[str, float] | None = None,
+        formula_kws: dict[str, float] | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -313,7 +313,7 @@ class SPCalLimit(object):
         formula = formula.lower()
         if formula == "currie":
             poisson_fn: Callable[
-                [...], Tuple[float | np.ndarray, float | np.ndarray]
+                [...], tuple[float | np.ndarray, float | np.ndarray]
             ] = currie
         elif formula == "formula a":
             poisson_fn = formula_a

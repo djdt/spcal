@@ -3,7 +3,6 @@ import logging
 import sys
 from importlib.resources import files
 from pathlib import Path
-from typing import List
 
 import numpy
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -20,7 +19,7 @@ logger = logging.getLogger("spcal")
 logger.setLevel(logging.INFO)
 
 
-def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     def existing_file(file: str) -> Path:
         path = Path(file)
         if not path.exists():
@@ -52,7 +51,7 @@ def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     return args
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     app = QtWidgets.QApplication(args.qtargs)

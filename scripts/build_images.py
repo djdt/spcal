@@ -2,7 +2,6 @@ import argparse
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List
 
 import sympy
 from PIL import Image
@@ -28,7 +27,7 @@ stapleton = (
 )
 
 
-def create_formula_images(path: Path) -> List[Path]:
+def create_formula_images(path: Path) -> list[Path]:
     paths = []
     for formula, name in zip(
         [currie, formula_a, formula_c, stapleton],
@@ -45,7 +44,7 @@ def create_formula_images(path: Path) -> List[Path]:
     return paths
 
 
-def write_qrc(qrc: Path, images: List[Path]):
+def write_qrc(qrc: Path, images: list[Path]):
     with qrc.open("w") as fp:
         fp.write('<RCC version="1.0">\n')
         fp.write('<qresource prefix="img/">\n')

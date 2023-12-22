@@ -1,4 +1,4 @@
-from typing import Dict, Generator, Tuple
+from typing import Generator
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -41,7 +41,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.resize(300, 120)
 
         self.regex = QtCore.QRegularExpression("([A-Z][a-z]?)([0-9\\.]*)")
-        self.ratios: Dict[str, float] = {}
+        self.ratios: dict[str, float] = {}
         self.mw = 0.0
 
         self.lineedit_formula = ValidColorLineEdit(formula)
@@ -74,7 +74,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.completeChanged()
 
     def accept(self) -> None:
-        # Dict order messed up during signal, send as list of tuples
+        # dict order messed up during signal, send as list of tuples
         ratios = [(k, v) for k, v in self.ratios.items()]
         self.ratiosSelected.emit(ratios)
         self.molarMassSelected.emit(self.mw)
@@ -101,7 +101,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
             self.ratios[element] = self.ratios[element] / self.mw
         self.ratiosChanged.emit()
 
-    def searchFormula(self) -> Generator[Tuple[str, float], None, None]:
+    def searchFormula(self) -> Generator[tuple[str, float], None, None]:
         iter = self.regex.globalMatch(self.lineedit_formula.text())
         while iter.hasNext():
             match = iter.next()

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 from PySide6 import QtCore
@@ -17,9 +17,9 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
     def __init__(
         self,
         array: np.ndarray,
-        fill_values: Dict[str, Any] | None = None,
-        column_formats: Dict[str, str] | None = None,
-        column_flags: Dict[str, QtCore.Qt.ItemFlag] | None = None,
+        fill_values: dict[str, Any] | None = None,
+        column_formats: dict[str, str] | None = None,
+        column_flags: dict[str, QtCore.Qt.ItemFlag] | None = None,
         parent: QtCore.QObject | None = None,
     ):
         assert array.ndim == 1
@@ -119,7 +119,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
 
 class SearchColumnsProxyModel(QtCore.QSortFilterProxyModel):
-    def __init__(self, columns: List[int], parent: QtCore.QObject | None = None):
+    def __init__(self, columns: list[int], parent: QtCore.QObject | None = None):
         super().__init__(parent)
         self._search_string = ""
         self.columns = columns

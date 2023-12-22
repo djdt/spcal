@@ -2,7 +2,6 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List
 
 import h5py
 import numpy as np
@@ -239,15 +238,15 @@ class TextImportDialog(_ImportDialogBase):
             delimiter = "\t"
         return delimiter
 
-    def ignoreColumns(self) -> List[int]:
+    def ignoreColumns(self) -> list[int]:
         return [int(i) - 1 for i in self.le_ignore_columns.text().split(";") if i != ""]
 
-    def useColumns(self) -> List[int]:
+    def useColumns(self) -> list[int]:
         return [
             c for c in range(self.table.columnCount()) if c not in self.ignoreColumns()
         ]
 
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         names = []
         for c in self.useColumns():
             item = self.table.item(self.spinbox_first_line.value() - 1, c)
@@ -417,7 +416,7 @@ class NuImportDialog(_ImportDialogBase):
         self.running = False
 
         self.threadpool = QtCore.QThreadPool()
-        self.results: List[np.ndarray] = []
+        self.results: list[np.ndarray] = []
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -510,7 +509,7 @@ class NuImportDialog(_ImportDialogBase):
         isotopes = isotopes[isotopes["Preferred"] > 0]  # limit to best isotopes
         self.table.setSelectedIsotopes(isotopes)
 
-    def segmentDelays(self) -> Dict[int, float]:
+    def segmentDelays(self) -> dict[int, float]:
         return {
             s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
         }

@@ -1,4 +1,3 @@
-from typing import List
 
 import numpy as np
 from pytestqt.qtbot import QtBot
@@ -35,7 +34,7 @@ def test_filter_dialog_empty(qtbot: QtBot):
     dlg.cluster_list.itemWidget(dlg.cluster_list.item(0)).index.setValue(10)
 
     def check_filters(
-        filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
+        filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
     ) -> bool:
         if len(filters) != 1:
             return False
@@ -75,7 +74,7 @@ def test_filter_dialog_filters(qtbot: QtBot):
     # Remove the or
     dlg.list.itemWidget(dlg.list.item(2)).close()
 
-    def check_filters(filters: List[List[Filter]], cluster_filters: List) -> bool:
+    def check_filters(filters: list[list[Filter]], cluster_filters: list) -> bool:
         if len(filters) != 1:
             return False
         if len(filters[0]) != 3:

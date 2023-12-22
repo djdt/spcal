@@ -1,4 +1,3 @@
-from typing import List
 
 import numpy as np
 import pyqtgraph
@@ -71,7 +70,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
         self.hovered_idx = -1
 
     @property
-    def paths(self) -> List[QtGui.QPainterPath]:
+    def paths(self) -> list[QtGui.QPainterPath]:
         raise NotImplementedError
 
     def setHoveredIdx(self, idx: int) -> None:
@@ -140,10 +139,10 @@ class BarChart(HoverableChartItem):
         self,
         height: float,
         width: float,
-        values: List[float],
-        brushes: List[QtGui.QBrush],
+        values: list[float],
+        brushes: list[QtGui.QBrush],
         pen: QtGui.QPen | None = None,
-        labels: List[str] | None = None,
+        labels: list[str] | None = None,
         # label_format: str = "{:.4g}",
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
@@ -160,9 +159,9 @@ class BarChart(HoverableChartItem):
         self.height = height
         self.width = width
         self.values = values
-        self._paths: List[QtGui.QPainterPath] = []
+        self._paths: list[QtGui.QPainterPath] = []
 
-        self.labels: List[pyqtgraph.TextItem] = []
+        self.labels: list[pyqtgraph.TextItem] = []
         # if labels is not None:
         #     assert len(labels) == len(values)
         #     angle = 0.0
@@ -171,7 +170,7 @@ class BarChart(HoverableChartItem):
         # self.label_format = label_format
 
     @property
-    def paths(self) -> List[QtGui.QPainterPath]:
+    def paths(self) -> list[QtGui.QPainterPath]:
         if len(self._paths) == 0:
             rect = self.boundingRect()
             total = np.sum(self.values)
@@ -198,10 +197,10 @@ class PieChart(HoverableChartItem):
     def __init__(
         self,
         radius: float,
-        values: List[float],
-        brushes: List[QtGui.QBrush],
+        values: list[float],
+        brushes: list[QtGui.QBrush],
         pen: QtGui.QPen | None = None,
-        labels: List[str] | None = None,
+        labels: list[str] | None = None,
         # label_format: str = "{:.4g}",
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
@@ -217,9 +216,9 @@ class PieChart(HoverableChartItem):
 
         self.radius = radius
         self.values = values
-        self._paths: List[QtGui.QPainterPath] = []
+        self._paths: list[QtGui.QPainterPath] = []
 
-        self.labels: List[pyqtgraph.TextItem] = []
+        self.labels: list[pyqtgraph.TextItem] = []
         # if labels is not None:
         #     assert len(labels) == len(values)
         #     angle = 0.0
@@ -228,7 +227,7 @@ class PieChart(HoverableChartItem):
         # self.label_format = label_format
 
     @property
-    def paths(self) -> List[QtGui.QPainterPath]:
+    def paths(self) -> list[QtGui.QPainterPath]:
         if len(self._paths) == 0:
             rect = self.boundingRect()
             total = np.sum(self.values)

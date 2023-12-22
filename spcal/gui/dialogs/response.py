@@ -14,7 +14,7 @@ from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spc
 from spcal.gui.models import NumpyRecArrayTableModel
 from spcal.siunits import mass_concentration_units
 
-# from typing import Tuple
+# from typing import tuple
 
 
 
@@ -234,7 +234,7 @@ class ResponseDialog(QtWidgets.QDialog):
     #     if file == "":
     #         return
 
-    #     names: Tuple[str, ...] = self.responses.dtype.names or tuple()
+    #     names: tuple[str, ...] = self.responses.dtype.names or tuple()
     #     factor = mass_concentration_units[self.combo_unit.currentText()]
 
     #     with open(file, "w") as fp:

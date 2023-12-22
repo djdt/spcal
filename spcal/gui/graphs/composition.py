@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -20,16 +19,16 @@ class CompositionView(SinglePlotGraphicsView):
         self.xaxis.hide()
         self.yaxis.hide()
 
-        self.pies: List[PieChart] = []
+        self.pies: list[PieChart] = []
 
     def draw(
         self,
-        data: Dict[str, np.ndarray],
+        data: dict[str, np.ndarray],
         T: np.ndarray,
         min_size: float | str = "5%",
         mode: str = "pie",
         pen: QtGui.QPen | None = None,
-        brushes: List[QtGui.QBrush] | None = None,
+        brushes: list[QtGui.QBrush] | None = None,
     ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)

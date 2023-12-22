@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict, Tuple
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -17,8 +16,8 @@ class ExportDialog(QtWidgets.QDialog):
     def __init__(
         self,
         path: str | Path,
-        results: Dict[str, SPCalResult],
-        units: Dict[str, Tuple[str, float]] | None = None,
+        results: dict[str, SPCalResult],
+        units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)

@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Set
+from typing import Set
 
 
 def collect_icons(path: Path) -> Set[str]:
@@ -17,7 +17,7 @@ def collect_icons(path: Path) -> Set[str]:
     return icons
 
 
-def write_index_theme(path: Path, sizes: List[int]):
+def write_index_theme(path: Path, sizes: list[int]):
     directories = [f"{size}x{size}" for size in sizes]
     directories.extend([dir + "@2" for dir in directories])
     with path.open("w") as fp:
@@ -33,8 +33,8 @@ def write_qrc(
     qrc: Path,
     index: Path,
     icons: Path,
-    icon_names: List[str],
-    sizes: List[int],
+    icon_names: list[str],
+    sizes: list[int],
 ):
     with qrc.open("w") as fp:
         fp.write('<RCC version="1.0">\n')

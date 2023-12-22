@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -41,14 +40,14 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.import_options: dict = {}
-        self.calculated_elements: Dict[str, str] = {}
+        self.calculated_elements: dict[str, str] = {}
 
         self.responses = np.array([])
         self.events = np.array([])
         self.detections = np.array([])
         self.labels = np.array([])
         self.regions = np.array([])
-        self.limits: Dict[str, SPCalLimit] = {}
+        self.limits: dict[str, SPCalLimit] = {}
 
         self.draw_mode = "overlay"
 
@@ -60,7 +59,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.graph.requestPeakProperties.connect(self.dialogDataProperties)
-        self.last_region: Tuple[int, int] | None = None
+        self.last_region: tuple[int, int] | None = None
 
         self.io = io_stack
         self.io.nameChanged.connect(self.updateGraphsForName)
@@ -142,25 +141,25 @@ class InputWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     @property
-    def names(self) -> Tuple[str, ...]:
+    def names(self) -> tuple[str, ...]:
         if self.responses.dtype.names is None:
             return tuple()
         else:
             return self.responses.dtype.names
 
     @property
-    def detection_names(self) -> Tuple[str, ...]:
+    def detection_names(self) -> tuple[str, ...]:
         if self.detections.dtype.names is None:
             return tuple()
         else:
             return self.detections.dtype.names
 
     @property
-    def enabled_names(self) -> List[str]:
+    def enabled_names(self) -> list[str]:
         return self.io.enabledNames()
 
     @property
-    def draw_names(self) -> Tuple[str, ...]:
+    def draw_names(self) -> tuple[str, ...]:
         if self.draw_mode == "single":
             name = self.io.combo_name.currentText()
             if name != "<element>":
@@ -173,7 +172,7 @@ class InputWidget(QtWidgets.QWidget):
         scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
-    def updateNames(self, names: Dict[str, str]) -> None:
+    def updateNames(self, names: dict[str, str]) -> None:
         if self.responses.dtype.names is not None:
             self.responses = rfn.rename_fields(self.responses, names)
         if self.detections.dtype.names is not None:
@@ -308,7 +307,7 @@ class InputWidget(QtWidgets.QWidget):
         # plot = next(iter(self.graph.plots.values()))
         self.last_region = self.graph.region_start, self.graph.region_end
 
-    def trimRegion(self, name: str) -> Tuple[int, int]:
+    def trimRegion(self, name: str) -> tuple[int, int]:
         return self.graph.region_start, self.graph.region_end
 
     def trimmedResponse(self, name: str) -> np.ndarray:

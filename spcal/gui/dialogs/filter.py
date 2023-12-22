@@ -1,4 +1,3 @@
-from typing import List
 
 from PySide6 import QtCore, QtWidgets
 
@@ -20,7 +19,7 @@ class FilterItemWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        names: List[str],
+        names: list[str],
         filter: Filter | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -225,9 +224,9 @@ class FilterDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        names: List[str],
-        filters: List[List[Filter]],
-        cluster_filters: List[ClusterFilter],
+        names: list[str],
+        filters: list[list[Filter]],
+        cluster_filters: list[ClusterFilter],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)

@@ -1,4 +1,3 @@
-from typing import List
 
 from pyqtgraph import ViewBox
 from PySide6 import QtCore
@@ -24,7 +23,7 @@ class ViewBoxForceScaleAtZero(LimitBoundViewBox):
 
     def scaleBy(
         self,
-        s: List[float] | None = None,
+        s: list[float] | None = None,
         center: QtCore.QPointF | None = None,
         x: float | None = None,
         y: float | None = None,

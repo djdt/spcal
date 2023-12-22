@@ -1,6 +1,5 @@
 """Functions for screening data for interesting signals."""
 
-from typing import List
 
 import numpy as np
 
@@ -53,7 +52,7 @@ def screen_element(
 def non_target_screen(
     x: np.ndarray,
     minimum_count_ppm: float,
-    limits: List[SPCalLimit] | None = None,
+    limits: list[SPCalLimit] | None = None,
     limit_kws: dict | None = None,
     mode: str = "events",
 ) -> np.ndarray:

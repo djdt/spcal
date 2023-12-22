@@ -1,5 +1,4 @@
 """Functions for detecting and classifying particles."""
-from typing import Dict, Tuple
 
 import numpy as np
 
@@ -60,7 +59,7 @@ def accumulate_detections(
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
     integrate: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above ``limit_accumulation`` that contain at least one value
@@ -106,10 +105,10 @@ def accumulate_detections(
 
 
 def combine_detections(
-    sums: Dict[str, np.ndarray],
-    labels: Dict[str, np.ndarray],
-    regions: Dict[str, np.ndarray],
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    sums: dict[str, np.ndarray],
+    labels: dict[str, np.ndarray],
+    regions: dict[str, np.ndarray],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Computes the relative fraction of each element in each detection.
     Recalculates the start and end point of each peak from *all* element data.
     Regions that overlap will be combined into a single region. Fractions are calculated

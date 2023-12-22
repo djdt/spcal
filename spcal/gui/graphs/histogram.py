@@ -1,4 +1,3 @@
-from typing import Dict
 
 import numpy as np
 import pyqtgraph
@@ -31,7 +30,7 @@ class HistogramView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
         draw_fit: str | None = None,
-        draw_limits: Dict[str, float] | None = None,
+        draw_limits: dict[str, float] | None = None,
         fit_visible: bool = True,
         limits_visible: bool = True,
     ) -> None:

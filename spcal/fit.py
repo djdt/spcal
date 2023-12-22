@@ -1,5 +1,5 @@
 """Distribution fitting calculations."""
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 
@@ -111,7 +111,7 @@ def nelder_mead(
 #     return simplex
 
 
-def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
+def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
     """Fit a normal distribution to data.
 
     Args:
@@ -140,7 +140,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndar
     return normal_pdf(x * args[2], args[0], args[1]), gradient(x, y, *args), args
 
 
-def fit_lognormal(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float, np.ndarray]:
+def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
     """Fit a log-normal distribution to data.
 
     Args:

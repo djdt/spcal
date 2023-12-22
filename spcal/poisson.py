@@ -8,7 +8,6 @@ not the limit of detection. For an explaination of why, see the manual linked ab
 
 """
 from statistics import NormalDist
-from typing import Tuple
 
 import numpy as np
 
@@ -19,7 +18,7 @@ def currie(
     beta: float = 0.05,
     eta: float = 2.0,
     epsilon: float = 0.0,
-) -> Tuple[float | np.ndarray, float | np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for mean background 'ub'.
 
     For low backgrounds (ub < 10), 'epsilon' of 0.5 is recommended.
@@ -56,7 +55,7 @@ def formula_a(
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[float | np.ndarray, float | np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.48, 20.73.
@@ -94,7 +93,7 @@ def formula_b(
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[float | np.ndarray, float | np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     raise NotImplementedError(
         "formula_b is not reccomended and is therefore not implemented"
     )
@@ -106,7 +105,7 @@ def formula_c(
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[float | np.ndarray, float | np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.52, 20.73.
@@ -146,7 +145,7 @@ def stapleton_approximation(
     beta: float = 0.05,
     t_sample: float = 1.0,
     t_blank: float = 1.0,
-) -> Tuple[float | np.ndarray, float | np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
     Uses the equations from the MARLAP manual, 20.54, 20.74.

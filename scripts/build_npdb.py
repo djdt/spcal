@@ -1,13 +1,12 @@
 import argparse
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
 
 
 def make_elements(
-    path: str, delimiter: str = "\t", drop_names: List[str] = ["MP", "BP", "Ref"]
+    path: str, delimiter: str = "\t", drop_names: list[str] = ["MP", "BP", "Ref"]
 ):
     elements = np.genfromtxt(
         path,
@@ -30,7 +29,7 @@ def make_elements(
     return rfn.drop_fields(elements, drop_names)
 
 
-def make_isotopes(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
+def make_isotopes(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
     isotopes = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -49,7 +48,7 @@ def make_isotopes(path: str, delimiter: str = "\t", drop_names: List[str] = ["Re
     return rfn.drop_fields(isotopes, drop_names)
 
 
-def make_inorganic(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
+def make_inorganic(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
     inorganic = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -66,7 +65,7 @@ def make_inorganic(path: str, delimiter: str = "\t", drop_names: List[str] = ["R
     return rfn.drop_fields(inorganic, drop_names)
 
 
-def make_polymer(path: str, delimiter: str = "\t", drop_names: List[str] = ["Ref"]):
+def make_polymer(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
     polymer = np.genfromtxt(
         path,
         delimiter=delimiter,

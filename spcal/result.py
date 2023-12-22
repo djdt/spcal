@@ -1,7 +1,6 @@
 """Class for calculating results."""
 import logging
 from pathlib import Path
-from typing import Dict, List
 
 import numpy as np
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Filter(object):
-    operations: Dict[str, np.ufunc] = {
+    operations: dict[str, np.ufunc] = {
         ">": np.greater,
         "<": np.less,
         ">=": np.greater_equal,
@@ -33,7 +32,7 @@ class Filter(object):
     def ufunc(self) -> np.ufunc:
         return Filter.operations[self.operation]
 
-    def filter(self, results: Dict[str, "SPCalResult"]) -> np.ndarray | None:
+    def filter(self, results: dict[str, "SPCalResult"]) -> np.ndarray | None:
         if self.name not in results or self.unit not in results[self.name].detections:
             return None
         return self.ufunc(results[self.name].detections[self.unit], self.value)
@@ -44,7 +43,7 @@ class ClusterFilter(object):
         self.idx = idx
         self.unit = unit
 
-    def filter(self, cluster_results: Dict[str, np.ndarray]) -> np.ndarray | None:
+    def filter(self, cluster_results: dict[str, np.ndarray]) -> np.ndarray | None:
         if self.unit not in cluster_results:
             return None
         counts = np.bincount(cluster_results[self.unit])
@@ -76,7 +75,7 @@ class SPCalResult(object):
         detections: np.ndarray,
         labels: np.ndarray,
         limits: SPCalLimit,
-        inputs_kws: Dict[str, float] | None = None,
+        inputs_kws: dict[str, float] | None = None,
     ):
         if detections.size == 0:
             raise ValueError("SPCalResult: detections size is zero")
@@ -341,7 +340,7 @@ class SPCalResult(object):
 
 
 def filter_results(
-    filters: List[List[Filter]], results: Dict[str, SPCalResult]
+    filters: list[list[Filter]], results: dict[str, SPCalResult]
 ) -> np.ndarray:
     """Filter a dictionary of results.
 

@@ -1,4 +1,3 @@
-from typing import Tuple
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -22,7 +21,7 @@ class AdvancedPoissonOptions(QtWidgets.QWidget):
         layout.addWidget(label, 0, QtCore.Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
-    def options(self) -> Tuple[float, float]:
+    def options(self) -> tuple[float, float]:
         raise NotImplementedError
 
 
@@ -43,7 +42,7 @@ class CurrieOptions(AdvancedPoissonOptions):
 
         self.layout().insertLayout(0, layout)
 
-    def options(self) -> Tuple[float, float]:
+    def options(self) -> tuple[float, float]:
         return self.eta.value(), self.epsilon.value()
 
 
@@ -70,7 +69,7 @@ class MARLAPFormulaOptions(AdvancedPoissonOptions):
 
         self.layout().insertLayout(0, layout)
 
-    def options(self) -> Tuple[float, float]:
+    def options(self) -> tuple[float, float]:
         return self.t_sample.value(), self.t_blank.value()
 
 

@@ -3,7 +3,7 @@
 import datetime
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, TextIO, Tuple
+from typing import Any, Callable, Set, TextIO
 
 import numpy as np
 
@@ -25,7 +25,7 @@ def is_text_file(path: Path) -> bool:
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
-    columns: Tuple[int] | np.ndarray | None = None,
+    columns: tuple[int] | np.ndarray | None = None,
     first_line: int = 1,
     convert_cps: float | None = None,
     max_rows: int | None = None,
@@ -104,10 +104,10 @@ def read_single_particle_file(
 
 def export_single_particle_results(
     path: Path | str,
-    results: Dict[str, SPCalResult],
-    units_for_inputs: Dict[str, Tuple[str, float]] | None = None,
-    units_for_results: Dict[str, Tuple[str, float]] | None = None,
-    composition_kws: Dict[str, Any] | None = None,
+    results: dict[str, SPCalResult],
+    units_for_inputs: dict[str, tuple[str, float]] | None = None,
+    units_for_results: dict[str, tuple[str, float]] | None = None,
+    composition_kws: dict[str, Any] | None = None,
     output_inputs: bool = True,
     output_results: bool = True,
     output_compositions: bool = False,
@@ -149,7 +149,7 @@ def export_single_particle_results(
 
     def write_if_exists(
         fp: TextIO,
-        results: Dict[str, SPCalResult],
+        results: dict[str, SPCalResult],
         fn: Callable[[SPCalResult], Any],
         prefix: str = "",
         postfix: str = "",
@@ -170,7 +170,7 @@ def export_single_particle_results(
         fp.write(f"# Acquisition events,{first_result.events}\n")
         fp.write("#\n")
 
-    def write_inputs(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+    def write_inputs(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         # Todo: split into insutrment, sample, reference inputs?
         fp.write(f"# Options and inputs,{','.join(results.keys())}\n")
         # fp.write(f"# Dwelltime,{first_result.inputs['dwelltime']},s")
@@ -197,7 +197,7 @@ def export_single_particle_results(
 
         fp.write("#\n")
 
-    def write_detection_results(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         fp.write(f"# Detection results,{','.join(results.keys())}\n")
 
         write_if_exists(fp, results, lambda r: r.number, "# Particle number,")
@@ -279,7 +279,7 @@ def export_single_particle_results(
                 postfix="," + unit,
             )
 
-    def write_compositions(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+    def write_compositions(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 
         keys = ",".join(f"{key},error" for key in results.keys())
@@ -327,7 +327,7 @@ def export_single_particle_results(
                     + "\n"
                 )
 
-    def write_limits(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+    def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         fp.write(f"# Limits of detection,{','.join(results.keys())}\n")
 
         def limit_or_range(
@@ -361,7 +361,7 @@ def export_single_particle_results(
             )
         fp.write("#\n")
 
-    def write_arrays(fp: TextIO, results: Dict[str, SPCalResult]) -> None:
+    def write_arrays(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         fp.write("# Raw detection data\n")
         # Output data
         data = []

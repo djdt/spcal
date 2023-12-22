@@ -182,21 +182,21 @@ class BasicTable(QtWidgets.QTableWidget):
                 if item is not None and QtCore.Qt.ItemIsEditable & item.flags():
                     item.setText(text)
 
-    # def columnText(self, column: int) -> List[str]:
+    # def columnText(self, column: int) -> list[str]:
     #     return [self.item(row, column).text() for row in range(0, self.rowCount())]
 
-    # def rowText(self, row: int) -> List[str]:
+    # def rowText(self, row: int) -> list[str]:
     #     return [
     #         self.item(row, column).text() for column in range(0, self.columnCount())
     #     ]
 
-    # def setColumnText(self, column: int, text: List[str] | None = None) -> None:
+    # def setColumnText(self, column: int, text: list[str] | None = None) -> None:
     #     if text is not None:
     #         assert len(text) <= self.rowCount()
     #     for row in range(0, self.rowCount()):
     #         self.item(row, column).setText(text[row] if text is not None else "")
 
-    # def setRowText(self, row: int, text: List[str] | None = None) -> None:
+    # def setRowText(self, row: int, text: list[str] | None = None) -> None:
     #     if text is not None:
     #         assert len(text) <= self.columnCount()
     #     for column in range(0, self.columnCount()):

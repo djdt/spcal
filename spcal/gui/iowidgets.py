@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterator, List, Tuple, Type
+from typing import Iterator, Type
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -202,7 +202,7 @@ class SampleIOWidget(IOWidget):
         self.lod_label.setText("")
 
     def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
-        def set_mass_fraction(ratios: List[Tuple[str, float]]):
+        def set_mass_fraction(ratios: list[tuple[str, float]]):
             self.massfraction.setValue(ratios[0][1])
 
         dlg = MassFractionCalculatorDialog(parent=self)
@@ -477,7 +477,7 @@ class ResultIOWidget(IOWidget):
     def updateOutputs(
         self,
         values: np.ndarray,
-        units: Dict[str, float],
+        units: dict[str, float],
         lod: np.ndarray,
         count: float,
         count_percent: float,
@@ -578,23 +578,23 @@ class IOStack(QtWidgets.QWidget):
         for i in range(self.stack.count()):
             yield self.stack.widget(i)
 
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
 
-    def enabledNames(self) -> List[str]:
+    def enabledNames(self) -> list[str]:
         return [
             self.combo_name.itemText(i)
             for i in range(self.combo_name.count())
             if self.combo_name.model().item(i).isEnabled()
         ]
 
-    def widgets(self) -> List[IOWidget]:
+    def widgets(self) -> list[IOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
     def handleRequest(self, request: str, value: None = None) -> None:
         raise NotImplementedError
 
-    def repopulate(self, names: List[str]) -> None:
+    def repopulate(self, names: list[str]) -> None:
         self.blockSignals(True)
         old_widgets = {
             name: widget for name, widget in zip(self.names(), self.widgets())
@@ -635,7 +635,7 @@ class SampleIOStack(IOStack):
         if request == "ionic response":
             self.requestIonicResponseTool.emit()
 
-    def setResponses(self, responses: Dict[str, float]) -> None:
+    def setResponses(self, responses: dict[str, float]) -> None:
         for name, response in responses.items():
             if name in self:
                 self[name].response.setBaseValue(response)
@@ -681,14 +681,14 @@ class ReferenceIOStack(IOStack):
                 b.setCheckState(QtCore.Qt.CheckState.Unchecked)
         self.button_group_check_efficiency.blockSignals(False)
 
-    def repopulate(self, names: List[str]) -> None:
+    def repopulate(self, names: list[str]) -> None:
         super().repopulate(names)
         for name in names:
             self.button_group_check_efficiency.addButton(
                 self[name].check_use_efficiency_for_all
             )
 
-    def setResponses(self, responses: Dict[str, float]) -> None:
+    def setResponses(self, responses: dict[str, float]) -> None:
         for name, response in responses.items():
             if name in self:
                 self[name].response.setBaseValue(response)

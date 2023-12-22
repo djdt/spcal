@@ -1,4 +1,3 @@
-from typing import List
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -38,11 +37,11 @@ class CheckableComboBox(QtWidgets.QComboBox):
         )
         self.model().appendRow(item)
 
-    def addItems(self, texts: List[str]) -> None:
+    def addItems(self, texts: list[str]) -> None:
         for text in texts:
             self.addItem(text)
 
-    def checkedItems(self) -> List[str]:
+    def checkedItems(self) -> list[str]:
         checked = []
         for row in range(self.model().rowCount()):
             item = self.model().item(row)
@@ -50,7 +49,7 @@ class CheckableComboBox(QtWidgets.QComboBox):
                 checked.append(item.text())
         return checked
 
-    def setCheckedItems(self, items: List[str]) -> None:
+    def setCheckedItems(self, items: list[str]) -> None:
         for row in range(self.model().rowCount()):
             item = self.model().item(row)
             if item.text() in items:

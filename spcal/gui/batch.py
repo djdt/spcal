@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import h5py
 import numpy as np
@@ -31,19 +30,19 @@ def process_data(
     path: Path,
     data: np.ndarray,
     method: str,
-    inputs: Dict[str, Dict[str, float | None]],
-    filters: List[List[Filter]],
+    inputs: dict[str, dict[str, float | None]],
+    filters: list[list[Filter]],
     limit_method: str,
     acc_method: str,
-    limit_params: Dict[str, dict],
+    limit_params: dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
-) -> Dict[str, SPCalResult]:
+) -> dict[str, SPCalResult]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data)
 
     # === Calculate Limits ===
-    limits: Dict[str, SPCalLimit] = {}
+    limits: dict[str, SPCalLimit] = {}
     d, l, r = {}, {}, {}
     assert data.dtype.names is not None
     for name in data.dtype.names:
@@ -110,7 +109,7 @@ def process_text_file(
     path: Path,
     outpath: Path,
     import_options: dict,
-    trim: Tuple[int, int],
+    trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
 ) -> None:
@@ -137,7 +136,7 @@ def process_nu_file(
     path: Path,
     outpath: Path,
     import_options: dict,
-    trim: Tuple[int, int],
+    trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
 ) -> None:
@@ -168,7 +167,7 @@ def process_tofwerk_file(
     path: Path,
     outpath: Path,
     import_options: dict,
-    trim: Tuple[int, int],
+    trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
 ) -> None:
@@ -234,7 +233,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        files: List[str],
+        files: list[str],
         sample: SampleWidget,
         reference: ReferenceWidget,
         options: OptionsWidget,
@@ -403,7 +402,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         if dir != "":
             self.output_dir.setText(dir)
 
-    def outputsForFiles(self, files: List[Path]) -> List[Path]:
+    def outputsForFiles(self, files: list[Path]) -> list[Path]:
         outdir = self.output_dir.text()
 
         outputs = []
@@ -442,7 +441,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         method = self.options.efficiency_method.currentText()
 
-        inputs: Dict[str, Dict[str, float | None]] = {}
+        inputs: dict[str, dict[str, float | None]] = {}
 
         assert self.sample.responses.dtype.names is not None
         trim = self.sample.trimRegion(self.sample.responses.dtype.names[0])

@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -247,12 +246,12 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-        self.pkeys: List[int] = []
+        self.pkeys: list[int] = []
 
         if enabled_isotopes is None:
             enabled_isotopes = db["isotopes"]
 
-        self.buttons: Dict[str, PeriodicTableButton] = {}
+        self.buttons: dict[str, PeriodicTableButton] = {}
         for symbol in element_positions.keys():
             # Limit to chosen ones
             isotopes = db["isotopes"][db["isotopes"]["Symbol"] == symbol]
@@ -270,13 +269,13 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def enabledIsotopes(self) -> np.ndarray:
-        enabled: List[np.ndarray] = []
+        enabled: list[np.ndarray] = []
         for button in self.buttons.values():
             enabled.extend(button.enabledIsotopes())
         return np.stack(enabled)
 
     def selectedIsotopes(self) -> np.ndarray | None:
-        selected: List[np.ndarray] = []
+        selected: list[np.ndarray] = []
         for button in self.buttons.values():
             selected.extend(button.selectedIsotopes())
         if len(selected) == 0:

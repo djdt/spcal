@@ -1,5 +1,4 @@
 """Misc and helper calculation functions."""
-from typing import Tuple
 
 import numpy as np
 
@@ -136,7 +135,7 @@ def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> fl
 
 def pca(
     x: np.ndarray, trim_to_components: int = 2
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Perform a PCA on 'x', standard scales data.
 
     Args:
@@ -231,7 +230,7 @@ def weighted_rsq(x: np.ndarray, y: np.ndarray, w: np.ndarray | None = None) -> f
 
 def weighted_linreg(
     x: np.ndarray, y: np.ndarray, w: np.ndarray | None = None
-) -> Tuple[float, float, float, float]:
+) -> tuple[float, float, float, float]:
     """Weighted linear regression.
 
     Uses polyfit with sqrt(weights) for intercept and gradient.

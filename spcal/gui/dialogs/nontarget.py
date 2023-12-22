@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List
+from typing import Callable
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -38,7 +38,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         self.aborted = False
         self.running = False
         self.threadpool = QtCore.QThreadPool()
-        self.results: List[int] = []
+        self.results: list[int] = []
 
         self.screening_ppm = ValueWidget(
             screening_ppm, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=".1f"

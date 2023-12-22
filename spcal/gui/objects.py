@@ -1,4 +1,3 @@
-from typing import Tuple
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -91,7 +90,7 @@ class KeepMenuOpenFilter(QtCore.QObject):
 
 
 class DoubleOrEmptyValidator(QtGui.QDoubleValidator):
-    def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
+    def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
         if input == "":
             return (QtGui.QValidator.State.Acceptable, input, pos)
         return super().validate(input, pos)
@@ -126,7 +125,7 @@ class DoubleOrPercentValidator(QtGui.QDoubleValidator):
         self.percent_bottom = percent_bottom
         self.percent_top = percent_top
 
-    def validate(self, input: str, pos: int) -> Tuple[QtGui.QValidator.State, str, int]:
+    def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
         # Treat as percent
         if "%" in input:
             if not input.endswith("%") or input.count("%") > 1:

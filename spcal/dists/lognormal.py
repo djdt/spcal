@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 from spcal.calc import erf, erfinv
 
@@ -23,13 +21,13 @@ def shifted_pdf(
     return pdf(x - theta, mu, sigma)
 
 
-def moments(mu: float, sigma: float) -> Tuple[float, float]:
+def moments(mu: float, sigma: float) -> tuple[float, float]:
     ex = np.exp(mu + 0.5 * sigma * sigma)
     vx = ex * ex * (np.exp(sigma * sigma) - 1.0)
     return ex, vx
 
 
-def from_moments(ex: float, vx: float) -> Tuple[float, float]:
+def from_moments(ex: float, vx: float) -> tuple[float, float]:
     mu = np.log(ex / np.sqrt(1.0 + vx / (ex * ex)))
     sigma = np.sqrt(np.log(1.0 + vx / (ex * ex)))
     return mu, sigma

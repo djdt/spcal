@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 import pyqtgraph
@@ -27,15 +26,15 @@ class ParticleView(SinglePlotGraphicsView):
         )
         self.xaxis.setScale(xscale)
 
-        self.raw_signals: Dict[str, np.ndarray] = {}  # for export
+        self.raw_signals: dict[str, np.ndarray] = {}  # for export
 
         self.plot.setMouseEnabled(y=False)
         self.plot.setAutoVisible(y=True)
         self.plot.enableAutoRange(y=True)
         self.plot.setLimits(yMin=0.0)
 
-        self.legend_items: Dict[str, MultipleItemSampleProxy] = {}
-        self.limit_items: List[pyqtgraph.PlotCurveItem] = []
+        self.legend_items: dict[str, MultipleItemSampleProxy] = {}
+        self.limit_items: list[pyqtgraph.PlotCurveItem] = []
 
         region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
         region_pen.setCosmetic(True)
@@ -69,7 +68,7 @@ class ParticleView(SinglePlotGraphicsView):
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
 
-    def dataForExport(self) -> Dict[str, np.ndarray]:
+    def dataForExport(self) -> dict[str, np.ndarray]:
         start, end = self.region_start, self.region_end
         return {k: v[start:end] for k, v in self.export_data.items()}
 

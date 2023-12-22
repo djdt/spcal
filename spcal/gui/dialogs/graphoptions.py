@@ -1,4 +1,3 @@
-from typing import Dict
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -19,7 +18,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
     def __init__(
         self,
         fit: str | None,
-        bin_widths: Dict[str, float | None],
+        bin_widths: dict[str, float | None],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)

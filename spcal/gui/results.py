@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -60,10 +60,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.sample = sample
         self.reference = reference
 
-        self.filters: List[List[Filter]] = []
-        self.cluster_filters: List[ClusterFilter] = []
+        self.filters: list[list[Filter]] = []
+        self.cluster_filters: list[ClusterFilter] = []
         # Graph default options
-        self.graph_options: Dict[str, Any] = {
+        self.graph_options: dict[str, Any] = {
             "histogram": {
                 "mode": "overlay",
                 "fit": "log normal",
@@ -78,8 +78,8 @@ class ResultsWidget(QtWidgets.QWidget):
             "scatter": {"weighting": "none"},
         }
 
-        self.results: Dict[str, SPCalResult] = {}
-        self.clusters: Dict[str, np.ndarray] = {}
+        self.results: dict[str, SPCalResult] = {}
+        self.clusters: dict[str, np.ndarray] = {}
         self.update_required = True
 
         self.graph_toolbar = QtWidgets.QToolBar()
@@ -286,7 +286,7 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
-    def validResultsForMode(self, mode: str) -> Dict[str, np.ndarray] | None:
+    def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
         size = next(iter(self.results.values())).detections["signal"].size
         valid = np.zeros(size, dtype=bool)
         for result in self.results.values():
@@ -307,7 +307,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def colorForName(self, name: str) -> QtGui.QColor:
         return self.sample.colorForName(name)
 
-    def updateNames(self, names: Dict[str, str]) -> None:
+    def updateNames(self, names: dict[str, str]) -> None:
         for old, new in names.items():
             if old == new:
                 continue
@@ -329,7 +329,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.redraw()
 
     def setFilters(
-        self, filters: List[List[Filter]], cluster_filters: List[ClusterFilter]
+        self, filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
     ) -> None:
         self.filters = filters
         self.cluster_filters = cluster_filters
@@ -352,7 +352,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["mode"] = mode
         self.drawGraphHist()
 
-    def setHistBinWidths(self, widths: Dict[str, float | None]) -> None:
+    def setHistBinWidths(self, widths: dict[str, float | None]) -> None:
         self.graph_options["histogram"]["bin widths"].update(widths)
         self.drawGraphHist()
 
@@ -844,7 +844,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if nresults == 1:  # Switch to histogram
             self.action_graph_histogram_single.trigger()
 
-    def bestUnitsForResults(self) -> Dict[str, Tuple[str, float]]:
+    def bestUnitsForResults(self) -> dict[str, tuple[str, float]]:
         best_units = {
             # "signal": ("counts", 1.0),
             "mass": ("kg", 1.0),

@@ -1,4 +1,3 @@
-from typing import List
 
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -32,7 +31,7 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         self,
         histogram: pyqtgraph.PlotDataItem,
         fit: pyqtgraph.PlotCurveItem | None = None,
-        limits: List[pyqtgraph.InfiniteLine] | None = None,
+        limits: list[pyqtgraph.InfiniteLine] | None = None,
     ):
         super().__init__(histogram)
         self.item_fit = fit
@@ -195,7 +194,7 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
     def __init__(
         self,
         brush: QtGui.QBrush | QtGui.QColor,
-        items: List[pyqtgraph.PlotDataItem] | None = None,
+        items: list[pyqtgraph.PlotDataItem] | None = None,
     ):
         if isinstance(brush, QtGui.QColor):
             brush = QtGui.QBrush(brush)

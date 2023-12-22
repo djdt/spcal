@@ -1,4 +1,3 @@
-from typing import Tuple
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -31,7 +30,7 @@ class RangeSlider(QtWidgets.QSlider):
         else:
             self.setValue2(value)
 
-    def values(self) -> Tuple[int, int]:
+    def values(self) -> tuple[int, int]:
         return self.value(), self.value2()
 
     def setValues(self, left: int, right: int) -> None:

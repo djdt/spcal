@@ -4,7 +4,7 @@ import json
 import logging
 from math import gamma
 from pathlib import Path
-from typing import BinaryIO, Dict, Generator, List, Tuple
+from typing import BinaryIO, Generator
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
@@ -33,12 +33,12 @@ def is_nu_directory(path: Path) -> bool:
 
 
 def blank_nu_signal_data(
-    autob_events: List[np.ndarray],
+    autob_events: list[np.ndarray],
     signals: np.ndarray,
     masses: np.ndarray,
     num_acc: int,
-    start_coef: Tuple[float, float],
-    end_coef: Tuple[float, float],
+    start_coef: tuple[float, float],
+    end_coef: tuple[float, float],
 ) -> np.ndarray:
     """Apply the auto-blanking to the integrated data.
     There must be one cycle / segment and no missing acquisitions / data!
@@ -84,10 +84,10 @@ def blank_nu_signal_data(
 
 def collect_nu_autob_data(
     root: Path,
-    index: List[dict],
+    index: list[dict],
     cyc_number: int | None = None,
     seg_number: int | None = None,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     autobs = []
     for idx in index:
         autob_path = root.joinpath(f"{idx['FileNum']}.autob")
@@ -112,10 +112,10 @@ def collect_nu_autob_data(
 
 def collect_nu_integ_data(
     root: Path,
-    index: List[dict],
+    index: list[dict],
     cyc_number: int | None = None,
     seg_number: int | None = None,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     integs = []
     for idx in index:
         integ_path = root.joinpath(f"{idx['FileNum']}.integ")
@@ -155,7 +155,7 @@ def get_dwelltime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
-def get_signals_from_nu_data(integs: List[np.ndarray], num_acc: int) -> np.ndarray:
+def get_signals_from_nu_data(integs: list[np.ndarray], num_acc: int) -> np.ndarray:
     """Converts signals from integ data to counts.
 
     Preserves run length when missing data is present.
@@ -181,7 +181,7 @@ def get_signals_from_nu_data(integs: List[np.ndarray], num_acc: int) -> np.ndarr
 
 
 def get_masses_from_nu_data(
-    integ: np.ndarray, cal_coef: Tuple[float, float], segment_delays: Dict[int, float]
+    integ: np.ndarray, cal_coef: tuple[float, float], segment_delays: dict[int, float]
 ) -> np.ndarray:
     """Converts Nu peak centers into masses.
 
@@ -209,7 +209,7 @@ def read_nu_autob_binary(
     first_cyc_number: int | None = None,
     first_seg_number: int | None = None,
     first_acq_number: int | None = None,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     def autob_dtype(size: int) -> np.dtype:
         return np.dtype(
             [
@@ -289,7 +289,7 @@ def read_nu_directory(
     cycle: int | None = None,
     segment: int | None = None,
     raw: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, dict]:
+) -> tuple[np.ndarray, np.ndarray, dict]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
@@ -365,7 +365,7 @@ def read_nu_directory(
 def select_nu_signals(
     masses: np.ndarray,
     signals: np.ndarray,
-    selected_masses: Dict[str, float],
+    selected_masses: dict[str, float],
     max_mass_diff: float = 0.1,
 ) -> np.ndarray:
     """Reduces signals to the isotopes in selected_masses.

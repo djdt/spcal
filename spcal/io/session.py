@@ -2,7 +2,6 @@
 
 
 from pathlib import Path
-from typing import List
 
 import h5py
 import numpy as np
@@ -50,7 +49,7 @@ def restoreOptions(options: dict) -> dict:
     return unflatten_dict(options)
 
 
-def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
+def sanitiseFilters(filters: list[list[Filter]]) -> np.ndarray:
     dtype = np.dtype(
         [
             ("name", "S64"),
@@ -71,9 +70,9 @@ def sanitiseFilters(filters: List[List[Filter]]) -> np.ndarray:
     return data
 
 
-def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
-    filters: List[List[Filter]] = []
-    group: List[Filter] = []
+def restoreFilters(data: np.ndarray) -> list[list[Filter]]:
+    filters: list[list[Filter]] = []
+    group: list[Filter] = []
     for x in data:
         if x["id"] == 0:
             if len(group) > 0:
@@ -93,15 +92,15 @@ def restoreFilters(data: np.ndarray) -> List[List[Filter]]:
     return filters
 
 
-def sanitiseClusterFilters(filters: List[ClusterFilter]) -> np.ndarray:
+def sanitiseClusterFilters(filters: list[ClusterFilter]) -> np.ndarray:
     data = np.empty(len(filters), dtype=[("unit", "S64"), ("index", int)])
     data["unit"] = [filter.unit for filter in filters]
     data["index"] = [filter.idx for filter in filters]
     return data
 
 
-def restoreClusterFilters(data: np.ndarray) -> List[ClusterFilter]:
-    filters: List[ClusterFilter] = []
+def restoreClusterFilters(data: np.ndarray) -> list[ClusterFilter]:
+    filters: list[ClusterFilter] = []
     for x in data:
         filters.append(ClusterFilter(unit=x["unit"].decode(), idx=x["index"]))
     return filters
