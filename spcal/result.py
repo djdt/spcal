@@ -84,7 +84,9 @@ class SPCalResult(object):
 
         self.responses = responses
         self.detections = {"signal": detections}
-        self.indicies = np.flatnonzero(detections)
+        self.indicies = np.flatnonzero(
+            np.logical_and(detections > 0, np.isfinite(detections))
+        )
 
         self.background = np.nanmean(responses[labels == 0])
         self.background_error = np.nanstd(responses[labels == 0])

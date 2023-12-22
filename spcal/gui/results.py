@@ -7,7 +7,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.cluster import (
     agglomerative_cluster,
-    cluster_information,
     prepare_data_for_clustering,
 )
 from spcal.gui.dialogs.export import ExportDialog
@@ -17,7 +16,6 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     ScatterOptionsDialog,
 )
-from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
