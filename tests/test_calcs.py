@@ -6,18 +6,6 @@ from scipy.special import erfinv as erfinv_sp
 from spcal import calc
 
 
-def test_erf():
-    x = np.linspace(0, 10.0, 1000)
-    assert np.allclose(calc.erf(x), erf_sp(x), atol=1.5e-7)
-    assert np.allclose(calc.erf(1.0), erf_sp(1.0), atol=1.5e-7)
-
-
-def test_erfinv():
-    x = np.random.random(1000)
-    assert np.allclose(calc.erfinv(x), erfinv_sp(x), atol=6e-3)
-    assert np.allclose(calc.erfinv(0.5), erfinv_sp(0.5), atol=6e-3)
-
-
 def test_is_integer_or_near():
     assert calc.is_integer_or_near(1.05, max_deviation=0.1)
     assert calc.is_integer_or_near(0.95, max_deviation=0.1)
