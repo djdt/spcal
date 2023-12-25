@@ -8,7 +8,7 @@ from spcal.dists import lognormal, normal, poisson, util
 
 # Test approximations are within their defined maximum errors
 def test_erf():
-    x = np.logspace(-16, 16, 1000)
+    x = np.linspace(-10.0, 10.0, 1000)
     assert np.allclose(normal.erf(x), erf_sp(x), atol=1.5e-7)
     assert np.isclose(normal.erf(0.0), erf_sp(0.0), atol=1.5e-7)
 
@@ -19,6 +19,24 @@ def test_erfinv():
     assert np.isclose(normal.erfinv(0.5), erfinv_sp(0.5), atol=1.5e-9 / np.sqrt(2))
 
 
+def test_standard_normal():
+    q = np.linspace(0.0, 1.0, 1000)
+    assert np.allclose(
+        normal.standard_quantile(q), stats.norm.ppf(q, loc=0.0, scale=1.0), atol=1.5e-9
+    )
+
+
+def test_dist_normal():
+    x = np.linspace(-100, 100, 3)
+    mu = 5.0
+    sigma = 2.0
+
+    assert np.allclose(
+        normal.cdf(x, mu, sigma), stats.norm.cdf(x, loc=mu, scale=sigma), atol=1e-3
+    )
+    assert np.allclose(normal.pdf(x, mu, sigma), stats.norm.pdf(x, loc=mu, scale=sigma))
+
+
 def test_dist_lognormal():
     x = np.linspace(0.001, 100, 100)
     mu = np.log(5.0)
@@ -27,7 +45,7 @@ def test_dist_lognormal():
     assert np.allclose(  # low accuracy at very low cdf values due to erf implementation
         lognormal.cdf(x, mu, sigma),
         stats.lognorm.cdf(x, sigma, scale=np.exp(mu)),
-        atol=0.001,
+        atol=1e-3,
     )
     assert np.allclose(
         lognormal.pdf(x, mu, sigma), stats.lognorm.pdf(x, sigma, scale=np.exp(mu))
@@ -43,5 +61,4 @@ def test_dist_lognormal():
     assert np.allclose(
         lognormal.quantile(q, mu, sigma),
         stats.lognorm.ppf(q, sigma, scale=np.exp(mu)),
-        atol=0.001,
     )

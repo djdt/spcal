@@ -1,7 +1,5 @@
 import numpy as np
 import pytest
-from scipy.special import erf as erf_sp
-from scipy.special import erfinv as erfinv_sp
 
 from spcal import calc
 

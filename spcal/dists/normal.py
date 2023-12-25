@@ -25,11 +25,11 @@ def erf(x: float | np.ndarray) -> float | np.ndarray:
             functions with formulas, graphs, and mathematical tables.
             Vol. 55. US Government printing office, 1970.
     """
-    t = 1.0 / (1.0 + 0.3275911 * x)
+    t = 1.0 / (1.0 + 0.3275911 * np.abs(x))
     a = np.array([0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429])
     p = np.array([[1, 2, 3, 4, 5]]).T
     e = 1.0 - np.sum(a * np.power(t, p).T, axis=1) * np.exp(-(x**2))
-    return np.clip(e, -1.0, 1.0)
+    return np.clip(e, -1.0, 1.0) * np.sign(x)
 
 
 def erfinv(x: float | np.ndarray) -> float | np.ndarray:
@@ -43,10 +43,10 @@ def erfinv(x: float | np.ndarray) -> float | np.ndarray:
     Returns:
         inverse error
     """
-    return quantile((x + 1.0) / 2.0) / np.sqrt(2.0)
+    return standard_quantile((x + 1.0) / 2.0) / np.sqrt(2.0)
 
 
-def quantile(p: float | np.ndarray) -> float | np.ndarray:
+def standard_quantile(p: float | np.ndarray) -> float | np.ndarray:
     """Approximation of the standard normal quantile.
 
     The maximum error is 1.5e-9 [2]
