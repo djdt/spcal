@@ -72,13 +72,16 @@ def test_dist_poisson():
 
 
 def test_compound_poisson_lognormal_quantile():
-    lam, sigma = 1.0, 0.47
+    sigma = 0.47
     x = np.random.lognormal(np.log(1.0) - 0.5 * sigma**2, sigma=sigma, size=1000)
-    sim = util.simulate_compound_poisson(lam, x, size=100000)
 
-    for q in [0.9, 0.95, 0.98, 0.99]:  # Low quantile due to sample size
-        a = np.quantile(sim, q)
-        b = util.compound_poisson_lognormal_quantile(
-            q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
-        )
-        assert np.isclose(a, b, rtol=0.05, atol=0)
+    lams = [1, 5, 10]
+    qs = np.geomspace(0.9, 1e-4, 10)
+    for lam in lams:
+        sim = util.simulate_compound_poisson(lam, x, size=100000)
+        for q in qs:
+            a = np.quantile(sim, q)
+            b = util.compound_poisson_lognormal_quantile(
+                q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
+            )
+            assert np.isclose(a, b, rtol=0.05, atol=0.1)
