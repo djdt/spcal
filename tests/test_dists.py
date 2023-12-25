@@ -38,14 +38,14 @@ def test_dist_normal():
 
 
 def test_dist_lognormal():
-    x = np.linspace(0.001, 100, 100)
+    x = np.linspace(1e-6, 100, 1000)
     mu = np.log(5.0)
     sigma = 2.0
 
-    assert np.allclose(  # low accuracy at very low cdf values due to erf implementation
+    assert np.allclose(
         lognormal.cdf(x, mu, sigma),
         stats.lognorm.cdf(x, sigma, scale=np.exp(mu)),
-        atol=1e-3,
+        atol=1.5e-9,
     )
     assert np.allclose(
         lognormal.pdf(x, mu, sigma), stats.lognorm.pdf(x, sigma, scale=np.exp(mu))
@@ -62,3 +62,10 @@ def test_dist_lognormal():
         lognormal.quantile(q, mu, sigma),
         stats.lognorm.ppf(q, sigma, scale=np.exp(mu)),
     )
+
+
+def test_dist_poisson():
+    k = np.arange(0, 100, dtype=int)
+    for lam in np.linspace(1.0, 10.0, 10):
+        assert np.allclose(poisson.cdf(k, lam), stats.poisson.cdf(k, lam))
+        assert np.allclose(poisson.pdf(k, lam), stats.poisson.pmf(k, lam))
