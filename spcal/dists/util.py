@@ -53,7 +53,7 @@ def compound_poisson_lognormal_quantile(
     # The quantile of the last log-normal, must be lower than this
     upper_q = lognormal.quantile(q, mus[-1], sigmas[-1])
 
-    xs = np.linspace(0.0, upper_q, 10000)
+    xs = np.linspace(1e-9, upper_q, 10000)
     cdf = np.sum(
         [w * lognormal.cdf(xs, m, s) for w, m, s in zip(weights, mus, sigmas)],
         axis=0,
