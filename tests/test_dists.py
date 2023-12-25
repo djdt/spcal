@@ -69,3 +69,16 @@ def test_dist_poisson():
     for lam in np.linspace(1.0, 10.0, 10):
         assert np.allclose(poisson.cdf(k, lam), stats.poisson.cdf(k, lam))
         assert np.allclose(poisson.pdf(k, lam), stats.poisson.pmf(k, lam))
+
+
+def test_compound_poisson_lognormal_quantile():
+    lam, sigma = 1.0, 0.47
+    x = np.random.lognormal(np.log(1.0) - 0.5 * sigma**2, sigma=sigma, size=1000)
+    sim = util.simulate_compound_poisson(lam, x, size=100000)
+
+    for q in [0.9, 0.95, 0.98, 0.99]:  # Low quantile due to sample size
+        a = np.quantile(sim, q)
+        b = util.compound_poisson_lognormal_quantile(
+            q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
+        )
+        assert np.isclose(a, b, rtol=0.05, atol=0)
