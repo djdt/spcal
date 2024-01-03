@@ -39,7 +39,7 @@ def erf(x: float | np.ndarray) -> float | np.ndarray:
 def erfinv(x: float | np.ndarray) -> float | np.ndarray:
     """The inverse error function.
 
-    Maximum error is 1.5e-9 / sqrt(2).
+    Maximum error is ~ 1.061e-9.
 
     Args:
         x: input (-1 - 1)
@@ -53,7 +53,7 @@ def erfinv(x: float | np.ndarray) -> float | np.ndarray:
 def standard_quantile(p: float | np.ndarray) -> float | np.ndarray:
     """Approximation of the standard normal quantile.
 
-    The maximum error is 1.5e-9 [2]
+    The maximum error is 1.5e-9 [2].
 
     Args:
         p: quantile (0 - 1)
