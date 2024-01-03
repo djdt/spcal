@@ -114,10 +114,7 @@ def sum_iid_lognormals(
     """
     if method == "Fenton-Wilkinson":
         # Fenton-Wilkinson
-        sigma2_x = np.log(
-            (np.exp(sigma**2) - 1.0) * (n * np.exp(2.0 * mu)) / (n * np.exp(mu)) ** 2
-            + 1.0
-        )
+        sigma2_x = np.log((np.exp(sigma**2) - 1.0) / n + 1.0)
         mu_x = np.log(n * np.exp(mu)) + 0.5 * (sigma**2 - sigma2_x)
         return mu_x, np.sqrt(sigma2_x)
     else:
