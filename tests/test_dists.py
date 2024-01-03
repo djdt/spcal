@@ -66,7 +66,7 @@ def test_dist_lognormal():
 
 def test_dist_poisson():
     k = np.arange(0, 100, dtype=int)
-    for lam in np.linspace(1.0, 10.0, 10):
+    for lam in np.linspace(0.1, 10.0, 100):
         assert np.allclose(poisson.cdf(k, lam), stats.poisson.cdf(k, lam))
         assert np.allclose(poisson.pdf(k, lam), stats.poisson.pmf(k, lam))
 
