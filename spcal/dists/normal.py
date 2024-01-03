@@ -1,12 +1,16 @@
 import numpy as np
 
 
-def cdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
+def cdf(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
     return 0.5 * (1.0 + erf((x - mu) / (sigma * np.sqrt(2.0))))
 
 
-def pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
+def pdf(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
     return 1.0 / (sigma * np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
+
+
+def quantile(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
+    return mu + sigma * np.sqrt(2.0) * erfinv(2.0 * x - 1.0)
 
 
 def erf(x: float | np.ndarray) -> float | np.ndarray:
