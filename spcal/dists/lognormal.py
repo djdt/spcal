@@ -1,5 +1,6 @@
 import numpy as np
-from spcal.calc import erf, erfinv
+
+from spcal.dists.normal import erf, erfinv
 
 
 def cdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:

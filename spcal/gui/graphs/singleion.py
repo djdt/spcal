@@ -2,7 +2,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import erfinv
+from spcal.dists.normal import erfinv
 from spcal.fit import lognormal_pdf
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero

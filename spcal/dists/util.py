@@ -6,7 +6,7 @@ from spcal.dists import lognormal, poisson
 
 
 def compound_poisson_lognormal_quantile(
-    q: float, lam: float, mu: float, sigma: float
+    q: float, lam: float, mu: float, sigma: float, method: str = "Fenton-Wilkinson"
 ) -> float:
     """Appoximation of a compound Poisson-Log-normal quantile.
 
@@ -48,13 +48,13 @@ def compound_poisson_lognormal_quantile(
     weights /= weights.sum()
 
     # Get the sum LN for each value of the Poisson
-    mus, sigmas = sum_iid_lognormals(k, np.log(1.0) - 0.5 * sigma**2, sigma)
-
+    mus, sigmas = sum_iid_lognormals(
+        k, np.log(1.0) - 0.5 * sigma**2, sigma, method=method
+    )
     # The quantile of the last log-normal, must be lower than this
     upper_q = lognormal.quantile(q, mus[-1], sigmas[-1])
-    lower_q = k[np.argmax(cdf > q) - 1]
 
-    xs = np.linspace(lower_q, upper_q, 1000)
+    xs = np.linspace(1e-9, upper_q, 10000)
     cdf = np.sum(
         [w * lognormal.cdf(xs, m, s) for w, m, s in zip(weights, mus, sigmas)],
         axis=0,
@@ -91,8 +91,8 @@ def simulate_compound_poisson(
 
 
 def sum_iid_lognormals(
-    n: int | np.ndarray, mu: float, sigma: float, method: str = "FW"
-) -> tuple[np.ndarray, np.ndarray]:
+    n: int | np.ndarray, mu: float, sigma: float, method: str = "Fenton-Wilkinson"
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Sum of ``n`` identical independant log-normal distributions.
 
     The sum is approximated by another log-normal distribution, defined by
@@ -112,10 +112,10 @@ def sum_iid_lognormals(
             transmission systems," IRE Trans. Commun. Syst., vol. CS-8, pp. 57-67, 1960.
             https://doi.org/10.1109/TCOM.1960.1097606
     """
-    # Fenton-Wilkinson
-    sigma2_x = np.log(
-        (np.exp(sigma**2) - 1.0) * (n * np.exp(2.0 * mu)) / (n * np.exp(mu)) ** 2
-        + 1.0
-    )
-    mu_x = np.log(n * np.exp(mu)) + 0.5 * (sigma**2 - sigma2_x)
-    return mu_x, np.sqrt(sigma2_x)
+    if method == "Fenton-Wilkinson":
+        # Fenton-Wilkinson
+        sigma2_x = np.log((np.exp(sigma**2) - 1.0) / n + 1.0)
+        mu_x = np.log(n * np.exp(mu)) + 0.5 * (sigma**2 - sigma2_x)
+        return mu_x, np.sqrt(sigma2_x)
+    else:
+        raise NotImplementedError

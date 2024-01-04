@@ -3,53 +3,6 @@
 import numpy as np
 
 
-def erf(x: float | np.ndarray) -> float | np.ndarray:
-    """Error function approximation.
-
-    The maximum error is 1.5e-7 [1].
-
-    Args:
-        x: value
-
-    Returns:
-        approximation of error function
-
-    References:
-        .. [1] Abramowitz, Milton, and Irene A. Stegun, eds. Handbook of mathematical
-            functions with formulas, graphs, and mathematical tables.
-            Vol. 55. US Government printing office, 1970.
-    """
-    t = 1.0 / (1.0 + 0.3275911 * x)
-    a = np.array([0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429])
-    p = np.array([[1, 2, 3, 4, 5]]).T
-    e = 1.0 - np.sum(a * np.power(t, p).T, axis=1) * np.exp(-(x**2))
-    return np.clip(e, -1.0, 1.0)
-
-
-def erfinv(x: float | np.ndarray) -> float | np.ndarray:
-    """Inverse error function approximation.
-
-    The maximum error is 6e-3 [2].
-
-    Args:
-        x: value
-
-    Returns:
-        approximation of inverse error function
-
-    References:
-        .. [2] Winitzki, S. A handy approximation for the error function and its inverse
-            2008
-    """
-    sign = np.sign(x)
-    x = np.log((1.0 - x) * (1.0 + x))
-
-    tt1 = 2.0 / (np.pi * 0.147) + 0.5 * x
-    tt2 = 1.0 / 0.147 * x
-
-    return sign * np.sqrt(-tt1 + np.sqrt(tt1 * tt1 - tt2))
-
-
 def gamma(x: float) -> float:
     """Gamma function approximation.
 
