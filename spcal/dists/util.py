@@ -92,7 +92,7 @@ def simulate_compound_poisson(
 
 def sum_iid_lognormals(
     n: int | np.ndarray, mu: float, sigma: float, method: str = "Fenton-Wilkinson"
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Sum of ``n`` identical independant log-normal distributions.
 
     The sum is approximated by another log-normal distribution, defined by
