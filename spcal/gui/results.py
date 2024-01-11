@@ -415,8 +415,13 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
+        max_idx = np.amax([idx.max() for idx in self.clusters.values()])
         dlg = FilterDialog(
-            list(self.results.keys()), self.filters, self.cluster_filters, parent=self
+            list(self.results.keys()),
+            self.filters,
+            self.cluster_filters,
+            number_clusters=max_idx + 1,
+            parent=self,
         )
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
