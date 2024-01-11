@@ -24,8 +24,6 @@ from spcal.siunits import mass_units, molar_concentration_units, size_units, tim
 
 logger = logging.getLogger(__name__)
 
-# Todo: filters?
-
 
 def process_data(
     path: Path,
@@ -122,16 +120,12 @@ def process_data(
 
     # Filter clusters
     if len(cluster_filters) > 0:
-        filter_indicies = ClusterFilter.filter_clusters(
-            cluster_filters, clusters
-        )
+        filter_indicies = ClusterFilter.filter_clusters(cluster_filters, clusters)
 
         valid = SPCalResult.all_valid_indicies(list(results.values()))
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[
-                np.in1d(indicies, valid[filter_indicies])
-            ]
+            results[name].indicies = indicies[np.in1d(indicies, valid[filter_indicies])]
 
         for key in clusters.keys():
             clusters[key] = clusters[key][filter_indicies]
