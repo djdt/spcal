@@ -758,7 +758,6 @@ class ResultsWidget(QtWidgets.QWidget):
             ]
 
         for key in self.clusters.keys():
-            print(self.clusters[key])
             self.clusters[key] = self.clusters[key][filter_indicies]
 
     def updateResults(self) -> None:
