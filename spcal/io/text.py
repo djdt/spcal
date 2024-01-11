@@ -284,18 +284,17 @@ def export_single_particle_results(
         fp.write(f"# Peak composition,count,{keys}\n")
         # For filtered?
         # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
-        # for result in self.results.values():
-        #     valid[result.indicies] = True
 
-        # num_valid = np.count_nonzero(valid)
-        # if num_valid == 0:
-        #     return
+        size = next(iter(results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in results.values():
+            valid[result.indicies] = True
 
         for key in ["signal", "mass", "size", "cell_concentration"]:
-            data = {
-                name: r.detections[key] if key in r.detections else np.array([0])
-                for name, r in results.items()
-            }
+            data = {}
+            for name, result in results.items():
+                if key in result.detections:
+                    data[name] = result.detections[key][valid]
             if len(data) == 0 or key not in clusters:
                 continue
 
@@ -372,6 +371,12 @@ def export_single_particle_results(
         header_name = ""
         header_unit = ""
 
+        # Non-filtered indicies
+        size = next(iter(results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in results.values():
+            valid[result.indicies] = True
+
         for name, result in results.items():
             for key in ["signal", "mass", "size", "cell_concentration"]:
                 if key in result.detections:
@@ -388,13 +393,15 @@ def export_single_particle_results(
         data = np.stack(data, axis=1)
 
         if export_clusters:
+            idx = np.zeros(valid.size)
             for key in ["signal", "mass", "size", "cell_concentration"]:
                 if key in clusters:
                     header_name += ",cluster idx"
                     header_unit += f",{key}"
 
+
             idx = np.stack([idx + 1 for idx in clusters.values()], axis=1)  # +1
-            data = np.concatenate((data, idx), axis=1)
+            data = np.concatenate((valid, data), axis=1)
 
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
