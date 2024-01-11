@@ -285,10 +285,7 @@ def export_single_particle_results(
         # For filtered?
         # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
 
-        size = next(iter(results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in results.values():
-            valid[result.indicies] = True
+        valid = SPCalResult.all_valid_indicies(list(results.values()))
 
         for key in ["signal", "mass", "size", "cell_concentration"]:
             data = {}
@@ -372,10 +369,7 @@ def export_single_particle_results(
         header_unit = ""
 
         # Non-filtered indicies
-        size = next(iter(results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in results.values():
-            valid[result.indicies] = True
+        valid = SPCalResult.all_valid_indicies(list(results.values()))
 
         for name, result in results.items():
             for key in ["signal", "mass", "size", "cell_concentration"]:
@@ -406,7 +400,6 @@ def export_single_particle_results(
                 indicies.append(idx)
 
             indicies = np.stack(indicies, axis=1)
-
             data = np.concatenate((data, indicies), axis=1)
 
         fp.write(header_name[1:] + "\n")
