@@ -391,3 +391,12 @@ class SPCalResult(object):
                     molar_mass=self.inputs["molar_mass"],
                 )
             )
+
+    @staticmethod
+    def all_valid_indicies(results: list["SPCalResult"]) -> np.ndarray:
+        """Return the indices where any of the results are valid."""
+        size = results[0].detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in results:
+            valid[result.indicies] = True
+        return np.flatnonzero(valid)

@@ -100,21 +100,15 @@ def process_data(
 
     # Filter results
     if len(filters) > 0:
-        valid_indicies = Filter.filter_results(filters, results)
+        filter_indicies = Filter.filter_results(filters, results)
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
 
     # Cluster results
     clusters = {}
+    valid = SPCalResult.all_valid_indicies(list(results.values()))
     for key in ["signal", "mass", "size", "cell_concentration"]:
-        size = next(iter(results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in results.values():
-            valid[result.indicies] = True
-        if not np.any(valid):
-            continue
-
         rdata = {}
         for name, result in results.items():
             if key not in result.detections:
@@ -128,14 +122,19 @@ def process_data(
 
     # Filter clusters
     if len(cluster_filters) > 0:
-        valid_indicies = ClusterFilter.filter_clusters(cluster_filters, clusters)
+        filter_indicies = ClusterFilter.filter_clusters(
+            cluster_filters, clusters
+        )
 
+        valid = SPCalResult.all_valid_indicies(list(results.values()))
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            results[name].indicies = indicies[
+                np.in1d(indicies, valid[filter_indicies])
+            ]
 
         for key in clusters.keys():
-            clusters[key] = clusters[key][valid_indicies]
+            clusters[key] = clusters[key][filter_indicies]
 
     return results, clusters
 

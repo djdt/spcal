@@ -287,11 +287,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-        if not np.any(valid):
+        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
+        if valid.size == 0:
             return None
 
         key = self.mode_keys[mode]
@@ -739,26 +736,30 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.filters) == 0:
             return
 
-        valid_indicies = Filter.filter_results(self.filters, self.results)
+        filter_indicies = Filter.filter_results(self.filters, self.results)
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            self.results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
             return
 
-        valid_indicies = ClusterFilter.filter_clusters(
+        filter_indicies = ClusterFilter.filter_clusters(
             self.cluster_filters, self.clusters
         )
 
+        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            self.results[name].indicies = indicies[
+                np.in1d(indicies, valid[filter_indicies])
+            ]
 
         for key in self.clusters.keys():
-            self.clusters[key] = self.clusters[key][valid_indicies]
+            print(self.clusters[key])
+            self.clusters[key] = self.clusters[key][filter_indicies]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
