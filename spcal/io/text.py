@@ -399,9 +399,15 @@ def export_single_particle_results(
                     header_name += ",cluster idx"
                     header_unit += f",{key}"
 
+            indicies = []
+            for cluster in clusters.values():
+                idx = np.zeros(valid.size, dtype=int)
+                idx[valid] = cluster + 1
+                indicies.append(idx)
 
-            idx = np.stack([idx + 1 for idx in clusters.values()], axis=1)  # +1
-            data = np.concatenate((valid, data), axis=1)
+            indicies = np.stack(indicies, axis=1)
+
+            data = np.concatenate((data, indicies), axis=1)
 
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
