@@ -6,6 +6,7 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
@@ -34,10 +35,11 @@ def process_data(
     filters: list[list[Filter]],
     limit_method: str,
     acc_method: str,
+    compositions_params: dict,
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
-) -> dict[str, SPCalResult]:
+) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray]]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data)
 
@@ -102,7 +104,30 @@ def process_data(
             indicies = results[name].indicies
             results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
 
-    return results
+    # Cluster results
+    clusters = {}
+    for key in ["signal", "mass", "size", "cell_concentration"]:
+        size = next(iter(results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+        for result in results.values():
+            valid[result.indicies] = True
+        if not np.any(valid):
+            continue
+
+        rdata = {}
+        for name, result in results.items():
+            if key not in result.detections:
+                continue
+            rdata[name] = result.detections[key][valid]
+        if len(rdata) == 0:
+            continue
+        X = prepare_data_for_clustering(rdata)
+        T = agglomerative_cluster(X, compositions_params["distance"])
+        clusters[key] = T
+
+    # Filter clusters TODO
+
+    return results, clusters
 
 
 def process_text_file(
@@ -126,10 +151,10 @@ def process_text_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 def process_nu_file(
@@ -157,10 +182,10 @@ def process_nu_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 def process_tofwerk_file(
@@ -186,10 +211,10 @@ def process_tofwerk_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 class ImportOptionsWidget(QtWidgets.QGroupBox):
@@ -526,6 +551,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "limit_window_size": (self.options.window_size.value() or 0)
                     if self.options.window_size.isEnabled()
                     else 0,
+                    "compositions_params": {
+                        "distance": self.results.graph_options["composition"][
+                            "distance"
+                        ]
+                    },
                 },
                 output_kws={
                     "units_for_results": units,
