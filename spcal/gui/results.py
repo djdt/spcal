@@ -401,6 +401,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg = ExportDialog(
             path.with_name(path.stem + "_results.csv"),
             self.results,
+            self.clusters,
             units=self.bestUnitsForResults(),
             parent=self,
         )

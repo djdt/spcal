@@ -105,9 +105,9 @@ def read_single_particle_file(
 def export_single_particle_results(
     path: Path | str,
     results: dict[str, SPCalResult],
+    clusters: dict[str, np.ndarray],
     units_for_inputs: dict[str, tuple[str, float]] | None = None,
     units_for_results: dict[str, tuple[str, float]] | None = None,
-    composition_kws: dict[str, Any] | None = None,
     output_inputs: bool = True,
     output_results: bool = True,
     output_compositions: bool = False,
@@ -137,10 +137,6 @@ def export_single_particle_results(
         "size": ("m", 1.0),
         "cell_concentration": ("mol/L", 1.0),
     }
-
-    compostion_distance = 0.03
-    if composition_kws is not None and "distance" in composition_kws:
-        compostion_distance = composition_kws["distance"]
 
     if units_for_inputs is not None:
         input_units.update(units_for_inputs)
@@ -279,8 +275,10 @@ def export_single_particle_results(
                 postfix="," + unit,
             )
 
-    def write_compositions(fp: TextIO, results: dict[str, SPCalResult]) -> None:
-        from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
+    def write_compositions(
+        fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
+    ) -> None:
+        from spcal.cluster import cluster_information, prepare_data_for_clustering
 
         keys = ",".join(f"{key},error" for key in results.keys())
         fp.write(f"# Peak composition,count,{keys}\n")
@@ -298,28 +296,29 @@ def export_single_particle_results(
                 name: r.detections[key] if key in r.detections else np.array([0])
                 for name, r in results.items()
             }
-            if len(data) == 0:
+            if len(data) == 0 or key not in clusters:
                 continue
-            fractions = prepare_data_for_clustering(data)
 
-            if fractions.shape[0] == 1:  # single peak
-                means, stds, counts = fractions, np.zeros_like(fractions), np.array([1])
-            elif fractions.shape[1] == 1:  # single element
+            X = prepare_data_for_clustering(data)
+            T = clusters[key]
+
+            if X.shape[0] == 1:  # single peak
+                means, stds, counts = X, np.zeros_like(X), np.array([1])
+            elif X.shape[1] == 1:  # single element
                 continue
             else:
-                means, stds, counts = agglomerative_cluster(
-                    fractions, compostion_distance
-                )
+                means, stds, counts = cluster_information(X, T)
 
-            compositions = np.empty(
-                counts.size, dtype=[(name, np.float64) for name in data]
-            )
-            for i, name in enumerate(data):
-                compositions[name] = means[:, i]
+            # compositions = np.empty(
+            #     counts.size, dtype=[(name, np.float64) for name in data]
+            # )
+            # for i, name in enumerate(data):
+            #     compositions[name] = means[:, i]
 
+            fp.write(f"# {key.replace('_', ' ').capitalize()}")
             for i in range(counts.size):
                 fp.write(
-                    f"# {key.replace('_', ' ').capitalize()},{counts[i]},"
+                    f",{counts[i]},"
                     + ",".join(
                         "{:.4g},{:.4g}".format(m, s)
                         for m, s in zip(means[i, :], stds[i, :])
@@ -361,7 +360,12 @@ def export_single_particle_results(
             )
         fp.write("#\n")
 
-    def write_arrays(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_arrays(
+        fp: TextIO,
+        results: dict[str, SPCalResult],
+        clusters: dict[str, np.ndarray],
+        export_clusters: bool = False,
+    ) -> None:
         fp.write("# Raw detection data\n")
         # Output data
         data = []
@@ -383,6 +387,15 @@ def export_single_particle_results(
 
         data = np.stack(data, axis=1)
 
+        if export_clusters:
+            for key in ["signal", "mass", "size", "cell_concentration"]:
+                if key in clusters:
+                    header_name += ",cluster idx"
+                    header_unit += f",{key}"
+
+            idx = np.stack([idx + 1 for idx in clusters.values()], axis=1)  # +1
+            data = np.concatenate((data, idx), axis=1)
+
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
@@ -403,7 +416,7 @@ def export_single_particle_results(
             write_detection_results(fp, results)
             write_limits(fp, results)
         if output_compositions:
-            write_compositions(fp, results)
+            write_compositions(fp, results, clusters)
         if output_arrays:
-            write_arrays(fp, results)
+            write_arrays(fp, results, clusters, output_compositions)
         fp.write("# End of export")
