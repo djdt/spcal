@@ -19,7 +19,7 @@ from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, read_single_particle_file
 from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
-from spcal.result import Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult
 from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,7 @@ def process_data(
     method: str,
     inputs: dict[str, dict[str, float | None]],
     filters: list[list[Filter]],
+    cluster_filters: list[ClusterFilter],
     limit_method: str,
     acc_method: str,
     compositions_params: dict,
@@ -99,7 +100,7 @@ def process_data(
 
     # Filter results
     if len(filters) > 0:
-        valid_indicies = filter_results(filters, results)
+        valid_indicies = Filter.filter_results(filters, results)
         for name in results:
             indicies = results[name].indicies
             results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
@@ -125,7 +126,16 @@ def process_data(
         T = agglomerative_cluster(X, compositions_params["distance"])
         clusters[key] = T
 
-    # Filter clusters TODO
+    # Filter clusters
+    if len(cluster_filters) > 0:
+        valid_indicies = ClusterFilter.filter_clusters(cluster_filters, clusters)
+
+        for name in results:
+            indicies = results[name].indicies
+            results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+
+        for key in clusters.keys():
+            clusters[key] = clusters[key][valid_indicies]
 
     return results, clusters
 
@@ -545,6 +555,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "method": method,
                     "inputs": inputs,
                     "filters": self.results.filters,
+                    "cluster_filters": self.results.cluster_filters,
                     "limit_method": self.options.limit_method.currentText(),
                     "acc_method": self.options.limit_accumulation.currentText(),
                     "limit_params": limit_params.copy(),

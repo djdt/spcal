@@ -37,6 +37,35 @@ class Filter(object):
             return None
         return self.ufunc(results[self.name].detections[self.unit], self.value)
 
+    @staticmethod
+    def filter_results(
+        filters: list[list["Filter"]], results: dict[str, "SPCalResult"]
+    ) -> np.ndarray:
+        """Filter a dictionary of results.
+
+        Filters are stored as a list of groups where filters  within groups
+        are combined by && (logical and) and each group is combined by || (logical or).
+
+        Args:
+            filters: list of filter groups
+            results: dict of name: result
+
+        Returns:
+            indicies of filtered detections
+        """
+        size = next(iter(results.values())).detections["signal"].size
+        valid = np.zeros(size, dtype=bool)
+
+        for filter_group in filters:
+            group_valid = np.ones(size, dtype=bool)
+            for filter in filter_group:
+                filter_valid = filter.filter(results)
+                if filter_valid is not None:
+                    group_valid = np.logical_and(group_valid, filter_valid)
+            valid = np.logical_or(group_valid, valid)
+
+        return np.flatnonzero(valid)
+
 
 class ClusterFilter(object):
     def __init__(self, idx: int, unit: str):
@@ -49,6 +78,31 @@ class ClusterFilter(object):
         counts = np.bincount(cluster_results[self.unit])
         idx = np.argsort(counts)[::-1]
         return cluster_results[self.unit] == idx[self.idx]
+
+    @staticmethod
+    def filter_clusters(
+        filters: list["ClusterFilter"], clusters: dict[str, np.ndarray]
+    ) -> np.ndarray:
+        """Filter a cluster indicies.
+
+        key of cluster dict is from SPCalResult types.
+
+        Args:
+            filters: list of cluster filters
+            results: dict of key: indicies
+
+        Returns:
+            indicies of filtered clusters
+        """
+        size = next(iter(clusters.values())).size
+        valid = np.zeros(size, dtype=bool)
+
+        for filter in filters:
+            idx = filter.filter(clusters)
+            if idx is not None:
+                valid = np.logical_or(valid, idx)
+
+        return np.flatnonzero(valid)
 
 
 class SPCalResult(object):
@@ -337,32 +391,3 @@ class SPCalResult(object):
                     molar_mass=self.inputs["molar_mass"],
                 )
             )
-
-
-def filter_results(
-    filters: list[list[Filter]], results: dict[str, SPCalResult]
-) -> np.ndarray:
-    """Filter a dictionary of results.
-
-    Filters are stored as a list of groups where filters  within groups
-    are combined by && (logical and) and each group is combined by || (logical or).
-
-    Args:
-        filters: list of filter groups
-        results: dict of name: result
-
-    Returns:
-        indicies of filtered detections
-    """
-    size = next(iter(results.values())).detections["signal"].size
-    valid = np.zeros(size, dtype=bool)
-
-    for filter_group in filters:
-        group_valid = np.ones(size, dtype=bool)
-        for filter in filter_group:
-            filter_valid = filter.filter(results)
-            if filter_valid is not None:
-                group_valid = np.logical_and(group_valid, filter_valid)
-        valid = np.logical_or(group_valid, valid)
-
-    return np.flatnonzero(valid)

@@ -22,7 +22,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import ClusterFilter, Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
@@ -734,7 +734,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.filters) == 0:
             return
 
-        valid_indicies = filter_results(self.filters, self.results)
+        valid_indicies = Filter.filter_results(self.filters, self.results)
 
         for name in self.results:
             indicies = self.results[name].indicies
@@ -744,12 +744,9 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.cluster_filters) == 0:
             return
 
-        size = next(iter(self.clusters.values())).size
-        valid_indicies = np.zeros(size, dtype=bool)
-        for filter in self.cluster_filters:
-            valid_indicies = np.logical_or(valid_indicies, filter.filter(self.clusters))
-
-        valid_indicies = np.flatnonzero(valid_indicies)
+        valid_indicies = ClusterFilter.filter_clusters(
+            self.cluster_filters, self.clusters
+        )
 
         for name in self.results:
             indicies = self.results[name].indicies
