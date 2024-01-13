@@ -69,6 +69,8 @@ class Filter(object):
 
 class ClusterFilter(object):
     def __init__(self, idx: int, unit: str):
+        """idx is the index of the group in decsending order by size.
+        i.e., 0=largest group"""
         self.idx = idx
         self.unit = unit
 
