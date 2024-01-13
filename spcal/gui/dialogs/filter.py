@@ -109,6 +109,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
     def __init__(
         self,
         filter: ClusterFilter | None = None,
+        maximum_index: int = 99,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -116,7 +117,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         self.index = QtWidgets.QSpinBox()
         self.index.setPrefix("Cluster index:    ")
         self.index.setMinimum(1)
-        self.index.setMaximum(99)
+        self.index.setMaximum(maximum_index)
 
         self.unit = QtWidgets.QComboBox()
         self.unit.addItems(list(FilterItemWidget.unit_labels.keys()))
@@ -227,6 +228,7 @@ class FilterDialog(QtWidgets.QDialog):
         names: list[str],
         filters: list[list[Filter]],
         cluster_filters: list[ClusterFilter],
+        number_clusters: int = 0,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -234,6 +236,7 @@ class FilterDialog(QtWidgets.QDialog):
         self.setMinimumSize(800, 800)
 
         self.names = names
+        self.number_clusters = number_clusters
 
         self.list = QtWidgets.QListWidget()
         self.list.setDragEnabled(True)
@@ -325,7 +328,7 @@ class FilterDialog(QtWidgets.QDialog):
                 break
 
     def addClusterFilter(self, filter: Filter | None = None):
-        widget = ClusterFilterItemWidget()
+        widget = ClusterFilterItemWidget(maximum_index=self.number_clusters)
         self.addClusterWidget(widget)
 
     def addClusterWidget(self, widget: QtWidgets.QWidget) -> None:

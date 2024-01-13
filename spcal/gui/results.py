@@ -22,7 +22,7 @@ from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.iowidgets import ResultIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
-from spcal.result import ClusterFilter, Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult
 from spcal.siunits import (
     mass_units,
     molar_concentration_units,
@@ -287,11 +287,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
-        size = next(iter(self.results.values())).detections["signal"].size
-        valid = np.zeros(size, dtype=bool)
-        for result in self.results.values():
-            valid[result.indicies] = True
-        if not np.any(valid):
+        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
+        if valid.size == 0:
             return None
 
         key = self.mode_keys[mode]
@@ -401,6 +398,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg = ExportDialog(
             path.with_name(path.stem + "_results.csv"),
             self.results,
+            self.clusters,
             units=self.bestUnitsForResults(),
             parent=self,
         )
@@ -414,8 +412,13 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
+        max_idx = np.amax([idx.max() for idx in self.clusters.values()])
         dlg = FilterDialog(
-            list(self.results.keys()), self.filters, self.cluster_filters, parent=self
+            list(self.results.keys()),
+            self.filters,
+            self.cluster_filters,
+            number_clusters=max_idx + 1,
+            parent=self,
         )
         dlg.filtersChanged.connect(self.setFilters)
         dlg.open()
@@ -733,29 +736,29 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(self.filters) == 0:
             return
 
-        valid_indicies = filter_results(self.filters, self.results)
+        filter_indicies = Filter.filter_results(self.filters, self.results)
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            self.results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
             return
 
-        size = next(iter(self.clusters.values())).size
-        valid_indicies = np.zeros(size, dtype=bool)
-        for filter in self.cluster_filters:
-            valid_indicies = np.logical_or(valid_indicies, filter.filter(self.clusters))
+        filter_indicies = ClusterFilter.filter_clusters(
+            self.cluster_filters, self.clusters
+        )
 
-        valid_indicies = np.flatnonzero(valid_indicies)
-
+        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            self.results[name].indicies = indicies[
+                np.in1d(indicies, valid[filter_indicies])
+            ]
 
         for key in self.clusters.keys():
-            self.clusters[key] = self.clusters[key][valid_indicies]
+            self.clusters[key] = self.clusters[key][filter_indicies]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()

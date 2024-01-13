@@ -10,7 +10,7 @@ results = {
     "a": SPCalResult(
         "a.csv",
         np.ones(100),
-        np.array([5]),
+        np.array([5, 5, 5, 5, 0]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
         inputs_kws={"dwelltime": 1e-6, "uptake": 1e-3, "not_a_kw": 10.0, "time": 100.0},
@@ -18,7 +18,7 @@ results = {
     "b": SPCalResult(
         "b.csv",
         np.full(100, 0.5),
-        np.array([9]),
+        np.array([0, 9, 9, 9, 9]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, 9.0, "Limit", {}),
         inputs_kws={
@@ -36,12 +36,13 @@ results = {
     ),
 }
 results["b"].fromNebulisationEfficiency()
+clusters = {"signal": np.array([0, 2, 2, 2, 1]), "mass": np.array([0, 1, 1, 0, 0])}
 
 
 def test_export_singleparticle_inputs(tmp_path: Path):
     tmp = tmp_path.joinpath("test_export_inputs.csv")
     export_single_particle_results(
-        tmp, results, output_results=False, output_arrays=False
+        tmp, results, clusters, output_results=False, output_arrays=False
     )
 
     with tmp.open("r") as fp:
@@ -71,7 +72,12 @@ def test_export_singleparticle_inputs(tmp_path: Path):
     }
     tmp = tmp_path.joinpath("test_export_inputs_units.csv")
     export_single_particle_results(
-        tmp, results, output_results=False, output_arrays=False, units_for_inputs=units
+        tmp,
+        results,
+        clusters,
+        output_results=False,
+        output_arrays=False,
+        units_for_inputs=units,
     )
 
     with tmp.open("r") as fp:
@@ -85,16 +91,16 @@ def test_export_singleparticle_results(tmp_path: Path):
     tmp = tmp_path.joinpath("test_export_results.csv")
 
     export_single_particle_results(
-        tmp, results, output_inputs=False, output_arrays=False
+        tmp, results, clusters, output_inputs=False, output_arrays=False
     )
     with tmp.open("r") as fp:
         for i in range(5):
             fp.readline()
         assert fp.readline() == "# Detection results,a,b\n"
-        assert fp.readline() == "# Particle number,1,1\n"
-        assert fp.readline() == "# Number error,1,1\n"
-        assert fp.readline() == "# Number concentration,,100,#/L\n"
-        assert fp.readline() == "# Mass concentration,,4.5e-17,kg/L\n"
+        assert fp.readline() == "# Particle number,4,4\n"
+        assert fp.readline() == "# Number error,2,2\n"
+        assert fp.readline() == "# Number concentration,,400,#/L\n"
+        assert fp.readline() == "# Mass concentration,,1.8e-16,kg/L\n"
         fp.readline()
         assert fp.readline() == "# Background,1,0.5,counts\n"
         assert fp.readline() == "#,,1.6838903e-07,m\n"
@@ -125,6 +131,7 @@ def test_export_singleparticle_results(tmp_path: Path):
     export_single_particle_results(
         tmp,
         results,
+        clusters,
         output_inputs=False,
         output_arrays=False,
         units_for_results={"mass": ("fg", 1e-18)},
@@ -132,7 +139,7 @@ def test_export_singleparticle_results(tmp_path: Path):
     with tmp.open("r") as fp:
         for i in range(9):
             fp.readline()
-        assert fp.readline() == "# Mass concentration,,45,fg/L\n"
+        assert fp.readline() == "# Mass concentration,,180,fg/L\n"
         for i in range(4):
             fp.readline()
         assert fp.readline() == "# Ionic background,,2.5e+08,fg/L\n"
@@ -145,7 +152,7 @@ def test_export_singleparticle_arrays(tmp_path: Path):
     tmp = tmp_path.joinpath("test_export_arrays.csv")
 
     export_single_particle_results(
-        tmp, results, output_inputs=False, output_results=False
+        tmp, results, clusters, output_inputs=False, output_results=False
     )
 
     with tmp.open("r") as fp:
@@ -155,7 +162,11 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         assert fp.readline() == "a,b,b,b,b\n"
         assert fp.readline() == "counts,counts,kg,m,mol/L\n"
         # Todo, compute these
+        assert fp.readline() == "5,,,,\n"
         assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
+        assert fp.readline() == ",9,4.5e-19,4.413041e-07,4.2971835e-08\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -163,6 +174,7 @@ def test_export_singleparticle_arrays(tmp_path: Path):
     export_single_particle_results(
         tmp,
         results,
+        clusters,
         output_inputs=False,
         output_results=False,
         units_for_results={"signal": ("cts", 1.0), "mass": ("fg", 1e-18)},
@@ -171,7 +183,7 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         for i in range(7):
             fp.readline()
         assert fp.readline().startswith("cts,cts,fg")
-        assert fp.readline().startswith("5,9,0.45")
+        assert fp.readline().startswith("5,,,,")
 
 
 def test_export_singleparticle_compositions(tmp_path: Path):
@@ -179,6 +191,7 @@ def test_export_singleparticle_compositions(tmp_path: Path):
     export_single_particle_results(
         tmp,
         results,
+        clusters,
         output_inputs=False,
         output_results=False,
         output_arrays=False,
@@ -190,7 +203,36 @@ def test_export_singleparticle_compositions(tmp_path: Path):
             fp.readline()
         # fp.readline()
         assert fp.readline() == "# Peak composition,count,a,error,b,error\n"
-        assert fp.readline() == "# Signal,1,0.3571,0,0.6429,0\n"
-        assert fp.readline() == "# Mass,1,0,0,1,0\n"
-        assert fp.readline() == "# Size,1,0,0,1,0\n"
-        assert fp.readline() == "# Cell concentration,1,0,0,1,0\n"
+        assert fp.readline() == "# Signal,3,0.3571,0,0.6429,0\n"
+        assert fp.readline() == ",1,0,0,1,0\n"
+        assert fp.readline() == ",1,1,0,0,0\n"
+        # No mass / size since only one element
+        assert fp.readline() == "# End of export"
+
+
+def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_arrays_comps.csv")
+
+    export_single_particle_results(
+        tmp,
+        results,
+        clusters,
+        output_inputs=False,
+        output_results=False,
+        output_compositions=True,
+    )
+
+    with tmp.open("r") as fp:
+        for i in range(5+4):
+            fp.readline()
+        fp.readline()
+        assert fp.readline() == "a,b,b,b,b,cluster idx,cluster idx\n"
+        assert fp.readline() == "counts,counts,kg,m,mol/L,signal,mass\n"
+        # Todo, compute these
+        assert fp.readline().endswith(",1,1\n")
+        assert fp.readline().endswith(",3,2\n")
+        assert fp.readline().endswith(",3,2\n")
+        assert fp.readline().endswith(",3,1\n")
+        assert fp.readline().endswith(",2,1\n")
+        fp.readline()
+        assert fp.readline() == "# End of export"

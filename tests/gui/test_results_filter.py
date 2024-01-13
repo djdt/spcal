@@ -4,7 +4,7 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.main import SPCalWindow
-from spcal.result import Filter
+from spcal.result import ClusterFilter, Filter
 
 
 # Clustering doesn't like the fake data
@@ -18,7 +18,7 @@ def test_results_filters(qtbot: QtBot):
     data = np.full((1000, 3), 0.01, dtype=np.float32)
     data[5::10, 0] += 100 + np.arange(0, 100)
     data[5::10, 1] += 100 + np.arange(0, 100) * 2
-    data[5::10, 2] += 100 + np.arange(100, 0, -1)
+    data[5::10, 2] += 100 + np.tile([10, 20, 30, 40, 50], 20)
 
     data = rfn.unstructured_to_structured(
         data, dtype=[("A", np.float32), ("B", np.float32), ("C", np.float32)]
@@ -41,6 +41,7 @@ def test_results_filters(qtbot: QtBot):
 
     # Update results
     window.results.graph_options["histogram"]["fit"] = None
+    window.results.graph_options["composition"]["distance"] = 0.01
     window.tabs.setCurrentWidget(window.results)
 
     for result in window.results.results.values():
@@ -63,12 +64,12 @@ def test_results_filters(qtbot: QtBot):
     window.results.setFilters(
         [
             [Filter("A", "signal", ">", 149.0), Filter("B", "signal", "<", 239.0)],
-            [Filter("C", "signal", ">", 110.0)],
+            [Filter("C", "signal", ">", 150.0)],
         ],
         [],
     )
     for result in window.results.results.values():
-        assert result.number == 90
+        assert result.number == 20
 
     window.results.setFilters([[Filter("A", "mass", ">", 0.019)]], [])
     for result in window.results.results.values():
@@ -77,3 +78,22 @@ def test_results_filters(qtbot: QtBot):
     window.results.setFilters([], [])
     for result in window.results.results.values():
         assert result.number == 100
+
+    # Cluster filter
+    counts = np.bincount(window.results.clusters["signal"])
+    idx = np.argsort(counts)[::-1]
+    for i, c in enumerate(counts[idx]):
+        window.results.setFilters([], [ClusterFilter(i, "signal")])
+        for result in window.results.results.values():
+            assert result.number == c
+
+    filters = [ClusterFilter(i, "signal") for i in np.arange(counts.size)]
+    window.results.setFilters([], filters)
+    for result in window.results.results.values():
+        assert result.number == 100
+
+    window.results.setFilters(
+        [[Filter("A", "signal", ">=", 149.0)]], [ClusterFilter(0, "signal")]
+    )
+    for result in window.results.results.values():
+        assert result.number < 50
