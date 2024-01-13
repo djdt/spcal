@@ -57,6 +57,7 @@ def test_limit_windowed():
 
 
 def test_limit_from():  # Better way for normality check?
+    np.random.seed(987634)
     for lam in np.linspace(1.0, 100.0, 25):
         x = np.random.poisson(size=10000, lam=lam)
         lim_g = SPCalLimit.fromGaussian(x, max_iters=1)
