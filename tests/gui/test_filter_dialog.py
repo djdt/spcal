@@ -1,4 +1,3 @@
-
 import numpy as np
 from pytestqt.qtbot import QtBot
 
@@ -18,7 +17,7 @@ def test_filter():
 
 
 def test_filter_dialog_empty(qtbot: QtBot):
-    dlg = FilterDialog(names, [], [])
+    dlg = FilterDialog(names, [], [], number_clusters=10)
     qtbot.addWidget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.show()
@@ -32,6 +31,8 @@ def test_filter_dialog_empty(qtbot: QtBot):
     dlg.action_cluster_add.trigger()
     dlg.list.itemWidget(dlg.list.item(0)).value.setBaseValue(1.0)
     dlg.cluster_list.itemWidget(dlg.cluster_list.item(0)).index.setValue(10)
+
+    assert dlg.cluster_list.itemWidget(dlg.cluster_list.item(0)).index.maximum() == 10
 
     def check_filters(
         filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
