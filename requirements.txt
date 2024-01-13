@@ -1,1 +1,5 @@
 numpy>=1.22
+PySide6
+pyqtgraph>=0.13.2
+bottleneck
+h5py
