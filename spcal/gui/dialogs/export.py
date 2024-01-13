@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.io.text import export_single_particle_results
@@ -17,6 +18,7 @@ class ExportDialog(QtWidgets.QDialog):
         self,
         path: str | Path,
         results: dict[str, SPCalResult],
+        clusters: dict[str, np.ndarray],
         units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -24,6 +26,7 @@ class ExportDialog(QtWidgets.QDialog):
         self.setWindowTitle("Results Export Options")
 
         self.results = results
+        self.clusters = clusters
 
         _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
         if units is not None:
@@ -122,6 +125,7 @@ class ExportDialog(QtWidgets.QDialog):
         export_single_particle_results(
             path,
             self.results,
+            self.clusters,
             units_for_results=units,
             output_inputs=self.check_export_inputs.isChecked(),
             output_compositions=self.check_export_compositions.isChecked(),

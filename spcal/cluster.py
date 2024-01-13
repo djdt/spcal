@@ -68,8 +68,9 @@ def cluster_information(
     for i in range(means.shape[1]):
         sx = np.bincount(T, weights=X[:, i])
         sx2 = np.bincount(T, weights=X[:, i] ** 2)
-        means[:, i] = sx / counts
-        stds[:, i] = np.sqrt(sx2 / counts - means[:, i] ** 2)
+        means[:, i] = np.divide(sx, counts, where=counts >= 1.0)
+        var = np.divide(sx2, counts, where=counts >= 1.0) - means[:, i] ** 2
+        stds[:, i] = np.sqrt(np.where(var > 0.0, var, 0.0))
 
     idx = np.argsort(counts)[::-1]
     return means[idx], stds[idx], counts[idx]

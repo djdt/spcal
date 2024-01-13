@@ -6,6 +6,7 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
@@ -18,12 +19,10 @@ from spcal.io.nu import read_nu_directory, select_nu_signals
 from spcal.io.text import export_single_particle_results, read_single_particle_file
 from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
-from spcal.result import Filter, SPCalResult, filter_results
+from spcal.result import ClusterFilter, Filter, SPCalResult
 from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
 
 logger = logging.getLogger(__name__)
-
-# Todo: filters?
 
 
 def process_data(
@@ -32,12 +31,14 @@ def process_data(
     method: str,
     inputs: dict[str, dict[str, float | None]],
     filters: list[list[Filter]],
+    cluster_filters: list[ClusterFilter],
     limit_method: str,
     acc_method: str,
+    compositions_params: dict,
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
-) -> dict[str, SPCalResult]:
+) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray]]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data)
 
@@ -97,12 +98,39 @@ def process_data(
 
     # Filter results
     if len(filters) > 0:
-        valid_indicies = filter_results(filters, results)
+        filter_indicies = Filter.filter_results(filters, results)
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[np.in1d(indicies, valid_indicies)]
+            results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
 
-    return results
+    # Cluster results
+    clusters = {}
+    valid = SPCalResult.all_valid_indicies(list(results.values()))
+    for key in ["signal", "mass", "size", "cell_concentration"]:
+        rdata = {}
+        for name, result in results.items():
+            if key not in result.detections:
+                continue
+            rdata[name] = result.detections[key][valid]
+        if len(rdata) == 0:
+            continue
+        X = prepare_data_for_clustering(rdata)
+        T = agglomerative_cluster(X, compositions_params["distance"])
+        clusters[key] = T
+
+    # Filter clusters
+    if len(cluster_filters) > 0:
+        filter_indicies = ClusterFilter.filter_clusters(cluster_filters, clusters)
+
+        valid = SPCalResult.all_valid_indicies(list(results.values()))
+        for name in results:
+            indicies = results[name].indicies
+            results[name].indicies = indicies[np.in1d(indicies, valid[filter_indicies])]
+
+        for key in clusters.keys():
+            clusters[key] = clusters[key][filter_indicies]
+
+    return results, clusters
 
 
 def process_text_file(
@@ -126,10 +154,10 @@ def process_text_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 def process_nu_file(
@@ -157,10 +185,10 @@ def process_nu_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 def process_tofwerk_file(
@@ -186,10 +214,10 @@ def process_tofwerk_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results = process_data(path, data, **process_kws)
+    results, clusters = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, **output_kws)
+    export_single_particle_results(outpath, results, clusters, **output_kws)
 
 
 class ImportOptionsWidget(QtWidgets.QGroupBox):
@@ -520,12 +548,18 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "method": method,
                     "inputs": inputs,
                     "filters": self.results.filters,
+                    "cluster_filters": self.results.cluster_filters,
                     "limit_method": self.options.limit_method.currentText(),
                     "acc_method": self.options.limit_accumulation.currentText(),
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (self.options.window_size.value() or 0)
                     if self.options.window_size.isEnabled()
                     else 0,
+                    "compositions_params": {
+                        "distance": self.results.graph_options["composition"][
+                            "distance"
+                        ]
+                    },
                 },
                 output_kws={
                     "units_for_results": units,
