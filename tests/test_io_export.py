@@ -36,7 +36,7 @@ results = {
     ),
 }
 results["b"].fromNebulisationEfficiency()
-clusters = {"signal": np.array([0, 2, 2, 2, 1]), "size": np.array([0, 1, 1, 0, 0])}
+clusters = {"signal": np.array([0, 2, 2, 2, 1]), "mass": np.array([0, 1, 1, 0, 0])}
 
 
 def test_export_singleparticle_inputs(tmp_path: Path):
@@ -206,4 +206,33 @@ def test_export_singleparticle_compositions(tmp_path: Path):
         assert fp.readline() == "# Signal,3,0.3571,0,0.6429,0\n"
         assert fp.readline() == ",1,0,0,1,0\n"
         assert fp.readline() == ",1,1,0,0,0\n"
-        assert fp.readline() == "# Mass,1,0,0,1,0\n"
+        # No mass / size since only one element
+        assert fp.readline() == "# End of export"
+
+
+def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_arrays_comps.csv")
+
+    export_single_particle_results(
+        tmp,
+        results,
+        clusters,
+        output_inputs=False,
+        output_results=False,
+        output_compositions=True,
+    )
+
+    with tmp.open("r") as fp:
+        for i in range(5+4):
+            fp.readline()
+        fp.readline()
+        assert fp.readline() == "a,b,b,b,b,cluster idx,cluster idx\n"
+        assert fp.readline() == "counts,counts,kg,m,mol/L,signal,mass\n"
+        # Todo, compute these
+        assert fp.readline().endswith(",1,1\n")
+        assert fp.readline().endswith(",3,2\n")
+        assert fp.readline().endswith(",3,2\n")
+        assert fp.readline().endswith(",3,1\n")
+        assert fp.readline().endswith(",2,1\n")
+        fp.readline()
+        assert fp.readline() == "# End of export"
