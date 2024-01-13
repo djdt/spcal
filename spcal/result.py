@@ -72,6 +72,9 @@ class ClusterFilter(object):
         self.idx = idx
         self.unit = unit
 
+    def __repr__(self) -> str:
+        return f"ClusterFilter({self.idx}::{self.unit})"
+
     def filter(self, cluster_results: dict[str, np.ndarray]) -> np.ndarray | None:
         if self.unit not in cluster_results:
             return None
