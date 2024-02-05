@@ -622,8 +622,12 @@ class NuImportDialog(_ImportDialogBase):
             worker.setAutoDelete(True)
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
-            worker.signals.result.connect(self.results.append)
+            worker.signals.result.connect(self.appendResult)
             self.threadpool.start(worker)
+
+    def appendResult(self, x: np.ndarray) -> None:
+        # connecting to self.results.append does not work
+        self.results.append(x)
 
     def finalise(self) -> None:
         if not self.threadpool.waitForDone(1000):
@@ -676,12 +680,15 @@ class NuImportDialog(_ImportDialogBase):
         logger.info(
             f"Nu instruments data loaded from {self.file_path} ({data.size} events)."
         )
+        self.results.clear()
         super().accept()
 
     def reject(self) -> None:
         if self.running:
             self.abort()
+            self.results.clear()
         else:
+            self.results.clear()
             super().reject()
 
 
