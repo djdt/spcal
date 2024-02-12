@@ -9,6 +9,7 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.nontarget import NonTargetScreeningDialog
+from spcal.gui.graphs import viridis_32
 from spcal.gui.util import Worker, create_action
 from spcal.gui.widgets import (
     CheckableComboBox,
@@ -143,7 +144,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
     def dataForScreening(self, size: int) -> np.ndarray:
         raise NotImplementedError
 
-    def screenData(self, idx: np.ndarray) -> None:
+    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
         raise NotImplementedError
 
 
@@ -379,7 +380,7 @@ class TextImportDialog(_ImportDialogBase):
         data = rfn.structured_to_unstructured(data)
         return data
 
-    def screenData(self, idx: np.ndarray) -> None:
+    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
         options = self.importOptions()
 
         mask = np.ones(len(options["columns"]), dtype=bool)
@@ -502,12 +503,20 @@ class NuImportDialog(_ImportDialogBase):
         )
         return data
 
-    def screenData(self, idx: np.ndarray) -> None:
+    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
         masses = self.masses[idx]
         unit_masses = np.round(masses).astype(int)
         isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
         isotopes = isotopes[isotopes["Preferred"] > 0]  # limit to best isotopes
         self.table.setSelectedIsotopes(isotopes)
+
+        idx = np.argsort(unit_masses)
+        ppm, unit_masses = ppm[idx], unit_masses[idx]  # sort by mass
+
+        idx = np.searchsorted(unit_masses, isotopes["Isotope"], side="right") - 1
+        cidx = (ppm[idx] / ppm.max() * (len(viridis_32) - 1)).astype(int)
+
+        self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
 
     def segmentDelays(self) -> dict[int, float]:
         return {
@@ -858,10 +867,10 @@ class TofwerkImportDialog(_ImportDialogBase):
         data *= factor_extraction_to_acquisition(self.h5)
         return data
 
-    def screenData(self, idx: np.ndarray) -> None:
-        _isotopes = []
+    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
+        _isotopes, _ppm = [], []
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
-        for label in self.peak_labels[idx]:
+        for label, val in zip(self.peak_labels[idx], ppm):
             m = re_valid.match(label)
             if m is not None:
                 _isotopes.append(
@@ -870,9 +879,15 @@ class TofwerkImportDialog(_ImportDialogBase):
                         & (db["isotopes"]["Symbol"] == m.group(2))
                     ]
                 )
-        isotopes = np.array(_isotopes, dtype=db["isotopes"].dtype)
+                _ppm.append(val)
+
+        isotopes = np.asarray(_isotopes, dtype=db["isotopes"].dtype).ravel()
+        cidx = np.asarray(_ppm)[isotopes["Preferred"] > 0]  # before isotopes
         isotopes = isotopes[isotopes["Preferred"] > 0]
+        cidx = (cidx / cidx.max() * (len(viridis_32) - 1)).astype(int)
+
         self.table.setSelectedIsotopes(isotopes)
+        self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
 
     def setImportOptions(
         self, options: dict, path: bool = False, dwelltime: bool = True
