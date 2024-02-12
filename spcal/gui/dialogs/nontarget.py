@@ -152,13 +152,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         }
 
         for i in range(data.shape[1]):
-            worker = Worker(
-                idx_screen_element,
-                i,
-                data[:, i],
-                self.screening_ppm.value() or 1e6,
-                limit_kws=limit_kws,
-            )
+            worker = Worker(idx_screen_element, i, data[:, i], limit_kws=limit_kws)
             worker.setAutoDelete(True)
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
