@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class NonTargetScreeningDialog(QtWidgets.QDialog):
     ppmSelected = QtCore.Signal(float)
     dataSizeSelected = QtCore.Signal(int)
-    screeningComplete = QtCore.Signal(np.ndarray)
+    screeningComplete = QtCore.Signal(np.ndarray, np.ndarray)
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         self.aborted = False
         self.running = False
         self.threadpool = QtCore.QThreadPool()
-        self.results: list[int] = []
+        self.results: list[tuple[int, float]] = []
 
         self.screening_ppm = ValueWidget(
             screening_ppm, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=".1f"
@@ -123,10 +123,10 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
 
     def accept(self) -> None:
         def idx_screen_element(
-            idx: int, x: np.ndarray, ppm: float, limit_kws: dict
-        ) -> int:
-            result = screen_element(x, ppm, limit_kws=limit_kws, mode="detections")
-            return idx if result else -1
+            idx: int, x: np.ndarray, limit_kws: dict
+        ) -> tuple[int, float]:
+            count = screen_element(x, limit_kws=limit_kws, mode="detections")
+            return idx, count * 1e6 / x.shape[0]  # equal to size
 
         self.ppmSelected.emit(self.screening_ppm.value() or 1e6)
         self.dataSizeSelected.emit(int(self.data_size.value() or 0))
@@ -152,31 +152,35 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         }
 
         for i in range(data.shape[1]):
-            worker = Worker(
-                idx_screen_element,
-                i,
-                data[:, i],
-                self.screening_ppm.value() or 1e6,
-                limit_kws=limit_kws,
-            )
+            worker = Worker(idx_screen_element, i, data[:, i], limit_kws=limit_kws)
             worker.setAutoDelete(True)
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
-            worker.signals.result.connect(self.results.append)
+            worker.signals.result.connect(self.appendResult)
             self.threadpool.start(worker)
+
+    def appendResult(self, result: tuple[int, float]) -> None:
+        self.results.append(result)
 
     def finalise(self) -> None:
         if not self.threadpool.waitForDone(1000):
             logger.warning("could not remove all threads at finalise")
         self.running = False
 
-        idx = np.array(self.results, dtype=int)
-        self.screeningComplete.emit(idx[idx >= 0])
+        idx = np.array([r[0] for r in self.results], dtype=int)
+        ppm = np.array([r[1] for r in self.results], dtype=np.float64)
 
+        valid = ppm > (self.screening_ppm.value() or 1e6)
+
+        self.screeningComplete.emit(idx[valid], ppm[valid])
+
+        self.results.clear()
         super().accept()
 
     def reject(self) -> None:
         if self.running:
             self.abort()
+            self.results.clear()
         else:
+            self.results.clear()
             super().reject()

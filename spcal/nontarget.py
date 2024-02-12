@@ -9,26 +9,24 @@ from spcal.limit import SPCalLimit
 
 def screen_element(
     x: np.ndarray,
-    minimum_count_ppm: float,
     limit: SPCalLimit | None = None,
     limit_kws: dict | None = None,
     mode: str = "events",
-) -> bool:
+) -> int:
     """Screen element for signals.
 
-    Returns true if ``x`` has ``minimum_count_ppm`` ppm points or particles greater than
-    provided limits. If no limit is provided then SPCalLimit.fromBest is used with
-    the supplied ``limit_kws``.
+    Returns number of points or particles greater than provided limits.
+    If no limit is provided then SPCalLimit.fromBest is used with the supplied
+    ``limit_kws``.
 
     Args:
         x: data
-        minimum_count_ppm: minimum number of points above limit
         limits: pre-calculated limit
         limit_kws: kwargs for SPCalLimit.fromBest if limit is None
         mode: method of detection, 'events' or 'detections'
 
     Returns:
-        True data has signal else False
+        number of detections
     """
     if limit is None:
         if limit_kws is None:
@@ -46,7 +44,7 @@ def screen_element(
     else:
         raise ValueError("screening mode must be 'events' or 'detections'")
 
-    return count * 1e6 / x.size > minimum_count_ppm
+    return count
 
 
 def non_target_screen(
@@ -78,10 +76,8 @@ def non_target_screen(
             limit_kws = {}
         limits = [SPCalLimit.fromBest(x[:, i], **limit_kws) for i in range(x.shape[1])]
 
-    idx = [
-        screen_element(
-            x[:, i], minimum_count_ppm=minimum_count_ppm, limit=limits[i], mode=mode
-        )
-        for i in range(x.shape[1])
-    ]
-    return np.flatnonzero(idx)
+    counts = np.array(
+        [screen_element(x[:, i], limit=limits[i], mode=mode) for i in range(x.shape[1])]
+    )
+    ppm = counts * 1e6 / x.shape[0]
+    return np.flatnonzero(ppm > minimum_count_ppm)
