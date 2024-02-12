@@ -126,7 +126,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
             idx: int, x: np.ndarray, limit_kws: dict
         ) -> tuple[int, float]:
             count = screen_element(x, limit_kws=limit_kws, mode="detections")
-            return idx, count * 1e6 / x.size
+            return idx, count * 1e6 / x.shape[0]  # equal to size
 
         self.ppmSelected.emit(self.screening_ppm.value() or 1e6)
         self.dataSizeSelected.emit(int(self.data_size.value() or 0))
