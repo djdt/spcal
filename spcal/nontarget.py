@@ -79,5 +79,5 @@ def non_target_screen(
     counts = np.array(
         [screen_element(x[:, i], limit=limits[i], mode=mode) for i in range(x.shape[1])]
     )
-    ppm = counts * 1e6 / x.size
+    ppm = counts * 1e6 / x.shape[0]
     return np.flatnonzero(ppm > minimum_count_ppm)
