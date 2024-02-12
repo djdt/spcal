@@ -1,4 +1,3 @@
-
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -294,6 +293,27 @@ class PeriodicTableSelector(QtWidgets.QWidget):
                 )
         self.blockSignals(False)
         self.isotopesChanged.emit()
+
+    def setIsotopeColors(
+        self, isotopes: np.ndarray, colors: list[QtGui.QColor]
+    ) -> None:
+        """Set the button colors for ``isotopes`` to ``colors.
+
+        Will change text to BrightText ColorRole if a dark color is used.
+        Sets other buttons to the default color.
+        """
+        for button in self.buttons.values():
+            button.setPalette(self.palette())
+
+        for isotope, color in zip(isotopes, colors):
+            palette = self.buttons[isotope["Symbol"]].palette()
+            palette.setBrush(QtGui.QPalette.ColorRole.Button, QtGui.QBrush(color))
+            if color.lightnessF() < 0.4:
+                palette.setBrush(
+                    QtGui.QPalette.ColorRole.ButtonText,
+                    self.palette().brush(QtGui.QPalette.ColorRole.BrightText),
+                )
+            self.buttons[isotope["Symbol"]].setPalette(palette)
 
     def findCollisions(self) -> None:
         selected = self.selectedIsotopes()
