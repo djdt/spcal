@@ -92,4 +92,4 @@ class ScatterView(SinglePlotGraphicsView):
         self.plot.addItem(curve)
 
         if set_title:
-            self.plot.setTitle("y = " + str(poly))
+            self.plot.setTitle(f"{x.size} points; y = {poly}")
