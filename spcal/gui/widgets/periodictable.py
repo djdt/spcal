@@ -306,14 +306,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             button.setPalette(self.palette())
 
         for isotope, color in zip(isotopes, colors):
-            palette = self.buttons[isotope["Symbol"]].palette()
-            palette.setBrush(QtGui.QPalette.ColorRole.Button, QtGui.QBrush(color))
-            if color.lightnessF() < 0.4:
-                palette.setBrush(
-                    QtGui.QPalette.ColorRole.ButtonText,
-                    self.palette().brush(QtGui.QPalette.ColorRole.BrightText),
-                )
-            self.buttons[isotope["Symbol"]].setPalette(palette)
+            self.buttons[isotope["Symbol"]].setPalette(QtGui.QPalette(color))
 
     def findCollisions(self) -> None:
         selected = self.selectedIsotopes()
