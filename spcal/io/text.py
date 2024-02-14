@@ -296,7 +296,7 @@ def export_single_particle_results(
             X = prepare_data_for_clustering(data)
             T = clusters[key]
 
-            if X.shape[0] == 1:  # single peak
+            if X.shape[0] == 1:  # pragma: no cover, single peak
                 means, stds, counts = X, np.zeros_like(X), np.array([1])
             elif X.shape[1] == 1:  # single element
                 continue
@@ -403,7 +403,7 @@ def export_single_particle_results(
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
-            if np.all(line == 0.0):  # Don't write line if all filterd
+            if np.all(line == 0.0):  # pragma: no cover, don't write line if all filtered
                 continue
             fp.write(
                 ",".join("" if x == 0.0 else "{:.8g}".format(x) for x in line) + "\n"
