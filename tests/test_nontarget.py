@@ -1,6 +1,14 @@
 import numpy as np
 
-from spcal.nontarget import non_target_screen
+from spcal.nontarget import non_target_screen, screen_element
+
+
+def test_screen_element():
+    x = np.random.random(100)
+    x[20::10] += 100.0
+    x[10:12] += 100.0  # will be summed
+    assert screen_element(x, mode="events") == 10
+    assert screen_element(x, mode="detections") == 9
 
 
 def test_non_target_screen():
