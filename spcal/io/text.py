@@ -89,8 +89,6 @@ def read_single_particle_file(
                 invalid_raise=False,
                 loose=True,
             )
-            if data.dtype.names is None:
-                data.dtype = dtype
 
     assert data.dtype.names is not None
     data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
