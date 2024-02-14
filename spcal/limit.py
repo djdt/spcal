@@ -217,8 +217,10 @@ class SPCalLimit(object):
 
                 p0 = np.exp(-lam)
                 q0 = ((1.0 - alpha) - p0) / (1.0 - p0)
-                q0 = np.clip(q0, 0.0, 1.0)
-                threshold = float(np.quantile(sim, q0))
+                if q0 < 0.0:
+                    threshold = 0.0
+                else:
+                    threshold = float(np.quantile(sim, q0))
             else:
                 threshold = compound_poisson_lognormal_quantile(
                     (1.0 - alpha), lam, np.log(1.0) - 0.5 * sigma**2, sigma
@@ -351,7 +353,7 @@ class SPCalLimit(object):
             threshold = np.ceil(mu + sc)
             iters += 1
 
-        if iters == max_iters and max_iters != 1:  # pragma: no cover
+    if iters == max_iters and max_iters != 1:  # pragma: no cover
             logger.warning("fromPoisson: reached max_iters")
 
         return cls(

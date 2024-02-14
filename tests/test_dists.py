@@ -78,9 +78,14 @@ def test_compound_poisson_lognormal_quantile():
     lams = [0.1, 1, 5]
     qs = np.geomspace(0.9, 1.0 - 1e-4, 10)
     for lam in lams:
-        sim = util.simulate_compound_poisson(lam, x, size=1000000)
+        sim = util.simulate_zt_compound_poisson(lam, x, size=1000000)
+        p0 = np.exp(-lam)
         for q in qs:
-            a = np.quantile(sim, q)
+            q0 = (q - p0) / (1.0 - p0)
+            if q0 < 0.0:
+                a = 0.0
+            else:
+                a = np.quantile(sim, q0)
             b = util.compound_poisson_lognormal_quantile(
                 q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
             )
