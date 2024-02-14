@@ -41,7 +41,7 @@ def screen_element(
             np.minimum(limit.mean_signal, limit.detection_threshold),
             limit.detection_threshold,
         )[0].size
-    else:
+    else:  # pragma: no cover
         raise ValueError("screening mode must be 'events' or 'detections'")
 
     return count

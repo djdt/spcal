@@ -217,7 +217,7 @@ class SPCalLimit(object):
 
                 p0 = np.exp(-lam)
                 q0 = ((1.0 - alpha) - p0) / (1.0 - p0)
-                if q0 < 0.0:
+                if q0 < 0.0:  # pragma: no cover
                     threshold = 0.0
                 else:
                     threshold = float(np.quantile(sim, q0))
@@ -327,7 +327,7 @@ class SPCalLimit(object):
             poisson_fn = formula_c
         elif formula.startswith("stapleton"):
             poisson_fn = stapleton_approximation
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown poisson limit formula: {formula}")
 
         if formula_kws is None:
