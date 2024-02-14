@@ -35,6 +35,21 @@ def test_limit_from_poisson():
         (lim.mean_signal + lim.detection_threshold) / 2.0,
     )
 
+    for name, func in zip(
+        ["currie", "formula a", "formula c", "stapleton"],
+        [
+            poisson.currie,
+            poisson.formula_a,
+            poisson.formula_c,
+            poisson.stapleton_approximation,
+        ],
+    ):
+        lim = SPCalLimit.fromPoisson(x, alpha=0.001, max_iters=1, formula=name)
+        limit = func(np.mean(x), alpha=0.001)[0] + np.mean(x)
+        if UPPER_INTEGER:
+            limit = int(limit) + 1.0
+        assert lim.detection_threshold == limit
+
 
 def test_limit_from_gaussian():
     lim = SPCalLimit.fromGaussian(x, alpha=0.001, max_iters=1)  # ld ~= 87

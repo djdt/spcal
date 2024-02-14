@@ -94,7 +94,7 @@ def formula_b(
     t_sample: float = 1.0,
     t_blank: float = 1.0,
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
-    raise NotImplementedError(
+    raise NotImplementedError(  # pragma: no cover
         "formula_b is not reccomended and is therefore not implemented"
     )
 
