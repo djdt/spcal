@@ -353,7 +353,7 @@ class SPCalLimit(object):
             threshold = np.ceil(mu + sc)
             iters += 1
 
-    if iters == max_iters and max_iters != 1:  # pragma: no cover
+        if iters == max_iters and max_iters != 1:  # pragma: no cover
             logger.warning("fromPoisson: reached max_iters")
 
         return cls(
