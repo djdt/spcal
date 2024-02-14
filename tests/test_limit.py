@@ -46,6 +46,47 @@ def test_limit_from_gaussian():
     assert np.isclose(lim.detection_threshold, limit)
 
 
+def test_limit_from_compound_poisson():
+    # LN approximation
+    lim = SPCalLimit.fromCompoundPoisson(
+        x,
+        alpha=0.001,
+        max_iters=1,
+        single_ion_dist=None,
+        sigma=0.1,
+    )
+    assert lim.name == "CompoundPoisson"
+    assert np.isclose(
+        lim.detection_threshold, 73.3671, rtol=0.01
+    )  # from simulation of 1e9 samples
+
+    # Nu Instruments style SIS
+    sis = np.random.lognormal(10.0, 0.1, size=1000000)
+    lim = SPCalLimit.fromCompoundPoisson(
+        x,
+        alpha=0.001,
+        max_iters=1,
+        single_ion_dist=sis,
+    )
+    assert np.isclose(
+        lim.detection_threshold, 73.3671, rtol=0.05
+    )  # from simulation of 1e9 samples, lowered tolerance due to random error
+
+    # TOFWERK style SIS
+    hist, edges = np.histogram(sis, 512)
+    sis = np.stack((edges[1:], hist), axis=1)
+
+    lim = SPCalLimit.fromCompoundPoisson(
+        x,
+        alpha=0.001,
+        max_iters=1,
+        single_ion_dist=sis,
+    )
+    assert np.isclose(
+        lim.detection_threshold, 73.3671, rtol=0.05
+    )  # from simulation of 1e9 samples, lowered tolerance due to random error
+
+
 def test_limit_windowed():
     lim = SPCalLimit.fromPoisson(x, window_size=3, max_iters=1)
     assert lim.params["window"] == 3
