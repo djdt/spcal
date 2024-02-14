@@ -9,7 +9,7 @@ import numpy as np
 from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
     compound_poisson_lognormal_quantile,
-    simulate_compound_poisson,
+    simulate_zt_compound_poisson,
 )
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
@@ -60,7 +60,7 @@ class SPCalLimit(object):
             "detection threshold",
             "half detection threshold",
             "signal mean",
-        ]:
+        ]:  # pragma: no cover
             raise ValueError(f"invalid accumulation method '{method}'.")
         if method == "detection threshold":
             return self.detection_threshold
@@ -210,11 +210,15 @@ class SPCalLimit(object):
 
             lam = bn.nanmean(responses[responses < threshold])
             if single_ion_dist is not None and single_ion_dist.size > 0:  # Simulate
-                sim = simulate_compound_poisson(
+                sim = simulate_zt_compound_poisson(
                     lam, single_ion_dist, weights=weights, size=size
                 )
                 sim /= average_single_ion
-                threshold = float(np.quantile(sim, 1.0 - alpha))
+
+                p0 = np.exp(-lam)
+                q0 = ((1.0 - alpha) - p0) / (1.0 - p0)
+                q0 = np.clip(q0, 0.0, 1.0)
+                threshold = float(np.quantile(sim, q0))
             else:
                 threshold = compound_poisson_lognormal_quantile(
                     (1.0 - alpha), lam, np.log(1.0) - 0.5 * sigma**2, sigma

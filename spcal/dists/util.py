@@ -63,10 +63,24 @@ def compound_poisson_lognormal_quantile(
     return q
 
 
-def simulate_compound_poisson(
+def zero_truncated_poisson(lam: float, size: int) -> np.ndarray:
+    """Poisson distribution with no zeros.
+
+    Args:
+        lam: lambda of non-zero truncated distribution
+        size: size of output
+
+    Returns:
+        array of random values from the zero-truncated distribution
+    """
+    u = np.random.uniform(np.exp(-lam), size=size)
+    return 1 + np.random.poisson(lam + np.log(u), size=size)
+
+
+def simulate_zt_compound_poisson(
     lam: float, dist: np.ndarray, weights: np.ndarray | None = None, size: int = 100000
 ) -> np.ndarray:
-    """Simulate a compound poisson distribution.
+    """Simulate a zero-truncated compound poisson distribution.
 
     The distribution is :math:`Y = \\sum_{n=1}^{N} X_n` where X is ``dist``
     and ``N`` is defined by a Poisson distribution with mean ``lam``.
@@ -82,7 +96,7 @@ def simulate_compound_poisson(
     """
     sim = np.zeros(size, dtype=np.float32)
 
-    poi = np.random.poisson(lam, size=size)
+    poi = zero_truncated_poisson(lam, size=size)
     unique, idx, counts = np.unique(poi, return_counts=True, return_inverse=True)
     for i, (u, c) in enumerate(zip(unique, counts)):
         sim[idx == i] += np.sum(np.random.choice(dist, size=(u, c), p=weights), axis=0)
