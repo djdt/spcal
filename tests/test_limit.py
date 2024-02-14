@@ -148,6 +148,15 @@ def test_limit_from_string():
         )
 
 
+def test_limit_highest():
+    x = np.random.poisson(size=1000, lam=1.0)
+    lim = SPCalLimit.fromHighest(x, max_iters=1)
+    assert lim.name == "Poisson"
+    x = np.random.poisson(size=1000, lam=1000.0)
+    lim = SPCalLimit.fromHighest(x, max_iters=1)
+    assert lim.name == "Gaussian"
+
+
 def test_limit_iterative():
     y = x.copy()
     idx = np.random.choice(1000, size=100, replace=False)
