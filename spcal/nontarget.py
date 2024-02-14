@@ -29,7 +29,7 @@ def screen_element(
         number of detections
     """
     if limit is None:
-        if limit_kws is None:
+        if limit_kws is None:  # pragma: no cover
             limit_kws = {}
         limit = SPCalLimit.fromBest(x, **limit_kws)
 

@@ -78,7 +78,7 @@ class ClusterFilter(object):
         return f"ClusterFilter({self.idx}::{self.unit})"
 
     def filter(self, cluster_results: dict[str, np.ndarray]) -> np.ndarray | None:
-        if self.unit not in cluster_results:
+        if self.unit not in cluster_results:  # pragma: no cover
             return None
         counts = np.bincount(cluster_results[self.unit])
         idx = np.argsort(counts)[::-1]
@@ -220,7 +220,7 @@ class SPCalResult(object):
             )
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalResult({self.number})"
 
     def asCellConcentration(

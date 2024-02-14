@@ -387,9 +387,9 @@ class Reducer(object):
                 op, nargs = self.operations[token]
                 args = [self.reduceExpr(tokens) for _ in range(nargs)]
                 return op(*args)
-            except (IndexError, TypeError):
+            except (IndexError, TypeError):  # pragma: no cover
                 raise ReducerException(f"Unable to index '{token}'.")
-            except (AttributeError, KeyError, ValueError):
+            except (AttributeError, KeyError, ValueError):  # pragma: no cover
                 raise ReducerException(f"Invalid args for '{token}'.")
         elif token in self.variables:
             return self.variables[token]
