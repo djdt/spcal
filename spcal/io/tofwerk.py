@@ -163,7 +163,7 @@ def read_tofwerk_file(
 
         if "PeakData" in h5["PeakData"]:
             data = h5["PeakData"]["PeakData"][..., idx]
-        else:
+        else:  # pragma: no cover, covered above
             data = integrate_tof_data(h5, idx=idx)
 
         data *= factor_extraction_to_acquisition(h5)
