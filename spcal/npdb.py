@@ -47,4 +47,3 @@ import numpy as np
 db = np.load(
     files("spcal.resources").joinpath("npdb.npz").open("rb"), allow_pickle=False
 )
-
