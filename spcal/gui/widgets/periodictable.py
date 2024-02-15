@@ -199,7 +199,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.update()
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
-        self.showMenu()
+        self.showMenu()  # pragma: no cover
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         super().paintEvent(event)
@@ -312,7 +312,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         selected = self.selectedIsotopes()
 
         for symbol, button in self.buttons.items():
-            if selected is None:
+            if selected is None:  # pragma: no cover
                 other_selected = []
             else:
                 other_selected = selected[selected["Symbol"] != symbol]["Isotope"]
