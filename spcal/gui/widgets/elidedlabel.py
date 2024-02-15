@@ -12,10 +12,10 @@ class ElidedLabel(QtWidgets.QWidget):
         self._text = text
         self._elide = elide
 
-    def elide(self) -> QtCore.Qt.TextElideMode:
+    def elide(self) -> QtCore.Qt.TextElideMode:  # pragma: no cover
         return self._elide
 
-    def setElide(self, elide: QtCore.Qt.TextElideMode) -> None:
+    def setElide(self, elide: QtCore.Qt.TextElideMode) -> None:  # pragma: no cover
         self._elide = elide
 
     def text(self) -> str:

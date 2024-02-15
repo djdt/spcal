@@ -1,4 +1,3 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import create_action
@@ -89,7 +88,9 @@ class EditableComboBox(QtWidgets.QComboBox):
             self.textsEdited.emit({self.previous_name: new_name})
             self.previous_name = new_name
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+    def contextMenuEvent(
+        self, event: QtGui.QContextMenuEvent
+    ) -> None:  # pragma: no cover
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_enable_names)
         menu.popup(event.globalPos())
