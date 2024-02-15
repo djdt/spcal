@@ -26,7 +26,7 @@ def is_nu_directory(path: Path) -> bool:
         return False
     if not path.joinpath("run.info").exists():
         return False
-    if not path.joinpath("integrated.index").exists():
+    if not path.joinpath("integrated.index").exists():  # pragma: no cover
         return False
 
     return True
@@ -103,7 +103,7 @@ def collect_nu_autob_data(
             if seg_number is not None:
                 events = [ev for ev in events if ev["seg_number"] == seg_number]
             autobs.extend(events)
-        else:
+        else:  # pragma: no cover, missing files
             logger.warning(
                 f"collect_nu_autob_data: missing autob {idx['FileNum']}, skipping"
             )
@@ -133,7 +133,7 @@ def collect_nu_integ_data(
             if data.size > 0:
                 integs.append(data)
         else:
-            logger.warning(
+            logger.warning(  # pragma: no cover, missing files
                 f"collect_nu_integ_data: missing integ {idx['FileNum']}, skipping"
             )
     return integs
@@ -268,13 +268,19 @@ def read_nu_integ_binary(
 
     with path.open("rb") as fp:
         cyc_number = int.from_bytes(fp.read(4), "little")
-        if first_cyc_number is not None and cyc_number != first_cyc_number:
+        if (
+            first_cyc_number is not None and cyc_number != first_cyc_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstCycNum")
         seg_number = int.from_bytes(fp.read(4), "little")
-        if first_seg_number is not None and seg_number != first_seg_number:
+        if (
+            first_seg_number is not None and seg_number != first_seg_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstSegNum")
         acq_number = int.from_bytes(fp.read(4), "little")
-        if first_acq_number is not None and acq_number != first_acq_number:
+        if (
+            first_acq_number is not None and acq_number != first_acq_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstAcqNum")
         num_results = int.from_bytes(fp.read(4), "little")
         fp.seek(0)
@@ -311,7 +317,7 @@ def read_nu_directory(
     """
 
     path = Path(path)
-    if not is_nu_directory(path):
+    if not is_nu_directory(path):  # pragma: no cover
         raise ValueError("read_nu_directory: missing 'run.info' or 'integrated.index'")
 
     with path.joinpath("run.info").open("r") as fp:
