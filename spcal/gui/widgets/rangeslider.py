@@ -1,4 +1,3 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
@@ -16,7 +15,7 @@ class RangeSlider(QtWidgets.QSlider):
         return min(self.value(), self.value2())
 
     def setLeft(self, value: int) -> None:
-        if self.value() < self._value2:
+        if self.value() < self._value2:  # pragma: no cover, trivial
             self.setValue(value)
         else:
             self.setValue2(value)
@@ -27,7 +26,7 @@ class RangeSlider(QtWidgets.QSlider):
     def setRight(self, value: int) -> None:
         if self.value() > self._value2:
             self.setValue(value)
-        else:
+        else:  # pragma: no cover, trivial
             self.setValue2(value)
 
     def values(self) -> tuple[int, int]:
