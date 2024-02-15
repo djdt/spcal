@@ -98,3 +98,6 @@ def test_units_sync(qtbot: QtBot):
 
     x.setError(2.0)
     assert w.error() == 2.0
+
+def test_units_view_format(qtbot: QtBot):
+    w = UnitsWidget({"a": 1.0, "b": 1.00001})
