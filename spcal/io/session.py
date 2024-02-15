@@ -186,7 +186,7 @@ def restoreSession(
 
     with h5py.File(path, "r") as h5:
         if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 14):
-            raise ValueError("Unsupported version.")
+            raise ValueError("Unsupported version.")  # pragma: no cover
 
         options.setState(restoreOptions(h5["options"].attrs))
         for key, val in h5["expressions"].attrs.items():
