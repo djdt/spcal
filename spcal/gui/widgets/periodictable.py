@@ -160,7 +160,6 @@ class PeriodicTableButton(QtWidgets.QToolButton):
     def preferred(self) -> np.ndarray:
         pref = self.isotopes["Preferred"] > 0
         if not np.any(pref):
-            print('no pref', self.isotopes)
             return self.isotopes[np.nanargmax(self.isotopes["Composition"])]
         return self.isotopes[pref]
 
