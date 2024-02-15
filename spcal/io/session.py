@@ -35,8 +35,6 @@ def unflatten_dict(d: dict, base: dict | None = None, sep: str = "/") -> dict:
             for token in tokens:
                 root.setdefault(token, {})
                 root = root[token]
-        if isinstance(v, dict):
-            v = unflatten_dict(v, root.get(k, {}))
         root[k] = v
     return base
 
