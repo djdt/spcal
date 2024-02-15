@@ -178,19 +178,3 @@ class UnitsWidget(QtWidgets.QWidget):
 
     def isEnabled(self) -> bool:
         return self.lineedit.isEnabled() and self.combo.isEnabled()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    le = UnitsWidget({"a": 1.0, "b": 1e-3})
-    le.setValue(1.23)
-    le.setError(0.45)
-
-    dlg = QtWidgets.QDialog()
-    dlg.setLayout(QtWidgets.QHBoxLayout())
-    dlg.layout().addWidget(le)
-    dlg.layout().addWidget(QtWidgets.QLineEdit("not me"))
-
-    dlg.show()
-    app.exec()
