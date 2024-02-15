@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
@@ -33,9 +33,11 @@ def test_units_widget(qtbot: QtBot):
     w.setReadOnly(True)
     assert w.lineedit.isReadOnly()
 
+    assert w.isEnabled()
     w.setEnabled(False)
     assert not w.lineedit.isEnabled()
     assert not w.combo.isEnabled()
+    assert not w.isEnabled()
 
     w.setToolTip("tip")
     assert w.lineedit.toolTip() == "tip"
@@ -99,5 +101,12 @@ def test_units_sync(qtbot: QtBot):
     x.setError(2.0)
     assert w.error() == 2.0
 
+
 def test_units_view_format(qtbot: QtBot):
-    w = UnitsWidget({"a": 1.0, "b": 1.00001})
+    w = UnitsWidget({"a": 1.0, "b": 1.0})
+    w.setValue(1.01)
+    w.setViewFormat(".1f")
+    assert w.lineedit.text() == "1.0"
+    w.setViewFormat(".2f")
+    assert w.lineedit.text() == "1.01"
+    w.setEditFormat(".1f")  # not tested
