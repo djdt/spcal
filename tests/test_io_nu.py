@@ -1,3 +1,4 @@
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -69,8 +70,23 @@ def test_io_nu_import_max_files():
     assert signals.shape == (10, 194)
 
 
-# need data, todo
-# def test_io_nu_import_autoblank():
+def test_io_nu_import_autoblank(tmp_path: Path):
+    path = Path(__file__).parent.joinpath("data/nu/autob.zip")
+    zp = zipfile.ZipFile(path)
+    zp.extractall(tmp_path)
+
+    print(tmp_path.joinpath("autob"))
+    masses, signals, info = read_nu_directory(
+        tmp_path.joinpath("autob"), cycle=1, segment=1
+    )
+    # blanking region of mass idx 10-14 at 32204 - 49999
+    assert np.all(np.isnan(signals[32204:49999, 0:14]))
+    assert np.all(~np.isnan(signals[32204:49999, 14:]))
+
+    masses, signals, info = read_nu_directory(
+        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank=False
+    )
+    assert np.all(~np.isnan(signals[32204:49999, 0:14]))
 
 
 def test_select_nu_signals():
@@ -86,9 +102,13 @@ def test_select_nu_signals():
         select_nu_signals(masses, signals, {"a": 2.0, "b": 9.95}, max_mass_diff=0.01)
 
 
-def test_single_ion_distribution():
-    path = Path(__file__).parent.joinpath("data/nu/cal")
-    masses, signals, info = read_nu_directory(path, cycle=1, segment=1)
+def test_single_ion_distribution(tmp_path: Path):
+    path = Path(__file__).parent.joinpath("data/nu/cal.zip")
+    zp = zipfile.ZipFile(path)
+    zp.extractall(tmp_path)
+    masses, signals, info = read_nu_directory(
+        tmp_path.joinpath("cal"), cycle=1, segment=1
+    )
     y = single_ion_distribution(signals)
     # not sure how to test this?
     assert y[np.argmax(y[:, 0]), 1] == 1.0
