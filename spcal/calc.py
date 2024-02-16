@@ -3,42 +3,6 @@
 import numpy as np
 
 
-def gamma(x: float) -> float:
-    """Gamma function approximation.
-
-    Maximum error of 3e-7 [3].
-
-    Args:
-        x: value
-
-    Returns:
-        approximation of error function
-
-    References:
-        .. [3] Abramowitz, Milton, and Irene A. Stegun, eds. Handbook of mathematical
-            functions with formulas, graphs, and mathematical tables.
-            Vol. 55. US Government printing office, 1970.
-    """
-    assert x >= 0.0
-    # Use recursion
-    b = np.array(
-        [
-            1.0,
-            -0.577191652,
-            0.988205891,
-            -0.897056937,
-            0.918206857,
-            -0.756704078,
-            0.482199394,
-            -0.193527818,
-            0.035868343,
-        ]
-    )
-    z = x % 1.0
-    n = 1.0 / x if x < 1.0 else np.prod(z + np.arange(1, int(x - z)))
-    return n * np.sum(b * np.power(z, np.arange(9)))
-
-
 def is_integer_or_near(x: np.ndarray, max_deviation: float = 1e-3) -> np.ndarray:
     """Test if float data is 'near' integer.
     Near integers values are those less than `max_deviation` from a whole number.
@@ -69,7 +33,7 @@ def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> fl
     See Also:
         :func:`skimage.filters.threshold_otsu`
     """
-    if remove_nan:
+    if remove_nan:  # pragma: no cover
         x = x[~np.isnan(x)]
 
     hist, bin_edges = np.histogram(x, bins=nbins)
