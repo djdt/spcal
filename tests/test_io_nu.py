@@ -75,7 +75,6 @@ def test_io_nu_import_autoblank(tmp_path: Path):
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
 
-    print(tmp_path.joinpath("autob"))
     masses, signals, info = read_nu_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1
     )
