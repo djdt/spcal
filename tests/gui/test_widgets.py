@@ -27,6 +27,35 @@ def test_checkable_combo_box(qtbot: QtBot):
     # cannot test delegates with click
 
 
+def test_editable_combo_box(qtbot: QtBot):
+    cb = EditableComboBox()
+    qtbot.add_widget(cb)
+    with qtbot.wait_exposed(cb):
+        cb.show()
+
+    cb.addItems(["a", "b", "c", "d", "e"])
+
+    with qtbot.wait_signal(cb.textsEdited):
+        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Backspace)
+        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Z)
+        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Enter)
+
+    items = [cb.itemText(i) for i in range(cb.count())]
+    assert items == ["z", "b", "c", "d", "e"]
+
+    with qtbot.assertNotEmitted(cb.textsEdited):
+        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Backspace)
+        qtbot.keyClick(cb, QtCore.Qt.Key.Key_A)
+        cb.setCurrentIndex(1)
+
+    dlg = cb.openEnableDialog()
+    dlg.texts.item(1).setCheckState(QtCore.Qt.CheckState.Unchecked)
+    dlg.accept()
+    assert not QtCore.Qt.ItemFlags.ItemIsEnabled & cb.model().flags(
+        cb.model().index(1, 0)
+    )
+
+
 def test_range_slider(qtbot: QtBot):
     slider = RangeSlider()
     qtbot.add_widget(slider)
