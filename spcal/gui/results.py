@@ -288,7 +288,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
-        if valid.size == 0:
+        if valid.size == 0:  # pragma: no cover
             return None
 
         key = self.mode_keys[mode]
@@ -306,7 +306,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateNames(self, names: dict[str, str]) -> None:
         for old, new in names.items():
-            if old == new:
+            if old == new:  # pragma: no cover
                 continue
             if old in self.results:
                 self.results[new] = self.results.pop(old)

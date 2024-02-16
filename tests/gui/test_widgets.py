@@ -52,6 +52,7 @@ def test_editable_combo_box(qtbot: QtBot):
     dlg.texts.item(1).setCheckState(QtCore.Qt.CheckState.Unchecked)
     dlg.accept()
     assert not QtCore.Qt.ItemFlags.ItemIsEnabled & cb.model().flags(
+
         cb.model().index(1, 0)
     )
 
