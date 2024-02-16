@@ -68,10 +68,9 @@ def blank_nu_signal_data(
             mass_idx = np.searchsorted(masses, (start_masses, end_masses))
             # There are a bunch of useless blanking regions
             mass_idx = mass_idx[:, mass_idx[0] != mass_idx[1]]
-
             acq_start, acq_end = (
-                int(start_event["acq_number"] // num_acc) - 1,
-                int(event["acq_number"] // num_acc) - 1,
+                int(start_event["acq_number"][0] // num_acc) - 1,
+                int(event["acq_number"][0] // num_acc) - 1,
             )
 
             for s, e in mass_idx.T:
