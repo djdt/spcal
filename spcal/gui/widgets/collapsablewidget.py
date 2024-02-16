@@ -48,6 +48,6 @@ class CollapsableWidget(QtWidgets.QWidget):
 
         self.parent().layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
 
-    def collapse(self, down: bool) -> None:
+    def collapse(self, down: bool) -> None:  # pragma: no cover, trivial
         self.button.setArrowType(QtCore.Qt.DownArrow if down else QtCore.Qt.RightArrow)
         self.area.setVisible(down)

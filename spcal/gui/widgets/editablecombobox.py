@@ -40,7 +40,7 @@ class EnableTextDialog(QtWidgets.QDialog):
         for i in range(self.texts.count()):
             if self.texts.item(i).checkState() == QtCore.Qt.CheckState.Checked:
                 return True
-        return False
+        return False  # pragma: no cover
 
     def completeChanged(self) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
