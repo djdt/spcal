@@ -133,10 +133,10 @@ class HistogramView(SinglePlotGraphicsView):
         hist = hist / bin_width / size
         xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
         if fit_type == "normal":
-            fit = fit_normal(centers, hist)[2]
+            fit = fit_normal(centers, hist)
             ys = normal_pdf(xs * fit[2], fit[0], fit[1])
         elif fit_type == "log normal":
-            fit = fit_lognormal(centers, hist)[2]
+            fit = fit_lognormal(centers, hist)
             ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
         else:
             raise ValueError(f"drawFit: unknown fit {fit_type}")

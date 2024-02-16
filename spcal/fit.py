@@ -111,7 +111,7 @@ def nelder_mead(
 #     return simplex
 
 
-def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
+def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     """Fit a normal distribution to data.
 
     Args:
@@ -119,7 +119,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndar
         y: y values
 
     Returns:
-        values of fit for ``x``
+        optimal mu, sigma, scale
     """
 
     def gradient(
@@ -129,6 +129,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndar
             return np.inf
         return np.sum(np.square(y - normal_pdf(x * scale, mu, sigma)))
 
+    assert x.size == y.size
     # Guess for result
     mu = np.mean(x)
     s = np.std(x)
@@ -137,10 +138,10 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndar
     )
 
     args = nelder_mead(gradient, x, y, simplex)
-    return normal_pdf(x * args[2], args[0], args[1]), gradient(x, y, *args), args
+    return (args[0], args[1], args[2])
 
 
-def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.ndarray]:
+def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     """Fit a log-normal distribution to data.
 
     Args:
@@ -148,7 +149,7 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.n
         y: y values
 
     Returns:
-        values of fit for ``x``
+        optimal mu, sigma, loc
     """
 
     def gradient(
@@ -159,6 +160,7 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.n
             return np.inf
         return np.sum(np.square(y - lognormal_pdf(xl, mu, sigma)))
 
+    assert x.size == y.size
     # Guess for result
     mu = np.log(np.median(x))
     s = 0.1
@@ -172,4 +174,4 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, float, np.n
     )
 
     args = nelder_mead(gradient, x, y, simplex)
-    return lognormal_pdf(x + args[2], args[0], args[1]), gradient(x, y, *args), args
+    return (args[0], args[1], args[2])
