@@ -35,6 +35,10 @@ def test_dist_normal():
         normal.cdf(x, mu, sigma), stats.norm.cdf(x, loc=mu, scale=sigma), atol=1e-3
     )
     assert np.allclose(normal.pdf(x, mu, sigma), stats.norm.pdf(x, loc=mu, scale=sigma))
+    q = np.linspace(0.1, 0.9, 10)
+    assert np.allclose(
+        normal.quantile(q, mu, sigma), stats.norm.ppf(q, loc=mu, scale=sigma)
+    )
 
 
 def test_dist_lognormal():
