@@ -1,8 +1,9 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
-class CheckableItemDelegate(QtWidgets.QStyledItemDelegate):
+class CheckableItemDelegate(
+    QtWidgets.QStyledItemDelegate
+):  # pragma: no cover, no way to test
     def editorEvent(
         self,
         event: QtCore.QEvent,

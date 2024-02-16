@@ -1,8 +1,30 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
+from spcal.gui.widgets.checkablecombobox import CheckableComboBox
+from spcal.gui.widgets.editablecombobox import EditableComboBox
 from spcal.gui.widgets.rangeslider import RangeSlider
 from spcal.gui.widgets.validcolorle import ValidColorLineEdit
+
+
+def test_checkable_combo_box(qtbot: QtBot):
+    cb = CheckableComboBox()
+    qtbot.add_widget(cb)
+    with qtbot.wait_exposed(cb):
+        cb.show()
+
+    cb.addItems(["a", "b", "c"])
+    assert cb.count() == 3
+    item = cb.model().item(0)
+    assert item.isCheckable()
+
+    cb.setCheckedItems(["b"])
+    assert cb.checkedItems() == ["b"]
+
+    cb.setCheckedItems(["b", "c"])
+    assert cb.checkedItems() == ["b", "c"]
+
+    # cannot test delegates with click
 
 
 def test_range_slider(qtbot: QtBot):
