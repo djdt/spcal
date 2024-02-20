@@ -132,6 +132,8 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.name = db["elements"][db["elements"]["Symbol"] == self.symbol]["Name"][0]
         self.number = isotopes["Number"][0]
 
+        self.indicator: QtGui.QColot | None = None
+
         self.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.DelayedPopup)
         self.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setMinimumSize(QtCore.QSize(45, 45))
@@ -234,6 +236,14 @@ class PeriodicTableButton(QtWidgets.QToolButton):
                 f"{num}/{len(self.isotopes)}",
             )
 
+        # Draw color icon
+        if self.indicator is not None:
+            rect = QtCore.QRectF(0.0, 0.0, 10.0, 10.0)
+            rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))
+            painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+            painter.setBrush(QtGui.QBrush(self.indicator))
+            painter.drawEllipse(rect)
+
 
 class PeriodicTableSelector(QtWidgets.QWidget):
     isotopesChanged = QtCore.Signal()
@@ -297,20 +307,16 @@ class PeriodicTableSelector(QtWidgets.QWidget):
     def setIsotopeColors(
         self, isotopes: np.ndarray, colors: list[QtGui.QColor]
     ) -> None:
-        """Set the button colors for ``isotopes`` to ``colors.
+        """Set the indicator colors for ``isotopes`` to ``colors.
 
         Will change text to BrightText ColorRole if a dark color is used.
         Sets other buttons to the default color.
         """
         for button in self.buttons.values():
-            button.setPalette(self.palette())
+            button.indicator = None
 
         for isotope, color in zip(isotopes, colors):
-            button = self.buttons[isotope["Symbol"]]
-            button.setPalette(QtGui.QPalette(color))
-            palette = button.palette()
-            palette.setColor(button.backgroundRole(), color)
-            button.setPalette(palette)
+            self.buttons[isotope["Symbol"]].indicator = color
 
     def findCollisions(self) -> None:
         selected = self.selectedIsotopes()
