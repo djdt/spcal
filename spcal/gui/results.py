@@ -170,7 +170,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.currentIndexChanged.connect(self.updateOutputs)
         self.mode.currentIndexChanged.connect(self.updateScatterElements)
         self.mode.currentIndexChanged.connect(self.updatePCAElements)
-        self.mode.currentIndexChanged.connect(self.drawIfRequired)
+        self.mode.currentIndexChanged.connect(self.redraw)
 
         self.label_file = QtWidgets.QLabel()
 
@@ -305,6 +305,21 @@ class ResultsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_main, 1)
         self.setLayout(layout)
 
+    @property
+    def clusters(self) -> dict[str, np.ndarray]:
+        if self._clusters is None:
+            self._clusters = {}
+            for mode, key in self.mode_keys.items():
+                data = self.validResultsForMode(mode)
+                if data is None:
+                    continue
+                X = prepare_data_for_clustering(data)
+                T = agglomerative_cluster(
+                    X, self.graph_options["composition"]["distance"]
+                )
+                self._clusters[key] = T
+        return self._clusters
+
     def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         if valid.size == 0:  # pragma: no cover
@@ -342,8 +357,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.updateScatterElements()
         self.updatePCAElements()
-        for k in self.redraw_required.keys():
-            self.redraw_required[k] = True
+        self.redraw()
 
     def setFilters(
         self, filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
@@ -471,12 +485,10 @@ class ResultsWidget(QtWidgets.QWidget):
                 ValueError(f"unkown graph type '{graph}'")
             self.redraw_required[graph] = False
 
-    # def redraw(self) -> None:
-    #     self.drawGraphHist()
-    #     if len(self.results) > 1:
-    #         # self.drawGraphCompositions()
-    #         self.drawGraphScatter()
-    #         self.drawGraphPCA()
+    def redraw(self) -> None:
+        for k in self.redraw_required.keys():
+            self.redraw_required[k] = True
+        self.drawIfRequired()
 
     def drawGraphHist(self) -> None:
         self.graph_hist.plot.clear()
@@ -760,21 +772,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 background_error=result.background / result.background_error,
             )
 
-    @property
-    def clusters(self) -> dict[str, np.ndarray]:
-        if self._clusters is None:
-            self._clusters = {}
-            for mode, key in self.mode_keys.items():
-                data = self.validResultsForMode(mode)
-                if data is None:
-                    continue
-                X = prepare_data_for_clustering(data)
-                T = agglomerative_cluster(
-                    X, self.graph_options["composition"]["distance"]
-                )
-                self._clusters[key] = T
-        return self._clusters
-
     def filterResults(self) -> None:
         """Filters the current results.
 
@@ -871,16 +868,14 @@ class ResultsWidget(QtWidgets.QWidget):
         # end for name in names
 
         self.filterResults()
-        self.filterClusters() # will call self.clusters to load clusters if needed
+        self.filterClusters()  # will call self.clusters to load clusters if needed
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
         self.updateEnabledItems()
 
         # selfitems.redraw()
-        for k in self.redraw_required.keys():
-            self.redraw_required[k] = True
-        self.drawIfRequired()
+        self.redraw()
 
         self.update_required = False
 
