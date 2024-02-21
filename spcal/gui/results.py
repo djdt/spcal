@@ -79,8 +79,16 @@ class ResultsWidget(QtWidgets.QWidget):
         }
 
         self.results: dict[str, SPCalResult] = {}
-        self.clusters: dict[str, np.ndarray] = {}
+        # for load on demand, see self.clusters property
+        self._clusters: dict[str, np.ndarray] | None = None
+
         self.update_required = True
+        self.redraw_required = {
+            "histogram": True,
+            "composition": False,
+            "scatter": False,
+            "pca": False,
+        }
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
@@ -162,7 +170,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.mode.currentIndexChanged.connect(self.updateOutputs)
         self.mode.currentIndexChanged.connect(self.updateScatterElements)
         self.mode.currentIndexChanged.connect(self.updatePCAElements)
-        self.mode.currentIndexChanged.connect(self.redraw)
+        self.mode.currentIndexChanged.connect(self.drawIfRequired)
 
         self.label_file = QtWidgets.QLabel()
 
@@ -176,6 +184,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Overlay of results histograms.",
             lambda: (
                 self.setHistDrawMode("overlay"),
+                self.drawIfRequired("histogram"),
                 self.graph_stack.setCurrentWidget(self.graph_hist),
             ),
             checkable=True,
@@ -187,6 +196,7 @@ class ResultsWidget(QtWidgets.QWidget):
             "Single histogram per result.",
             lambda: (
                 self.setHistDrawMode("single"),
+                self.drawIfRequired("histogram"),
                 self.graph_stack.setCurrentWidget(self.graph_hist),
             ),
             checkable=True,
@@ -196,21 +206,30 @@ class ResultsWidget(QtWidgets.QWidget):
             "office-chart-pie",
             "Composition",
             "Show the elemental composition of peaks.",
-            lambda: self.graph_stack.setCurrentWidget(self.graph_composition),
+            lambda: (
+                self.drawIfRequired("composition"),
+                self.graph_stack.setCurrentWidget(self.graph_composition),
+            ),
             checkable=True,
         )
         self.action_graph_scatter = create_action(
             "office-chart-scatter",
             "Scatter",
             "Create scatter plots of elements.",
-            lambda: self.graph_stack.setCurrentWidget(self.scatter_widget),
+            lambda: (
+                self.drawIfRequired("scatter"),
+                self.graph_stack.setCurrentWidget(self.scatter_widget),
+            ),
             checkable=True,
         )
         self.action_graph_pca = create_action(
             "skg-chart-bubble",
             "PCA",
             "Create PCA plot of detections.",
-            lambda: self.graph_stack.setCurrentWidget(self.pca_widget),
+            lambda: (
+                self.drawIfRequired("pca"),
+                self.graph_stack.setCurrentWidget(self.pca_widget),
+            ),
             checkable=True,
         )
 
@@ -310,8 +329,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 continue
             if old in self.results:
                 self.results[new] = self.results.pop(old)
-            if old in self.clusters:
-                self.clusters[new] = self.clusters.pop(old)
+            if self._clusters is not None and old in self._clusters:
+                self._clusters[new] = self._clusters.pop(old)
             if old in self.io:
                 index = self.io.combo_name.findText(old)
                 self.io.combo_name.setItemText(index, new)
@@ -323,7 +342,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.updateScatterElements()
         self.updatePCAElements()
-        self.redraw()
+        for k in self.redraw_required.keys():
+            self.redraw_required[k] = True
 
     def setFilters(
         self, filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
@@ -334,7 +354,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def setCompDistance(self, distance: float) -> None:
         self.graph_options["composition"]["distance"] = distance
-        self.clusterResults()
+        self._clusters = None
         self.drawGraphCompositions()
 
     def setCompMode(self, mode: str) -> None:
@@ -424,12 +444,39 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.open()
 
     # Plotting
-    def redraw(self) -> None:
-        self.drawGraphHist()
-        if len(self.results) > 1:
-            self.drawGraphCompositions()
-            self.drawGraphScatter()
-            self.drawGraphPCA()
+    def drawIfRequired(self, graph: str | None = None) -> None:
+        if graph is None:
+            w = self.graph_stack.currentWidget()
+            if w == self.graph_hist:
+                graph = "histogram"
+            elif w == self.graph_composition:
+                graph = "composition"
+            elif w == self.graph_scatter:
+                graph = "scatter"
+            elif w == self.graph_pca:
+                graph = "pca"
+            else:
+                raise ValueError(f"unkown graph widget '{graph}'")
+
+        if self.redraw_required[graph]:
+            if graph == "histogram":
+                self.drawGraphHist()
+            elif graph == "composition":
+                self.drawGraphCompositions()
+            elif graph == "scatter":
+                self.drawGraphScatter()
+            elif graph == "pca":
+                self.drawGraphPCA()
+            else:
+                ValueError(f"unkown graph type '{graph}'")
+            self.redraw_required[graph] = False
+
+    # def redraw(self) -> None:
+    #     self.drawGraphHist()
+    #     if len(self.results) > 1:
+    #         # self.drawGraphCompositions()
+    #         self.drawGraphScatter()
+    #         self.drawGraphPCA()
 
     def drawGraphHist(self) -> None:
         self.graph_hist.plot.clear()
@@ -713,16 +760,20 @@ class ResultsWidget(QtWidgets.QWidget):
                 background_error=result.background / result.background_error,
             )
 
-    def clusterResults(self) -> None:
-        self.clusters = {}
-
-        for mode, key in self.mode_keys.items():
-            data = self.validResultsForMode(mode)
-            if data is None:
-                continue
-            X = prepare_data_for_clustering(data)
-            T = agglomerative_cluster(X, self.graph_options["composition"]["distance"])
-            self.clusters[key] = T
+    @property
+    def clusters(self) -> dict[str, np.ndarray]:
+        if self._clusters is None:
+            self._clusters = {}
+            for mode, key in self.mode_keys.items():
+                data = self.validResultsForMode(mode)
+                if data is None:
+                    continue
+                X = prepare_data_for_clustering(data)
+                T = agglomerative_cluster(
+                    X, self.graph_options["composition"]["distance"]
+                )
+                self._clusters[key] = T
+        return self._clusters
 
     def filterResults(self) -> None:
         """Filters the current results.
@@ -764,6 +815,7 @@ class ResultsWidget(QtWidgets.QWidget):
         method = self.options.efficiency_method.currentText()
 
         self.results.clear()
+        self._clusters = None
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
@@ -819,14 +871,16 @@ class ResultsWidget(QtWidgets.QWidget):
         # end for name in names
 
         self.filterResults()
-        self.clusterResults()
-        self.filterClusters()
+        self.filterClusters() # will call self.clusters to load clusters if needed
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
         self.updateEnabledItems()
 
-        self.redraw()
+        # selfitems.redraw()
+        for k in self.redraw_required.keys():
+            self.redraw_required[k] = True
+        self.drawIfRequired()
 
         self.update_required = False
 
@@ -880,4 +934,4 @@ class ResultsWidget(QtWidgets.QWidget):
         self.filters.clear()
         self.cluster_filters.clear()
         self.results.clear()
-        self.clusters.clear()
+        self._clusters = None
