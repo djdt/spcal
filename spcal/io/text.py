@@ -90,7 +90,8 @@ def read_single_particle_file(
                 loose=True,
             )
 
-    assert data.dtype.names is not None
+    if data.dtype.names is None:
+        data.dtype = dtype
     data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
 
     if convert_cps is not None:
