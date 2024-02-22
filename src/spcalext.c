@@ -51,6 +51,7 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   double *D = (double *)PyArray_DATA(Darray);
 
   npy_intp k = 0;
+#pragma omp parallel for
   for (npy_intp i = 0; i < n; ++i) {
     for (npy_intp j = i + 1; j < n; ++j, ++k) {
       D[k] = euclidean(X, i, j, m);
