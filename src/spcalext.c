@@ -17,6 +17,13 @@ inline double euclidean(const double *X, npy_intp i, npy_intp j, npy_intp m) {
   return sqrt(sum);
 }
 
+inline int condensed_index(int i, int j, int n) {
+  if (i < j)
+    return n * i - (i * (i + 1) / 2) + (j - i - 1);
+  else
+    return n * j - (j * (j + 1) / 2) + (i - j - 1);
+}
+
 static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   PyObject *in;
   PyArrayObject *Xarray, *Darray;
@@ -50,22 +57,14 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
-  npy_intp k = 0;
 #pragma omp parallel for
   for (npy_intp i = 0; i < n; ++i) {
-    for (npy_intp j = i + 1; j < n; ++j, ++k) {
-      D[k] = euclidean(X, i, j, m);
+    for (npy_intp j = i + 1; j < n; ++j) {
+      D[condensed_index(i, j, n)] = euclidean(X, i, j, m);
     }
   }
   Py_DECREF(Xarray);
   return (PyObject *)Darray;
-}
-
-inline int condensed_index(int i, int j, int n) {
-  if (i < j)
-    return n * i - (i * (i + 1) / 2) + (j - i - 1);
-  else
-    return n * j - (j * (j + 1) / 2) + (i - j - 1);
 }
 
 struct argsort {
