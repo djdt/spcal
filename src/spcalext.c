@@ -75,9 +75,9 @@ struct argsort {
 int argsort_cmp(const void *a, const void *b) {
   struct argsort *as = (struct argsort *)a;
   struct argsort *bs = (struct argsort *)b;
-  if ((*as).value > (*bs).value)
+  if (as->value > bs->value)
     return 1;
-  else if ((*as).value < (*bs).value)
+  else if (as->value < bs->value)
     return -1;
   else
     return 0;
@@ -164,9 +164,9 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   D[n - 1] = INFINITY;
 
   int x = 0, y = 0;
-  double dist, min;
   for (int i = 0; i < n - 1; ++i) {
-    min = INFINITY;
+    double min = INFINITY;
+    double dist;
     M[x] = 1;
 
     for (int j = 0; j < n; ++j) {
