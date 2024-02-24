@@ -5,6 +5,8 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+#include "sort.h"
+
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
@@ -57,7 +59,7 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
-#pragma omp parallel for
+#pragma omp parallel for shared(X, n, m)
   for (npy_intp i = 0; i < n; ++i) {
     for (npy_intp j = i + 1; j < n; ++j) {
       D[condensed_index(i, j, n)] = euclidean(X, i, j, m);
@@ -65,22 +67,6 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   }
   Py_DECREF(Xarray);
   return (PyObject *)Darray;
-}
-
-struct argsort {
-  double value;
-  int index;
-};
-
-int argsort_cmp(const void *a, const void *b) {
-  struct argsort *as = (struct argsort *)a;
-  struct argsort *bs = (struct argsort *)b;
-  if (as->value > bs->value)
-    return 1;
-  else if (as->value < bs->value)
-    return -1;
-  else
-    return 0;
 }
 
 inline int find_root(int *parents, int x) {
@@ -133,98 +119,6 @@ void label(int *Z, int n) {
   free(sizes);
 }
 
-void _merge_argsort(struct argsort *x, int n, struct argsort *t) {
-  int i = 0, j = n / 2, ti = 0;
-
-  while (i < n / 2 && j < n) {
-    if (x[i].value < x[j].value) {
-      t[ti++] = x[i++];
-    } else {
-      t[ti++] = x[j++];
-    }
-  }
-  while (i < n / 2) {
-    t[ti++] = x[i++];
-  }
-  while (j < n) {
-    t[ti++] = x[j++];
-  }
-  memcpy(x, t, n * sizeof(struct argsort));
-}
-
-void _mergesort_argsort_rec(struct argsort *x, int n, struct argsort *t) {
-  if (n < 2)
-    return;
-#pragma omp task shared(x) if (n > 1000)
-  _mergesort_argsort_rec(x, n / 2, t);
-#pragma omp task shared(x) if (n > 1000)
-  _mergesort_argsort_rec(x + n / 2, n - n / 2, t + n / 2);
-#pragma omp taskwait
-  _merge_argsort(x, n, t);
-}
-void mergesort_argsort(struct argsort *x, int n) {
-  struct argsort *t = malloc(n * sizeof(struct argsort));
-#pragma omp parallel
-  {
-#pragma omp single
-    _mergesort_argsort_rec(x, n, t);
-  }
-  free(t);
-}
-
-int cmp(const void *a, const void *b) {
-  const double aa = *(const double *)a;
-  const double bb = *(const double *)b;
-  if (aa > bb)
-    return 1;
-  else if (bb > aa)
-    return -1;
-  return 0;
-  // return (*aa) - (*bb);
-}
-
-static PyObject *mergesort(PyObject *self, PyObject *args) {
-  PyObject *in;
-  PyArrayObject *Xarray;
-  if (!PyArg_ParseTuple(args, "O:mergesort", &in))
-    return NULL;
-
-  Xarray =
-      (PyArrayObject *)PyArray_FROM_OTF(in, NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
-  if (!Xarray) {
-    return NULL;
-  }
-
-  npy_intp n = PyArray_DIM(Xarray, 0);
-  double *x = (double *)PyArray_DATA(Xarray);
-  qsort(x, n, sizeof(double), cmp);
-  Py_DECREF(Xarray);
-  // struct argsort *Z3 = malloc((n - 1) * sizeof(struct argsort));
-  Py_RETURN_NONE;
-}
-
-static PyObject *mergesort2(PyObject *self, PyObject *args) {
-  PyObject *in;
-  PyArrayObject *Xarray;
-  if (!PyArg_ParseTuple(args, "O:mergesort", &in))
-    return NULL;
-
-  Xarray = (PyArrayObject *)PyArray_FROM_OTF(in, NPY_DOUBLE, NPY_ARRAY_DEFAULT);
-
-  npy_intp n = PyArray_DIM(Xarray, 0);
-  struct argsort *A = malloc(n * sizeof(struct argsort));
-  double *x = PyArray_DATA(Xarray);
-  for (npy_intp i = 0; i < n; ++i) {
-    A[i].value = x[i];
-    A[i].index = i;
-  }
-  mergesort_argsort(A, n);
-  // qsort(x, n, sizeof(x[0]), cmp);
-  Py_DECREF(Xarray);
-  // struct argsort *Z3 = malloc((n - 1) * sizeof(struct argsort));
-  Py_RETURN_NONE;
-}
-
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   PyObject *in;
   PyArrayObject *PDarray;
@@ -238,6 +132,8 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   if (!PDarray) {
     return NULL;
   }
+  // m = n*(n+1)/2
+  // npy_intp n = 1 + (-1 + (int)sqrt(1 + 8 * PyArray_DIM(PDarray, 0))) / 2;
 
   const double *PD = (const double *)PyArray_DATA(PDarray);
   int *Z1 = malloc((n - 1) * sizeof(int));
@@ -287,8 +183,7 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   Py_DECREF(PDarray);
 
   // Sort
-  qsort(Z3, n - 1, sizeof(Z3[0]), argsort_cmp);
-  // mergesort_argsort(Z3, n - 1);
+  quicksort_argsort(Z3, n - 1);
 
   PyArrayObject *Zarray, *ZDarray;
   npy_intp Zdims[] = {n - 1, 3};
@@ -505,10 +400,6 @@ static PyMethodDef spcal_methods[] = {
      "Cluster using the MST linkage."},
     // Other
     {"maxima", maxima, METH_VARARGS,
-     "Calculates maxima between pairs of start and end positions."},
-    {"mergesort", mergesort, METH_VARARGS,
-     "Calculates maxima between pairs of start and end positions."},
-    {"mergesort2", mergesort, METH_VARARGS,
      "Calculates maxima between pairs of start and end positions."},
     // Fitting
     /* {"fit_normal", fit_normal, METH_VARARGS, "Fit a normal pdf to the
