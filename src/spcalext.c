@@ -122,9 +122,9 @@ void label(int *Z, int n) {
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   PyObject *in;
   PyArrayObject *PDarray;
-  int n;
+  npy_intp n;
 
-  if (!PyArg_ParseTuple(args, "Oi:mst_linkage", &in, &n))
+  if (!PyArg_ParseTuple(args, "On:mst_linkage", &in, &n))
     return NULL;
 
   PDarray =
