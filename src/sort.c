@@ -1,9 +1,8 @@
 #include "sort.h"
-#include <stdlib.h>
 #include <string.h>
 
-void merge_argsort(struct argsort *x, int n, struct argsort *t) {
-  int i = 0, j = n / 2, ti = 0;
+void merge_argsort(struct argsort *x, size_t n, struct argsort *t) {
+  size_t i = 0, j = n / 2, ti = 0;
 
   while (i < n / 2 && j < n) {
     if (x[i].value < x[j].value) {
@@ -21,7 +20,7 @@ void merge_argsort(struct argsort *x, int n, struct argsort *t) {
   memcpy(x, t, n * sizeof(struct argsort));
 }
 
-void mergesort_argsort_rec(struct argsort *x, int n, struct argsort *t) {
+void mergesort_argsort_rec(struct argsort *x, size_t n, struct argsort *t) {
   if (n < 2)
     return;
 #pragma omp task shared(x) if (n > 1000)
@@ -32,7 +31,7 @@ void mergesort_argsort_rec(struct argsort *x, int n, struct argsort *t) {
   merge_argsort(x, n, t);
 }
 
-void mergesort_argsort(struct argsort *x, int n) {
+void mergesort_argsort(struct argsort *x, size_t n) {
   struct argsort *t = malloc(n * sizeof(struct argsort));
 #pragma omp parallel
   {
@@ -42,37 +41,38 @@ void mergesort_argsort(struct argsort *x, int n) {
   free(t);
 }
 
-int partition_argsort(struct argsort *x, int low, int high) {
+long partition_argsort(struct argsort *x, size_t low, size_t high) {
   double pivot = x[low].value;
   struct argsort t;
-  int i = low - 1;
 
-  for (size_t j = low; j <= high; ++j) {
-    if (x[j].value < pivot) {
-      i++;
-      t = x[i];
-      x[i] = x[j];
-      x[j] = t;
+  long i = low - 1;
+  long j = high + 1;
+
+  while (1) {
+    while (x[++i].value < pivot)
+      ;
+    while (x[--j].value > pivot)
+      ;
+    if (i >= j) {
+      return j;
     }
+    t = x[i];
+    x[i] = x[j];
+    x[j] = t;
   }
-  i++;
-  t = x[i];
-  x[i] = x[high];
-  x[high] = t;
-  return i + 1;
 }
 
-void quicksort_argsort_rec(struct argsort *x, int low, int high) {
+void quicksort_argsort_rec(struct argsort *x, size_t low, size_t high) {
   if (low < high) {
-    int pivot = partition_argsort(x, low, high);
+    size_t pivot = partition_argsort(x, low, high);
 #pragma omp task shared(x) if ((high - low) > 1000)
-    quicksort_argsort_rec(x, low, pivot - 1);
+    quicksort_argsort_rec(x, low, pivot);
 #pragma omp task shared(x) if ((high - low) > 1000)
     quicksort_argsort_rec(x, pivot + 1, high);
   }
 }
 
-void quicksort_argsort(struct argsort *x, int n) {
+void quicksort_argsort(struct argsort *x, size_t n) {
 #pragma omp parallel
   {
 #pragma omp single
