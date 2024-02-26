@@ -155,14 +155,13 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   int x = 0, y = 0;
   for (int i = 0; i < n - 1; ++i) {
     double min = INFINITY;
-    double dist;
     M[x] = 1;
 
     for (int j = 0; j < n; ++j) {
       if (M[j] == 1)
         continue;
 
-      dist = PD[condensed_index(x, j, n)];
+      double dist = PD[condensed_index(x, j, n)];
 
       if (D[j] > dist)
         D[j] = dist;
