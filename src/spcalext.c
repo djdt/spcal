@@ -5,6 +5,8 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
 
+#include "sort.h"
+
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
@@ -15,6 +17,13 @@ inline double euclidean(const double *X, npy_intp i, npy_intp j, npy_intp m) {
     sum += dist * dist;
   }
   return sqrt(sum);
+}
+
+inline int condensed_index(int i, int j, int n) {
+  if (i < j)
+    return n * i - (i * (i + 1) / 2) + (j - i - 1);
+  else
+    return n * j - (j * (j + 1) / 2) + (i - j - 1);
 }
 
 static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
@@ -50,37 +59,14 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
-  npy_intp k = 0;
+#pragma omp parallel for shared(X, n, m)
   for (npy_intp i = 0; i < n; ++i) {
-    for (npy_intp j = i + 1; j < n; ++j, ++k) {
-      D[k] = euclidean(X, i, j, m);
+    for (npy_intp j = i + 1; j < n; ++j) {
+      D[condensed_index(i, j, n)] = euclidean(X, i, j, m);
     }
   }
   Py_DECREF(Xarray);
   return (PyObject *)Darray;
-}
-
-inline int condensed_index(int i, int j, int n) {
-  if (i < j)
-    return n * i - (i * (i + 1) / 2) + (j - i - 1);
-  else
-    return n * j - (j * (j + 1) / 2) + (i - j - 1);
-}
-
-struct argsort {
-  double value;
-  int index;
-};
-
-int argsort_cmp(const void *a, const void *b) {
-  struct argsort *as = (struct argsort *)a;
-  struct argsort *bs = (struct argsort *)b;
-  if ((*as).value > (*bs).value)
-    return 1;
-  else if ((*as).value < (*bs).value)
-    return -1;
-  else
-    return 0;
 }
 
 inline int find_root(int *parents, int x) {
@@ -136,9 +122,9 @@ void label(int *Z, int n) {
 static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   PyObject *in;
   PyArrayObject *PDarray;
-  int n;
+  npy_intp n;
 
-  if (!PyArg_ParseTuple(args, "Oi:mst_linkage", &in, &n))
+  if (!PyArg_ParseTuple(args, "On:mst_linkage", &in, &n))
     return NULL;
 
   PDarray =
@@ -146,6 +132,8 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   if (!PDarray) {
     return NULL;
   }
+  // m = n*(n+1)/2
+  // npy_intp n = 1 + (-1 + (int)sqrt(1 + 8 * PyArray_DIM(PDarray, 0))) / 2;
 
   const double *PD = (const double *)PyArray_DATA(PDarray);
   int *Z1 = malloc((n - 1) * sizeof(int));
@@ -157,6 +145,7 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
 
   // We use Z[:, 2] as M, tracking merged
   // Init arrays (ZD = 0), D = inf
+#pragma omp parallel for
   for (npy_intp i = 0; i < n - 1; ++i) {
     D[i] = INFINITY;
     Z3[i].index = i;
@@ -164,22 +153,35 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   D[n - 1] = INFINITY;
 
   int x = 0, y = 0;
-  double dist, min;
   for (int i = 0; i < n - 1; ++i) {
-    min = INFINITY;
+    double min = INFINITY;
     M[x] = 1;
 
-    for (int j = 0; j < n; ++j) {
-      if (M[j] == 1)
-        continue;
+#pragma omp parallel shared(D, PD, M)
+    {
+      double tmin = min;
+      int ty = y;
 
-      dist = PD[condensed_index(x, j, n)];
+#pragma omp for
+      for (int j = 0; j < n; ++j) {
+        if (M[j] == 1)
+          continue;
 
-      if (D[j] > dist)
-        D[j] = dist;
-      if (D[j] < min) {
-        y = j;
-        min = D[j];
+        double dist = PD[condensed_index(x, j, n)];
+
+        if (D[j] > dist)
+          D[j] = dist;
+        if (D[j] < tmin) {
+          ty = j;
+          tmin = D[j];
+        }
+      }
+#pragma omp critical
+      {
+        if (tmin < min) {
+          min = tmin;
+          y = ty;
+        }
       }
     }
 
@@ -194,7 +196,7 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
   Py_DECREF(PDarray);
 
   // Sort
-  qsort(Z3, n - 1, sizeof(Z3[0]), argsort_cmp);
+  quicksort_argsort(Z3, n - 1);
 
   PyArrayObject *Zarray, *ZDarray;
   npy_intp Zdims[] = {n - 1, 3};
