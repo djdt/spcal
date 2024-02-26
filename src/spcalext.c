@@ -157,7 +157,7 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
     double min = INFINITY;
     M[x] = 1;
 
-#pragma omp parallel shared(PD)
+#pragma omp parallel shared(D, PD, M)
     {
       double tmin = min;
       int ty = y;
