@@ -129,4 +129,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-src/.ccls-cache
+.ccls-cache
