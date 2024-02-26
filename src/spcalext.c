@@ -157,17 +157,31 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
     double min = INFINITY;
     M[x] = 1;
 
-    for (int j = 0; j < n; ++j) {
-      if (M[j] == 1)
-        continue;
+#pragma omp parallel shared(PD)
+    {
+      double tmin = min;
+      int ty = y;
 
-      double dist = PD[condensed_index(x, j, n)];
+#pragma omp for
+      for (int j = 0; j < n; ++j) {
+        if (M[j] == 1)
+          continue;
 
-      if (D[j] > dist)
-        D[j] = dist;
-      if (D[j] < min) {
-        y = j;
-        min = D[j];
+        double dist = PD[condensed_index(x, j, n)];
+
+        if (D[j] > dist)
+          D[j] = dist;
+        if (D[j] < tmin) {
+          ty = j;
+          tmin = D[j];
+        }
+      }
+#pragma omp critical
+      {
+        if (tmin < min) {
+          min = tmin;
+          y = ty;
+        }
       }
     }
 
