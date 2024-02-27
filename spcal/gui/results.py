@@ -460,7 +460,7 @@ class ResultsWidget(QtWidgets.QWidget):
     # Plotting
     def drawIfRequired(self, graph: str | None = None) -> None:
         if graph is None:
-            w = self.graph_stack.currentWidget()
+            w = self.graph_stack.widget(self.graph_stack.currentIndex())
             if w == self.graph_hist:
                 graph = "histogram"
             elif w == self.graph_composition:
