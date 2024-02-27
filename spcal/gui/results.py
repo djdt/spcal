@@ -28,6 +28,7 @@ from spcal.siunits import (
     molar_concentration_units,
     signal_units,
     size_units,
+    volume_units,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,12 +39,14 @@ class ResultsWidget(QtWidgets.QWidget):
         "Signal": ("Intensity (counts)", "", 1.0),
         "Mass": ("Mass", "g", 1e3),
         "Size": ("Size", "m", 1.0),
+        "Volume": ("Volume", "m³", 1.0),
         "Concentration": ("Concentration", "mol/L", 1.0),
     }
     mode_keys = {
         "Signal": "signal",
         "Mass": "mass",
         "Size": "size",
+        "Volume": "volume",
         "Concentration": "cell_concentration",
     }
 
@@ -71,6 +74,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "signal": None,
                     "mass": None,
                     "size": None,
+                    "volume": None,
                     "cell_concentration": None,
                 },
             },
@@ -163,6 +167,11 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         self.mode.setItemData(
             3,
+            "Particle volume, requires calibration.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.mode.setItemData(
+            4,
             "Intracellular concentration, requires cell diameter and molarmass.",
             QtCore.Qt.ToolTipRole,
         )
@@ -749,6 +758,10 @@ class ResultsWidget(QtWidgets.QWidget):
                 units = size_units
                 values = result.detections["size"]
                 lod = result.asSize(lod)  # type: ignore
+            elif mode == "Volume" and "volume" in result.detections:
+                units = volume_units
+                values = result.detections["volume"]
+                lod = result.asVolume(lod)  # type: ignore
             elif mode == "Concentration" and "cell_concentration" in result.detections:
                 units = molar_concentration_units
                 values = result.detections["cell_concentration"]
@@ -881,7 +894,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
-        for key, index in zip(["mass", "size", "cell_concentration"], [1, 2, 3]):
+        for key, index in zip(
+            ["mass", "size", "volume", "cell_concentration"], [1, 2, 3, 4]
+        ):
             enabled = any(key in result.detections for result in self.results.values())
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
@@ -901,10 +916,12 @@ class ResultsWidget(QtWidgets.QWidget):
             # "signal": ("counts", 1.0),
             "mass": ("kg", 1.0),
             "size": ("m", 1.0),
+            "volume": ("m³", 1.0),
             "cell_concentration": ("mol/L", 1.0),
         }
         for key, units in zip(
-            best_units, [mass_units, size_units, molar_concentration_units]
+            best_units,
+            [mass_units, size_units, volume_units, molar_concentration_units],
         ):
             unit_keys = list(units.keys())
             unit_values = list(units.values())
