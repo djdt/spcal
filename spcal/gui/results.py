@@ -35,19 +35,19 @@ logger = logging.getLogger(__name__)
 
 
 class ResultsWidget(QtWidgets.QWidget):
-    mode_labels = {
-        "Signal": ("Intensity (counts)", "", 1.0),
-        "Mass": ("Mass", "g", 1e3),
-        "Size": ("Size", "m", 1.0),
-        "Volume": ("Volume", "m³", 1.0),
-        "Concentration": ("Concentration", "mol/L", 1.0),
-    }
     mode_keys = {
         "Signal": "signal",
         "Mass": "mass",
         "Size": "size",
         "Volume": "volume",
         "Concentration": "cell_concentration",
+    }
+    mode_labels = {  # these differ from SPCalResult.base_units
+        "Signal": ("Intensity (counts)", "", 1.0),
+        "Mass": ("Mass", "g", 1e3),
+        "Size": ("Size", "m", 1.0),
+        "Volume": ("Volume", "m³", 1.0),
+        "Concentration": ("Concentration", "mol/L", 1.0),
     }
 
     def __init__(
@@ -912,16 +912,16 @@ class ResultsWidget(QtWidgets.QWidget):
             self.action_graph_histogram_single.trigger()
 
     def bestUnitsForResults(self) -> dict[str, tuple[str, float]]:
-        best_units = {
-            # "signal": ("counts", 1.0),
-            "mass": ("kg", 1.0),
-            "size": ("m", 1.0),
-            "volume": ("m³", 1.0),
-            "cell_concentration": ("mol/L", 1.0),
-        }
+        best_units = {k: v for k, v in SPCalResult.base_units.items()}
         for key, units in zip(
             best_units,
-            [mass_units, size_units, volume_units, molar_concentration_units],
+            [
+                signal_units,
+                mass_units,
+                size_units,
+                volume_units,
+                molar_concentration_units,
+            ],
         ):
             unit_keys = list(units.keys())
             unit_values = list(units.values())
@@ -933,7 +933,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 if unit_values[idx] < best_units[key][1]:
                     best_units[key] = unit_keys[idx], unit_values[idx]
 
-        best_units["signal"] = ("counts", 1.0)
         return best_units
 
     def requestUpdate(self) -> None:
