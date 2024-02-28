@@ -130,12 +130,8 @@ def export_single_particle_results(
         "time": ("s", 1.0),
         "uptake": ("ml/min", 1e-3 / 60.0),
     }
-    result_units = {
-        "signal": ("counts", 1.0),
-        "mass": ("kg", 1.0),
-        "size": ("m", 1.0),
-        "cell_concentration": ("mol/L", 1.0),
-    }
+
+    result_units = {k: v for k, v in SPCalResult.base_units.items()}
 
     if units_for_inputs is not None:
         input_units.update(units_for_inputs)
@@ -254,7 +250,7 @@ def export_single_particle_results(
             return ufunc(r.detections[key][r.indicies]) / factor
 
         fp.write(f"# Mean,{','.join(results.keys())}\n")
-        for key in ["signal", "mass", "size", "cell_concentration"]:
+        for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
             write_if_exists(
                 fp,
@@ -264,7 +260,7 @@ def export_single_particle_results(
                 postfix="," + unit,
             )
         fp.write(f"# Median,{','.join(results.keys())}\n")
-        for key in ["signal", "mass", "size", "cell_concentration"]:
+        for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
             write_if_exists(
                 fp,
@@ -286,7 +282,7 @@ def export_single_particle_results(
 
         valid = SPCalResult.all_valid_indicies(list(results.values()))
 
-        for key in ["signal", "mass", "size", "cell_concentration"]:
+        for key in SPCalResult.base_units.keys():
             data = {}
             for name, result in results.items():
                 if key in result.detections:
@@ -343,7 +339,7 @@ def export_single_particle_results(
                 )
             return format.format(lod / factor)
 
-        for key in ["signal", "mass", "size", "cell_concentration"]:
+        for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
             write_if_exists(
                 fp,
@@ -371,7 +367,7 @@ def export_single_particle_results(
         valid = SPCalResult.all_valid_indicies(list(results.values()))
 
         for name, result in results.items():
-            for key in ["signal", "mass", "size", "cell_concentration"]:
+            for key in SPCalResult.base_units.keys():
                 if key in result.detections:
                     unit, factor = result_units[key]
                     header_name += f",{name}"
@@ -387,7 +383,7 @@ def export_single_particle_results(
 
         if export_clusters:
             idx = np.zeros(valid.size)
-            for key in ["signal", "mass", "size", "cell_concentration"]:
+            for key in SPCalResult.base_units.keys():
                 if key in clusters:
                     header_name += ",cluster idx"
                     header_unit += f",{key}"
@@ -404,7 +400,9 @@ def export_single_particle_results(
         fp.write(header_name[1:] + "\n")
         fp.write(header_unit[1:] + "\n")
         for line in data:
-            if np.all(line == 0.0):  # pragma: no cover, don't write line if all filtered
+            if np.all(
+                line == 0.0
+            ):  # pragma: no cover, don't write line if all filtered
                 continue
             fp.write(
                 ",".join("" if x == 0.0 else "{:.8g}".format(x) for x in line) + "\n"

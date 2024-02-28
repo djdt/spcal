@@ -117,7 +117,7 @@ class SPCalResult(object):
     """Calculates results from single particle detections.
 
     At minimum `detections` must contain 'signal' key, other
-    valid keys are 'mass', 'size', 'cell_concentration'.
+    valid keys are 'mass', 'size', 'volume', 'cell_concentration'.
 
     Attributes:
         file: path of file results are from
@@ -129,6 +129,14 @@ class SPCalResult(object):
         limits: SPCalLimit for element
         inputs: inputs used to calculate results
     """
+
+    base_units = {
+        "signal": ("counts", 1.0),
+        "mass": ("kg", 1.0),
+        "size": ("m", 1.0),
+        "volume": ("m³", 1.0),
+        "cell_concentration": ("mol/L", 1.0),
+    }
 
     def __init__(
         self,
@@ -317,7 +325,7 @@ class SPCalResult(object):
     def asSize(self, value: float | np.ndarray) -> float | np.ndarray | None:
         """Convert value to size in m.
 
-        Has the same requirements as ``asMass`` but also requires 'density'.
+        Requires the ``asMass`` and 'density' inputs.
 
         Args:
             value: single value or array
@@ -331,9 +339,9 @@ class SPCalResult(object):
         return None
 
     def asVolume(self, value: float | np.ndarray) -> float | np.ndarray | None:
-        """Convert value to volume in m3.
+        """Convert value to size in m3.
 
-        Has the same requirements as ``asMass`` but also requires 'density'.
+        Requires the ``asMass`` and 'density' inputs.
 
         Args:
             value: single value or array
@@ -341,9 +349,9 @@ class SPCalResult(object):
         Returns:
             value or None if unable to calculate
         """
-        masses = self.asMass(value)
-        if masses is not None and "density" in self.inputs:
-            return masses * self.inputs["density"]
+        mass = self.asMass(value)
+        if mass is not None and "density" in self.inputs:
+            return mass * self.inputs["density"]
         return None
 
     def convertTo(
@@ -353,8 +361,8 @@ class SPCalResult(object):
 
         Args:
             value: single value or array
-            key: type of conversion {'signal', 'mass', 'size', 'cell_concentration',
-                                     'volume'}
+            key: type of conversion {'single', 'mass', 'size', 'volume',
+                                     'cell_concentration'}
 
         Returns:
             converted value or None if unable to calculate
@@ -371,77 +379,6 @@ class SPCalResult(object):
             return self.asVolume(value)
         else:
             raise KeyError(f"convertTo: unknown key '{key}'.")
-
-    # def fromNebulisationEfficiency(
-    #     self,
-    # ) -> None:
-    #     """Calculates detection mass, size and intracellular concentration.
-    #
-    #         Performs calibration of detections into masses.
-    #         Requires the 'dwelltime', 'efficiency', 'uptake', 'response' and 'mass_fraction'
-    #         inputs.
-    #
-    #         Particle sizes are calculated if 'density' is available and intracellular
-    #         concentrations if the 'cell_diameter' and 'molar_mass' inputs are available.
-    #     #"""
-
-    #     masses = self.asMass(self.detections["signal"], mode="efficiency")
-    #     if not isinstance(masses, np.ndarray):
-    #         raise ValueError("fromNebulisationEfficiency: missing required mass input")
-    #     self.detections["mass"] = masses
-    #
-    #     if "density" not in self.inputs:  # pragma: no cover
-    #         logger.warning("fromNebulisationEfficiency: missing required size input")
-    #     else:
-    #         self.detections["size"] = np.asarray(
-    #             particle.particle_size(
-    #                 self.detections["mass"], density=self.inputs["density"]
-    #             )
-    #         )
-    #         self.detections["volume"] = self.detections["mass"] * self.inputs["density"]
-    #
-    #     if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
-    #         self.detections["cell_concentration"] = np.asarray(
-    #             particle.cell_concentration(
-    #                 self.detections["mass"],
-    #                 diameter=self.inputs["cell_diameter"],
-    #                 molar_mass=self.inputs["molar_mass"],
-    #             )
-    #         )
-    #
-    # def fromMassResponse(self) -> None:
-    #     """Calculates detection mass, size and intracellular concentration.
-    #
-    #     Performs calibration of detections into masses.
-    #     Requires the 'mass_response' and 'mass_fraction' inputs.
-    #
-    #     Particle sizes are calculated if 'density' is available and intracellular
-    #     concentrations if the 'cell_diameter' and 'molar_mass' inputs are available.
-    #     """
-    #     masses = self.asMass(self.detections["signal"], mode="efficiency")
-    #     if any(x not in self.inputs for x in ["mass_response", "mass_fraction"]):
-    #         raise ValueError("fromMassResponse: missing required mass input")
-    #
-    #     self.detections["mass"] = self.detections["signal"] * (
-    #         self.inputs["mass_response"] / self.inputs["mass_fraction"]
-    #     )
-    #     if "density" not in self.inputs:  # pragma: no cover
-    #         logger.warning("fromMassResponse: missing required size input")
-    #     else:
-    #         self.detections["size"] = np.asarray(
-    #             particle.particle_size(
-    #                 self.detections["mass"], density=self.inputs["density"]
-    #             )
-    #         )
-    #
-    #     if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
-    #         self.detections["cell_concentration"] = np.asarray(
-    #             particle.cell_concentration(
-    #                 self.detections["mass"],
-    #                 diameter=self.inputs["cell_diameter"],
-    #                 molar_mass=self.inputs["molar_mass"],
-    #             )
-    #         )
 
     @staticmethod
     def all_valid_indicies(results: list["SPCalResult"]) -> np.ndarray:

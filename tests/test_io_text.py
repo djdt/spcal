@@ -168,18 +168,21 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "#,5,9,counts\n"
         assert fp.readline() == "#,,4.5e-19,kg\n"
         assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
         assert fp.readline() == "# Median,a,b\n"
         assert fp.readline() == "#,5,9,counts\n"
         assert fp.readline() == "#,,4.5e-19,kg\n"
         assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
         assert fp.readline() == "# Limits of detection,a,b\n"
         assert fp.readline() == "#,8 - 10,9,counts\n"
         assert fp.readline() == "#,,4.5e-19,kg\n"
         assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
         fp.readline()
         assert fp.readline() == "# End of export"
@@ -233,14 +236,14 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         for i in range(5):
             fp.readline()
         fp.readline()
-        assert fp.readline() == "a,b,b,b,b\n"
-        assert fp.readline() == "counts,counts,kg,m,mol/L\n"
+        assert fp.readline() == "a,b,b,b,b,b\n"
+        assert fp.readline() == "counts,counts,kg,m,m³,mol/L\n"
         # Todo, compute these
-        assert fp.readline() == "5,,,,\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.2971835e-08\n"
-        assert fp.readline() == ",9,4.5e-19,4.413041e-07,4.2971835e-08\n"
+        assert fp.readline() == "5,,,,,\n"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == ",9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -300,8 +303,8 @@ def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
         for i in range(5 + 4):
             fp.readline()
         fp.readline()
-        assert fp.readline() == "a,b,b,b,b,cluster idx,cluster idx\n"
-        assert fp.readline() == "counts,counts,kg,m,mol/L,signal,mass\n"
+        assert fp.readline() == "a,b,b,b,b,b,cluster idx,cluster idx\n"
+        assert fp.readline() == "counts,counts,kg,m,m³,mol/L,signal,mass\n"
         # Todo, compute these
         assert fp.readline().endswith(",1,1\n")
         assert fp.readline().endswith(",3,2\n")
