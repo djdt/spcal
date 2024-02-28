@@ -339,23 +339,7 @@ class SPCalResult(object):
         return None
 
     def asVolume(self, value: float | np.ndarray) -> float | np.ndarray | None:
-        """Convert value to size in m.
-
-        Requires the ``asMass`` and 'density' inputs.
-
-        Args:
-            value: single value or array
-
-        Returns:
-            value or None if unable to calculate
-        """
-        mass = self.asMass(value)
-        if mass is not None and "density" in self.inputs:
-            return mass * self.inputs["density"]
-        return None
-
-    def asVolume(self, value: float | np.ndarray) -> float | np.ndarray | None:
-        """Convert value to size in m.
+        """Convert value to size in m3.
 
         Requires the ``asMass`` and 'density' inputs.
 
