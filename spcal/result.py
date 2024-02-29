@@ -114,7 +114,7 @@ class SPCalResult(object):
     """Calculates results from single particle detections.
 
     At minimum `detections` must contain 'signal' key, other
-    valid keys are 'mass', 'size', 'cell_concentration'.
+    valid keys are 'mass', 'size', 'volume', 'cell_concentration'.
 
     Attributes:
         file: path of file results are from
@@ -126,6 +126,14 @@ class SPCalResult(object):
         limits: SPCalLimit for element
         inputs: inputs used to calculate results
     """
+
+    base_units = {
+        "signal": ("counts", 1.0),
+        "mass": ("kg", 1.0),
+        "size": ("m", 1.0),
+        "volume": ("m³", 1.0),
+        "cell_concentration": ("mol/L", 1.0),
+    }
 
     def __init__(
         self,
@@ -279,10 +287,9 @@ class SPCalResult(object):
             return None
 
     def asSize(self, value: float | np.ndarray) -> float | np.ndarray | None:
-        """Convert value to mass in kg.
+        """Convert value to size in m.
 
-        Requires 'dwelltime', 'density', 'efficiency', 'uptake', 'response' and
-        'mass_fraction' or 'density', 'mass_response' and 'mass_fraction' inputs.
+        Requires the ``asMass`` and 'density' inputs.
 
         Args:
             value: single value or array
@@ -295,6 +302,22 @@ class SPCalResult(object):
             return particle.particle_size(mass, density=self.inputs["density"])
         return None
 
+    def asVolume(self, value: float | np.ndarray) -> float | np.ndarray | None:
+        """Convert value to size in m.
+
+        Requires the ``asMass`` and 'density' inputs.
+
+        Args:
+            value: single value or array
+
+        Returns:
+            value or None if unable to calculate
+        """
+        mass = self.asMass(value)
+        if mass is not None and "density" in self.inputs:
+            return mass * self.inputs["density"]
+        return None
+
     def convertTo(
         self, value: float | np.ndarray, key: str
     ) -> float | np.ndarray | None:
@@ -302,7 +325,8 @@ class SPCalResult(object):
 
         Args:
             value: single value or array
-            key: type of conversion {'single', 'mass', 'size', 'cell_concentration'}
+            key: type of conversion {'single', 'mass', 'size', 'volume',
+                                     'cell_concentration'}
 
         Returns:
             converted value or None if unable to calculate
@@ -313,6 +337,8 @@ class SPCalResult(object):
             return self.asMass(value)
         elif key == "size":
             return self.asSize(value)
+        elif key == "volume":
+            return self.asVolume(value)
         elif key == "cell_concentration":
             return self.asCellConcentration(value)
         else:
@@ -354,6 +380,7 @@ class SPCalResult(object):
                     self.detections["mass"], density=self.inputs["density"]
                 )
             )
+            self.detections["volume"] = self.detections["mass"] * self.inputs["density"]
 
         if all(x in self.inputs for x in ["cell_diameter", "molar_mass"]):
             self.detections["cell_concentration"] = np.asarray(
@@ -396,6 +423,7 @@ class SPCalResult(object):
                     molar_mass=self.inputs["molar_mass"],
                 )
             )
+            self.detections["volume"] = self.detections["mass"] * self.inputs["density"]
 
     @staticmethod
     def all_valid_indicies(results: list["SPCalResult"]) -> np.ndarray:
