@@ -146,9 +146,13 @@ class SPCalResult(object):
         labels: np.ndarray,
         limits: SPCalLimit,
         inputs_kws: dict[str, float] | None = None,
+        calibration_mode: str = "efficiency",
     ):
         if detections.size == 0:
-            raise ValueError("SPCalResult: detections size is zero")
+            raise ValueError("detections size is zero")
+        if calibration_mode not in ["efficiency", "mass response"]:
+            raise ValueError("unknown calibration mode")
+
         self.file = Path(file)
 
         self.responses = responses
@@ -165,6 +169,8 @@ class SPCalResult(object):
         self.inputs = {}
         if inputs_kws is not None:
             self.inputs.update({k: v for k, v in inputs_kws.items() if v is not None})
+
+        self.calibration_mode = calibration_mode
 
     @property
     def events(self) -> int:
@@ -195,20 +201,18 @@ class SPCalResult(object):
     def mass_concentration(self) -> float | None:
         """Total particle concentration in kg/L.
 
-        Retuires 'mass' type detections. 'efficiency', 'uptake' and 'time' inupts.
+        Requires 'mass' type detections. 'efficiency', 'uptake' and 'time' inupts.
 
         Returns:
             concentration or None if unable to calculate
         """
-        if any(x not in self.inputs for x in ["efficiency", "uptake", "time"]):
-            return None
-
-        masses = self.asMass(self.detections)
-        if masses is None:
+        if not self.canCalibrate("mass") or any(
+            x not in self.inputs for x in ["efficiency", "uptake", "time"]
+        ):
             return None
 
         return particle.particle_total_concentration(
-            masses,
+            self.asMass(self.detections),
             efficiency=self.inputs["efficiency"],
             flow_rate=self.inputs["uptake"],
             time=self.inputs["time"],
@@ -237,9 +241,7 @@ class SPCalResult(object):
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalResult({self.number})"
 
-    def asCellConcentration(
-        self, value: float | np.ndarray
-    ) -> float | np.ndarray | None:
+    def asCellConcentration(self, value: float | np.ndarray) -> float | np.ndarray:
         """Convert a value to an intracellur concentration in mol/L.
 
         Requires 'dwelltime', 'efficiency', 'uptake', 'response', 'mass_fraction',
@@ -249,67 +251,31 @@ class SPCalResult(object):
             value: single value or array
 
         Returns:
-            value or None if unable to calculate
+            value
         """
-        masses = self.asMass(value)
-        if masses is not None and all(
-            x in self.inputs for x in ["cell_diameter", "molar_mass"]
-        ):
-            return particle.cell_concentration(
-                masses,
-                diameter=self.inputs["cell_diameter"],
-                molar_mass=self.inputs["molar_mass"],
-            )
-        return None
-
-    def canCalibrateMass(self, mode: str = "either") -> bool:
-        if mode in ["efficiency", "either"] and all(
-            x in self.inputs
-            for x in [
-                "dwelltime",
-                "efficiency",
-                "uptake",
-                "response",
-                "mass_fraction",
-            ]
-        ):
-            return True
-        if mode in ["mass response", "either"] and all(
-            x in self.inputs for x in ["mass_response", "mass_fraction"]
-        ):
-            return True
-        return False
-
-    def canCalibrateSize(self) -> bool:
-        return self.canCalibrateMass() and "density" in self.inputs
-
-    def canCalibrateCellConcentration(self) -> bool:
-        return (
-            self.canCalibrateMass()
-            and "cell_concentration" in self.inputs
-            and "molar_mass" in self.inputs
+        return particle.cell_concentration(
+            self.asMass(value),
+            diameter=self.inputs["cell_diameter"],
+            molar_mass=self.inputs["molar_mass"],
         )
 
-    def asMass(
-        self, value: float | np.ndarray, mode: str = "either"
-    ) -> float | np.ndarray | None:
+    def asMass(self, value: float | np.ndarray) -> float | np.ndarray:
         """Convert value to mass in kg.
 
         'mass_response' and 'mass_fraction' inputs.
 
-        For the 'efficiency' mode: requires 'dwelltime', 'efficiency', 'uptake',
-        'response' and 'mass_fraction' inputs.
-        For the 'mass response' mode: requires 'mass response' and 'mass fraction'.
-        Mode 'either' will try 'efficiency' then 'mass response'.
+        For ``calibration_mode`` 'efficiency' mode: requires 'dwelltime', 'efficiency',
+        'uptake', 'response' and 'mass_fraction' inputs.
+        For ``calibration_mode`` 'mass response': requires 'mass_response' and
+        'mass_fraction'.
 
         Args:
             value: single value or array
-            mode: method to calculate mass, 'efficiency', 'mass response' or 'either'
 
         Returns:
-            value or None if unable to calculate
+            value
         """
-        if mode in ["efficiency", "either"] and self.canCalibrateMass(mode):
+        if self.calibration_mode == "efficiency":
             return particle.particle_mass(
                 value,
                 dwell=self.inputs["dwelltime"],
@@ -318,11 +284,10 @@ class SPCalResult(object):
                 response_factor=self.inputs["response"],
                 mass_fraction=self.inputs["mass_fraction"],
             )
-        if mode in ["mass response", "either"] and self.canCalibrateMass(mode):
+        else:
             return value * self.inputs["mass_response"] / self.inputs["mass_fraction"]
-        return None
 
-    def asSize(self, value: float | np.ndarray) -> float | np.ndarray | None:
+    def asSize(self, value: float | np.ndarray) -> float | np.ndarray:
         """Convert value to size in m.
 
         Requires the ``asMass`` and 'density' inputs.
@@ -331,14 +296,13 @@ class SPCalResult(object):
             value: single value or array
 
         Returns:
-            value or None if unable to calculate
+            value
         """
-        masses = self.asMass(value)
-        if masses is not None and "density" in self.inputs:
-            return particle.particle_size(masses, density=self.inputs["density"])
-        return None
+        return particle.particle_size(
+            self.asMass(value), density=self.inputs["density"]
+        )
 
-    def asVolume(self, value: float | np.ndarray) -> float | np.ndarray | None:
+    def asVolume(self, value: float | np.ndarray) -> float | np.ndarray:
         """Convert value to size in m3.
 
         Requires the ``asMass`` and 'density' inputs.
@@ -347,16 +311,43 @@ class SPCalResult(object):
             value: single value or array
 
         Returns:
-            value or None if unable to calculate
+            value
         """
-        mass = self.asMass(value)
-        if mass is not None and "density" in self.inputs:
-            return mass * self.inputs["density"]
-        return None
+        return self.asMass(value) * self.inputs["density"]
 
-    def convertTo(
-        self, value: float | np.ndarray, key: str
-    ) -> float | np.ndarray | None:
+    def canCalibrate(self, key: str) -> bool:
+        if key == "signal":
+            return True
+
+        # all non signal conversions require mass
+        if self.calibration_mode == "efficiency":
+            mass = all(
+                x in self.inputs
+                for x in [
+                    "dwelltime",
+                    "efficiency",
+                    "uptake",
+                    "response",
+                    "mass_fraction",
+                ]
+            )
+        else:
+            mass = all(x in self.inputs for x in ["mass_response", "mass_fraction"])
+
+        if key == "mass":
+            return mass
+        elif key in ["size", "volume"]:
+            return mass and "density" in self.inputs
+        elif key == "cell_concentration":
+            return (
+                mass
+                and "cell_concentration" in self.inputs
+                and "molar_mass" in self.inputs
+            )
+        else:
+            raise KeyError(f"unknown key '{key}'.")
+
+    def convertTo(self, value: float | np.ndarray, key: str) -> float | np.ndarray:
         """Helper function to convert to mass, size or conc.
 
         Args:
@@ -365,7 +356,7 @@ class SPCalResult(object):
                                      'cell_concentration'}
 
         Returns:
-            converted value or None if unable to calculate
+            converted value
         """
         if key == "signal":
             return value

@@ -75,8 +75,22 @@ def process_data(
 
     detections, labels, regions = combine_detections(d, l, r)
 
+    if method in ["Manual Input", "Reference Particle"]:
+        calibration_mode = "efficiency"
+    elif method == "Mass Response":
+        calibration_mode = "mass response"
+    else:
+        raise ValueError("unknown calibration mode")
+
     results = {
-        name: SPCalResult(path, data[name], detections[name], labels, limits[name])
+        name: SPCalResult(
+            path,
+            data[name],
+            detections[name],
+            labels,
+            limits[name],
+            calibration_mode=calibration_mode,
+        )
         for name in detections.dtype.names
     }
 
@@ -84,17 +98,8 @@ def process_data(
     for name, result in results.items():
         assert inputs[name]["dwelltime"] is not None
         inputs[name]["time"] = result.events * inputs[name]["dwelltime"]  # type: ignore
-
         # No None inputs
         result.inputs.update({k: v for k, v in inputs[name].items() if v is not None})
-
-        try:
-            if method in ["Manual Input", "Reference Particle"]:
-                result.fromNebulisationEfficiency()
-            elif method == "Mass Response":
-                result.fromMassResponse()
-        except ValueError:
-            pass
 
     # Filter results
     if len(filters) > 0:
@@ -109,9 +114,10 @@ def process_data(
     for key in ["signal", "mass", "size", "cell_concentration"]:
         rdata = {}
         for name, result in results.items():
-            if key not in result.detections:
-                continue
-            rdata[name] = result.detections[key][valid]
+            if result.canCalibrate(key):
+                rdata[name] = np.asanyarray(result.convertTo(result.detections, key))[
+                    valid
+                ]
         if len(rdata) == 0:
             continue
         X = prepare_data_for_clustering(rdata)

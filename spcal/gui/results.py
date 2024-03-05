@@ -42,6 +42,13 @@ class ResultsWidget(QtWidgets.QWidget):
         "Volume": "volume",
         "Concentration": "cell_concentration",
     }
+    mode_units = {
+        "Signal": signal_units,
+        "Mass": mass_units,
+        "Size": size_units,
+        "Volume": volume_units,
+        "Concentration": molar_concentration_units,
+    }
     mode_labels = {  # these differ from SPCalResult.base_units
         "Signal": ("Intensity (counts)", "", 1.0),
         "Mass": ("Mass", "g", 1e3),
@@ -337,9 +344,8 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         data = {}
         for name, result in self.results.items():
-            x = result.convertTo(result.detections, key)
-            if isinstance(x, np.ndarray):
-                data[name] = x[valid]
+            if result.canCalibrate(key):
+                data[name] = result.convertTo(result.detections, key)[valid]
         if len(data) == 0:
             return None
         return data
@@ -515,10 +521,10 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         for name in names:
             indices = self.results[name].indicies
-            x = self.results[name].convertTo(self.results[name].detections, key)
-            if indices.size < 2 or x is None:
+            if indices.size < 2 or not self.results[name].canCalibrate(key):
                 continue
-            graph_data[name] = x[indices]
+            x = self.results[name].convertTo(self.results[name].detections, key)
+            graph_data[name] = np.asanyarray(x)[indices]
             graph_data[name] = np.clip(  # Remove outliers
                 graph_data[name], 0.0, np.percentile(graph_data[name], 95)
             )
@@ -643,20 +649,17 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_scatter.clear()
 
         # Set the elements
-        xname = self.combo_scatter_x.currentText()
-        yname = self.combo_scatter_y.currentText()
         mode = self.mode.currentText()
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        x = self.results[xname].detections[key] * modifier
-        y = self.results[yname].detections[key] * modifier
+        rx = self.results[self.combo_scatter_x.currentText()]
+        ry = self.results[self.combo_scatter_y.currentText()]
 
-        valid = np.intersect1d(
-            self.results[xname].indicies,
-            self.results[yname].indicies,
-            assume_unique=True,
-        )
+        x = rx.convertTo(rx.detections, key) * modifier
+        y = ry.convertTo(ry.detections, key) * modifier
+
+        valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
 
         num_valid = np.count_nonzero(valid)
         if num_valid == 0:
@@ -710,7 +713,7 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         elements = [
-            name for name in self.results if key in self.results[name].detections
+            name for name in self.results if self.results[name].canCalibrate(key)
         ]
 
         for i, combo in enumerate([self.combo_scatter_x, self.combo_scatter_y]):
@@ -729,7 +732,7 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         elements = ["None", "Total"] + [
-            name for name in self.results if key in self.results[name].detections
+            name for name in self.results if self.results[name].canCalibrate(key)
         ]
         current = self.combo_pca_colour.currentText()
         self.combo_pca_colour.blockSignals(True)
@@ -743,30 +746,17 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
+        units = self.mode_units[mode]
 
         self.io.repopulate(list(self.results.keys()))
 
         for name, result in self.results.items():
             lod = self.sample.limits[name].detection_threshold
             values = result.detections
-            if mode == "Signal":
-                units = signal_units
-            elif mode == "Mass" and result.canCalibrateMass():
-                units = mass_units
-                values = result.asMass(values)
-                lod = result.asMass(lod)  # type: ignore
-            elif mode == "Size" and result.canCalibrateSize():
-                units = size_units
-                values = result.asSize(values)
-                lod = result.asSize(lod)  # type: ignore
-            elif mode == "Volume" and result.canCalibrateSize():
-                units = volume_units
-                values = result.asVolume(values)
-                lod = result.asVolume(lod)  # type: ignore
-            elif mode == "Concentration" and result.canCalibrateCellConcentration():
-                units = molar_concentration_units
-                values = result.asCellConcentration(values)
-                lod = result.asCellConcentration(lod)  # type: ignore
+            if result.canCalibrate(key):
+                values = np.asanyarray(result.convertTo(values, key))
+                lod = result.convertTo(lod, key)
             else:
                 self.io[name].clearOutputs()
                 continue
@@ -889,7 +879,7 @@ class ResultsWidget(QtWidgets.QWidget):
         for key, index in zip(
             ["mass", "size", "volume", "cell_concentration"], [1, 2, 3, 4]
         ):
-            enabled = any(key in result.detections for result in self.results.values())
+            enabled = any(result.canCalibrate(key) for result in self.results.values())
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)

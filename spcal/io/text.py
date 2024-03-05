@@ -221,7 +221,9 @@ def export_single_particle_results(
         write_if_exists(
             fp,
             results,
-            lambda r: ((r.asSize(r.background) or 0.0) / factor) or None,
+            lambda r: r.asSize(r.background) / factor
+            if r.canCalibrate("size")
+            else None,
             "#,",
             postfix="," + unit,
         )
@@ -245,9 +247,12 @@ def export_single_particle_results(
         def ufunc_or_none(
             r: SPCalResult, ufunc, key: str, factor: float = 1.0
         ) -> float | None:
-            if key not in r.detections:
+            if not r.canCalibrate(key):
                 return None
-            return ufunc(r.detections[key][r.indicies]) / factor
+            return (
+                ufunc(np.asanyarray(r.convertTo(r.detections, key))[r.indicies])
+                / factor
+            )
 
         fp.write(f"# Mean,{','.join(results.keys())}\n")
         for key in SPCalResult.base_units.keys():
@@ -327,11 +332,11 @@ def export_single_particle_results(
             if isinstance(lod, np.ndarray):
                 lod = np.array([lod.min(), lod.max()])
 
-            lod = r.convertTo(lod, key)  # type: ignore
-
-            if lod is None:
+            if not r.canCalibrate(key):
                 return None
-            elif isinstance(lod, np.ndarray):
+
+            lod = r.convertTo(lod, key)  # type: ignore
+            if isinstance(lod, np.ndarray):
                 return (
                     format.format(lod[0] / factor)
                     + " - "
@@ -368,15 +373,14 @@ def export_single_particle_results(
 
         for name, result in results.items():
             for key in SPCalResult.base_units.keys():
-                if key in result.detections:
+                if result.canCalibrate(key):
                     unit, factor = result_units[key]
                     header_name += f",{name}"
                     header_unit += f",{unit}"
                     # Make sure filters are applied
-                    detections = np.zeros(result.detections[key].size)
-                    detections[result.indicies] = result.detections[key][
-                        result.indicies
-                    ]
+                    x = np.asanyarray(result.convertTo(result.detections, key))
+                    detections = np.zeros(x.size)
+                    detections[result.indicies] = x[result.indicies]
                     data.append(detections / factor)
 
         data = np.stack(data, axis=1)
