@@ -337,9 +337,9 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         data = {}
         for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            data[name] = result.detections[key][valid]
+            x = result.convertTo(result.detections, key)
+            if isinstance(x, np.ndarray):
+                data[name] = x[valid]
         if len(data) == 0:
             return None
         return data
@@ -515,9 +515,10 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         for name in names:
             indices = self.results[name].indicies
-            if indices.size < 2 or key not in self.results[name].detections:
+            x = self.results[name].convertTo(self.results[name].detections, key)
+            if indices.size < 2 or x is None:
                 continue
-            graph_data[name] = self.results[name].detections[key][indices]
+            graph_data[name] = x[indices]
             graph_data[name] = np.clip(  # Remove outliers
                 graph_data[name], 0.0, np.percentile(graph_data[name], 95)
             )
@@ -747,24 +748,24 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name, result in self.results.items():
             lod = self.sample.limits[name].detection_threshold
+            values = result.detections
             if mode == "Signal":
                 units = signal_units
-                values = result.detections["signal"]
-            elif mode == "Mass" and "mass" in result.detections:
+            elif mode == "Mass" and result.canCalibrateMass():
                 units = mass_units
-                values = result.detections["mass"]
+                values = result.asMass(values)
                 lod = result.asMass(lod)  # type: ignore
-            elif mode == "Size" and "size" in result.detections:
+            elif mode == "Size" and result.canCalibrateSize():
                 units = size_units
-                values = result.detections["size"]
+                values = result.asSize(values)
                 lod = result.asSize(lod)  # type: ignore
-            elif mode == "Volume" and "volume" in result.detections:
+            elif mode == "Volume" and result.canCalibrateSize():
                 units = volume_units
-                values = result.detections["volume"]
+                values = result.asVolume(values)
                 lod = result.asVolume(lod)  # type: ignore
-            elif mode == "Concentration" and "cell_concentration" in result.detections:
+            elif mode == "Concentration" and result.canCalibrateCellConcentration():
                 units = molar_concentration_units
-                values = result.detections["cell_concentration"]
+                values = result.asCellConcentration(values)
                 lod = result.asCellConcentration(lod)  # type: ignore
             else:
                 self.io[name].clearOutputs()
@@ -868,15 +869,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
             # No None inputs
             result.inputs.update({k: v for k, v in inputs.items() if v is not None})
-
-            try:
-                if method in ["Manual Input", "Reference Particle"]:
-                    result.fromNebulisationEfficiency()
-                elif method == "Mass Response":
-                    result.fromMassResponse()
-            except ValueError:
-                pass
-
             self.results[name] = result
         # end for name in names
 
