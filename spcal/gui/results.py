@@ -336,6 +336,22 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
+    def resultsForMode(self, mode: str) -> dict[str, np.ndarray]:
+        # filter_indicies = Filter.filter_results(self.filters, self.results)
+
+        # valid = SPCalResult.all_valid_indicies(list(self.results.values()))
+        # if valid.size == 0:  # pragma: no cover
+        #     return None
+
+        key = self.mode_keys[mode]
+        data = {}
+        for name, result in self.results.items():
+            # indicies = result.indicies[np.intersect1d(result.indicies, filter_indicies)]
+            indicies = result.indicies
+            if result.canCalibrate(key) and len(indicies) > 0:
+                data[name] = result.calibrated(key)[indicies]
+        return data
+
     def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         if valid.size == 0:  # pragma: no cover
@@ -513,20 +529,25 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         bin_width = self.graph_options["histogram"]["bin widths"][key]
 
-        graph_data = {}
         names = (
             [self.io.combo_name.currentText()]
             if self.graph_options["histogram"]["mode"] == "single"
             else self.results.keys()
         )
-        for name in names:
-            indices = self.results[name].indicies
-            if indices.size < 2 or not self.results[name].canCalibrate(key):
-                continue
-            graph_data[name] = self.results[name].calibrated(key)[indices]
-            graph_data[name] = np.clip(  # Remove outliers
-                graph_data[name], 0.0, np.percentile(graph_data[name], 95)
-            )
+        graph_data = {
+            k: np.clip(v, 0.0, np.percentile(v, 95))
+            for k, v in self.resultsForMode(mode).items()
+            if k in names
+        }
+
+        # for name in names:
+        #     indices = self.results[name].indicies
+        #     if indices.size < 2 or not self.results[name].canCalibrate(key):
+        #         continue
+        #     graph_data[name] = self.results[name].calibrated(key)[indices]
+        #     graph_data[name] = np.clip(  # Remove outliers
+        #         graph_data[name], 0.0, np.percentile(graph_data[name], 95)
+        #     )
 
         if len(graph_data) == 0:
             return
