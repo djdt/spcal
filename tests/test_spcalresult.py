@@ -34,9 +34,10 @@ def test_spcalresult():
     assert result.number_concentration is None
     assert result.mass_concentration is None
 
-    assert result.asCellConcentration(1.0) is None
-    assert result.asMass(1.0) is None
-    assert result.asSize(1.0) is None
+    assert not result.canCalibrate("cell_concentration")
+    assert not result.canCalibrate("mass")
+    assert not result.canCalibrate("size")
+    assert not result.canCalibrate("volume")
 
 
 def test_spcalresult_from_mass_response():
@@ -53,8 +54,8 @@ def test_spcalresult_from_mass_response():
             "cell_diameter": 10e-6,
             "molar_mass": 100.0,
         },
+        calibration_mode="mass response",
     )
-    result.fromMassResponse()
 
     assert result.ionic_background is None
     assert result.number_concentration is None
@@ -63,12 +64,13 @@ def test_spcalresult_from_mass_response():
     assert result.asMass(1.0) == 1.0 * 1e-3 / 0.5
     assert result.asSize(1.0) == particle_size(1.0 * 1e-3 / 0.5, 0.01)
 
-    assert np.all(result.detections["mass"] == result.asMass(detections))
-    assert np.all(result.detections["size"] == result.asSize(detections))
     assert np.all(
-        result.detections["cell_concentration"]
+        result.calibrated("cell_concentration")
         == result.asCellConcentration(detections)
     )
+    assert np.all(result.calibrated("mass") == result.asMass(detections))
+    assert np.all(result.calibrated("size") == result.asSize(detections))
+    assert np.all(result.calibrated("volume") == result.asVolume(detections))
 
 
 def test_spcalresult_from_nebulisation_efficiency():
@@ -89,19 +91,20 @@ def test_spcalresult_from_nebulisation_efficiency():
             "cell_diameter": 10e-6,
             "molar_mass": 100.0,
         },
+        calibration_mode="efficiency",
     )
-    result.fromNebulisationEfficiency()
 
     assert result.ionic_background == result.background / 100.0
     assert result.number_concentration is not None
     assert result.mass_concentration is not None
 
-    assert np.all(result.detections["mass"] == result.asMass(detections))
-    assert np.all(result.detections["size"] == result.asSize(detections))
     assert np.all(
-        result.detections["cell_concentration"]
+        result.calibrated("cell_concentration")
         == result.asCellConcentration(detections)
     )
+    assert np.all(result.calibrated("mass") == result.asMass(detections))
+    assert np.all(result.calibrated("size") == result.asSize(detections))
+    assert np.all(result.calibrated("volume") == result.asVolume(detections))
 
 
 def test_spcalresult_errors():
@@ -112,6 +115,15 @@ def test_spcalresult_errors():
             detections=np.array([]),
             labels=np.zeros_like(signal),
             limits=SPCalLimit(1.0, 1.0, "", {}),
+        )
+    with pytest.raises(ValueError):
+        SPCalResult(
+            "",
+            signal,
+            detections=detections,
+            labels=labels,
+            limits=SPCalLimit(1.0, 1.0, "", {}),
+            calibration_mode="invalid",
         )
 
     result = SPCalResult(
@@ -124,7 +136,3 @@ def test_spcalresult_errors():
 
     with pytest.raises(KeyError):
         result.convertTo(1.0, "invalid")
-    with pytest.raises(ValueError):
-        result.fromMassResponse()
-    with pytest.raises(ValueError):
-        result.fromNebulisationEfficiency()
