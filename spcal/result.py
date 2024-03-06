@@ -55,6 +55,8 @@ class Filter(object):
             indicies of filtered detections
         """
         size = next(iter(results.values())).detections.size
+        if len(filters) == 0:  # all valid
+            return np.arange(size)
         valid = np.zeros(size, dtype=bool)
 
         for filter_group in filters:
