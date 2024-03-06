@@ -326,8 +326,10 @@ class ResultsWidget(QtWidgets.QWidget):
         if self._clusters is None:
             self._clusters = {}
             for mode, key in self.mode_keys.items():
-                data = self.validResultsForMode(mode)
-                if data is None:
+                data = self.resultsForMode(
+                    mode, any_valid=True, filter=True, filter_clusters=False
+                )
+                if len(data) == 0:
                     continue
                 X = prepare_data_for_clustering(data)
                 T = agglomerative_cluster(
@@ -336,34 +338,35 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
-    def resultsForMode(self, mode: str) -> dict[str, np.ndarray]:
-        # filter_indicies = Filter.filter_results(self.filters, self.results)
+    def resultsForMode(
+        self,
+        mode: str,
+        any_valid: bool = False,
+        filter: bool = True,
+        filter_clusters: bool = True,
+    ) -> dict[str, np.ndarray]:
+        valid_idx = SPCalResult.all_valid_indicies(list(self.results.values()))
 
-        # valid = SPCalResult.all_valid_indicies(list(self.results.values()))
-        # if valid.size == 0:  # pragma: no cover
-        #     return None
+        if filter and len(self.filters) > 0:
+            filter_idx = Filter.filter_results(self.filters, self.results)
+            valid_idx = valid_idx[np.intersect1d(valid_idx, filter_idx)]
+        if filter_clusters and len(self.cluster_filters) > 0:
+            filter_idx = ClusterFilter.filter_clusters(
+                self.cluster_filters, self.clusters
+            )
+            valid_idx = valid_idx[np.intersect1d(valid_idx, filter_idx)]
+
+        if len(valid_idx) == 0:
+            return {}
 
         key = self.mode_keys[mode]
         data = {}
         for name, result in self.results.items():
-            # indicies = result.indicies[np.intersect1d(result.indicies, filter_indicies)]
-            indicies = result.indicies
+            indicies = (
+                valid_idx if any_valid else np.intersect1d(result.indicies, valid_idx)
+            )
             if result.canCalibrate(key) and len(indicies) > 0:
                 data[name] = result.calibrated(key)[indicies]
-        return data
-
-    def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
-        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
-        if valid.size == 0:  # pragma: no cover
-            return None
-
-        key = self.mode_keys[mode]
-        data = {}
-        for name, result in self.results.items():
-            if result.canCalibrate(key):
-                data[name] = result.calibrated(key)[valid]
-        if len(data) == 0:
-            return None
         return data
 
     def colorForName(self, name: str) -> QtGui.QColor:
@@ -477,7 +480,10 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
-        max_idx = np.amax([idx.max() for idx in self.clusters.values()])
+        if len(self.clusters) > 0:
+            max_idx = np.amax([idx.max() for idx in self.clusters.values()])
+        else:
+            max_idx = -1
         dlg = FilterDialog(
             list(self.results.keys()),
             self.filters,
@@ -624,8 +630,8 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.validResultsForMode(mode)
-        if graph_data is None:
+        graph_data = self.resultsForMode(mode, any_valid=True)
+        if len(graph_data) == 0:
             return
 
         brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
@@ -643,9 +649,9 @@ class ResultsWidget(QtWidgets.QWidget):
         mode = self.mode.currentText()
 
         label, unit, modifier = self.mode_labels[mode]
-        graph_data = self.validResultsForMode(mode)
+        graph_data = self.resultsForMode(mode, any_valid=True)
 
-        if graph_data is None or len(graph_data) < 2:
+        if len(graph_data) < 2:
             return
 
         X = np.stack(list(graph_data.values()), axis=1)
@@ -881,8 +887,8 @@ class ResultsWidget(QtWidgets.QWidget):
             self.results[name] = result
         # end for name in names
 
-        self.filterResults()
-        self.filterClusters()  # will call self.clusters to load clusters if needed
+        # self.filterResults()
+        # self.filterClusters()  # will call self.clusters to load clusters if needed
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
