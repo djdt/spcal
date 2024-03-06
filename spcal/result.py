@@ -159,7 +159,7 @@ class SPCalResult(object):
             np.logical_and(detections > 0, np.isfinite(detections))
         )
 
-        self._cache = {}
+        self._cache: dict[str, np.ndarray] = {}
 
         self.background = np.nanmean(responses[labels == 0])
         self.background_error = np.nanstd(responses[labels == 0])
