@@ -345,7 +345,7 @@ class ResultsWidget(QtWidgets.QWidget):
         data = {}
         for name, result in self.results.items():
             if result.canCalibrate(key):
-                data[name] = result.convertTo(result.detections, key)[valid]
+                data[name] = result.calibrated(key)[valid]
         if len(data) == 0:
             return None
         return data
@@ -523,8 +523,7 @@ class ResultsWidget(QtWidgets.QWidget):
             indices = self.results[name].indicies
             if indices.size < 2 or not self.results[name].canCalibrate(key):
                 continue
-            x = self.results[name].convertTo(self.results[name].detections, key)
-            graph_data[name] = np.asanyarray(x)[indices]
+            graph_data[name] = self.results[name].calibrated(key)[indices]
             graph_data[name] = np.clip(  # Remove outliers
                 graph_data[name], 0.0, np.percentile(graph_data[name], 95)
             )
@@ -656,8 +655,8 @@ class ResultsWidget(QtWidgets.QWidget):
         rx = self.results[self.combo_scatter_x.currentText()]
         ry = self.results[self.combo_scatter_y.currentText()]
 
-        x = rx.convertTo(rx.detections, key) * modifier
-        y = ry.convertTo(ry.detections, key) * modifier
+        x = rx.calibrated(key) * modifier
+        y = ry.calibrated(key) * modifier
 
         valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
 
@@ -753,9 +752,8 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name, result in self.results.items():
             lod = self.sample.limits[name].detection_threshold
-            values = result.detections
             if result.canCalibrate(key):
-                values = np.asanyarray(result.convertTo(values, key))
+                values = result.calibrated(key)
                 lod = result.convertTo(lod, key)
             else:
                 self.io[name].clearOutputs()

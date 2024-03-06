@@ -115,9 +115,7 @@ def process_data(
         rdata = {}
         for name, result in results.items():
             if result.canCalibrate(key):
-                rdata[name] = np.asanyarray(result.convertTo(result.detections, key))[
-                    valid
-                ]
+                rdata[name] = result.calibrated(key)[valid]
         if len(rdata) == 0:
             continue
         X = prepare_data_for_clustering(rdata)

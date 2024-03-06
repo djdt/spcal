@@ -249,10 +249,7 @@ def export_single_particle_results(
         ) -> float | None:
             if not r.canCalibrate(key):
                 return None
-            return (
-                ufunc(np.asanyarray(r.convertTo(r.detections, key))[r.indicies])
-                / factor
-            )
+            return ufunc(r.calibrated(key)[r.indicies]) / factor
 
         fp.write(f"# Mean,{','.join(results.keys())}\n")
         for key in SPCalResult.base_units.keys():
@@ -378,7 +375,7 @@ def export_single_particle_results(
                     header_name += f",{name}"
                     header_unit += f",{unit}"
                     # Make sure filters are applied
-                    x = np.asanyarray(result.convertTo(result.detections, key))
+                    x = result.calibrated(key)
                     detections = np.zeros(x.size)
                     detections[result.indicies] = x[result.indicies]
                     data.append(detections / factor)
