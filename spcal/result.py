@@ -157,7 +157,8 @@ class SPCalResult(object):
 
         self.responses = responses
         self.detections = detections
-        self.indicies = np.flatnonzero(
+
+        self._indicies = np.flatnonzero(
             np.logical_and(detections > 0, np.isfinite(detections))
         )
 
@@ -173,6 +174,10 @@ class SPCalResult(object):
             self.inputs.update({k: v for k, v in inputs_kws.items() if v is not None})
 
         self.calibration_mode = calibration_mode
+
+    @property
+    def indicies(self) -> np.ndarray:
+        return self._indicies
 
     @property
     def events(self) -> int:
