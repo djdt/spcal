@@ -3,7 +3,7 @@ import pytest
 
 from spcal.limit import SPCalLimit
 from spcal.particle import particle_size
-from spcal.result import SPCalResult
+from spcal.result import ClusterFilter, Filter, SPCalResult
 
 signal = np.random.random(50)
 signal[5:10] = 10.0
@@ -148,3 +148,48 @@ def test_spcalresult_errors():
 
     with pytest.raises(KeyError):
         result.convertTo(1.0, "invalid")
+
+
+def test_spcalresult_filters():
+    results = {
+        "a": SPCalResult(
+            "a.csv",
+            np.ones(10),
+            np.array([1.0, 0.0, 2.0, 0.0, 3.0, 0.0, 4.0, 0.0, 5.0, 0.0]),
+            np.array([1, 0, 2, 0, 3, 0, 4, 0, 5, 5]),
+            limits=SPCalLimit(0.1, 0.5, "Limit", {}),
+        ),
+        "b": SPCalResult(
+            "b.csv",
+            np.ones(10),
+            np.array([0.0, 1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 5.0]),
+            np.array([0, 1, 2, 0, 0, 3, 4, 0, 5, 5]),
+            limits=SPCalLimit(0.1, 0.5, "Limit", {}),
+            inputs_kws={
+                "dwelltime": 1.0,
+                "efficiency": 1.0,
+                "uptake": 1.0,
+                "response": 1.0,
+                "mass_fraction": 1.0,
+            },
+        ),
+    }
+
+    assert np.all(results["a"].indicies == [0, 2, 4, 6, 8])
+    assert np.all(results["b"].indicies == [1, 2, 5, 6, 9])
+
+    filters = [[Filter("a", "signal", ">", 4.0)]]
+    idx = Filter.filter_results(filters, results)
+    assert idx == [8]
+
+    filters = [[Filter("a", "signal", "<", 4.0), Filter("b", "signal", ">", 2.0)]]
+    idx = Filter.filter_results(filters, results)
+    assert np.all(idx == [5, 9])
+
+    filters = [[Filter("a", "signal", "<", 4.0), Filter("b", "mass", ">", 2.0)]]
+    idx = Filter.filter_results(filters, results)
+    assert np.all(idx == [5, 9])
+
+    filters = [[Filter("a", "signal", "==", 1.0)], [Filter("b", "signal", "==", 1.0)]]
+    idx = Filter.filter_results(filters, results)
+    assert np.all(idx == [0, 1])
