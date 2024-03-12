@@ -46,6 +46,8 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
     window.reference.loadData(data.copy(), {"path": "test/ref.csv", "dwelltime": 0.1})
     window.reference.io["Au"].density.setBaseValue(4.0)
 
+    window.results.updateResults()
+
     window.results.filters = [
         [Filter("Au", "signal", ">", 1.0)],
         [Filter("Ag", "mass", "<", 1000.0)],
