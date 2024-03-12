@@ -270,6 +270,7 @@ def export_single_particle_results(
 
         keys = ",".join(f"{key},error" for key in results.keys())
         fp.write(f"# Peak composition,count,{keys}\n")
+        # TODO filter on demand
         # For filtered?
         # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
 
@@ -278,8 +279,8 @@ def export_single_particle_results(
         for key in SPCalResult.base_units.keys():
             data = {}
             for name, result in results.items():
-                if key in result.detections:
-                    data[name] = result.detections[key][valid]
+                if result.canCalibrate(key):
+                    data[name] = result.calibrated(key)[valid]
             if len(data) == 0 or key not in clusters:
                 continue
 
