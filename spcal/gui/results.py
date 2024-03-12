@@ -505,9 +505,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph = "histogram"
             elif w == self.graph_composition:
                 graph = "composition"
-            elif w == self.graph_scatter:
+            elif w == self.scatter_widget:
                 graph = "scatter"
-            elif w == self.graph_pca:
+            elif w == self.pca_widget:
                 graph = "pca"
             else:
                 raise ValueError(f"unkown graph widget '{graph}'")
@@ -687,8 +687,8 @@ class ResultsWidget(QtWidgets.QWidget):
         rx = self.results[self.combo_scatter_x.currentText()]
         ry = self.results[self.combo_scatter_y.currentText()]
 
-        x = rx.calibrated(key) * modifier
-        y = ry.calibrated(key) * modifier
+        x = rx.calibrated(key, use_indicies=False) * modifier
+        y = ry.calibrated(key, use_indicies=False) * modifier
 
         valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
 
