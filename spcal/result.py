@@ -331,7 +331,7 @@ class SPCalResult(object):
             key: key of ``base_units``
         """
         if key not in self._cache:
-            self._cache[key] = self.convertTo(self.detections, key)
+            self._cache[key] = np.asanyarray(self.convertTo(self.detections, key))
         return self._cache[key]
 
     def canCalibrate(self, key: str) -> bool:
