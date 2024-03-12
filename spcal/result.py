@@ -354,9 +354,7 @@ class SPCalResult(object):
             return mass and "density" in self.inputs
         elif key == "cell_concentration":
             return (
-                mass
-                and "cell_concentration" in self.inputs
-                and "molar_mass" in self.inputs
+                mass and "cell_diameter" in self.inputs and "molar_mass" in self.inputs
             )
         else:
             raise KeyError(f"unknown key '{key}'.")
