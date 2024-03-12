@@ -158,9 +158,7 @@ class SPCalResult(object):
         self.responses = responses
         self.detections = detections
 
-        self._indicies = np.flatnonzero(
-            np.logical_and(detections > 0, np.isfinite(detections))
-        )
+        self._indicies = np.flatnonzero(detections > 0)  # checks for nan
 
         self._cache: dict[str, np.ndarray] = {}
 
@@ -219,7 +217,7 @@ class SPCalResult(object):
             return None
 
         return particle.particle_total_concentration(
-            self.asMass(self.detections),
+            self.asMass(self.detections[self.indicies]),
             efficiency=self.inputs["efficiency"],
             flow_rate=self.inputs["uptake"],
             time=self.inputs["time"],
@@ -322,17 +320,24 @@ class SPCalResult(object):
         """
         return self.asMass(value) * self.inputs["density"]
 
-    def calibrated(self, key: str) -> np.ndarray:
+    def calibrated(self, key: str, use_indicies: bool = True) -> np.ndarray:
         """Return calibrated detections.
 
         Also caches calibrated results.
 
         Args:
             key: key of ``base_units``
+            all: only return values at ``self.indicies``
+
+        Returns:
+            array of calibrated detections
         """
         if key not in self._cache:
             self._cache[key] = np.asanyarray(self.convertTo(self.detections, key))
-        return self._cache[key]
+        if use_indicies:
+            return self._cache[key][self.indicies]
+        else:
+            return self._cache[key]
 
     def canCalibrate(self, key: str) -> bool:
         if key == "signal":

@@ -345,6 +345,7 @@ class ResultsWidget(QtWidgets.QWidget):
         filter: bool = True,
         filter_clusters: bool = True,
     ) -> dict[str, np.ndarray]:
+        """Get results, with optional filtering."""
         valid_idx = SPCalResult.all_valid_indicies(list(self.results.values()))
 
         if filter and len(self.filters) > 0:
@@ -365,7 +366,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 valid_idx if any_valid else np.intersect1d(result.indicies, valid_idx)
             )
             if result.canCalibrate(key) and len(indicies) > 0:
-                data[name] = result.calibrated(key)[indicies]
+                data[name] = result.calibrated(key, use_indicies=False)[indicies]
         return data
 
     def colorForName(self, name: str) -> QtGui.QColor:
@@ -778,23 +779,24 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.io.repopulate(list(self.results.keys()))
 
+        data = self.resultsForKey(key)
         for name, result in self.results.items():
             lod = self.sample.limits[name].detection_threshold
-            if result.canCalibrate(key):
-                values = result.calibrated(key)
+            if name in data:
                 lod = result.convertTo(lod, key)
             else:
                 self.io[name].clearOutputs()
                 continue
 
-            indicies = result.indicies
+            # re-calculate results, they could be filtered
+            # indicies = result.indicies
 
             self.io[name].updateOutputs(
-                values[indicies],
+                data[name],
                 units,
                 lod,  # type: ignore
                 count=result.number,
-                count_percent=indicies.size / values.size * 100.0,
+                count_percent=result.detections.size / result.indicies.size * 100.0,
                 count_error=result.number_error,
                 conc=result.mass_concentration,
                 number_conc=result.number_concentration,
@@ -818,9 +820,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name]._filtered_indicies = indicies[
-                np.in1d(indicies, filter_indicies)
-            ]
+            self.results[name]._indicies = indicies[np.in1d(indicies, filter_indicies)]
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
@@ -833,7 +833,7 @@ class ResultsWidget(QtWidgets.QWidget):
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name]._filtered_indicies = indicies[
+            self.results[name]._indicies = indicies[
                 np.in1d(indicies, valid[filter_indicies])
             ]
 
@@ -890,8 +890,8 @@ class ResultsWidget(QtWidgets.QWidget):
             self.results[name] = result
         # end for name in names
 
-        # self.filterResults()
-        # self.filterClusters()  # will call self.clusters to load clusters if needed
+        self.filterResults()
+        self.filterClusters()  # will call self.clusters to load clusters if needed
         self.updateOutputs()
         self.updateScatterElements()
         self.updatePCAElements()
