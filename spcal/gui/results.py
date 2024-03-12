@@ -345,26 +345,29 @@ class ResultsWidget(QtWidgets.QWidget):
         filter: bool = True,
         filter_clusters: bool = True,
     ) -> dict[str, np.ndarray]:
-        """Get results, with optional filtering."""
+        """Function to get results with optional filtering."""
         valid_idx = SPCalResult.all_valid_indicies(list(self.results.values()))
 
         if filter and len(self.filters) > 0:
             filter_idx = Filter.filter_results(self.filters, self.results)
-            valid_idx = valid_idx[np.intersect1d(valid_idx, filter_idx)]
+            valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
         if filter_clusters and len(self.cluster_filters) > 0:
             filter_idx = ClusterFilter.filter_clusters(
                 self.cluster_filters, self.clusters
             )
-            valid_idx = valid_idx[np.intersect1d(valid_idx, filter_idx)]
+            valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
 
         if len(valid_idx) == 0:
             return {}
 
         data = {}
         for name, result in self.results.items():
-            indicies = (
-                valid_idx if any_valid else np.intersect1d(result.indicies, valid_idx)
-            )
+            if any_valid:
+                indicies = valid_idx
+            else:
+                indicies = np.intersect1d(
+                    valid_idx, np.flatnonzero(result.detections > 0), assume_unique=True
+                )
             if result.canCalibrate(key) and len(indicies) > 0:
                 data[name] = result.calibrated(key, use_indicies=False)[indicies]
         return data
@@ -779,24 +782,22 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.io.repopulate(list(self.results.keys()))
 
-        data = self.resultsForKey(key)
         for name, result in self.results.items():
-            lod = self.sample.limits[name].detection_threshold
-            if name in data:
-                lod = result.convertTo(lod, key)
-            else:
+            if not result.canCalibrate(key):
                 self.io[name].clearOutputs()
                 continue
+            lod = self.sample.limits[name].detection_threshold
+            lod = result.convertTo(lod, key)
 
             # re-calculate results, they could be filtered
             # indicies = result.indicies
 
             self.io[name].updateOutputs(
-                data[name],
+                result.calibrated(key),
                 units,
                 lod,  # type: ignore
                 count=result.number,
-                count_percent=result.detections.size / result.indicies.size * 100.0,
+                count_percent=result.number / result.detections.size * 100.0,
                 count_error=result.number_error,
                 conc=result.mass_concentration,
                 number_conc=result.number_concentration,
@@ -820,7 +821,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name]._indicies = indicies[np.in1d(indicies, filter_indicies)]
+            self.results[name]._indicies = np.intersect1d(
+                indicies, filter_indicies, assume_unique=True
+            )
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
@@ -833,9 +836,9 @@ class ResultsWidget(QtWidgets.QWidget):
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name]._indicies = indicies[
-                np.in1d(indicies, valid[filter_indicies])
-            ]
+            self.results[name]._indicies = np.intersect1d(
+                indicies, valid[filter_indicies], assume_unique=True
+            )
 
         for key in self.clusters.keys():
             self.clusters[key] = self.clusters[key][filter_indicies]
@@ -897,9 +900,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updatePCAElements()
         self.updateEnabledItems()
 
-        # selfitems.redraw()
         self.redraw()
-
         self.update_required = False
 
     def updateEnabledItems(self) -> None:
