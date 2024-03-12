@@ -249,7 +249,7 @@ def export_single_particle_results(
         ) -> float | None:
             if not r.canCalibrate(key):
                 return None
-            return ufunc(r.calibrated(key)[r.indicies]) / factor
+            return ufunc(r.calibrated(key)) / factor
 
         for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
             fp.write(f"# {label},{','.join(results.keys())}\n")
@@ -280,7 +280,7 @@ def export_single_particle_results(
             data = {}
             for name, result in results.items():
                 if result.canCalibrate(key):
-                    data[name] = result.calibrated(key)[valid]
+                    data[name] = result.calibrated(key, use_indicies=False)[valid]
             if len(data) == 0 or key not in clusters:
                 continue
 
@@ -366,11 +366,9 @@ def export_single_particle_results(
                     unit, factor = result_units[key]
                     header_name += f",{name}"
                     header_unit += f",{unit}"
-                    # Make sure filters are applied
-                    x = result.calibrated(key)
-                    detections = np.zeros(x.size)
-                    detections[result.indicies] = x[result.indicies]
-                    data.append(detections / factor)
+                    data.append(
+                        result.calibrated(key, use_indicies=False)[valid] / factor
+                    )
 
         data = np.stack(data, axis=1)
 
