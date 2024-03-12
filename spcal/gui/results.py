@@ -326,7 +326,7 @@ class ResultsWidget(QtWidgets.QWidget):
         if self._clusters is None:
             self._clusters = {}
             for mode, key in self.mode_keys.items():
-                data = self.resultsForMode(
+                data = self.resultsForKey(
                     key, any_valid=True, filter=True, filter_clusters=False
                 )
                 if len(data) == 0:
@@ -630,7 +630,7 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.resultsForKey(key, any_valid=True)
+        graph_data = self.resultsForKey(key, any_valid=True, filter_clusters=False)
         if len(graph_data) == 0:
             return
 
@@ -818,7 +818,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
+            self.results[name]._filtered_indicies = indicies[
+                np.in1d(indicies, filter_indicies)
+            ]
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
@@ -831,7 +833,7 @@ class ResultsWidget(QtWidgets.QWidget):
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[
+            self.results[name]._filtered_indicies = indicies[
                 np.in1d(indicies, valid[filter_indicies])
             ]
 
