@@ -396,6 +396,8 @@ class SPCalResult(object):
     @staticmethod
     def all_valid_indicies(results: list["SPCalResult"]) -> np.ndarray:
         """Return the indices where any of the results are valid."""
+        if len(results) == 0:
+            return np.array([], dtype=int)
         size = results[0].detections.size
         valid = np.zeros(size, dtype=bool)
         for result in results:
