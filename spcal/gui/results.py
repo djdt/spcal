@@ -840,8 +840,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 indicies, valid[filter_indicies], assume_unique=True
             )
 
-        for key in self.clusters.keys():
-            self.clusters[key] = self.clusters[key][filter_indicies]
+        # for key in self.clusters.keys():
+        #     self._clusters[key] = self._clusters[key][filter_indicies]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
