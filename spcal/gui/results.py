@@ -327,7 +327,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self._clusters = {}
             for mode, key in self.mode_keys.items():
                 data = self.resultsForMode(
-                    mode, any_valid=True, filter=True, filter_clusters=False
+                    key, any_valid=True, filter=True, filter_clusters=False
                 )
                 if len(data) == 0:
                     continue
@@ -338,9 +338,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
-    def resultsForMode(
+    def resultsForKey(
         self,
-        mode: str,
+        key: str,
         any_valid: bool = False,
         filter: bool = True,
         filter_clusters: bool = True,
@@ -359,7 +359,6 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(valid_idx) == 0:
             return {}
 
-        key = self.mode_keys[mode]
         data = {}
         for name, result in self.results.items():
             indicies = (
@@ -542,7 +541,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         graph_data = {
             k: np.clip(v, 0.0, np.percentile(v, 95))
-            for k, v in self.resultsForMode(mode).items()
+            for k, v in self.resultsForKey(key).items()
             if k in names
         }
 
@@ -626,11 +625,12 @@ class ResultsWidget(QtWidgets.QWidget):
         # composition view
         self.graph_composition.clear()
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
 
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.resultsForMode(mode, any_valid=True)
+        graph_data = self.resultsForKey(key, any_valid=True)
         if len(graph_data) == 0:
             return
 
@@ -647,9 +647,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_pca.clear()
 
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
 
         label, unit, modifier = self.mode_labels[mode]
-        graph_data = self.resultsForMode(mode, any_valid=True)
+        graph_data = self.resultsForKey(key, any_valid=True)
 
         if len(graph_data) < 2:
             return
