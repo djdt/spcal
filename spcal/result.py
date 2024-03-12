@@ -35,7 +35,7 @@ class Filter(object):
     def filter(self, results: dict[str, "SPCalResult"]) -> np.ndarray | None:
         if self.name not in results or not results[self.name].canCalibrate(self.unit):
             return None
-        data = results[self.name].calibrated(self.unit)
+        data = results[self.name].calibrated(self.unit, use_indicies=False)
         return self.ufunc(data, self.value)
 
     @staticmethod
