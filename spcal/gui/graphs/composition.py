@@ -1,4 +1,3 @@
-
 import numpy as np
 import numpy.lib.recfunctions as rfn
 import pyqtgraph
@@ -73,7 +72,9 @@ class CompositionView(SinglePlotGraphicsView):
             for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
                 pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
                 pie.setPos(i * spacing, 0)
-                label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+                label = pyqtgraph.TextItem(
+                    f"idx {i+1}: {count}", color="black", anchor=(0.5, 0.0)
+                )
                 label.setPos(i * spacing, -size)
                 self.plot.addItem(pie)
                 self.plot.addItem(label)
