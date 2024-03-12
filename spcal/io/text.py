@@ -251,26 +251,17 @@ def export_single_particle_results(
                 return None
             return ufunc(r.calibrated(key)[r.indicies]) / factor
 
-        fp.write(f"# Mean,{','.join(results.keys())}\n")
-        for key in SPCalResult.base_units.keys():
-            unit, factor = result_units[key]
-            write_if_exists(
-                fp,
-                results,
-                lambda r: (ufunc_or_none(r, np.mean, key, factor)),
-                "#,",
-                postfix="," + unit,
-            )
-        fp.write(f"# Median,{','.join(results.keys())}\n")
-        for key in SPCalResult.base_units.keys():
-            unit, factor = result_units[key]
-            write_if_exists(
-                fp,
-                results,
-                lambda r: (ufunc_or_none(r, np.median, key, factor)),
-                "#,",
-                postfix="," + unit,
-            )
+        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+            fp.write(f"# {label},{','.join(results.keys())}\n")
+            for key in SPCalResult.base_units.keys():
+                unit, factor = result_units[key]
+                write_if_exists(
+                    fp,
+                    results,
+                    lambda r: (ufunc_or_none(r, ufunc, key, factor)),
+                    "#,",
+                    postfix="," + unit,
+                )
 
     def write_compositions(
         fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
