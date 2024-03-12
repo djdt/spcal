@@ -68,7 +68,9 @@ def nebulisation_efficiency_from_mass(
         response_factor: counts / concentration (kg/L)
         mass_fraction: molar mass analyte / molar mass particle
     """
-    signal = np.mean(signal)
+    if isinstance(signal, np.ndarray):
+        signal = signal[signal > 0]  # filter zeros and nan
+    signal = float(np.mean(signal))
     return (mass * response_factor * mass_fraction) / (signal * (dwell * flow_rate))
 
 
