@@ -48,18 +48,18 @@ def test_results_filters(qtbot: QtBot):
         assert result.number == 100
 
     window.results.setFilters([[Filter("A", "signal", ">=", 149.0)]], [])
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 50
+    for result in window.results.results.values():
+        assert result.number == 50
 
     window.results.setFilters([[Filter("A", "signal", ">", 159.0)]], [])
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 40
+    for result in window.results.results.values():
+        assert result.number == 40
 
     window.results.setFilters(
         [[Filter("A", "signal", ">", 149.0), Filter("B", "signal", "<", 239.0)]], []
     )
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 20
+    for result in window.results.results.values():
+        assert result.number == 20
 
     window.results.setFilters(
         [
@@ -68,24 +68,24 @@ def test_results_filters(qtbot: QtBot):
         ],
         [],
     )
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 20
+    for result in window.results.results.values():
+        assert result.number == 20
 
     window.results.setFilters([[Filter("A", "mass", ">", 0.019)]], [])
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 9
+    for result in window.results.results.values():
+        assert result.number == 9
 
     window.results.setFilters([], [])
-    for result in window.results.resultsForKey("signal").values():
-        assert result.size == 100
+    for result in window.results.results.values():
+        assert result.number == 100
 
     # Cluster filter
     counts = np.bincount(window.results.clusters["signal"])
     idx = np.argsort(counts)[::-1]
     for i, c in enumerate(counts[idx]):
         window.results.setFilters([], [ClusterFilter(i, "signal")])
-        for result in window.results.resultsForKey("signal").values():
-            assert result.size == c
+        for result in window.results.results.values():
+            assert result.number == c
 
     filters = [ClusterFilter(i, "signal") for i in np.arange(counts.size)]
     window.results.setFilters([], filters)
