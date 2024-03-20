@@ -602,7 +602,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 raise ValueError("drawGraphHist: invalid draw mode")
 
             lod = self.results[name].convertTo(
-                self.results[name].limits.detection_threshold, key
+                self.results[name].limits.detection_limit, key
             )
 
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
@@ -617,7 +617,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_limits={
                     "mean": np.mean(data) * modifier,
-                    "threshold": np.mean(lod) * modifier,  # type: ignore
+                    "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
             )
@@ -786,7 +786,7 @@ class ResultsWidget(QtWidgets.QWidget):
             if not result.canCalibrate(key):
                 self.io[name].clearOutputs()
                 continue
-            lod = self.sample.limits[name].detection_threshold
+            lod = self.sample.limits[name].detection_limit
             lod = result.convertTo(lod, key)
 
             # re-calculate results, they could be filtered

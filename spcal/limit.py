@@ -69,6 +69,15 @@ class SPCalLimit(object):
         else:
             return self.mean_signal
 
+    @property
+    def detection_limit(self) -> float | np.ndarray:
+        """The 'true' detection limit in counts.
+
+        There may be values less than the ``detection_threshold`` due to
+        subtraction of the ``signal_mean`` during calculations.
+        """
+        return self.detection_threshold - self.mean_signal
+
     @classmethod
     def fromMethodString(
         cls,
