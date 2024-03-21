@@ -178,11 +178,11 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
         assert fp.readline() == "# Limits of detection,a,b\n"
-        assert fp.readline() == "#,8 - 10,9,counts\n"
-        assert fp.readline() == "#,,4.5e-19,kg\n"
-        assert fp.readline() == "#,,4.413041e-07,m\n"
-        assert fp.readline() == "#,,4.5e-18,m³\n"
-        assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
+        assert fp.readline() == "#,7.5 - 9.5,8.5,counts\n"
+        assert fp.readline() == "#,,4.25e-19,kg\n"
+        assert fp.readline() == "#,,4.3297561e-07,m\n"
+        assert fp.readline() == "#,,4.25e-18,m³\n"
+        assert fp.readline() == "#,,4.058451e-08,mol/L\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
