@@ -548,18 +548,12 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         graph_data = {
             k: np.clip(v, 0.0, np.percentile(v, 95))
-            for k, v in self.resultsForKey(key).items()
+            for k, v in self.resultsForKey(
+                key
+                # key, filter=False, filter_clusters=False
+            ).items()
             if k in names
         }
-
-        # for name in names:
-        #     indices = self.results[name].indicies
-        #     if indices.size < 2 or not self.results[name].canCalibrate(key):
-        #         continue
-        #     graph_data[name] = self.results[name].calibrated(key)[indices]
-        #     graph_data[name] = np.clip(  # Remove outliers
-        #         graph_data[name], 0.0, np.percentile(graph_data[name], 95)
-        #     )
 
         if len(graph_data) == 0:
             return
@@ -608,9 +602,15 @@ class ResultsWidget(QtWidgets.QWidget):
                 self.results[name].limits.detection_limit, key
             )
 
+            # indicies = np.in1d(
+            #     np.flatnonzero(self.results[name].detections > 0),
+            #     self.results[name].indicies,
+            # )
+
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
                 data * modifier,
+                # valid_idx=indicies,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,

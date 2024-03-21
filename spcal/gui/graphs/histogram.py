@@ -23,6 +23,7 @@ class HistogramView(SinglePlotGraphicsView):
     def draw(
         self,
         data: np.ndarray,
+        # valid_idx: np.ndarray | None = None,
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
