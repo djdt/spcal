@@ -1,4 +1,3 @@
-
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
@@ -302,8 +301,8 @@ class FilterDialog(QtWidgets.QDialog):
                     self.addFilter(filter)
             if i < len(filters) - 1:
                 self.addBooleanOr()
-        for filter in cluster_filters:
-            self.addClusterFilter(filter)
+        for cfilter in cluster_filters:
+            self.addClusterFilter(cfilter)
 
     def addFilter(self, filter: Filter | None = None):
         widget = FilterItemWidget(self.names, filter=filter)
@@ -327,7 +326,7 @@ class FilterDialog(QtWidgets.QDialog):
                 self.list.takeItem(i)
                 break
 
-    def addClusterFilter(self, filter: Filter | None = None):
+    def addClusterFilter(self, filter: ClusterFilter | None = None):
         widget = ClusterFilterItemWidget(maximum_index=self.number_clusters)
         self.addClusterWidget(widget)
 
