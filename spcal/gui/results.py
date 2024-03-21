@@ -343,12 +343,12 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
-    def filterIndicies(self, clusters: bool = False) -> np.ndarray:
+    def filterIndicies(self, clusters: bool = True) -> np.ndarray:
         idx = np.arange(next(iter(self.results.values())).detections.size)
         idx = np.intersect1d(
             idx, Filter.filter_results(self.filters, self.results), assume_unique=True
         )
-        if clusters:
+        if clusters and len(self.cluster_filters) > 0:
             idx = np.intersect1d(
                 idx,
                 ClusterFilter.filter_clusters(self.cluster_filters, self.clusters),
