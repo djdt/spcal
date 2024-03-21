@@ -346,7 +346,10 @@ class ResultsWidget(QtWidgets.QWidget):
         filter_clusters: bool = True,
     ) -> dict[str, np.ndarray]:
         """Function to get results with optional filtering."""
-        valid_idx = SPCalResult.all_valid_indicies(list(self.results.values()))
+        valid = np.zeros(next(iter(self.results.values())).detections.size, dtype=bool)
+        for result in self.results.values():
+            valid[result.detections > 0] = True
+        valid_idx = np.flatnonzero(valid)
 
         if filter and len(self.filters) > 0:
             filter_idx = Filter.filter_results(self.filters, self.results)
@@ -366,7 +369,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 indicies = valid_idx
             else:
                 indicies = np.intersect1d(
-                    valid_idx, np.flatnonzero(result.detections > 0), assume_unique=True
+                    np.flatnonzero(result.detections > 0), valid_idx, assume_unique=True
                 )
             if result.canCalibrate(key) and len(indicies) > 0:
                 data[name] = result.calibrated(key, use_indicies=False)[indicies]
