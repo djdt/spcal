@@ -42,6 +42,13 @@ class ResultsWidget(QtWidgets.QWidget):
         "Volume": "volume",
         "Concentration": "cell_concentration",
     }
+    mode_units = {
+        "Signal": signal_units,
+        "Mass": mass_units,
+        "Size": size_units,
+        "Volume": volume_units,
+        "Concentration": molar_concentration_units,
+    }
     mode_labels = {  # these differ from SPCalResult.base_units
         "Signal": ("Intensity (counts)", "", 1.0),
         "Mass": ("Mass", "g", 1e3),
@@ -319,9 +326,16 @@ class ResultsWidget(QtWidgets.QWidget):
         if self._clusters is None:
             self._clusters = {}
             for mode, key in self.mode_keys.items():
-                data = self.validResultsForMode(mode)
-                if data is None:
+                data = self.resultsForKey(key)
+                idx = self.filterIndicies(clusters=False)
+                # data = data[Filter.filter_results(self.filters, self.results)]
+                #     key, include_zeros=True, filter=True, filter_clusters=False
+                # )
+                if len(data) == 0 or idx.size == 0:
                     continue
+                for k, v in data.items():
+                    data[k] = v[idx]
+
                 X = prepare_data_for_clustering(data)
                 T = agglomerative_cluster(
                     X, self.graph_options["composition"]["distance"]
@@ -329,19 +343,55 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
-    def validResultsForMode(self, mode: str) -> dict[str, np.ndarray] | None:
-        valid = SPCalResult.all_valid_indicies(list(self.results.values()))
-        if valid.size == 0:  # pragma: no cover
-            return None
+    def filterIndicies(self, clusters: bool = True) -> np.ndarray:
+        idx = np.arange(next(iter(self.results.values())).detections.size)
+        idx = np.intersect1d(
+            idx, Filter.filter_results(self.filters, self.results), assume_unique=True
+        )
+        if clusters and len(self.cluster_filters) > 0:
+            idx = np.intersect1d(
+                idx,
+                ClusterFilter.filter_clusters(self.cluster_filters, self.clusters),
+                assume_unique=True,
+            )
+        return idx
 
-        key = self.mode_keys[mode]
+    def resultsForKey(
+        self,
+        key: str,
+        # include_zeros: bool = False,
+        # filter: bool = True,
+        # filter_clusters: bool = True,
+    ) -> dict[str, np.ndarray]:
+        """Function to get results with optional filtering."""
+        # valid = np.zeros(next(iter(self.results.values())).detections.size, dtype=bool)
+        # for result in self.results.values():
+        #     valid[result.detections > 0] = True
+        # valid_idx = np.flatnonzero(valid)
+        # valid_idx = np.arange(next(iter(self.results.values())).detections.size)
+        #
+        # if filter and len(self.filters) > 0:
+        #     filter_idx = Filter.filter_results(self.filters, self.results)
+        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
+        # if filter_clusters and len(self.cluster_filters) > 0:
+        #     filter_idx = ClusterFilter.filter_clusters(
+        #         self.cluster_filters, self.clusters
+        #     )
+        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
+
+        # if len(valid_idx) == 0:
+        #     return {}
+
         data = {}
         for name, result in self.results.items():
-            if key not in result.detections:
-                continue
-            data[name] = result.detections[key][valid]
-        if len(data) == 0:
-            return None
+            # if include_zeros:
+            #     indicies = valid_idx
+            # else:
+            #     indicies = np.intersect1d(
+            #         np.flatnonzero(result.detections > 0), valid_idx, assume_unique=True
+            #     )
+            if result.canCalibrate(key):
+                data[name] = result.calibrated(key, use_indicies=False)  # [indicies]
         return data
 
     def colorForName(self, name: str) -> QtGui.QColor:
@@ -455,7 +505,10 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
-        max_idx = np.amax([idx.max() for idx in self.clusters.values()])
+        if len(self.clusters) > 0:
+            max_idx = np.amax([idx.max() for idx in self.clusters.values()])
+        else:
+            max_idx = -1
         dlg = FilterDialog(
             list(self.results.keys()),
             self.filters,
@@ -474,9 +527,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 graph = "histogram"
             elif w == self.graph_composition:
                 graph = "composition"
-            elif w == self.graph_scatter:
+            elif w == self.scatter_widget:
                 graph = "scatter"
-            elif w == self.graph_pca:
+            elif w == self.pca_widget:
                 graph = "pca"
             else:
                 raise ValueError(f"unkown graph widget '{graph}'")
@@ -507,22 +560,19 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         bin_width = self.graph_options["histogram"]["bin widths"][key]
 
-        graph_data = {}
         names = (
             [self.io.combo_name.currentText()]
             if self.graph_options["histogram"]["mode"] == "single"
             else self.results.keys()
         )
-        for name in names:
-            indices = self.results[name].indicies
-            if indices.size < 2 or key not in self.results[name].detections:
-                continue
-            graph_data[name] = self.results[name].detections[key][indices]
-            graph_data[name] = np.clip(  # Remove outliers
-                graph_data[name], 0.0, np.percentile(graph_data[name], 95)
-            )
+        graph_data = {
+            k: np.clip(v, 0.0, np.percentile(v, 95))
+            for k, v in self.resultsForKey(key).items()
+            if k in names
+        }
+        idx = self.filterIndicies()
 
-        if len(graph_data) == 0:
+        if len(graph_data) == 0 or idx.size == 0:
             return
 
         # median FD bin width
@@ -566,12 +616,18 @@ class ResultsWidget(QtWidgets.QWidget):
                 raise ValueError("drawGraphHist: invalid draw mode")
 
             lod = self.results[name].convertTo(
-                self.results[name].limits.detection_threshold, key
+                self.results[name].limits.detection_limit, key
             )
+
+            # indicies = np.in1d(
+            #     np.flatnonzero(self.results[name].detections > 0),
+            #     self.results[name].indicies,
+            # )
 
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
                 data * modifier,
+                idx=idx,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,
@@ -581,7 +637,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_limits={
                     "mean": np.mean(data) * modifier,
-                    "threshold": np.mean(lod) * modifier,  # type: ignore
+                    "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
             )
@@ -593,13 +649,19 @@ class ResultsWidget(QtWidgets.QWidget):
         # composition view
         self.graph_composition.clear()
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
 
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.validResultsForMode(mode)
-        if graph_data is None:
+        graph_data = self.resultsForKey(
+            key
+        )  # , include_zeros=True, filter_clusters=False)
+        idx = self.filterIndicies(clusters=False)
+        if len(graph_data) == 0 or idx.size == 0:
             return
+        for k, v in graph_data.items():
+            graph_data[k] = v[idx]
 
         brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
         self.graph_composition.draw(
@@ -614,12 +676,15 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_pca.clear()
 
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
 
         label, unit, modifier = self.mode_labels[mode]
-        graph_data = self.validResultsForMode(mode)
-
-        if graph_data is None or len(graph_data) < 2:
+        graph_data = self.resultsForKey(key)  # , include_zeros=True)
+        idx = self.filterIndicies()
+        if len(graph_data) < 2 or idx.size == 0:
             return
+        for k, v in graph_data.items():
+            graph_data[k] = v[idx]
 
         X = np.stack(list(graph_data.values()), axis=1)
         brush = QtGui.QBrush(QtCore.Qt.black)
@@ -642,20 +707,17 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_scatter.clear()
 
         # Set the elements
-        xname = self.combo_scatter_x.currentText()
-        yname = self.combo_scatter_y.currentText()
         mode = self.mode.currentText()
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
-        x = self.results[xname].detections[key] * modifier
-        y = self.results[yname].detections[key] * modifier
+        rx = self.results[self.combo_scatter_x.currentText()]
+        ry = self.results[self.combo_scatter_y.currentText()]
 
-        valid = np.intersect1d(
-            self.results[xname].indicies,
-            self.results[yname].indicies,
-            assume_unique=True,
-        )
+        x = rx.calibrated(key, use_indicies=False) * modifier
+        y = ry.calibrated(key, use_indicies=False) * modifier
+
+        valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
 
         num_valid = np.count_nonzero(valid)
         if num_valid == 0:
@@ -709,7 +771,7 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         elements = [
-            name for name in self.results if key in self.results[name].detections
+            name for name in self.results if self.results[name].canCalibrate(key)
         ]
 
         for i, combo in enumerate([self.combo_scatter_x, self.combo_scatter_y]):
@@ -728,7 +790,7 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         elements = ["None", "Total"] + [
-            name for name in self.results if key in self.results[name].detections
+            name for name in self.results if self.results[name].canCalibrate(key)
         ]
         current = self.combo_pca_colour.currentText()
         self.combo_pca_colour.blockSignals(True)
@@ -742,42 +804,27 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateOutputs(self) -> None:
         mode = self.mode.currentText()
+        key = self.mode_keys[mode]
+        units = self.mode_units[mode]
 
         self.io.repopulate(list(self.results.keys()))
 
         for name, result in self.results.items():
-            lod = self.sample.limits[name].detection_threshold
-            if mode == "Signal":
-                units = signal_units
-                values = result.detections["signal"]
-            elif mode == "Mass" and "mass" in result.detections:
-                units = mass_units
-                values = result.detections["mass"]
-                lod = result.asMass(lod)  # type: ignore
-            elif mode == "Size" and "size" in result.detections:
-                units = size_units
-                values = result.detections["size"]
-                lod = result.asSize(lod)  # type: ignore
-            elif mode == "Volume" and "volume" in result.detections:
-                units = volume_units
-                values = result.detections["volume"]
-                lod = result.asVolume(lod)  # type: ignore
-            elif mode == "Concentration" and "cell_concentration" in result.detections:
-                units = molar_concentration_units
-                values = result.detections["cell_concentration"]
-                lod = result.asCellConcentration(lod)  # type: ignore
-            else:
+            if not result.canCalibrate(key):
                 self.io[name].clearOutputs()
                 continue
+            lod = self.sample.limits[name].detection_limit
+            lod = result.convertTo(lod, key)
 
-            indicies = result.indicies
+            # re-calculate results, they could be filtered
+            # indicies = result.indicies
 
             self.io[name].updateOutputs(
-                values[indicies],
+                result.calibrated(key),
                 units,
                 lod,  # type: ignore
                 count=result.number,
-                count_percent=indicies.size / values.size * 100.0,
+                count_percent=result.number / result.detections.size * 100.0,
                 count_error=result.number_error,
                 conc=result.mass_concentration,
                 number_conc=result.number_concentration,
@@ -801,7 +848,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
+            self.results[name]._indicies = np.intersect1d(
+                indicies, filter_indicies, assume_unique=True
+            )
 
     def filterClusters(self) -> None:
         if len(self.cluster_filters) == 0:
@@ -814,12 +863,12 @@ class ResultsWidget(QtWidgets.QWidget):
         valid = SPCalResult.all_valid_indicies(list(self.results.values()))
         for name in self.results:
             indicies = self.results[name].indicies
-            self.results[name].indicies = indicies[
-                np.in1d(indicies, valid[filter_indicies])
-            ]
+            self.results[name]._indicies = np.intersect1d(
+                indicies, valid[filter_indicies], assume_unique=True
+            )
 
-        for key in self.clusters.keys():
-            self.clusters[key] = self.clusters[key][filter_indicies]
+        # for key in self.clusters.keys():
+        #     self._clusters[key] = self._clusters[key][filter_indicies]
 
     def updateResults(self) -> None:
         method = self.options.efficiency_method.currentText()
@@ -868,15 +917,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
             # No None inputs
             result.inputs.update({k: v for k, v in inputs.items() if v is not None})
-
-            try:
-                if method in ["Manual Input", "Reference Particle"]:
-                    result.fromNebulisationEfficiency()
-                elif method == "Mass Response":
-                    result.fromMassResponse()
-            except ValueError:
-                pass
-
             self.results[name] = result
         # end for name in names
 
@@ -887,9 +927,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updatePCAElements()
         self.updateEnabledItems()
 
-        # selfitems.redraw()
         self.redraw()
-
         self.update_required = False
 
     def updateEnabledItems(self) -> None:
@@ -897,7 +935,7 @@ class ResultsWidget(QtWidgets.QWidget):
         for key, index in zip(
             ["mass", "size", "volume", "cell_concentration"], [1, 2, 3, 4]
         ):
-            enabled = any(key in result.detections for result in self.results.values())
+            enabled = any(result.canCalibrate(key) for result in self.results.values())
             if not enabled and self.mode.currentIndex() == index:
                 self.mode.setCurrentIndex(0)
             self.mode.model().item(index).setEnabled(enabled)

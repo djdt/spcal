@@ -45,7 +45,6 @@ results = {
         },
     ),
 }
-results["b"].fromNebulisationEfficiency()
 clusters = {"signal": np.array([0, 2, 2, 2, 1]), "mass": np.array([0, 1, 1, 0, 0])}
 
 
@@ -179,11 +178,11 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
         assert fp.readline() == "# Limits of detection,a,b\n"
-        assert fp.readline() == "#,8 - 10,9,counts\n"
-        assert fp.readline() == "#,,4.5e-19,kg\n"
-        assert fp.readline() == "#,,4.413041e-07,m\n"
-        assert fp.readline() == "#,,4.5e-18,m³\n"
-        assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
+        assert fp.readline() == "#,7.5 - 9.5,8.5,counts\n"
+        assert fp.readline() == "#,,4.25e-19,kg\n"
+        assert fp.readline() == "#,,4.3297561e-07,m\n"
+        assert fp.readline() == "#,,4.25e-18,m³\n"
+        assert fp.readline() == "#,,4.058451e-08,mol/L\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -311,5 +310,62 @@ def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
         assert fp.readline().endswith(",3,2\n")
         assert fp.readline().endswith(",3,1\n")
         assert fp.readline().endswith(",2,1\n")
+        fp.readline()
+        assert fp.readline() == "# End of export"
+
+
+def test_export_singleparticle_results_filtered(tmp_path: Path):
+    tmp = tmp_path.joinpath("test_export_results_filtered.csv")
+
+    filtered_results = {
+        "a": SPCalResult(
+            "a.csv",
+            np.ones(100),
+            np.array([1, 5, 1, 5, 0]),
+            np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
+            SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
+        ),
+        "b": SPCalResult(
+            "b.csv",
+            np.ones(100),
+            np.array([0, 1, 1, 9, 1]),
+            np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
+            SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
+        ),
+    }
+    filtered_results["a"]._indicies = np.array([0, 2])
+    filtered_results["b"]._indicies = np.array([1, 2, 4])
+
+    export_single_particle_results(
+        tmp, filtered_results, clusters, output_inputs=False, output_arrays=True
+    )
+    with tmp.open("r") as fp:
+        for i in range(5):
+            fp.readline()
+        assert fp.readline() == "# Detection results,a,b\n"
+        assert fp.readline() == "# Particle number,2,3\n"
+        fp.readline()  # number error
+        # Number / Mass concentrations skipped
+        fp.readline()
+        assert fp.readline() == "# Background,1,1,counts\n"
+        fp.readline()  # background error
+
+        fp.readline()
+        assert fp.readline() == "# Mean,a,b\n"
+        assert fp.readline() == "#,1,1,counts\n"
+
+        assert fp.readline() == "# Median,a,b\n"
+        assert fp.readline() == "#,1,1,counts\n"
+        fp.readline()  # lod
+        fp.readline()  # lod
+        fp.readline()
+        fp.readline()  # header
+        fp.readline()
+        fp.readline()
+        assert fp.readline() == "1,\n"
+        assert fp.readline() == "5,1\n"
+        assert fp.readline() == "1,1\n"
+        # 5,9 is filtered
+        assert fp.readline() == ",1\n"
         fp.readline()
         assert fp.readline() == "# End of export"

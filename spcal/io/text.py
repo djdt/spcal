@@ -221,7 +221,9 @@ def export_single_particle_results(
         write_if_exists(
             fp,
             results,
-            lambda r: ((r.asSize(r.background) or 0.0) / factor) or None,
+            lambda r: r.asSize(r.background) / factor
+            if r.canCalibrate("size")
+            else None,
             "#,",
             postfix="," + unit,
         )
@@ -245,30 +247,21 @@ def export_single_particle_results(
         def ufunc_or_none(
             r: SPCalResult, ufunc, key: str, factor: float = 1.0
         ) -> float | None:
-            if key not in r.detections:
+            if not r.canCalibrate(key):
                 return None
-            return ufunc(r.detections[key][r.indicies]) / factor
+            return ufunc(r.calibrated(key)) / factor
 
-        fp.write(f"# Mean,{','.join(results.keys())}\n")
-        for key in SPCalResult.base_units.keys():
-            unit, factor = result_units[key]
-            write_if_exists(
-                fp,
-                results,
-                lambda r: (ufunc_or_none(r, np.mean, key, factor)),
-                "#,",
-                postfix="," + unit,
-            )
-        fp.write(f"# Median,{','.join(results.keys())}\n")
-        for key in SPCalResult.base_units.keys():
-            unit, factor = result_units[key]
-            write_if_exists(
-                fp,
-                results,
-                lambda r: (ufunc_or_none(r, np.median, key, factor)),
-                "#,",
-                postfix="," + unit,
-            )
+        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+            fp.write(f"# {label},{','.join(results.keys())}\n")
+            for key in SPCalResult.base_units.keys():
+                unit, factor = result_units[key]
+                write_if_exists(
+                    fp,
+                    results,
+                    lambda r: (ufunc_or_none(r, ufunc, key, factor)),
+                    "#,",
+                    postfix="," + unit,
+                )
 
     def write_compositions(
         fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
@@ -277,6 +270,7 @@ def export_single_particle_results(
 
         keys = ",".join(f"{key},error" for key in results.keys())
         fp.write(f"# Peak composition,count,{keys}\n")
+        # TODO filter on demand
         # For filtered?
         # valid = np.zeros(self.results[names[0]].detections["signal"].size, dtype=bool)
 
@@ -285,8 +279,8 @@ def export_single_particle_results(
         for key in SPCalResult.base_units.keys():
             data = {}
             for name, result in results.items():
-                if key in result.detections:
-                    data[name] = result.detections[key][valid]
+                if result.canCalibrate(key):
+                    data[name] = result.calibrated(key, use_indicies=False)[valid]
             if len(data) == 0 or key not in clusters:
                 continue
 
@@ -323,15 +317,15 @@ def export_single_particle_results(
         def limit_or_range(
             r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
         ) -> str | None:
-            lod = r.limits.detection_threshold
+            lod = r.limits.detection_limit
             if isinstance(lod, np.ndarray):
                 lod = np.array([lod.min(), lod.max()])
 
-            lod = r.convertTo(lod, key)  # type: ignore
-
-            if lod is None:
+            if not r.canCalibrate(key):
                 return None
-            elif isinstance(lod, np.ndarray):
+
+            lod = r.convertTo(lod, key)  # type: ignore
+            if isinstance(lod, np.ndarray):
                 return (
                     format.format(lod[0] / factor)
                     + " - "
@@ -368,16 +362,13 @@ def export_single_particle_results(
 
         for name, result in results.items():
             for key in SPCalResult.base_units.keys():
-                if key in result.detections:
+                if result.canCalibrate(key):
                     unit, factor = result_units[key]
                     header_name += f",{name}"
                     header_unit += f",{unit}"
-                    # Make sure filters are applied
-                    detections = np.zeros(result.detections[key].size)
-                    detections[result.indicies] = result.detections[key][
-                        result.indicies
-                    ]
-                    data.append(detections / factor)
+                    data.append(
+                        result.calibrated(key, use_indicies=False)[valid] / factor
+                    )
 
         data = np.stack(data, axis=1)
 

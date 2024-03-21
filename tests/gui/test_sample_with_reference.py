@@ -108,8 +108,8 @@ def test_sample_with_reference(qtbot: QtBot):
     assert window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
     window.results.updateResults()
-    assert "size" in window.results.results["Au"].detections
-    assert "size" in window.results.results["Ag"].detections
+    assert window.results.results["Au"].canCalibrate("size")
+    assert window.results.results["Ag"].canCalibrate("size")
     assert window.results.io["Au"].count.value() == 3072
     assert window.results.io["Au"].count.error() == np.round(np.sqrt(3072), 0)
     assert window.results.io["Au"].count_label.text() == "(100 %)"
@@ -117,7 +117,9 @@ def test_sample_with_reference(qtbot: QtBot):
     # Should test all outputs here
     assert np.isclose(window.results.io["Au"].mean.baseValue(), 2091, atol=1)
     assert np.isclose(window.results.io["Au"].median.baseValue(), 2034, atol=1)
-    assert np.isclose(window.results.io["Au"].lod.baseValue(), limit, atol=0.1)
+    assert np.isclose(
+        window.results.io["Au"].lod.baseValue(), limit - data["Au"].mean(), atol=0.1
+    )
     assert np.isclose(window.results.io["Au"].number.baseValue(), 7.946e8, rtol=1e-4)
     assert np.isclose(window.results.io["Au"].conc.baseValue(), 8.788e-10, rtol=1e-4)
     assert np.isclose(
@@ -128,4 +130,4 @@ def test_sample_with_reference(qtbot: QtBot):
     window.reference.io["Au"].check_use_efficiency_for_all.setChecked(False)
 
     window.results.updateResults()
-    assert "size" not in window.results.results["Ag"].detections
+    assert not window.results.results["Ag"].canCalibrate("size")

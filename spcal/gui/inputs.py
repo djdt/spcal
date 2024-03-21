@@ -314,13 +314,22 @@ class InputWidget(QtWidgets.QWidget):
         trim = self.trimRegion(name)
         return self.responses[name][trim[0] : trim[1]]
 
-    def asResult(self, name: str) -> SPCalResult:
+    def asResult(self, name: str, calibration_mode: str | None = None) -> SPCalResult:
+        if calibration_mode is None:
+            method = self.options.efficiency_method.currentText()
+            if method in ["Manual Input", "Reference Particle"]:
+                calibration_mode = "efficiency"
+            elif method == "Mass Response":
+                calibration_mode = "mass response"
+            else:
+                raise ValueError("unable to determine calibration mode")
         return SPCalResult(
             self.label_file.text(),
             self.trimmedResponse(name),
             self.detections[name],
             self.labels,
             self.limits[name],
+            calibration_mode=calibration_mode
         )
 
     def updateDetections(self) -> None:

@@ -54,6 +54,15 @@ class SPCalLimit(object):
         pstring = ";".join(f"{k}={v}" for k, v in self.params.items() if v != 0)
         return f"{self.name} ({pstring})" if len(pstring) > 0 else self.name
 
+    @property
+    def detection_limit(self) -> float | np.ndarray:
+        """The 'true' detection limit in counts.
+
+        There may be values less than the ``detection_threshold`` due to
+        subtraction of the ``signal_mean`` during calculations.
+        """
+        return self.detection_threshold - self.mean_signal
+
     def accumulationLimit(self, method: str) -> float | np.ndarray:
         method = method.lower()
         if method not in [

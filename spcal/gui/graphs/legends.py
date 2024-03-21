@@ -29,11 +29,12 @@ class HistogramItemSample(pyqtgraph.ItemSample):
 
     def __init__(
         self,
-        histogram: pyqtgraph.PlotDataItem,
+        histograms: list[pyqtgraph.PlotDataItem],
         fit: pyqtgraph.PlotCurveItem | None = None,
         limits: list[pyqtgraph.InfiniteLine] | None = None,
     ):
-        super().__init__(histogram)
+        super().__init__(histograms[0])
+        self.other_items = histograms[1:]
         self.item_fit = fit
         self.item_limits = []
         if limits is not None:
@@ -84,12 +85,19 @@ class HistogramItemSample(pyqtgraph.ItemSample):
             ).contains(event.pos()):
                 if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
                     self.item.setVisible(True)
+                    for item in self.other_items:
+                        item.setVisible(True)
                     for item in self.parentItem().childItems():
                         if isinstance(item, HistogramItemSample) and item != self:
                             item.item.setVisible(False)
+                            for it in item.other_items:
+                                it.setVisible(False)
                             item.update()
                 else:
-                    self.item.setVisible(not self.item.isVisible())
+                    visible = not self.item.isVisible()
+                    self.item.setVisible(visible)
+                    for item in self.other_items:
+                        item.setVisible(visible)
                 self.update()
 
         event.accept()

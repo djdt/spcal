@@ -7,7 +7,9 @@ def test_equations():
     # N = m (kg) * N_A (/mol) / M (kg/mol)
     assert np.all(
         np.isclose(
-            particle.atoms_per_particle(masses=np.array([1.0, 2.0]), molar_mass=6.0221e23),
+            particle.atoms_per_particle(
+                masses=np.array([1.0, 2.0]), molar_mass=6.0221e23
+            ),
             [1.0, 2.0],
         )
     )
@@ -90,7 +92,24 @@ def test_equations():
     )
     assert np.isclose(
         particle.particle_mass(
-            efficiency=particle.nebulisation_efficiency_from_mass(mass=5.6, **kws), **kws
+            efficiency=particle.nebulisation_efficiency_from_mass(mass=5.6, **kws),
+            **kws
         ),
         5.6,
+    )
+
+
+def test_efficiency_with_zeros():
+    assert np.all(
+        np.isclose(  # sensitive to mean value
+            particle.nebulisation_efficiency_from_mass(
+                signal=np.array([10.0, 20.0, 30.0, 0.0, 0.0, 0.0]),
+                mass=10.0,
+                response_factor=20.0,
+                mass_fraction=0.5,
+                dwell=10.0,
+                flow_rate=2.0,
+            ),
+            0.25,
+        ),
     )

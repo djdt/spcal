@@ -1,10 +1,20 @@
 import numpy as np
 import numpy.lib.recfunctions as rfn
+import pyqtgraph
 import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.main import SPCalWindow
 from spcal.result import ClusterFilter, Filter
+
+data = np.full((1000, 3), 0.01, dtype=np.float32)
+data[5::10, 0] += 100 + np.arange(0, 100)
+data[5::10, 1] += 100 + np.arange(0, 100) * 2
+data[5::10, 2] += 100 + np.tile([10, 20, 30, 40, 50], 20)
+
+data = rfn.unstructured_to_structured(
+    data, dtype=[("A", np.float32), ("B", np.float32), ("C", np.float32)]
+)
 
 
 # Clustering doesn't like the fake data
@@ -14,15 +24,6 @@ def test_results_filters(qtbot: QtBot):
     qtbot.add_widget(window)
     with qtbot.wait_exposed(window):
         window.show()
-
-    data = np.full((1000, 3), 0.01, dtype=np.float32)
-    data[5::10, 0] += 100 + np.arange(0, 100)
-    data[5::10, 1] += 100 + np.arange(0, 100) * 2
-    data[5::10, 2] += 100 + np.tile([10, 20, 30, 40, 50], 20)
-
-    data = rfn.unstructured_to_structured(
-        data, dtype=[("A", np.float32), ("B", np.float32), ("C", np.float32)]
-    )
 
     window.options.efficiency_method.setCurrentText("Manual Input")
     window.options.limit_method.setCurrentText("Manual Input")
@@ -97,3 +98,48 @@ def test_results_filters(qtbot: QtBot):
     )
     for result in window.results.results.values():
         assert result.number < 50
+
+
+def test_result_filters_plotting(qtbot: QtBot):
+    window = SPCalWindow()
+    qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
+
+    window.options.limit_method.setCurrentText("Manual Input")
+    window.sample.loadData(data, {"path": "test/fake_data.csv", "dwelltime": 0.001})
+    window.sample.io["A"].lod_count.setValue(0.02)
+    window.sample.io["B"].lod_count.setValue(0.02)
+    window.sample.io["C"].lod_count.setValue(0.02)
+    window.sample.updateLimits()
+    window.tabs.setCurrentWidget(window.results)  # calc results
+
+    # Unfiltered results
+    window.results.drawIfRequired("histogram")
+    for item in window.results.graph_hist.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 100
+    window.results.drawIfRequired("scatter")
+    for item in window.results.graph_scatter.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 100
+    window.results.drawIfRequired("pca")
+    for item in window.results.graph_pca.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 100
+
+    window.results.setFilters([[Filter("A", "signal", ">=", 149.0)]], [])
+
+    # Filtered results
+    window.results.drawIfRequired("histogram")
+    for item in window.results.graph_hist.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 50
+    window.results.drawIfRequired("scatter")
+    for item in window.results.graph_scatter.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 50
+    window.results.drawIfRequired("pca")
+    for item in window.results.graph_pca.plot.items:
+        if isinstance(item, pyqtgraph.PlotDataItem):
+            assert item.scatter.data.size == 50
