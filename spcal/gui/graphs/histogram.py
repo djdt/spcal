@@ -22,7 +22,7 @@ class HistogramView(SinglePlotGraphicsView):
     def draw(
         self,
         data: np.ndarray,
-        idx: np.ndarray,
+        filtered_data: np.ndarray,
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
@@ -38,10 +38,7 @@ class HistogramView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.black)
 
-        mask = np.zeros(data.size, dtype=bool)
-        mask[idx] = True
-
-        hist, edges = np.histogram(data[np.logical_and(mask, data > 0)], bins)
+        hist, edges = np.histogram(data, bins)
         curve = self.drawData(
             hist,
             edges,
@@ -51,9 +48,7 @@ class HistogramView(SinglePlotGraphicsView):
             brush=brush,
         )
         if draw_filtered:
-            hist_filt, edges_filt = np.histogram(
-                data[np.logical_and(~mask, data > 0)], bins
-            )
+            hist_filt, edges_filt = np.histogram(filtered_data, bins)
             curve_filt = self.drawData(
                 hist_filt,
                 edges_filt,
