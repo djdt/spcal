@@ -737,6 +737,10 @@ class ResultsWidget(QtWidgets.QWidget):
         y = ry.calibrated(key, use_indicies=False) * modifier
 
         valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
+        filtered = np.setdiff1d(
+            np.intersect1d(np.flatnonzero(x), np.flatnonzero(y), assume_unique=True),
+            valid,
+        )
 
         num_valid = np.count_nonzero(valid)
         if num_valid == 0:
@@ -750,6 +754,14 @@ class ResultsWidget(QtWidgets.QWidget):
             y[valid],
             logx=self.check_scatter_logx.isChecked(),
             logy=self.check_scatter_logy.isChecked(),
+        )
+        self.graph_scatter.drawData(
+            x[filtered],
+            y[filtered],
+            logx=self.check_scatter_logx.isChecked(),
+            logy=self.check_scatter_logy.isChecked(),
+            pen=QtGui.QPen(QtCore.Qt.gray),
+            set_limits=False,
         )
         if num_valid > 2:
             self.graph_scatter.drawFit(
