@@ -103,6 +103,8 @@ class ClusterFilter(object):
             indicies of filtered clusters
         """
         size = next(iter(clusters.values())).size
+        if len(filters) == 0:  # all valid
+            return np.arange(size)
         valid = np.zeros(size, dtype=bool)
 
         for filter in filters:
