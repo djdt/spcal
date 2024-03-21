@@ -326,11 +326,16 @@ class ResultsWidget(QtWidgets.QWidget):
         if self._clusters is None:
             self._clusters = {}
             for mode, key in self.mode_keys.items():
-                data = self.resultsForKey(
-                    key, include_zeros=True, filter=True, filter_clusters=False
-                )
-                if len(data) == 0:
+                data = self.resultsForKey(key)
+                idx = self.filterIndicies(clusters=False)
+                # data = data[Filter.filter_results(self.filters, self.results)]
+                #     key, include_zeros=True, filter=True, filter_clusters=False
+                # )
+                if len(data) == 0 or idx.size == 0:
                     continue
+                for k, v in data.items():
+                    data[k] = v[idx]
+
                 X = prepare_data_for_clustering(data)
                 T = agglomerative_cluster(
                     X, self.graph_options["composition"]["distance"]
@@ -338,41 +343,55 @@ class ResultsWidget(QtWidgets.QWidget):
                 self._clusters[key] = T
         return self._clusters
 
+    def filterIndicies(self, clusters: bool = False) -> np.ndarray:
+        idx = np.arange(next(iter(self.results.values())).detections.size)
+        idx = np.intersect1d(
+            idx, Filter.filter_results(self.filters, self.results), assume_unique=True
+        )
+        if clusters:
+            idx = np.intersect1d(
+                idx,
+                ClusterFilter.filter_clusters(self.cluster_filters, self.clusters),
+                assume_unique=True,
+            )
+        return idx
+
     def resultsForKey(
         self,
         key: str,
-        include_zeros: bool = False,
-        filter: bool = True,
-        filter_clusters: bool = True,
+        # include_zeros: bool = False,
+        # filter: bool = True,
+        # filter_clusters: bool = True,
     ) -> dict[str, np.ndarray]:
         """Function to get results with optional filtering."""
-        valid = np.zeros(next(iter(self.results.values())).detections.size, dtype=bool)
-        for result in self.results.values():
-            valid[result.detections > 0] = True
-        valid_idx = np.flatnonzero(valid)
+        # valid = np.zeros(next(iter(self.results.values())).detections.size, dtype=bool)
+        # for result in self.results.values():
+        #     valid[result.detections > 0] = True
+        # valid_idx = np.flatnonzero(valid)
+        # valid_idx = np.arange(next(iter(self.results.values())).detections.size)
+        #
+        # if filter and len(self.filters) > 0:
+        #     filter_idx = Filter.filter_results(self.filters, self.results)
+        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
+        # if filter_clusters and len(self.cluster_filters) > 0:
+        #     filter_idx = ClusterFilter.filter_clusters(
+        #         self.cluster_filters, self.clusters
+        #     )
+        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
 
-        if filter and len(self.filters) > 0:
-            filter_idx = Filter.filter_results(self.filters, self.results)
-            valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
-        if filter_clusters and len(self.cluster_filters) > 0:
-            filter_idx = ClusterFilter.filter_clusters(
-                self.cluster_filters, self.clusters
-            )
-            valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
-
-        if len(valid_idx) == 0:
-            return {}
+        # if len(valid_idx) == 0:
+        #     return {}
 
         data = {}
         for name, result in self.results.items():
-            if include_zeros:
-                indicies = valid_idx
-            else:
-                indicies = np.intersect1d(
-                    np.flatnonzero(result.detections > 0), valid_idx, assume_unique=True
-                )
-            if result.canCalibrate(key) and len(indicies) > 0:
-                data[name] = result.calibrated(key, use_indicies=False)[indicies]
+            # if include_zeros:
+            #     indicies = valid_idx
+            # else:
+            #     indicies = np.intersect1d(
+            #         np.flatnonzero(result.detections > 0), valid_idx, assume_unique=True
+            #     )
+            if result.canCalibrate(key):
+                data[name] = result.calibrated(key, use_indicies=False)  # [indicies]
         return data
 
     def colorForName(self, name: str) -> QtGui.QColor:
@@ -548,14 +567,12 @@ class ResultsWidget(QtWidgets.QWidget):
         )
         graph_data = {
             k: np.clip(v, 0.0, np.percentile(v, 95))
-            for k, v in self.resultsForKey(
-                key
-                # key, filter=False, filter_clusters=False
-            ).items()
+            for k, v in self.resultsForKey(key).items()
             if k in names
         }
+        idx = self.filterIndicies()
 
-        if len(graph_data) == 0:
+        if len(graph_data) == 0 or idx.size == 0:
             return
 
         # median FD bin width
@@ -610,7 +627,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
                 data * modifier,
-                # valid_idx=indicies,
+                idx=idx,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,
@@ -637,9 +654,14 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.resultsForKey(key, include_zeros=True, filter_clusters=False)
-        if len(graph_data) == 0:
+        graph_data = self.resultsForKey(
+            key
+        )  # , include_zeros=True, filter_clusters=False)
+        idx = self.filterIndicies(clusters=False)
+        if len(graph_data) == 0 or idx.size == 0:
             return
+        for k, v in graph_data.items():
+            graph_data[k] = v[idx]
 
         brushes = [QtGui.QBrush(self.colorForName(name)) for name in graph_data.keys()]
         self.graph_composition.draw(
@@ -657,10 +679,12 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         label, unit, modifier = self.mode_labels[mode]
-        graph_data = self.resultsForKey(key, include_zeros=True)
-
-        if len(graph_data) < 2:
+        graph_data = self.resultsForKey(key)  # , include_zeros=True)
+        idx = self.filterIndicies()
+        if len(graph_data) < 2 or idx.size == 0:
             return
+        for k, v in graph_data.items():
+            graph_data[k] = v[idx]
 
         X = np.stack(list(graph_data.values()), axis=1)
         brush = QtGui.QBrush(QtCore.Qt.black)

@@ -1,4 +1,3 @@
-
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -23,7 +22,7 @@ class HistogramView(SinglePlotGraphicsView):
     def draw(
         self,
         data: np.ndarray,
-        # valid_idx: np.ndarray | None = None,
+        idx: np.ndarray,
         bins: str | np.ndarray = "auto",
         bar_width: float = 0.5,
         bar_offset: float = 0.0,
@@ -34,11 +33,15 @@ class HistogramView(SinglePlotGraphicsView):
         draw_limits: dict[str, float] | None = None,
         fit_visible: bool = True,
         limits_visible: bool = True,
+        draw_filtered: bool = False,
     ) -> None:
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.black)
 
-        hist, edges = np.histogram(data, bins)
+        mask = np.zeros(data.size, dtype=bool)
+        mask[idx] = True
+
+        hist, edges = np.histogram(data[np.logical_and(mask, data > 0)], bins)
         curve = self.drawData(
             hist,
             edges,
@@ -47,8 +50,21 @@ class HistogramView(SinglePlotGraphicsView):
             pen=pen,
             brush=brush,
         )
-
-        legend = HistogramItemSample(curve)
+        if draw_filtered:
+            hist_filt, edges_filt = np.histogram(
+                data[np.logical_and(~mask, data > 0)], bins
+            )
+            curve_filt = self.drawData(
+                hist_filt,
+                edges_filt,
+                bar_width=bar_width,
+                bar_offset=bar_offset,
+                pen=pen,
+                brush=QtGui.QBrush(QtGui.QColor(128, 128, 128, 128)),
+            )
+            legend = HistogramItemSample([curve, curve_filt])
+        else:
+            legend = HistogramItemSample([curve])
 
         if draw_fit is not None:
             pen = QtGui.QPen(brush.color().darker(), 2.0)
