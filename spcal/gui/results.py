@@ -327,7 +327,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self._clusters = {}
             for mode, key in self.mode_keys.items():
                 data = self.resultsForKey(
-                    key, any_valid=True, filter=True, filter_clusters=False
+                    key, include_zeros=True, filter=True, filter_clusters=False
                 )
                 if len(data) == 0:
                     continue
@@ -341,7 +341,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def resultsForKey(
         self,
         key: str,
-        any_valid: bool = False,
+        include_zeros: bool = False,
         filter: bool = True,
         filter_clusters: bool = True,
     ) -> dict[str, np.ndarray]:
@@ -365,7 +365,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         data = {}
         for name, result in self.results.items():
-            if any_valid:
+            if include_zeros:
                 indicies = valid_idx
             else:
                 indicies = np.intersect1d(
@@ -637,7 +637,7 @@ class ResultsWidget(QtWidgets.QWidget):
         label, _, _ = self.mode_labels[mode]
         self.graph_composition.plot.setTitle(f"{label} Composition")
 
-        graph_data = self.resultsForKey(key, any_valid=True, filter_clusters=False)
+        graph_data = self.resultsForKey(key, include_zeros=True, filter_clusters=False)
         if len(graph_data) == 0:
             return
 
@@ -657,7 +657,7 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
 
         label, unit, modifier = self.mode_labels[mode]
-        graph_data = self.resultsForKey(key, any_valid=True)
+        graph_data = self.resultsForKey(key, include_zeros=True)
 
         if len(graph_data) < 2:
             return
