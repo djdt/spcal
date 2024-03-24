@@ -69,6 +69,7 @@ def get_import_dialog_for_path(
     parent: QtWidgets.QWidget,
     path: Path,
     import_options: dict | None = None,
+    screening_options: dict | None = None,
 ) -> _ImportDialogBase:
     if path.is_dir():
         if is_nu_directory(path):
@@ -89,4 +90,6 @@ def get_import_dialog_for_path(
             dlg.setImportOptions(import_options, path=False, dwelltime=False)
         except (ValueError, KeyError):
             pass
+    if screening_options is not None:
+        dlg.setScreeningOptions(screening_options)
     return dlg
