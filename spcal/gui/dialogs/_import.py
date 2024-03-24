@@ -44,9 +44,10 @@ class _ImportDialogBase(QtWidgets.QDialog):
         )
         self.screening_ppm = 100.0
         self.screening_data_size = 1_000_000
+        # These keywords are updated externally
         self.screening_poisson_kws = {"alpha": 1e-3}
         self.screening_gaussian_kws = {"alpha": 1e-7}
-        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45}
+        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45, "single ion": None}
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -118,6 +119,23 @@ class _ImportDialogBase(QtWidgets.QDialog):
         if dwelltime:
             self.dwelltime.setBaseValue(options["dwelltime"])
             self.dwelltime.setBestUnit()
+
+    def setScreeningOptions(
+        self,
+        options: dict,
+    ) -> None:
+        if "ppm" in options:
+            self.screening_ppm = options["ppm"]
+        if "size" in options:
+            self.screening_data_size = options["size"]
+        if "poisson_kws" in options:
+            self.screening_poisson_kws = options["poisson_kws"]
+        if "gaussian_kws" in options:
+            self.screening_gaussian_kws = options["gaussian_kws"]
+        if "compound_kws" in options:
+            self.screening_compound_kws = options["compound_kws"]
+            if not self.screening_compound_kws["simulate"]:  # Keep as None
+                self.screening_compound_kws["single ion"] = None
 
     def dialogScreenData(self) -> NonTargetScreeningDialog:
         dlg = NonTargetScreeningDialog(

@@ -238,13 +238,17 @@ class InputWidget(QtWidgets.QWidget):
         else:
             path = Path(path)
 
-        dlg = get_import_dialog_for_path(self, path, self.import_options)
+        dlg = get_import_dialog_for_path(
+            self,
+            path,
+            self.import_options,
+            screening_options={
+                "poisson_kws": dict(self.options.poisson.state()),
+                "gaussian_kws": dict(self.options.gaussian.state()),
+                "compound_kws": dict(self.options.compound_poisson.state()),
+            },
+        )
         dlg.dataImported.connect(self.loadData)
-        dlg.screening_poisson_kws = dict(self.options.poisson.state())
-        dlg.screening_gaussian_alpha = dict(self.options.gaussian.state())
-        dlg.screening_compound_kws = dict(self.options.compound_poisson.state())
-        if not dlg.screening_compound_kws["simulate"]:  # Keep as None
-            dlg.screening_compound_kws["single ion"] = None
         dlg.open()
         return dlg
 
@@ -329,7 +333,7 @@ class InputWidget(QtWidgets.QWidget):
             self.detections[name],
             self.labels,
             self.limits[name],
-            calibration_mode=calibration_mode
+            calibration_mode=calibration_mode,
         )
 
     def updateDetections(self) -> None:
