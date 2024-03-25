@@ -430,9 +430,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
     def syncSampleAndReference(self) -> None:
         # Sync response
-        for io in self.sample.io.widgets():
-            if io.name in self.reference.io:
-                ref_io = self.reference.io[io.name]
+        for name, io in zip(self.sample.io.names(), self.sample.io.widgets()):
+            if name in self.reference.io:
+                ref_io = self.reference.io[name]
                 sample_value = io.response.baseValue()
                 ref_value = ref_io.response.baseValue()
                 if sample_value is not None and ref_value is None:
