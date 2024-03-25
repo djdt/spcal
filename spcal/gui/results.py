@@ -75,7 +75,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # Graph default options
         self.graph_options: dict[str, Any] = {
             "histogram": {
-                "show filtered": False,
+                "draw filtered": False,
                 "mode": "overlay",
                 "fit": "log normal",
                 "bin widths": {
@@ -87,8 +87,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 },
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
-            "scatter": {"show filtered": False, "weighting": "none"},
-            # "pca": {"show filtered": False},  # while it is possible to do this, it doesn't make sense
+            "scatter": {"draw filtered": False, "weighting": "none"},
+            # "pca": {"draw filtered": False},  # while it is possible to do this, it doesn't make sense
         }
 
         self.results: dict[str, SPCalResult] = {}
@@ -403,7 +403,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def setShowFiltered(self, show: bool) -> None:
         for name in ["histogram", "scatter"]: #, "pca"]:
-            self.graph_options[name]["show filtered"] = show
+            self.graph_options[name]["draw filtered"] = show
             self.redraw_required[name] = True
         self.drawIfRequired()
 
@@ -432,8 +432,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
-    def setHistShowFiltered(self, show: bool) -> None:
-        self.graph_options["histogram"]["show filtered"] = show
+    def setHistDrawFiltered(self, show: bool) -> None:
+        self.graph_options["histogram"]["draw filtered"] = show
         self.drawGraphHist()
 
     def setScatterWeighting(self, weighting: str) -> None:
@@ -441,7 +441,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.drawGraphScatter()
 
     def setScatterShowFiltered(self, show: bool) -> None:
-        self.graph_options["scatter"]["show filtered"] = show
+        self.graph_options["scatter"]["draw filtered"] = show
         self.drawGraphScatter()
 
     # Dialogs
@@ -452,12 +452,12 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
                 self.graph_options["histogram"]["bin widths"],
-                self.graph_options["histogram"]["show filtered"],
+                self.graph_options["histogram"]["draw filtered"],
                 parent=self,
             )
             dlg.fitChanged.connect(self.setHistFit)
             dlg.binWidthsChanged.connect(self.setHistBinWidths)
-            dlg.showFilteredChanged.connect(self.setHistShowFiltered)
+            dlg.drawFilteredChanged.connect(self.setHistDrawFiltered)
         elif self.graph_stack.currentWidget() == self.graph_composition:
             dlg = CompositionsOptionsDialog(
                 self.graph_options["composition"]["distance"],
@@ -471,7 +471,7 @@ class ResultsWidget(QtWidgets.QWidget):
         elif self.graph_stack.currentWidget() == self.scatter_widget:
             dlg = ScatterOptionsDialog(
                 self.graph_options["scatter"]["weighting"],
-                self.graph_options["scatter"]["show filtered"],
+                self.graph_options["scatter"]["draw filtered"],
                 parent=self,
             )
             dlg.weightingChanged.connect(self.setScatterWeighting)
@@ -632,7 +632,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
-                draw_filtered=self.graph_options["histogram"]["show filtered"],
+                draw_filtered=self.graph_options["histogram"]["draw filtered"],
             )
 
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
@@ -729,7 +729,7 @@ class ResultsWidget(QtWidgets.QWidget):
             logx=self.check_scatter_logx.isChecked(),
             logy=self.check_scatter_logy.isChecked(),
         )
-        if self.graph_options["scatter"]["show filtered"]:
+        if self.graph_options["scatter"]["draw filtered"]:
             self.graph_scatter.drawData(
                 x[filtered],
                 y[filtered],
