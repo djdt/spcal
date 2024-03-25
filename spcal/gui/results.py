@@ -729,14 +729,14 @@ class ResultsWidget(QtWidgets.QWidget):
             logx=self.check_scatter_logx.isChecked(),
             logy=self.check_scatter_logy.isChecked(),
         )
-        self.graph_scatter.drawData(
-            x[filtered],
-            y[filtered],
-            logx=self.check_scatter_logx.isChecked(),
-            logy=self.check_scatter_logy.isChecked(),
-            pen=QtGui.QPen(QtCore.Qt.gray),
-            set_limits=False,
-        )
+        if self.graph_options["scatter"]["show filtered"]:
+            self.graph_scatter.drawData(
+                x[filtered],
+                y[filtered],
+                logx=self.check_scatter_logx.isChecked(),
+                logy=self.check_scatter_logy.isChecked(),
+                pen=QtGui.QPen(QtCore.Qt.gray),
+            )
         if num_valid > 2:
             self.graph_scatter.drawFit(
                 x[valid],
