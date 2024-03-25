@@ -4,6 +4,7 @@ from pytestqt.qtbot import QtBot
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
+    ScatterOptionsDialog,
 )
 
 
@@ -96,6 +97,38 @@ def test_histogram_options_dialog(qtbot: QtBot):
             lambda d: all(x is None for x in d.values()),
             lambda b: not b,
         ],
+    ):
+        dlg.apply()
+    dlg.accept()
+
+
+def test_scatter_options_dialog(qtbot: QtBot):
+    dlg = ScatterOptionsDialog(weighting="none", draw_filtered=False)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.show()
+
+    # No change, no signal
+    with qtbot.assert_not_emitted(dlg.weightingChanged, wait=100):
+        dlg.apply()
+
+    dlg.combo_weighting.setCurrentText("1/x")
+    dlg.check_draw_filtered.setChecked(True)
+
+    with qtbot.wait_signals(
+        [dlg.weightingChanged, dlg.drawFilteredChanged],
+        timeout=100,
+        check_params_cbs=[lambda w: w == "1/x", lambda b: b],
+    ):
+        dlg.apply()
+
+    # Reset to default values
+    dlg.reset()
+
+    with qtbot.wait_signals(
+        [dlg.weightingChanged, dlg.drawFilteredChanged],
+        timeout=100,
+        check_params_cbs=[lambda w: w == "none", lambda b: not b],
     ):
         dlg.apply()
     dlg.accept()
