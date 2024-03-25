@@ -362,43 +362,9 @@ class ResultsWidget(QtWidgets.QWidget):
             )
         return idx
 
-    def resultsForKey(
-        self,
-        key: str,
-        # include_zeros: bool = False,
-        # filter: bool = True,
-        # filter_clusters: bool = True,
-    ) -> dict[str, np.ndarray]:
-        """Function to get results with optional filtering."""
-        # valid = np.zeros(next(iter(self.results.values())).detections.size, dtype=bool)
-        # for result in self.results.values():
-        #     valid[result.detections > 0] = True
-        # valid_idx = np.flatnonzero(valid)
-        # valid_idx = np.arange(next(iter(self.results.values())).detections.size)
-        #
-        # if filter and len(self.filters) > 0:
-        #     filter_idx = Filter.filter_results(self.filters, self.results)
-        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
-        # if filter_clusters and len(self.cluster_filters) > 0:
-        #     filter_idx = ClusterFilter.filter_clusters(
-        #         self.cluster_filters, self.clusters
-        #     )
-        #     valid_idx = np.intersect1d(valid_idx, filter_idx, assume_unique=True)
-
-        # if len(valid_idx) == 0:
-        #     return {}
-
-        data = {}
-        for name, result in self.results.items():
-            # if include_zeros:
-            #     indicies = valid_idx
-            # else:
-            #     indicies = np.intersect1d(
-            #         np.flatnonzero(result.detections > 0), valid_idx, assume_unique=True
-            #     )
-            if result.canCalibrate(key):
-                data[name] = result.calibrated(key, use_indicies=False)  # [indicies]
-        return data
+    def resultsForKey(self, key: str) -> dict[str, np.ndarray]:
+        """Function to get results without filtering."""
+        return {k: v.calibrated(key, use_indicies=False) for k, v in self.results.items() if v.canCalibrate(key)}
 
     def colorForName(self, name: str) -> QtGui.QColor:
         return self.sample.colorForName(name)
