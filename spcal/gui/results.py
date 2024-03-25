@@ -362,7 +362,11 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def resultsForKey(self, key: str) -> dict[str, np.ndarray]:
         """Function to get results without filtering."""
-        return {k: v.calibrated(key, use_indicies=False) for k, v in self.results.items() if v.canCalibrate(key)}
+        return {
+            k: v.calibrated(key, use_indicies=False)
+            for k, v in self.results.items()
+            if v.canCalibrate(key)
+        }
 
     def colorForName(self, name: str) -> QtGui.QColor:
         return self.sample.colorForName(name)
