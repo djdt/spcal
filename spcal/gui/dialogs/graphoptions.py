@@ -258,22 +258,26 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
 class ScatterOptionsDialog(QtWidgets.QDialog):
     weightingChanged = QtCore.Signal(str)
-    showFilteredChanged = QtCore.Signal(bool)
+    drawFilteredChanged = QtCore.Signal(bool)
+
+    weightings = ["none", "1/x", "1/x²", "1/y", "1/y²"]
 
     def __init__(
         self,
-        weighting: str = "equal",
+        weighting: str = "none",
         draw_filtered: bool = False,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Scatter Options")
 
+        if weighting not in weighting:
+            raise ValueError("invalid weighting string.")
         self.weighting = weighting
         self.draw_filtered = draw_filtered
 
         self.combo_weighting = QtWidgets.QComboBox()
-        self.combo_weighting.addItems(["none", "1/x", "1/x²", "1/y", "1/y²"])
+        self.combo_weighting.addItems(ScatterOptionsDialog.weightings)
 
         box = QtWidgets.QGroupBox("")
         box.setLayout(QtWidgets.QFormLayout())
@@ -320,7 +324,8 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
             self.weighting = weighting
             self.weightingChanged.emit(weighting)
         if draw_filtered != self.draw_filtered:
-            self.showFilteredChanged.emit(draw_filtered)
+            self.draw_filtered = draw_filtered
+            self.drawFilteredChanged.emit(draw_filtered)
 
     def reset(self) -> None:
         self.combo_weighting.setCurrentText("none")

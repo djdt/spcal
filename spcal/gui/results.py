@@ -440,7 +440,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["scatter"]["weighting"] = weighting
         self.drawGraphScatter()
 
-    def setScatterShowFiltered(self, show: bool) -> None:
+    def setScatterDrawFiltered(self, show: bool) -> None:
         self.graph_options["scatter"]["draw filtered"] = show
         self.drawGraphScatter()
 
@@ -475,7 +475,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 parent=self,
             )
             dlg.weightingChanged.connect(self.setScatterWeighting)
-            dlg.showFilteredChanged.connect(self.setScatterShowFiltered)
+            dlg.drawFilteredChanged.connect(self.setScatterDrawFiltered)
         else:  # Todo: scatter
             return None
         dlg.show()
