@@ -6,6 +6,7 @@ from pytestqt.qtbot import QtBot
 
 from spcal.gui.main import SPCalWindow
 from spcal.result import Filter
+import numpy as np
 
 # Determined experimentally
 uptake = 1.567e-6
@@ -64,3 +65,8 @@ def test_edit_and_enable_names(qtbot: QtBot):
     assert window.reference.enabled_names == ["Au2"]
     window.results.updateResults()
     assert list(window.results.results.keys()) == ["Ag"]
+
+    # test_update_efficiency_after_rename
+    eff = window.reference.io["Au2"].efficiency.value()
+    window.reference.io["Au2"].density.setBaseValue(density / 10.0)
+    assert np.isclose(window.reference.io["Au2"].efficiency.value(), eff / 10.0)
