@@ -153,6 +153,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.bin_widths = bin_widths
             self.binWidthsChanged.emit(bin_widths)
         if draw_filtered != self.draw_filtered:
+            self.draw_filtered = draw_filtered
             self.drawFilteredChanged.emit(draw_filtered)
 
     def reset(self) -> None:
