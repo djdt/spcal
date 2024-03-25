@@ -88,7 +88,7 @@ class ResultsWidget(QtWidgets.QWidget):
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
             "scatter": {"show filtered": False, "weighting": "none"},
-            "pca": {"show filtered": False},
+            # "pca": {"show filtered": False},  # while it is possible to do this, it doesn't make sense
         }
 
         self.results: dict[str, SPCalResult] = {}
@@ -402,7 +402,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.updateResults()
 
     def setShowFiltered(self, show: bool) -> None:
-        for name in ["histogram", "scatter", "pca"]:
+        for name in ["histogram", "scatter"]: #, "pca"]:
             self.graph_options[name]["show filtered"] = show
             self.redraw_required[name] = True
         self.drawIfRequired()
