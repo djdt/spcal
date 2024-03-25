@@ -6,7 +6,6 @@ from pytestqt.qtbot import QtBot
 
 from spcal.gui.main import SPCalWindow
 from spcal.result import Filter
-import numpy as np
 
 # Determined experimentally
 uptake = 1.567e-6
