@@ -14,12 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class IOWidget(QtWidgets.QWidget):
-    optionsChanged = QtCore.Signal(str)
+    optionsChanged = QtCore.Signal()
     request = QtCore.Signal(str)
 
-    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.name = name
 
     def clearInputs(self) -> None:
         raise NotImplementedError
@@ -45,8 +44,8 @@ class IOWidget(QtWidgets.QWidget):
 
 
 class SampleIOWidget(IOWidget):
-    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(name, parent)
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))
 
@@ -125,18 +124,10 @@ class SampleIOWidget(IOWidget):
             "Ratio of the mass of the analyte over the mass of the particle."
         )
 
-        self.density.baseValueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-        self.molarmass.baseValueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-        self.response.baseValueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-        self.massfraction.valueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
+        self.density.baseValueChanged.connect(self.optionsChanged)
+        self.molarmass.baseValueChanged.connect(self.optionsChanged)
+        self.response.baseValueChanged.connect(self.optionsChanged)
+        self.massfraction.valueChanged.connect(self.optionsChanged)
 
         self.inputs.layout().addRow("Density:", self.density)
         self.inputs.layout().addRow("Molar mass:", self.molarmass)
@@ -185,7 +176,7 @@ class SampleIOWidget(IOWidget):
         if "mass fraction" in state:
             self.massfraction.setValue(state["mass fraction"])
         self.blockSignals(False)
-        self.optionsChanged.emit(self.name)
+        self.optionsChanged.emit()
 
     def clearInputs(self) -> None:
         self.blockSignals(True)
@@ -254,8 +245,8 @@ class SampleIOWidget(IOWidget):
 
 
 class ReferenceIOWidget(SampleIOWidget):
-    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(name, parent=parent)
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent=parent)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))
 
@@ -270,12 +261,8 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration.setToolTip("Reference particle concentration.")
         self.diameter.setToolTip("Reference particle diameter.")
 
-        self.concentration.baseValueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
-        self.diameter.baseValueChanged.connect(
-            lambda: self.optionsChanged.emit(self.name)
-        )
+        self.concentration.baseValueChanged.connect(self.optionsChanged)
+        self.diameter.baseValueChanged.connect(self.optionsChanged)
 
         self.inputs.layout().setRowVisible(self.molarmass, False)
         self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
@@ -411,8 +398,8 @@ class ReferenceIOWidget(SampleIOWidget):
 class ResultIOWidget(IOWidget):
     optionsChanged = QtCore.Signal(str)
 
-    def __init__(self, name: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(name, parent=parent)
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent=parent)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))
 
@@ -611,11 +598,17 @@ class IOStack(QtWidgets.QWidget):
             if name in old_widgets:
                 widget = old_widgets[name]
             else:
-                widget = self.io_widget_type(name)
-                widget.optionsChanged.connect(self.optionsChanged)
+                widget = self.io_widget_type()
+                widget.optionsChanged.connect(
+                    lambda: self.onWidgetOptionChanged(widget)
+                )
                 widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
         self.blockSignals(False)
+
+    def onWidgetOptionChanged(self, widget: IOWidget) -> None:
+        name = self.combo_name.itemText(self.stack.indexOf(widget))
+        self.optionsChanged.emit(name)
 
     def setSignificantFigures(self, num: int | None = None) -> None:
         for widget in self.widgets():
