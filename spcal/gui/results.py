@@ -747,6 +747,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 weighting=self.graph_options["scatter"]["weighting"],
             )
 
+        self.graph_scatter.zoomReset()
+
     def graphZoomReset(self) -> None:
         widget = self.graph_stack.currentWidget()
         if hasattr(widget, "zoomReset"):
