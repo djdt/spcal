@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
     app.setOrganizationName("SPCal")
-    app.setApplicationVersion(importlib.metadata.version(__package__ or __name__))
+    app.setApplicationVersion(importlib.metadata.version("spcal"))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
     window = SPCalWindow()
