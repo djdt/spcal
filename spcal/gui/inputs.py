@@ -8,6 +8,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import spcal
 from spcal.detection import combine_detections, detection_maxima
 from spcal.gui.dialogs._import import _ImportDialogBase
+from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
@@ -255,14 +257,11 @@ class InputWidget(QtWidgets.QWidget):
     def dialogDataProperties(self) -> QtWidgets.QDialog:
         if len(self.detection_names) == 0:
             return
-        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
     def loadData(self, data: np.ndarray, options: dict) -> None:
-        from spcal.gui.dialogs.calculator import CalculatorDialog
-
         # Calculate any existing and valid expr
         data = CalculatorDialog.reduceForData(data)
 
