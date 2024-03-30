@@ -368,7 +368,7 @@ class SPCalResult(object):
             return (
                 mass and "cell_diameter" in self.inputs and "molar_mass" in self.inputs
             )
-        else:
+        else:  # pragma: no cover
             raise KeyError(f"unknown key '{key}'.")
 
     def convertTo(self, value: float | np.ndarray, key: str) -> float | np.ndarray:
