@@ -190,6 +190,7 @@ def restoreSession(
         options.setState(restoreOptions(h5["options"].attrs))
         for key, val in h5["expressions"].attrs.items():
             sample.current_expr[key] = val
+            reference.current_expr[key] = val
 
         input: InputWidget
         for key, input in zip(["sample", "reference"], [sample, reference]):
