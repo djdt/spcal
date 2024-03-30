@@ -1,11 +1,6 @@
 # vim: set ft=python:
 from pathlib import Path
-
-version = "notfound"
-with Path("spcal", "__init__.py").open() as fp:
-    for line in fp:
-        if line.startswith("__version__"):
-            version = line.split("=")[1].strip().strip('"')
+import importlib.metadata
 
 block_cipher = None
 
@@ -33,7 +28,7 @@ exe = EXE(
     a.datas,
     [],
     exclude_binaries=False,
-    name=f"spcal_{version}",
+    name=f"spcal_{importlib.metadata.version('spcal')}",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

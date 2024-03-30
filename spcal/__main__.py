@@ -1,4 +1,5 @@
 import argparse
+import importlib.metadata
 import logging
 import sys
 from importlib.resources import files
@@ -8,7 +9,6 @@ import numpy
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.resources
-from spcal import __version__
 from spcal.gui.main import SPCalWindow
 
 import pyqtgraph  # isort:skip
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
     app.setOrganizationName("SPCal")
-    app.setApplicationVersion(__version__)
+    app.setApplicationVersion(importlib.metadata.version(__package__ or __name__))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
     window = SPCalWindow()
@@ -66,9 +66,9 @@ def main(argv: list[str] | None = None) -> int:
         sys.excepthook = window.exceptHook
 
     logger.addHandler(window.log.handler)
-    logger.info(f"SPCal {__version__} started.")
-    logger.info(f"using numpy {numpy.version.version}.")
-    logger.info(f"using pyqtgraph {pyqtgraph.__version__}.")
+    logger.info(f"SPCal {app.applicationVersion()} started.")
+    logger.info(f"using numpy {importlib.metadata.version('numpy')}.")
+    logger.info(f"using pyqtgraph {importlib.metadata.version('pyqtgraph')}.")
 
     window.show()
 

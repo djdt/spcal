@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-# from spcal import __version__
 from spcal.calc import weighted_linreg
 from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.graphs import color_schemes
@@ -13,10 +12,6 @@ from spcal.gui.graphs.response import ResponseView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.models import NumpyRecArrayTableModel
 from spcal.siunits import mass_concentration_units
-
-# from typing import tuple
-
-
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,6 @@ from types import TracebackType
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
@@ -258,7 +257,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "About SPCal",
             (
                 "sp/scICP-MS processing.\n"
-                f"Version {__version__}\n"
+                f"Version {QtWidgets.QApplication.applicationVersion()}\n"
                 "https://github.com/djdt/spcal"
             ),
             parent=self,

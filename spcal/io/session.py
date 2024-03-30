@@ -1,12 +1,12 @@
 """Save and restore SPCal sessions."""
 
+from PySide6 import QtWidgets
 
 from pathlib import Path
 
 import h5py
 import numpy as np
 
-from spcal import __version__
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
@@ -138,7 +138,7 @@ def saveSession(
     results: ResultsWidget,
 ) -> None:
     with h5py.File(path, "w") as h5:
-        h5.attrs["version"] = __version__
+        h5.attrs["version"] = QtWidgets.QApplication.applicationVersion()
         options_group = h5.create_group("options")
         for key, val in sanitiseOptions(options.state()).items():
             options_group.attrs[key] = val

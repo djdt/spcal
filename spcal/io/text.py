@@ -1,13 +1,13 @@
 """Reading and writing single particle data from and to csv files."""
 # import csv
 import datetime
+import importlib.metadata
 import logging
 from pathlib import Path
 from typing import Any, Callable, Set, TextIO
 
 import numpy as np
 
-from spcal import __version__
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,9 @@ def export_single_particle_results(
 
     def write_header(fp: TextIO, first_result: SPCalResult) -> None:
         date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
-        fp.write(f"# SPCal Export {__version__}\n")
+        fp.write(
+            f"# SPCal Export {importlib.metadata.version('spcal')}\n"
+        )
         fp.write(f"# Date,{date}\n")
         fp.write(f"# File,{first_result.file}\n")
         fp.write(f"# Acquisition events,{first_result.events}\n")
