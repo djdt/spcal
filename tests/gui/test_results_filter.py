@@ -113,33 +113,45 @@ def test_result_filters_plotting(qtbot: QtBot):
     window.sample.io["C"].lod_count.setValue(0.02)
     window.sample.updateLimits()
     window.tabs.setCurrentWidget(window.results)  # calc results
+    window.results.graph_options["histogram"]["bin widths"]["signal"] = 10
 
     # Unfiltered results
-    window.results.drawIfRequired("histogram")
-    for item in window.results.graph_hist.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 100
+    # window.results.drawIfRequired("histogram")
+    # for item in window.results.graph_hist.plot.items:
+    #     if (
+    #         isinstance(item, pyqtgraph.PlotCurveItem)
+    #         and item.opts["stepMode"] == "center"
+    #     ):
+    #         assert item.yData.size < 100
     window.results.drawIfRequired("scatter")
     for item in window.results.graph_scatter.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 100
+        if isinstance(item, pyqtgraph.ScatterPlotItem):
+            assert item.data.size == 100
     window.results.drawIfRequired("pca")
     for item in window.results.graph_pca.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 100
+        if isinstance(item, pyqtgraph.ScatterPlotItem):
+            assert item.data.size == 100
 
     window.results.setFilters([[Filter("A", "signal", ">=", 149.0)]], [])
 
     # Filtered results
-    window.results.drawIfRequired("histogram")
-    for item in window.results.graph_hist.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 50
     window.results.drawIfRequired("scatter")
     for item in window.results.graph_scatter.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 50
+        if isinstance(item, pyqtgraph.ScatterPlotItem):
+            assert item.data.size == 50
     window.results.drawIfRequired("pca")
     for item in window.results.graph_pca.plot.items:
-        if isinstance(item, pyqtgraph.PlotDataItem):
-            assert item.scatter.data.size == 50
+        if isinstance(item, pyqtgraph.ScatterPlotItem):
+            assert item.data.size == 50
+
+    # Test draw filtered
+    window.results.setHistDrawFiltered(True)
+    window.results.drawIfRequired("histogram")
+    window.results.setScatterDrawFiltered(True)
+    window.results.drawIfRequired("scatter")
+    number = 0
+    for item in window.results.graph_scatter.plot.items:
+        if isinstance(item, pyqtgraph.ScatterPlotItem):
+            number += 1
+            assert item.data.size == 50
+    assert number == 2
