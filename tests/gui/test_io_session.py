@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import numpy.lib.recfunctions as rfn
 import pytest
+from pytestqt.qt_compat import qt_api
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.dialogs.calculator import CalculatorDialog
@@ -24,6 +25,8 @@ def tmp_session_path(tmp_path_factory):
 
 
 def test_save_session(tmp_session_path: Path, qtbot: QtBot):
+    qt_api.QtWidgets.QApplication.setApplicationVersion("99.99.99")
+
     window = SPCalWindow()
     qtbot.addWidget(window)
 
