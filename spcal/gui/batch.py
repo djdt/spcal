@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 def process_data(
     path: Path,
     data: np.ndarray,
+    expr: dict[str, str],
     method: str,
     inputs: dict[str, dict[str, float | None]],
     filters: list[list[Filter]],
@@ -40,7 +41,7 @@ def process_data(
     limit_iterations: int = 1,
 ) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray]]:
     # === Add any valid expressions
-    data = CalculatorDialog.reduceForData(data)
+    data = CalculatorDialog.reduceForData(data, expr)
 
     # === Calculate Limits ===
     limits: dict[str, SPCalLimit] = {}
@@ -549,6 +550,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 import_options=self.sample.import_options,
                 trim=trim,
                 process_kws={
+                    "expr": self.sample.current_expr,
                     "method": method,
                     "inputs": inputs,
                     "filters": self.results.filters,
