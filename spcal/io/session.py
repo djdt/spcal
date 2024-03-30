@@ -7,7 +7,6 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
@@ -144,7 +143,7 @@ def saveSession(
             options_group.attrs[key] = val
 
         expressions_group = h5.create_group("expressions")
-        for key, val in CalculatorDialog.current_expressions.items():
+        for key, val in sample.current_expr.items():
             expressions_group.attrs[key] = val
 
         h5.create_dataset("filters", data=sanitiseFilters(results.filters))
@@ -190,7 +189,7 @@ def restoreSession(
 
         options.setState(restoreOptions(h5["options"].attrs))
         for key, val in h5["expressions"].attrs.items():
-            CalculatorDialog.current_expressions[key] = val
+            sample.current_expr[key] = val
 
         input: InputWidget
         for key, input in zip(["sample", "reference"], [sample, reference]):

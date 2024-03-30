@@ -90,7 +90,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.updateNames(names)
         self.reference.updateNames(names)
         self.results.updateNames(names)
-        CalculatorDialog.updateNames(names)
 
     def createMenuBar(self) -> None:
         # File
@@ -281,7 +280,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogCalculator(self) -> CalculatorDialog:
-        dlg = CalculatorDialog(self.sample, self.reference, parent=self)
+        dlg = CalculatorDialog(
+            self.sample.names, self.sample.current_expr, parent=self
+        )
+        dlg.expressionAdded.connect(self.sample.addExpression)
+        dlg.expressionRemoved.connect(self.sample.removeExpression)
+        dlg.expressionAdded.connect(self.reference.addExpression)
+        dlg.expressionRemoved.connect(self.reference.removeExpression)
         dlg.open()
         return dlg
 
