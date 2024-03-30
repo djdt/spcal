@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spcal"
+version = "1.2.0"
+dependencies = [
+    "numpy>=1.22",
+    "PySide6",
+    "pyqtgraph>=0.13.4",
+    "bottleneck",
+    "h5py",
+]
+description = "Software for processing spICP-MS data."
+readme = "README.md"
+requires-python = ">= 3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Thomas Lockwood", email = "thomas.lockwood@uts.edu.au"}]
+
+[project.optional-dependencies]
+tests = ["pytest", "scipy"]
+
+[project.urls]
+Repository = "https://gtihub.com/djdt/spcal"
+Publication = "https://doi.org/10.1039/D1JA00297J"
+
+[project.scripts]
+spcal = "spcal.__main__:main"
