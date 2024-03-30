@@ -57,10 +57,8 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
     ]
     window.results.cluster_filters = [ClusterFilter(0, "signal")]
 
-    dlg = CalculatorDialog(window.sample, window.reference, parent=window)
-    qtbot.add_widget(dlg)
-    dlg.formula.setPlainText("Ag + Au")
-    dlg.accept()
+    window.sample.addExpression("{Ag+Au}", "+ Ag Au")
+    window.reference.addExpression("{Ag+Au}", "+ Ag Au")
 
     window.sample.io.combo_name.setCurrentText("Au_mod")
     window.sample.io.combo_name.editingFinished()
@@ -72,8 +70,6 @@ def test_save_session(tmp_session_path: Path, qtbot: QtBot):
         window.reference,
         window.results,
     )
-
-    CalculatorDialog.current_expressions.clear()
 
 
 def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
@@ -123,6 +119,4 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     assert window.results.cluster_filters[0].unit == "signal"
     assert window.results.cluster_filters[0].idx == 0
 
-    assert CalculatorDialog.current_expressions["{Ag+Au}"] == "+ Ag Au"
-
-    CalculatorDialog.current_expressions.clear()
+    assert window.sample.current_expr["{Ag+Au}"] == "+ Ag Au"
