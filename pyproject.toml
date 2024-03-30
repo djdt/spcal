@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "numpy>=1.22"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "1.2.0"
 dependencies = [
     "numpy>=1.22",
     "PySide6",
-    "pyqtgraph>=0.13.4",
+    "pyqtgraph>=0.13.2",
     "bottleneck",
     "h5py",
 ]
