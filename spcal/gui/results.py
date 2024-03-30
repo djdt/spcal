@@ -401,12 +401,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.cluster_filters = cluster_filters
         self.updateResults()
 
-    def setShowFiltered(self, show: bool) -> None:
-        for name in ["histogram", "scatter"]: #, "pca"]:
-            self.graph_options[name]["draw filtered"] = show
-            self.redraw_required[name] = True
-        self.drawIfRequired()
-
     def setCompDistance(self, distance: float) -> None:
         self.graph_options["composition"]["distance"] = distance
         self._clusters = None
