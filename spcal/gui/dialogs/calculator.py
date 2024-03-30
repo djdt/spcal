@@ -321,7 +321,6 @@ class CalculatorDialog(QtWidgets.QDialog):
     #     except (ReducerException, ValueError) as e:
     #         self.output.setText(str(e))
 
-    # todo: remove static
     @staticmethod
     def reduceForData(data: np.ndarray, expressions: dict[str, str]) -> np.ndarray:
         reducer = Reducer(variables={name: data[name] for name in data.dtype.names})
