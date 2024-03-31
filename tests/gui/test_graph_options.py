@@ -4,6 +4,7 @@ from pytestqt.qtbot import QtBot
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
+    ScatterOptionsDialog,
 )
 
 
@@ -51,6 +52,7 @@ def test_histogram_options_dialog(qtbot: QtBot):
             "size": None,
             "cell_concentration": 1e-9,
         },
+        draw_filtered=False,
     )
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
@@ -64,6 +66,7 @@ def test_histogram_options_dialog(qtbot: QtBot):
     dlg.width_signal.setBaseValue(100.0)
     dlg.width_mass.setBaseValue(1e-19)
     dlg.width_size.setBaseValue(1e-9)
+    dlg.check_draw_filtered.setChecked(True)
 
     def check_bin_widths(widths: dict) -> bool:
         if widths["signal"] != 100.0:
@@ -77,9 +80,9 @@ def test_histogram_options_dialog(qtbot: QtBot):
         return True
 
     with qtbot.wait_signals(
-        [dlg.fitChanged, dlg.binWidthsChanged],
+        [dlg.fitChanged, dlg.binWidthsChanged, dlg.drawFilteredChanged],
         timeout=100,
-        check_params_cbs=[lambda f: f == "normal", check_bin_widths],
+        check_params_cbs=[lambda f: f == "normal", check_bin_widths, lambda b: b],
     ):
         dlg.apply()
 
@@ -87,12 +90,45 @@ def test_histogram_options_dialog(qtbot: QtBot):
     dlg.reset()
 
     with qtbot.wait_signals(
-        [dlg.fitChanged, dlg.binWidthsChanged],
+        [dlg.fitChanged, dlg.binWidthsChanged, dlg.drawFilteredChanged],
         timeout=100,
         check_params_cbs=[
             lambda f: f == "log normal",
             lambda d: all(x is None for x in d.values()),
+            lambda b: not b,
         ],
+    ):
+        dlg.apply()
+    dlg.accept()
+
+
+def test_scatter_options_dialog(qtbot: QtBot):
+    dlg = ScatterOptionsDialog(weighting="none", draw_filtered=False)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.show()
+
+    # No change, no signal
+    with qtbot.assert_not_emitted(dlg.weightingChanged, wait=100):
+        dlg.apply()
+
+    dlg.combo_weighting.setCurrentText("1/x")
+    dlg.check_draw_filtered.setChecked(True)
+
+    with qtbot.wait_signals(
+        [dlg.weightingChanged, dlg.drawFilteredChanged],
+        timeout=100,
+        check_params_cbs=[lambda w: w == "1/x", lambda b: b],
+    ):
+        dlg.apply()
+
+    # Reset to default values
+    dlg.reset()
+
+    with qtbot.wait_signals(
+        [dlg.weightingChanged, dlg.drawFilteredChanged],
+        timeout=100,
+        check_params_cbs=[lambda w: w == "none", lambda b: not b],
     ):
         dlg.apply()
     dlg.accept()

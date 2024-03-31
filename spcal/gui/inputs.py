@@ -5,9 +5,9 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal
-from spcal.detection import combine_detections, detection_maxima
+from spcal.detection import accumulate_detections, combine_detections, detection_maxima
 from spcal.gui.dialogs._import import _ImportDialogBase
+from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
@@ -16,6 +16,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
 from spcal.limit import SPCalLimit
+from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class InputWidget(QtWidgets.QWidget):
         self.setAcceptDrops(True)
 
         self.import_options: dict = {}
-        self.calculated_elements: dict[str, str] = {}
+        self.current_expr: dict[str, str] = {}
 
         self.responses = np.array([])
         self.events = np.array([])
@@ -183,6 +184,8 @@ class InputWidget(QtWidgets.QWidget):
                 continue
             if old in self.limits:
                 self.limits[new] = self.limits.pop(old)
+            if old in self.current_expr:
+                self.current_expr[new] = self.current_expr[old].pop()
             if old in self.io:
                 index = self.io.combo_name.findText(old)
                 self.io.combo_name.setItemText(index, new)
@@ -253,18 +256,32 @@ class InputWidget(QtWidgets.QWidget):
         return dlg
 
     def dialogDataProperties(self) -> QtWidgets.QDialog:
+        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+
         if len(self.detection_names) == 0:
             return
-        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-    def loadData(self, data: np.ndarray, options: dict) -> None:
-        from spcal.gui.dialogs.calculator import CalculatorDialog
+    def addExpression(self, name: str, expr: str) -> None:
+        self.current_expr[name] = expr
+        self.reloadData()
+        try:  # attempt to set response of new variable
+            reducer = Reducer({n: self.io[n].response.baseValue() for n in self.names})
+            data = reducer.reduce(expr)
+            self.io[name].response.setBaseValue(data)
+        except ReducerException:
+            pass
 
-        # Calculate any existing and valid expr
-        data = CalculatorDialog.reduceForData(data)
+    def removeExpression(self, name: str) -> None:
+        self.current_expr.pop(name)
+        if name in self.names:
+            self.responses = rfn.drop_fields(self.responses, name, usemask=False)
+        self.reloadData()
+
+    def loadData(self, data: np.ndarray, options: dict) -> None:
+        data = CalculatorDialog.reduceForData(data, self.current_expr)
 
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
@@ -346,7 +363,7 @@ class InputWidget(QtWidgets.QWidget):
             limit_accumulation = np.minimum(limit_accumulation, limit_detection)
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
-                d[name], l[name], r[name] = spcal.accumulate_detections(
+                d[name], l[name], r[name] = accumulate_detections(
                     responses, limit_accumulation, limit_detection, integrate=True
                 )
 

@@ -1,4 +1,3 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.objects import DoubleOrPercentValidator
@@ -14,11 +13,13 @@ from spcal.siunits import (
 class HistogramOptionsDialog(QtWidgets.QDialog):
     fitChanged = QtCore.Signal(str)
     binWidthsChanged = QtCore.Signal(dict)
+    drawFilteredChanged = QtCore.Signal(bool)
 
     def __init__(
         self,
         fit: str | None,
         bin_widths: dict[str, float | None],
+        draw_filtered: bool,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -26,6 +27,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 
         self.fit = fit
         self.bin_widths = bin_widths.copy()
+        self.draw_filtered = draw_filtered
 
         self.radio_fit_off = QtWidgets.QRadioButton("Off")
         self.radio_fit_norm = QtWidgets.QRadioButton("Normal")
@@ -81,6 +83,10 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             widget.setBestUnit()
             widget.lineedit.setPlaceholderText("auto")
 
+        self.check_draw_filtered = QtWidgets.QCheckBox("Draw filtered detections.")
+        self.check_draw_filtered.setToolTip("Draw filtered detections in grey.")
+        self.check_draw_filtered.setChecked(draw_filtered)
+
         box_fit = QtWidgets.QGroupBox("Curve Fit")
         box_fit.setLayout(QtWidgets.QHBoxLayout())
         for button in [self.radio_fit_off, self.radio_fit_norm, self.radio_fit_log]:
@@ -104,6 +110,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(box_fit)
         layout.addWidget(box_widths)
+        layout.addWidget(self.check_draw_filtered)
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
@@ -136,6 +143,8 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             "cell_concentration": self.width_conc.baseValue(),
         }
 
+        draw_filtered = self.check_draw_filtered.isChecked()
+
         # Check for changes
         if fit != self.fit:
             self.fit = fit
@@ -143,6 +152,9 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         if bin_widths != self.bin_widths:
             self.bin_widths = bin_widths
             self.binWidthsChanged.emit(bin_widths)
+        if draw_filtered != self.draw_filtered:
+            self.draw_filtered = draw_filtered
+            self.drawFilteredChanged.emit(draw_filtered)
 
     def reset(self) -> None:
         self.radio_fit_log.setChecked(True)
@@ -153,6 +165,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_conc,
         ]:
             widget.setBaseValue(None)
+        self.check_draw_filtered.setChecked(False)
 
 
 class CompositionsOptionsDialog(QtWidgets.QDialog):
@@ -245,23 +258,34 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
 class ScatterOptionsDialog(QtWidgets.QDialog):
     weightingChanged = QtCore.Signal(str)
+    drawFilteredChanged = QtCore.Signal(bool)
+
+    weightings = ["none", "1/x", "1/x²", "1/y", "1/y²"]
 
     def __init__(
         self,
-        weighting: str = "equal",
+        weighting: str = "none",
+        draw_filtered: bool = False,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Scatter Options")
 
+        if weighting not in weighting:
+            raise ValueError("invalid weighting string.")
         self.weighting = weighting
+        self.draw_filtered = draw_filtered
 
         self.combo_weighting = QtWidgets.QComboBox()
-        self.combo_weighting.addItems(["none", "1/x", "1/x²", "1/y", "1/y²"])
+        self.combo_weighting.addItems(ScatterOptionsDialog.weightings)
 
         box = QtWidgets.QGroupBox("")
         box.setLayout(QtWidgets.QFormLayout())
         box.layout().addRow("Weighting:", self.combo_weighting)
+
+        self.check_draw_filtered = QtWidgets.QCheckBox("Draw filtered detections.")
+        self.check_draw_filtered.setToolTip("Draw filtered detections in grey.")
+        self.check_draw_filtered.setChecked(draw_filtered)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
@@ -273,6 +297,7 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(box)
+        layout.addWidget(self.check_draw_filtered)
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
@@ -292,11 +317,16 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 
     def apply(self) -> None:
         weighting = self.combo_weighting.currentText()
+        draw_filtered = self.check_draw_filtered.isChecked()
 
         # Check for changes
         if weighting != self.weighting:
             self.weighting = weighting
             self.weightingChanged.emit(weighting)
+        if draw_filtered != self.draw_filtered:
+            self.draw_filtered = draw_filtered
+            self.drawFilteredChanged.emit(draw_filtered)
 
     def reset(self) -> None:
         self.combo_weighting.setCurrentText("none")
+        self.check_draw_filtered.setChecked(False)

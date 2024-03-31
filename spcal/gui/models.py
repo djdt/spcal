@@ -42,10 +42,14 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             self.column_flags.update(column_flags)
 
     # Rows and Columns
-    def columnCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+    def columnCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+        if parent.isValid():
+            return 0
         return len(self.array.dtype.names)  # type: ignore
 
-    def rowCount(self, parent: QtCore.QModelIndex | None = None) -> int:
+    def rowCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+        if parent.isValid():
+            return 0
         return self.array.shape[0]
 
     # Data
@@ -78,7 +82,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
     def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
         if not index.isValid():  # pragma: no cover
-            return QtCore.Qt.ItemIsEnabled
+            return 0
 
         name = self.array.dtype.names[index.column()]
         return self.column_flags.get(

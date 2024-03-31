@@ -28,19 +28,21 @@ def test_calculator_dialog(qtbot: QtBot):
     window.reference.io["Ag"].response.setBaseValue(100.0)
     window.reference.io["Au"].response.setBaseValue(200.0)
 
-    dlg = CalculatorDialog(window.sample, window.reference, parent=window)
+    dlg = CalculatorDialog(
+        window.sample.names, window.sample.current_expr, parent=window
+    )
+    dlg.expressionAdded.connect(window.sample.addExpression)
+    dlg.expressionAdded.connect(window.reference.addExpression)
 
     with qtbot.wait_exposed(dlg):
         dlg.show()
 
     dlg.formula.setPlainText("Ag + Au")
-    dlg.accept()
+    with qtbot.waitSignal(dlg.expressionAdded):
+        dlg.accept()
 
     assert "{Ag+Au}" in window.sample.names
     assert "{Ag+Au}" in window.reference.names
 
     assert window.sample.io["{Ag+Au}"].response.baseValue() == 300.0
     assert window.reference.io["{Ag+Au}"].response.baseValue() == 300.0
-
-    # Prevent altering further tests
-    CalculatorDialog.current_expressions.clear()

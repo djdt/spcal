@@ -44,8 +44,13 @@ def test_periodic_table_selector(qtbot: QtBot):
         pt.enabledIsotopes()[[50, 60]],
         [QtGui.QColor.fromRgb(255, 0, 0), QtGui.QColor.fromRgb(0, 255, 0)],
     )
+    assert pt.buttons["Ti"].indicator is not None
     assert pt.buttons["Ti"].indicator.red() == 255
+    assert pt.buttons["Cr"].indicator is not None
     assert pt.buttons["Cr"].indicator.green() == 255
+
+    with qtbot.waitExposed(pt):
+        pt.show()
 
     # Remove color
     pt.setIsotopeColors(

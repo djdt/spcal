@@ -34,16 +34,7 @@ class ScatterView(SinglePlotGraphicsView):
         curve = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
         self.plot.addItem(curve)
 
-        xmin, xmax = np.amin(x), np.amax(x)
-        ymin, ymax = np.amin(y), np.amax(y)
-
-        self.plot.setLimits(
-            xMin=xmin - (xmax - xmin) * 0.05,
-            xMax=xmax + (xmax - xmin) * 0.05,
-            yMin=ymin - (ymax - ymin) * 0.05,
-            yMax=ymax + (ymax - ymin) * 0.05,
-        )
-        self.plot.enableAutoRange(x=True, y=True)  # rescale to max bounds
+        self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
     def drawFit(
         self,

@@ -150,7 +150,7 @@ def test_spcalresult_errors():
         result.convertTo(1.0, "invalid")
 
 
-def test_spcalresult_filters():
+def test_spcalresult_filters_and_valid():
     results = {
         "a": SPCalResult(
             "a.csv",
@@ -175,8 +175,13 @@ def test_spcalresult_filters():
         ),
     }
 
+    assert SPCalResult.all_valid_indicies([]).size == 0
     assert np.all(results["a"].indicies == [0, 2, 4, 6, 8])
     assert np.all(results["b"].indicies == [1, 2, 5, 6, 9])
+    assert np.all(
+        SPCalResult.all_valid_indicies(list(results.values()))
+        == [0, 1, 2, 4, 5, 6, 8, 9]
+    )
 
     filters = [[Filter("a", "signal", ">", 4.0)]]
     idx = Filter.filter_results(filters, results)
@@ -193,3 +198,6 @@ def test_spcalresult_filters():
     filters = [[Filter("a", "signal", "==", 1.0)], [Filter("b", "signal", "==", 1.0)]]
     idx = Filter.filter_results(filters, results)
     assert np.all(idx == [0, 1])
+
+    idx = Filter.filter_results([], results)
+    assert np.all(idx == np.arange(10))

@@ -75,6 +75,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # Graph default options
         self.graph_options: dict[str, Any] = {
             "histogram": {
+                "draw filtered": False,
                 "mode": "overlay",
                 "fit": "log normal",
                 "bin widths": {
@@ -86,7 +87,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 },
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
-            "scatter": {"weighting": "none"},
+            "scatter": {"draw filtered": False, "weighting": "none"},
+            # "pca": {"draw filtered": False},  # while it is possible to do this, it doesn't make sense
         }
 
         self.results: dict[str, SPCalResult] = {}
@@ -424,8 +426,16 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
+    def setHistDrawFiltered(self, show: bool) -> None:
+        self.graph_options["histogram"]["draw filtered"] = show
+        self.drawGraphHist()
+
     def setScatterWeighting(self, weighting: str) -> None:
         self.graph_options["scatter"]["weighting"] = weighting
+        self.drawGraphScatter()
+
+    def setScatterDrawFiltered(self, show: bool) -> None:
+        self.graph_options["scatter"]["draw filtered"] = show
         self.drawGraphScatter()
 
     # Dialogs
@@ -436,10 +446,12 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
                 self.graph_options["histogram"]["bin widths"],
+                self.graph_options["histogram"]["draw filtered"],
                 parent=self,
             )
             dlg.fitChanged.connect(self.setHistFit)
             dlg.binWidthsChanged.connect(self.setHistBinWidths)
+            dlg.drawFilteredChanged.connect(self.setHistDrawFiltered)
         elif self.graph_stack.currentWidget() == self.graph_composition:
             dlg = CompositionsOptionsDialog(
                 self.graph_options["composition"]["distance"],
@@ -452,9 +464,12 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg.modeChanged.connect(self.setCompMode)
         elif self.graph_stack.currentWidget() == self.scatter_widget:
             dlg = ScatterOptionsDialog(
-                self.graph_options["scatter"]["weighting"], parent=self
+                self.graph_options["scatter"]["weighting"],
+                self.graph_options["scatter"]["draw filtered"],
+                parent=self,
             )
             dlg.weightingChanged.connect(self.setScatterWeighting)
+            dlg.drawFilteredChanged.connect(self.setScatterDrawFiltered)
         else:  # Todo: scatter
             return None
         dlg.show()
@@ -545,8 +560,7 @@ class ResultsWidget(QtWidgets.QWidget):
             if k in names
         }
         idx = self.filterIndicies()
-
-        if len(graph_data) == 0 or idx.size == 0:
+        if len(graph_data) == 0:
             return
 
         # median FD bin width
@@ -593,15 +607,13 @@ class ResultsWidget(QtWidgets.QWidget):
                 self.results[name].limits.detection_limit, key
             )
 
-            # indicies = np.in1d(
-            #     np.flatnonzero(self.results[name].detections > 0),
-            #     self.results[name].indicies,
-            # )
+            non_zero = np.flatnonzero(data)
 
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
-                data * modifier,
-                idx=idx,
+                data[np.intersect1d(idx, non_zero, assume_unique=True)] * modifier,
+                filtered_data=data[np.setdiff1d(non_zero, idx, assume_unique=True)]
+                * modifier,
                 bins=bins,
                 bar_width=width,
                 bar_offset=offset,
@@ -614,6 +626,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
+                draw_filtered=self.graph_options["histogram"]["draw filtered"],
             )
 
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
@@ -692,6 +705,10 @@ class ResultsWidget(QtWidgets.QWidget):
         y = ry.calibrated(key, use_indicies=False) * modifier
 
         valid = np.intersect1d(rx.indicies, ry.indicies, assume_unique=True)
+        filtered = np.setdiff1d(
+            np.intersect1d(np.flatnonzero(x), np.flatnonzero(y), assume_unique=True),
+            valid,
+        )
 
         num_valid = np.count_nonzero(valid)
         if num_valid == 0:
@@ -706,6 +723,14 @@ class ResultsWidget(QtWidgets.QWidget):
             logx=self.check_scatter_logx.isChecked(),
             logy=self.check_scatter_logy.isChecked(),
         )
+        if self.graph_options["scatter"]["draw filtered"]:
+            self.graph_scatter.drawData(
+                x[filtered],
+                y[filtered],
+                logx=self.check_scatter_logx.isChecked(),
+                logy=self.check_scatter_logy.isChecked(),
+                pen=QtGui.QPen(QtCore.Qt.gray),
+            )
         if num_valid > 2:
             self.graph_scatter.drawFit(
                 x[valid],
@@ -715,6 +740,8 @@ class ResultsWidget(QtWidgets.QWidget):
                 logy=self.check_scatter_logy.isChecked(),
                 weighting=self.graph_options["scatter"]["weighting"],
             )
+
+        self.graph_scatter.zoomReset()
 
     def graphZoomReset(self) -> None:
         widget = self.graph_stack.currentWidget()

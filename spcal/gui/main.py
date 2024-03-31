@@ -6,7 +6,6 @@ from types import TracebackType
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal import __version__
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
@@ -91,7 +90,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.updateNames(names)
         self.reference.updateNames(names)
         self.results.updateNames(names)
-        CalculatorDialog.updateNames(names)
 
     def createMenuBar(self) -> None:
         # File
@@ -258,7 +256,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "About SPCal",
             (
                 "sp/scICP-MS processing.\n"
-                f"Version {__version__}\n"
+                f"Version {QtWidgets.QApplication.applicationVersion()}\n"
                 "https://github.com/djdt/spcal"
             ),
             parent=self,
@@ -282,7 +280,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogCalculator(self) -> CalculatorDialog:
-        dlg = CalculatorDialog(self.sample, self.reference, parent=self)
+        dlg = CalculatorDialog(
+            self.sample.names, self.sample.current_expr, parent=self
+        )
+        dlg.expressionAdded.connect(self.sample.addExpression)
+        dlg.expressionRemoved.connect(self.sample.removeExpression)
+        dlg.expressionAdded.connect(self.reference.addExpression)
+        dlg.expressionRemoved.connect(self.reference.removeExpression)
         dlg.open()
         return dlg
 
