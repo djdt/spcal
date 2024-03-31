@@ -21,7 +21,7 @@ jobs:
       id: build-exec
       run: |
         pyinstaller --clean -y spcal.spec
-        echo "::set-output name=version::$(python setup.py --version)"
+        echo "::set-output name=version::$(python -c "from importlib.metadata import version; print(version('spcal'))")"
     - name: Upload binary
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
