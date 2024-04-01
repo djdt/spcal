@@ -34,3 +34,7 @@ The program can then be run from the command line. See the help for extended usa
 ```bash
 spcal --help
 ```
+
+## Publications
+
+* [Lockwood, T. E.; Gonzalez de Vega, R.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544.](https://doi.org/10.1039/D1JA00297J)
