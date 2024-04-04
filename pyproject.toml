@@ -22,7 +22,7 @@ authors = [{name = "Thomas Lockwood", email = "thomas.lockwood@uts.edu.au"}]
 tests = ["pytest", "scipy"]
 
 [project.urls]
-Repository = "https://gtihub.com/djdt/spcal"
+Repository = "https://github.com/djdt/spcal"
 Publication = "https://doi.org/10.1039/D1JA00297J"
 
 [project.scripts]
