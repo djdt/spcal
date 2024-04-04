@@ -555,26 +555,39 @@ class ResultsWidget(QtWidgets.QWidget):
             else self.results.keys()
         )
         graph_data = {
-            k: np.clip(v, 0.0, np.percentile(v, 95))
+            k: np.clip(v, 0.0, np.percentile(v, 99))
             for k, v in self.resultsForKey(key).items()
             if k in names
         }
-        idx = self.filterIndicies()
         if len(graph_data) == 0:
             return
+
+        idx = self.filterIndicies()
+        graph_idx = {
+            k: np.intersect1d(idx, np.nonzero(v), assume_unique=True)
+            for k, v in graph_data.items()
+        }
 
         # median FD bin width
         if bin_width is None:
             bin_width = np.median(
                 [
                     2.0
-                    * np.subtract(*np.percentile(graph_data[name], [75, 25]))
-                    / np.cbrt(graph_data[name].size)
+                    * np.subtract(
+                        *np.percentile(graph_data[name][graph_idx[name]], [75, 25])
+                    )
+                    / np.cbrt(graph_idx[name].size)
                     for name in graph_data
                 ]
             )
         # Limit maximum / minimum number of bins
-        data_range = np.ptp(np.concatenate(list(graph_data.values())))
+        data_range = 1.0
+        for name, data in graph_data.items():
+            ptp = np.ptp(data[graph_idx[name]])
+            if ptp > data_range:
+                data_range = ptp
+
+        # data_range = np.ptp(np.concatenate(list(graph_data.values())))
         min_bins, max_bins = 10, 1000
         if bin_width < data_range / max_bins:
             logger.warning(
@@ -611,7 +624,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
-                data[np.intersect1d(idx, non_zero, assume_unique=True)] * modifier,
+                data[graph_idx[name]] * modifier,
                 filtered_data=data[np.setdiff1d(non_zero, idx, assume_unique=True)]
                 * modifier,
                 bins=bins,
@@ -622,7 +635,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 draw_fit=self.graph_options["histogram"]["fit"],
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_limits={
-                    "mean": np.mean(data) * modifier,
+                    "mean": np.mean(data[graph_idx[name]]) * modifier,
                     "LOD": np.mean(lod) * modifier,  # type: ignore
                 },
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
