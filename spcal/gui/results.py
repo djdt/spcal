@@ -559,14 +559,17 @@ class ResultsWidget(QtWidgets.QWidget):
             for k, v in self.resultsForKey(key).items()
             if k in names
         }
-        if len(graph_data) == 0:
-            return
-
         idx = self.filterIndicies()
         graph_idx = {
             k: np.intersect1d(idx, np.nonzero(v), assume_unique=True)
             for k, v in graph_data.items()
         }
+        for k, v in graph_idx.items():
+            if v.size == 0:
+                graph_data.pop(k)
+
+        if len(graph_data) == 0:
+            return
 
         # median FD bin width
         if bin_width is None:
