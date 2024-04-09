@@ -1,4 +1,5 @@
 """Distribution fitting calculations."""
+import warnings
 from typing import Callable
 
 import numpy as np
@@ -102,6 +103,89 @@ def nelder_mead(
 
     idx = np.argmax(fx)
     return simplex[idx]
+
+
+def _central_finite_difference(
+    fn, x: np.ndarray, eps: float | None = None
+) -> np.ndarray:
+    if eps is None:
+        eps = np.sqrt(np.finfo(float).eps)
+
+    g = np.empty_like(x)
+    for i in range(x.size):
+        x_f = x.copy()
+        x_b = x.copy()
+        x_f[i] += eps
+        x_b[i] -= eps
+        g[i] = (fn(x_f) - fn(x_b)) / (2.0 * eps)
+    return g
+
+
+def _line_search(
+    fn,
+    x: np.ndarray,
+    g: np.ndarray,
+    p: np.ndarray,
+    a: float = 1.0,
+    tau: float = 0.5,
+    c1: float = 0.5,
+    c2: float = 0.9,
+):
+    fx = fn(x)
+    m = np.dot(g, p)
+    while True:
+        if fx - fn(x + a * p) >= a * (-c1 * m):
+            break
+        a *= tau
+    return a
+
+
+def bfgs(
+    fn: Callable[[np.ndarray], float],
+    x0: np.ndarray,
+    eps: float = 1e-3,
+    max_iter: int = 100,
+):
+    """Minimizes ``fn(x)`` using the Broyden-Fletcher-Goldfarb-Shanno algorithm.
+
+    Gradients are estimated using the central finite difference.
+
+    Args:
+        fn: function to minimise
+        x0: inital guess at function parameters
+        eps: minimum function gradient
+        max_iter: maximum number of iterations
+
+    Returns:
+        optimised values for x
+    """
+    Id = np.identity(x0.size)
+    Bk = Id.copy()
+    iter = 0
+    x = x0
+    g = _central_finite_difference(fn, x)
+    while iter < max_iter and np.linalg.norm(g) > eps:
+        iter += 1
+
+        p = -Bk @ g
+        a = _line_search(fn, x, g, p)
+        s = a * p
+
+        gn = _central_finite_difference(fn, x + s)
+        y = gn - g
+
+        A = Id - ((s @ y.T) / (y.T @ s))
+        B = Id - ((y @ s.T) / (y.T @ s))
+        C = (s @ s.T) / (y.T @ s)
+        Bk = A @ Bk @ B + C
+
+        g = gn
+        x = x + s
+
+    if iter == max_iter:
+        warnings.warn("bfgs reached maximum iteration.")
+
+    return x
 
 
 # def get_simplex(mins: np.ndarray, maxs: np.ndarray) -> np.ndarray:
