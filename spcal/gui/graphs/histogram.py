@@ -149,7 +149,7 @@ class HistogramView(SinglePlotGraphicsView):
             ys = normal_pdf(xs * fit[2], fit[0], fit[1])
         elif fit_type == "log normal":
             fit = fit_lognormal(centers, hist)
-            ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
+            ys = lognormal_pdf(xs, fit[0], fit[1])
         else:
             raise ValueError(f"drawFit: unknown fit {fit_type}")
 

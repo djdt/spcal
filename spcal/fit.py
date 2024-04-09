@@ -46,7 +46,7 @@ def _line_search(
     eps: float | None = None,
 ):
     if eps is None:
-        eps = float(np.finfo(float).eps)
+        eps = np.sqrt(np.finfo(float).eps)
     fx = fn(x)
     m = np.dot(g, p)
     while a > eps:
@@ -82,7 +82,7 @@ def bfgs(
             return _central_finite_difference(fn, x)
 
     Id = np.identity(x0.size)
-    Bk = Id.copy()
+    Bk = np.linalg.inv(Id)
     iter = 0
     x = x0
     g = grad_fn(x)
@@ -103,6 +103,7 @@ def bfgs(
 
         g = gn
         x = x + s
+        print(f"iter {iter}: {x}, {g}")
 
     if iter == max_iter:
         warnings.warn("bfgs reached maximum iteration.")
@@ -154,15 +155,14 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     """
 
     def gradient(p: np.ndarray) -> float:
-        mu, sigma, loc = p
-        if sigma <= 0.0 or np.any(x + loc <= 0.0):
+        if p[1] <= 0.0:
             return np.inf
-        return np.sum(np.square(y - lognormal_pdf(x + loc, mu, sigma)))
+        return np.sum(np.square(y - lognormal_pdf(x, p[0], p[1])))
 
     assert x.size == y.size
     # Guess for result
-    p0 = np.array([np.log(np.mean(x)), 1.0, 0.0])
+    p0 = np.array([np.log(np.median(x)), 0.5])
 
-    p = bfgs(gradient, p0)
-    print(p0, p)
+    p = bfgs(gradient, p0, eps=1e-3)
+    print(p)
     return p
