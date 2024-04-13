@@ -406,9 +406,10 @@ class SPCalLimit(object):
             gaussian_kws = {}
 
         # Find if data is Poisson distributed
-        # Limit to < 5 to stay out of analouge region
-        low_responses = responses[(responses > 0.0) & (responses <= 5.0)]
-        if low_responses.size == 0:  # No values less than 5.0, Gaussian
+        nonzero_response = responses > 0.0
+        low_responses = responses[nonzero_response & (responses <= 5.0)]
+        # Less than 5% of nonzero values are below 5, equivilent to background of ~ 10
+        if low_responses.size / np.count_nonzero(nonzero_response) < 0.05:
             return SPCalLimit.fromGaussian(
                 responses,
                 alpha=gaussian_kws.get("alpha", 1e-6),
