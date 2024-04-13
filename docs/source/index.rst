@@ -11,6 +11,7 @@ Welcome to spcal's documentation!
    :caption: Contents:
 
    thresholds.rst
+   tutorial.rst
 
 
 Indices and tables

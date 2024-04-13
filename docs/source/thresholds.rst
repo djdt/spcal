@@ -1,15 +1,16 @@
 Thresholds for spICP-MS
 =======================
+
 Poisson
 -------
 
 At the very low counting rates often seen in spICP-MS work, the typical Gaussian statistics (:math:`\mu + 3 \sigma`) used to determine detection limits do not apply.
-Instead Poisson statsitics should be used to determine the `critical threshold`, the threshold above which a signal is considered to be a detected particle.
+Instead Poisson statsitics should be used to determine the `critical threshold`, the threshold above which a signal is considered to be a detected particle [1]_ .
 Confusingly, most Poisson statistics will also define a `detection threshold`, but this should not be used to detemine the detection of signal.
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
 
-Thresholds for spICP-ToF: Compound-Poisson
-------------------------------------------
+spICP-ToF: Compound-Poisson
+---------------------------
 
 .. figure:: images/integer_data.png
     :width: 640px
@@ -52,10 +53,40 @@ The log-normal approximation works by closely appoximating the SIA with a log-no
 Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting detection threshold for the sum of log-normal distributions.
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
+Threshold selection
+-------------------
+
+.. table:: Selection of statistics for determining detection threholds
+   :align: center
+
++-----------------------+------------------------------------+--------------------+
+| Number of non-zero    | Number of non-zero                 | Threshold method   |
+| values below 5 counts | values :math:`\mathbb{Z} \pm 0.05` |                    |
++-----------------------+------------------------------------+--------------------+
+| :math:`>5%`           |                                    | Gaussian           |
++-----------------------+------------------------------------+--------------------+
+| :math:`<5%`           |  :math:`>75%`                      | Poissson           |
++-----------------------+------------------------------------+--------------------+
+| :math:`<5%`           |  :math:`<75%`                      | compound-Poisson   |
++-----------------------+------------------------------------+--------------------+
+
+The best method to find the detection threshold will depend on the data being analysed.
+SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson of compound-Poisson statistics.
+For data that is consistently above five counts, Gaussian statistics are used, otherwise Poisson or compound-Poisson dending on the integer nature of the data.
+Values are considered integer if they are within 0.05 of an integer value, as data exports from ICP-MS often seem to have a small offset from true integers.
+The detection threhold is then calculated for the chosen error rate (:math:`\alpha`).
+
+In other analytical techniques a 5% error rate (:math:`\alpha = 0.05`) is considered acceptable and is frequently used implemented as the :math:`3 \sigma` rule.
+However, the large number of events collected during spICP-MS makes such low error rates lead to a very large number of false detections.
+Error rates of :math:`\alpha = 1e-6` are fairly standard and will lead to only 1 false detection per million events.
+
 References
 ----------
 
 .. [1] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
+
 .. [2] Gundlach-Graham, A.; Hendriks, L.; Mehrabi, K.; Günther, D. Monte Carlo Simulation of Low-Count Signals in Time-of-Flight Mass Spectrometry and Its Application to Single-Particle Detection. Anal. Chem. 2018, 90 (20), 11847–11855. https://doi.org/10.1021/acs.analchem.8b01551.
+
 .. [3] Koppenaal, D. W.; Barinaga, C. J.; Denton, M. B.; Sperline, R. P.; Hieftje, G. M.; Schilling, G. D.; Andrade, F. J.; Barnes, J. H.; Iv, I. MS Detectors. Anal. Chem. 2005, 77 (21), 418 A-427 A. https://doi.org/10.1021/ac053495p.
+
 .. [4] Ialongo, C. Confidence Interval for Quantiles and Percentiles. Biochem. med. (Online) 2019, 29 (1), 5–17. https://doi.org/10.11613/BM.2019.010101.
