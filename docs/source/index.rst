@@ -10,6 +10,7 @@ Welcome to spcal's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   thresholds.rst
 
 
 Indices and tables
