@@ -56,19 +56,21 @@ In the case of the log-normal approximation only the shape parameter (:math:`\si
 Threshold selection
 -------------------
 
-.. table:: Selection of statistics for determining detection threholds
-   :align: center
+.. list-table:: Selection of statistics for determining detection threholds.
+   :header-rows: 1
 
-+-----------------------+------------------------------------+--------------------+
-| Number of non-zero    | Number of non-zero                 | Threshold method   |
-| values below 5 counts | values :math:`\mathbb{Z} \pm 0.05` |                    |
-+-----------------------+------------------------------------+--------------------+
-| :math:`>5%`           |                                    | Gaussian           |
-+-----------------------+------------------------------------+--------------------+
-| :math:`<5%`           |  :math:`>75%`                      | Poissson           |
-+-----------------------+------------------------------------+--------------------+
-| :math:`<5%`           |  :math:`<75%`                      | compound-Poisson   |
-+-----------------------+------------------------------------+--------------------+
+   * - Number of non-zero values below 5 counts
+     - NUmber of non-zero values :math:`\mathbb{Z} \pm 0.05`
+     - Threshold method
+   * - :math:`>5%`
+     - 
+     - Gaussian
+   * - :math:`<5%`
+     - :math:`>75%` 
+     - Poissson
+   * - :math:`<5%`
+     - :math:`<75%`
+     - compound-Poisson
 
 The best method to find the detection threshold will depend on the data being analysed.
 SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson of compound-Poisson statistics.
