@@ -1,5 +1,7 @@
-Thresholds for spICP-MS: Poisson
-================================
+Thresholds for spICP-MS
+=======================
+Poisson
+-------
 
 At the very low counting rates often seen in spICP-MS work, the typical Gaussian statistics (:math:`\mu + 3 \sigma`) used to determine detection limits do not apply.
 Instead Poisson statsitics should be used to determine the `critical threshold`, the threshold above which a signal is considered to be a detected particle.
@@ -7,7 +9,7 @@ Confusingly, most Poisson statistics will also define a `detection threshold`, b
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
 
 Thresholds for spICP-ToF: Compound-Poisson
-==========================================
+------------------------------------------
 
 .. figure:: images/integer_data.png
     :width: 640px
@@ -38,7 +40,7 @@ The simulation uses a given SIA distribution to generate a compound-Poisson dist
 While accurate at high error rates (>1e3) the computational cost to simulate enough samples for low error rates is too high to be practical [4]_ .
 
 Log-normal approximation
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. figure:: images/sum_ln.png
    :width: 640px
@@ -51,7 +53,7 @@ Since the cumulative density and quantile functions of a log-normal are known, w
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
 References
-==========
+----------
 
 .. [1] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
 .. [2] Gundlach-Graham, A.; Hendriks, L.; Mehrabi, K.; Günther, D. Monte Carlo Simulation of Low-Count Signals in Time-of-Flight Mass Spectrometry and Its Application to Single-Particle Detection. Anal. Chem. 2018, 90 (20), 11847–11855. https://doi.org/10.1021/acs.analchem.8b01551.
