@@ -12,6 +12,8 @@ Data files can be loaded from the **File -> Open Sample File** or by drag-and-dr
 Text files
 ----------
 
+
+.. _text import wizard:
 .. figure:: images/tutorial_data_text_importer.png
    :width: 640px
    :align: center
@@ -20,6 +22,9 @@ Text files
 
 Opening a text file will start the text import wizard. This wizard allows you to select which columns in the file to import and skip any non-data rows.
 The wizard will attempt to guess the correct options when the file is loaded, a description of each option is shown in :numref:`tabtextoptions`.
+The wizard displays the first 10 lines from the file (:numref:`text import wizard`) and is used to identify and remove non-data rows and columns before import.
+In the example in :numref:`text import wizard`, there are 0 header rows so import proceed from row 1, and column 1 consists of non-particle data.
+The first non-header row should contain the names of each column and is editable by double-clicking.
 
 .. _tabtextoptions:
 .. list-table:: Options for the text import wizard.
