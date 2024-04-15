@@ -101,7 +101,7 @@ One of the advantages of spICP-MS is its ability to calculate the size and mass 
 This is performed by calibrating particle signals (in counts) to mass using the instrument :term:`ionic response`, and then to size using a known particle :term:`density`.
 
 The :term:`transport efficiency` is the fraction of sample that makes it through to detection and must also be determined before calibration can occour.
-With the exception of total-consumption nebulisers (100% efficiency) it is typically 2-10%.
+With the exception of total-consumption nebulisers (100% efficiency) it is typically 0.02 - 0.1 (2 - 10%).
 The :term:`transport efficiency` (:math:`\eta`) can be entered manually if known (see Pace et al. [1]_ for examples), or calulated based on the reponse of a well characterised reference particle.
 
 Reference Particle
@@ -113,6 +113,8 @@ Reference Particle
 
    The Reference tab is used to calculate the transport efficiency.
    This is required to calibrate data from signal into mass and size.
+
+.. TODO there is an error where the TF is not updating on parameter change in references tab
 
 To use a reference particle select *Reference Particle* as the :term:`transport efficiency` option in the **Options Tab**.
 This enables the **Reference Tab**, where data for the reference particle can be loaded via drag-and-drop or **File -> Open Reference File**.
