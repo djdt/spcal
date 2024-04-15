@@ -51,8 +51,13 @@ ToF Data
 
 
 SPCal supports import of ICP-ToF data from both Nu Instruments and TOFWERK instruments.
+
 Nu Instruments data is stored in a single directory consiting of a number of ``.integ`` files with an index file (``integrated.index``) and  ``run.info`` file that stores run parameters.
 To load Nu Instruments data, either drag-and-drop the directory into the **Sample** tab, or select the ``run.info`` file via **File -> Open Sample File**.
+This starts the ToF import wizard, where you can select which elements / isotopes to import. Options for the ToF import wizard are summarised below in :numref:`table tof options`.
+
+TOFWERKs data and parameters are stored in HDF5 archives.
+To load this data either drag-and-drop or load the ``.h5`` archive via **File -> Open Sample File**.
 This starts the ToF import wizard, where you can select which elements / isotopes to import. Options for the ToF import wizard are summarised below in :numref:`table tof options`.
 
 .. _table tof options:
