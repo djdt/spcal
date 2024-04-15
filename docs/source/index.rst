@@ -11,6 +11,12 @@ Welcome to spcal's documentation!
    :caption: Contents:
 
    thresholds.rst
+   glossary.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorial:
+
    tutorial.rst
 
 
