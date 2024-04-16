@@ -1,4 +1,4 @@
-Data import
+Data Import
 ===========
 
 The first step to performing any data processing is to load the data into SPCal.
@@ -6,7 +6,7 @@ SPCal supports import of delimited text files, which can be exported from instru
 Data files can be loaded from the **File -> Open Sample File** or by drag-and-drop of files into the **Sample Tab**.
 
 
-Text files
+Text Files
 ----------
 
 
@@ -94,6 +94,7 @@ Both the text and ToF import wizards (:numref:`text import wizard`, :numref:`tof
 This will search the first *Minimum no. events* events of the imported data file for elements / isotopes with greater than *Screening ppm* detections per million events.
 
 
+.. _calibration:
 Calibration
 ===========
 
@@ -138,6 +139,10 @@ Mass Response
 Limited calibration can also occur with the :term:`transport efficiency` by determining the :term:`mass response` from a reference particle.
 After selecting *Mass Response* as the :term:`transport efficiency` option in the **Options Tab** the calibration proceeds as above in the `Reference Particle`_ section.
 Using the :term:`mass response` eliminates the need for instrument :term:`uptake` and :term:`ionic response` but can only calibrate signals into masses.
+
+Processing and Interpretting Results
+====================================
+
 
 
 Exporting Results

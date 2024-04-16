@@ -19,6 +19,12 @@ Welcome to spcal's documentation!
 
    tutorial.rst
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples:
+   
+   example_quad.rst
+
 
 Indices and tables
 ==================
