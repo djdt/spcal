@@ -143,6 +143,12 @@ Exporting Results
 
 .. TODO warn overwritge when exporting data 
 
+.. _export options:
+.. figure:: images/tutorial_export_dialog.png
+   :align: center
+
+   The export options dialog allows you to select what data is exported.
+
 Exporting results is performed by pressing the *Export Results* button in the **Results Tab**.
 This opens the dialog shown in :numref:`export options`, where options for exporting can be entered.
 The filename of the export is set to *Save File*, and can be selected by pressing *Select File*.
