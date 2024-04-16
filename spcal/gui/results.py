@@ -584,7 +584,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 ]
             )
         # Limit maximum / minimum number of bins
-        data_range = 1.0
+        data_range = 0.0
         for name, data in graph_data.items():
             ptp = np.ptp(data[graph_idx[name]])
             if ptp > data_range:
