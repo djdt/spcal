@@ -104,6 +104,8 @@ The :term:`transport efficiency` is the fraction of sample that makes it through
 With the exception of total-consumption nebulisers (100% efficiency) it is typically 0.02 - 0.1 (2 - 10%).
 The :term:`transport efficiency` (:math:`\eta`) can be entered manually if known (see Pace et al. [1]_ for examples), or calulated based on the reponse of a well characterised reference particle.
 
+A full description of the calibration methods used in SPCal is avaiable in a previous publication [2]_ .
+
 Reference Particle
 ------------------
 
@@ -157,7 +159,7 @@ The units of exported masses, sizes and concentrations can be set using the *Out
 Finally, the *Export options* control what extra data is written to the file.
 All exports will contain particle numbers, concentrations, backgrounds, the mean and median of signal, size and mass, and limits of detection.
 
-Checking *Export options and inputs* will save parameters such as the :term:`dwelltime` and instrument :term:`uptake` to the file.
+Checking *Export options and inputs* will save parameters such as the :term:`dwelltime`, instrument :term:`uptake` and particle :term:`density` to the file.
 Checking *Export paraticle detection data arrays* will save the particle signals and any calibrated data to the end of the file.
 Each row of this data is a single detection with columns of elements and units, particles may contain one or more elements and are blank when that element is not detected. An example is shown below.
 
@@ -191,3 +193,5 @@ Batch Processing
 
 
 .. [1] Pace, H. E.; Rogers, N. J.; Jarolimek, C.; Coleman, V. A.; Higgins, C. P.; Ranville, J. F. Determining Transport Efficiency for the Purpose of Counting and Sizing Nanoparticles via Single Particle Inductively Coupled Plasma Mass Spectrometry. Anal. Chem. 2011, 83 (24), 9361–9369. https://doi.org/10.1021/ac201952t.
+
+.. [2] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
