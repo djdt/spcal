@@ -8,22 +8,27 @@ Welcome to spcal's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :glob:
+   :caption: Background
 
-   thresholds.rst
-   glossary.rst
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorial:
-
-   tutorial.rst
+   background/*
 
 .. toctree::
    :maxdepth: 2
-   :caption: Examples:
-   
-   example_quad.rst
+   :caption: Contents
+
+   data_import
+   calibration
+   results
+   export
+   glossary
+
+.. toctree::
+   :maxdepth: 2
+   :glob:
+   :caption: Examples
+
+   examples/*
 
 
 Indices and tables

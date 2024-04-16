@@ -12,7 +12,7 @@ There are a number of different (more or less permissive) formulas for determini
 spICP-ToF: Compound-Poisson
 ---------------------------
 
-.. figure:: images/integer_data.png
+.. figure:: ../images/integer_data.png
     :width: 640px
     :align: center
     
@@ -25,7 +25,7 @@ Instead, the detectors in TOFs use the raw output of fast analouge-to-digital co
 The result of multiple ions striking the detector is therefore a Poisson sampling of the PHD, where each ion may produce a range of values.
 
 .. _sia:
-.. figure:: images/sia.png
+.. figure:: ../images/sia.png
     :width: 640px
     :align: center
 
@@ -43,7 +43,7 @@ While accurate at high error rates (>1e3) the computational cost to simulate eno
 Log-normal approximation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: images/sum_ln.png
+.. figure:: ../images/sum_ln.png
    :width: 640px
    :align: center
 
