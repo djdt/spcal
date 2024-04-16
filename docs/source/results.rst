@@ -39,4 +39,32 @@ The graph options ((11) :numref:`results label`) let you set the *Distance thres
 The *Distance threshold* sets the minimum distance to merge clusters, while the *Minimum cluster size* controls the smallest cluster to show (e.g. to prevent single-particle clusters).
 The size of each cluster (number of particles) and index for filtering is shown below.
 
+
+Filtering
+---------
+
+.. _results filter:
+.. figure:: images/tutorial_results_filter.png
+   :align: center
+
+   The filter dialog can be used to restrict analysis of particles using a combination of boolean AND and OR operations.
+   Additionally, data can be filtered using the cluster index following hierarchical agglomerative clustering.
+
+
+The **Filtering Dialog** ((10) :numref:`results label`) can be used to select particles with certain characteristcs.
+Particles can be selected based on their signal, mass or size for one or more elements, using boolean (AND, OR) operations.
+The example in :numref:`results filter` uses the boolean AND of the two silver isotopes, 107 and 109, with signals greater than 0 counts.
+This filters particle detections and results to only those that contain both silver isotopes.
+
+.. _results filtered:
+.. figure:: images/tutorial_results_filter_after.png
+   :align: center
+
+   Data before and after filtering particles containing Au197 > 100 counts.
+   Filtered particles are shown in grey.
+
+The Histogram views ((4, 5) :numref:`results label`) and Scatter view ((7) :numref:`results label`) can show filtered detections in grey, as in :numref:`results filtered`.
+This is done by selecting *Draw filtered detections* in the graph options ((11) :numref:`results label`) for the relevant view.
+
+
 .. [1] Tharaud, M.; Schlatt, L.; Shaw, P.; Benedetti, M. F. Nanoparticle Identification Using Single Particle ICP-ToF-MS Acquisition Coupled to Cluster Analysis. From Engineered to Natural Nanoparticles. J. Anal. At. Spectrom. 2022, 37 (10), 2042–2052. https://doi.org/10.1039/D2JA00116K.
