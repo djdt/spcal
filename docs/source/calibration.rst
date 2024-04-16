@@ -20,8 +20,6 @@ Reference Particle
    The Reference tab is used to calculate the transport efficiency.
    This is required to calibrate data from signal into mass and size.
 
-.. TODO there is an error where the TF is not updating on parameter change in references tab
-
 To use a reference particle select *Reference Particle* as the :term:`transport efficiency` option in the **Options Tab**.
 This enables the **Reference Tab**, where data for the reference particle can be loaded via drag-and-drop or **File -> Open Reference File**.
 See :doc:`Data Import <data_import>` for details on importing data.
