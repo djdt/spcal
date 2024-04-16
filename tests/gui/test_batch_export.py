@@ -57,7 +57,6 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
 
 def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
     # Todo: need to make a better (more data) Nu test data file
-    return
     window = SPCalWindow()
     qtbot.add_widget(window)
     with qtbot.wait_exposed(window):
