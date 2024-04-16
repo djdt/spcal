@@ -925,6 +925,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 elif method == "Reference Particle":
                     inputs["efficiency"] = self.reference.getEfficiency(name)
                 elif method == "Mass Response":
+                    # TODO: error if refeernce wrong
                     inputs["mass_response"] = self.reference.io[
                         name
                     ].massresponse.baseValue()
