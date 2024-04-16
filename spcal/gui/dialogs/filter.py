@@ -232,7 +232,7 @@ class FilterDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Particle Filtering")
-        self.setMinimumSize(800, 800)
+        self.setMinimumSize(640, 480)
 
         self.names = names
         self.number_clusters = number_clusters
