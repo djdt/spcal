@@ -71,7 +71,6 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
     Your reference tab should look like :numref:`quad reference tab` and the :term:`transport efficiency` calculated as ~0.01897.
 
 #. Switch to the **Results Tab**.
-
     .. _quad results tab:
     .. figure:: ../images/example_quad_results_tab.png
        :width: 60%
