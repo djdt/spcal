@@ -1,3 +1,5 @@
+import importlib.metadata
+
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -6,10 +8,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'spcal'
-copyright = '2024, Thomas Lockwood'
-author = 'Thomas Lockwood'
-release = '0.1'
+project = "spcal"
+copyright = "2024, Thomas Lockwood"
+author = "Thomas Lockwood"
+release = importlib.metadata.version("spcal")
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -17,13 +19,12 @@ release = '0.1'
 extensions = []
 numfig = True
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
-
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
-html_static_path = ['_static']
+html_theme = "furo"
+html_static_path = ["_static"]
