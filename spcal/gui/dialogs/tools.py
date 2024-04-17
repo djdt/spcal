@@ -145,7 +145,7 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
         self.model = NumpyRecArrayTableModel(
             np.concatenate((db["inorganic"], db["polymer"])),
-            column_formats={"Density": "{:.4g}"},
+            name_formats={"Density": "{:.4g}"},
         )
         self.proxy = SearchColumnsProxyModel([0, 1])
         self.proxy.setSourceModel(self.model)
