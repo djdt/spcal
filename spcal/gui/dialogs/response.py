@@ -22,6 +22,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Ionic Response Calculator")
+        self.setMinimumSize(640, 480)
 
         self.data = np.array([])
         self.import_options: dict | None = None
@@ -31,14 +32,16 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.graph = ResponseView()
         self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
+        # self.graph.sizeHint = lambda: QtCore.QSize(500, 300)
 
         self.graph_cal = CalibrationView()
+        self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
 
-        data = np.array([], dtype=[("_", np.float64)])
+        data = np.array([], dtype=[("<element>", np.float64)])
         self.model = NumpyRecArrayTableModel(
             data, orientation=QtCore.Qt.Orientation.Horizontal
         )
-        self.responses = np.array([], dtype=[("_", np.float64)])
+        self.responses = np.array([], dtype=[("<element>", np.float64)])
 
         self.table = QtWidgets.QTableView()
         self.table.setModel(self.model)
@@ -50,7 +53,7 @@ class ResponseDialog(QtWidgets.QDialog):
             QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
         self.table.setVerticalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
 
         self.model.dataChanged.connect(self.completeChanged)
@@ -87,15 +90,19 @@ class ResponseDialog(QtWidgets.QDialog):
         )
 
         layout_graphs = QtWidgets.QHBoxLayout()
-        layout_graphs.addWidget(self.graph, 2)
-        layout_graphs.addWidget(self.graph_cal, 1)
+        layout_graphs.addWidget(self.graph, 3)
+        layout_graphs.addWidget(self.graph_cal, 2)
+        # layout_graphs.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetMaximumSize)
+        # layout_graphs.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetMinimumSize)
+        # self.graph.setSizePolicy(QtWidgets.QSizePolicy.Preferred,QtWidgets.QSizePolicy.Expanding)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_graphs, 1)
-        layout.addWidget(box_concs)
+        layout.addLayout(layout_graphs, 3)
+        layout.addWidget(box_concs, 2)
         layout.addWidget(self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
+        # self.resize(640, 480)
 
     def isComplete(self) -> bool:
         if self.model.array.dtype.names is None:
@@ -186,7 +193,6 @@ class ResponseDialog(QtWidgets.QDialog):
         self.graph.clear()
         self.graph.plot.setTitle(f"TIC: {options['path'].name}")
         self.graph.drawData(xs, tic)
-        self.graph.drawMean(0.0)
         if old_size != data.size:
             self.graph.region.blockSignals(True)
             self.graph.region.setRegion((xs[0], xs[-1]))
