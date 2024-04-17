@@ -63,18 +63,19 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add_level.pressed.connect(self.dialogLoadFile)
 
-        # self.button_save = QtWidgets.QPushButton(
-        #     QtGui.QIcon.fromTheme("document-save"), "Save"
-        # )
-        # self.button_save.setEnabled(False)
-        # self.button_save.pressed.connect(self.exportCalibration)
+        self.button_save = QtWidgets.QPushButton(
+            QtGui.QIcon.fromTheme("document-save"), "Save"
+        )
+        self.button_save.setEnabled(False)
+        self.button_save.pressed.connect(self.exportCalibration)
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
         self.combo_unit.setCurrentText("μg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
@@ -85,24 +86,26 @@ class ResponseDialog(QtWidgets.QDialog):
         box_concs = QtWidgets.QGroupBox("Concentrations")
         box_concs.setLayout(QtWidgets.QVBoxLayout())
         box_concs.layout().addWidget(self.table, 1)
-        box_concs.layout().addWidget(
+
+        layout_conc_bar = QtWidgets.QHBoxLayout()
+        layout_conc_bar.addStretch(1)
+        layout_conc_bar.addWidget(
+            self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        layout_conc_bar.addWidget(
             self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
+        box_concs.layout().addLayout(layout_conc_bar, 0)
 
         layout_graphs = QtWidgets.QHBoxLayout()
         layout_graphs.addWidget(self.graph, 3)
         layout_graphs.addWidget(self.graph_cal, 2)
-        # layout_graphs.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetMaximumSize)
-        # layout_graphs.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetMinimumSize)
-        # self.graph.setSizePolicy(QtWidgets.QSizePolicy.Preferred,QtWidgets.QSizePolicy.Expanding)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_graphs, 3)
         layout.addWidget(box_concs, 2)
-        layout.addWidget(self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
-        # self.resize(640, 480)
 
     def isComplete(self) -> bool:
         if self.model.array.dtype.names is None:
@@ -228,58 +231,68 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    # def exportCalibration(self) -> None:
-    #     assert self.import_options is not None
-    #     dir = self.import_options["path"].parent
-    #     file, _ = QtWidgets.QFileDialog.getOpenFileName(
-    #         self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-    #     )
-    #     if file == "":
-    #         return
+    def exportCalibration(self) -> None:
+        assert self.import_options is not None
+        dir = self.import_options["path"].parent
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
+        )
+        if file == "":
+            return
 
-    #     names: tuple[str, ...] = self.responses.dtype.names or tuple()
-    #     factor = mass_concentration_units[self.combo_unit.currentText()]
+        result = self.calculateResult()
+        names = result.dtype.names
+        if names is None:
+            return
 
-    #     with open(file, "w") as fp:
-    #         fp.write(f"SPCal Calibration {__version__}\n")
-    #         fp.write("," + ",".join(name for name in names) + "\n")
-    #         fp.write("Slope," + )
-    #         fp.write("Intercept," + )
-    #         fp.write("Error," + )
-    #         fp.write("r2," + )
-    #         for i in range(self.responses.shape[0]):
-    #             row = self.responses[i]
-    #             fp.write(
-    #                 f"Level {i}" + ",".join(str(row[name]) for name in names) + "\n"
-    #             )
-    #         fp.write("Concentration (kg/L)," + ",".join(name for name in names) + "\n")
-    #         for i in range(self.model.array.shape[0]):
-    #             row = self.model.array[i]
-    #             fp.write(
-    #                 f"Level {i}"
-    #                 + ",".join(
-    #                     str(row[name] * factor if not np.isnan(row[name]) else "")
-    #                     for name in names
-    #                 )
-    #                 + "\n"
-    #             )
+        with open(file, "w") as fp:
+            fp.write(f"SPCal Calibration {1}\n")
+            fp.write("," + ",".join(name for name in names) + "\n")
+            fp.write("Slope," + 1)
+            fp.write("Intercept," + 1)
+            fp.write("Error," + 1)
+            fp.write("r2," + 1)
+            for i in range(self.responses.shape[0]):
+                row = self.responses[i]
+                fp.write(
+                    f"Level {i}" + ",".join(str(row[name]) for name in names) + "\n"
+                )
+            fp.write("Concentration (kg/L)," + ",".join(name for name in names) + "\n")
+            for i in range(self.model.array.shape[0]):
+                row = self.model.array[i]
+                fp.write(
+                    f"Level {i}"
+                    + ",".join(
+                        str(row[name] * factor if not np.isnan(row[name]) else "")
+                        for name in names
+                    )
+                    + "\n"
+                )
 
-    def accept(self) -> None:
-        assert self.responses.dtype.names is not None
-
-        responses = {}
+    def calculateResult(self) -> np.ndarray:
+        result = np.full(4, np.nan, dtype=self.model.array.dtype)
         factor = mass_concentration_units[self.combo_unit.currentText()]
-        for name in self.responses.dtype.names:
+        for name in result.dtype.names:
             x = self.model.array[name]
             y = self.responses[name][~np.isnan(x)]
             x = x[~np.isnan(x)] * factor
             if x.size == 0:
                 continue
             elif x.size == 1:  # single point, force 0
-                m = y[0] / x[0]
+                result[name][0] = y[0] / x[0]
             else:
-                m, b, r2, err = weighted_linreg(x, y)
-            responses[name] = m
+                result[name] = weighted_linreg(x, y)
+
+        return result
+
+    def accept(self) -> None:
+        assert self.responses.dtype.names is not None
+
+        responses = {}
+        result = self.calculateResult()
+        for name in result.dtype.names:
+            if result[name][0] is not np.nan:
+                responses[name] = result[0]
 
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
