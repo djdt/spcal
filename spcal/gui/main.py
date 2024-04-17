@@ -174,7 +174,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         self.action_ionic_response_tool = create_action(
             "document-open",
-            "Ionic Response Tool",
+            "Ionic Response Calculator",
             "Read ionic responses from a standard file and apply to "
             "sample and reference.",
             self.dialogIonicResponse,
