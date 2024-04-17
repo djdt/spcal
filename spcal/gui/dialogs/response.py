@@ -35,7 +35,9 @@ class ResponseDialog(QtWidgets.QDialog):
         self.graph_cal = CalibrationView()
 
         data = np.array([], dtype=[("_", np.float64)])
-        self.model = NumpyRecArrayTableModel(data)
+        self.model = NumpyRecArrayTableModel(
+            data, orientation=QtCore.Qt.Orientation.Horizontal
+        )
         self.responses = np.array([], dtype=[("_", np.float64)])
 
         self.table = QtWidgets.QTableView()
@@ -168,7 +170,7 @@ class ResponseDialog(QtWidgets.QDialog):
             else:
                 return
         else:
-            self.model.insertRow(self.model.rowCount())
+            self.model.insertColumn(self.model.columnCount())
             self.responses = np.append(
                 self.responses, np.full(1, np.nan, self.responses.dtype)
             )

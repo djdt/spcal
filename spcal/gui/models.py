@@ -9,17 +9,20 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
     Args:
         array: 1d array
+        orientation: direction of array data, vertical = names in columns
         fill_values: default value for missing data for each type
-        column_formats: dict of column names and formatting strings for display
+        name_formats: dict of array names and formatting strings for display
+        name_flags: dict of array names and model flags
         parent: parent object
     """
 
     def __init__(
         self,
         array: np.ndarray,
+        orientation: QtCore.Qt.Orientation = QtCore.Qt.Orientation.Vertical,
         fill_values: dict[str, Any] | None = None,
-        column_formats: dict[str, str] | None = None,
-        column_flags: dict[str, QtCore.Qt.ItemFlag] | None = None,
+        name_formats: dict[str, str] | None = None,
+        name_flags: dict[str, QtCore.Qt.ItemFlag] | None = None,
         parent: QtCore.QObject | None = None,
     ):
         assert array.ndim == 1
@@ -28,29 +31,36 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
 
         self.array = array
+        self.orientation = orientation
 
         self.fill_values = {"f": np.nan, "U": "", "i": -1, "u": 0}
         if fill_values is not None:
             self.fill_values.update(fill_values)
 
-        self.column_formats = {}
-        if column_formats is not None:
-            self.column_formats.update(column_formats)
+        self.name_formats = {}
+        if name_formats is not None:
+            self.name_formats.update(name_formats)
 
-        self.column_flags = {}
-        if column_flags is not None:
-            self.column_flags.update(column_flags)
+        self.name_flags = {}
+        if name_flags is not None:
+            self.name_flags.update(name_flags)
 
     # Rows and Columns
     def columnCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
         if parent.isValid():
             return 0
-        return len(self.array.dtype.names)  # type: ignore
+        if self.orientation == QtCore.Qt.Orientation.Horizontal:
+            return self.array.shape[0]
+        else:
+            return len(self.array.dtype.names)  # type: ignore
 
     def rowCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
         if parent.isValid():
             return 0
-        return self.array.shape[0]
+        if self.orientation == QtCore.Qt.Orientation.Horizontal:
+            return len(self.array.dtype.names)  # type: ignore
+        else:
+            return self.array.shape[0]
 
     # Data
     def data(
@@ -59,23 +69,34 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return None
 
+        row, column = index.row(), index.column()
+        if self.orientation == QtCore.Qt.Orientation.Horizontal:
+            row, column = column, row
+
         if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
-            name = self.array.dtype.names[index.column()]
-            value = self.array[name][index.row()]
+            name = self.array.dtype.names[column]
+            value = self.array[name][row]
             if np.isreal(value) and np.isnan(value):
                 return ""
-            return self.column_formats.get(name, "{}").format(value)
+            return self.name_formats.get(name, "{}").format(value)
         else:  # pragma: no cover
             return None
 
     def setData(
         self, index: QtCore.QModelIndex, value: Any, role: QtCore.Qt.ItemFlag
     ) -> bool:
-        name = self.array.dtype.names[index.column()]
+        if not index.isValid():
+            return False
+
+        row, column = index.row(), index.column()
+        if self.orientation == QtCore.Qt.Orientation.Horizontal:
+            row, column = column, row
+
+        name = self.array.dtype.names[column]
         if role == QtCore.Qt.EditRole:
             if value == "":
                 value = self.fill_values[self.array[name].dtype.kind]
-            self.array[name][index.row()] = value
+            self.array[name][row] = value
             self.dataChanged.emit(index, index, [role])
             return True
         return False
@@ -84,8 +105,14 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         if not index.isValid():  # pragma: no cover
             return 0
 
-        name = self.array.dtype.names[index.column()]
-        return self.column_flags.get(
+        idx = (
+            index.column()
+            if self.orientation == QtCore.Qt.Orientation.Vertical
+            else index.row()
+        )
+
+        name = self.array.dtype.names[idx]
+        return self.name_flags.get(
             name, super().flags(index) | QtCore.Qt.ItemIsEditable
         )
 
@@ -99,14 +126,37 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         if role != QtCore.Qt.DisplayRole:  # pragma: no cover
             return None
 
-        if orientation == QtCore.Qt.Orientation.Horizontal:
-            return self.array.dtype.names[section]
-        else:
+        if orientation == self.orientation:
             return str(section)
+        else:
+            return self.array.dtype.names[section]
+
+    def insertColumns(
+        self, pos: int, columns: int, parent: QtCore.QModelIndex = QtCore.QModelIndex()
+    ) -> bool:
+        if self.orientation == QtCore.Qt.Orientation.Vertical:
+            raise NotImplementedError("name insert is not implemented")
+
+        self.beginInsertColumns(parent, pos, pos + columns - 1)
+        empty = np.array(
+            [
+                tuple(
+                    self.fill_values[d.kind]
+                    for d, v in self.array.dtype.fields.values()
+                )
+            ],
+            dtype=self.array.dtype,
+        )
+        self.array = np.insert(self.array, pos, np.full(columns, empty))
+        self.endInsertColumns()
+        return True
 
     def insertRows(
         self, pos: int, rows: int, parent: QtCore.QModelIndex = QtCore.QModelIndex()
     ) -> bool:
+        if self.orientation == QtCore.Qt.Orientation.Horizontal:
+            raise NotImplementedError("name insert is not implemented")
+
         self.beginInsertRows(parent, pos, pos + rows - 1)
         empty = np.array(
             [
