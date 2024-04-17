@@ -42,6 +42,10 @@ class ResponseView(SinglePlotGraphicsView):
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
 
+    def clear(self) -> None:
+        super().clear()
+        self.signal_mean = None
+
     def drawData(
         self,
         x: np.ndarray,
@@ -80,7 +84,7 @@ class ResponseView(SinglePlotGraphicsView):
         )
 
     def updateMean(self) -> None:
-        if self.signal is None or self.signal_mean is None:
+        if self.signal is None:
             return
         ds, _, _ = self.plot.downsampleMode()
         mean = np.mean(
