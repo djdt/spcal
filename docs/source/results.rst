@@ -34,7 +34,7 @@ Compositions
    Results of hierarchical agglomerative clustering. The cluster index and size are shown below each cluster result.
 
 The per-particle elemental composition can be calculated using spICP-ToF data and then displayed as a pir or bar chart using the Composition view (|c6| :numref:`results label`).
-Particle compostions are clustered using heirachcal-agglomerative clustering [1]_ and displayed (:numref:`results composition`).
+Particle compostions are clustered using hierachical-agglomerative clustering [1]_ and displayed (:numref:`results composition`).
 The graph options (|c11| :numref:`results label`) let you set the *Distance threshold*, *Minimum cluster size* and *Display mode* (bar or pie) for the clustering.
 The *Distance threshold* sets the minimum distance to merge clusters, while the *Minimum cluster size* controls the smallest cluster to show (e.g. to prevent single-particle clusters).
 The size of each cluster (number of particles) and index for filtering is shown below.
