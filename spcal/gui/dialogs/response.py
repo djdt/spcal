@@ -76,7 +76,6 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
         self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
 
-        # self.button_box.addButton(self.button_save)
         self.button_box.clicked.connect(self.buttonClicked)
         self.button_box.rejected.connect(self.reject)
 
@@ -285,6 +284,8 @@ class ResponseDialog(QtWidgets.QDialog):
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
             self.save()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.reset()
 
     def accept(self) -> None:
         assert self.responses.dtype.names is not None
@@ -298,3 +299,14 @@ class ResponseDialog(QtWidgets.QDialog):
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
         super().accept()
+
+    def reset(self) -> None:
+        data = np.array([], dtype=[("<element>", np.float64)])
+        self.model.beginResetModel()
+        self.model.array = np.full(1, np.nan, dtype=data.dtype)
+        self.model.endResetModel()
+        self.responses = self.model.array.copy()
+
+        self.import_options = None
+        self.graph.clear()
+        self.graph_cal.clear()
