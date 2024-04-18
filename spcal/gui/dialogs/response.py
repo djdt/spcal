@@ -1,4 +1,5 @@
 import logging
+from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
@@ -63,11 +64,11 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add_level.pressed.connect(self.dialogLoadFile)
 
-        self.button_save = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("document-save"), "Save"
-        )
-        self.button_save.setEnabled(False)
-        self.button_save.pressed.connect(self.exportCalibration)
+        # self.button_save = QtWidgets.QPushButton(
+        #     QtGui.QIcon.fromTheme("document-save"), "Save"
+        # )
+        # self.button_save.setEnabled(False)
+        # self.button_save.pressed.connect(self.exportCalibration)
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
@@ -76,11 +77,14 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
+        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
 
-        self.button_box.accepted.connect(self.accept)
+        # self.button_box.addButton(self.button_save)
+        self.button_box.clicked.connect(self.buttonClicked)
         self.button_box.rejected.connect(self.reject)
 
         box_concs = QtWidgets.QGroupBox("Concentrations")
@@ -117,6 +121,9 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def completeChanged(self) -> None:
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
+            self.isComplete()
+        )
+        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(
             self.isComplete()
         )
 
@@ -231,68 +238,69 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    def exportCalibration(self) -> None:
+    def save(self) -> None:
         assert self.import_options is not None
         dir = self.import_options["path"].parent
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
         )
         if file == "":
             return
 
-        result = self.calculateResult()
-        names = result.dtype.names
-        if names is None:
-            return
+        assert self.responses.dtype.names is not None
+        names = self.responses.dtype.names
+        factor = mass_concentration_units[self.combo_unit.currentText()]
 
         with open(file, "w") as fp:
-            fp.write(f"SPCal Calibration {1}\n")
-            fp.write("," + ",".join(name for name in names) + "\n")
-            fp.write("Slope," + 1)
-            fp.write("Intercept," + 1)
-            fp.write("Error," + 1)
-            fp.write("r2," + 1)
-            for i in range(self.responses.shape[0]):
-                row = self.responses[i]
+            fp.write(f"#SPCal Calibration {version('spcal')}\n")
+            fp.write(",Slope,Intercept,r2,Error\n")
+            for name in names:
+                m, b, r2, err = self.calibrationResult(name)
                 fp.write(
-                    f"Level {i}" + ",".join(str(row[name]) for name in names) + "\n"
+                    f"{name},{m if m is not None else ''},{b if b is not None else ''},"
+                    f"{r2 if r2 is not None else ''},{err if err is not None else ''}\n"
                 )
-            fp.write("Concentration (kg/L)," + ",".join(name for name in names) + "\n")
-            for i in range(self.model.array.shape[0]):
-                row = self.model.array[i]
-                fp.write(
-                    f"Level {i}"
-                    + ",".join(
-                        str(row[name] * factor if not np.isnan(row[name]) else "")
-                        for name in names
-                    )
-                    + "\n"
-                )
+            for name in names:
+                x = self.model.array[name]
+                y = self.responses[name][~np.isnan(x)]
+                x = x[~np.isnan(x)] * factor
 
-    def calculateResult(self) -> np.ndarray:
-        result = np.full(4, np.nan, dtype=self.model.array.dtype)
+                if x.size == 0:
+                    continue
+
+                fp.write(f"\n{name}," + ",".join(str(i) for i in range(len(x))) + "\n")
+                fp.write("Conc. (kg/L)," + ",".join(str(xx) for xx in x) + "\n")
+                fp.write("Response," + ",".join(str(xx) for xx in y) + "\n")
+
+    def calibrationResult(
+        self, name: str
+    ) -> tuple[float | None, float | None, float | None, float | None]:
         factor = mass_concentration_units[self.combo_unit.currentText()]
-        for name in result.dtype.names:
-            x = self.model.array[name]
-            y = self.responses[name][~np.isnan(x)]
-            x = x[~np.isnan(x)] * factor
-            if x.size == 0:
-                continue
-            elif x.size == 1:  # single point, force 0
-                result[name][0] = y[0] / x[0]
-            else:
-                result[name] = weighted_linreg(x, y)
+        x = self.model.array[name]
+        y = self.responses[name][~np.isnan(x)]
+        x = x[~np.isnan(x)] * factor
+        if x.size == 0:
+            return None, None, None, None
+        elif x.size == 1:  # single point, force 0
+            return y[0] / x[0], 0.0, None, None
+        else:
+            return weighted_linreg(x, y)
 
-        return result
+    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
+            self.save()
 
     def accept(self) -> None:
         assert self.responses.dtype.names is not None
 
         responses = {}
-        result = self.calculateResult()
-        for name in result.dtype.names:
-            if result[name][0] is not np.nan:
-                responses[name] = result[0]
+        for name in self.responses.dtype.names:
+            m, _, _, _ = self.calibrationResult(name)
+            if m is not None:
+                responses[name] = m
 
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
