@@ -22,7 +22,7 @@ Reference Particle
 
 To use a reference particle select *Reference Particle* as the :term:`transport efficiency` option in the **Options Tab**.
 This enables the **Reference Tab**, where data for the reference particle can be loaded via drag-and-drop or **File -> Open Reference File**.
-See :doc:`Data Import <data_import>` for details on importing data.
+See :ref:`Data Import` for details on importing data.
 
 To correctly calibrate, the particle :term:`diameter`, :term:`density` and :term:`ionic response` must be enetered in the **Reference Tab** and the instrument :term:`uptake` in the **Options Tab**.
 Ideally a particle of a single element is used, if one containing multiple is used then the :term:`mass fraction` of the measured element must be entered.

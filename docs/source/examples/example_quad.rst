@@ -3,7 +3,7 @@ Calibrating Quadrupole ICP-MS Data
 
 This example will guide you through importing, calibrating and exporting single-particle data collected on a quadrupole ICP-MS.
 A 15 nm gold NP is used as a sample, with a 50 nm gold NP as a reference.
-A sample is loaded and then calibrated using the *Reference Particle* method described in :doc:`Calibration <../calibration>`.
+A sample is loaded and then calibrated using the *Reference Particle* method described in :ref:`Calibration`.
 
 .. _table parameters:
 .. list-table:: Parameters used in this example.
@@ -41,7 +41,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
 #. Import the sample file.
     The ``quad_sample_15nm.csv`` file can be opened using **File -> Open Sample File**, then switch to the **Sample Tab**.
     Enter the sample parameters listed in :numref:`table parameters`.
-    A detailed guide on the :doc:`Data Import <../data_import>` wizard is avaiable.
+    A detailed guide on the :ref:`Data Import` wizard is avaiable.
 
     .. _quad sample tab:
     .. figure:: ../images/example_quad_sample_tab.png
@@ -59,7 +59,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
 #. Import the reference file.
     Open ``quad_reference_50nm.csv`` using **File -> Open Reference File**, and switch to the **Reference Tab**.
     Enter the reference parameters listed in :numref:`table parameters`.
-    A detailed guide on the :doc:`Data Import <../data_import>` wizard is avaiable.
+    A detailed guide on the :ref:`Data Import` wizard is avaiable.
 
     .. _quad reference tab:
     .. figure:: ../images/example_quad_reference_tab.png

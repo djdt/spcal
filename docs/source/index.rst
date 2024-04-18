@@ -21,6 +21,7 @@ Welcome to spcal's documentation!
    calibration
    results
    export
+   tools
    glossary
 
 .. toctree::

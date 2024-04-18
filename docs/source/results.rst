@@ -8,7 +8,7 @@ Processing Results
    The results tab, as shown for ToF data in the Multi-histogram view. |c1| Mode selector, |c2| Element selector, |c3| Outputs, |c4| Multi-histogram view, |c5| Histogram view, |c6| Compositions view, |c7| Scatter view, |c8| PCA view, |c9| Legend, |c10| Filter options, |c11| Graph options, |c12| View reset, |c13| Export button.
 
 The **Results Tab** is available once a sample is imported and one or more particles are detected.
-Here you can via the distribution of signals, as well as sizes and masses if data has been :doc:`Calibrated <calibration>`.
+Here you can via the distribution of signals, as well as sizes and masses if data has been calibrated (see :ref:`Calibration`).
 For single-element (quadrupole) data, only the standard histrogram view (|c5| :numref:`results label`) is avaiable.
 This displays the data's distribution, a log-normal or normal fit to the histogram, and the mean and limit-of-detection.
 The visiblity of these can be toggled by left-clicking the graph's legend (|c9| :numref:`results label`).
@@ -19,7 +19,7 @@ The *No. Dectections* shows the number of detected particles :math:`N` with thei
 The fraction of total particles that contain the selected element is shown as a percent.
 
 The *No. Concentration* is avaiable when the instrument :term:`uptake` is provided in the **Options Tab**.
-The mass *Concentration* is available when the data can be calibrated into masses, see :doc:`Calibration <calibration>`.
+The mass *Concentration* is available when the data can be calibrated into masses, see :ref:`Calibration`.
 
 *Ionic Background* shows the mean signal of non-detection areas (the gaps between particle signals) and can be calculated when the :term:`ionic response` is provided for an element.
 

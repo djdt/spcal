@@ -19,7 +19,7 @@ Glossary
     ionic response
         The signal produced per mass of material.
         Measured by collecting one or more ionic standards of known concentrations.
-        The ionic response can be calibrated from multiple standard levels using the **Ionic Response Tool**.
+        The ionic response can be calibrated from multiple standard levels using the :ref:`Ionic Response Calculator`.
 
     mass fraction
         The amount of measured material per total particle.
