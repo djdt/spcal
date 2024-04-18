@@ -33,7 +33,6 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.graph = ResponseView()
         self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
-        # self.graph.sizeHint = lambda: QtCore.QSize(500, 300)
 
         self.graph_cal = CalibrationView()
         self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
@@ -63,12 +62,6 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_add_level = QtWidgets.QPushButton("Add Level")
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add_level.pressed.connect(self.dialogLoadFile)
-
-        # self.button_save = QtWidgets.QPushButton(
-        #     QtGui.QIcon.fromTheme("document-save"), "Save"
-        # )
-        # self.button_save.setEnabled(False)
-        # self.button_save.pressed.connect(self.exportCalibration)
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
