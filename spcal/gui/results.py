@@ -590,7 +590,9 @@ class ResultsWidget(QtWidgets.QWidget):
             if ptp > data_range:
                 data_range = ptp
 
-        # data_range = np.ptp(np.concatenate(list(graph_data.values())))
+        if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+            return
+
         min_bins, max_bins = 10, 1000
         if bin_width < data_range / max_bins:
             logger.warning(
