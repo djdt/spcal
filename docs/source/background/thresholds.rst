@@ -5,8 +5,8 @@ Poisson
 -------
 
 At the very low counting rates often seen in spICP-MS work, the typical Gaussian statistics (:math:`\mu + 3 \sigma`) used to determine detection limits do not apply.
-Instead Poisson statsitics should be used to determine the `critical threshold`, the threshold above which a signal is considered to be a detected particle [1]_ .
-Confusingly, most Poisson statistics will also define a `detection threshold`, but this should not be used to detemine the detection of signal.
+Instead Poisson statsitics should be used to determine the *critical value*, the threshold above which a signal is considered to be a detected particle [1]_ .
+Confusingly, most Poisson statistics will also define a :term:`detection threshold`, but this should not be used to detemine the detection of signal.
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
 
 spICP-ToF: Compound-Poisson
@@ -34,11 +34,11 @@ The result of multiple ions striking the detector is therefore a Poisson samplin
 To convert these values into counts the detector is calibrated to determine the SIA, typically by analysing a very low concentration sample, i.e. one that is likely to only produce single-ion events.
 Multiple aquistions of raw data from the detector are summed and then normalised to approxmate the signal produced for 1 ion (count) by dividing by the mean of the recorded SIA.
 
-Compound-Poisson sampling must be used to accurately determine detection thresholds for spICP-ToF, ideally of the actual SIA of the instrument [3]_ .
+Compound-Poisson sampling must be used to accurately determine a :term:`detection threshold` for spICP-ToF, ideally of the actual SIA of the instrument [3]_ .
 In SPCal, this can be performed by brute force simulation or by using a log-normal approximation of the SIA.
 For both methods, the lambda (mean) value of the Poisson is taken as the mean signal in the data set.
 The simulation uses a given SIA distribution to generate a compound-Poisson distributed data and determines the threshold from the appropriate quantile of this data.
-While accurate at high error rates (>1e3) the computational cost to simulate enough samples for low error rates is too high to be practical [4]_ .
+While accurate at high :term:`error rate` (>1e3) the computational cost to simulate enough samples for low :term:`error rate` is too high to be practical [4]_ .
 
 Log-normal approximation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -50,13 +50,13 @@ Log-normal approximation
    A spICP-ToF background and the corresponding log-normal approximation. Each log-normal (red) is summed to estimate the non-zero portion of the compound-Poisson distributed data.
 
 The log-normal approximation works by closely appoximating the SIA with a log-normal distribution, see :numref:`sia`.
-Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting detection threshold for the sum of log-normal distributions.
+Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting :term:`detection threshold` for the sum of log-normal distributions.
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
 Threshold selection
 -------------------
 
-.. list-table:: Selection of statistics for determining detection threholds.
+.. list-table:: Selection of statistics for determining the :term:`detection threshold`.
    :header-rows: 1
 
    * - Number of non-zero values below 5 counts
@@ -72,15 +72,15 @@ Threshold selection
      - :math:`<75%`
      - compound-Poisson
 
-The best method to find the detection threshold will depend on the data being analysed.
+The best method to find the :term:`detection threshold` will depend on the data being analysed.
 SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson of compound-Poisson statistics.
 For data that is consistently above five counts, Gaussian statistics are used, otherwise Poisson or compound-Poisson dending on the integer nature of the data.
 Values are considered integer if they are within 0.05 of an integer value, as data exports from ICP-MS often seem to have a small offset from true integers.
-The detection threhold is then calculated for the chosen error rate (:math:`\alpha`).
+The detection threhold is then calculated for the chosen :term:`error rate` (:math:`\alpha`).
 
-In other analytical techniques a 5% error rate (:math:`\alpha = 0.05`) is considered acceptable and is frequently used implemented as the :math:`3 \sigma` rule.
-However, the large number of events collected during spICP-MS makes such low error rates lead to a very large number of false detections.
-Error rates of :math:`\alpha = 1e-6` are fairly standard and will lead to only 1 false detection per million events.
+In other analytical techniques a 5% :term:`error rate` (:math:`\alpha = 0.05`) is considered acceptable and is frequently used implemented as the :math:`3 \sigma` rule.
+However, the large number of events collected during spICP-MS makes such low :term:`error rate` lead to a very large number of false detections.
+An :term:`error rate` of :math:`\alpha = 1e-6` is fairly standard and will lead to only 1 false detection per million events.
 
 References
 ----------

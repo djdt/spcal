@@ -18,6 +18,7 @@ Welcome to spcal's documentation!
    :caption: Contents
 
    data_import
+   options
    calibration
    results
    export

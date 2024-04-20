@@ -3,6 +3,9 @@ Glossary
 
 .. glossary::
 
+    accumulation threshold
+        The value above which contiguous regions with at least one detection are summed.
+
     diameter
         Reference particle diameter.
         Must be determined externally.
@@ -12,9 +15,17 @@ Glossary
         Must be measured externally or assumed for a certain material.
         The :ref:`Density Database` contains the density for several hundred materials.
 
+    detection threshold
+        The value above which a signal is considered a detection (particle).
+        This is also called the *critical value* in Poisson statistics.
+
     dwelltime
         The total acquistion time for a single event.
         The dwelltime is set during data import and cannot be edited.
+
+    error rate
+        Determines the number of false detections, i.e. background signal incorrectly identified as particles.
+        An error rate (:math:`\alpha`) of :math:`10^(-6)` corresponds to 1 false detection per 1 million events.
 
     ionic response
         The signal produced per mass of material.
