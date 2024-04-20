@@ -39,10 +39,6 @@ def test_numpy_recarray_table_model(qtmodeltester: ModelTester):
     assert model.array[1]["int"] == 0
     assert np.isnan(model.array[1]["float"])
 
-    # Remove
-    # model.removeRow(7)
-    # assert model.array.shape == (10,)
-
     # Data
     assert model.data(model.index(1, 1)) == "0.0"
     assert model.data(model.index(1, 2)) == ""  # nan
@@ -87,10 +83,6 @@ def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
     assert model.array[1]["str"] == "0"
     assert model.array[1]["int"] == 0
     assert np.isnan(model.array[1]["float"])
-
-    # Remove
-    # model.removeRow(7)
-    # assert model.array.shape == (10,)
 
     # Data
     assert model.data(model.index(1, 1)) == "0.0"
