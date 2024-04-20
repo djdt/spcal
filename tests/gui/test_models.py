@@ -14,8 +14,8 @@ def test_numpy_recarray_table_model(qtmodeltester: ModelTester):
     model = NumpyRecArrayTableModel(
         array,
         fill_values={"U": "0", "i": 0},
-        column_formats={"int": "{:.1f}"},
-        column_flags={"str": ~QtCore.Qt.ItemFlag.ItemIsEditable},
+        name_formats={"int": "{:.1f}"},
+        name_flags={"str": ~QtCore.Qt.ItemFlag.ItemIsEditable},
     )
 
     assert model.columnCount() == 3
@@ -46,6 +46,55 @@ def test_numpy_recarray_table_model(qtmodeltester: ModelTester):
     # Data
     assert model.data(model.index(1, 1)) == "0.0"
     assert model.data(model.index(1, 2)) == ""  # nan
+
+    model.setData(model.index(1, 1), 10, QtCore.Qt.EditRole)
+    assert model.array["int"][1] == 10
+
+    qtmodeltester.check(model, force_py=True)
+
+
+def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
+    array = np.empty(10, dtype=[("str", "U16"), ("int", int), ("float", float)])
+    array["str"] = "A"
+    array["int"] = np.arange(10)
+    array["float"] = np.random.random(10)
+
+    model = NumpyRecArrayTableModel(
+        array,
+        orientation=QtCore.Qt.Orientation.Horizontal,
+        fill_values={"U": "0", "i": 0},
+        name_formats={"int": "{:.1f}"},
+        name_flags={"str": ~QtCore.Qt.ItemFlag.ItemIsEditable},
+    )
+
+    assert model.columnCount() == 10
+    assert model.rowCount() == 3
+    # Header
+    assert model.headerData(0, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole) == "str"
+    assert model.headerData(1, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole) == "int"
+    assert model.headerData(2, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole) == "float"
+
+    for i in range(10):
+        assert model.headerData(i, QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole) == str(i)
+
+    # Col flags
+    assert model.flags(model.index(1, 1)) & QtCore.Qt.ItemFlag.ItemIsEditable
+    assert not model.flags(model.index(0, 1)) & QtCore.Qt.ItemFlag.ItemIsEditable
+
+    # Insert
+    model.insertColumns(1, 1)
+    assert model.array.shape == (11,)
+    assert model.array[1]["str"] == "0"
+    assert model.array[1]["int"] == 0
+    assert np.isnan(model.array[1]["float"])
+
+    # Remove
+    # model.removeRow(7)
+    # assert model.array.shape == (10,)
+
+    # Data
+    assert model.data(model.index(1, 1)) == "0.0"
+    assert model.data(model.index(2, 1)) == ""  # nan
 
     model.setData(model.index(1, 1), 10, QtCore.Qt.EditRole)
     assert model.array["int"][1] == 10
