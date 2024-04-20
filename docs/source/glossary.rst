@@ -10,7 +10,7 @@ Glossary
     density
         Particle density.
         Must be measured externally or assumed for a certain material.
-        The **Density Database** contains the density for several hundred materials.
+        The :ref:`Density Database` contains the density for several hundred materials.
 
     dwelltime
         The total acquistion time for a single event.
@@ -24,11 +24,15 @@ Glossary
     mass fraction
         The amount of measured material per total particle.
         If an AuAg particle is 40 % Au by mass, then the mass fraction for Au will be 0.4 and 0.6 for Ag.
-        The **Mass Fraction Calculator** can calculate the mass fraction from a known molecular formula.
+        The :ref:`Mass Fraction Calculator` can calculate the mass fraction from a known molecular formula.
 
     mass response
         An alternate calibration strategy.
         The mass response uses the average mass of a reference particle to calibrate signal into mass.
+
+    molar mass
+        The molecular weight of the particle material.
+        Used to calculate the intracellular concentration for single-cell ICP-MS.
 
     transport efficiency
         The fraction of material that is successfully transported to the detector.
