@@ -30,17 +30,17 @@ def test_response_dialog(qtbot: QtBot):
         dlg.show()
 
     dlg.loadData(generate_data(10.0), {"path": Path("0.csv")})
-    assert dlg.model.columnCount() == 4
-    assert dlg.model.rowCount() == 1
+    assert dlg.model.columnCount() == 1
+    assert dlg.model.rowCount() == 4
     dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(0, 1), 0.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(0, 2), 10.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(1, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(2, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
 
     dlg.loadData(generate_data(20.0), {"path": Path("1.csv")})
-    dlg.model.setData(dlg.model.index(1, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(0, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(1, 1), 20.0, QtCore.Qt.ItemDataRole.EditRole)
-    assert dlg.model.columnCount() == 4
-    assert dlg.model.rowCount() == 2
+    assert dlg.model.columnCount() == 2
+    assert dlg.model.rowCount() == 4
 
     dlg.combo_unit.setCurrentText("mg/L")
 
