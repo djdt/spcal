@@ -19,6 +19,7 @@ Welcome to spcal's documentation!
 
    data_import
    options
+   sample
    calibration
    results
    export
