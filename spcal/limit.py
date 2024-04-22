@@ -14,7 +14,7 @@ from spcal.dists.util import (
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
 logger = logging.getLogger(__name__)
-eps = np.finfo(float).eps
+iter_eps = 1e-3
 
 
 class SPCalLimit(object):
@@ -216,7 +216,7 @@ class SPCalLimit(object):
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
         while (
-            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
         ) or iters == 0:
             prev_threshold = threshold
 
@@ -275,7 +275,7 @@ class SPCalLimit(object):
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
         while (
-            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
         ) or iters == 0:
             prev_threshold = threshold
 
@@ -351,7 +351,7 @@ class SPCalLimit(object):
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
         while (
-            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
         ) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
