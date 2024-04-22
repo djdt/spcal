@@ -22,7 +22,7 @@ The method used for data can be selected using *Threshold method* in the **Optio
    Selects the most appropraite of Compound-Poisson, Gaussian and Poisson.
 
 #. Highest
-   Selects the highest thrshold.
+   Selects the highest threshold.
 
 #. Compound-Poisson
    Uses Compound-Poisson statistics with the options in :ref: `Compound-Poisson options`.
@@ -103,8 +103,27 @@ The strengths and weaknesses of each formula are discussed in the MARLAP manual 
 Windowed thresholding
 ---------------------
 
+.. _threshold window:
+.. figure:: images/tutorial_options_window.png
+   :align: center
+
+   Windowed thresholding can be used in samples with dynamic background, such as those collected by laser ablation.
+
+
+A static threshold is easy to calculate and suitable most solution-based spICP-MS data.
+However, in situations with dynamic backgrounds, such as when using laser ablation, a thresholding method that can adapt to the moving background is required.
+SPCal implements *windowed thresholding* for these cases, and is enabled be checking the *Use window* option in the **Options Tab**.
+
+Windowed thresholding is performed by calculating the local signal mean and :term:`detection threshold` in regions around each point. The size of the window is set using the *Window size* option.
+Larger windows are less affected by local changes, but take longer to compute.
+*Windowed thresholding is not availble for Compound-Poisson thresholds*.
+
 Iterative threshoding
 ---------------------
+
+The presence of a large number of particles can impact the mean of the signal, and therefore the :term:`detection threshold`.
+Iterative thresholding removes the influence of particles :term:`detection threshold` by sequentially filtering particle signal and re-calculating using non-detected regions.
+Once the :term:`detection threshold` stops changing, the process is ended.
 
 
 .. [1] United States Environmental Protection Agency, MARLAP Manual Volume III: Chapter 20, Detection and Quantification Capabilities Overview. https://www.epa.gov/sites/default/files/2015-05/documents/402-b-04-001c-20_final.pdf
