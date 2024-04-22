@@ -17,6 +17,31 @@ The *trim controls* (|c7| :numref:`sample label`) can be used to trim data, limi
 When the single element histogram is used (|c6| :numref:`sample label`) the mean and detection threhold are also shown.
 
 
+Sample parameters
+-----------------
+
+:ref:`Calibration` requires the input sample of parameters for each element collected.
+The parameters for the selected element (|c2| :numref:`sample label`) are shown on the left hand side of the tab (|c3| :numref:`sample label`) and summarised in :numref:`table sample`
+
+.. _table sample:
+.. list-table:: Sample parameters on the **Sample Tab**.
+   :header-rows: 1
+
+   * - Parameter
+     - Description
+   * - Density
+     - The particle :term:`density`.
+   * - Molar mass
+     - The :term:`molar mass` (molecular weight) of the particle material.
+   * - Ionic response
+     - The detectors response for a given conectration of material.
+   * - Mass fraction
+     - The fraction of a particle mass respresented by the measured element.
+
+Buttons on the :term:`density`, :term:`molar mass`, :term:`ionic response` and :term:`mass fraction` will start the :ref:`Density Database`, :ref:`Mass Fraction Calculator` and :ref:`Ionic Response Calculator`.
+When completed, these tools will automatically fill the corresponding field.
+The :term:`ionic response` fields of the **Sample Tab** anmd **Reference Tab** are linked, and editing one value will also change the other.
+
 
 .. |c1| unicode:: U+2460
 .. |c2| unicode:: U+2461
