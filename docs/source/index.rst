@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to spcal's documentation!
+Welcome to SPCal's documentation!
 =================================
 
 .. toctree::
@@ -23,6 +23,7 @@ Welcome to spcal's documentation!
    calibration
    results
    export
+   batch
    tools
    glossary
 

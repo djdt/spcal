@@ -10,8 +10,8 @@ Thresholding Options
    Contiguous regions above the :term:`accumulation threshold`, with at least one detection, are summed.
 
 To resolve particles from background signals a :term:`detection threshold` must be defined, above with signal is considered a particle.
-SPCal offers three different threholding methods, each with their own use-cases.
-In general, Gaussian statistics should be used for thresholding singals with a high-mean background (> 10 counts) and Poisson statistics for thosfe below.
+SPCal offers three different thresholding methods, each with their own use-cases.
+In general, Gaussian statistics should be used for thresholding signals with a high-mean background (> 10 counts) and Poisson statistics for those below.
 For spICP-ToF data with low-mean backgrounds, Compound-Poisson statistics must be used.
 For more a detailed discussion see :ref:`Thresholds for spICP-MS`.
 Each method also allows the definition of an error-rate :math:`\alpha`, that corresponds to the expected number of falsely detected particles.
@@ -19,22 +19,22 @@ Each method also allows the definition of an error-rate :math:`\alpha`, that cor
 The method used for data can be selected using *Threshold method* in the **Options Tab**, with the following options.
 
 #. Automatic
-   Selects the most appropraite of Compound-Poisson, Gaussian and Poisson.
+   Selects the most appropriate of Compound-Poisson, Gaussian and Poisson.
 
 #. Highest
    Selects the highest threshold.
 
 #. Compound-Poisson
    Uses Compound-Poisson statistics with the options in :ref: `Compound-Poisson options`.
-   Reccomended for ToF data.
+   Recommended for ToF data.
 
 #. Gaussian
    Uses Gaussian statistics with the options in :ref: `Gaussian options`.
-   Reccomended for data with a background signal > 10 counts.
+   Recommended for data with a background signal > 10 counts.
 
 #. Poisson
    Uses Poisson statistics with the options in :ref: `Poisson options`.
-   Reccomended for data with a background signal < 10 counts.
+   Recommended for data with a background signal < 10 counts.
 
 #. Manual Input
    Enables setting the *Detection threshold* manually in the **Sample Tab** and **Reference Tab**.
@@ -118,7 +118,7 @@ Windowed thresholding is performed by calculating the local signal mean and :ter
 Larger windows are less affected by local changes, but take longer to compute.
 *Windowed thresholding is not availble for Compound-Poisson thresholds*.
 
-Iterative threshoding
+Iterative thresholding
 ---------------------
 
 .. _threshold iter:

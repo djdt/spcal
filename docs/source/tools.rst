@@ -21,7 +21,7 @@ To calculate the :term:`ionic response` one or more dissolved standards must be 
 When one standard is used, the :term:`ionic response` is taken as the mean value of the data, :numref:`ionic response example`.
 When two or more are used, a calibration curve is created, with the :term:`ionic response` taken as the slope of that curve.
 
-Ideally a blank and several dissolved standards are analysed, covering the range of signal produced by nanoparticles in the sample.
+Ideally a blank and several dissolved standards are analysed, covering the range of signal produced by nano-particles in the sample.
 In practice, a blank and one standard are usually sufficient.
 As the :term:`ionic response` will change day-to-day with instrument conditions so should be determined every run.
 
@@ -29,7 +29,7 @@ As the :term:`ionic response` will change day-to-day with instrument conditions 
 .. figure:: images/tools_ionic_response_dialog.png
    :align: center
 
-   The **Ionic Response Calculator**. |c1| The currently loaded data and mean (red), |c2| Calibration curve, |c3| Concentration table, |c4| Import data for new level, |c5| Concetration units.
+   The **Ionic Response Calculator**. |c1| The currently loaded data and mean (red), |c2| Calibration curve, |c3| Concentration table, |c4| Import data for new level, |c5| Concentration units.
 
 The **Ionic Response Calculator** is used to calculate the :term:`ionic response` using one or more data files.
 To use the calculator import one or more data files (|c4| :numref:`ionic response dialog`) and set their corresponding concentrations in the concentration table (|c3| :numref:`ionic response dialog`).

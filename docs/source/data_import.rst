@@ -29,14 +29,14 @@ The first non-header row should contain the names of each column and is editable
     * - Option
       - Description
     * - :term:`dwelltime`
-      - The instrument event acquistion time. Calculated from data when a column with ``time`` in the title is included.
+      - The instrument event acquisition time. Calculated from data when a column with ``time`` in the title is included.
     * - Intensity Units
       - Selects if data is in *counts* or *counts-per-second (CPS)*. Defaults to counts unless *CPS* is included in the file header.
     * - Delimiter
       - The delimiter character.
     * - Import From Row
       - Skips the first *x* rows of the file (the header). The first non-skipped row should be the column names.
-    * - Ingnore Columns
+    * - Ignore Columns
       - A ``;`` delimited list of which columns to ignore. For example time or index rows should not be imported.
 
 
@@ -52,7 +52,7 @@ ToF Data
 
 SPCal supports import of ICP-ToF data from both Nu Instruments and TOFWERK instruments.
 
-Nu Instruments data is stored in a single directory consiting of a number of ``.integ`` files with an index file (``integrated.index``) and  ``run.info`` file that stores run parameters.
+Nu Instruments data is stored in a single directory consisting of a number of ``.integ`` files with an index file (``integrated.index``) and  ``run.info`` file that stores run parameters.
 To load Nu Instruments data, either drag-and-drop the directory into the **Sample Tab**, or select the ``run.info`` file via **File -> Open Sample File**.
 This starts the ToF import wizard, where you can select which elements / isotopes to import. Options for the ToF import wizard are summarised below in :numref:`table tof options`.
 
@@ -67,7 +67,7 @@ This starts the ToF import wizard, where you can select which elements / isotope
     * - Option
       - Description
     * - :term:`dwelltime`
-      - The instrument event acquistion time, read from data on load.
+      - The instrument event acquisition time, read from data on load.
     * - Cycle (Nu Instruments)
       - ToF cycle to load, defaults to 1.
     * - Segment (Nu Instruments)

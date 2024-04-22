@@ -5,8 +5,8 @@ Poisson
 -------
 
 At the very low counting rates often seen in spICP-MS work, the typical Gaussian statistics (:math:`\mu + 3 \sigma`) used to determine detection limits do not apply.
-Instead Poisson statsitics should be used to determine the *critical value*, the threshold above which a signal is considered to be a detected particle [1]_ .
-Confusingly, most Poisson statistics will also define a :term:`detection threshold`, but this should not be used to detemine the detection of signal.
+Instead Poisson statistics should be used to determine the *critical value*, the threshold above which a signal is considered to be a detected particle [1]_ .
+Confusingly, most Poisson statistics will also define a :term:`detection threshold`, but this should not be used to determine the detection of signal.
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
 
 spICP-ToF: Compound-Poisson
@@ -20,8 +20,8 @@ spICP-ToF: Compound-Poisson
    
 The Poisson thresholding typically used for spICP-MS is not valid for spICP-ToF, as is easily established by looking at spICP-ToF data.
 Unlike data from a quadrupole instrument, this data is non-integer.
-To achieve sufficient resolution a time-of-flight instrument cannot be operated in pulse-counting mode, where the electron pulses from indiviual ions are counted as discrete (integer) events [2]_ .
-Instead, the detectors in TOFs use the raw output of fast analouge-to-digital converters and this exposes the variation in current produced by an electron multiplier for a single ion, known as the pulse-height distribution (PHD) or single-ion area (SIA) [3]_ .
+To achieve sufficient resolution a time-of-flight instrument cannot be operated in pulse-counting mode, where the electron pulses from individual ions are counted as discrete (integer) events [2]_ .
+Instead, the detectors in TOFs use the raw output of fast analogue-to-digital converters and this exposes the variation in current produced by an electron multiplier for a single ion, known as the pulse-height distribution (PHD) or single-ion area (SIA) [3]_ .
 The result of multiple ions striking the detector is therefore a Poisson sampling of the PHD, where each ion may produce a range of values.
 
 .. _sia:
@@ -32,7 +32,7 @@ The result of multiple ions striking the detector is therefore a Poisson samplin
     The single-ion areas of two ICP-ToF instruments, and log-normal fits.
 
 To convert these values into counts the detector is calibrated to determine the SIA, typically by analysing a very low concentration sample, i.e. one that is likely to only produce single-ion events.
-Multiple aquistions of raw data from the detector are summed and then normalised to approxmate the signal produced for 1 ion (count) by dividing by the mean of the recorded SIA.
+Multiple acquisitions of raw data from the detector are summed and then normalised to approximate the signal produced for 1 ion (count) by dividing by the mean of the recorded SIA.
 
 Compound-Poisson sampling must be used to accurately determine a :term:`detection threshold` for spICP-ToF, ideally of the actual SIA of the instrument [3]_ .
 In SPCal, this can be performed by brute force simulation or by using a log-normal approximation of the SIA.
@@ -49,7 +49,7 @@ Log-normal approximation
 
    A spICP-ToF background and the corresponding log-normal approximation. Each log-normal (red) is summed to estimate the non-zero portion of the compound-Poisson distributed data.
 
-The log-normal approximation works by closely appoximating the SIA with a log-normal distribution, see :numref:`sia`.
+The log-normal approximation works by closely approximating the SIA with a log-normal distribution, see :numref:`sia`.
 Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting :term:`detection threshold` for the sum of log-normal distributions.
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
@@ -60,7 +60,7 @@ Threshold selection
    :header-rows: 1
 
    * - Number of non-zero values below 5 counts
-     - NUmber of non-zero values :math:`\mathbb{Z} \pm 0.05`
+     - Number of non-zero values :math:`\mathbb{Z} \pm 0.05`
      - Threshold method
    * - :math:`>5%`
      - 
@@ -74,9 +74,9 @@ Threshold selection
 
 The best method to find the :term:`detection threshold` will depend on the data being analysed.
 SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson of compound-Poisson statistics.
-For data that is consistently above five counts, Gaussian statistics are used, otherwise Poisson or compound-Poisson dending on the integer nature of the data.
+For data that is consistently above five counts, Gaussian statistics are used, otherwise Poisson or compound-Poisson depending on the integer nature of the data.
 Values are considered integer if they are within 0.05 of an integer value, as data exports from ICP-MS often seem to have a small offset from true integers.
-The detection threhold is then calculated for the chosen :term:`error rate` (:math:`\alpha`).
+The detection threshold is then calculated for the chosen :term:`error rate` (:math:`\alpha`).
 
 Error rates
 -----------

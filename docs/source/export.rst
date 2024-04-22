@@ -12,7 +12,7 @@ Data Export
 Exporting results is performed by pressing the *Export Results* button in the **Results Tab**.
 This opens the dialog shown in :numref:`export options`, where options for exporting can be entered.
 The filename of the export is set to *Save File*, and can be selected by pressing *Select File*.
-By default the export name will be the imported sample filename with ``_results.csv`` appeneded.
+By default the export name will be the imported sample filename with ``_results.csv`` appended.
 The units of exported masses, sizes and concentrations can be set using the *Output Units* controls, and default to SI units.
 Finally, the *Export options* control what extra data is written to the file.
 All exports will contain particle numbers, concentrations, backgrounds, the mean and median of signal, size and mass, and limits of detection.

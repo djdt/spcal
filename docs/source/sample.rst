@@ -14,7 +14,7 @@ This tab shows the loaded signal data for all elements, and element specific opt
 The plot of sample data can be navigated using the left-mouse to scroll the view and mouse-wheel to zoom.
 The y-axis of the plot is automatically scaled to show the maximum currently visible signal value.
 The *trim controls* (|c7| :numref:`sample label`) can be used to trim data, limiting the region of analysis.
-When the single element histogram is used (|c6| :numref:`sample label`) the mean and detection threhold are also shown.
+When the single element histogram is used (|c6| :numref:`sample label`) the mean and detection threshold are also shown.
 
 
 Sample parameters
@@ -34,13 +34,13 @@ The parameters for the selected element (|c2| :numref:`sample label`) are shown 
    * - Molar mass
      - The :term:`molar mass` (molecular weight) of the particle material.
    * - Ionic response
-     - The detectors response for a given conectration of material.
+     - The detectors response for a given concentration of material.
    * - Mass fraction
-     - The fraction of a particle mass respresented by the measured element.
+     - The fraction of a particle mass represented by the measured element.
 
 Buttons on the :term:`density`, :term:`molar mass`, :term:`ionic response` and :term:`mass fraction` will start the :ref:`Density Database`, :ref:`Mass Fraction Calculator` and :ref:`Ionic Response Calculator`.
 When completed, these tools will automatically fill the corresponding field.
-The :term:`ionic response` fields of the **Sample Tab** anmd **Reference Tab** are linked, and editing one value will also change the other.
+The :term:`ionic response` fields of the **Sample Tab** and **Reference Tab** are linked, and editing one value will also change the other.
 
 
 .. |c1| unicode:: U+2460

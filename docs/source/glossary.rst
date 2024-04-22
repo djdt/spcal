@@ -20,7 +20,7 @@ Glossary
         This is also called the *critical value* in Poisson statistics.
 
     dwelltime
-        The total acquistion time for a single event.
+        The total acquisition time for a single event.
         The dwelltime is set during data import and cannot be edited.
 
     error rate
