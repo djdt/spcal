@@ -14,6 +14,7 @@ from spcal.dists.util import (
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
 logger = logging.getLogger(__name__)
+eps = np.finfo(float).eps
 
 
 class SPCalLimit(object):
@@ -214,7 +215,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
 
             lam = bn.nanmean(responses[responses < threshold])
@@ -271,7 +274,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
 
             if window_size == 0:  # No window
@@ -345,7 +350,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
                 mu = bn.nanmean(responses[responses < threshold])
