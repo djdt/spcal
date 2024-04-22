@@ -1,6 +1,9 @@
 Tools
 =====
 
+Various tools are availbale in SPCal to help with providing sample inputs and manipulating signal data.
+These are found in the **Edit** menu.
+
 Density Database
 ----------------
 
@@ -58,6 +61,17 @@ When started from the *Molar mass* or *Mass fraction* fields on the **Sample Tab
 .. |c3| unicode:: U+2462
 .. |c4| unicode:: U+2463
 .. |c5| unicode:: U+2464
+
+
+Signal Calculator
+-----------------
+
+.. _results calculator:
+.. figure:: images/tools_calculator.png
+   :align: center
+
+   The Signal Calculator 
+
 
 .. [1] National Library of Medicine PubChem Periodic Table of Elements. https://pubchem.ncbi.nlm.nih.gov/periodic-table/
 .. [2] Kholodovych, V.; Welsh, W. J. Densities of Amorphous and Crystalline Polymers. In Physical Properties of Polymers Handbook; Mark, J. E., Ed.; Springer New York: New York, NY, 2007; pp 611–617. https://doi.org/10.1007/978-0-387-69002-5_37.
