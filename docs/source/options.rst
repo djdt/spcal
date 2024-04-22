@@ -121,6 +121,12 @@ Larger windows are less affected by local changes, but take longer to compute.
 Iterative threshoding
 ---------------------
 
+.. _threshold iter:
+.. figure:: images/tutorial_options_iter.png
+   :align: center
+
+   Iterative thresholding can be used to more accurately approximate the mean in samples with many particles.
+
 The presence of a large number of particles can impact the mean of the signal, and therefore the :term:`detection threshold`.
 Iterative thresholding removes the influence of particles :term:`detection threshold` by sequentially filtering particle signal and re-calculating using non-detected regions.
 Once the :term:`detection threshold` stops changing, the process is ended.
