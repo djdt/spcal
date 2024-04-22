@@ -38,7 +38,7 @@ Compound-Poisson sampling must be used to accurately determine a :term:`detectio
 In SPCal, this can be performed by brute force simulation or by using a log-normal approximation of the SIA.
 For both methods, the lambda (mean) value of the Poisson is taken as the mean signal in the data set.
 The simulation uses a given SIA distribution to generate a compound-Poisson distributed data and determines the threshold from the appropriate quantile of this data.
-While accurate at high :term:`error rate` (>1e3) the computational cost to simulate enough samples for low :term:`error rate` is too high to be practical [4]_ .
+While accurate at high :term:`error rate` (:math:`>10^{-3}`) the computational cost to simulate enough samples for low :term:`error rate` is too high to be practical [4]_ .
 
 Log-normal approximation
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,12 +78,13 @@ For data that is consistently above five counts, Gaussian statistics are used, o
 Values are considered integer if they are within 0.05 of an integer value, as data exports from ICP-MS often seem to have a small offset from true integers.
 The detection threhold is then calculated for the chosen :term:`error rate` (:math:`\alpha`).
 
+Error rates
+-----------
+
 In other analytical techniques a 5% :term:`error rate` (:math:`\alpha = 0.05`) is considered acceptable and is frequently used implemented as the :math:`3 \sigma` rule.
 However, the large number of events collected during spICP-MS makes such low :term:`error rate` lead to a very large number of false detections.
-An :term:`error rate` of :math:`\alpha = 1e-6` is fairly standard and will lead to only 1 false detection per million events.
+An :term:`error rate` of :math:`\alpha = 10^{-6}` is fairly standard and will lead to only 1 false detection per million events.
 
-References
-----------
 
 .. [1] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
 
