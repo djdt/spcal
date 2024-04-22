@@ -24,4 +24,13 @@ The output options (|c4| :numref:`batch dialog`) are the same as described in :r
 The import options (|c5| :numref:`batch dialog`) are the parameters used during importing the current sample file (see :ref:`Data Import`).
 These are used to import files in the file list, so *all files should have the same file format!*
 
-Once all options are set pressing the *Start Batch* will start the processing.
+Once all options are set pressing the *Start Batch* (|c7| :numref:`batch dialog`) will start the processing.
+
+
+.. |c1| unicode:: U+2460
+.. |c2| unicode:: U+2461
+.. |c3| unicode:: U+2462
+.. |c4| unicode:: U+2463
+.. |c5| unicode:: U+2464
+.. |c6| unicode:: U+2465
+.. |c7| unicode:: U+2466
