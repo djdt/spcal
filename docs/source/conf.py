@@ -20,7 +20,7 @@ extensions = ["sphinx.ext.autosectionlabel"]
 numfig = True
 
 templates_path = ["_templates"]
-exclude_patterns = []
+# exclude_patterns = []
 
 
 # -- Options for HTML output -------------------------------------------------

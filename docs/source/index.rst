@@ -26,11 +26,12 @@ Some features include:
    background/index
 
 .. toctree::
+   :hidden:
+
    usage/index
 
 .. toctree::
    :hidden:
-   :caption: Examples
 
    examples/index
 
