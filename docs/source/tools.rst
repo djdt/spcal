@@ -1,7 +1,7 @@
 Tools
 =====
 
-Various tools are availbale in SPCal to help with providing sample inputs and manipulating signal data.
+Various tools are available in SPCal to help with providing sample inputs and manipulating signal data.
 These are found in the **Edit** menu.
 
 Density Database

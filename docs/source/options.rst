@@ -85,8 +85,8 @@ The :term:`detection threshold` is calculated using Gaussian statistics as follo
 The z-value is calculated from :math:`\alpha` using the quantile function of a standard normal distribution.
 Editing :math:`\alpha` or :math:`\sigma` will adjust the other value to match.
 
-Poisson
--------
+Poisson options
+---------------
 
 .. list-table:: Poisson options in the **Options Tab**.
     :header-rows: 0
@@ -119,7 +119,7 @@ Larger windows are less affected by local changes, but take longer to compute.
 *Windowed thresholding is not availble for Compound-Poisson thresholds*.
 
 Iterative thresholding
----------------------
+----------------------
 
 .. _threshold iter:
 .. figure:: images/tutorial_options_iter.png
