@@ -34,12 +34,3 @@ Some features include:
    :hidden:
 
    examples/index
-
-
-.. Indices and tables
-.. ==================
-..
-.. * :ref:`genindex`
-.. * :ref:`modindex`
-.. * :ref:`search`
-.. * :ref:`glossary`
