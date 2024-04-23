@@ -20,7 +20,7 @@ Publications
 
 A previous, quadruple only, version of SPCal was published and is available here:
 
-* Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. `<https://doi.org/10.1039/D1JA00297J>`_.
+* Lockwood, T. E.; Gonzalez de Vega, R.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. `<https://doi.org/10.1039/D1JA00297J>`_.
 
 Several other publications discussing aspects of the new ToF version are also available:
 
