@@ -17,25 +17,22 @@ Some features include:
 
 .. toctree::
    :hidden:
-   :caption: Installation
-    
+
    install
    
 .. toctree::
    :hidden:
-   :glob:
-   :caption: Background
 
-   background/*
+   background/index
 
 .. toctree::
    usage/index
 
 .. toctree::
-   :glob:
+   :hidden:
    :caption: Examples
 
-   examples/*
+   examples/index
 
 
 .. Indices and tables
