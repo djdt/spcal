@@ -19,7 +19,7 @@ Some features include:
    :hidden:
    :caption: Installation
     
-   installation/install
+   install
    
 .. toctree::
    :hidden:

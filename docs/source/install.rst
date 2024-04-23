@@ -3,9 +3,10 @@ Installation
 
 Windows executables are available for all major releases on `GitHub<https://github.com/djdt/spcal/releases>`.
 
-TO install SPCal via pip, first clone the repository, then install as a local package.
+To install SPCal via pip, first clone the repository, then install as a local package.
 
 .. code-block::
+
     git clone https://github.com/djdt/spcal
     cd spcal
     pip install -e
