@@ -14,7 +14,7 @@ Reference Particle
 ------------------
 
 .. _calibrate reference tab:
-.. figure:: images/tutorial_cal_reference.png
+.. figure:: ../images/tutorial_cal_reference.png
    :align: center
 
    The Reference tab is used to calculate the transport efficiency.

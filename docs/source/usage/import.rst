@@ -11,7 +11,7 @@ Text Files
 
 
 .. _text import wizard:
-.. figure:: images/tutorial_data_text_importer.png
+.. figure:: ../images/tutorial_data_text_importer.png
    :align: center
 
    The import wizard for delimited text files.
@@ -44,7 +44,7 @@ ToF Data
 --------
 
 .. _tof import wizard:
-.. figure:: images/tutorial_data_tof_importer.png
+.. figure:: ../images/tutorial_data_tof_importer.png
    :align: center
 
    The import wizard for Nu Instruments and TOFWERKs ToF data.
@@ -84,7 +84,7 @@ Non-target Screening
 --------------------
 
 .. _non target screen:
-.. figure:: images/tutorial_data_nontarget.png
+.. figure:: ../images/tutorial_data_nontarget.png
    :align: center
 
    The non-target screening options available for the text and ToF importers.

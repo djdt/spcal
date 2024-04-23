@@ -4,7 +4,7 @@ Data Export
 .. TODO warn overwritge when exporting data 
 
 .. _export options:
-.. figure:: images/tutorial_export_dialog.png
+.. figure:: ../images/tutorial_export_dialog.png
    :align: center
 
    The export options dialog allows you to select what data is exported.

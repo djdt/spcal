@@ -29,27 +29,9 @@ Some features include:
    background/*
 
 .. toctree::
-   :hidden:
-   :caption: Installation
-
-   install
+   usage/index
 
 .. toctree::
-   :hidden:
-   :glob:
-   :caption: Usage
-
-   usage/import
-   usage/options
-   usage/sample
-   usage/calibration
-   usage/results
-   usage/export
-   usage/batch
-   usage/tools
-
-.. toctree::
-   :maxdepth: 1
    :glob:
    :caption: Examples
 

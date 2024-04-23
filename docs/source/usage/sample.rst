@@ -2,7 +2,7 @@ Viewing Data
 ============
 
 .. _sample label:
-.. figure:: images/tutorial_sample_tab.png
+.. figure:: ../images/tutorial_sample_tab.png
    :align: center
 
    The **Sample Tab** shows the currently loaded sample data. |c1| Current file, |c2| Current element, |c3| Sample parameters for selected element, |c4| Outputs for selected elements, |c5| Multi-element plot, |c6| Single element plot, |c7| Trim control, |c8| Legend, |c9| Reset zoom.

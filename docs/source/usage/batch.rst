@@ -7,7 +7,7 @@ One sample file can be imported, the thresholding and calibration options set, a
 
 
 .. _batch dialog:
-.. figure:: images/tutorial_batch.png
+.. figure:: ../images/tutorial_batch.png
    :align: center
 
    The **Batch Process Dialog** is used to apply the current processing paramters to new files. |c1| Button to load files, |c2| Processing file list, |c3| Output name and trim options, |c4| Export options, |c5| Current data import options, |c6| Progress bar, |c7| Start / stop processing.

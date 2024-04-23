@@ -15,7 +15,7 @@ Ionic Response Calculator
 -------------------------
 
 .. _ionic response example:
-.. figure:: images/tools_ionic_response_example.png
+.. figure:: ../images/tools_ionic_response_example.png
     :align: center
 
     Measurement of a dissolved standard, the mean of the signal (red line) can be used to determine the :term:`ionic response`.
@@ -29,7 +29,7 @@ In practice, a blank and one standard are usually sufficient.
 As the :term:`ionic response` will change day-to-day with instrument conditions so should be determined every run.
 
 .. _ionic response dialog:
-.. figure:: images/tools_ionic_response_dialog.png
+.. figure:: ../images/tools_ionic_response_dialog.png
    :align: center
 
    The **Ionic Response Calculator**. |c1| The currently loaded data and mean (red), |c2| Calibration curve, |c3| Concentration table, |c4| Import data for new level, |c5| Concentration units.
@@ -45,7 +45,7 @@ If the **Ionic Response Calculator** was started from an :term:`ionic response` 
 Mass Fraction Calculator
 ------------------------
 
-.. figure:: images/tools_mass_fraction.png
+.. figure:: ../images/tools_mass_fraction.png
    :align: center
 
    The **Mass Fraction Calculator** calculates the :term:`molar mass` (here MW=215.8 g/mol) and the :term:`mass fraction` from an input formula.
@@ -71,7 +71,7 @@ One example is the recovery of sensitivity for multi-isotopic elements, where th
 Some of this lost sensitivity can be recovered by summing the individual isotopic signals [4]_.
 
 .. _results calculator:
-.. figure:: images/tools_calculator.png
+.. figure:: ../images/tools_calculator.png
    :align: center
 
    The Signal Calculator can be used to perform arithmetic operations on one or more element.

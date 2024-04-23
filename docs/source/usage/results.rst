@@ -2,7 +2,7 @@ Processing Results
 ==================
 
 .. _results label:
-.. figure:: images/tutorial_results_labeled.png
+.. figure:: ../images/tutorial_results_labeled.png
    :align: center
 
    The results tab, as shown for ToF data in the Multi-histogram view. |c1| Mode selector, |c2| Element selector, |c3| Outputs, |c4| Multi-histogram view, |c5| Histogram view, |c6| Compositions view, |c7| Scatter view, |c8| PCA view, |c9| Legend, |c10| Filter options, |c11| Graph options, |c12| View reset, |c13| Export button.
@@ -28,7 +28,7 @@ Compositions
 ------------
 
 .. _results composition:
-.. figure:: images/tutorial_results_composition.png
+.. figure:: ../images/tutorial_results_composition.png
    :align: center
 
    Results of hierarchical agglomerative clustering. The cluster index and size are shown below each cluster result.
@@ -44,7 +44,7 @@ Filtering
 ---------
 
 .. _results filter:
-.. figure:: images/tutorial_results_filter.png
+.. figure:: ../images/tutorial_results_filter.png
    :align: center
 
    The filter dialog can be used to restrict analysis of particles using a combination of boolean AND and OR operations.
@@ -57,7 +57,7 @@ The example in :numref:`results filter` uses the boolean AND of the two silver i
 This filters particle detections and results to only those that contain both silver isotopes.
 
 .. _results filtered:
-.. figure:: images/tutorial_results_filter_after.png
+.. figure:: ../images/tutorial_results_filter_after.png
    :align: center
 
    Data before and after filtering particles containing Au197 > 100 counts.

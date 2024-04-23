@@ -3,7 +3,7 @@ Thresholding Options
 
 
 .. _accumulation plot:
-.. figure:: images/options_accumulation.png
+.. figure:: ../images/options_accumulation.png
    :align: center
 
    Signal above the :term:`detection threshold` is detected as a particle.
@@ -104,7 +104,7 @@ Windowed thresholding
 ---------------------
 
 .. _threshold window:
-.. figure:: images/tutorial_options_window.png
+.. figure:: ../images/tutorial_options_window.png
    :align: center
 
    Windowed thresholding can be used in samples with dynamic background, such as those collected by laser ablation.
@@ -122,7 +122,7 @@ Iterative thresholding
 ----------------------
 
 .. _threshold iter:
-.. figure:: images/tutorial_options_iter.png
+.. figure:: ../images/tutorial_options_iter.png
    :align: center
 
    Iterative thresholding can be used to more accurately approximate the mean in samples with many particles.
