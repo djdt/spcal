@@ -66,13 +66,21 @@ When started from the *Molar mass* or *Mass fraction* fields on the **Sample Tab
 Signal Calculator
 -----------------
 
+Simple arithmetic operations can be performed on signal data using the calculator found at ** **Edit -> Signal Caluclator**. 
+One example is the recovery of sensitivity for multi-isotopic elements, where the total elemental signal is split across multiple masses.
+Some of this lost sensitivity can be recovered by summing the individual isotopic signals [4]_.
+
 .. _results calculator:
 .. figure:: images/tools_calculator.png
    :align: center
 
-   The Signal Calculator 
+   The Signal Calculator can be used to perform arithmetic operations on one or more element.
 
+To start a calculation, enter a mathematical formula in the *Formula* box, using the current element names and the ``+ - ^ * /`` operators.
+For example, given data names in the format ``Ag10x``, the sum of silver isotopes can be calculated using ``Ag107 + Ag109``.
+The default name of the output result will be the formula enclosed by curly braces, e.g. ``{Ag107+Ag109}``.
 
 .. [1] National Library of Medicine PubChem Periodic Table of Elements. https://pubchem.ncbi.nlm.nih.gov/periodic-table/
 .. [2] Kholodovych, V.; Welsh, W. J. Densities of Amorphous and Crystalline Polymers. In Physical Properties of Polymers Handbook; Mark, J. E., Ed.; Springer New York: New York, NY, 2007; pp 611–617. https://doi.org/10.1007/978-0-387-69002-5_37.
 .. [3] Yaws, C. L.; Chen, D. H. Density of Solid—Inorganic Compounds. In Thermophysical Properties of Chemicals and Hydrocarbons; Elsevier, 2009; pp 296–308. https://doi.org/10.1016/B978-081551596-8.50011-0.
+.. [4] Lockwood, T. E.; Gonzalez De Vega, R.; Du, Z.; Schlatt, L.; Xu, X.; Clases, D. Strategies to Enhance Figures of Merit in ICP-ToF-MS. J. Anal. At. Spectrom. 2024, 39 (1), 227–234. https://doi.org/10.1039/D3JA00288H.
