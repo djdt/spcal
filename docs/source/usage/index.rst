@@ -10,5 +10,6 @@ Other functions such as batch processing and calculators are launched from the *
    sample
    calibration
    results
+   export
    batch
    tools
