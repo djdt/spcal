@@ -1,43 +1,65 @@
-.. spcal documentation master file, created by
-   sphinx-quickstart on Fri Apr 12 14:42:30 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+SPCal
+=====
 
-Welcome to SPCal's documentation!
-=================================
+SPCal is a spICP-MS and spICP-ToF data processing platform with an easy-to-use GUI.
+Some features include:
+
+* Native import of Nu Instruments and TOFWERKs data.
+
+* Thresholding using Gaussian, Poisson and Compound-Poisson statistics.
+
+* Multiple calibration pathways.
+
+* Compositional filtering and clustering.
+
+* Batch processing of many files.
+
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
+   :caption: Installation
+    
+   installation/install
+   
+.. toctree::
+   :hidden:
    :glob:
    :caption: Background
 
    background/*
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents
+   :hidden:
+   :caption: Installation
 
-   data_import
-   options
-   sample
-   calibration
-   results
-   export
-   batch
-   tools
-   glossary
+   install
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
+   :glob:
+   :caption: Usage
+
+   usage/import
+   usage/options
+   usage/sample
+   usage/calibration
+   usage/results
+   usage/export
+   usage/batch
+   usage/tools
+
+.. toctree::
+   :maxdepth: 1
    :glob:
    :caption: Examples
 
    examples/*
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. Indices and tables
+.. ==================
+..
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`
+.. * :ref:`glossary`
