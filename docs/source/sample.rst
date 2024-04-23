@@ -10,12 +10,12 @@ Viewing Data
 
 Files loaded into SPCal will be shown in the **Sample Tab**, as in :numref:`sample label`.
 This tab shows the loaded signal data for all elements, and element specific options and outputs.
+The currently selected element / name, as shown in |c2| :numref:`sample label`, can be edited to rename it.
 
 The plot of sample data can be navigated using the left-mouse to scroll the view and mouse-wheel to zoom.
 The y-axis of the plot is automatically scaled to show the maximum currently visible signal value.
 The *trim controls* (|c7| :numref:`sample label`) can be used to trim data, limiting the region of analysis.
 When the single element histogram is used (|c6| :numref:`sample label`) the mean and detection threshold are also shown.
-
 
 Sample parameters
 -----------------
