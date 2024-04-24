@@ -1,5 +1,5 @@
-Particle Clusters on an ICP-ToF
-===============================
+Particle Compositions on an ICP-ToF
+===================================
 
 The simultaneous aquistion of elements by an ICP-ToF has major benefits over a quadrupole based instrument.
 One key advantage is the ability to determine particle compositions.
