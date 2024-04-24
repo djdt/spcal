@@ -11,3 +11,4 @@ Examples
    :numbered:
 
    example_quad
+   example_tof_cluster
