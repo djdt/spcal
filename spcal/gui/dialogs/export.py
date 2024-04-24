@@ -122,6 +122,20 @@ class ExportDialog(QtWidgets.QDialog):
 
         path = Path(self.lineedit_path.text())
         first_result = next(iter(self.results.values()))
+
+        # Check if overwriting
+        if path.exists():
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Overwrite File?",
+                f"The file '{path.name}' already exists, do you want to overwrite it?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.No:
+                return
+
         export_single_particle_results(
             path,
             self.results,
