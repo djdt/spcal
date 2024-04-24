@@ -32,8 +32,8 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
       - 50 nm
 
 
-#. Download the required files ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv``.
-    These files are avaiable from XXXXX.
+#. Download the required sample and reference data files.
+    The ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv`` files are available as a Zip archive `example_1_data.zip <https://github.com/djdt/spcal/docs/data/example_1_data.zip>`_ on the GitHub. 
 
 #. Enter the instrument parameters.
     In the **Options Tab**, enter the :term:`uptake` from :numref:`table parameters`.
@@ -41,7 +41,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
 #. Import the sample file.
     The ``quad_sample_15nm.csv`` file can be opened using **File -> Open Sample File**, then switch to the **Sample Tab**.
     Enter the sample parameters listed in :numref:`table parameters`.
-    A detailed guide on the :ref:`Data Import` wizard is avaiable.
+    A detailed guide on the :ref:`Data Import` wizard is available.
 
     .. _quad sample tab:
     .. figure:: ../images/example_quad_sample_tab.png
@@ -59,7 +59,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
 #. Import the reference file.
     Open ``quad_reference_50nm.csv`` using **File -> Open Reference File**, and switch to the **Reference Tab**.
     Enter the reference parameters listed in :numref:`table parameters`.
-    A detailed guide on the :ref:`Data Import` wizard is avaiable.
+    A detailed guide on the :ref:`Data Import` wizard is available.
 
     .. _quad reference tab:
     .. figure:: ../images/example_quad_reference_tab.png
@@ -76,7 +76,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
        :width: 60%
        :align: center
 
-       The results tab showing the sample size distribution, availble after calibrating.
+       The results tab showing the sample size distribution, available after calibrating.
 
     The calculated results for the loaded sample are shown as in :numref:`quad results tab`.
     Switch to *Size* mode, the median size should be around 15 nm.
