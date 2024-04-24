@@ -451,15 +451,15 @@ class BatchProcessDialog(QtWidgets.QDialog):
         if self.running:
             self.abort()
         else:
-            self.button_process.setText("Cancel Batch")
             self.start()
 
     def abort(self) -> None:
-        self.aborted = True
         self.threadpool.clear()
         self.threadpool.waitForDone()
 
         self.progress.reset()
+
+        self.aborted = True
         self.button_process.setText("Start Batch")
         self.running = False
 
@@ -467,8 +467,24 @@ class BatchProcessDialog(QtWidgets.QDialog):
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
 
+        # Check for overwrites
+        if any(of.exists() for of in outfiles):
+            exist = ", ".join(of.name for of in outfiles if of.exists())
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Overwrite File(s)?",
+                f"The file(s) '{exist}' already exist, do you want to overwrite them?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.No:
+                return
+
         self.aborted = False
+        self.button_process.setText("Cancel Batch")
         self.running = True
+
         self.progress.setValue(0)
         self.progress.setMaximum(len(infiles))
 
