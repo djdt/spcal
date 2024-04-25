@@ -17,6 +17,10 @@ The y-axis of the plot is automatically scaled to show the maximum currently vis
 The *trim controls* (|c7| :numref:`sample label`) can be used to trim data, limiting the region of analysis.
 When the single element histogram is used (|c6| :numref:`sample label`) the mean and detection threshold are also shown.
 
+Visibility of all items can be toggled by left clicking the corresponding legend item (|c8| :numref:`sample label`).
+Holding-shift while clicking the legend will hide all but the selected element.
+Right-clicking the graph will open a context menu where the current image can be copied to the system clipboard, signal data exported as a ``.csv`` and peak propeties (width, height and skew) examined.
+
 Sample parameters
 -----------------
 
