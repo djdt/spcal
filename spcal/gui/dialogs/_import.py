@@ -532,7 +532,7 @@ class NuImportDialog(_ImportDialogBase):
         ppm, unit_masses = ppm[idx], unit_masses[idx]  # sort by mass
 
         idx = np.searchsorted(unit_masses, isotopes["Isotope"], side="right") - 1
-        cidx = (ppm[idx] / ppm.max() * (len(viridis_32) - 1)).astype(int)
+        cidx = (ppm[idx] / ppm[idx].max() * (len(viridis_32) - 1)).astype(int)
 
         self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
 
