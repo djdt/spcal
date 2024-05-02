@@ -33,7 +33,7 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
 
 
 #. Download the required sample and reference data files.
-    The ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv`` files are available as a Zip archive `example_1_data.zip <https://github.com/djdt/spcal/docs/data/example_1_data.zip>`_ on the GitHub. 
+    The ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv`` files are available as a Zip archive `example_1_data.zip <https://github.com/djdt/djdt.github.io/blob/main/spcal_example_data/example_1_data.zip>`_ on the GitHub. 
 
 #. Enter the instrument parameters.
     In the **Options Tab**, enter the :term:`uptake` from :numref:`table parameters`.

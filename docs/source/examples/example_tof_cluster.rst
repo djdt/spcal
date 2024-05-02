@@ -7,7 +7,7 @@ In this example a mixture of gold, silver and gold-silver core-shell particles a
 
 
 #. Download the required data file.
-    The ``tof_mix_au_ag_auag.csv`` file can be found in the `example_2_data.zip <https://github.com/djdt/spcal/docs/data/example_2_data.zip>`_ archive.
+    The ``tof_mix_au_ag_auag.csv`` file can be found in the `example_2_data.zip <https://github.com/djdt/djdt.github.io/blob/main/spcal_example_data/example_2_data.zip>`_ archive.
 
 #. Import the data file.
     In this example we are only interested in the gold and silver isotopes (Ag107, Ag109 and Au197).
