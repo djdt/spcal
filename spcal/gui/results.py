@@ -479,7 +479,9 @@ class ResultsWidget(QtWidgets.QWidget):
         path = Path(self.sample.label_file.text())
 
         regions = self.sample.regions
-        times = self.options.dwelltime.baseValue() * (regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0)
+        times = self.options.dwelltime.baseValue() * (
+            regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0
+        )
 
         dlg = ExportDialog(
             path.with_name(path.stem + "_results.csv"),
