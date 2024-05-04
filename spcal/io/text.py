@@ -360,13 +360,14 @@ def export_single_particle_results(
         export_clusters: bool = False,
     ) -> None:
         fp.write("# Raw detection data\n")
-        # Output data
-        data = [] if detection_times is None else [detection_times]
-        header_name = "" if detection_times is None else ",Time"
-        header_unit = "" if detection_times is None else ",s"
 
         # Non-filtered indicies
         valid = SPCalResult.all_valid_indicies(list(results.values()))
+
+        # Output data
+        data = [] if detection_times is None else [detection_times[valid]]
+        header_name = "" if detection_times is None else ",Time"
+        header_unit = "" if detection_times is None else ",s"
 
         for name, result in results.items():
             for key in SPCalResult.base_units.keys():
