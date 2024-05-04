@@ -76,7 +76,9 @@ def process_data(
 
     detections, labels, regions = combine_detections(d, l, r)
 
-    times = inputs["dwelltime"] * (regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0)
+    times = next(iter(inputs.values()))["dwelltime"] * (
+        regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0
+    )
 
     if method in ["Manual Input", "Reference Particle"]:
         calibration_mode = "efficiency"
