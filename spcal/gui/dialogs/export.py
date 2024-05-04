@@ -19,6 +19,7 @@ class ExportDialog(QtWidgets.QDialog):
         path: str | Path,
         results: dict[str, SPCalResult],
         clusters: dict[str, np.ndarray],
+        times: np.ndarray,
         units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -27,6 +28,7 @@ class ExportDialog(QtWidgets.QDialog):
 
         self.results = results
         self.clusters = clusters
+        self.times = times
 
         _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
         if units is not None:
@@ -140,6 +142,7 @@ class ExportDialog(QtWidgets.QDialog):
             path,
             self.results,
             self.clusters,
+            self.times,
             units_for_results=units,
             output_inputs=self.check_export_inputs.isChecked(),
             output_compositions=self.check_export_compositions.isChecked(),

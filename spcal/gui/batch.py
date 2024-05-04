@@ -39,7 +39,7 @@ def process_data(
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
-) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray]]:
+) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray], np.ndarray]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data, expr)
 
@@ -75,6 +75,8 @@ def process_data(
         )
 
     detections, labels, regions = combine_detections(d, l, r)
+
+    times = inputs["dwelltime"] * (regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0)
 
     if method in ["Manual Input", "Reference Particle"]:
         calibration_mode = "efficiency"
@@ -135,7 +137,7 @@ def process_data(
         for key in clusters.keys():
             clusters[key] = clusters[key][filter_indicies]
 
-    return results, clusters
+    return results, clusters, times
 
 
 def process_text_file(
@@ -159,10 +161,10 @@ def process_text_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 def process_nu_file(
@@ -190,10 +192,10 @@ def process_nu_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 def process_tofwerk_file(
@@ -219,10 +221,10 @@ def process_tofwerk_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 class ImportOptionsWidget(QtWidgets.QGroupBox):
