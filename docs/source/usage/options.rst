@@ -25,15 +25,15 @@ The method used for data can be selected using *Threshold method* in the **Optio
    Selects the highest threshold.
 
 #. Compound-Poisson
-   Uses Compound-Poisson statistics with the options in :ref: `Compound-Poisson options`.
+   Uses Compound-Poisson statistics with the options in :ref:`Compound-Poisson options`.
    Recommended for ToF data.
 
 #. Gaussian
-   Uses Gaussian statistics with the options in :ref: `Gaussian options`.
+   Uses Gaussian statistics with the options in :ref:`Gaussian options`.
    Recommended for data with a background signal > 10 counts.
 
 #. Poisson
-   Uses Poisson statistics with the options in :ref: `Poisson options`.
+   Uses Poisson statistics with the options in :ref:`Poisson options`.
    Recommended for data with a background signal < 10 counts.
 
 #. Manual Input
@@ -116,7 +116,9 @@ SPCal implements *windowed thresholding* for these cases, and is enabled be chec
 
 Windowed thresholding is performed by calculating the local signal mean and :term:`detection threshold` in regions around each point. The size of the window is set using the *Window size* option.
 Larger windows are less affected by local changes, but take longer to compute.
-*Windowed thresholding is not availble for Compound-Poisson thresholds*.
+
+.. note::
+    Windowed thresholding is not availble for Compound-Poisson thresholds.
 
 Iterative thresholding
 ----------------------

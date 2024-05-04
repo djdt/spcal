@@ -11,8 +11,11 @@ To install SPCal via pip, first clone the repository, then install as a local pa
     cd spcal
     pip install -e
 
-Installation requires compilation of a C extension, for more information see the Python documentation `Building C and C++ Extensions <https://docs.python.org/3/extending/building.html>`_ and `Building C and C++ Extensions on Windows <https://docs.python.org/3/extending/windows.html>`_.
 
 The program can then be launched from the command line using ``spcal``.
 
 For help, options and usage run ``spcal --help``.
+
+.. note::
+   Installation requires compilation of a C extension.
+   For more information see the Python documentation on `Building C and C++ Extensions <https://docs.python.org/3/extending/building.html>`_ and `Building C and C++ Extensions on Windows <https://docs.python.org/3/extending/windows.html>`_.

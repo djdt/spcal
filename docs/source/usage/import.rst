@@ -39,6 +39,8 @@ The first non-header row should contain the names of each column and is editable
     * - Ignore Columns
       - A ``;`` delimited list of which columns to ignore. For example time or index rows should not be imported.
 
+.. warning::
+   The :term:`dwelltime` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
 
 ToF Data
 --------
