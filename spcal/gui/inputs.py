@@ -369,6 +369,17 @@ class InputWidget(QtWidgets.QWidget):
 
         self.detections, self.labels, self.regions = combine_detections(d, l, r)
 
+        self.maxima = {}
+        for name in self.names:
+            trim = self.trimRegion(name)
+            self.maxima[name] = (
+                detection_maxima(
+                    self.trimmedResponse(name),
+                    self.regions,
+                )
+                + trim[0]
+            )
+
         self.detectionsChanged.emit()
 
     def updateLimits(self) -> None:
@@ -489,14 +500,7 @@ class InputWidget(QtWidgets.QWidget):
             detected = np.flatnonzero(self.detections[name])
 
             if detected.size > 0:
-                trim = self.trimRegion(name)
-                maxima = (
-                    detection_maxima(
-                        self.trimmedResponse(name),
-                        self.regions[detected],
-                    )
-                    + trim[0]
-                )
+                maxima = self.maxima[name]
                 self.graph.drawMaxima(
                     name,
                     self.events[maxima],
