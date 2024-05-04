@@ -11,7 +11,7 @@ A full description of the non-target screening tool is available at :ref:`Non-ta
     The ``tof_non_target.csv`` file can be found in the `example_3_data.zip <https://github.com/djdt/djdt.github.io/blob/main/spcal_example_data/example_3_data.zip>`_ archive.
 
 #. Import the sample file.
-    Open the sample file to start the :red:`Data Import` wizard.
+    Open the sample file to start the :ref:`Data Import` wizard.
     Select *Non-target screening* and enter 1000 into the *Screening ppm* field, this will select elements with greater than 1000 particles per million events.
     Press *Ok* to start the screening process.
 
