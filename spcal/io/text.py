@@ -117,9 +117,15 @@ def export_single_particle_results(
 
     Args:
         path: path to output csv
-        results: dict of SPCalResult for each element
+        results: dict of element: SPCalResult
+        clusters: dict of element: cluster indices
+        detection_times: array of times for each detection
         units_for_inputs: units for option/sample inputs, defaults to sane
         units_for_results: units for output of detections and lods
+        output_inputs: write input instrument and sample parameters
+        output_results: write basic results, e.g. means, median
+        output_compositions: write cluster means and indices (if output_array)
+        output_arrays: write detection data
     """
 
     input_units = {
@@ -356,8 +362,8 @@ def export_single_particle_results(
         fp.write("# Raw detection data\n")
         # Output data
         data = [] if detection_times is None else [detection_times]
-        header_name = "" if detection_times is None else "Time"
-        header_unit = "" if detection_times is None else "s"
+        header_name = "" if detection_times is None else ",Time"
+        header_unit = "" if detection_times is None else ",s"
 
         # Non-filtered indicies
         valid = SPCalResult.all_valid_indicies(list(results.values()))
