@@ -46,6 +46,7 @@ results = {
     ),
 }
 clusters = {"signal": np.array([0, 2, 2, 2, 1]), "mass": np.array([0, 1, 1, 0, 0])}
+times = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
 
 
 def test_io_is_text_file():
@@ -228,21 +229,21 @@ def test_export_singleparticle_arrays(tmp_path: Path):
     tmp = tmp_path.joinpath("test_export_arrays.csv")
 
     export_single_particle_results(
-        tmp, results, clusters, output_inputs=False, output_results=False
+        tmp, results, clusters, times, output_inputs=False, output_results=False
     )
 
     with tmp.open("r") as fp:
         for i in range(5):
             fp.readline()
         fp.readline()
-        assert fp.readline() == "a,b,b,b,b,b\n"
-        assert fp.readline() == "counts,counts,kg,m,m³,mol/L\n"
+        assert fp.readline() == "Time,a,b,b,b,b,b\n"
+        assert fp.readline() == "s,counts,counts,kg,m,m³,mol/L\n"
         # Todo, compute these
-        assert fp.readline() == "5,,,,,\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
-        assert fp.readline() == "5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
-        assert fp.readline() == ",9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.1,5,,,,,\n"
+        assert fp.readline() == "0.2,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.3,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.4,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.5,,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -251,6 +252,7 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         tmp,
         results,
         clusters,
+        times,
         output_inputs=False,
         output_results=False,
         units_for_results={"signal": ("cts", 1.0), "mass": ("fg", 1e-18)},
@@ -258,8 +260,8 @@ def test_export_singleparticle_arrays(tmp_path: Path):
     with tmp.open("r") as fp:
         for i in range(7):
             fp.readline()
-        assert fp.readline().startswith("cts,cts,fg")
-        assert fp.readline().startswith("5,,,,")
+        assert fp.readline().startswith("s,cts,cts,fg")
+        assert fp.readline().startswith("0.1,5,,,,")
 
 
 def test_export_singleparticle_compositions(tmp_path: Path):
@@ -293,6 +295,7 @@ def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
         tmp,
         results,
         clusters,
+        times,
         output_inputs=False,
         output_results=False,
         output_compositions=True,
@@ -302,8 +305,8 @@ def test_export_singleparticle_arrays_with_compositions(tmp_path: Path):
         for i in range(5 + 4):
             fp.readline()
         fp.readline()
-        assert fp.readline() == "a,b,b,b,b,b,cluster idx,cluster idx\n"
-        assert fp.readline() == "counts,counts,kg,m,m³,mol/L,signal,mass\n"
+        assert fp.readline() == "Time,a,b,b,b,b,b,cluster idx,cluster idx\n"
+        assert fp.readline() == "s,counts,counts,kg,m,m³,mol/L,signal,mass\n"
         # Todo, compute these
         assert fp.readline().endswith(",1,1\n")
         assert fp.readline().endswith(",3,2\n")
@@ -337,7 +340,7 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
     filtered_results["b"]._indicies = np.array([1, 2, 4])
 
     export_single_particle_results(
-        tmp, filtered_results, clusters, output_inputs=False, output_arrays=True
+        tmp, filtered_results, clusters, times, output_inputs=False, output_arrays=True
     )
     with tmp.open("r") as fp:
         for i in range(5):
@@ -362,10 +365,10 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
         fp.readline()  # header
         fp.readline()
         fp.readline()
-        assert fp.readline() == "1,\n"
-        assert fp.readline() == "5,1\n"
-        assert fp.readline() == "1,1\n"
+        assert fp.readline() == "0.1,1,\n"
+        assert fp.readline() == "0.2,5,1\n"
+        assert fp.readline() == "0.3,1,1\n"
         # 5,9 is filtered
-        assert fp.readline() == ",1\n"
+        assert fp.readline() == "0.5,,1\n"
         fp.readline()
         assert fp.readline() == "# End of export"
