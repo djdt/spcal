@@ -368,7 +368,7 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
         assert fp.readline() == "0.1,1,\n"
         assert fp.readline() == "0.2,5,1\n"
         assert fp.readline() == "0.3,1,1\n"
-        # 5,9 is filtered
+        # 0.4,5,9 is filtered
         assert fp.readline() == "0.5,,1\n"
         fp.readline()
         assert fp.readline() == "# End of export"
