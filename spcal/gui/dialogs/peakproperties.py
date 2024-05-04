@@ -75,8 +75,9 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             return
 
         regions = self.input.regions[detected]
+        trim = self.input.trimRegion(name)
         response = self.input.trimmedResponse(name)
-        maxima = self.input.maxima[name]
+        maxima = detection_maxima(response, regions) + trim[0]
 
         # heights from peak maxima to baseline
         heights = response[maxima] - self.input.limits[name].mean_signal
