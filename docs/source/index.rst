@@ -4,15 +4,15 @@ SPCal
 SPCal is a spICP-MS and spICP-ToF data processing platform with an easy-to-use GUI.
 Some features include:
 
-* Native import of Nu Instruments and TOFWERKs data.
+* Native import of :ref:`Nu Instruments and TOFWERKs data<ToF Data>`.
 
-* Thresholding using Gaussian, Poisson and Compound-Poisson statistics.
+* :ref:`Thresholding<Thresholding Options>` using Gaussian, Poisson and Compound-Poisson statistics.
 
-* Multiple calibration pathways.
+* Multiple :ref:`Calibration` pathways.
 
-* Compositional filtering and clustering.
+* Compositional :ref:`filtering<Filtering>` and :ref:`clustering<Compositions>`.
 
-* Batch processing of many files.
+* :ref:`Batch Processing` of many files.
 
 
 .. toctree::
