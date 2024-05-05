@@ -16,7 +16,7 @@ def quantile(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
 def erf(x: float | np.ndarray) -> float | np.ndarray:
     """Error function approximation.
 
-    The maximum error is 1.5e-7 [1].
+    The maximum error is 1.5e-7 [1]_.
 
     Args:
         x: value
@@ -53,7 +53,7 @@ def erfinv(x: float | np.ndarray) -> float | np.ndarray:
 def standard_quantile(p: float | np.ndarray) -> float | np.ndarray:
     """Approximation of the standard normal quantile.
 
-    The maximum error is 1.5e-9 [2].
+    The maximum error is 1.5e-9 [2]_.
 
     Args:
         p: quantile (0 - 1)

@@ -38,7 +38,7 @@ def read_single_particle_file(
         columns: which columns to import, deafults to all
         first_line: the first data (not header) line
         convert_cps: the dwelltime (in s) if data is stored as counts per second,
-            else None
+        else None
 
     Returns:
         data, structred array

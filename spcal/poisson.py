@@ -1,7 +1,7 @@
 """Poission limits of criticality and detection.
 
-Formulas used here are taken from the `MARLAP manual<https://www.epa.gov/
-radiation/marlap-manual-and-supporting-documents>`_.
+Formulas used here are taken from the `MARLAP manual
+<https://www.epa.gov/radiation/marlap-manual-and-supporting-documents>`_.
 
 The limit of crticality should be used for all particle detection descisions,
 not the limit of detection. For an explaination of why, see the manual linked above.
@@ -21,7 +21,7 @@ def currie(
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for mean background 'ub'.
 
-    For low backgrounds (ub < 10), 'epsilon' of 0.5 is recommended.
+    For low backgrounds (ub < 10), 'epsilon' of 0.5 is recommended [1]_.
 
     Args:
         nb: mean of background
@@ -35,8 +35,8 @@ def currie(
         Sd, minimum detection net value
 
     References:
-        Currie, L.A. On the detection of rare, and moderately rare, nuclear events.
-            J Radioanal Nucl Chem 276, 285–297 (2008).
+        .. [1] Currie, L.A. On the detection of rare, and moderately rare,
+            nuclear events. J Radioanal Nucl Chem 276, 285–297 (2008).
             https://doi.org/10.1007/s10967-008-0501-5
     """
 
@@ -58,7 +58,7 @@ def formula_a(
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
-    Uses the equations from the MARLAP manual, 20.48, 20.73.
+    Uses the equations from the MARLAP manual, 20.48, 20.73 [2]_.
     Reccomended for mean backgrounds > 100.
     Sc equivilent to ``currie(ub=Nb)`` if t_sample = t_blank.
 
@@ -72,7 +72,7 @@ def formula_a(
         Sd, minimum detection net value
 
     References:
-        United States Environmental Protection Agency,
+        .. [2] United States Environmental Protection Agency,
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """
@@ -108,7 +108,7 @@ def formula_c(
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
-    Uses the equations from the MARLAP manual, 20.52, 20.73.
+    Uses the equations from the MARLAP manual, 20.52, 20.73 [3]_.
     Reccomended for low mean backgrounds.
     Sc equivilent to 'decision threshold' of ISO 11929-1.
 
@@ -122,7 +122,7 @@ def formula_c(
         Sd, minimum detection net value
 
     References:
-        United States Environmental Protection Agency,
+        .. [3] United States Environmental Protection Agency,
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """
@@ -148,7 +148,7 @@ def stapleton_approximation(
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for net background 'Nb'.
 
-    Uses the equations from the MARLAP manual, 20.54, 20.74.
+    Uses the equations from the MARLAP manual, 20.54, 20.74 [4]_.
     Reccomended for low mean backgrounds.
 
     Args:
@@ -161,7 +161,7 @@ def stapleton_approximation(
         Sd, minimum detection net value
 
     References:
-        United States Environmental Protection Agency,
+        .. [4] United States Environmental Protection Agency,
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """

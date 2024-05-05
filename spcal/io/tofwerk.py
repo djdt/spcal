@@ -22,8 +22,8 @@ def calibrate_index_to_mass(
 
     Args:
         indices: array of sample incidies
-        mode: mode from "/FullSpectra/MassCalibMode"
-        ps: coefficients from "/FullSpectra/MassCalibration p_"
+        mode: mode from `/FullSpectra/MassCalibMode`
+        ps: coefficients from `/FullSpectra/MassCalibration p_`
 
     Returns:
         calibrated masses
@@ -53,8 +53,8 @@ def calibrate_mass_to_index(
 
     Args:
         indices: array of sample incidies
-        mode: mode from "/FullSpectra/MassCalibMode"
-        ps: coefficients from "/FullSpectra/MassCalibration p_"
+        mode: mode from `/FullSpectra/MassCalibMode`
+        ps: coefficients from `/FullSpectra/MassCalibration p_`
 
     Returns:
         sample indicies
@@ -93,7 +93,7 @@ def integrate_tof_data(
 ) -> np.ndarray:
     """Integrates TofData to recreate PeakData.
     Returned data is in ions/extraction for compatibility with PeakData, it can be
-    converted to ions/acquisition by via * `factor_extraction_to_acquisition`.
+    converted to ions/acquisition by via * ``factor_extraction_to_acquisition``.
     Integration is summing from int(lower index limit) + 1 to int(upper index limit).
 
     Args:
