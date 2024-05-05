@@ -34,3 +34,9 @@ Some features include:
    :hidden:
 
    examples/index
+
+
+.. toctree::
+   :hidden:
+
+   reference/index
