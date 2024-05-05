@@ -2,6 +2,17 @@ import numpy as np
 
 
 def pdf(k: np.ndarray, lam: float) -> np.ndarray:
+    """Poisson probability mass function.
+
+    :math:`\\frac{\\lambda^k e^{-k}}{k!}`
+
+    Args:
+        k: index values, integer
+        lam: expected rate of occurrences
+
+    Retuns:
+        PMF at all ``k``
+    """
     assert np.issubdtype(k.dtype, np.integer)
     assert np.all(k >= 0)
 
@@ -14,6 +25,17 @@ def pdf(k: np.ndarray, lam: float) -> np.ndarray:
 
 
 def cdf(k: np.ndarray, lam: float) -> np.ndarray:
+    """Poisson cummulative distribution function.
+
+    :math:`\\sum_{j=0}^{\\lfloor k \\rfloor} \\text{PMF}(j, \\lambda)`
+
+    Args:
+        k: index values, integer
+        lam: expected rate of occurences
+
+    Returns:
+        CDF at all ``k``
+    """
     assert np.issubdtype(k.dtype, np.integer)
     assert np.all(k >= 0)
 
