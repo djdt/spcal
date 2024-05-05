@@ -47,7 +47,7 @@ def from_moments(ex: float, vx: float) -> tuple[float, float]:
     return mu, sigma
 
 
-def quantile(quantile: float, mu: float, sigma: float) -> float:
+def quantile(quantile: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     """Quantile (inverse CDF) function of a log-normal distribution.
 
     Args:
