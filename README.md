@@ -37,7 +37,7 @@ spcal --help
 
 ## Documentation
 
-Documentation on usage, examples and a programming reference can be found at https://spcal/readthedocs.io.
+Documentation on usage, examples and a programming reference can be found at https://spcal.readthedocs.io.
 
 ## Publications
 
