@@ -204,7 +204,12 @@ class SPCalWindow(QtWidgets.QMainWindow):
             "Show the error and information log.",
             self.log.open,
         )
-
+        self.action_documentation = create_action(
+            "documentation",
+            "Online Documentation",
+            "Opens a link to documenation on usage.",
+            self.linkToDocumenation,
+        )
         self.action_about = create_action(
             "help-about", "About", "About SPCal.", self.about
         )
@@ -248,6 +253,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
+        menuhelp.addAction(self.action_documentation)
         menuhelp.addAction(self.action_about)
 
     def about(self) -> QtWidgets.QDialog:
@@ -280,9 +286,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogCalculator(self) -> CalculatorDialog:
-        dlg = CalculatorDialog(
-            self.sample.names, self.sample.current_expr, parent=self
-        )
+        dlg = CalculatorDialog(self.sample.names, self.sample.current_expr, parent=self)
         dlg.expressionAdded.connect(self.sample.addExpression)
         dlg.expressionRemoved.connect(self.sample.removeExpression)
         dlg.expressionAdded.connect(self.reference.addExpression)
@@ -376,6 +380,9 @@ class SPCalWindow(QtWidgets.QMainWindow):
         restoreSession(
             Path(file), self.options, self.sample, self.reference, self.results
         )
+
+    def linkToDocumenation(self) -> None:
+        QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
     def onInputsChanged(self) -> None:
         # Reference tab is neb method requires
