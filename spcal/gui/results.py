@@ -85,6 +85,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "volume": None,
                     "cell_concentration": None,
                 },
+                "percentile": 95,
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
             "scatter": {"draw filtered": False, "weighting": "none"},
@@ -426,6 +427,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
+    def setHistPercentile(self, p: int) -> None:
+        self.graph_options["histogram"]["percentile"] = p
+        self.drawGraphHist()
+
     def setHistDrawFiltered(self, show: bool) -> None:
         self.graph_options["histogram"]["draw filtered"] = show
         self.drawGraphHist()
@@ -446,11 +451,13 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
                 self.graph_options["histogram"]["bin widths"],
+                self.graph_options["histogram"]["percentile"],
                 self.graph_options["histogram"]["draw filtered"],
                 parent=self,
             )
             dlg.fitChanged.connect(self.setHistFit)
             dlg.binWidthsChanged.connect(self.setHistBinWidths)
+            dlg.percentileChanged.connect(self.setHistPercentile)
             dlg.drawFilteredChanged.connect(self.setHistDrawFiltered)
         elif self.graph_stack.currentWidget() == self.graph_composition:
             dlg = CompositionsOptionsDialog(
@@ -562,7 +569,9 @@ class ResultsWidget(QtWidgets.QWidget):
             else self.results.keys()
         )
         graph_data = {
-            k: np.clip(v, 0.0, np.percentile(v, 99))
+            k: np.clip(
+                v, 0.0, np.percentile(v, self.graph_options["histogram"]["percentile"])
+            )
             for k, v in self.resultsForKey(key).items()
             if k in names
         }
