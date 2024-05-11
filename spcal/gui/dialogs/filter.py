@@ -327,7 +327,9 @@ class FilterDialog(QtWidgets.QDialog):
                 break
 
     def addClusterFilter(self, filter: ClusterFilter | None = None):
-        widget = ClusterFilterItemWidget(maximum_index=self.number_clusters)
+        widget = ClusterFilterItemWidget(
+            filter=filter, maximum_index=self.number_clusters
+        )
         self.addClusterWidget(widget)
 
     def addClusterWidget(self, widget: QtWidgets.QWidget) -> None:
