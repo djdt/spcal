@@ -643,6 +643,9 @@ class ResultsWidget(QtWidgets.QWidget):
 
             non_zero = np.flatnonzero(data)
 
+            # Auto SI prefix does not work with squared (or cubed) units
+            self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
+
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
                 data[graph_idx[name]] * modifier,
