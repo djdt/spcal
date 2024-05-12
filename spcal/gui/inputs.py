@@ -185,7 +185,7 @@ class InputWidget(QtWidgets.QWidget):
             if old in self.limits:
                 self.limits[new] = self.limits.pop(old)
             if old in self.current_expr:
-                self.current_expr[new] = self.current_expr[old].pop()
+                self.current_expr[new] = self.current_expr.pop(old)
             if old in self.io:
                 index = self.io.combo_name.findText(old)
                 self.io.combo_name.setItemText(index, new)
