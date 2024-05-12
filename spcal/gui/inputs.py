@@ -376,6 +376,16 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         method = self.options.limit_method.currentText()
+        if method not in ["Compound Poisson", "Poisson"]:  # not Gaussian
+            if not self.options.gaussian.isComplete():
+                return
+        if method not in ["Compound Poisson", "Gaussian"]:  # not Poisson
+            if not self.options.poisson.isComplete():
+                return
+        if method not in ["Poisson", "Gaussian"]:  # not Compound Poisson
+            if not self.options.compound_poisson.isComplete():
+                return
+
         if self.options.window_size.isEnabled():
             window_size = self.options.window_size.value() or 0
         else:

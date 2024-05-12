@@ -43,6 +43,9 @@ class LimitOptions(QtWidgets.QGroupBox):
         self.blockSignals(False)
         self.limitOptionsChanged.emit()
 
+    def isComplete(self) -> bool:
+        return False
+
 
 class CompoundPoissonOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -52,7 +55,7 @@ class CompoundPoissonOptions(LimitOptions):
         self.single_ion_dist: np.ndarray | None = None
 
         self.lognormal_sigma = ValueWidget(
-            0.45, validator=QtGui.QDoubleValidator(1e-9, 10.0, 9), format=sf
+            0.47, validator=QtGui.QDoubleValidator(1e-9, 10.0, 9), format=sf
         )
         self.lognormal_sigma.setPlaceholderText("0.45")
         self.lognormal_sigma.setToolTip(
@@ -218,6 +221,16 @@ class CompoundPoissonOptions(LimitOptions):
         self.blockSignals(False)
         self.limitOptionsChanged.emit()
 
+    def isComplete(self) -> bool:
+        if self.method.currentText() == "LN Approximation":
+            if not self.lognormal_sigma.hasAcceptableInput():
+                return False
+        else:
+            if self.single_ion_dist is None:
+                return False
+
+        return self.alpha.hasAcceptableInput()
+
 
 class GaussianOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -252,6 +265,9 @@ class GaussianOptions(LimitOptions):
         self.sigma.valueChanged.disconnect(self.updateAlpha)
         self.sigma.setValue(round(sigma, 4))
         self.sigma.valueChanged.connect(self.updateAlpha)
+
+    def isComplete(self) -> bool:
+        return self.alpha.hasAcceptableInput()
 
 
 class PoissonOptions(LimitOptions):
@@ -331,3 +347,6 @@ class PoissonOptions(LimitOptions):
             # settings.setValue("Poisson/Tblank", self.t_blank)
 
         self.limitOptionsChanged.emit()
+
+    def isComplete(self) -> bool:
+        return self.alpha.hasAcceptableInput()
