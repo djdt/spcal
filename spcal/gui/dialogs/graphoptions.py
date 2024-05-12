@@ -7,6 +7,7 @@ from spcal.siunits import (
     molar_concentration_units,
     signal_units,
     size_units,
+    volume_units,
 )
 
 
@@ -70,6 +71,12 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             color_invalid=color,
             format=sf,
         )
+        self.width_volume = UnitsWidget(
+            volume_units,
+            base_value=self.bin_widths["volume"],
+            color_invalid=color,
+            format=sf,
+        )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
             base_value=self.bin_widths["cell_concentration"],
@@ -81,6 +88,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_signal,
             self.width_mass,
             self.width_size,
+            self.width_volume,
             self.width_conc,
         ]:
             widget.setBestUnit()
@@ -106,6 +114,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         box_widths.layout().addRow("Signal:", self.width_signal)
         box_widths.layout().addRow("Mass:", self.width_mass)
         box_widths.layout().addRow("Size:", self.width_size)
+        box_widths.layout().addRow("Volume:", self.width_volume)
         box_widths.layout().addRow("Concentration:", self.width_conc)
 
         box_max = QtWidgets.QGroupBox("Highest Bin")
@@ -154,6 +163,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             "signal": self.width_signal.baseValue(),
             "mass": self.width_mass.baseValue(),
             "size": self.width_size.baseValue(),
+            "volume": self.width_volume.baseValue(),
             "cell_concentration": self.width_conc.baseValue(),
         }
 
@@ -181,6 +191,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_signal,
             self.width_mass,
             self.width_size,
+            self.width_volume,
             self.width_conc,
         ]:
             widget.setBaseValue(None)
