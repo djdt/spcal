@@ -188,7 +188,9 @@ class SampleIOWidget(IOWidget):
 
     def clearOutputs(self) -> None:
         self.count.setValue(None)
+        self.count.setError(None)
         self.background_count.setValue(None)
+        self.background_count.setError(None)
         self.lod_count.setValue(None)
         self.lod_label.setText("")
 
