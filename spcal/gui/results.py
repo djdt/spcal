@@ -845,7 +845,10 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         units = self.mode_units[mode]
 
+        previous_name = self.io.combo_name.currentText()
         self.io.repopulate(list(self.results.keys()))
+        if previous_name in self.io:
+            self.io.combo_name.setCurrentText(previous_name)
 
         for name, result in self.results.items():
             if not result.canCalibrate(key):
