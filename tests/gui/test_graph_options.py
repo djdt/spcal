@@ -50,8 +50,10 @@ def test_histogram_options_dialog(qtbot: QtBot):
             "signal": None,
             "mass": None,
             "size": None,
+            "volume": None,
             "cell_concentration": 1e-9,
         },
+        percentile=95,
         draw_filtered=False,
     )
     qtbot.add_widget(dlg)
@@ -66,6 +68,8 @@ def test_histogram_options_dialog(qtbot: QtBot):
     dlg.width_signal.setBaseValue(100.0)
     dlg.width_mass.setBaseValue(1e-19)
     dlg.width_size.setBaseValue(1e-9)
+    dlg.width_volume.setBaseValue(1e-6)
+    dlg.spinbox_percentile.setValue(90)
     dlg.check_draw_filtered.setChecked(True)
 
     def check_bin_widths(widths: dict) -> bool:
@@ -75,14 +79,26 @@ def test_histogram_options_dialog(qtbot: QtBot):
             return False
         if widths["size"] != 1e-9:
             return False
+        if widths["volume"] != 1e-6:
+            return False
         if widths["cell_concentration"] != 1e-9:
             return False
         return True
 
     with qtbot.wait_signals(
-        [dlg.fitChanged, dlg.binWidthsChanged, dlg.drawFilteredChanged],
+        [
+            dlg.fitChanged,
+            dlg.binWidthsChanged,
+            dlg.percentileChanged,
+            dlg.drawFilteredChanged,
+        ],
         timeout=100,
-        check_params_cbs=[lambda f: f == "normal", check_bin_widths, lambda b: b],
+        check_params_cbs=[
+            lambda f: f == "normal",
+            check_bin_widths,
+            lambda p: p == 90,
+            lambda b: b,
+        ],
     ):
         dlg.apply()
 
