@@ -24,7 +24,7 @@ def compound_poisson_lognormal_quantile(
         sigma: log stddev of the log-normal distribution
 
     Returns:
-        the ``q``th value of the compound Poisson-Log-normal
+        the ``q`` th value of the compound Poisson-Log-normal
     """
     # A reasonable overestimate of the upper value
     uk = (
@@ -111,7 +111,7 @@ def sum_iid_lognormals(
 
     The sum is approximated by another log-normal distribution, defined by
     the returned parameters. Uses the Fenton-Wilkinson approximation for good
-    right-tail accuracy.
+    right-tail accuracy [3]_.
 
     Args:
         n: int or array of ints
@@ -122,7 +122,7 @@ def sum_iid_lognormals(
         mu, sigma of the log-normal approximation
 
     References:
-        L. F. Fenton, "The sum of lognormal probability distributions in scatter
+        .. [3] L. F. Fenton, "The sum of lognormal probability distributions in scatter
             transmission systems," IRE Trans. Commun. Syst., vol. CS-8, pp. 57-67, 1960.
             https://doi.org/10.1109/TCOM.1960.1097606
     """

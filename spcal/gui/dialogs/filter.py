@@ -232,7 +232,7 @@ class FilterDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Particle Filtering")
-        self.setMinimumSize(800, 800)
+        self.setMinimumSize(640, 480)
 
         self.names = names
         self.number_clusters = number_clusters
@@ -327,7 +327,9 @@ class FilterDialog(QtWidgets.QDialog):
                 break
 
     def addClusterFilter(self, filter: ClusterFilter | None = None):
-        widget = ClusterFilterItemWidget(maximum_index=self.number_clusters)
+        widget = ClusterFilterItemWidget(
+            filter=filter, maximum_index=self.number_clusters
+        )
         self.addClusterWidget(widget)
 
     def addClusterWidget(self, widget: QtWidgets.QWidget) -> None:

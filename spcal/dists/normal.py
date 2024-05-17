@@ -2,21 +2,51 @@ import numpy as np
 
 
 def cdf(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
+    """Cummulative density function of a normal distribution.
+
+    Args:
+        x: values
+        mu: mean
+        sigma: standard deviation
+
+    Returns:
+        CDF at all ``x``
+    """
     return 0.5 * (1.0 + erf((x - mu) / (sigma * np.sqrt(2.0))))
 
 
 def pdf(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
+    """Probability density function of a normal distribution.
+
+    Args:
+        x: values
+        mu: mean
+        sigma: standard deviation
+
+    Returns:
+        PDF at all ``x``
+    """
     return 1.0 / (sigma * np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
 
 def quantile(x: np.ndarray, mu: float = 0.0, sigma: float = 1.0) -> np.ndarray:
+    """Quantile (inverse-CDF) function of a normal distribution.
+
+    Args:
+        x: quantile values
+        mu: mean
+        sigma: standard deviation
+
+    Returns:
+        quantile at all ``x``
+    """
     return mu + sigma * np.sqrt(2.0) * erfinv(2.0 * x - 1.0)
 
 
 def erf(x: float | np.ndarray) -> float | np.ndarray:
     """Error function approximation.
 
-    The maximum error is 1.5e-7 [1].
+    The maximum error is 1.5e-7 [1]_.
 
     Args:
         x: value
@@ -53,7 +83,7 @@ def erfinv(x: float | np.ndarray) -> float | np.ndarray:
 def standard_quantile(p: float | np.ndarray) -> float | np.ndarray:
     """Approximation of the standard normal quantile.
 
-    The maximum error is 1.5e-9 [2].
+    The maximum error is 1.5e-9 [2]_.
 
     Args:
         p: quantile (0 - 1)

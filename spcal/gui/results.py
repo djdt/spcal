@@ -85,6 +85,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "volume": None,
                     "cell_concentration": None,
                 },
+                "percentile": 95,
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
             "scatter": {"draw filtered": False, "weighting": "none"},
@@ -426,6 +427,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
+    def setHistPercentile(self, p: int) -> None:
+        self.graph_options["histogram"]["percentile"] = p
+        self.drawGraphHist()
+
     def setHistDrawFiltered(self, show: bool) -> None:
         self.graph_options["histogram"]["draw filtered"] = show
         self.drawGraphHist()
@@ -446,11 +451,13 @@ class ResultsWidget(QtWidgets.QWidget):
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
                 self.graph_options["histogram"]["bin widths"],
+                self.graph_options["histogram"]["percentile"],
                 self.graph_options["histogram"]["draw filtered"],
                 parent=self,
             )
             dlg.fitChanged.connect(self.setHistFit)
             dlg.binWidthsChanged.connect(self.setHistBinWidths)
+            dlg.percentileChanged.connect(self.setHistPercentile)
             dlg.drawFilteredChanged.connect(self.setHistDrawFiltered)
         elif self.graph_stack.currentWidget() == self.graph_composition:
             dlg = CompositionsOptionsDialog(
@@ -477,10 +484,17 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def dialogExportResults(self) -> None:
         path = Path(self.sample.label_file.text())
+
+        regions = self.sample.regions
+        times = self.options.dwelltime.baseValue() * (
+            regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0
+        )
+
         dlg = ExportDialog(
             path.with_name(path.stem + "_results.csv"),
             self.results,
             self.clusters,
+            times,
             units=self.bestUnitsForResults(),
             parent=self,
         )
@@ -494,15 +508,15 @@ class ResultsWidget(QtWidgets.QWidget):
     #     #     self.chartview.saveToFile(file)
 
     def dialogFilterDetections(self) -> None:
-        if len(self.clusters) > 0:
-            max_idx = np.amax([idx.max() for idx in self.clusters.values()])
-        else:
-            max_idx = -1
+        # if len(self.clusters) > 0:
+        #     max_idx = np.amax([idx.max() for idx in self.clusters.values()])
+        # else:
+        #     max_idx = -1
         dlg = FilterDialog(
             list(self.results.keys()),
             self.filters,
             self.cluster_filters,
-            number_clusters=max_idx + 1,
+            number_clusters=99,
             parent=self,
         )
         dlg.filtersChanged.connect(self.setFilters)
@@ -555,7 +569,9 @@ class ResultsWidget(QtWidgets.QWidget):
             else self.results.keys()
         )
         graph_data = {
-            k: np.clip(v, 0.0, np.percentile(v, 99))
+            k: np.clip(
+                v, 0.0, np.percentile(v, self.graph_options["histogram"]["percentile"])
+            )
             for k, v in self.resultsForKey(key).items()
             if k in names
         }
@@ -584,13 +600,15 @@ class ResultsWidget(QtWidgets.QWidget):
                 ]
             )
         # Limit maximum / minimum number of bins
-        data_range = 1.0
+        data_range = 0.0
         for name, data in graph_data.items():
             ptp = np.ptp(data[graph_idx[name]])
             if ptp > data_range:
                 data_range = ptp
 
-        # data_range = np.ptp(np.concatenate(list(graph_data.values())))
+        if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+            return
+
         min_bins, max_bins = 10, 1000
         if bin_width < data_range / max_bins:
             logger.warning(
@@ -624,6 +642,9 @@ class ResultsWidget(QtWidgets.QWidget):
             )
 
             non_zero = np.flatnonzero(data)
+
+            # Auto SI prefix does not work with squared (or cubed) units
+            self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
 
             self.graph_hist.xaxis.setLabel(text=label, units=unit)
             self.graph_hist.draw(
@@ -824,7 +845,10 @@ class ResultsWidget(QtWidgets.QWidget):
         key = self.mode_keys[mode]
         units = self.mode_units[mode]
 
+        previous_name = self.io.combo_name.currentText()
         self.io.repopulate(list(self.results.keys()))
+        if previous_name in self.io:
+            self.io.combo_name.setCurrentText(previous_name)
 
         for name, result in self.results.items():
             if not result.canCalibrate(key):
@@ -924,7 +948,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     inputs["efficiency"] = self.options.efficiency.value()
                 elif method == "Reference Particle":
                     inputs["efficiency"] = self.reference.getEfficiency(name)
-                elif method == "Mass Response":
+                elif method == "Mass Response" and name in self.reference.io:
                     inputs["mass_response"] = self.reference.io[
                         name
                     ].massresponse.baseValue()

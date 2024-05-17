@@ -39,7 +39,7 @@ def process_data(
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
     limit_iterations: int = 1,
-) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray]]:
+) -> tuple[dict[str, SPCalResult], dict[str, np.ndarray], np.ndarray]:
     # === Add any valid expressions
     data = CalculatorDialog.reduceForData(data, expr)
 
@@ -75,6 +75,10 @@ def process_data(
         )
 
     detections, labels, regions = combine_detections(d, l, r)
+
+    times = next(iter(inputs.values()))["dwelltime"] * (
+        regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0
+    )
 
     if method in ["Manual Input", "Reference Particle"]:
         calibration_mode = "efficiency"
@@ -135,7 +139,7 @@ def process_data(
         for key in clusters.keys():
             clusters[key] = clusters[key][filter_indicies]
 
-    return results, clusters
+    return results, clusters, times
 
 
 def process_text_file(
@@ -159,10 +163,10 @@ def process_text_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 def process_nu_file(
@@ -190,10 +194,10 @@ def process_nu_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 def process_tofwerk_file(
@@ -219,10 +223,10 @@ def process_tofwerk_file(
     if data.size == 0:
         raise ValueError("data size zero")
 
-    results, clusters = process_data(path, data, **process_kws)
+    results, clusters, times = process_data(path, data, **process_kws)
 
     # === Export to file ===
-    export_single_particle_results(outpath, results, clusters, **output_kws)
+    export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
 
 class ImportOptionsWidget(QtWidgets.QGroupBox):
@@ -451,15 +455,15 @@ class BatchProcessDialog(QtWidgets.QDialog):
         if self.running:
             self.abort()
         else:
-            self.button_process.setText("Cancel Batch")
             self.start()
 
     def abort(self) -> None:
-        self.aborted = True
         self.threadpool.clear()
         self.threadpool.waitForDone()
 
         self.progress.reset()
+
+        self.aborted = True
         self.button_process.setText("Start Batch")
         self.running = False
 
@@ -467,8 +471,24 @@ class BatchProcessDialog(QtWidgets.QDialog):
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
         outfiles = self.outputsForFiles(infiles)
 
+        # Check for overwrites
+        if any(of.exists() for of in outfiles):
+            exist = ", ".join(of.name for of in outfiles if of.exists())
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Overwrite File(s)?",
+                f"The file(s) '{exist}' already exist, do you want to overwrite them?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.No:
+                return
+
         self.aborted = False
+        self.button_process.setText("Cancel Batch")
         self.running = True
+
         self.progress.setValue(0)
         self.progress.setMaximum(len(infiles))
 

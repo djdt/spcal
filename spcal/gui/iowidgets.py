@@ -188,7 +188,9 @@ class SampleIOWidget(IOWidget):
 
     def clearOutputs(self) -> None:
         self.count.setValue(None)
+        self.count.setError(None)
         self.background_count.setValue(None)
+        self.background_count.setError(None)
         self.lod_count.setValue(None)
         self.lod_label.setText("")
 
@@ -599,14 +601,15 @@ class IOStack(QtWidgets.QWidget):
                 widget = old_widgets[name]
             else:
                 widget = self.io_widget_type()
-                widget.optionsChanged.connect(
-                    lambda: self.onWidgetOptionChanged(widget)
-                )
+                widget.optionsChanged.connect(self.onWidgetOptionChanged)
                 widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
         self.blockSignals(False)
 
-    def onWidgetOptionChanged(self, widget: IOWidget) -> None:
+    def onWidgetOptionChanged(self) -> None:
+        widget = self.sender()
+        if not isinstance(widget, self.io_widget_type):
+            raise ValueError("invalid widget triggered onWidgetOptionsChanged")
         name = self.combo_name.itemText(self.stack.indexOf(widget))
         self.optionsChanged.emit(name)
 

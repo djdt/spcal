@@ -7,6 +7,44 @@ from spcal.cluster import cluster_information, prepare_data_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
+from spcal.gui.util import create_action
+from spcal.gui.modelviews import BasicTable
+
+
+class CompositionDetailDialog(QtWidgets.QDialog):
+    def __init__(
+        self,
+        export_data: dict[str, np.ndarray],
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Compostion Detail")
+        self.setMinimumSize(QtCore.QSize(480, 640))
+
+        names = [k[:-5] for k in export_data.keys() if "_mean" in k]
+        nrows = export_data["count"].size
+
+        self.table = BasicTable()
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setRowCount(nrows)
+        self.table.setColumnCount(len(names) + 1)
+
+        self.table.setHorizontalHeaderLabels(["Count"] + names)
+        for i in range(nrows):
+            item = QtWidgets.QTableWidgetItem(f"{export_data['count'][i]}")
+            self.table.setItem(i, 0, item)
+            for j, name in enumerate(names):
+                mean = export_data[name + "_mean"][i]
+                std = export_data[name + "_std"][i]
+                item = QtWidgets.QTableWidgetItem(f"{mean:.2f} ± {std:.2f}")
+                self.table.setItem(i, j + 1, item)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.table)
+        self.setLayout(layout)
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
 
 
 class CompositionView(SinglePlotGraphicsView):
@@ -19,6 +57,20 @@ class CompositionView(SinglePlotGraphicsView):
         self.yaxis.hide()
 
         self.pies: list[PieChart] = []
+
+        self.action_show_comp_dialog = create_action(
+            "office-chart-pie",
+            "Composition Detail",
+            "Open a dialog displaying compositions in detail.",
+            self.dialogDetail,
+        )
+
+        self.context_menu_actions.append(self.action_show_comp_dialog)
+
+    def dialogDetail(self) -> QtWidgets.QDialog:
+        dlg = CompositionDetailDialog(self.export_data, parent=self)
+        dlg.open()
+        return dlg
 
     def draw(
         self,
@@ -37,9 +89,15 @@ class CompositionView(SinglePlotGraphicsView):
         assert len(brushes) >= len(data.keys())
 
         self.pies.clear()
+        self.export_data.clear()
 
         X = prepare_data_for_clustering(data)
         means, stds, counts = cluster_information(X, T)
+
+        self.export_data["count"] = counts
+        for i, name in enumerate(data.keys()):
+            self.export_data[name + "_mean"] = means[:, i]
+            self.export_data[name + "_std"] = stds[:, i]
 
         # Get minimum size as number
         if isinstance(min_size, str) and min_size.endswith("%"):
@@ -99,6 +157,7 @@ class CompositionView(SinglePlotGraphicsView):
             raise ValueError("Composition mode must be 'pie' or 'bar'.")
 
         # link all hovers
+        # todo link hover to legend
         for i in range(len(self.pies)):
             for j in range(len(self.pies)):
                 if i == j:

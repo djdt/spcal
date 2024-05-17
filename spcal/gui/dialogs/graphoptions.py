@@ -7,18 +7,21 @@ from spcal.siunits import (
     molar_concentration_units,
     signal_units,
     size_units,
+    volume_units,
 )
 
 
 class HistogramOptionsDialog(QtWidgets.QDialog):
     fitChanged = QtCore.Signal(str)
     binWidthsChanged = QtCore.Signal(dict)
+    percentileChanged = QtCore.Signal(int)
     drawFilteredChanged = QtCore.Signal(bool)
 
     def __init__(
         self,
         fit: str | None,
         bin_widths: dict[str, float | None],
+        percentile: int,
         draw_filtered: bool,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -27,6 +30,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 
         self.fit = fit
         self.bin_widths = bin_widths.copy()
+        self.percentile = percentile
         self.draw_filtered = draw_filtered
 
         self.radio_fit_off = QtWidgets.QRadioButton("Off")
@@ -67,6 +71,12 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             color_invalid=color,
             format=sf,
         )
+        self.width_volume = UnitsWidget(
+            volume_units,
+            base_value=self.bin_widths["volume"],
+            color_invalid=color,
+            format=sf,
+        )
         self.width_conc = UnitsWidget(
             molar_concentration_units,
             base_value=self.bin_widths["cell_concentration"],
@@ -78,10 +88,17 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_signal,
             self.width_mass,
             self.width_size,
+            self.width_volume,
             self.width_conc,
         ]:
             widget.setBestUnit()
             widget.lineedit.setPlaceholderText("auto")
+
+        self.spinbox_percentile = QtWidgets.QSpinBox()
+        self.spinbox_percentile.setMaximum(100)
+        self.spinbox_percentile.setMinimum(50)
+        self.spinbox_percentile.setValue(percentile)
+        self.spinbox_percentile.setToolTip("Bin histrogram up to the this percentile.")
 
         self.check_draw_filtered = QtWidgets.QCheckBox("Draw filtered detections.")
         self.check_draw_filtered.setToolTip("Draw filtered detections in grey.")
@@ -97,7 +114,12 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         box_widths.layout().addRow("Signal:", self.width_signal)
         box_widths.layout().addRow("Mass:", self.width_mass)
         box_widths.layout().addRow("Size:", self.width_size)
+        box_widths.layout().addRow("Volume:", self.width_volume)
         box_widths.layout().addRow("Concentration:", self.width_conc)
+
+        box_max = QtWidgets.QGroupBox("Highest Bin")
+        box_max.setLayout(QtWidgets.QFormLayout())
+        box_max.layout().addRow("Percentile", self.spinbox_percentile)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.RestoreDefaults
@@ -110,6 +132,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(box_fit)
         layout.addWidget(box_widths)
+        layout.addWidget(box_max)
         layout.addWidget(self.check_draw_filtered)
         layout.addWidget(self.button_box)
 
@@ -140,8 +163,11 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             "signal": self.width_signal.baseValue(),
             "mass": self.width_mass.baseValue(),
             "size": self.width_size.baseValue(),
+            "volume": self.width_volume.baseValue(),
             "cell_concentration": self.width_conc.baseValue(),
         }
+
+        percentile = self.spinbox_percentile.value()
 
         draw_filtered = self.check_draw_filtered.isChecked()
 
@@ -152,6 +178,9 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         if bin_widths != self.bin_widths:
             self.bin_widths = bin_widths
             self.binWidthsChanged.emit(bin_widths)
+        if percentile != self.percentile:
+            self.percentile = percentile
+            self.percentileChanged.emit(percentile)
         if draw_filtered != self.draw_filtered:
             self.draw_filtered = draw_filtered
             self.drawFilteredChanged.emit(draw_filtered)
@@ -162,6 +191,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_signal,
             self.width_mass,
             self.width_size,
+            self.width_volume,
             self.width_conc,
         ]:
             widget.setBaseValue(None)

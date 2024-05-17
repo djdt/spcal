@@ -122,7 +122,8 @@ def test_limit_from():  # Better way for normality check?
         lim_b = SPCalLimit.fromBest(x, max_iters=1)
 
         assert lim_h.name == max(lim_p, lim_g, key=lambda x: x.detection_threshold).name
-        assert lim_b.name == ("Poisson" if np.min(x) < 5.0 else "Gaussian")
+        f = np.count_nonzero((x > 0.0) & (x <= 5.0)) / np.count_nonzero(x)
+        assert lim_b.name == ("Poisson" if f > 0.05 else "Gaussian")
 
     # Make sure quad / tof detection works
     x = np.random.poisson(size=1000, lam=10.0)

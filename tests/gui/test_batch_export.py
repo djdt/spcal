@@ -57,7 +57,6 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
 
 def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
     # Todo: need to make a better (more data) Nu test data file
-    return
     window = SPCalWindow()
     qtbot.add_widget(window)
     with qtbot.wait_exposed(window):
@@ -70,7 +69,7 @@ def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
     masses, signals, info = read_nu_directory(path)
     data = select_nu_signals(masses, signals, selected_masses={"Ar40": 39.96238})
 
-    window.options.poisson.alpha.setValue(0.1)
+    window.options.compound_poisson.alpha.setValue(0.1)
 
     with qtbot.wait_signal(window.sample.detectionsChanged):
         window.sample.loadData(

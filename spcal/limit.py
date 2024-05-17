@@ -14,6 +14,7 @@ from spcal.dists.util import (
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
 logger = logging.getLogger(__name__)
+iter_eps = 1e-3
 
 
 class SPCalLimit(object):
@@ -214,7 +215,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
 
             lam = bn.nanmean(responses[responses < threshold])
@@ -271,7 +274,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
 
             if window_size == 0:  # No window
@@ -345,7 +350,9 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
-        while (np.all(prev_threshold > threshold) and iters < max_iters) or iters == 0:
+        while (
+            np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
+        ) or iters == 0:
             prev_threshold = threshold
             if window_size == 0:  # No window
                 mu = bn.nanmean(responses[responses < threshold])
@@ -406,9 +413,11 @@ class SPCalLimit(object):
             gaussian_kws = {}
 
         # Find if data is Poisson distributed
-        # Limit to < 5 to stay out of analouge region
-        low_responses = responses[(responses > 0.0) & (responses <= 5.0)]
-        if low_responses.size == 0:  # No values less than 5.0, Gaussian
+        nonzero_response = responses > 0.0
+        nonzero_count = np.count_nonzero(nonzero_response)
+        low_responses = responses[nonzero_response & (responses <= 5.0)]
+        # Less than 5% of nonzero values are below 5, equivilent to background of ~ 10
+        if nonzero_count > 0 and low_responses.size / nonzero_count < 0.05:
             return SPCalLimit.fromGaussian(
                 responses,
                 alpha=gaussian_kws.get("alpha", 1e-6),

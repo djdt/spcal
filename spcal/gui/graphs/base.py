@@ -209,6 +209,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.autoRange()
         self.plot.enableAutoRange(x=x, y=y)
 
+        # Reset the legend postion
+        if self.plot.legend is not None:
+            self.plot.legend.anchor(
+                QtCore.QPointF(1, 0), QtCore.QPointF(1, 0), QtCore.QPointF(-10, 10)
+            )
+
 
 # class MultiPlotGraphicsView(SPCalGraphicsView):
 #     def __init__(

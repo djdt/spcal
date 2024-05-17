@@ -38,7 +38,7 @@ def read_single_particle_file(
         columns: which columns to import, deafults to all
         first_line: the first data (not header) line
         convert_cps: the dwelltime (in s) if data is stored as counts per second,
-            else None
+        else None
 
     Returns:
         data, structred array
@@ -105,6 +105,7 @@ def export_single_particle_results(
     path: Path | str,
     results: dict[str, SPCalResult],
     clusters: dict[str, np.ndarray],
+    detection_times: np.ndarray | None = None,
     units_for_inputs: dict[str, tuple[str, float]] | None = None,
     units_for_results: dict[str, tuple[str, float]] | None = None,
     output_inputs: bool = True,
@@ -116,9 +117,15 @@ def export_single_particle_results(
 
     Args:
         path: path to output csv
-        results: dict of SPCalResult for each element
+        results: dict of element: SPCalResult
+        clusters: dict of element: cluster indices
+        detection_times: array of times for each detection
         units_for_inputs: units for option/sample inputs, defaults to sane
         units_for_results: units for output of detections and lods
+        output_inputs: write input instrument and sample parameters
+        output_results: write basic results, e.g. means, median
+        output_compositions: write cluster means and indices (if output_array)
+        output_arrays: write detection data
     """
 
     input_units = {
@@ -155,9 +162,7 @@ def export_single_particle_results(
 
     def write_header(fp: TextIO, first_result: SPCalResult) -> None:
         date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
-        fp.write(
-            f"# SPCal Export {importlib.metadata.version('spcal')}\n"
-        )
+        fp.write(f"# SPCal Export {importlib.metadata.version('spcal')}\n")
         fp.write(f"# Date,{date}\n")
         fp.write(f"# File,{first_result.file}\n")
         fp.write(f"# Acquisition events,{first_result.events}\n")
@@ -351,16 +356,18 @@ def export_single_particle_results(
         fp: TextIO,
         results: dict[str, SPCalResult],
         clusters: dict[str, np.ndarray],
+        detection_times: np.ndarray | None = None,
         export_clusters: bool = False,
     ) -> None:
         fp.write("# Raw detection data\n")
-        # Output data
-        data = []
-        header_name = ""
-        header_unit = ""
 
         # Non-filtered indicies
         valid = SPCalResult.all_valid_indicies(list(results.values()))
+
+        # Output data
+        data = [] if detection_times is None else [detection_times[valid]]
+        header_name = "" if detection_times is None else ",Time"
+        header_unit = "" if detection_times is None else ",s"
 
         for name, result in results.items():
             for key in SPCalResult.base_units.keys():
@@ -414,5 +421,11 @@ def export_single_particle_results(
         if output_compositions:
             write_compositions(fp, results, clusters)
         if output_arrays:
-            write_arrays(fp, results, clusters, output_compositions)
+            write_arrays(
+                fp,
+                results,
+                clusters,
+                detection_times,
+                export_clusters=output_compositions,
+            )
         fp.write("# End of export")

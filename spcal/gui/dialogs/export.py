@@ -19,6 +19,7 @@ class ExportDialog(QtWidgets.QDialog):
         path: str | Path,
         results: dict[str, SPCalResult],
         clusters: dict[str, np.ndarray],
+        times: np.ndarray,
         units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -27,6 +28,7 @@ class ExportDialog(QtWidgets.QDialog):
 
         self.results = results
         self.clusters = clusters
+        self.times = times
 
         _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
         if units is not None:
@@ -122,10 +124,25 @@ class ExportDialog(QtWidgets.QDialog):
 
         path = Path(self.lineedit_path.text())
         first_result = next(iter(self.results.values()))
+
+        # Check if overwriting
+        if path.exists():
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Overwrite File?",
+                f"The file '{path.name}' already exists, do you want to overwrite it?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.No:
+                return
+
         export_single_particle_results(
             path,
             self.results,
             self.clusters,
+            self.times,
             units_for_results=units,
             output_inputs=self.check_export_inputs.isChecked(),
             output_compositions=self.check_export_compositions.isChecked(),

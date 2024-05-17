@@ -1,4 +1,5 @@
 import logging
+from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +23,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Ionic Response Calculator")
+        self.setMinimumSize(640, 480)
 
         self.data = np.array([])
         self.import_options: dict | None = None
@@ -33,10 +35,13 @@ class ResponseDialog(QtWidgets.QDialog):
         self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
         self.graph_cal = CalibrationView()
+        self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
 
-        data = np.array([], dtype=[("_", np.float64)])
-        self.model = NumpyRecArrayTableModel(data)
-        self.responses = np.array([], dtype=[("_", np.float64)])
+        data = np.array([], dtype=[("<element>", np.float64)])
+        self.model = NumpyRecArrayTableModel(
+            data, orientation=QtCore.Qt.Orientation.Horizontal
+        )
+        self.responses = np.array([], dtype=[("<element>", np.float64)])
 
         self.table = QtWidgets.QTableView()
         self.table.setModel(self.model)
@@ -48,7 +53,7 @@ class ResponseDialog(QtWidgets.QDialog):
             QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
         self.table.setVerticalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
 
         self.model.dataChanged.connect(self.completeChanged)
@@ -58,40 +63,43 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add_level.pressed.connect(self.dialogLoadFile)
 
-        # self.button_save = QtWidgets.QPushButton(
-        #     QtGui.QIcon.fromTheme("document-save"), "Save"
-        # )
-        # self.button_save.setEnabled(False)
-        # self.button_save.pressed.connect(self.exportCalibration)
-
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
         self.combo_unit.setCurrentText("μg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
+        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
 
-        self.button_box.accepted.connect(self.accept)
+        self.button_box.clicked.connect(self.buttonClicked)
         self.button_box.rejected.connect(self.reject)
 
         box_concs = QtWidgets.QGroupBox("Concentrations")
         box_concs.setLayout(QtWidgets.QVBoxLayout())
         box_concs.layout().addWidget(self.table, 1)
-        box_concs.layout().addWidget(
+
+        layout_conc_bar = QtWidgets.QHBoxLayout()
+        layout_conc_bar.addStretch(1)
+        layout_conc_bar.addWidget(
+            self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        layout_conc_bar.addWidget(
             self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
+        box_concs.layout().addLayout(layout_conc_bar, 0)
 
         layout_graphs = QtWidgets.QHBoxLayout()
-        layout_graphs.addWidget(self.graph, 2)
-        layout_graphs.addWidget(self.graph_cal, 1)
+        layout_graphs.addWidget(self.graph, 3)
+        layout_graphs.addWidget(self.graph_cal, 2)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_graphs, 1)
-        layout.addWidget(box_concs)
-        layout.addWidget(self.button_add_level, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout.addLayout(layout_graphs, 3)
+        layout.addWidget(box_concs, 2)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
@@ -105,6 +113,9 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def completeChanged(self) -> None:
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
+            self.isComplete()
+        )
+        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(
             self.isComplete()
         )
 
@@ -168,7 +179,7 @@ class ResponseDialog(QtWidgets.QDialog):
             else:
                 return
         else:
-            self.model.insertRow(self.model.rowCount())
+            self.model.insertColumn(self.model.columnCount())
             self.responses = np.append(
                 self.responses, np.full(1, np.nan, self.responses.dtype)
             )
@@ -184,7 +195,6 @@ class ResponseDialog(QtWidgets.QDialog):
         self.graph.clear()
         self.graph.plot.setTitle(f"TIC: {options['path'].name}")
         self.graph.drawData(xs, tic)
-        self.graph.drawMean(0.0)
         if old_size != data.size:
             self.graph.region.blockSignals(True)
             self.graph.region.setRegion((xs[0], xs[-1]))
@@ -220,59 +230,83 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    # def exportCalibration(self) -> None:
-    #     assert self.import_options is not None
-    #     dir = self.import_options["path"].parent
-    #     file, _ = QtWidgets.QFileDialog.getOpenFileName(
-    #         self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-    #     )
-    #     if file == "":
-    #         return
+    def save(self) -> None:
+        assert self.import_options is not None
+        dir = self.import_options["path"].parent
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
+        )
+        if file == "":
+            return
 
-    #     names: tuple[str, ...] = self.responses.dtype.names or tuple()
-    #     factor = mass_concentration_units[self.combo_unit.currentText()]
+        assert self.responses.dtype.names is not None
+        names = self.responses.dtype.names
+        factor = mass_concentration_units[self.combo_unit.currentText()]
 
-    #     with open(file, "w") as fp:
-    #         fp.write(f"SPCal Calibration {__version__}\n")
-    #         fp.write("," + ",".join(name for name in names) + "\n")
-    #         fp.write("Slope," + )
-    #         fp.write("Intercept," + )
-    #         fp.write("Error," + )
-    #         fp.write("r2," + )
-    #         for i in range(self.responses.shape[0]):
-    #             row = self.responses[i]
-    #             fp.write(
-    #                 f"Level {i}" + ",".join(str(row[name]) for name in names) + "\n"
-    #             )
-    #         fp.write("Concentration (kg/L)," + ",".join(name for name in names) + "\n")
-    #         for i in range(self.model.array.shape[0]):
-    #             row = self.model.array[i]
-    #             fp.write(
-    #                 f"Level {i}"
-    #                 + ",".join(
-    #                     str(row[name] * factor if not np.isnan(row[name]) else "")
-    #                     for name in names
-    #                 )
-    #                 + "\n"
-    #             )
+        with open(file, "w") as fp:
+            fp.write(f"#SPCal Calibration {version('spcal')}\n")
+            fp.write(",Slope,Intercept,r2,Error\n")
+            for name in names:
+                m, b, r2, err = self.calibrationResult(name)
+                fp.write(
+                    f"{name},{m if m is not None else ''},{b if b is not None else ''},"
+                    f"{r2 if r2 is not None else ''},{err if err is not None else ''}\n"
+                )
+            for name in names:
+                x = self.model.array[name]
+                y = self.responses[name][~np.isnan(x)]
+                x = x[~np.isnan(x)] * factor
+
+                if x.size == 0:
+                    continue
+
+                fp.write(f"\n{name}," + ",".join(str(i) for i in range(len(x))) + "\n")
+                fp.write("Conc. (kg/L)," + ",".join(str(xx) for xx in x) + "\n")
+                fp.write("Response," + ",".join(str(xx) for xx in y) + "\n")
+
+    def calibrationResult(
+        self, name: str
+    ) -> tuple[float | None, float | None, float | None, float | None]:
+        factor = mass_concentration_units[self.combo_unit.currentText()]
+        x = self.model.array[name]
+        y = self.responses[name][~np.isnan(x)]
+        x = x[~np.isnan(x)] * factor
+        if x.size == 0:
+            return None, None, None, None
+        elif x.size == 1:  # single point, force 0
+            return y[0] / x[0], 0.0, None, None
+        else:
+            return weighted_linreg(x, y)
+
+    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
+            self.save()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.reset()
 
     def accept(self) -> None:
         assert self.responses.dtype.names is not None
 
         responses = {}
-        factor = mass_concentration_units[self.combo_unit.currentText()]
         for name in self.responses.dtype.names:
-            x = self.model.array[name]
-            y = self.responses[name][~np.isnan(x)]
-            x = x[~np.isnan(x)] * factor
-            if x.size == 0:
-                continue
-            elif x.size == 1:  # single point, force 0
-                m = y[0] / x[0]
-            else:
-                m, b, r2, err = weighted_linreg(x, y)
-            responses[name] = m
+            m, _, _, _ = self.calibrationResult(name)
+            if m is not None:
+                responses[name] = m
 
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
         super().accept()
+
+    def reset(self) -> None:
+        data = np.array([], dtype=[("<element>", np.float64)])
+        self.model.beginResetModel()
+        self.model.array = np.full(1, np.nan, dtype=data.dtype)
+        self.model.endResetModel()
+        self.responses = self.model.array.copy()
+
+        self.import_options = None
+        self.graph.clear()
+        self.graph_cal.clear()
