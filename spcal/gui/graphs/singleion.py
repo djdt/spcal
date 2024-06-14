@@ -3,7 +3,7 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.dists.normal import erfinv
-from spcal.fit import lognormal_pdf
+from spcal.dists import lognormal
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
@@ -39,7 +39,7 @@ class SingleIonView(SinglePlotGraphicsView):
 
             xs = np.linspace(0.0, p99, 1000)
 
-            ys = lognormal_pdf(xs, mu, sigma)
+            ys = lognormal.pdf(xs, mu, sigma)
             curve = pyqtgraph.PlotCurveItem(
                 x=xs,
                 y=np.nan_to_num(ys),
