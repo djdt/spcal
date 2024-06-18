@@ -289,8 +289,8 @@ class SPCalLimit(object):
                     [halfwin, halfwin],
                     mode="reflect",
                 )
-                mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
-                std = bn.move_std(pad, window_size, min_count=1)[2 * halfwin :]
+                mu = bn.move_mean(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
+                std = bn.move_std(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
 
             threshold = mu + std * z
             iters += 1
@@ -363,7 +363,7 @@ class SPCalLimit(object):
                     [halfwin, halfwin],
                     mode="reflect",
                 )
-                mu = bn.move_mean(pad, window_size, min_count=1)[2 * halfwin :]
+                mu = bn.move_mean(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
 
             sc, _ = poisson_fn(mu, **formula_kws)
             threshold = np.ceil(mu + sc)
