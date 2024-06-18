@@ -649,6 +649,12 @@ class ResultsWidget(QtWidgets.QWidget):
 
             non_zero = np.flatnonzero(data)
 
+            limits = {"mean": np.mean(data[graph_idx[name]]) * modifier}
+            if isinstance(lod, np.ndarray):
+                limits["LOD (mean)"] = np.nanmean(lod) * modifier
+            else:
+                limits["LOD"] = lod * modifier
+
             # Auto SI prefix does not work with squared (or cubed) units
             self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
 
@@ -664,10 +670,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 name=name,
                 draw_fit=self.graph_options["histogram"]["fit"],
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
-                draw_limits={
-                    "mean": np.mean(data[graph_idx[name]]) * modifier,
-                    "LOD": np.mean(lod) * modifier,  # type: ignore
-                },
+                draw_limits=limits,
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_filtered=self.graph_options["histogram"]["draw filtered"],
             )
