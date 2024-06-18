@@ -85,7 +85,7 @@ class ResultsWidget(QtWidgets.QWidget):
                     "volume": None,
                     "cell_concentration": None,
                 },
-                "percentile": 95,
+                "percentile": 95.0,
             },
             "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
             "scatter": {"draw filtered": False, "weighting": "none"},
@@ -427,7 +427,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
-    def setHistPercentile(self, p: int) -> None:
+    def setHistPercentile(self, p: float) -> None:
         self.graph_options["histogram"]["percentile"] = p
         self.drawGraphHist()
 
@@ -569,9 +569,7 @@ class ResultsWidget(QtWidgets.QWidget):
             else self.results.keys()
         )
         graph_data = {
-            k: np.clip(
-                v, 0.0, np.percentile(v, self.graph_options["histogram"]["percentile"])
-            )
+            k: np.maximum(0.0, v)
             for k, v in self.resultsForKey(key).items()
             if k in names
         }
@@ -602,11 +600,14 @@ class ResultsWidget(QtWidgets.QWidget):
         # Limit maximum / minimum number of bins
         data_range = 0.0
         for name, data in graph_data.items():
-            ptp = np.ptp(data[graph_idx[name]])
+            ptp = np.percentile(
+                data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
+            ) - np.amin(data[graph_idx[name]])
             if ptp > data_range:
                 data_range = ptp
 
         if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+            print("returning")
             return
 
         min_bins, max_bins = 10, 1000
@@ -624,9 +625,14 @@ class ResultsWidget(QtWidgets.QWidget):
 
         for i, (name, data) in enumerate(graph_data.items()):
             color = self.colorForName(name)
-            bins = np.arange(
-                data.min() * modifier, data.max() * modifier + bin_width, bin_width
+            max_bin = np.percentile(
+                data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
             )
+            bins = np.arange(
+                data.min() * modifier, max_bin * modifier + bin_width, bin_width
+            )
+            if bins.size == 1:
+                bins = np.array([bins[0], max_bin])
             bins -= bins[0] % bin_width  # align bins
             if self.graph_options["histogram"]["mode"] == "overlay":
                 width = 1.0 / len(graph_data)
@@ -643,6 +649,12 @@ class ResultsWidget(QtWidgets.QWidget):
 
             non_zero = np.flatnonzero(data)
 
+            limits = {"mean": np.mean(data[graph_idx[name]]) * modifier}
+            if isinstance(lod, np.ndarray):
+                limits["LOD (mean)"] = np.nanmean(lod) * modifier
+            else:
+                limits["LOD"] = lod * modifier
+
             # Auto SI prefix does not work with squared (or cubed) units
             self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
 
@@ -658,10 +670,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 name=name,
                 draw_fit=self.graph_options["histogram"]["fit"],
                 fit_visible=self.graph_options["histogram"]["mode"] == "single",
-                draw_limits={
-                    "mean": np.mean(data[graph_idx[name]]) * modifier,
-                    "LOD": np.mean(lod) * modifier,  # type: ignore
-                },
+                draw_limits=limits,
                 limits_visible=self.graph_options["histogram"]["mode"] == "single",
                 draw_filtered=self.graph_options["histogram"]["draw filtered"],
             )

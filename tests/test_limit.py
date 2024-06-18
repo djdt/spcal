@@ -112,6 +112,25 @@ def test_limit_windowed():
     assert lim.detection_threshold.size == x.size
 
 
+def test_limit_windowed_with_nan():
+    y = x.astype(float)
+    y[100:200] = np.nan
+
+    lim = SPCalLimit.fromPoisson(y, window_size=3, max_iters=1)
+    assert lim.params["window"] == 3
+    assert lim.detection_threshold.size == y.size
+    assert np.all(~np.isnan(lim.detection_limit[:100]))
+    assert np.all(np.isnan(lim.detection_limit[100:200]))
+    assert np.all(~np.isnan(lim.detection_limit[200:]))
+
+    lim = SPCalLimit.fromGaussian(y, window_size=3, max_iters=1)
+    assert lim.params["window"] == 3
+    assert lim.detection_threshold.size == y.size
+    assert np.all(~np.isnan(lim.detection_limit[:100]))
+    assert np.all(np.isnan(lim.detection_limit[100:200]))
+    assert np.all(~np.isnan(lim.detection_limit[200:]))
+
+
 def test_limit_from():  # Better way for normality check?
     np.random.seed(987634)
     for lam in np.linspace(1.0, 100.0, 25):
