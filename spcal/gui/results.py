@@ -569,9 +569,6 @@ class ResultsWidget(QtWidgets.QWidget):
             else self.results.keys()
         )
         graph_data = {
-            # k: np.clip(
-            #     v, 0.0, np.percentile(v, self.graph_options["histogram"]["percentile"])
-            # )
             k: np.maximum(0.0, v)
             for k, v in self.resultsForKey(key).items()
             if k in names
@@ -588,8 +585,6 @@ class ResultsWidget(QtWidgets.QWidget):
         if len(graph_data) == 0:
             return
 
-        # TODO zeros are sneaking in
-
         # median FD bin width
         if bin_width is None:
             bin_width = np.median(
@@ -603,7 +598,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 ]
             )
         # Limit maximum / minimum number of bins
-        print(graph_data)
         data_range = 0.0
         for name, data in graph_data.items():
             ptp = np.percentile(
