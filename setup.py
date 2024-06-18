@@ -5,8 +5,8 @@ from setuptools.command.build_ext import new_compiler
 compiler = new_compiler().compiler_type
 
 if compiler == "msvc":
-    extra_compile_args = ["/openmp"]
-    extra_link_args = ["/openmp"]
+    extra_compile_args = ["/openmp:llvm"]
+    extra_link_args = ["/openmp:llvm"]
 else:
     extra_compile_args = ["-fopenmp"]
     extra_link_args = ["-fopenmp"]
