@@ -428,19 +428,11 @@ class SPCalLimit(object):
         # 0.05 counts. If 75% of data is near integer we consider it Poisson, for ToF
         # data only ~ 10% will be.
         elif (
-            np.count_nonzero(is_integer_or_near(low_responses, 0.05))
+            low_responses.size > 0
+            and np.count_nonzero(is_integer_or_near(low_responses, 0.05))
             / low_responses.size
-            > 0.75
+            <= 0.75
         ):
-            return SPCalLimit.fromPoisson(
-                responses,
-                alpha=poisson_kws.get("alpha", 0.001),
-                formula=poisson_kws.get("formula", "formula c"),
-                formula_kws=poisson_kws.get("params", None),
-                window_size=window_size,
-                max_iters=max_iters,
-            )
-        else:
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
@@ -448,6 +440,16 @@ class SPCalLimit(object):
                 sigma=compound_kws.get("sigma", 0.45),
                 max_iters=max_iters,
             )
+
+        # Default to Poisson
+        return SPCalLimit.fromPoisson(
+            responses,
+            alpha=poisson_kws.get("alpha", 0.001),
+            formula=poisson_kws.get("formula", "formula c"),
+            formula_kws=poisson_kws.get("params", None),
+            window_size=window_size,
+            max_iters=max_iters,
+        )
 
     @classmethod
     def fromHighest(
