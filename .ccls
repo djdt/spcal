@@ -1,5 +1,5 @@
 clang
 %c -std=c11
 -Iinclude
--isystem/usr/include/python3.11/
--isystem/usr/lib/python3.11/site-packages/numpy/core/include/
+-isystem/usr/include/python3.12/
+-isystem/usr/lib/python3.12/site-packages/numpy/core/include/
