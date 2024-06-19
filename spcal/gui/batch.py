@@ -101,7 +101,6 @@ def process_data(
         except ValueError:
             pass
 
-    print("results", results)
     # === Calculate results ===
     for name, result in results.items():
         assert inputs[name]["dwelltime"] is not None
