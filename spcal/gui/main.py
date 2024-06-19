@@ -101,7 +101,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         )
         self.action_open_recent = QtGui.QActionGroup(self)
         self.action_open_recent.triggered.connect(
-            lambda a: self.sample.dialogLoadFile(a.text().replace("&",""))
+            lambda a: self.sample.dialogLoadFile(a.text().replace("&", ""))
         )
         self.action_open_reference = create_action(
             "document-open",
