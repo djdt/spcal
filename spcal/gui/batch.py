@@ -87,18 +87,21 @@ def process_data(
     else:
         raise ValueError("unknown calibration mode")
 
-    results = {
-        name: SPCalResult(
-            path,
-            data[name],
-            detections[name],
-            labels,
-            limits[name],
-            calibration_mode=calibration_mode,
-        )
-        for name in detections.dtype.names
-    }
+    results: dict[str, SPCalResult] = {}
+    for name in detections.dtype.names:
+        try:
+            results[name] = SPCalResult(
+                path,
+                data[name],
+                detections[name],
+                labels,
+                limits[name],
+                calibration_mode=calibration_mode,
+            )
+        except ValueError:
+            pass
 
+    print("results", results)
     # === Calculate results ===
     for name, result in results.items():
         assert inputs[name]["dwelltime"] is not None
@@ -111,7 +114,9 @@ def process_data(
         filter_indicies = Filter.filter_results(filters, results)
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[np.in1d(indicies, filter_indicies)]
+            results[name]._indicies = np.intersect1d(
+                indicies, filter_indicies, assume_unique=True
+            )
 
     # Cluster results
     clusters = {}
@@ -134,10 +139,9 @@ def process_data(
         valid = SPCalResult.all_valid_indicies(list(results.values()))
         for name in results:
             indicies = results[name].indicies
-            results[name].indicies = indicies[np.in1d(indicies, valid[filter_indicies])]
-
-        for key in clusters.keys():
-            clusters[key] = clusters[key][filter_indicies]
+            results[name]._indicies = np.intersect1d(
+                indicies, valid[filter_indicies], assume_unique=True
+            )
 
     return results, clusters, times
 
@@ -578,9 +582,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "limit_method": self.options.limit_method.currentText(),
                     "acc_method": self.options.limit_accumulation.currentText(),
                     "limit_params": limit_params.copy(),
-                    "limit_window_size": (self.options.window_size.value() or 0)
-                    if self.options.window_size.isEnabled()
-                    else 0,
+                    "limit_window_size": (
+                        (self.options.window_size.value() or 0)
+                        if self.options.window_size.isEnabled()
+                        else 0
+                    ),
                     "compositions_params": {
                         "distance": self.results.graph_options["composition"][
                             "distance"
