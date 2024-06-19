@@ -228,7 +228,7 @@ class SampleIOWidget(IOWidget):
         limit_str: str,
     ) -> None:
         bg_values = responses[labels == 0]
-        if np.count_nonzero(np.isfinite(bg_values))> 0:
+        if np.count_nonzero(np.isfinite(bg_values)) > 0:
             background, background_std = np.nanmean(bg_values), np.nanstd(bg_values)
         else:
             background, background_std = None, None
