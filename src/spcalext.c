@@ -59,9 +59,10 @@ static PyObject *pairwise_euclidean(PyObject *self, PyObject *args) {
   const double *X = (const double *)PyArray_DATA(Xarray);
   double *D = (double *)PyArray_DATA(Darray);
 
+  npy_intp i, j;
 #pragma omp parallel for shared(X, n, m)
-  for (npy_intp i = 0; i < n; ++i) {
-    for (npy_intp j = i + 1; j < n; ++j) {
+  for (i = 0; i < n; ++i) {
+    for (j = i + 1; j < n; ++j) {
       D[condensed_index(i, j, n)] = euclidean(X, i, j, m);
     }
   }
@@ -145,8 +146,9 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
 
   // We use Z[:, 2] as M, tracking merged
   // Init arrays (ZD = 0), D = inf
+  npy_intp i;
 #pragma omp parallel for
-  for (npy_intp i = 0; i < n - 1; ++i) {
+  for (i = 0; i < n - 1; ++i) {
     D[i] = INFINITY;
     Z3[i].index = i;
   }
@@ -162,8 +164,9 @@ static PyObject *mst_linkage(PyObject *self, PyObject *args) {
       double tmin = min;
       int ty = y;
 
+      int j;
 #pragma omp for
-      for (int j = 0; j < n; ++j) {
+      for (j = 0; j < n; ++j) {
         if (M[j] == 1)
           continue;
 
