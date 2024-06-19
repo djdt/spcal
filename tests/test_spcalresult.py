@@ -40,6 +40,18 @@ def test_spcalresult():
     assert not result.canCalibrate("volume")
 
 
+def test_spcalresult_no_detections():
+    result = SPCalResult(
+        "test.csv",
+        signal,
+        detections=np.array([]),
+        labels=labels,
+        limits=SPCalLimit(1.0, 5.0, "Limit", {}),
+    )
+    assert result.number == 0
+    assert result.number_error == 0
+
+
 def test_spcalresult_from_mass_response():
     result = SPCalResult(
         "test.csv",
@@ -120,14 +132,14 @@ def test_spcalresult_from_nebulisation_efficiency():
 
 
 def test_spcalresult_errors():
-    with pytest.raises(ValueError):
-        SPCalResult(
-            "",
-            signal,
-            detections=np.array([]),
-            labels=np.zeros_like(signal),
-            limits=SPCalLimit(1.0, 1.0, "", {}),
-        )
+    # with pytest.raises(ValueError):
+    #     SPCalResult(
+    #         "",
+    #         signal,
+    #         detections=np.array([]),
+    #         labels=np.zeros_like(signal),
+    #         limits=SPCalLimit(1.0, 1.0, "", {}),
+    #     )
     with pytest.raises(ValueError):
         SPCalResult(
             "",
