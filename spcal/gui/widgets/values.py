@@ -1,4 +1,5 @@
 """Widget that displays a value with formatting."""
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets.validcolorle import ValidColorLineEdit
@@ -107,12 +108,12 @@ class ValueWidget(ValidColorLineEdit):
 
         self.ensurePolished()
 
-        fm = self.fontMetrics()
-
         panel = QtWidgets.QStyleOptionFrame()
         self.initStyleOption(panel)
+        fm = panel.fontMetrics
+
         rect = self.style().subElementRect(
-            QtWidgets.QStyle.SubElement.SE_LineEditContents, panel
+            QtWidgets.QStyle.SubElement.SE_LineEditContents, panel, self
         )
         rect = rect.marginsRemoved(self.textMargins())
         rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
