@@ -227,8 +227,11 @@ class SampleIOWidget(IOWidget):
         lod: float,
         limit_str: str,
     ) -> None:
-        background = np.nanmean(responses[labels == 0])
-        background_std = np.nanstd(responses[labels == 0])
+        bg_values = responses[labels == 0]
+        if np.count_nonzero(np.isfinite(bg_values))> 0:
+            background, background_std = np.nanmean(bg_values), np.nanstd(bg_values)
+        else:
+            background, background_std = None, None
 
         count = np.count_nonzero(detections)
 
