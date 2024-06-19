@@ -150,8 +150,8 @@ class SPCalResult(object):
         inputs_kws: dict[str, float] | None = None,
         calibration_mode: str = "efficiency",
     ):
-        if detections.size == 0:
-            raise ValueError("detections size is zero")
+        # if detections.size == 0:
+        #     raise ValueError("detections size is zero")
         if calibration_mode not in ["efficiency", "mass response"]:
             raise ValueError("unknown calibration mode")
 
