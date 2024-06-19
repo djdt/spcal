@@ -607,7 +607,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 data_range = ptp
 
         if data_range == 0.0:  # prevent drawing if no range, i.e. one point
-            print("returning")
             return
 
         min_bins, max_bins = 10, 1000
