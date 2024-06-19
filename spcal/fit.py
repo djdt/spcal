@@ -1,4 +1,5 @@
 """Distribution fitting calculations."""
+
 from typing import Callable
 
 import numpy as np
@@ -11,10 +12,12 @@ def normal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
 
 def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
     """Probabilty density function of a log-normal distribution."""
+    with np.errstate(invalid="ignore"):
+        logx = np.log(x)
     return (
         1.0
         / (x * sigma * np.sqrt(2.0 * np.pi))
-        * np.exp(-0.5 * ((np.log(x) - mu) / sigma) ** 2)
+        * np.exp(-0.5 * ((logx - mu) / sigma) ** 2)
     )
 
 
