@@ -196,6 +196,9 @@ def export_single_particle_results(
         fp.write("#\n")
 
     def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+        if len(results) == 0:
+            return
+
         fp.write(f"# Detection results,{','.join(results.keys())}\n")
 
         write_if_exists(fp, results, lambda r: r.number, "# Particle number,")
@@ -274,6 +277,8 @@ def export_single_particle_results(
         fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
     ) -> None:
         from spcal.cluster import cluster_information, prepare_data_for_clustering
+        if len(results) == 0:
+            return
 
         keys = ",".join(f"{key},error" for key in results.keys())
         fp.write(f"# Peak composition,count,{keys}\n")
