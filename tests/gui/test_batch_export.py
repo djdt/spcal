@@ -55,6 +55,55 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
     assert tmp.stat().st_size > 0
 
 
+def test_batch_export_no_detections(tmp_path: Path, qtbot: QtBot):
+    window = SPCalWindow()
+    qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
+
+    assert not window.action_open_batch.isEnabled()
+
+    path = Path(__file__).parent.parent.joinpath("data/text/tofwerk_export_au.csv")
+    bg_path = Path(__file__).parent.parent.joinpath(
+        "data/text/tofwerk_export_au_bg.csv"
+    )
+
+    data = read_single_particle_file(path, columns=(2,))
+
+    with qtbot.wait_signal(window.sample.detectionsChanged):
+        window.sample.loadData(
+            data,
+            {
+                "path": path,
+                "columns": [2],
+                "ignores": [0, 1],
+                "first line": 0,
+                "names": {data.dtype.names[0]: data.dtype.names[0]},
+                "cps": False,
+                "delimiter": ",",
+                "importer": "text",
+                "dwelltime": 1e-4,
+            },
+        )
+
+    assert window.action_open_batch.isEnabled()
+
+    tmp = tmp_path.joinpath("batch_export_bg.csv")
+    dlg = window.dialogBatchProcess()
+    qtbot.add_widget(dlg)
+    dlg.files.addItems([str(bg_path)])
+
+    dlg.output_name.setText(tmp.name)
+    dlg.output_dir.setText(str(tmp_path))
+
+    assert not tmp.exists()
+
+    with qtbot.wait_signal(dlg.processingFinshed):
+        dlg.start()
+
+    assert tmp.stat().st_size > 0
+
+
 def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
     # Todo: need to make a better (more data) Nu test data file
     window = SPCalWindow()

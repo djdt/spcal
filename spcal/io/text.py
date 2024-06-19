@@ -257,7 +257,7 @@ def export_single_particle_results(
         def ufunc_or_none(
             r: SPCalResult, ufunc, key: str, factor: float = 1.0
         ) -> float | None:
-            if not r.canCalibrate(key):
+            if not r.canCalibrate(key) or r.detections.size == 0:
                 return None
             return ufunc(r.calibrated(key)) / factor
 
