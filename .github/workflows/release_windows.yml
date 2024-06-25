@@ -19,6 +19,7 @@ jobs:
     - name: Install project
       run: |
         pip install . -v
+        python setup.py build_ext --inplace
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
