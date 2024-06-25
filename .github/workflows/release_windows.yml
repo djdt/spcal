@@ -18,7 +18,7 @@ jobs:
           pip install wheel pyinstaller
     - name: Install project
       run: |
-        pip install .
+        pip install . -v
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
