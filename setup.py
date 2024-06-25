@@ -6,7 +6,7 @@ compiler = new_compiler().compiler_type
 
 if compiler == "msvc":
     extra_compile_args = ["/openmp:llvm"]
-    extra_link_args = ["/openmp:llvm"]
+    extra_link_args = []
 else:
     extra_compile_args = ["-fopenmp"]
     extra_link_args = ["-fopenmp"]
