@@ -18,7 +18,7 @@ jobs:
           pip install wheel pyinstaller
     - name: Install project
       run: |
-        pip install .
+        pip install . -v
         python setup.py build_ext --inplace
     - name: Build exec
       run: |
