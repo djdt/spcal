@@ -135,26 +135,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
 
   auto z1 = std::vector<int>(n - 1);
   auto z2 = std::vector<int>(n - 1);
-  // auto Z1 = py::array_t<int>(n - 1);
-  // auto Z2 = py::array_t<int>(n - 1);
-  // auto z1 = Z1.mutable_unchecked();
-  // auto z2 = Z2.mutable_unchecked();
-
-  // auto zd = std::vector<double>(n - 1);
   auto zd_idx = std::vector<std::pair<double, int>>(n - 1);
-
-  // auto zd = ZD.mutable_unchecked<1>();
-  //
-  // std::array<double>(ZD.request().ptr, n);
-
-  // auto idx = std::vector<int>(n);
-  // std::iota(idx.begin(), idx.end(), 0);
-  // std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i)
-  // {
-  //   z(i, 2) = i;
-  //   zd(i) = std::numeric_limits<double>::infinity();
-  // });
-  // zd(n - 1) = std::numeric_limits<double>::infinity();
 
   auto M = std::vector<bool>(n);
   auto D = std::vector<double>(n);
@@ -166,28 +147,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     double min = std::numeric_limits<double>::infinity();
     M[x] = true;
 
-    // std::mutex m;
-    // auto jdx = std::ranges::views::iota(0, n);
-    // std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
-    //   double jmin = min;
-    //   int jy = y;
-    //
-    //   if (M[j])
-    //     return;
-    //
-    //   double dist = dists[condensed_index(x, j, n)];
-    //   if (D[j] > dist)
-    //     D[j] = dist;
-    //   if (D[j] < jmin) {
-    //     jy = j;
-    //     jmin = D[j];
-    //   }
-    //   std::lock_guard<std::mutex> lock(m);
-    //   if (jmin < min) {
-    //     min = jmin;
-    //     y = jy;
-    //   }
-    // });
+    std::mutex m;
+    auto jdx = std::ranges::views::iota(0, n);
     for (int j = 0; j < n; ++j) {
       if (M[j])
         continue;
@@ -200,6 +161,46 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
         y = j;
       }
     }
+    // auto futures = std::vector<std::future<void>>(n);
+    // for (int j = 0; j < n; ++j) {
+    //   std::async(std::launch::async, [&]() {
+    //     double jmin = min;
+    //     int jy = y;
+    //
+    //     if (M[j])
+    //       return;
+    //
+    //     double dist = dists[condensed_index(x, j, n)];
+    //     if (D[j] > dist)
+    //       D[j] = dist;
+    //     if (D[j] < jmin) {
+    //       jy = j;
+    //       jmin = D[j];
+    //     }
+    //     std::lock_guard<std::mutex> lock(m);
+    //     if (jmin < min) {
+    //       min = jmin;
+    //       y = jy;
+    //     }
+    //   });
+    // }
+    // std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
+    //   if (M[j])
+    //     return;
+    //
+    //   double dist = dists[condensed_index(x, j, n)];
+    //   if (D[j] > dist)
+    //     D[j] = dist;
+    //   if (D[j] < min) {
+    //     min = D[j];
+    //     y = j;
+    //   }
+    //   // std::lock_guard<std::mutex> lock(m);
+    // });
+    // if (jmin < min) {
+    //   min = jmin;
+    //   y = jy;
+    // }
 
     z1[i] = x;
     z2[i] = y;
