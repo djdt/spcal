@@ -44,7 +44,7 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   return dists;
 }
 
-inline int find_root(std::vector<int> parents, int x) {
+inline int find_root(std::vector<int> &parents, int x) {
   int p = x;
   while (parents[x] != x) {
     x = parents[x];
@@ -56,7 +56,7 @@ inline int find_root(std::vector<int> parents, int x) {
   return x;
 }
 
-void label(py::array_t<int> Z, int n) {
+void label(py::array_t<int> &Z, int n) {
   if (Z.ndim() != 2 || Z.shape(1) != 2)
     throw std::runtime_error("Z must have shape (n, 2)");
 
@@ -106,7 +106,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     for (int j = 0; j < n; ++j) {
       if (M[j])
         continue;
-      double dist = dists[condensed_index(x, j, n)];
+      double dist = dists(condensed_index(x, j, n));
       if (D[j] > dist) {
         D[j] = dist;
       }
@@ -190,7 +190,16 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     zd(i) = zd_idx[i].first;
   }
 
+  for (int i = 0; i < 10; ++i) {
+    std::cout << z(i, 0) << ", ";
+  }
+  std::cout << std::endl;
+
   label(Z, n);
+  for (int i = 0; i < 10; ++i) {
+    std::cout << z(i, 0) << ", ";
+  }
+  std::cout << std::endl;
 
   return py::make_tuple(Z, ZD);
 }
