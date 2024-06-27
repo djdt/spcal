@@ -43,57 +43,7 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   });
   return dists;
 }
-// inline int find_root(int *parents, int x) {
-//   int p = x;
-//   while (parents[x] != x)
-//     x = parents[x];
-//
-//   while (parents[p] != x) {
-//     p = parents[p];
-//     parents[p] = x;
-//   }
-//   return x;
-// }
-//
-// inline int merge_roots(int *parents, int *sizes, int n, int x, npy_int y)
-// {
-//   int size = sizes[x] + sizes[y];
-//   sizes[n] = size;
-//   parents[x] = n;
-//   parents[y] = n;
-//   return size;
-// }
-//
-// void label(int *Z, int n) {
-//   int *parents = malloc((2 * n - 1) * sizeof(int));
-//   int *sizes = malloc((2 * n - 1) * sizeof(int));
-//   int next = n;
-//   int x, y, x_root, y_root;
-//   for (int i = 0; i < 2 * n - 1; ++i) {
-//     parents[i] = i;
-//     sizes[i] = 1;
-//   }
-//
-//   for (npy_intp i = 0; i < n - 1; ++i) {
-//     x = Z[i * 3];
-//     y = Z[i * 3 + 1];
-//     x_root = find_root(parents, x);
-//     y_root = find_root(parents, y);
-//     if (x_root < y_root) {
-//       Z[i * 3] = x_root;
-//       Z[i * 3 + 1] = y_root;
-//     } else {
-//       Z[i * 3] = y_root;
-//       Z[i * 3 + 1] = x_root;
-//     }
-//     Z[i * 3 + 2] = merge_roots(parents, sizes, next, x_root, y_root);
-//     next += 1;
-//   }
-//
-//   free(parents);
-//   free(sizes);
-// }
-//
+
 inline int find_root(std::vector<int> parents, int x) {
   int p = x;
   while (parents[x] != x) {
@@ -105,7 +55,11 @@ inline int find_root(std::vector<int> parents, int x) {
   }
   return x;
 }
+
 void label(py::array_t<int> Z, int n) {
+  if (Z.ndim() != 2 || Z.shape(1) != 2)
+    throw std::runtime_error("Z must have shape (n, 2)");
+
   auto z = Z.mutable_unchecked<2>();
 
   auto parents = std::vector<int>(2 * n - 1);
@@ -129,6 +83,7 @@ void label(py::array_t<int> Z, int n) {
     parents[y_root] = n + i;
   }
 }
+
 py::tuple mst_linkage(py::array_t<double> Dists, int n) {
 
   auto dists = Dists.unchecked<1>();
@@ -138,6 +93,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   auto zd_idx = std::vector<std::pair<double, int>>(n - 1);
 
   auto M = std::vector<bool>(n);
+  std::fill(std::execution::par_unseq, M.begin(), M.end(), false);
   auto D = std::vector<double>(n);
   std::fill(std::execution::par_unseq, D.begin(), D.end(),
             std::numeric_limits<double>::infinity());
@@ -147,8 +103,6 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     double min = std::numeric_limits<double>::infinity();
     M[x] = true;
 
-    std::mutex m;
-    auto jdx = std::ranges::views::iota(0, n);
     for (int j = 0; j < n; ++j) {
       if (M[j])
         continue;
@@ -184,18 +138,30 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     //     }
     //   });
     // }
-    // std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
+    // std::atomic<double> jmin = min;
+    // std::atomic<int> jy = y;
+    // std::mutex m;
+    // auto jdx = std::ranges::views::iota(0, n);
+    // std::for_each(std::execution::par, jdx.begin(), jdx.end(), [&](int j) {
     //   if (M[j])
     //     return;
     //
     //   double dist = dists[condensed_index(x, j, n)];
-    //   if (D[j] > dist)
-    //     D[j] = dist;
-    //   if (D[j] < min) {
-    //     min = D[j];
-    //     y = j;
+    //   if (D[j] < dist) {
+    //     dist = D[j];
     //   }
-    //   // std::lock_guard<std::mutex> lock(m);
+    //   // if (D[j] > dist) {
+    //   //   std::lock_guard<std::mutex> lock(m);
+    //   //   D[j] = dist;
+    //   // }
+    //   if (dist < jmin) {
+    //     jmin = dist;
+    //     jy = j;
+    //   }
+    //   // if (D[j] < jmin) {
+    //   //   jy = j;
+    //   //   jmin = D[j];
+    //   // }
     // });
     // if (jmin < min) {
     //   min = jmin;
@@ -206,7 +172,6 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     z2[i] = y;
     zd_idx[i].first = min;
     zd_idx[i].second = i;
-    // zd[i] = min;
     x = y;
   }
 
@@ -232,6 +197,11 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
 
 py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
                                      double cluster_dist) {
+  if (Z.ndim() != 2 || Z.shape(1) != 2)
+    throw std::runtime_error("Z must have shape (n, 2)");
+  if (Z.shape(0) != ZD.shape(0))
+    throw std::runtime_error("ZD must have same shape as Z[:, 0]");
+
   py::ssize_t n = Z.shape(0) + 1;
   auto max_dist = std::vector<double>(n - 1);
   // maximum distance for each cluster
