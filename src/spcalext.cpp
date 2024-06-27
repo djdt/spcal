@@ -3,7 +3,9 @@
 
 #include <algorithm>
 #include <execution>
+#include <future>
 #include <iostream>
+#include <mutex>
 #include <numeric>
 #include <ranges>
 
@@ -29,8 +31,7 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   auto d = dists.mutable_unchecked<1>();
 
   auto idx = std::ranges::views::iota(static_cast<py::ssize_t>(0), n);
-  std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i)
-  {
+  std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i) {
     for (ssize_t j = i + 1; j < n; ++j) {
       double sum = 0.0;
       for (py::ssize_t k = 0; k < m; ++k) {
@@ -93,288 +94,228 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
 //   free(sizes);
 // }
 //
-py::array_t<double> mst_linkage(py::array_t<double> dists, int n) {
-  auto Z = py::array_t<int>({n - 1, 3});
-  auto ZD = py::array_t<double>(n, INFINITY);
-
-  // auto Z1 = std::vector<int>(n-1);
-  // auto Z2 = std::vector<int>(n-1);
-  //
-  auto Z3 = Z[py::make_tuple(py::slice(0, n - 1, 1), 0)];
-  auto z = Z.mutable_unchecked<3>();
-  for (py::ssize_t i = 0; i < Z.shape(0); ++i) {
-    z(i, 2) = static_cast<int>(i);
+inline int find_root(std::vector<int> parents, int x) {
+  int p = x;
+  while (parents[x] != x) {
+    x = parents[x];
   }
-  std::fill(std::execution::par_unseq, Z3.begin(), Z3.end(), 0);
+  while (parents[p] != x) {
+    p = parents[p];
+    parents[p] = x;
+  }
+  return x;
 }
-// static PyObject *mst_linkage(PyObject *self, PyObject *args) {
-//   PyObject *in;
-//   PyArrayObject *PDarray;
-//   npy_intp n;
-//
-//   if (!PyArg_ParseTuple(args, "On:mst_linkage", &in, &n))
-//     return nullptr;
-//
-//   PDarray =
-//       (PyArrayObject *)PyArray_FROM_OTF(in, NPY_DOUBLE,
-//       NPY_ARRAY_IN_ARRAY);
-//   if (!PDarray) {
-//     return nullptr;
-//   }
-//   // m = n*(n+1)/2
-//   // npy_intp n = 1 + (-1 + (int)sqrt(1 + 8 * PyArray_DIM(PDarray, 0))) /
-//   2;
-//
-//   const double *PD = (const double *)PyArray_DATA(PDarray);
-//   int *Z1 = malloc((n - 1) * sizeof(int));
-//   int *Z2 = malloc((n - 1) * sizeof(int));
-//   struct argsort *Z3 = malloc((n - 1) * sizeof(struct argsort));
-//
-//   uint8_t *M = calloc(n, sizeof(uint8_t));
-//   double *D = malloc(n * sizeof(double));
-//
-//   // We use Z[:, 2] as M, tracking merged
-//   // Init arrays (ZD = 0), D = inf
-//   npy_intp i;
-// #pragma omp parallel for
-//   for (i = 0; i < n - 1; ++i) {
-//     D[i] = INFINITY;
-//     Z3[i].index = i;
-//   }
-//   D[n - 1] = INFINITY;
-//
-//   int x = 0, y = 0;
-//   for (int i = 0; i < n - 1; ++i) {
-//     double min = INFINITY;
-//     M[x] = 1;
-//
-// #pragma omp parallel shared(D, PD, M)
-//     {
-//       double tmin = min;
-//       int ty = y;
-//
-//       int j;
-// #pragma omp for
-//       for (j = 0; j < n; ++j) {
-//         if (M[j] == 1)
-//           continue;
-//
-//         double dist = PD[condensed_index(x, j, n)];
-//
-//         if (D[j] > dist)
-//           D[j] = dist;
-//         if (D[j] < tmin) {
-//           ty = j;
-//           tmin = D[j];
-//         }
-//       }
-// #pragma omp critical
-//       {
-//         if (tmin < min) {
-//           min = tmin;
-//           y = ty;
-//         }
-//       }
-//     }
-//
-//     Z1[i] = x;
-//     Z2[i] = y;
-//     Z3[i].value = min;
-//     x = y;
-//   }
-//
-//   free(M);
-//   free(D);
-//   Py_DECREF(PDarray);
-//
-//   // Sort
-//   quicksort_argsort(Z3, n - 1);
-//
-//   PyArrayObject *Zarray, *ZDarray;
-//   npy_intp Zdims[] = {n - 1, 3};
-//   npy_intp ZDdims[] = {n - 1};
-//   Zarray = (PyArrayObject *)PyArray_SimpleNew(2, Zdims, NPY_INT);
-//   ZDarray = (PyArrayObject *)PyArray_SimpleNew(1, ZDdims, NPY_DOUBLE);
-//
-//   int *Z = (int *)PyArray_DATA(Zarray);
-//   double *ZD = (double *)PyArray_DATA(ZDarray);
-//
-//   for (int i = 0; i < n - 1; ++i) {
-//     Z[i * 3] = Z1[Z3[i].index];
-//     Z[i * 3 + 1] = Z2[Z3[i].index];
-//     ZD[i] = Z3[i].value;
-//   }
-//
-//   free(Z1);
-//   free(Z2);
-//   free(Z3);
-//
-//   label(Z, n);
-//
-//   return PyTuple_Pack(2, Zarray, ZDarray);
-// }
-//
-// py::array_t<double> cluster_by_distance(py::array_t<int> Z,
-// py::array_t<double> dists) {
-//     // maximum distance for each cluster
-//   double *MD = malloc((n - 1) * sizeof(double));
-//     std::vector<double> max_dist(n - 1);
-//   int *N = malloc(n * sizeof(int));            // current nodes
-//   uint8_t *V = calloc(n * 2, sizeof(uint8_t)); // visted nodes
-//
-//   double max;
-//   int root, i, j, k = 0;
-//   N[0] = 2 * n - 2;
-//   while (k >= 0) {
-//     root = N[k] - n;
-//     i = Z[root * 3];
-//     j = Z[root * 3 + 1];
-//
-//     if (i >= n && V[i] != 1) {
-//       V[i] = 1;
-//       N[++k] = i;
-//       continue;
-//     }
-//     if (j >= n && V[j] != 1) {
-//       V[j] = 1;
-//       N[++k] = j;
-//       continue;
-//     }
-//
-//     max = ZD[root];
-//
-//     if (i >= n && MD[i - n] > max)
-//       max = MD[i - n];
-//     if (j >= n && MD[j - n] > max)
-//       max = MD[j - n];
-//     MD[root] = max;
-//
-//     k -= 1;
-//   }
-// }
-// static PyObject *cluster_by_distance(PyObject *self, PyObject *args) {
-//   PyObject *in[2];
-//   PyArrayObject *Zarray, *ZDarray, *Tarray;
-//   double cluster_dist;
-//
-//   if (!PyArg_ParseTuple(args, "OOd:cluster", &in[0], &in[1],
-//   &cluster_dist))
-//     return nullptr;
-//   Zarray =
-//       (PyArrayObject *)PyArray_FROM_OTF(in[0], NPY_INT,
-//       NPY_ARRAY_IN_ARRAY);
-//   if (!Zarray)
-//     return nullptr;
-//   if (PyArray_NDIM(Zarray) != 2 || PyArray_DIM(Zarray, 1) != 3) {
-//     PyErr_SetString(PyExc_ValueError, "Z must be be of shape (n, 3).");
-//     Py_DECREF(Zarray);
-//     return nullptr;
-//   }
-//
-//   ZDarray =
-//       (PyArrayObject *)PyArray_FROM_OTF(in[1], NPY_DOUBLE,
-//       NPY_ARRAY_IN_ARRAY);
-//   if (!ZDarray) {
-//     Py_DECREF(Zarray);
-//     return nullptr;
-//   }
-//
-//   int n = PyArray_DIM(Zarray, 0) + 1;
-//
-//   int *Z = (int *)PyArray_DATA(Zarray);
-//   const double *ZD = (const double *)PyArray_DATA(ZDarray);
-//
-//   // Get the maximum distance for each cluster
-//   double *MD = malloc((n - 1) * sizeof(double));
-//   int *N = malloc(n * sizeof(int));            // current nodes
-//   uint8_t *V = calloc(n * 2, sizeof(uint8_t)); // visted nodes
-//
-//   double max;
-//   int root, i, j, k = 0;
-//   N[0] = 2 * n - 2;
-//   while (k >= 0) {
-//     root = N[k] - n;
-//     i = Z[root * 3];
-//     j = Z[root * 3 + 1];
-//
-//     if (i >= n && V[i] != 1) {
-//       V[i] = 1;
-//       N[++k] = i;
-//       continue;
-//     }
-//     if (j >= n && V[j] != 1) {
-//       V[j] = 1;
-//       N[++k] = j;
-//       continue;
-//     }
-//
-//     max = ZD[root];
-//
-//     if (i >= n && MD[i - n] > max)
-//       max = MD[i - n];
-//     if (j >= n && MD[j - n] > max)
-//       max = MD[j - n];
-//     MD[root] = max;
-//
-//     k -= 1;
-//   }
-//
-//   // cluster nodes by distance
-//   npy_intp dims[] = {n};
-//   Tarray = (PyArrayObject *)PyArray_ZEROS(1, dims, NPY_INT, 0);
-//   int *T = (int *)PyArray_DATA(Tarray);
-//   memset(V, 0, n * 2 * sizeof(uint8_t));
-//
-//   int cluster_leader = -1, cluster_number = 0;
-//
-//   k = 0;
-//   N[0] = 2 * n - 2;
-//   while (k >= 0) {
-//     root = N[k] - n;
-//     i = Z[root * 3];
-//     j = Z[root * 3 + 1];
-//
-//     if (cluster_leader == -1 && MD[root] <= cluster_dist) {
-//       cluster_leader = root;
-//       cluster_number += 1;
-//     }
-//
-//     if (i >= n && V[i] != 1) {
-//       V[i] = 1;
-//       N[++k] = i;
-//       continue;
-//     }
-//     if (j >= n && V[j] != 1) {
-//       V[j] = 1;
-//       N[++k] = j;
-//       continue;
-//     }
-//     if (i < n) {
-//       if (cluster_leader == -1)
-//         cluster_number += 1;
-//       T[i] = cluster_number;
-//     }
-//     if (j < n) {
-//       if (cluster_leader == -1)
-//         cluster_number += 1;
-//       T[j] = cluster_number;
-//     }
-//     if (cluster_leader == root)
-//       cluster_leader = -1;
-//     k -= 1;
-//   }
-//
-//   free(MD);
-//   free(N);
-//   free(V);
-//
-//   Py_DECREF(Zarray);
-//   Py_DECREF(ZDarray);
-//
-//   return (PyObject *)Tarray;
-// }
-//
-//
+void label(py::array_t<int> Z, int n) {
+  auto z = Z.mutable_unchecked<2>();
+
+  auto parents = std::vector<int>(2 * n - 1);
+  std::iota(parents.begin(), parents.end(), 0);
+  auto sizes = std::vector<int>(2 * n - 1);
+  std::fill(std::execution::par_unseq, sizes.begin(), sizes.end(), 1);
+
+  for (int i = 0; i < n - 1; ++i) {
+    int x_root = find_root(parents, z(i, 0));
+    int y_root = find_root(parents, z(i, 1));
+    if (x_root < y_root) {
+      z(i, 0) = x_root;
+      z(i, 1) = y_root;
+    } else {
+      z(i, 0) = y_root;
+      z(i, 1) = x_root;
+    }
+    // merge roots
+    sizes[n + i] = sizes[x_root] + sizes[y_root];
+    parents[x_root] = n + i;
+    parents[y_root] = n + i;
+  }
+}
+py::tuple mst_linkage(py::array_t<double> Dists, int n) {
+
+  auto dists = Dists.unchecked<1>();
+
+  // auto z1 = std::vector<int>(n - 1);
+  // auto z2 = std::vector<int>(n - 1);
+  auto Z1 = py::array_t<int>(n - 1);
+  auto Z2 = py::array_t<int>(n - 1);
+  auto z1 = Z1.mutable_unchecked();
+  auto z2 = Z2.mutable_unchecked();
+
+  // auto zd = std::vector<double>(n - 1);
+  auto zd_idx = std::vector<std::pair<double, int>>(n - 1);
+
+  // auto zd = ZD.mutable_unchecked<1>();
+  //
+  // std::array<double>(ZD.request().ptr, n);
+
+  // auto idx = std::vector<int>(n);
+  // std::iota(idx.begin(), idx.end(), 0);
+  // std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i)
+  // {
+  //   z(i, 2) = i;
+  //   zd(i) = std::numeric_limits<double>::infinity();
+  // });
+  // zd(n - 1) = std::numeric_limits<double>::infinity();
+
+  auto M = std::vector<bool>(n);
+  auto D = std::vector<double>(n);
+  std::fill(std::execution::par_unseq, D.begin(), D.end(),
+            std::numeric_limits<double>::infinity());
+
+  int x = 0, y = 0;
+  for (int i = 0; i < n - 1; ++i) {
+    double min = std::numeric_limits<double>::infinity();
+    M[x] = true;
+
+    // std::mutex m;
+    // auto jdx = std::ranges::views::iota(0, n);
+    // std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
+    //   double jmin = min;
+    //   int jy = y;
+    //
+    //   if (M[j])
+    //     return;
+    //
+    //   double dist = dists[condensed_index(x, j, n)];
+    //   if (D[j] > dist)
+    //     D[j] = dist;
+    //   if (D[j] < jmin) {
+    //     jy = j;
+    //     jmin = D[j];
+    //   }
+    //   std::lock_guard<std::mutex> lock(m);
+    //   if (jmin < min) {
+    //     min = jmin;
+    //     y = jy;
+    //   }
+    // });
+    for (int j = 0; j < n; ++j) {
+      if (M[j])
+        continue;
+      double dist = dists[condensed_index(x, j, n)];
+      if (D[j] > dist) {
+        D[j] = dist;
+      }
+      if (D[j] < min) {
+        min = D[j];
+        y = j;
+      }
+    }
+
+    z1(i) = x;
+    z2(i) = y;
+    zd_idx[i].first = min;
+    zd_idx[i].second = i;
+    // zd[i] = min;
+    x = y;
+  }
+
+  std::sort(std::execution::par_unseq, zd_idx.begin(), zd_idx.end(),
+            [](std::pair<double, int> a, std::pair<double, int> b) {
+              return a.first < b.first;
+            });
+  auto Z = py::array_t<int>({n - 1, 2});
+  auto z = Z.mutable_unchecked<2>();
+  auto ZD = py::array_t<double>(n - 1);
+  auto zd = ZD.mutable_unchecked<1>();
+
+  for (int i = 0; i < n - 1; ++i) {
+    z(i, 0) = z1(zd_idx[i].second);
+    z(i, 1) = z2(zd_idx[i].second);
+    zd(i) = zd_idx[i].first;
+  }
+
+  label(Z, n);
+
+  return py::make_tuple(Z, ZD);
+}
+
+py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
+                                     double cluster_dist) {
+  py::ssize_t n = Z.shape(0) + 1;
+  auto max_dist = std::vector<double>(n - 1);
+  // maximum distance for each cluster
+  auto nodes = std::vector<int>(n);
+  auto visited = std::vector<bool>(n * 2);
+  std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
+
+  auto z = Z.unchecked();
+  auto zd = ZD.unchecked();
+
+  nodes[0] = 2 * n - 2;
+  int k = 0;
+  while (k >= 0) {
+    int root = nodes[k] - n;
+    int i = z(root, 0);
+    int j = z(root, 1);
+
+    if (i >= n && !visited[i]) {
+      visited[i] = true;
+      nodes[++k] = i;
+      continue;
+    }
+    if (j >= n && !visited[j]) {
+      visited[j] = 1;
+      nodes[++k] = j;
+      continue;
+    }
+
+    double max = zd(root);
+
+    if (i >= n && max_dist[i - n] > max)
+      max = max_dist[i - n];
+    if (j >= n && max_dist[j - n] > max)
+      max = max_dist[j - n];
+    max_dist[root] = max;
+
+    k -= 1;
+  }
+
+  auto T = py::array_t<int>(n);
+  auto Tbuf = T.request();
+  memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
+  auto t = T.mutable_unchecked();
+
+  std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
+
+  int cluster_leader = -1, cluster_number = 0;
+  nodes[0] = 2 * n - 2;
+  k = 0;
+  while (k >= 0) {
+    int root = nodes[k] - n;
+    int i = z(root, 0);
+    int j = z(root, 1);
+
+    if (cluster_leader == -1 && max_dist[root] <= cluster_dist) {
+      cluster_leader = root;
+      cluster_number += 1;
+    }
+
+    if (i >= n && visited[i] != 1) {
+      visited[i] = 1;
+      nodes[++k] = i;
+      continue;
+    }
+    if (j >= n && visited[j] != 1) {
+      visited[j] = 1;
+      nodes[++k] = j;
+      continue;
+    }
+    if (i < n) {
+      if (cluster_leader == -1)
+        cluster_number += 1;
+      t(i) = cluster_number;
+    }
+    if (j < n) {
+      if (cluster_leader == -1)
+        cluster_number += 1;
+      t(j) = cluster_number;
+    }
+    if (cluster_leader == root)
+      cluster_leader = -1;
+    k -= 1;
+  }
+  return T;
+}
 
 py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
   py::buffer_info vbuf = values.request(), rbuf = regions.request();
@@ -385,7 +326,6 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
     throw std::runtime_error("regions must have shape (n, 2)");
 
   auto argmax = py::array_t<int>(rbuf.shape[0]);
-  py::buffer_info mbuf = argmax.request();
 
   auto v = values.unchecked<1>();
   auto r = regions.unchecked<2>();
@@ -403,27 +343,15 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
   return argmax;
 }
 
-void tester(py::array_t<double> x) {
-  std::cout << x.size() << std::endl;
-  for (auto &y : x) {
-    std::cout << "[ ";
-    for (auto &z : y) {
-      std::cout << z.cast<double>() << ", " << std::endl;
-    }
-    std::cout << "]" << std::endl;
-  }
-}
-
 PYBIND11_MODULE(spcalext, mod) {
   mod.doc() = "extension module for SPCal.";
 
-  mod.def("tester", &tester, "test");
   mod.def("pairwise_euclidean", &pairwise_euclidean,
           "Calculates the euclidean distance for an array");
-  // mod.def("mst_linkage", &mst_linkage,
-  //         "Return the minimum-spanning-tree linkage.");
-  // mod.def("cluster_by_distance", &cluster_by_distance,
-  //         "Cluster using MST linkage.");
+  mod.def("mst_linkage", &mst_linkage,
+          "Return the minimum-spanning-tree linkage.");
+  mod.def("cluster_by_distance", &cluster_by_distance,
+          "Cluster using MST linkage.");
   mod.def("maxima", &maxima,
           "Calculates to maxima between pairs of start and end positions.");
 }

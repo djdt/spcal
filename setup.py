@@ -5,6 +5,7 @@ spcalext = Pybind11Extension(
     "spcal.lib.spcalext",
     sources=["src/spcalext.cpp"],
     cxx_std=23,
+    extra_link_args=["-ltbb"],
 )
 
 setup(
