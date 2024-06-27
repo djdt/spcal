@@ -133,12 +133,12 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
 
   auto dists = Dists.unchecked<1>();
 
-  // auto z1 = std::vector<int>(n - 1);
-  // auto z2 = std::vector<int>(n - 1);
-  auto Z1 = py::array_t<int>(n - 1);
-  auto Z2 = py::array_t<int>(n - 1);
-  auto z1 = Z1.mutable_unchecked();
-  auto z2 = Z2.mutable_unchecked();
+  auto z1 = std::vector<int>(n - 1);
+  auto z2 = std::vector<int>(n - 1);
+  // auto Z1 = py::array_t<int>(n - 1);
+  // auto Z2 = py::array_t<int>(n - 1);
+  // auto z1 = Z1.mutable_unchecked();
+  // auto z2 = Z2.mutable_unchecked();
 
   // auto zd = std::vector<double>(n - 1);
   auto zd_idx = std::vector<std::pair<double, int>>(n - 1);
@@ -201,8 +201,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
       }
     }
 
-    z1(i) = x;
-    z2(i) = y;
+    z1[i] = x;
+    z2[i] = y;
     zd_idx[i].first = min;
     zd_idx[i].second = i;
     // zd[i] = min;
@@ -219,8 +219,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   auto zd = ZD.mutable_unchecked<1>();
 
   for (int i = 0; i < n - 1; ++i) {
-    z(i, 0) = z1(zd_idx[i].second);
-    z(i, 1) = z2(zd_idx[i].second);
+    z(i, 0) = z1[zd_idx[i].second];
+    z(i, 1) = z2[zd_idx[i].second];
     zd(i) = zd_idx[i].first;
   }
 
@@ -254,7 +254,7 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
       continue;
     }
     if (j >= n && !visited[j]) {
-      visited[j] = 1;
+      visited[j] = true;
       nodes[++k] = j;
       continue;
     }
@@ -290,13 +290,13 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
       cluster_number += 1;
     }
 
-    if (i >= n && visited[i] != 1) {
-      visited[i] = 1;
+    if (i >= n && !visited[i]) {
+      visited[i] = true;
       nodes[++k] = i;
       continue;
     }
-    if (j >= n && visited[j] != 1) {
-      visited[j] = 1;
+    if (j >= n && !visited[j]) {
+      visited[j] = true;
       nodes[++k] = j;
       continue;
     }
