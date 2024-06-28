@@ -64,8 +64,7 @@ void label(py::array_t<int> &Z, int n) {
 
   auto parents = std::vector<int>(2 * n - 1);
   std::iota(parents.begin(), parents.end(), 0);
-  auto sizes = std::vector<int>(2 * n - 1);
-  std::fill(std::execution::par_unseq, sizes.begin(), sizes.end(), 1);
+  auto sizes = std::vector<int>(2 * n - 1, 1);
 
   for (int i = 0; i < n - 1; ++i) {
     int x_root = find_root(parents, z(i, 0));
@@ -92,26 +91,24 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   auto z2 = std::vector<int>(n - 1);
   auto zd_idx = std::vector<std::pair<double, int>>(n - 1);
 
-  auto M = std::vector<bool>(n);
-  std::fill(std::execution::par_unseq, M.begin(), M.end(), false);
-  auto D = std::vector<double>(n);
-  std::fill(std::execution::par_unseq, D.begin(), D.end(),
-            std::numeric_limits<double>::infinity());
+  auto merged = std::vector<bool>(n, false);
+  auto min_dists =
+      std::vector<double>(n, std::numeric_limits<double>::infinity());
 
   int x = 0, y = 0;
   for (int i = 0; i < n - 1; ++i) {
     double min = std::numeric_limits<double>::infinity();
-    M[x] = true;
+    merged[x] = true;
 
     for (int j = 0; j < n; ++j) {
-      if (M[j])
+      if (merged[j])
         continue;
       double dist = dists(condensed_index(x, j, n));
-      if (D[j] > dist) {
-        D[j] = dist;
+      if (min_dists[j] > dist) {
+        min_dists[j] = dist;
       }
-      if (D[j] < min) {
-        min = D[j];
+      if (min_dists[j] < min) {
+        min = min_dists[j];
         y = j;
       }
     }
@@ -123,7 +120,6 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     x = y;
   }
 
-  // todo: seq
   std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
             [](std::pair<double, int> a, std::pair<double, int> b) {
               return a.first < b.first;
@@ -139,16 +135,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     zd(i) = zd_idx[i].first;
   }
 
-  for (int i = 50; i < 60; ++i) {
-    std::cout << z(i, 0) << ", ";
-  }
-  std::cout << std::endl;
-
   label(Z, n);
-  for (int i = 50; i < 60; ++i) {
-    std::cout << z(i, 0) << ", ";
-  }
-  std::cout << std::endl;
 
   return py::make_tuple(Z, ZD);
 }
@@ -164,8 +151,7 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
 
   auto max_dist = std::vector<double>(n - 1);
   auto nodes = std::vector<int>(n);
-  auto visited = std::vector<bool>(n * 2);
-  std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
+  auto visited = std::vector<bool>(n * 2, false);
 
   auto z = Z.unchecked();
   auto zd = ZD.unchecked();
@@ -203,10 +189,11 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   auto T = py::array_t<int>(n);
   auto Tbuf = T.request();
   std::memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
-  auto t = T.mutable_unchecked();
+  auto t = T.mutable_unchecked<1>();
 
   std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
 
+  // Cluster nodes by distance
   int cluster_leader = -1, cluster_number = 0;
   nodes[0] = 2 * n - 2;
   k = 0;
