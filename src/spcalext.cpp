@@ -209,11 +209,11 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   if (Z.ndim() != 2 || Z.shape(1) != 2)
     throw std::runtime_error("Z must have shape (n, 2)");
   if (Z.shape(0) != ZD.shape(0))
-    throw std::runtime_error("ZD must have same shape as Z[:, 0]");
+    throw std::runtime_error("ZD must have same length as first dim of Z");
 
   py::ssize_t n = Z.shape(0) + 1;
+
   auto max_dist = std::vector<double>(n - 1);
-  // maximum distance for each cluster
   auto nodes = std::vector<int>(n);
   auto visited = std::vector<bool>(n * 2);
   std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
@@ -221,8 +221,9 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   auto z = Z.unchecked();
   auto zd = ZD.unchecked();
 
-  nodes[0] = 2 * n - 2;
+  // Get the maximum distance for each cluster
   int k = 0;
+  nodes[0] = 2 * n - 2;
   while (k >= 0) {
     int root = nodes[k] - n;
     int i = z(root, 0);
@@ -252,7 +253,7 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
 
   auto T = py::array_t<int>(n);
   auto Tbuf = T.request();
-  memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
+  std::memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
   auto t = T.mutable_unchecked();
 
   std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
