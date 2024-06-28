@@ -115,58 +115,6 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
         y = j;
       }
     }
-    // auto futures = std::vector<std::future<void>>(n);
-    // for (int j = 0; j < n; ++j) {
-    //   std::async(std::launch::async, [&]() {
-    //     double jmin = min;
-    //     int jy = y;
-    //
-    //     if (M[j])
-    //       return;
-    //
-    //     double dist = dists[condensed_index(x, j, n)];
-    //     if (D[j] > dist)
-    //       D[j] = dist;
-    //     if (D[j] < jmin) {
-    //       jy = j;
-    //       jmin = D[j];
-    //     }
-    //     std::lock_guard<std::mutex> lock(m);
-    //     if (jmin < min) {
-    //       min = jmin;
-    //       y = jy;
-    //     }
-    //   });
-    // }
-    // std::atomic<double> jmin = min;
-    // std::atomic<int> jy = y;
-    // std::mutex m;
-    // auto jdx = std::ranges::views::iota(0, n);
-    // std::for_each(std::execution::par, jdx.begin(), jdx.end(), [&](int j) {
-    //   if (M[j])
-    //     return;
-    //
-    //   double dist = dists[condensed_index(x, j, n)];
-    //   if (D[j] < dist) {
-    //     dist = D[j];
-    //   }
-    //   // if (D[j] > dist) {
-    //   //   std::lock_guard<std::mutex> lock(m);
-    //   //   D[j] = dist;
-    //   // }
-    //   if (dist < jmin) {
-    //     jmin = dist;
-    //     jy = j;
-    //   }
-    //   // if (D[j] < jmin) {
-    //   //   jy = j;
-    //   //   jmin = D[j];
-    //   // }
-    // });
-    // if (jmin < min) {
-    //   min = jmin;
-    //   y = jy;
-    // }
 
     z1[i] = x;
     z2[i] = y;
@@ -175,7 +123,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     x = y;
   }
 
-  std::sort(std::execution::par_unseq, zd_idx.begin(), zd_idx.end(),
+  // todo: seq
+  std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
             [](std::pair<double, int> a, std::pair<double, int> b) {
               return a.first < b.first;
             });
@@ -190,13 +139,13 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     zd(i) = zd_idx[i].first;
   }
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 50; i < 60; ++i) {
     std::cout << z(i, 0) << ", ";
   }
   std::cout << std::endl;
 
   label(Z, n);
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 50; i < 60; ++i) {
     std::cout << z(i, 0) << ", ";
   }
   std::cout << std::endl;
