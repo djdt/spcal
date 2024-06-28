@@ -20,6 +20,6 @@ spcalext = Pybind11Extension(
 
 setup(
     packages=find_packages(include=["spcal", "spcal.*"]),
-    cmd_class={"build_ext": build_ext},
+    cmdclass={"build_ext": build_ext},
     ext_modules=[spcalext],
 )
