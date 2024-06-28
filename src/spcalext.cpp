@@ -101,18 +101,6 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     double min = std::numeric_limits<double>::infinity();
     merged[x] = true;
 
-    // for (int j = 0; j < n; ++j) {
-    //   if (merged[j])
-    //     continue;
-    //   double dist = dists(condensed_index(x, j, n));
-    //   if (min_dists[j] > dist) {
-    //     min_dists[j] = dist;
-    //   }
-    //   if (min_dists[j] < min) {
-    //     min = min_dists[j];
-    //     y = j;
-    //   }
-    // }
     auto jdx = std::ranges::views::iota(0, n);
     std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
       if (merged[j])
