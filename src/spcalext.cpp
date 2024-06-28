@@ -10,7 +10,8 @@ namespace py = pybind11;
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
-inline int condensed_index(int i, int j, int n) {
+inline py::ssize_t condensed_index(py::ssize_t i, py::ssize_t j,
+                                   py::ssize_t n) {
   if (i < j)
     return n * i - (i * (i + 1) / 2) + (j - i - 1);
   else
@@ -119,8 +120,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     x = y;
   }
 
-  std::sort(std::execution::par_unseq, zd_idx.begin(), zd_idx.end(),
-            [](std::pair<double, int> a, std::pair<double, int> b) {
+  std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
+            [](std::pair<double, int> &a, std::pair<double, int> &b) {
               return a.first < b.first;
             });
   auto Z = py::array_t<int>({n - 1, 2});
@@ -146,7 +147,7 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   if (Z.shape(0) != ZD.shape(0))
     throw std::runtime_error("ZD must have same length as first dim of Z");
 
-  py::ssize_t n = Z.shape(0) + 1;
+  int n = static_cast<int>(Z.shape(0)) + 1;
 
   auto max_dist = std::vector<double>(n - 1);
   auto nodes = std::vector<int>(n);
@@ -186,9 +187,10 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   }
 
   auto T = py::array_t<int>(n);
-  auto Tbuf = T.request();
-  std::memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
   auto t = T.mutable_unchecked<1>();
+  for (int i = 0; i < n; ++i) {
+    t(i) = 0;
+  }
 
   // std::execution::par fails to fill
   std::fill(std::execution::seq, visited.begin(), visited.end(), false);
