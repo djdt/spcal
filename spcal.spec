@@ -9,7 +9,6 @@ opts = parser.parse_args()
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
-    binaries=[("C:\\Windows\\system32\\libomp*.dll", ".")],
     datas=[
         ("spcal/resources/app.ico", "spcal/resources"),
         ("spcal/resources/npdb.npz", "spcal/resources"),
