@@ -3,9 +3,6 @@
 
 #include <algorithm>
 #include <execution>
-#include <future>
-#include <iostream>
-#include <mutex>
 #include <numeric>
 #include <ranges>
 
