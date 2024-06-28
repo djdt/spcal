@@ -121,7 +121,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   }
 
   // par_unseq causes crash in Pyinstaller created exe
-  std::sort(std::execution::par, zd_idx.begin(), zd_idx.end(),
+  std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
             [](std::pair<double, int> &a, std::pair<double, int> &b) {
               return a.first < b.first;
             });
