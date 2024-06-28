@@ -30,7 +30,9 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   auto x = X.unchecked<2>();
   auto d = dists.mutable_unchecked<1>();
 
-  auto idx = std::ranges::views::iota(static_cast<py::ssize_t>(0), n);
+  auto idx = std::vector<int>(n);
+  std::iota(idx.begin(), idx.end(), 0);
+  // auto idx = std::ranges::views::iota(0, static_cast<int>(n));
   std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i) {
     for (ssize_t j = i + 1; j < n; ++j) {
       double sum = 0.0;
@@ -120,7 +122,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     x = y;
   }
 
-  std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
+  std::sort(std::execution::par_unseq, zd_idx.begin(), zd_idx.end(),
             [](std::pair<double, int> a, std::pair<double, int> b) {
               return a.first < b.first;
             });
@@ -153,8 +155,8 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   auto nodes = std::vector<int>(n);
   auto visited = std::vector<bool>(n * 2, false);
 
-  auto z = Z.unchecked();
-  auto zd = ZD.unchecked();
+  auto z = Z.unchecked<2>();
+  auto zd = ZD.unchecked<1>();
 
   // Get the maximum distance for each cluster
   int k = 0;
