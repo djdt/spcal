@@ -30,9 +30,7 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   auto x = X.unchecked<2>();
   auto d = dists.mutable_unchecked<1>();
 
-  auto idx = std::vector<py::ssize_t>(n);
-  std::iota(idx.begin(), idx.end(), 0);
-  // auto idx = std::ranges::views::iota(0, static_cast<int>(n));
+  auto idx = std::ranges::views::iota(static_cast<py::ssize_t>(0), n);
   std::for_each(std::execution::par_unseq, idx.begin(), idx.end(),
                 [&](py::ssize_t i) {
                   for (py::ssize_t j = i + 1; j < n; ++j) {
@@ -103,9 +101,22 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
     double min = std::numeric_limits<double>::infinity();
     merged[x] = true;
 
-    for (int j = 0; j < n; ++j) {
+    // for (int j = 0; j < n; ++j) {
+    //   if (merged[j])
+    //     continue;
+    //   double dist = dists(condensed_index(x, j, n));
+    //   if (min_dists[j] > dist) {
+    //     min_dists[j] = dist;
+    //   }
+    //   if (min_dists[j] < min) {
+    //     min = min_dists[j];
+    //     y = j;
+    //   }
+    // }
+    auto jdx = std::ranges::views::iota(0, n);
+    std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
       if (merged[j])
-        continue;
+        return;
       double dist = dists(condensed_index(x, j, n));
       if (min_dists[j] > dist) {
         min_dists[j] = dist;
@@ -114,7 +125,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
         min = min_dists[j];
         y = j;
       }
-    }
+    });
 
     z1[i] = x;
     z2[i] = y;
@@ -194,7 +205,8 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   std::memset(Tbuf.ptr, 0, Tbuf.size * Tbuf.itemsize);
   auto t = T.mutable_unchecked<1>();
 
-  std::fill(std::execution::par_unseq, visited.begin(), visited.end(), false);
+  // std::execution::par fails to fill
+  std::fill(std::execution::seq, visited.begin(), visited.end(), false);
 
   // Cluster nodes by distance
   int cluster_leader = -1, cluster_number = 0;
