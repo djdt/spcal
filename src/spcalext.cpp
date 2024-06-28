@@ -30,19 +30,20 @@ py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
   auto x = X.unchecked<2>();
   auto d = dists.mutable_unchecked<1>();
 
-  auto idx = std::vector<int>(n);
+  auto idx = std::vector<py::ssize_t>(n);
   std::iota(idx.begin(), idx.end(), 0);
   // auto idx = std::ranges::views::iota(0, static_cast<int>(n));
-  std::for_each(std::execution::par_unseq, idx.begin(), idx.end(), [&](int i) {
-    for (ssize_t j = i + 1; j < n; ++j) {
-      double sum = 0.0;
-      for (py::ssize_t k = 0; k < m; ++k) {
-        double dist = x(i, k) - x(j, k);
-        sum += dist * dist;
-      }
-      d(condensed_index(i, j, n)) = std::sqrt(sum);
-    }
-  });
+  std::for_each(std::execution::par_unseq, idx.begin(), idx.end(),
+                [&](py::ssize_t i) {
+                  for (py::ssize_t j = i + 1; j < n; ++j) {
+                    double sum = 0.0;
+                    for (py::ssize_t k = 0; k < m; ++k) {
+                      double dist = x(i, k) - x(j, k);
+                      sum += dist * dist;
+                    }
+                    d(condensed_index(i, j, n)) = std::sqrt(sum);
+                  }
+                });
   return dists;
 }
 
