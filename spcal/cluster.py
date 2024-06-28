@@ -40,11 +40,17 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
     Returns:
         cluster indicies
     """
+    print("entering agglomerative_cluster", flush=True)
     if X.size == 0:
         return np.array([], dtype=int)
+    print("\trunning", "pairwise_euclidean", flush=True)
     dists = pairwise_euclidean(X)
+    print("\trunning", "mst_linkage", flush=True)
     Z, ZD = mst_linkage(dists, X.shape[0])
-    return cluster_by_distance(Z, ZD, max_dist) - 1
+    print("\trunning", "cluster_by_distance", flush=True)
+    T = cluster_by_distance(Z, ZD, max_dist) - 1
+    print("exiting agglomerative_cluster", flush=True)
+    return T
 
 
 def cluster_information(
