@@ -121,7 +121,12 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   }
 
   // par_unseq causes crash in Pyinstaller created exe
-  std::sort(std::execution::seq, zd_idx.begin(), zd_idx.end(),
+#ifdef SEQSORT
+  auto sortexc = std::execution::seq;
+#else
+  auto sortexc = std::execution::par_unseq;
+#endif
+  std::sort(sortexc, zd_idx.begin(), zd_idx.end(),
             [](std::pair<double, int> &a, std::pair<double, int> &b) {
               return a.first < b.first;
             });
@@ -253,7 +258,7 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
 
   for (py::ssize_t i = 0; i < r.shape(0); ++i) {
     int max_idx = r(i, 0);
-    for (py::ssize_t j = r(i, 0) + 1; j < r(i, 1); ++j) {
+    for (int j = r(i, 0) + 1; j < r(i, 1); ++j) {
       if (v[j] > v[max_idx]) {
         max_idx = j;
       }
