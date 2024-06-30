@@ -44,7 +44,8 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
         return np.array([], dtype=int)
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
-    return cluster_by_distance(Z, ZD, max_dist) - 1
+    T = cluster_by_distance(Z, ZD, max_dist) - 1
+    return T
 
 
 def cluster_information(

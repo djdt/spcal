@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "numpy>=1.22,<2.0"]
+requires = ["setuptools", "pybind11"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "spcal"
-version = "1.2.6"
+version = "1.2.7"
 dependencies = [
     "numpy>=1.22,<2.0",
     "PySide6",
