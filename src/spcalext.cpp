@@ -122,7 +122,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
 
   // par_unseq causes crash in Pyinstaller created exe
 #ifdef SEQSORT
-#pragma message("Using sequential sort.")
+#pragma message("Building ext using sequential sort.")
   auto sortexc = std::execution::seq;
 #else
   auto sortexc = std::execution::par_unseq;
