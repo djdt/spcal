@@ -18,8 +18,8 @@ jobs:
           pip install wheel pyinstaller
     - name: Install project
       run: |
-        pip install . -v
-        python setup.py build_ext --inplace
+        pip install . --config-settings="--build-option=build_ext --define SEQSORT" -v
+        python setup.py build_ext --inplace --define SEQSORT
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
