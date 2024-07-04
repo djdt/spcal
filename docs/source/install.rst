@@ -17,5 +17,5 @@ The program can then be launched from the command line using ``spcal``.
 For help, options and usage run ``spcal --help``.
 
 .. note::
-   Installation requires compilation of a C extension.
+   Installation requires compilation of a C++ extension.
    For more information see the Python documentation on `Building C and C++ Extensions <https://docs.python.org/3/extending/building.html>`_ and `Building C and C++ Extensions on Windows <https://docs.python.org/3/extending/windows.html>`_.
