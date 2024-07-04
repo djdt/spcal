@@ -128,7 +128,7 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   auto sortexc = std::execution::par_unseq;
 #endif
   std::sort(sortexc, zd_idx.begin(), zd_idx.end(),
-            [](std::pair<double, int> &a, std::pair<double, int> &b) {
+            [](const std::pair<double, int> &a, const std::pair<double, int> &b) {
               return a.first < b.first;
             });
   auto Z = py::array_t<int>({n - 1, 2});
