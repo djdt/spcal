@@ -418,7 +418,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.options.resetInputs()
 
     def setColorScheme(self, action: QtGui.QAction) -> None:
-        scheme = action.text()
+        scheme = action.text().lstrip("&")
         QtCore.QSettings().setValue("colorscheme", scheme)
 
         self.sample.redraw()
