@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spcal"
-version = "1.2.7"
+version = "1.2.8"
 dependencies = [
     "numpy>=1.22",
     "PySide6",
