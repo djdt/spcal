@@ -556,7 +556,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.drawIfRequired()
 
     def drawGraphHist(self) -> None:
-        self.graph_hist.plot.clear()
+        self.graph_hist.clear()
         mode = self.mode.currentText()
 
         label, unit, modifier = self.mode_labels[mode]
