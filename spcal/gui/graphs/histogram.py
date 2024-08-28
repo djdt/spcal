@@ -81,6 +81,9 @@ class HistogramView(SinglePlotGraphicsView):
         if name is not None:
             self.export_data[name] = hist
             self.export_data[name + "_bins"] = edges[1:]
+            if draw_filtered:
+                self.export_data[name + "_filtered"] = hist_filt
+                self.export_data[name + "_filtered_bins"] = edges_filt[1:]
 
     def drawData(
         self,
