@@ -240,18 +240,39 @@ class ResponseDialog(QtWidgets.QDialog):
             return
 
         assert self.responses.dtype.names is not None
-        names = self.responses.dtype.names
+        names = [  # remove any unpopulated names
+            name
+            for name in self.responses.dtype.names
+            if np.any(~np.isnan(self.model.array[name]))
+        ]
+        nlevels = len(self.model.array)
         factor = mass_concentration_units[self.combo_unit.currentText()]
+
+        def write_cal_levels(fp, name: str) -> None:
+            fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
 
         with open(file, "w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
             fp.write(",Slope,Intercept,r2,Error\n")
             for name in names:
                 m, b, r2, err = self.calibrationResult(name)
+                fp.write(f"{name},{m},{b},{r2 or ''},{err or ''},\n")
+
+            fp.write(
+                "#Concentrations (kg/L),"
+                + ",".join(str(i) for i in range(nlevels))
+                + "\n"
+            )
+            for name in names:
+                xs = self.model.array[name] * factor
                 fp.write(
-                    f"{name},{m if m is not None else ''},{b if b is not None else ''},"
-                    f"{r2 if r2 is not None else ''},{err if err is not None else ''}\n"
+                    f"{name},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in xs)
+                    + "\n"
                 )
+            fp.write(
+                "#Responses (counts)," + ",".join(str(i) for i in range(nlevels)) + "\n"
+            )
             for name in names:
                 x = self.model.array[name]
                 y = self.responses[name][~np.isnan(x)]
