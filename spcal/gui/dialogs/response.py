@@ -232,7 +232,7 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    def saveToFile(self) -> None:
+    def dialogSaveToFile(self) -> None:
         assert self.import_options is not None
         dir = self.import_options["path"].parent
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -240,7 +240,9 @@ class ResponseDialog(QtWidgets.QDialog):
         )
         if file == "":
             return
+        self.saveToFile(Path(file))
 
+    def saveToFile(self, path: Path) -> None:
         assert self.responses.dtype.names is not None
         names = [  # remove any unpopulated names
             name
@@ -253,7 +255,7 @@ class ResponseDialog(QtWidgets.QDialog):
         def write_cal_levels(fp, name: str) -> None:
             fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
 
-        with open(file, "w") as fp:
+        with path.open("w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
             fp.write(",Slope,Intercept,r2,Error\n")
             for name in names:
@@ -283,7 +285,7 @@ class ResponseDialog(QtWidgets.QDialog):
                     + "\n"
                 )
 
-    def loadFromFile(self) -> None:
+    def dialogLoadFromFile(self) -> None:
         if self.import_options is not None:
             dir = self.import_options["path"].parent
         else:
@@ -293,11 +295,14 @@ class ResponseDialog(QtWidgets.QDialog):
         )
         if file == "":
             return
+        self.loadFromFile(Path(file))
+
+    def loadFromFile(self, path: Path) -> None:
 
         concs = {}
         responses = {}
 
-        with open(file, "r") as fp:
+        with path.open("r") as fp:
             line = fp.readline()
             if not line.startswith("#SPCal Calibration"):
                 raise ValueError("file is not valid SPCal calibration")
@@ -344,9 +349,9 @@ class ResponseDialog(QtWidgets.QDialog):
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
-            self.saveToFile()
+            self.dialogSaveToFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
-            self.loadFromFile()
+            self.dialogLoadFromFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
