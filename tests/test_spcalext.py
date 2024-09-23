@@ -23,12 +23,13 @@ def test_mst_linkage():
     Z, ZD = mst_linkage(dists, 8)
 
     assert np.allclose(ZD, [0.05, 0.1, 0.2, 0.25, 0.5, 1.0, 1.1])
-    # Only testing first pairs
-    f = Z[:, 2] == 2
-    assert np.all(Z[f][0] == [6, 7, 2])
-    assert np.all(Z[f][1] == [0, 2, 2])
-    assert np.all(Z[f][2] == [1, 3, 2])
-    assert np.all(Z[f][3] == [4, 5, 2])
+    assert np.all(Z[0] == [6, 7])  # 0.05
+    assert np.all(Z[1] == [0, 2])  # 0.1
+    assert np.all(Z[2] == [1, 3])  # 0.2
+    assert np.all(Z[3] == [8, 10])
+    assert np.all(Z[4] == [9, 11])
+    assert np.all(Z[5] == [4, 5])
+    assert np.all(Z[6] == [12, 13])
 
 
 def test_cluster_by_distance():
