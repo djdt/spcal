@@ -30,7 +30,7 @@ def test_response_dialog(qtbot: QtBot):
 
     dlg.loadData(generate_data(10.0), {"path": Path("0.csv")})
     assert dlg.model.columnCount() == 1
-    assert dlg.model.rowCount() == 4
+    assert dlg.model.rowCount() == 3
     dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(1, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(2, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
