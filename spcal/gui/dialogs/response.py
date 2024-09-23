@@ -232,7 +232,7 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    def save(self) -> None:
+    def saveToFile(self) -> None:
         assert self.import_options is not None
         dir = self.import_options["path"].parent
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -283,7 +283,7 @@ class ResponseDialog(QtWidgets.QDialog):
                     + "\n"
                 )
 
-    def load(self) -> None:
+    def loadFromFile(self) -> None:
         if self.import_options is not None:
             dir = self.import_options["path"].parent
         else:
@@ -344,9 +344,9 @@ class ResponseDialog(QtWidgets.QDialog):
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
-            self.save()
+            self.saveToFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
-            self.load()
+            self.loadFromFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
