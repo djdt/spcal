@@ -14,7 +14,6 @@ def generate_data(mean: float) -> np.ndarray:
             ("A", np.float32),
             ("B", np.float32),
             ("C", np.float32),
-            ("D", np.float32),
         ],
     )
     assert data.dtype.names is not None
@@ -58,4 +57,33 @@ def test_response_dialog(qtbot: QtBot):
     ):
         dlg.accept()
 
-    # Todo, test for export
+
+def test_response_dialog_save_load(tmp_path: Path, qtbot: QtBot):
+    dlg = ResponseDialog()
+    qtbot.add_widget(dlg)
+
+    dlg.loadData(generate_data(10.0), {"path": Path("0.csv")})
+    dlg.loadData(generate_data(20.0), {"path": Path("1.csv")})
+    dlg.loadData(generate_data(30.0), {"path": Path("2.csv")})
+
+    dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(1, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(2, 0), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+
+    dlg.model.setData(dlg.model.index(1, 1), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(2, 1), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+
+    dlg.model.setData(dlg.model.index(0, 2), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model.setData(dlg.model.index(1, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+
+    array = dlg.model.array.copy()
+    resp = dlg.responses.copy()
+
+    path = tmp_path.joinpath("response_dialog.csv")
+    dlg.saveToFile(path)
+    dlg.reset()
+    dlg.loadFromFile(path)
+
+    for name in dlg.model.array.dtype.names:
+        assert np.allclose(array[name], dlg.model.array[name], equal_nan=True)
+        assert np.allclose(resp[name], dlg.responses[name], equal_nan=True)
