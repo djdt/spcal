@@ -3,6 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
@@ -68,7 +69,8 @@ class ResponseDialog(QtWidgets.QDialog):
         self.combo_unit.setCurrentText("μg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Save
+            QtWidgets.QDialogButtonBox.StandardButton.Open
+            | QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
@@ -274,16 +276,54 @@ class ResponseDialog(QtWidgets.QDialog):
                 "#Responses (counts)," + ",".join(str(i) for i in range(nlevels)) + "\n"
             )
             for name in names:
-                x = self.model.array[name]
-                y = self.responses[name][~np.isnan(x)]
-                x = x[~np.isnan(x)] * factor
+                ys = self.responses[name]
+                fp.write(
+                    f"{name},"
+                    + ",".join("" if np.isnan(y) else str(y) for y in ys)
+                    + "\n"
+                )
 
-                if x.size == 0:
-                    continue
+    def load(self) -> None:
+        if self.import_options is not None:
+            dir = self.import_options["path"].parent
+        else:
+            dir = ""
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
+        )
+        if file == "":
+            return
 
-                fp.write(f"\n{name}," + ",".join(str(i) for i in range(len(x))) + "\n")
-                fp.write("Conc. (kg/L)," + ",".join(str(xx) for xx in x) + "\n")
-                fp.write("Response," + ",".join(str(xx) for xx in y) + "\n")
+        concs = {}
+        responses = {}
+
+        with open(file, "r") as fp:
+            line = fp.readline()
+            if not line.startswith("#SPCal Calibration"):
+                raise ValueError("file is not valid SPCal calibration")
+            while not line.startswith("#Concentrations"):
+                line = fp.readline()
+            line = fp.readline()
+            while not line.startswith("#Responses"):
+                name, *xs = line.split(",")
+                concs[name] = np.array([float(x) if x != "" else np.nan for x in xs])
+                line = fp.readline().strip()
+            line = fp.readline()
+            while line:
+                name, *ys = line.split(",")
+                responses[name] = np.array(
+                    [float(y) if y != "" else np.nan for y in ys]
+                )
+                line = fp.readline().strip()
+
+        array = np.stack(list(responses.values()), axis=1)
+        self.responses = rfn.unstructured_to_structured(array, names=responses.keys())
+        self.model.beginResetModel()
+
+        array = np.stack(list(concs.values()), axis=1)
+        self.model.array = rfn.unstructured_to_structured(array, names=concs.keys())
+        self.model.endResetModel()
+        self.updateCalibration()
 
     def calibrationResult(
         self, name: str
@@ -305,6 +345,8 @@ class ResponseDialog(QtWidgets.QDialog):
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
             self.save()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
+            self.load()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
