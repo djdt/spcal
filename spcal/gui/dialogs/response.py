@@ -298,6 +298,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.loadFromFile(Path(file))
 
     def loadFromFile(self, path: Path) -> None:
+        factor = mass_concentration_units[self.combo_unit.currentText()]
 
         concs = {}
         responses = {}
@@ -311,7 +312,9 @@ class ResponseDialog(QtWidgets.QDialog):
             line = fp.readline()
             while not line.startswith("#Responses"):
                 name, *xs = line.split(",")
-                concs[name] = np.array([float(x) if x != "" else np.nan for x in xs])
+                concs[name] = (
+                    np.array([float(x) if x != "" else np.nan for x in xs]) / factor
+                )
                 line = fp.readline().strip()
             line = fp.readline()
             while line:
