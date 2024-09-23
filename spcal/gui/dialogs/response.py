@@ -3,6 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
@@ -68,7 +69,8 @@ class ResponseDialog(QtWidgets.QDialog):
         self.combo_unit.setCurrentText("μg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Save
+            QtWidgets.QDialogButtonBox.StandardButton.Open
+            | QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
@@ -230,7 +232,7 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    def save(self) -> None:
+    def dialogSaveToFile(self) -> None:
         assert self.import_options is not None
         dir = self.import_options["path"].parent
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -238,31 +240,98 @@ class ResponseDialog(QtWidgets.QDialog):
         )
         if file == "":
             return
+        self.saveToFile(Path(file))
 
+    def saveToFile(self, path: Path) -> None:
         assert self.responses.dtype.names is not None
-        names = self.responses.dtype.names
+        names = [  # remove any unpopulated names
+            name
+            for name in self.responses.dtype.names
+            if np.any(~np.isnan(self.model.array[name]))
+        ]
+        nlevels = len(self.model.array)
         factor = mass_concentration_units[self.combo_unit.currentText()]
 
-        with open(file, "w") as fp:
+        def write_cal_levels(fp, name: str) -> None:
+            fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
+
+        with path.open("w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
             fp.write(",Slope,Intercept,r2,Error\n")
             for name in names:
                 m, b, r2, err = self.calibrationResult(name)
-                fp.write(
-                    f"{name},{m if m is not None else ''},{b if b is not None else ''},"
-                    f"{r2 if r2 is not None else ''},{err if err is not None else ''}\n"
-                )
+                fp.write(f"{name},{m},{b},{r2 or ''},{err or ''},\n")
+
+            fp.write(
+                "#Concentrations (kg/L),"
+                + ",".join(str(i) for i in range(nlevels))
+                + "\n"
+            )
             for name in names:
-                x = self.model.array[name]
-                y = self.responses[name][~np.isnan(x)]
-                x = x[~np.isnan(x)] * factor
+                xs = self.model.array[name] * factor
+                fp.write(
+                    f"{name},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in xs)
+                    + "\n"
+                )
+            fp.write(
+                "#Responses (counts)," + ",".join(str(i) for i in range(nlevels)) + "\n"
+            )
+            for name in names:
+                ys = self.responses[name]
+                fp.write(
+                    f"{name},"
+                    + ",".join("" if np.isnan(y) else str(y) for y in ys)
+                    + "\n"
+                )
 
-                if x.size == 0:
-                    continue
+    def dialogLoadFromFile(self) -> None:
+        if self.import_options is not None:
+            dir = self.import_options["path"].parent
+        else:
+            dir = ""
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
+        )
+        if file == "":
+            return
+        self.loadFromFile(Path(file))
 
-                fp.write(f"\n{name}," + ",".join(str(i) for i in range(len(x))) + "\n")
-                fp.write("Conc. (kg/L)," + ",".join(str(xx) for xx in x) + "\n")
-                fp.write("Response," + ",".join(str(xx) for xx in y) + "\n")
+    def loadFromFile(self, path: Path) -> None:
+        factor = mass_concentration_units[self.combo_unit.currentText()]
+
+        concs = {}
+        responses = {}
+
+        with path.open("r") as fp:
+            line = fp.readline()
+            if not line.startswith("#SPCal Calibration"):
+                raise ValueError("file is not valid SPCal calibration")
+            while not line.startswith("#Concentrations"):
+                line = fp.readline()
+            line = fp.readline()
+            while not line.startswith("#Responses"):
+                name, *xs = line.split(",")
+                concs[name] = (
+                    np.array([float(x) if x != "" else np.nan for x in xs]) / factor
+                )
+                line = fp.readline().strip()
+            line = fp.readline()
+            while line:
+                name, *ys = line.split(",")
+                responses[name] = np.array(
+                    [float(y) if y != "" else np.nan for y in ys]
+                )
+                line = fp.readline().strip()
+
+        array = np.stack(list(responses.values()), axis=1)
+        self.responses = rfn.unstructured_to_structured(array, names=responses.keys())
+        self.model.beginResetModel()
+
+        array = np.stack(list(concs.values()), axis=1)
+        self.model.array = rfn.unstructured_to_structured(array, names=concs.keys())
+        self.model.endResetModel()
+        self.updateCalibration()
 
     def calibrationResult(
         self, name: str
@@ -283,7 +352,9 @@ class ResponseDialog(QtWidgets.QDialog):
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
-            self.save()
+            self.dialogSaveToFile()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
+            self.dialogLoadFromFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
