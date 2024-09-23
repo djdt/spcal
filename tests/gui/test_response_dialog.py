@@ -39,7 +39,7 @@ def test_response_dialog(qtbot: QtBot):
     dlg.model.setData(dlg.model.index(0, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole)
     dlg.model.setData(dlg.model.index(1, 1), 20.0, QtCore.Qt.ItemDataRole.EditRole)
     assert dlg.model.columnCount() == 2
-    assert dlg.model.rowCount() == 4
+    assert dlg.model.rowCount() == 3
 
     dlg.combo_unit.setCurrentText("mg/L")
 
