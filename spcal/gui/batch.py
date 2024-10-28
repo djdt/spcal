@@ -217,7 +217,7 @@ def process_tofwerk_file(
         f"[{i['Isotope']}{i['Symbol']}]+" for i in import_options["isotopes"]
     ]
     selected_labels.extend(import_options["other peaks"])
-    selected_idx = np.flatnonzero(np.in1d(peak_labels, selected_labels))
+    selected_idx = np.flatnonzero(np.isin(peak_labels, selected_labels))
 
     data, info, dwell = read_tofwerk_file(path, idx=selected_idx)
     data = rfn.rename_fields(data, import_options["names"])

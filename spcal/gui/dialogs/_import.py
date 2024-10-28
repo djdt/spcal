@@ -926,7 +926,7 @@ class TofwerkImportDialog(_ImportDialogBase):
         assert isotopes is not None
         selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
         selected_labels.extend(self.combo_other_peaks.checkedItems())
-        self.selected_idx = np.flatnonzero(np.in1d(self.peak_labels, selected_labels))
+        self.selected_idx = np.flatnonzero(np.isin(self.peak_labels, selected_labels))
 
         if (
             "PeakData" not in self.h5["PeakData"]
