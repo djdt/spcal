@@ -348,7 +348,6 @@ class OptionsWidget(QtWidgets.QWidget):
     def setAdvancedOptions(self, accumlation_method: str, points_required: int) -> None:
         settings = QtCore.QSettings()
         settings.setValue("Threshold/AccumulationMethod", accumlation_method)
-        settings.setValue("Threshold/Test/AccumulationMethod", accumlation_method)
         settings.setValue("Threshold/PointsRequired", points_required)
         self.limit_accumulation = accumlation_method
         self.points_required = points_required
