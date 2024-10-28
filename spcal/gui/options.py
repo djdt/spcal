@@ -18,8 +18,6 @@ class OptionsWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
-
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
             "ml/s": 1e-3,
@@ -33,6 +31,8 @@ class OptionsWidget(QtWidgets.QWidget):
             "Threshold/AccumulationMethod", "Signal Mean"
         )
         self.points_required = int(settings.value("Threshold/PointsRequired", 1))
+
+        sf = int(settings.value("SigFigs", 4))
 
         # Instrument wide options
         self.dwelltime = UnitsWidget(
@@ -213,7 +213,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def state(self) -> dict:
-        settings = QtCore.QSettings()
         state_dict = {
             "uptake": self.uptake.baseValue(),
             "dwelltime": self.dwelltime.baseValue(),
@@ -250,6 +249,11 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_window.setChecked(bool(state["use window"]))
         self.check_iterative.setChecked(bool(state["iterative"]))
 
+        if "accumulation method" in state:
+            self.limit_accumulation = state["accumulation method"]
+        if "points required" in state:
+            self.points_required = state["points required"]
+
         if "cell diameter" in state:
             self.celldiameter.setBaseValue(state["cell diameter"])
             self.celldiameter.setBestUnit()
@@ -262,8 +266,6 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # Separate for useManualLimits signal
         self.limit_method.setCurrentText(state["limit method"])
-        if "accumulation method" in state:
-            self.limit_accumulation.setCurrentText(state["accumulation method"])
 
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
@@ -346,14 +348,13 @@ class OptionsWidget(QtWidgets.QWidget):
                 widget.setViewFormat(num)
 
     def setAdvancedOptions(self, accumlation_method: str, points_required: int) -> None:
-        settings = QtCore.QSettings()
-        settings.setValue("Threshold/AccumulationMethod", accumlation_method)
-        settings.setValue("Threshold/PointsRequired", points_required)
         self.limit_accumulation = accumlation_method
         self.points_required = points_required
         self.limitOptionsChanged.emit()
 
     def dialogAdvancedOptions(self) -> None:
-        dlg = AdvancedThresholdOptions(self.limit_accumulation, self.points_required, parent=self)
+        dlg = AdvancedThresholdOptions(
+            self.limit_accumulation, self.points_required, parent=self
+        )
         dlg.optionsSelected.connect(self.setAdvancedOptions)
         dlg.open()
