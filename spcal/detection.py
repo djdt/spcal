@@ -58,20 +58,20 @@ def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
-    minimum_points: int = 1,
+    points_required: int = 1,
     integrate: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Contiguous regions above ``limit_accumulation`` that contain at least
-    ``minimum_points`` values above ``limit_detection`` are summed or integrated
+    ``points_required`` values above ``limit_detection`` are summed or integrated
     (sum - ``limit_accumulation``).
 
     Args:
         y: array
         limit_accumulation: minimum accumulation value(s)
         limit_detection: minimum detection value(s)
-        minimum_points: minimum points > limit_detection to be detected
+        points_required: no. points > limit_detection to be detected
         integrate: integrate, otherwise sum
 
     Returns:
@@ -81,7 +81,7 @@ def accumulate_detections(
     """
     if np.any(limit_accumulation > limit_detection):
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
-    if minimum_points < 1:
+    if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
     regions = _contiguous_regions(y, limit_accumulation)
@@ -92,7 +92,7 @@ def accumulate_detections(
     # Get maximum in each region
     detections = np.add.reduceat(y > limit_detection, indicies)[::2]
     # Remove regions without minimum_size values above detection limit
-    regions = regions[detections >= minimum_points]
+    regions = regions[detections >= points_required]
 
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
