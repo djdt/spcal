@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.dialogs.advancedoptions import AdvancedThresholdOptions
 from spcal.gui.limitoptions import (
     CompoundPoissonOptions,
     GaussianOptions,
@@ -25,6 +26,13 @@ class OptionsWidget(QtWidgets.QWidget):
             "L/min": 1.0 / 60.0,
             "L/s": 1.0,
         }
+
+        # load stored options
+        settings = QtCore.QSettings()
+        self.limit_accumulation = settings.value(
+            "Threshold/AccumulationMethod", "Signal Mean"
+        )
+        self.points_required = int(settings.value("Threshold/PointsRequired", 1))
 
         # Instrument wide options
         self.dwelltime = UnitsWidget(
@@ -148,43 +156,17 @@ class OptionsWidget(QtWidgets.QWidget):
             )
         )
 
-        # Controllable limit
-        self.limit_accumulation = QtWidgets.QComboBox()
-        self.limit_accumulation.addItems(
-            ["Detection Threshold", "Half Detection Threshold", "Signal Mean"]
-        )
-        self.limit_accumulation.setCurrentText("Signal Mean")
-        self.limit_accumulation.setItemData(
-            0,
-            "Sum contiguous regions above the detection threshold.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_accumulation.setItemData(
-            1,
-            "Sum contiguous regions above the midpoint of the threshold and mean.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_accumulation.setItemData(
-            2, "Sum contiguous regions above the signal mean.", QtCore.Qt.ToolTipRole
-        )
-        self.limit_accumulation.setToolTip(
-            self.limit_accumulation.currentData(QtCore.Qt.ToolTipRole)
-        )
-        self.limit_accumulation.currentIndexChanged.connect(
-            lambda i: self.limit_accumulation.setToolTip(
-                self.limit_accumulation.itemData(i, QtCore.Qt.ToolTipRole)
-            )
-        )
-
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
+
+        self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
+        self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
 
         self.limit_method.currentTextChanged.connect(self.limitMethodChanged)
 
         self.window_size.editingFinished.connect(self.limitOptionsChanged)
         self.check_window.toggled.connect(self.limitOptionsChanged)
         self.limit_method.currentTextChanged.connect(self.limitOptionsChanged)
-        self.limit_accumulation.currentTextChanged.connect(self.limitOptionsChanged)
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         self.compound_poisson = CompoundPoissonOptions()
@@ -202,9 +184,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Threshold method:", layout_method)
-        self.limit_inputs.layout().addRow(
-            "Accumulation method:", self.limit_accumulation
-        )
+        self.limit_inputs.layout().addRow(self.button_advanced_options)
         self.limit_inputs.layout().addRow(self.compound_poisson)
         self.limit_inputs.layout().addRow(self.gaussian)
         self.limit_inputs.layout().addRow(self.poisson)
@@ -233,6 +213,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def state(self) -> dict:
+        settings = QtCore.QSettings()
         state_dict = {
             "uptake": self.uptake.baseValue(),
             "dwelltime": self.dwelltime.baseValue(),
@@ -241,7 +222,8 @@ class OptionsWidget(QtWidgets.QWidget):
             "window size": self.window_size.value(),
             "use window": self.check_window.isChecked(),
             "limit method": self.limit_method.currentText(),
-            "accumulation method": self.limit_accumulation.currentText(),
+            "accumulation method": self.limit_accumulation,
+            "points required": self.points_required,
             "iterative": self.check_iterative.isChecked(),
             "cell diameter": self.celldiameter.baseValue(),
             "compound poisson": self.compound_poisson.state(),
@@ -267,6 +249,7 @@ class OptionsWidget(QtWidgets.QWidget):
             self.window_size.setValue(state["window size"])
         self.check_window.setChecked(bool(state["use window"]))
         self.check_iterative.setChecked(bool(state["iterative"]))
+
         if "cell diameter" in state:
             self.celldiameter.setBaseValue(state["cell diameter"])
             self.celldiameter.setBestUnit()
@@ -361,3 +344,17 @@ class OptionsWidget(QtWidgets.QWidget):
         for widget in self.findChildren(ValueWidget):
             if widget.view_format.endswith("g"):
                 widget.setViewFormat(num)
+
+    def setAdvancedOptions(self, accumlation_method: str, points_required: int) -> None:
+        settings = QtCore.QSettings()
+        settings.setValue("Threshold/AccumulationMethod", accumlation_method)
+        settings.setValue("Threshold/Test/AccumulationMethod", accumlation_method)
+        settings.setValue("Threshold/PointsRequired", points_required)
+        self.limit_accumulation = accumlation_method
+        self.points_required = points_required
+        self.limitOptionsChanged.emit()
+
+    def dialogAdvancedOptions(self) -> None:
+        dlg = AdvancedThresholdOptions(self.limit_accumulation, self.points_required, parent=self)
+        dlg.optionsSelected.connect(self.setAdvancedOptions)
+        dlg.open()
