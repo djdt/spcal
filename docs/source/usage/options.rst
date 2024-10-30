@@ -51,6 +51,10 @@ SPCal also allows editing of the *Accumulation method*, to set the :term:`accumu
 #. Half-detection threshold
    Uses the value half way between the signal mean and :term:`detection threshold`.
 
+Settings the *Required points* to greater than 1 will require detected regions to contain at least this many points.
+
+Both the :term:`accumulation threshold` and :term:`required points` controls are found in the thresholding *Advanced Options* dialog.
+
 Compound-Poisson options
 ------------------------
 
