@@ -177,16 +177,16 @@ class PeriodicTableButton(QtWidgets.QToolButton):
 
     def enabledIsotopes(self) -> np.ndarray:
         nums = np.array([n for n, action in self.actions.items() if action.isEnabled()])
-        return self.isotopes[np.in1d(self.isotopes["Isotope"], nums)]
+        return self.isotopes[np.isin(self.isotopes["Isotope"], nums)]
 
     def selectedIsotopes(self) -> np.ndarray:
         nums = np.array([n for n, action in self.actions.items() if action.isChecked()])
-        return self.isotopes[np.in1d(self.isotopes["Isotope"], nums)]
+        return self.isotopes[np.isin(self.isotopes["Isotope"], nums)]
 
     def selectPreferredIsotopes(self, checked: bool) -> None:
         preferred = self.preferred()
         for num, action in self.actions.items():
-            if checked and np.in1d(num, preferred["Isotope"]):
+            if checked and np.isin(num, preferred["Isotope"]):
                 action.setChecked(True)
             else:
                 action.setChecked(False)

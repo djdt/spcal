@@ -35,6 +35,7 @@ def process_data(
     cluster_filters: list[ClusterFilter],
     limit_method: str,
     acc_method: str,
+    points_req: int,
     compositions_params: dict,
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
@@ -71,6 +72,7 @@ def process_data(
             data[name],
             limits[name].accumulationLimit(acc_method),
             limits[name].detection_threshold,
+            points_required=points_req,
             integrate=True,
         )
 
@@ -217,7 +219,7 @@ def process_tofwerk_file(
         f"[{i['Isotope']}{i['Symbol']}]+" for i in import_options["isotopes"]
     ]
     selected_labels.extend(import_options["other peaks"])
-    selected_idx = np.flatnonzero(np.in1d(peak_labels, selected_labels))
+    selected_idx = np.flatnonzero(np.isin(peak_labels, selected_labels))
 
     data, info, dwell = read_tofwerk_file(path, idx=selected_idx)
     data = rfn.rename_fields(data, import_options["names"])
@@ -579,7 +581,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "filters": self.results.filters,
                     "cluster_filters": self.results.cluster_filters,
                     "limit_method": self.options.limit_method.currentText(),
-                    "acc_method": self.options.limit_accumulation.currentText(),
+                    "acc_method": self.options.limit_accumulation,
+                    "points_req": self.options.points_required,
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (
                         (self.options.window_size.value() or 0)

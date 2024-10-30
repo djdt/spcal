@@ -1,7 +1,72 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import ValueWidget
+
+
+class AdvancedThresholdOptions(QtWidgets.QDialog):
+    optionsSelected = QtCore.Signal(str, int)
+
+    def __init__(
+        self,
+        accumulation_method: str,
+        points_required: int,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+
+        # Controllable limit
+        self.limit_accumulation = QtWidgets.QComboBox()
+        self.limit_accumulation.addItems(
+            ["Detection Threshold", "Half Detection Threshold", "Signal Mean"]
+        )
+        self.limit_accumulation.setCurrentText(accumulation_method)
+        self.limit_accumulation.setItemData(
+            0,
+            "Sum contiguous regions above the detection threshold.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_accumulation.setItemData(
+            1,
+            "Sum contiguous regions above the midpoint of the threshold and mean.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_accumulation.setItemData(
+            2, "Sum contiguous regions above the signal mean.", QtCore.Qt.ToolTipRole
+        )
+        self.limit_accumulation.setToolTip(
+            self.limit_accumulation.currentData(QtCore.Qt.ToolTipRole)
+        )
+        self.limit_accumulation.currentIndexChanged.connect(
+            lambda i: self.limit_accumulation.setToolTip(
+                self.limit_accumulation.itemData(i, QtCore.Qt.ToolTipRole)
+            )
+        )
+
+        self.points_req = QtWidgets.QSpinBox()
+        self.points_req.setRange(1, 99)
+        self.points_req.setValue(points_required)
+        self.points_req.setToolTip(
+            "Number of points > threshold to be considered a detection"
+        )
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        layout = QtWidgets.QFormLayout()
+        layout.addRow("Accumulation method:", self.limit_accumulation)
+        layout.addRow("Points required:", self.points_req)
+        layout.addRow(self.button_box)
+        self.setLayout(layout)
+
+    def accept(self) -> None:
+        self.optionsSelected.emit(
+            self.limit_accumulation.currentText(), self.points_req.value()
+        )
+        super().accept()
 
 
 class AdvancedPoissonOptions(QtWidgets.QWidget):

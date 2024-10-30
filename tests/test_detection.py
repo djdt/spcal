@@ -44,6 +44,25 @@ def test_accumulate_detections():
     assert regions.size == 0
 
 
+def test_accumulate_detections_multiple_points():
+    x = np.array([0, 0, 2, 3, 4, 0, 4, 5, 0, 1, 0, 2])
+
+    sums, labels, _ = detection.accumulate_detections(x, 0.5, 1, points_required=1)
+    assert np.all(sums == [9.0, 9.0, 2.0])
+    assert np.all(labels == [0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 3])
+
+    sums, labels, _ = detection.accumulate_detections(x, 0.5, 1, points_required=2)
+    assert np.all(sums == [9.0, 9.0])
+    assert np.all(labels == [0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0])
+
+    sums, labels, _ = detection.accumulate_detections(x, 0.5, 1, points_required=3)
+    assert np.all(sums == [9.0])
+    assert np.all(labels == [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0])
+
+    with pytest.raises(ValueError):
+        _, _, _ = detection.accumulate_detections(x, 0.5, 1, points_required=0)
+
+
 def test_accumulate_detections_regions():
     # To end
     x = np.array([0, 2, 2, 0, 0, 2, 0, 0, 0, 0])

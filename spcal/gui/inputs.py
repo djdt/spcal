@@ -355,7 +355,8 @@ class InputWidget(QtWidgets.QWidget):
 
     def updateDetections(self) -> None:
         d, l, r = {}, {}, {}
-        acc_method = self.options.limit_accumulation.currentText()
+        acc_method = self.options.limit_accumulation
+        points_req = self.options.points_required
         for name in self.names:
             limit_accumulation = self.limits[name].accumulationLimit(acc_method)
             limit_detection = self.limits[name].detection_threshold
@@ -364,7 +365,11 @@ class InputWidget(QtWidgets.QWidget):
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
                 d[name], l[name], r[name] = accumulate_detections(
-                    responses, limit_accumulation, limit_detection, integrate=True
+                    responses,
+                    limit_accumulation,
+                    limit_detection,
+                    points_required=points_req,
+                    integrate=True,
                 )
 
         self.detections, self.labels, self.regions = combine_detections(d, l, r)
