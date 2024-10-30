@@ -7,7 +7,7 @@ Thresholding Options
    :align: center
 
    Signal above the :term:`detection threshold` is detected as a particle.
-   Contiguous regions above the :term:`accumulation threshold`, with at least one detection, are summed.
+   Contiguous regions above the :term:`accumulation threshold`, with at least the :term:`required points` detections, are summed.
 
 To resolve particles from background signals a :term:`detection threshold` must be defined, above with signal is considered a particle.
 SPCal offers three different thresholding methods, each with their own use-cases.
