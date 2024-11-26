@@ -126,6 +126,13 @@ def test_sample_with_reference(qtbot: QtBot):
         window.results.io["Au"].background.baseValue(), 1.906e-11, rtol=1e-4
     )
 
+    # test best units
+    best_units = window.results.bestUnitsForResults()
+    assert best_units["signal"] == ("counts", 1.0)
+    assert best_units["size"] == ("nm", 1e-9)
+    assert best_units["mass"] == ("fg", 1e-18)
+    assert best_units["volume"] == ("μm³", 1e-18)
+
     # Check all
     window.reference.io["Au"].check_use_efficiency_for_all.setChecked(False)
 
