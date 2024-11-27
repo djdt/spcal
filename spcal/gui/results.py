@@ -1013,9 +1013,9 @@ class ResultsWidget(QtWidgets.QWidget):
             unit_keys = list(units.keys())
             unit_values = list(units.values())
             for result in self.results.values():
-                if key not in result.detections:
+                if not result.canCalibrate(key):
                     continue
-                mean = np.mean(result.detections[key])
+                mean = np.mean(result.calibrated(key))
                 idx = max(np.searchsorted(list(unit_values), mean) - 1, 0)
                 if unit_values[idx] < best_units[key][1]:
                     best_units[key] = unit_keys[idx], unit_values[idx]

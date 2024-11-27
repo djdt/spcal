@@ -7,7 +7,7 @@ Thresholding Options
    :align: center
 
    Signal above the :term:`detection threshold` is detected as a particle.
-   Contiguous regions above the :term:`accumulation threshold`, with at least one detection, are summed.
+   Contiguous regions above the :term:`accumulation threshold`, with at least the :term:`required points` detections, are summed.
 
 To resolve particles from background signals a :term:`detection threshold` must be defined, above with signal is considered a particle.
 SPCal offers three different thresholding methods, each with their own use-cases.
@@ -50,6 +50,10 @@ SPCal also allows editing of the *Accumulation method*, to set the :term:`accumu
 
 #. Half-detection threshold
    Uses the value half way between the signal mean and :term:`detection threshold`.
+
+Settings the *Required points* to greater than 1 will require detected regions to contain at least this many points.
+
+Both the :term:`accumulation threshold` and :term:`required points` controls are found in the thresholding *Advanced Options* dialog.
 
 Compound-Poisson options
 ------------------------

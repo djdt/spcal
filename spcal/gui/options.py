@@ -180,11 +180,16 @@ class OptionsWidget(QtWidgets.QWidget):
         layout_method.addWidget(self.limit_method, 1)
         layout_method.addWidget(self.check_iterative, 1)
 
+        layout_button = QtWidgets.QHBoxLayout()
+        layout_button.addWidget(
+            self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+
         self.limit_inputs = QtWidgets.QGroupBox("Threshold Options")
         self.limit_inputs.setLayout(QtWidgets.QFormLayout())
         self.limit_inputs.layout().addRow("Window size:", layout_window_size)
         self.limit_inputs.layout().addRow("Threshold method:", layout_method)
-        self.limit_inputs.layout().addRow(self.button_advanced_options)
+        self.limit_inputs.layout().addRow(layout_button)
         self.limit_inputs.layout().addRow(self.compound_poisson)
         self.limit_inputs.layout().addRow(self.gaussian)
         self.limit_inputs.layout().addRow(self.poisson)

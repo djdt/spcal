@@ -6,7 +6,7 @@ Glossary
 .. glossary::
 
     accumulation threshold
-        The value above which contiguous regions with at least one detection are summed.
+        The value above which contiguous regions with at least the required points detections are summed.
 
     diameter
         Reference particle diameter.
@@ -46,6 +46,9 @@ Glossary
     molar mass
         The molecular weight of the particle material.
         Used to calculate the intracellular concentration for single-cell ICP-MS.
+
+    required points
+        The number of points in a consecutive regions that must be above the detection threshold to be cconsidered a detection. Added in version 1.2.10.
 
     transport efficiency
         The fraction of material that is successfully transported to the detector.

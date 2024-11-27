@@ -13,6 +13,7 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
+        self.setWindowTitle("Advanced Thresholding Options")
 
         # Controllable limit
         self.limit_accumulation = QtWidgets.QComboBox()
@@ -72,6 +73,7 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
 class AdvancedPoissonOptions(QtWidgets.QWidget):
     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setWindowTitle("Advanced Poisson Options")
 
         image = QtGui.QImage(image).scaledToWidth(
             400, QtCore.Qt.TransformationMode.SmoothTransformation
