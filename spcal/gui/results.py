@@ -999,9 +999,10 @@ class ResultsWidget(QtWidgets.QWidget):
             self.action_graph_histogram_single.trigger()
 
     def bestUnitsForResults(self) -> dict[str, tuple[str, float]]:
-        best_units = {k: v for k, v in SPCalResult.base_units.items()}
+        best_units: dict[str, tuple[str, float]] = {}
+        # k: v for k, v in SPCalResult.base_units.items()}
         for key, units in zip(
-            best_units,
+            SPCalResult.base_units,
             [
                 signal_units,
                 mass_units,
@@ -1010,14 +1011,19 @@ class ResultsWidget(QtWidgets.QWidget):
                 molar_concentration_units,
             ],
         ):
+            print(f"key={key}, units={units}")
             unit_keys = list(units.keys())
             unit_values = list(units.values())
-            for result in self.results.values():
+            for k, result in self.results.items():
+                print(f"\tresult {k}, {result.canCalibrate(key)}")
                 if not result.canCalibrate(key):
                     continue
                 mean = np.mean(result.calibrated(key))
                 idx = max(np.searchsorted(list(unit_values), mean) - 1, 0)
-                if unit_values[idx] < best_units[key][1]:
+                if (
+                    unit_values[idx]
+                    < best_units.get(key, SPCalResult.base_units[key])[1]
+                ):
                     best_units[key] = unit_keys[idx], unit_values[idx]
 
         return best_units

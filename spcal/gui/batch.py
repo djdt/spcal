@@ -346,16 +346,18 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow(self.check_single_file)
 
         best_units = self.results.bestUnitsForResults()
+        _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
+        _units.update({k: v[0] for k, v in best_units.items()})
 
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(mass_units.keys())
-        self.mass_units.setCurrentText(best_units["mass"][0])
+        self.mass_units.setCurrentText(_units["mass"])
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(size_units.keys())
-        self.size_units.setCurrentText(best_units["size"][0])
+        self.size_units.setCurrentText(_units["size"])
         self.conc_units = QtWidgets.QComboBox()
         self.conc_units.addItems(molar_concentration_units.keys())
-        self.conc_units.setCurrentText(best_units["cell_concentration"][0])
+        self.conc_units.setCurrentText(_units["cell_concentration"])
 
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
