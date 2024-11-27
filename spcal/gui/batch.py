@@ -306,6 +306,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
         self.trim_right.setChecked(True)
 
+        self.check_single_file = QtWidgets.QCheckBox("Export to single file.")
+        self.check_single_file.setToolTip("Output all results to a single file.")
+        self.check_single_file.checkStateChanged.connect(self.singleFileModeChanged)
+
         self.progress = QtWidgets.QProgressBar()
         self.threadpool = QtCore.QThreadPool()
         self.threadpool.setMaxThreadCount(1)  # No advantage multi?
@@ -339,6 +343,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
+        self.inputs.layout().addRow(self.check_single_file)
 
         best_units = self.results.bestUnitsForResults()
 
@@ -431,6 +436,11 @@ class BatchProcessDialog(QtWidgets.QDialog):
             return False
 
         return True
+
+    def singleFileModeChanged(self, state: QtCore.Qt.CheckState) -> None:
+        is_single_file = state == QtCore.Qt.CheckState.Checked
+        self.check_export_arrays.setEnabled(not is_single_file)
+        self.check_export_compositions.setEnabled(not is_single_file)
 
     def dialogLoadFiles(self) -> None:
         paths = get_open_spcal_paths(self, "Batch Process Files")
@@ -597,6 +607,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 },
                 output_kws={
                     "units_for_results": units,
+                    "single_file": self.check_single_file.isChecked(),
                     "output_inputs": self.check_export_inputs.isChecked(),
                     "output_compositions": self.check_export_compositions.isChecked(),
                     "output_arrays": self.check_export_arrays.isChecked(),
