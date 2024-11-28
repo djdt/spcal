@@ -441,6 +441,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
     def singleFileModeChanged(self, state: QtCore.Qt.CheckState) -> None:
         is_single_file = state == QtCore.Qt.CheckState.Checked
+        self.check_export_inputs.setEnabled(not is_single_file)
         self.check_export_arrays.setEnabled(not is_single_file)
         self.check_export_compositions.setEnabled(not is_single_file)
 
