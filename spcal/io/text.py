@@ -280,7 +280,7 @@ def export_single_particle_results_flat(
             )
 
     with path.open("a", encoding="utf-8") as fp:
-        write_detection_results(fp, path.stem,results)
+        write_detection_results(fp, path.stem, results)
         write_limits(fp, path.stem, results)
 
 
