@@ -133,7 +133,10 @@ def weighted_rsq(x: np.ndarray, y: np.ndarray, w: np.ndarray | None = None) -> f
     """
     c = np.cov(x, y, aweights=w)
     d = np.diag(c)
+
     stddev = np.sqrt(d.real)
+    stddev[stddev == 0.0] = np.nan
+
     c /= stddev[:, None]
     c /= stddev[None, :]
 
