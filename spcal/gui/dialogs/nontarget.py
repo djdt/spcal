@@ -1,4 +1,5 @@
 import logging
+from types import TracebackType
 from typing import Callable
 
 import numpy as np
@@ -92,19 +93,16 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         if self.progress.value() == self.progress.maximum() and self.running:
             self.finalise()
 
-    def threadFailed(self, exception: Exception) -> None:
+    def threadFailed(
+        self, etype: type, value: BaseException, tb: TracebackType | None = None
+    ) -> None:
         if self.aborted:
             return
+
         self.abort()
 
-        logger.exception(exception)
-        msg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Warning,
-            "Screening Failed",
-            str(exception),
-            parent=self,
-        )
-        msg.exec()
+        logger.exception("Screening exception", exc_info=(etype, value, tb))
+        QtWidgets.QMessageBox.critical(self, "Screening Failed", str(value))
 
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)

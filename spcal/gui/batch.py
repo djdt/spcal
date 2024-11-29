@@ -1,5 +1,7 @@
 import logging
 from pathlib import Path
+from types import TracebackType
+from typing import TextIO
 
 import h5py
 import numpy as np
@@ -643,18 +645,13 @@ class BatchProcessDialog(QtWidgets.QDialog):
             self.finalise()
         # if self.threadpool.activeThreadCount() == 0 and self.running:
 
-    def workerFailed(self, exception: Exception) -> None:
+    def workerFailed(
+        self, etype: type, value: BaseException, tb: TracebackType | None = None
+    ) -> None:
         if self.aborted:
             return
 
         self.abort()
 
-        logger.exception(exception)
-
-        msg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Warning,
-            "Batch Process Failed",
-            str(exception),
-            parent=self,
-        )
-        msg.exec()
+        logger.exception("Batch exception", exc_info=(etype, value, tb))
+        QtWidgets.QMessageBox.critical(self, "Batch Process Failed", str(value))
