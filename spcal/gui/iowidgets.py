@@ -482,16 +482,17 @@ class ResultIOWidget(IOWidget):
         background_error: float | None = None,
     ) -> None:
 
-        if values.size == 0:
-            mean = median = std = None
-            relative_error = 0.0
-        else:
-            mean = np.mean(values)
-            median = np.median(values)
-            std = np.std(values)
-            relative_error = count_error / count
+        if values.size == 0:  # will never be visible / enabled
+            self.clearOutputs()
+            return
+
+        mean = np.mean(values)
+        median = np.median(values)
+        std = np.std(values)
 
         mean_lod = np.mean(lod)
+
+        relative_error = count_error / count
 
         for te in [self.mean, self.median, self.lod]:
             te.setUnits(units)
