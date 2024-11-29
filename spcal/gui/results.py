@@ -1000,7 +1000,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def bestUnitsForResults(self) -> dict[str, tuple[str, float]]:
         best_units: dict[str, tuple[str, float]] = {}
-        # k: v for k, v in SPCalResult.base_units.items()}
         for key, units in zip(
             SPCalResult.base_units,
             [
