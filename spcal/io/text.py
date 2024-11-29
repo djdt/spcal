@@ -118,57 +118,32 @@ def read_single_particle_file(
     return data
 
 
-def export_single_particle_results_flat(
-    path: Path | str,
+def append_results_summary(
+    path: TextIO | Path,
     results: dict[str, SPCalResult],
-    clusters: dict[str, np.ndarray],
-    detection_times: np.ndarray | None = None,
-    units_for_inputs: dict[str, tuple[str, float]] | None = None,
     units_for_results: dict[str, tuple[str, float]] | None = None,
-    output_inputs: bool = True,
-    output_results: bool = True,
-    output_compositions: bool = False,
-    output_arrays: bool = True,
 ) -> None:
-    """Export flattened results for elements to a file.
+    """Export and append flattened results for elements to a file.
 
     Args:
         path: path to output csv
         results: dict of element: SPCalResult
-        clusters: dict of element: cluster indices
-        detection_times: array of times for each detection
-        units_for_inputs: units for option/sample inputs, defaults to sane
         units_for_results: units for output of detections and lods
-        output_inputs: write input instrument and sample parameters
         output_results: write basic results, e.g. means, median
-        output_compositions: write cluster means and indices (if output_array)
-        output_arrays: write detection data
     """
 
-    input_units = {
-        "cell_diameter": ("μm", 1e-6),
-        "density": ("g/cm3", 1e3),
-        "dwelltime": ("ms", 1e-3),
-        "molar_mass": ("g/mol", 1e-3),
-        "response": ("counts/(μg/L)", 1e9),
-        "time": ("s", 1.0),
-        "uptake": ("ml/min", 1e-3 / 60.0),
-    }
     result_units = {k: v for k, v in SPCalResult.base_units.items()}
 
-    if units_for_inputs is not None:
-        input_units.update(units_for_inputs)
     if units_for_results is not None:
         result_units.update(units_for_results)
 
-    if isinstance(path, str):
-        path = Path(path)
+    if isinstance(path, Path):
+        path = path.open("a")
 
-    def write_detection_results(
-        fp: TextIO, file: str, results: dict[str, SPCalResult]
-    ) -> None:
+    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         if len(results) == 0:
             return
+        file = next(iter(results.values())).file
 
         _write_if_exists(
             fp, results, lambda r: r.number, f"{file},Number,#,", postfix="\n"
@@ -248,7 +223,7 @@ def export_single_particle_results_flat(
                     postfix="\n",
                 )
 
-    def write_limits(fp: TextIO, file: str, results: dict[str, SPCalResult]) -> None:
+    def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         def limit_or_range(
             r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
         ) -> str | None:
@@ -268,6 +243,10 @@ def export_single_particle_results_flat(
                 )
             return format.format(lod / factor)
 
+        if len(results) == 0:
+            return
+        file = next(iter(results.values())).file
+
         for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
             _write_if_exists(
@@ -279,9 +258,8 @@ def export_single_particle_results_flat(
                 format="{}",
             )
 
-    with path.open("a", encoding="utf-8") as fp:
-        write_detection_results(fp, path.stem, results)
-        write_limits(fp, path.stem, results)
+    write_detection_results(path, results)
+    write_limits(path, results)
 
 
 def export_single_particle_results(
