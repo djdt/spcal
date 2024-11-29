@@ -43,6 +43,7 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
     dlg = window.dialogBatchProcess()
     qtbot.add_widget(dlg)
     dlg.files.addItems([str(path)])
+    dlg.check_summary.setChecked(True)
 
     dlg.output_name.setText(tmp.name)
     dlg.output_dir.setText(str(tmp_path))
@@ -53,6 +54,8 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
         dlg.start()
 
     assert tmp.stat().st_size > 0
+    assert dlg.summary_path is not None
+    assert dlg.summary_path.stat().st_size > 0
 
 
 def test_batch_export_no_detections(tmp_path: Path, qtbot: QtBot):
