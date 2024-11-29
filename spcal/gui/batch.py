@@ -128,7 +128,7 @@ def process_data(
         rdata = {}
         for name, result in results.items():
             if result.canCalibrate(key):
-                rdata[name] = result.calibrated(key)[valid]
+                rdata[name] = result.calibrated(key, use_indicies=False)[valid]
         if len(rdata) == 0:
             continue
         X = prepare_data_for_clustering(rdata)

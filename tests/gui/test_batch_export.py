@@ -17,17 +17,17 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
 
     assert not window.action_open_batch.isEnabled()
 
-    path = Path(__file__).parent.parent.joinpath("data/text/tofwerk_export_au.csv")
+    path = Path(__file__).parent.parent.joinpath("data/text/tof_mix_au_ag_auag.csv")
 
-    data = read_single_particle_file(path, columns=(2,))
+    data = read_single_particle_file(path, columns=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
     with qtbot.wait_signal(window.sample.detectionsChanged):
         window.sample.loadData(
             data,
             {
                 "path": path,
-                "columns": [2],
-                "ignores": [0, 1],
+                "columns": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "ignores": [0],
                 "first line": 0,
                 "names": {data.dtype.names[0]: data.dtype.names[0]},
                 "cps": False,
