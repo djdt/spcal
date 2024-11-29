@@ -140,27 +140,26 @@ def append_results_summary(
     if isinstance(path, Path):
         path = path.open("a")
 
+    def write_header(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+        fp.write(",,," + ",".join(results.keys()) + "\n")
+
     def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
         if len(results) == 0:
             return
-        file = next(iter(results.values())).file
+        file = next(iter(results.values())).file.stem
 
-        _write_if_exists(
-            fp, results, lambda r: r.number, f"{file},Number,#,", postfix="\n"
-        )
+        _write_if_exists(fp, results, lambda r: r.number, f"{file},Number,#,")
         _write_if_exists(
             fp,
             results,
             lambda r: r.number_error,
-            f"{file},Number error,#",
-            postfix="\n",
+            f"{file},Number error,#,",
         )
         _write_if_exists(
             fp,
             results,
             lambda r: r.number_concentration,
             f"{file},Number concentration,#/L,",
-            postfix="\n",
         )
         unit, factor = result_units["mass"]
         _write_if_exists(
@@ -168,7 +167,6 @@ def append_results_summary(
             results,
             lambda r: ((r.mass_concentration or 0.0) / factor) or None,
             f"{file},Mass concentration,{unit}/L,",
-            postfix="\n",
         )
 
         # === Background ===
@@ -177,7 +175,6 @@ def append_results_summary(
             results,
             lambda r: r.background,
             f"{file},Background,counts,",
-            postfix="\n",
         )
         unit, factor = result_units["size"]
         _write_if_exists(
@@ -187,14 +184,12 @@ def append_results_summary(
                 r.asSize(r.background) / factor if r.canCalibrate("size") else None
             ),
             f"{file},Background,{unit},",
-            postfix="\n",
         )
         _write_if_exists(
             fp,
             results,
             lambda r: r.background_error,
             f"{file},Background error,counts,",
-            postfix="\n",
         )
         unit, factor = result_units["mass"]
         _write_if_exists(
@@ -202,7 +197,6 @@ def append_results_summary(
             results,
             lambda r: ((r.ionic_background or 0.0) / factor) or None,
             f"{file},Ionic background,{unit}/L,",
-            postfix="\n",
         )
 
         def ufunc_or_none(
@@ -220,7 +214,6 @@ def append_results_summary(
                     results,
                     lambda r: (ufunc_or_none(r, ufunc, key, factor)),
                     f"{file},{label},{unit},",
-                    postfix="\n",
                 )
 
     def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
@@ -245,7 +238,7 @@ def append_results_summary(
 
         if len(results) == 0:
             return
-        file = next(iter(results.values())).file
+        file = next(iter(results.values())).file.stem
 
         for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
@@ -254,10 +247,10 @@ def append_results_summary(
                 results,
                 lambda r: limit_or_range(r, key, factor),
                 f"{file},Limit of detection,{unit},",
-                postfix="\n",
                 format="{}",
             )
 
+    write_header(path, results)
     write_detection_results(path, results)
     write_limits(path, results)
 

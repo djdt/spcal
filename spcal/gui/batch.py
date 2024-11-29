@@ -327,7 +327,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
         self.trim_right.setChecked(True)
 
-        self.check_summary = QtWidgets.QCheckBox("Export results summary.")
+        self.check_summary = QtWidgets.QCheckBox("Export batch results summary.")
         self.check_summary.setToolTip("Output a summary of results to a single file.")
 
         self.progress = QtWidgets.QProgressBar()
@@ -607,11 +607,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
                 raise ValueError(f"start: no exporter for importer '{default}'")
 
         if self.check_summary.isChecked():
-            time = datetime.datetime.now()
-            time.microsecond = None  # strip microseconds
-            self.summary_path = outfiles[0].parent.joinpath(
-                f"batch_summary_{time.isoformat()}.csv"
+            tstr = datetime.datetime.strftime(
+                datetime.datetime.now(), "%Y-%m-%dT%H:%M:%S"
             )
+            self.summary_path = outfiles[0].parent.joinpath(f"batch_summary_{tstr}.csv")
             summary = self.summary_path.open("w")
         else:
             self.summary_path = None
