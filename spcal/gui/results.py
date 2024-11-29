@@ -1000,7 +1000,6 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def bestUnitsForResults(self) -> dict[str, tuple[str, float]]:
         best_units: dict[str, tuple[str, float]] = {}
-        # k: v for k, v in SPCalResult.base_units.items()}
         for key, units in zip(
             SPCalResult.base_units,
             [
@@ -1011,11 +1010,9 @@ class ResultsWidget(QtWidgets.QWidget):
                 molar_concentration_units,
             ],
         ):
-            print(f"key={key}, units={units}")
             unit_keys = list(units.keys())
             unit_values = list(units.values())
             for k, result in self.results.items():
-                print(f"\tresult {k}, {result.canCalibrate(key)}")
                 if not result.canCalibrate(key):
                     continue
                 mean = np.mean(result.calibrated(key))
