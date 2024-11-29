@@ -481,9 +481,16 @@ class ResultIOWidget(IOWidget):
         background_conc: float | None = None,
         background_error: float | None = None,
     ) -> None:
-        mean = np.mean(values)
-        median = np.median(values)
-        std = np.std(values)
+
+        if values.size == 0:
+            mean = median = std = None
+            relative_error = 0.0
+        else:
+            mean = np.mean(values)
+            median = np.median(values)
+            std = np.std(values)
+            relative_error = count_error / count
+
         mean_lod = np.mean(lod)
 
         for te in [self.mean, self.median, self.lod]:
@@ -498,7 +505,6 @@ class ResultIOWidget(IOWidget):
         self.median.setUnit(unit)
         self.lod.setUnit(unit)
 
-        relative_error = count_error / count
         self.count.setValue(int(count))
         self.count.setError(int(np.round(count_error, 0)))
         self.count_label.setText(f"({count_percent:{self.count.view_format}} %)")
