@@ -39,6 +39,14 @@ def _write_if_exists(
     fp.write(prefix + text + postfix + "\n")
 
 
+def _ufunc_or_none(
+    r: SPCalResult, ufunc, key: str, factor: float = 1.0
+) -> float | None:
+    if not r.canCalibrate(key) or r.indicies.size == 0:
+        return None
+    return ufunc(r.calibrated(key)) / factor
+
+
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
@@ -199,20 +207,13 @@ def append_results_summary(
             f"{file},Ionic background,{unit}/L,",
         )
 
-        def ufunc_or_none(
-            r: SPCalResult, ufunc, key: str, factor: float = 1.0
-        ) -> float | None:
-            if not r.canCalibrate(key) or r.detections.size == 0:
-                return None
-            return ufunc(r.calibrated(key)) / factor
-
         for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]
                 _write_if_exists(
                     fp,
                     results,
-                    lambda r: (ufunc_or_none(r, ufunc, key, factor)),
+                    lambda r: (_ufunc_or_none(r, ufunc, key, factor)),
                     f"{file},{label},{unit},",
                 )
 
@@ -393,13 +394,6 @@ def export_single_particle_results(
         )
         fp.write("#\n")
 
-        def ufunc_or_none(
-            r: SPCalResult, ufunc, key: str, factor: float = 1.0
-        ) -> float | None:
-            if not r.canCalibrate(key) or r.detections.size == 0:
-                return None
-            return ufunc(r.calibrated(key)) / factor
-
         for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
             fp.write(f"# {label},{','.join(results.keys())}\n")
             for key in SPCalResult.base_units.keys():
@@ -407,7 +401,7 @@ def export_single_particle_results(
                 _write_if_exists(
                     fp,
                     results,
-                    lambda r: (ufunc_or_none(r, ufunc, key, factor)),
+                    lambda r: (_ufunc_or_none(r, ufunc, key, factor)),
                     "#,",
                     postfix="," + unit,
                 )
