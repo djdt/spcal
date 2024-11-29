@@ -168,7 +168,9 @@ def weighted_linreg(
     See Also:
         :func:`pewlib.calibration.weighted_rsq`
     """
-    coef = np.polynomial.polynomial.polyfit(x, y, 1, w=w if w is None else np.sqrt(w))
+    coef, _ = np.polynomial.polynomial.polyfit(
+        x, y, 1, w=w if w is None else np.sqrt(w), full=True
+    )
     r2 = weighted_rsq(x, y, w)
     if x.size > 2:
         error = np.sqrt(np.sum(((coef[0] + x * coef[1]) - y) ** 2) / (x.size - 2))
