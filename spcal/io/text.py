@@ -50,7 +50,7 @@ def _ufunc_or_none(
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
-    columns: tuple[int] | np.ndarray | None = None,
+    columns: tuple[int, ...] | np.ndarray | None = None,
     first_line: int = 1,
     convert_cps: float | None = None,
     max_rows: int | None = None,
