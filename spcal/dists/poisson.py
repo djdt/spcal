@@ -21,9 +21,9 @@ def pdf(k: np.ndarray, lam: float) -> np.ndarray:
 
     # There will be overflows for high lam during factorial and power
     with np.errstate(over="ignore"):
-        fk = np.cumprod(np.where(j == 0, 1, j), dtype=np.float64)
-        pdf = np.zeros(j.size, dtype=np.float64)
-        np.divide(lam**j * np.exp(-lam), fk, where=np.isfinite(fk), out=pdf)
+        top = lam**j
+        bottom = np.cumprod(np.where(j == 0, 1, j), dtype=np.float64)
+        pdf = top / bottom * np.exp(-lam)
     return pdf[k]
 
 
