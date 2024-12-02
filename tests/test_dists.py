@@ -78,6 +78,10 @@ def test_dist_poisson():
     assert np.allclose(poisson.cdf(k, 1.0), stats.poisson.cdf(k, 1.0))
     assert np.allclose(poisson.pdf(k, 1.0), stats.poisson.pmf(k, 1.0))
 
+    qs = np.arange(0.1, 1.0, 0.01)
+    for q in qs:
+        assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))
+
 
 def test_compound_poisson_lognormal_quantile():
     sigma = 0.47
