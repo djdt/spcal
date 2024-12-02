@@ -1,5 +1,3 @@
-from statistics import NormalDist
-
 import numpy as np
 
 from spcal.dists import lognormal, poisson
@@ -26,24 +24,23 @@ def compound_poisson_lognormal_quantile(
     Returns:
         the ``q`` th value of the compound Poisson-Log-normal
     """
+
     # A reasonable overestimate of the upper value
-    uk = (
-        int((lam + 1.0) * NormalDist().inv_cdf(1.0 - (1.0 - q) / 1e3) * np.sqrt(lam))
-        + 1
-    )
-    k = np.arange(0, uk + 1)
+    uk = poisson.quantile(1.0 - 1e-12, lam)
+    k = np.arange(0, uk + 1, dtype=int)
     pdf = poisson.pdf(k, lam)
+
+    valid = np.isfinite(pdf)
+    k = k[valid]
+    pdf = pdf[valid]
     cdf = np.cumsum(pdf)
 
     # Calculate the zero-truncated quantile
     q0 = (q - pdf[0]) / (1.0 - pdf[0])
     if q0 <= 0.0:  # The quantile is in the zero portion
         return 0.0
-    # Trim values with a low probability
-    valid = pdf > 1e-6
-    weights = pdf[valid][1:]
-    k = k[valid][1:]
-    cdf = cdf[valid]
+    weights = pdf[1:]
+    k = k[1:]
     # Re-normalize weights
     weights /= weights.sum()
 
