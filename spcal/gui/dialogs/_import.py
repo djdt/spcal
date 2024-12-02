@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from pathlib import Path
+from types import TracebackType
 
 import h5py
 import numpy as np
@@ -584,21 +585,16 @@ class NuImportDialog(_ImportDialogBase):
         if self.progress.value() == self.progress.maximum() and self.running:
             self.finalise()
 
-    def threadFailed(self, exception: Exception) -> None:
+    def threadFailed(
+        self, etype: type, value: BaseException, tb: TracebackType | None = None
+    ) -> None:
         if self.aborted:
             return
 
         self.abort()
 
-        logger.exception(exception)
-
-        msg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Warning,
-            "Import Failed",
-            "Failed to read integ binary.",
-            parent=self,
-        )
-        msg.exec()
+        logger.exception("Thread exception", exc_info=(etype, value, tb))
+        QtWidgets.QMessageBox.critical(self, "Import Failed", str(value))
 
     def abort(self) -> None:
         self.aborted = True

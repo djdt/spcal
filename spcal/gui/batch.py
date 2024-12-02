@@ -1,5 +1,8 @@
+import datetime
 import logging
 from pathlib import Path
+from types import TracebackType
+from typing import TextIO
 
 import h5py
 import numpy as np
@@ -16,7 +19,11 @@ from spcal.gui.results import ResultsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
 from spcal.io.nu import read_nu_directory, select_nu_signals
-from spcal.io.text import export_single_particle_results, read_single_particle_file
+from spcal.io.text import (
+    append_results_summary,
+    export_single_particle_results,
+    read_single_particle_file,
+)
 from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
 from spcal.result import ClusterFilter, Filter, SPCalResult
@@ -126,7 +133,7 @@ def process_data(
         rdata = {}
         for name, result in results.items():
             if result.canCalibrate(key):
-                rdata[name] = result.calibrated(key)[valid]
+                rdata[name] = result.calibrated(key, use_indicies=False)[valid]
         if len(rdata) == 0:
             continue
         X = prepare_data_for_clustering(rdata)
@@ -150,6 +157,7 @@ def process_data(
 def process_text_file(
     path: Path,
     outpath: Path,
+    summary: TextIO | None,
     import_options: dict,
     trim: tuple[int, int],
     process_kws: dict,
@@ -172,11 +180,15 @@ def process_text_file(
 
     # === Export to file ===
     export_single_particle_results(outpath, results, clusters, times, **output_kws)
+    # === Export to summary ===
+    if summary is not None:
+        append_results_summary(summary, results, output_kws["units_for_results"])
 
 
 def process_nu_file(
     path: Path,
     outpath: Path,
+    summary: TextIO | None,
     import_options: dict,
     trim: tuple[int, int],
     process_kws: dict,
@@ -204,10 +216,15 @@ def process_nu_file(
     # === Export to file ===
     export_single_particle_results(outpath, results, clusters, times, **output_kws)
 
+    # === Export summary ===
+    if summary is not None:
+        append_results_summary(summary, results, output_kws["units_for_results"])
+
 
 def process_tofwerk_file(
     path: Path,
     outpath: Path,
+    summary: TextIO | None,
     import_options: dict,
     trim: tuple[int, int],
     process_kws: dict,
@@ -232,6 +249,10 @@ def process_tofwerk_file(
 
     # === Export to file ===
     export_single_particle_results(outpath, results, clusters, times, **output_kws)
+
+    # === Export summary ===
+    if summary is not None:
+        append_results_summary(summary, results, output_kws["units_for_results"])
 
 
 class ImportOptionsWidget(QtWidgets.QGroupBox):
@@ -306,9 +327,14 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.trim_right = QtWidgets.QCheckBox("Use sample right trim.")
         self.trim_right.setChecked(True)
 
+        self.check_summary = QtWidgets.QCheckBox("Export batch results summary.")
+        self.check_summary.setToolTip("Output a summary of results to a single file.")
+
         self.progress = QtWidgets.QProgressBar()
         self.threadpool = QtCore.QThreadPool()
-        self.threadpool.setMaxThreadCount(1)  # No advantage multi?
+        # No advantage for multi-thread and single thread required for flat output
+        self.threadpool.setMaxThreadCount(1)
+        self.summary_path: Path | None = None
         self.aborted = False
         self.running = False
 
@@ -339,18 +365,21 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
+        self.inputs.layout().addRow(self.check_summary)
 
         best_units = self.results.bestUnitsForResults()
+        _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
+        _units.update({k: v[0] for k, v in best_units.items()})
 
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(mass_units.keys())
-        self.mass_units.setCurrentText(best_units["mass"][0])
+        self.mass_units.setCurrentText(_units["mass"])
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(size_units.keys())
-        self.size_units.setCurrentText(best_units["size"][0])
+        self.size_units.setCurrentText(_units["size"])
         self.conc_units = QtWidgets.QComboBox()
         self.conc_units.addItems(molar_concentration_units.keys())
-        self.conc_units.setCurrentText(best_units["cell_concentration"][0])
+        self.conc_units.setCurrentText(_units["cell_concentration"])
 
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
@@ -432,6 +461,12 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         return True
 
+    # def singleFileModeChanged(self, state: QtCore.Qt.CheckState) -> None:
+    #     is_single_file = state == QtCore.Qt.CheckState.Checked
+    #     self.check_export_inputs.setEnabled(not is_single_file)
+    #     self.check_export_arrays.setEnabled(not is_single_file)
+    #     self.check_export_compositions.setEnabled(not is_single_file)
+
     def dialogLoadFiles(self) -> None:
         paths = get_open_spcal_paths(self, "Batch Process Files")
         if len(paths) > 0:
@@ -471,6 +506,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.aborted = True
         self.button_process.setText("Start Batch")
         self.running = False
+
+        if self.summary_path is not None and self.summary_path.exists():
+            self.summary_path.unlink()
+            self.summary_path = None
 
     def start(self) -> None:
         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
@@ -567,11 +606,22 @@ class BatchProcessDialog(QtWidgets.QDialog):
             case default:
                 raise ValueError(f"start: no exporter for importer '{default}'")
 
+        if self.check_summary.isChecked():
+            tstr = datetime.datetime.strftime(
+                datetime.datetime.now(), "%Y-%m-%dT%H:%M:%S"
+            )
+            self.summary_path = outfiles[0].parent.joinpath(f"batch_summary_{tstr}.csv")
+            summary = self.summary_path.open("w")
+        else:
+            self.summary_path = None
+            summary = None
+
         for path, outpath in zip(infiles, outfiles):
             worker = Worker(
                 fn,
                 path,
                 outpath,
+                summary,
                 import_options=self.sample.import_options,
                 trim=trim,
                 process_kws={
@@ -629,18 +679,13 @@ class BatchProcessDialog(QtWidgets.QDialog):
             self.finalise()
         # if self.threadpool.activeThreadCount() == 0 and self.running:
 
-    def workerFailed(self, exception: Exception) -> None:
+    def workerFailed(
+        self, etype: type, value: BaseException, tb: TracebackType | None = None
+    ) -> None:
         if self.aborted:
             return
 
         self.abort()
 
-        logger.exception(exception)
-
-        msg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Warning,
-            "Batch Process Failed",
-            str(exception),
-            parent=self,
-        )
-        msg.exec()
+        logger.exception("Batch exception", exc_info=(etype, value, tb))
+        QtWidgets.QMessageBox.critical(self, "Batch Process Failed", str(value))

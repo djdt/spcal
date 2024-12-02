@@ -1,4 +1,5 @@
 """Reading and writing single particle data from and to csv files."""
+
 # import csv
 import datetime
 import importlib.metadata
@@ -22,10 +23,34 @@ def is_text_file(path: Path) -> bool:
     return True
 
 
+def _write_if_exists(
+    fp: TextIO,
+    results: dict[str, SPCalResult],
+    fn: Callable[[SPCalResult], Any],
+    prefix: str = "",
+    postfix: str = "",
+    delimiter: str = ",",
+    format: str = "{:.8g}",
+) -> None:
+    values = [fn(result) for result in results.values()]
+    if all(x is None for x in values):
+        return
+    text = delimiter.join(format.format(v) if v is not None else "" for v in values)
+    fp.write(prefix + text + postfix + "\n")
+
+
+def _ufunc_or_none(
+    r: SPCalResult, ufunc, key: str, factor: float = 1.0
+) -> float | None:
+    if not r.canCalibrate(key) or r.indicies.size == 0:
+        return None
+    return ufunc(r.calibrated(key)) / factor
+
+
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
-    columns: tuple[int] | np.ndarray | None = None,
+    columns: tuple[int, ...] | np.ndarray | None = None,
     first_line: int = 1,
     convert_cps: float | None = None,
     max_rows: int | None = None,
@@ -101,6 +126,136 @@ def read_single_particle_file(
     return data
 
 
+def append_results_summary(
+    path: TextIO | Path,
+    results: dict[str, SPCalResult],
+    units_for_results: dict[str, tuple[str, float]] | None = None,
+) -> None:
+    """Export and append flattened results for elements to a file.
+
+    Args:
+        path: path to output csv
+        results: dict of element: SPCalResult
+        units_for_results: units for output of detections and lods
+        output_results: write basic results, e.g. means, median
+    """
+
+    result_units = {k: v for k, v in SPCalResult.base_units.items()}
+
+    if units_for_results is not None:
+        result_units.update(units_for_results)
+
+    if isinstance(path, Path):
+        path = path.open("a")
+
+    def write_header(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+        fp.write(",,," + ",".join(results.keys()) + "\n")
+
+    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+        if len(results) == 0:
+            return
+        file = next(iter(results.values())).file.stem
+
+        _write_if_exists(fp, results, lambda r: r.number, f"{file},Number,#,")
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: r.number_error,
+            f"{file},Number error,#,",
+        )
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: r.number_concentration,
+            f"{file},Number concentration,#/L,",
+        )
+        unit, factor = result_units["mass"]
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: ((r.mass_concentration or 0.0) / factor) or None,
+            f"{file},Mass concentration,{unit}/L,",
+        )
+
+        # === Background ===
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: r.background,
+            f"{file},Background,counts,",
+        )
+        unit, factor = result_units["size"]
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: (
+                r.asSize(r.background) / factor if r.canCalibrate("size") else None
+            ),
+            f"{file},Background,{unit},",
+        )
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: r.background_error,
+            f"{file},Background error,counts,",
+        )
+        unit, factor = result_units["mass"]
+        _write_if_exists(
+            fp,
+            results,
+            lambda r: ((r.ionic_background or 0.0) / factor) or None,
+            f"{file},Ionic background,{unit}/L,",
+        )
+
+        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+            for key in SPCalResult.base_units.keys():
+                unit, factor = result_units[key]
+                _write_if_exists(
+                    fp,
+                    results,
+                    lambda r: (_ufunc_or_none(r, ufunc, key, factor)),
+                    f"{file},{label},{unit},",
+                )
+
+    def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+        def limit_or_range(
+            r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
+        ) -> str | None:
+            lod = r.limits.detection_limit
+            if isinstance(lod, np.ndarray):
+                lod = np.array([lod.min(), lod.max()])
+
+            if not r.canCalibrate(key):
+                return None
+
+            lod = r.convertTo(lod, key)  # type: ignore
+            if isinstance(lod, np.ndarray):
+                return (
+                    format.format(lod[0] / factor)
+                    + " - "
+                    + format.format(lod[1] / factor)
+                )
+            return format.format(lod / factor)
+
+        if len(results) == 0:
+            return
+        file = next(iter(results.values())).file.stem
+
+        for key in SPCalResult.base_units.keys():
+            unit, factor = result_units[key]
+            _write_if_exists(
+                fp,
+                results,
+                lambda r: limit_or_range(r, key, factor),
+                f"{file},Limit of detection,{unit},",
+                format="{}",
+            )
+
+    write_header(path, results)
+    write_detection_results(path, results)
+    write_limits(path, results)
+
+
 def export_single_particle_results(
     path: Path | str,
     results: dict[str, SPCalResult],
@@ -145,21 +300,6 @@ def export_single_particle_results(
     if units_for_results is not None:
         result_units.update(units_for_results)
 
-    def write_if_exists(
-        fp: TextIO,
-        results: dict[str, SPCalResult],
-        fn: Callable[[SPCalResult], Any],
-        prefix: str = "",
-        postfix: str = "",
-        delimiter: str = ",",
-        format: str = "{:.8g}",
-    ) -> None:
-        values = [fn(result) for result in results.values()]
-        if all(x is None for x in values):
-            return
-        text = delimiter.join(format.format(v) if v is not None else "" for v in values)
-        fp.write(prefix + text + postfix + "\n")
-
     def write_header(fp: TextIO, first_result: SPCalResult) -> None:
         date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
         fp.write(f"# SPCal Export {importlib.metadata.version('spcal')}\n")
@@ -180,7 +320,7 @@ def export_single_particle_results(
 
         for input in sorted(list(input_set)):
             unit, factor = input_units.get(input, ("", 1.0))
-            write_if_exists(
+            _write_if_exists(
                 fp,
                 results,
                 lambda r: (r.inputs.get(input, 0.0) / factor) or None,
@@ -189,7 +329,7 @@ def export_single_particle_results(
             )
         fp.write("#\n")
 
-        write_if_exists(
+        _write_if_exists(
             fp, results, lambda r: str(r.limits), "# Limit method,", format="{}"
         )
 
@@ -201,9 +341,9 @@ def export_single_particle_results(
 
         fp.write(f"# Detection results,{','.join(results.keys())}\n")
 
-        write_if_exists(fp, results, lambda r: r.number, "# Particle number,")
-        write_if_exists(fp, results, lambda r: r.number_error, "# Number error,")
-        write_if_exists(
+        _write_if_exists(fp, results, lambda r: r.number, "# Particle number,")
+        _write_if_exists(fp, results, lambda r: r.number_error, "# Number error,")
+        _write_if_exists(
             fp,
             results,
             lambda r: r.number_concentration,
@@ -211,7 +351,7 @@ def export_single_particle_results(
             postfix=",#/L",
         )
         unit, factor = result_units["mass"]
-        write_if_exists(
+        _write_if_exists(
             fp,
             results,
             lambda r: ((r.mass_concentration or 0.0) / factor) or None,
@@ -221,23 +361,23 @@ def export_single_particle_results(
         fp.write("#\n")
 
         # === Background ===
-        write_if_exists(
+        _write_if_exists(
             fp, results, lambda r: r.background, "# Background,", postfix=",counts"
         )
-        # write_if_exists(
+        # _write_if_exists(
         #     fp, results, lambda r: r.asMass(r.background), "#,", postfix=",kg"
         # )
         unit, factor = result_units["size"]
-        write_if_exists(
+        _write_if_exists(
             fp,
             results,
-            lambda r: r.asSize(r.background) / factor
-            if r.canCalibrate("size")
-            else None,
+            lambda r: (
+                r.asSize(r.background) / factor if r.canCalibrate("size") else None
+            ),
             "#,",
             postfix="," + unit,
         )
-        write_if_exists(
+        _write_if_exists(
             fp,
             results,
             lambda r: r.background_error,
@@ -245,7 +385,7 @@ def export_single_particle_results(
             postfix=",counts",
         )
         unit, factor = result_units["mass"]
-        write_if_exists(
+        _write_if_exists(
             fp,
             results,
             lambda r: ((r.ionic_background or 0.0) / factor) or None,
@@ -254,21 +394,14 @@ def export_single_particle_results(
         )
         fp.write("#\n")
 
-        def ufunc_or_none(
-            r: SPCalResult, ufunc, key: str, factor: float = 1.0
-        ) -> float | None:
-            if not r.canCalibrate(key) or r.detections.size == 0:
-                return None
-            return ufunc(r.calibrated(key)) / factor
-
         for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
             fp.write(f"# {label},{','.join(results.keys())}\n")
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]
-                write_if_exists(
+                _write_if_exists(
                     fp,
                     results,
-                    lambda r: (ufunc_or_none(r, ufunc, key, factor)),
+                    lambda r: (_ufunc_or_none(r, ufunc, key, factor)),
                     "#,",
                     postfix="," + unit,
                 )
@@ -277,6 +410,7 @@ def export_single_particle_results(
         fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
     ) -> None:
         from spcal.cluster import cluster_information, prepare_data_for_clustering
+
         if len(results) == 0:
             return
 
@@ -347,7 +481,7 @@ def export_single_particle_results(
 
         for key in SPCalResult.base_units.keys():
             unit, factor = result_units[key]
-            write_if_exists(
+            _write_if_exists(
                 fp,
                 results,
                 lambda r: limit_or_range(r, key, factor),
