@@ -2,7 +2,9 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <cmath>
 #include <execution>
+#include <iostream>
 #include <numeric>
 #include <ranges>
 #include <vector>
@@ -270,13 +272,18 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
 }
 
 double poisson_quantile(double q, double lam) {
-  int k = 0;
-  double pdf = std::exp(-lam);
-  double cdf = pdf;
+  double k = 0.0;
+  long double pdf = std::expl(-lam);
+  long double cdf = pdf;
 
   while (cdf < q) {
-    k++;
+    k += 1.0;
     pdf *= lam / k;
+    if (!std::isnormal(pdf)) {
+      std::cerr << "poisson_qunatile: error calculating quantile for lambda="
+                << lam << std::endl;
+      break;
+    }
     cdf += pdf;
   }
   return k;
