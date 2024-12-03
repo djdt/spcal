@@ -36,7 +36,7 @@ def compound_poisson_lognormal_quantile_lookup(
         the ``q`` th value of the compound Poisson-Lognormal
     """
     lam = np.atleast_1d(lam)
-    q0 = zero_trunc_quantile(lam, q)
+    q0 = np.atleast_1d(zero_trunc_quantile(lam, q))
     nonzero = q0 > 0.0
 
     qs = np.zeros_like(lam)
