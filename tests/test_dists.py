@@ -83,23 +83,18 @@ def test_dist_poisson():
         assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))
 
 
-def test_compound_poisson_lognormal_quantile():
-    sigma = 0.47
-    x = np.random.lognormal(np.log(1.0) - 0.5 * sigma**2, sigma=sigma, size=10000)
+def test_compound_poisson_lognormal_quantile_approximation():
+    lambdas = [0.01, 0.1, 1.0, 10.0, 100.0]
+    sigmas = [0.3, 0.4, 0.5]
+    qs = 1.0 - np.array([1e-3, 1e-4, 1e-5, 1e-6])
 
-    lams = [0.1, 1, 5]
-    qs = np.geomspace(0.9, 1.0 - 1e-4, 10)
-    for lam in lams:
-        sim = util.simulate_zt_compound_poisson(lam, x, size=1000000)
-        p0 = np.exp(-lam)
-        for q in qs:
-            q0 = (q - p0) / (1.0 - p0)
-            if q0 < 0.0:
-                a = 0.0
-            else:
-                a = np.quantile(sim, q0)
-            b = util.compound_poisson_lognormal_quantile(
-                q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
-            )
-            # Within 5% or within 0.1
-            assert np.isclose(a, b, rtol=0.05, atol=0.1)
+    for lam in lambdas:
+        for sigma in sigmas:
+            for q in qs:
+                mu = np.log(1.0) - 0.5 * sigma**2
+                qtrue = util.compound_poisson_lognormal_quantile_lookup(q, lam, sigma)
+                qaprx = util.compound_poisson_lognormal_quantile_approximation(
+                    q, lam, mu, sigma
+                )
+                # within 5 %
+                assert np.isclose(qaprx, qtrue, rtol=0.05)
