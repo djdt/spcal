@@ -139,7 +139,7 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                method=compound_kws.get("method", "lookup"),
+                method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 window_size=window_size,
@@ -183,22 +183,27 @@ class SPCalLimit(object):
         simulate the expected background and calculate the appropriate quantile for a
         given alpha value.
 
-        Two methods are available, depending on the presence of ``single_ion_dist``. If
-        passed, the background is simulated as a compound poisson using the SIS
-        distribution. Otherwise an approximation is made that assumes the underlying SIS
-        distribution is log-normal with a log stdev of ``sigma``. The approximation is
-        much faster, but may be less accurate.
+        Three methods are available, depending on the value of ``method``.
+        If 'approximation' is passed the log-normal approximation described in the SPCal
+        ToF paper is used, assuming the SIS is a lognormal with shape ``sigma``.
+        If 'lookup table' is passed the threshold is interpolated from a table of
+        pre-computed values spanning lambda (0.01 - 100.0), sigma (0.3 - 0.6) and alpha
+        (1e-7 - (1.0 - 1e-7)).
+        If 'simulation' is passed, the background is simulated using the provdied
+        ``single_ion_dist`` distribution. This should only be performed for alpha values
+        >1e-3 due to the time required for accurate simulation.
+        The 'lookup' method is fastest and can be used with windowed thresholding.
 
         A good value for ``sigma`` is 0.45, for both Nu Instruments and TOFWERK ToFs.
 
         Args:
             responses: single-particle data
             alpha: type I error rate
-            method: method of calculating ('approximation', 'lookup table', 'simulation')
+            method: method used ('approximation', 'lookup table', 'simulation')
             single_ion: single ion distribution
             sigma: sigma of SIS, used for compound log-normal approx
             size: size of simulation, larger values will give more consistent quantiles
-            window_size: size of moving window
+            window_size: size of moving window, for method 'lookup table' only
             max_iters: number of iterations, set to 1 for no iters
 
         References:
@@ -209,6 +214,10 @@ class SPCalLimit(object):
                 MacDonald, E.; Hooland, M.l Giles, B.; Pollock, C. The parameterization
                 of microchannel-plate-based detection systems, J. Geo. R. 2018
                 https://doi.org/10.1002/2016JA022563
+            Lockwood, T. E.; Schlatt, L.; Clases, D. SPCal – an Open Source, Easy-to-Use
+                Processing Platform for ICP-TOFMS-Based Single Event Data. J. Anal. At.
+                Spectrom. 2024.
+                https://doi.org/10.1039/D4JA00241E.
         """
         if size is None:
             size = responses.size
@@ -226,7 +235,7 @@ class SPCalLimit(object):
 
         if window_size > 0 and method != "lookup table":
             logger.warning(
-                "window size is not available for methods other than 'lookup'"
+                "window size is not available for methods other than 'lookup table'"
             )
             window_size = 0
         if method == "simulation" and single_ion_dist is None:
@@ -476,7 +485,7 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
-                method=compound_kws.get("method", "lookup"),
+                method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 window_size=window_size,
