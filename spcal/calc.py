@@ -178,3 +178,55 @@ def weighted_linreg(
         error = 0.0
 
     return coef[1], coef[0], r2, error
+
+
+def interpolate_3d(
+    x: np.ndarray | float,
+    y: np.ndarray | float,
+    z: np.ndarray | float,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    zs: np.ndarray,
+    data: np.ndarray,
+) -> np.ndarray | float:
+    """Cubic interpolation of (x, y, z) for data.
+
+    Args:
+        x: x position of values to interpolate
+        y: y position of values to interpolate
+        z: z position of values to interpolate
+        xs: x values of ``data``
+        ys: y values of ``data``
+        zs: z values of ``data``
+        data: known values, shape (xs, ys, zs)
+
+    Returns:
+        interpolated values, shape (x)
+    """
+    x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+    assert x.size == y.size == z.size
+    assert data.shape == (xs.size, ys.size, zs.size)
+
+    idx0 = np.searchsorted(xs, x, side="right") - 1
+    idy0 = np.searchsorted(ys, y, side="right") - 1
+    idz0 = np.searchsorted(zs, z, side="right") - 1
+
+    idx1 = np.minimum(idx0 + 1, xs.size - 1)
+    idy1 = np.minimum(idy0 + 1, ys.size - 1)
+    idz1 = np.minimum(idz0 + 1, zs.size - 1)
+
+    xd = (x - xs[idx0]) / (xs[idx1] - xs[idx0])
+    yd = (y - ys[idy0]) / (ys[idy1] - ys[idy0])
+    zd = (z - zs[idz0]) / (zs[idz1] - zs[idz0])
+
+    c00 = data[idx0, idy0, idz0] * (1.0 - xd) + data[idx1, idy0, idz0] * xd
+    c01 = data[idx0, idy0, idz1] * (1.0 - xd) + data[idx1, idy0, idz1] * xd
+    c10 = data[idx0, idy1, idz0] * (1.0 - xd) + data[idx1, idy1, idz0] * xd
+    c11 = data[idx0, idy1, idz1] * (1.0 - xd) + data[idx1, idy1, idz1] * xd
+
+    c0 = c00 * (1.0 - yd) + c10 * yd
+    c1 = c01 * (1.0 - yd) + c11 * yd
+
+    c = c0 * (1.0 - zd) + c1 * zd
+
+    return c
