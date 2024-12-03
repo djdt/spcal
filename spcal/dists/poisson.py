@@ -20,7 +20,7 @@ def pdf(k: np.ndarray, lam: float) -> np.ndarray:
     j = np.arange(0, np.amax(k) + 1)
 
     # There will be overflows for high lam during factorial and power
-    with np.errstate(over="ignore"):
+    with np.errstate(invalid="ignore", over="ignore"):
         top = lam**j
         bottom = np.cumprod(np.where(j == 0, 1, j), dtype=np.float64)
         pdf = top / bottom * np.exp(-lam)
