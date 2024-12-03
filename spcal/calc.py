@@ -215,6 +215,11 @@ def interpolate_3d(
     idy1 = np.minimum(idy0 + 1, ys.size - 1)
     idz1 = np.minimum(idz0 + 1, zs.size - 1)
 
+    # Fix any edge cases
+    idx0 = np.where(idx1 == xs.size - 1, idx1 - 1, idx0)
+    idy0 = np.where(idy1 == ys.size - 1, idy1 - 1, idy0)
+    idz0 = np.where(idz1 == zs.size - 1, idz1 - 1, idz0)
+
     xd = (x - xs[idx0]) / (xs[idx1] - xs[idx0])
     yd = (y - ys[idy0]) / (ys[idy1] - ys[idy0])
     zd = (z - zs[idz0]) / (zs[idz1] - zs[idz0])
