@@ -308,7 +308,6 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.check_iterative.setEnabled(not manual)
         self.check_window.setEnabled(not nowindow)
-        print(nowindow)
 
         if nowindow:
             self.check_window.setChecked(False)

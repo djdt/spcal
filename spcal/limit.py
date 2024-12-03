@@ -250,7 +250,6 @@ class SPCalLimit(object):
                     2 * halfwin :
                 ]
 
-            print('method', method, 'window', window_size)
             if method == "approximation":
                 mu = np.log(1.0) - 0.5 * sigma**2
                 threshold = compound_poisson_lognormal_quantile_approximation(
