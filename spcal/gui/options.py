@@ -170,6 +170,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.check_iterative.toggled.connect(self.limitOptionsChanged)
 
         self.compound_poisson = CompoundPoissonOptions()
+        self.compound_poisson.method.currentTextChanged.connect(
+            lambda: self.limitMethodChanged("Compound Poisson")
+        )
         self.compound_poisson.limitOptionsChanged.connect(self.limitOptionsChanged)
         self.poisson = PoissonOptions()
         self.poisson.limitOptionsChanged.connect(self.limitOptionsChanged)
@@ -290,7 +293,13 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def limitMethodChanged(self, method: str) -> None:
         manual = method == "Manual Input"
-        compound = method == "Compound Poisson"
+
+        nowindow = manual
+        if (
+            method == "Compound Poisson"
+            and not self.compound_poisson.method.currentText() == "Lookup Table"
+        ):
+            nowindow = True
 
         self.useManualLimits.emit(manual)
         self.compound_poisson.setEnabled(not manual)
@@ -298,10 +307,10 @@ class OptionsWidget(QtWidgets.QWidget):
         self.poisson.setEnabled(not manual)
 
         self.check_iterative.setEnabled(not manual)
-        self.check_window.setEnabled(not manual and not compound)
+        self.check_window.setEnabled(not nowindow)
+        print(nowindow)
 
-        self.blockSignals(True)
-        if manual or compound:
+        if nowindow:
             self.check_window.setChecked(False)
         if manual:
             self.check_iterative.setChecked(False)

@@ -401,8 +401,6 @@ class InputWidget(QtWidgets.QWidget):
         self.limits.clear()
 
         compound_kws = self.options.compound_poisson.state()
-        if not compound_kws["simulate"]:
-            compound_kws["single ion"] = None
         gaussian_kws = self.options.gaussian.state()
         poisson_kws = self.options.poisson.state()
 

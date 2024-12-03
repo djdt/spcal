@@ -1,4 +1,5 @@
 """Helper class for SPCal limits and thresholding."""
+
 import logging
 from statistics import NormalDist
 from typing import Callable
@@ -8,8 +9,10 @@ import numpy as np
 
 from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
-    compound_poisson_lognormal_quantile,
+    compound_poisson_lognormal_quantile_approximation,
+    compound_poisson_lognormal_quantile_lookup,
     simulate_zt_compound_poisson,
+    zero_trunc_quantile,
 )
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
@@ -136,8 +139,10 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
+                method=compound_kws.get("method", "lookup"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
+                window_size=window_size,
                 max_iters=max_iters,
             )
         elif method.startswith("gaussian"):
@@ -164,9 +169,11 @@ class SPCalLimit(object):
         cls,
         responses: np.ndarray,
         alpha: float = 1e-6,
+        method: str = "lookup table",
         single_ion_dist: np.ndarray | None = None,
         sigma: float = 0.45,
         size: int | None = None,
+        window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
         """Calculate threshold from simulated compound distribution.
@@ -187,9 +194,11 @@ class SPCalLimit(object):
         Args:
             responses: single-particle data
             alpha: type I error rate
+            method: method of calculating ('approximation', 'lookup table', 'simulation')
             single_ion: single ion distribution
             sigma: sigma of SIS, used for compound log-normal approx
             size: size of simulation, larger values will give more consistent quantiles
+            window_size: size of moving window
             max_iters: number of iterations, set to 1 for no iters
 
         References:
@@ -201,7 +210,6 @@ class SPCalLimit(object):
                 of microchannel-plate-based detection systems, J. Geo. R. 2018
                 https://doi.org/10.1002/2016JA022563
         """
-        # sigma = 0.45  # Matches both Nu Instruments and TOFWERK SIAs
         if size is None:
             size = responses.size
 
@@ -215,28 +223,55 @@ class SPCalLimit(object):
 
         threshold, prev_threshold = np.inf, np.inf
         iters = 0
+
+        if window_size > 0 and method != "lookup table":
+            logger.warning(
+                "window size is not available for methods other than 'lookup'"
+            )
+            window_size = 0
+        if method == "simulation" and single_ion_dist is None:
+            raise ValueError("method 'simulation' requires a valid 'single_ion_dist")
+
         while (
             np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
         ) or iters == 0:
             prev_threshold = threshold
 
-            lam = bn.nanmean(responses[responses < threshold])
-            if single_ion_dist is not None and single_ion_dist.size > 0:  # Simulate
-                sim = simulate_zt_compound_poisson(
-                    lam, single_ion_dist, weights=weights, size=size
+            if window_size == 0:  # No window
+                lam = bn.nanmean(responses[responses < threshold])
+            else:
+                halfwin = window_size // 2
+                pad = np.pad(
+                    np.where(responses < threshold, responses, np.nan),
+                    [halfwin, halfwin],
+                    mode="reflect",
                 )
-                sim /= average_single_ion
+                lam = bn.move_mean(pad, window_size, min_count=halfwin + 1)[
+                    2 * halfwin :
+                ]
 
-                p0 = np.exp(-lam)
-                q0 = ((1.0 - alpha) - p0) / (1.0 - p0)
+            print('method', method, 'window', window_size)
+            if method == "approximation":
+                mu = np.log(1.0) - 0.5 * sigma**2
+                threshold = compound_poisson_lognormal_quantile_approximation(
+                    1.0 - alpha, lam, mu, sigma
+                )
+            elif method == "lookup table":
+                threshold = compound_poisson_lognormal_quantile_lookup(
+                    1.0 - alpha, lam, sigma
+                )
+            elif method == "simulation":
+                q0 = zero_trunc_quantile(lam, 1.0 - alpha)
                 if q0 < 0.0:  # pragma: no cover
                     threshold = 0.0
                 else:
+                    sim = simulate_zt_compound_poisson(
+                        lam, single_ion_dist, weights=weights, size=size
+                    )
+                    sim /= average_single_ion
                     threshold = float(np.quantile(sim, q0))
             else:
-                threshold = compound_poisson_lognormal_quantile(
-                    (1.0 - alpha), lam, np.log(1.0) - 0.5 * sigma**2, sigma
-                )
+                raise ValueError(f"unknown method '{method}'")
             iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
@@ -289,8 +324,12 @@ class SPCalLimit(object):
                     [halfwin, halfwin],
                     mode="reflect",
                 )
-                mu = bn.move_mean(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
-                std = bn.move_std(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
+                mu = bn.move_mean(pad, window_size, min_count=halfwin + 1)[
+                    2 * halfwin :
+                ]
+                std = bn.move_std(pad, window_size, min_count=halfwin + 1)[
+                    2 * halfwin :
+                ]
 
             threshold = mu + std * z
             iters += 1
@@ -363,7 +402,9 @@ class SPCalLimit(object):
                     [halfwin, halfwin],
                     mode="reflect",
                 )
-                mu = bn.move_mean(pad, window_size, min_count=halfwin+1)[2 * halfwin :]
+                mu = bn.move_mean(pad, window_size, min_count=halfwin + 1)[
+                    2 * halfwin :
+                ]
 
             sc, _ = poisson_fn(mu, **formula_kws)
             threshold = np.ceil(mu + sc)
@@ -436,8 +477,10 @@ class SPCalLimit(object):
             return SPCalLimit.fromCompoundPoisson(
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
+                method=compound_kws.get("method", "lookup"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
+                window_size=window_size,
                 max_iters=max_iters,
             )
 
