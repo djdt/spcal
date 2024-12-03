@@ -230,7 +230,8 @@ class SPCalLimit(object):
                 single_ion_dist = single_ion_dist[:, 0]
             average_single_ion = np.average(single_ion_dist, weights=weights)
 
-        threshold, prev_threshold = np.inf, np.inf
+        threshold: float | np.ndarray = np.inf
+        prev_threshold: float | np.ndarray = np.inf
         iters = 0
 
         if window_size > 0 and method != "lookup table":
@@ -274,7 +275,7 @@ class SPCalLimit(object):
                     threshold = 0.0
                 else:
                     sim = simulate_zt_compound_poisson(
-                        lam, single_ion_dist, weights=weights, size=size
+                            lam, single_ion_dist, weights=weights, size=size  #type: ignore
                     )
                     sim /= average_single_ion
                     threshold = float(np.quantile(sim, q0))
