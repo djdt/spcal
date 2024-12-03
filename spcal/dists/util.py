@@ -11,48 +11,47 @@ qtable = np.load(
 )
 
 
-def zero_trunc_quantile(lam: float, y: np.ndarray | float) -> np.ndarray | float:
+def zero_trunc_quantile(
+    lam: np.ndarray | float, y: np.ndarray | float
+) -> np.ndarray | float:
     k0 = np.exp(-lam)
     return np.maximum((y - k0) / (1.0 - k0), 0.0)
 
 
-def compound_poisson_lognormal_quantile(
-    q: float, lam: float, sigma: float, method: str = "Lookup"
-) -> float:
+def compound_poisson_lognormal_quantile_lookup(
+    q: float, lam: np.ndarray | float, sigma: float
+) -> np.ndarray | float:
     """The quantile of a compound Poisson-Lognormal distribution.
 
-    Method 'Lookup' interpolates values from a simulation
-    of 1e10 zero-truncated values. Method 'Approximation' uses the
-    approximation described in the paper.
+    Interpolates values from a simulation of 1e10 zero-truncated values.
+    The lookup table spans lambda values from 0.01 to 100.0, sigmas of
+    0.3 to 0.6 and zt-quantiles of 1e-7 to 1.0 - 1e-7.
 
     Args:
         q: quantile
         lam: mean of the Poisson distribution
         sigma: log stddev of the log-normal distribution
-        method: which method to use, 'Lookup' or 'Approximation'
 
     Returns:
         the ``q`` th value of the compound Poisson-Lognormal
     """
-    if method == "Lookup":
-        q0 = zero_trunc_quantile(lam, q)
-        return float(
-            interpolate_3d(
-                lam,
-                sigma,
-                q0,
-                qtable["lambdas"],
-                qtable["sigmas"],
-                qtable["ys"],
-                qtable["quantiles"],
-            )
-        )
-    elif method == "Approximation":
-        return compound_poisson_lognormal_quantile_approximation(
-            q, lam, np.log(1.0) - 0.5 * sigma**2, sigma
-        )
-    else:
-        raise NotImplementedError
+    lam = np.atleast_1d(lam)
+    q0 = zero_trunc_quantile(lam, q)
+    nonzero = q0 > 0.0
+
+    qs = np.zeros_like(lam)
+    qs[nonzero] = interpolate_3d(
+        lam[nonzero],
+        np.full_like(lam[nonzero], sigma),
+        q0[nonzero],
+        qtable["lambdas"],
+        qtable["sigmas"],
+        qtable["ys"],
+        qtable["quantiles"],
+    )
+    if len(qs) == 1:
+        qs = float(qs)
+    return qs
 
 
 def compound_poisson_lognormal_quantile_approximation(
@@ -88,7 +87,7 @@ def compound_poisson_lognormal_quantile_approximation(
     cdf = np.cumsum(pdf)
 
     # Calculate the zero-truncated quantile
-    q0 = (q - pdf[0]) / (1.0 - pdf[0])
+    q0 = zero_trunc_quantile(lam, q)
     if q0 <= 0.0:  # The quantile is in the zero portion
         return 0.0
     weights = pdf[1:]
@@ -99,7 +98,7 @@ def compound_poisson_lognormal_quantile_approximation(
     # Get the sum LN for each value of the Poisson
     mus, sigmas = sum_iid_lognormals(k, np.log(1.0) - 0.5 * sigma**2, sigma)
     # The quantile of the last log-normal, must be lower than this
-    upper_q = lognormal.quantile(q, mus[-1], sigmas[-1])
+    upper_q = lognormal.quantile(q0, mus[-1], sigmas[-1])
 
     xs = np.linspace(lam, upper_q, 10000)
     cdf = np.sum(
