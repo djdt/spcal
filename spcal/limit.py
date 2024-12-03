@@ -275,7 +275,7 @@ class SPCalLimit(object):
                     threshold = 0.0
                 else:
                     sim = simulate_zt_compound_poisson(
-                            lam, single_ion_dist, weights=weights, size=size  #type: ignore
+                        lam, single_ion_dist, weights=weights, size=size  # type: ignore
                     )
                     sim /= average_single_ion
                     threshold = float(np.quantile(sim, q0))
