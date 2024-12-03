@@ -93,3 +93,26 @@ def test_weighted_linreg():
     assert calc.weighted_linreg(x, y, x) == pytest.approx(
         (2.085714, -3.314286, 0.865097, 1.603991)
     )
+
+
+def test_interpolate_3d():
+    xs = np.array([1.0, 2.0, 3.0])
+    ys = np.array([2.0, 4.0, 6.0])
+    zs = np.array([10.0, 20.0, 30.0])
+    data = np.sin(np.arange(3 * 3 * 3).reshape(3, 3, 3))
+
+    # existing value
+    v1 = calc.interpolate_3d(2.0, 4.0, 20.0, xs, ys, zs, data)
+    assert v1 == data[1, 1, 1]
+
+    # linear between 2 values
+    v2 = calc.interpolate_3d(2.5, 4.0, 20.0, xs, ys, zs, data)
+    assert v2 == np.mean([data[1, 1, 1], data[2, 1, 1]])
+
+    # all existing
+    v3 = calc.interpolate_3d([2.0, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
+    assert np.allclose(v3, [data[1, 1, 0], data[2, 2, 1]])
+
+    # mix of existing
+    v4 = calc.interpolate_3d([2.5, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
+    assert np.all(v4 == [np.mean([data[2, 1, 0], data[1, 1, 0]]), data[2, 2, 1]])
