@@ -50,7 +50,7 @@ def compound_poisson_lognormal_quantile_lookup(
         qtable["quantiles"],
     )
     if len(qs) == 1:
-        qs = float(qs)
+        return qs[0]
     return qs
 
 
