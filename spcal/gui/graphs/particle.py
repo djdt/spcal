@@ -25,6 +25,7 @@ class ParticleView(SinglePlotGraphicsView):
             parent=parent,
         )
         self.xaxis.setScale(xscale)
+        self.xaxis.enableAutoSIPrefix(False)
 
         self.raw_signals: dict[str, np.ndarray] = {}  # for export
 
