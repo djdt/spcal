@@ -22,6 +22,10 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.spinbox_size_y.setRange(100, 10000)
         self.spinbox_size_y.setValue(size.height())
 
+        self.spinbox_dpi = QtWidgets.QSpinBox()
+        # 96, 10000)
+        self.spinbox_dpi.setValue(96)
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Close,
@@ -30,9 +34,17 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        layout_size = QtWidgets.QHBoxLayout()
+        layout_size.addWidget(self.spinbox_size_x, 1)
+        layout_size.addWidget(QtWidgets.QLabel("x"), 0)
+        layout_size.addWidget(self.spinbox_size_y, 1)
+
+        layout_form = QtWidgets.QFormLayout()
+        layout_form.addRow("Size:", layout_size)
+        layout_form.addRow("DPI:", self.spinbox_dpi)
+
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.spinbox_size_x)
-        layout.addWidget(self.spinbox_size_y)
+        layout.addLayout(layout_form)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
@@ -40,28 +52,52 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.render()
         super().accept()
 
+    def scaleFonts(self, points: float, dpi: float) -> None:
+        size = points / 96.0 * dpi
+        for item in self.scene.items():
+            if isinstance(item, pyqtgraph.AxisItem):
+                item.setStyle(
+                    tickLength=int(size),
+                    tickTextHeight=int(size),
+                    tickFont=QtGui.QFont("sans", size)
+                )
+            elif isinstance(item, QtWidgets.QGraphicsTextItem):
+                item.setFont(QtGui.QFont("sans", size))
+            elif isinstance(item, pyqtgraph.LabelItem):
+                item.setText(item.text, family="sans", size=f"{size}pt")
+                item.item.setFont(QtGui.QFont("sans", size))
+                item.item.setPlainText(item.text)
+
     def render(self):
-        pixmap = QtGui.QImage(
+        original_size = self.graph.size()
+        image = QtGui.QImage(
             self.spinbox_size_x.value(),
             self.spinbox_size_y.value(),
             QtGui.QImage.Format.Format_ARGB32,
         )
-        pixmap.fill(QtGui.QColor(0, 0, 0, 0))
-        painter = QtGui.QPainter(pixmap)
+        image.fill(QtGui.QColor(0, 0, 0, 0))
+        painter = QtGui.QPainter(image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
 
-        source = self.graph.viewRect()
+        self.graph.resize(image.size())
+        self.scaleFonts(10.0, 300.0)
+
+        # Set font prior, in program is required
+        # We can then scale everything to the approriate dpi (assume 96 standard)
+
+        # print(image.dotsPerMeterY() * 0.0254)
+        # image.setDotsPerMeterY(200.0 / 0.0254)
+        # image.setDotsPerMeterX(200.0 / 0.0254)
+        #
+
 
         self.scene.render(
             painter,
-            QtCore.QRectF(pixmap.rect()),
+            QtCore.QRectF(image.rect()),
             self.graph.viewRect(),
-            QtCore.Qt.AspectRatioMode.KeepAspectRatio
+            QtCore.Qt.AspectRatioMode.KeepAspectRatio,
         )
         painter.end()
-        pixmap.save("/home/tom/Downloads/out.png")
-        # painter.drawSc
-        # for item in self.graph.items():
-        #     if isinstance(item, pyqtgraph.PlotCurveItem):
-        #         pen: QtGui.QPen = item.opts["pen"]
-        #         pen.setWidthF(2.0)
+        image.save("/home/tom/Downloads/out.png")
+        self.graph.resize(original_size)
