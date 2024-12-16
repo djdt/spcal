@@ -121,18 +121,22 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         if self.xaxis.contains(self.xaxis.mapFromView(event.pos())):
-            vb = self.plot.getViewBox()
-            xr, _ = vb.viewRange()
-            xl = vb.state["limits"]["xLimits"]
-            dlg = AxisEditDialog(xr, xl, parent=self)
+            scale = self.xaxis.scale
+            (v1, v2), (_, _) = self.plot.getViewBox().viewRange()
+            min, max = self.plot.getViewBox().state["limits"]["xLimits"]
+            dlg = AxisEditDialog(
+                (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
+            )
             dlg.rangeSelected.connect(self.setXAxisRange)
             dlg.open()
             event.accept()
         elif self.yaxis.contains(self.yaxis.mapFromView(event.pos())):
-            vb = self.plot.getViewBox()
-            _, yr = vb.viewRange()
-            yl = vb.state["limits"]["yLimits"]
-            dlg = AxisEditDialog(yr, yl, parent=self)
+            scale = self.yaxis.scale
+            (_, _), (v1, v2) = self.plot.getViewBox().viewRange()
+            min, max = self.plot.getViewBox().state["limits"]["yLimits"]
+            dlg = AxisEditDialog(
+                (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
+            )
             dlg.rangeSelected.connect(self.setYAxisRange)
             dlg.open()
             event.accept()
@@ -140,15 +144,17 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             super().mouseDoubleClickEvent(event)
 
     def setXAxisRange(self, min: float, max: float) -> None:
+        scale = self.xaxis.scale
         if min > max:
             min, max = max, min
-        self.plot.getViewBox().setRange(xRange=(min, max))
+        self.plot.getViewBox().setRange(xRange=(min / scale, max / scale))
 
     def setYAxisRange(self, min: float, max: float) -> None:
+        scale = self.yaxis.scale
         self.setAutoScaleY(False)
         if min > max:
             min, max = max, min
-        self.plot.getViewBox().setRange(yRange=(min, max))
+        self.plot.getViewBox().setRange(yRange=(min / scale, max / scale))
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         if self.xaxis.contains(
