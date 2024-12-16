@@ -28,10 +28,8 @@ class ParticleView(SinglePlotGraphicsView):
 
         self.raw_signals: dict[str, np.ndarray] = {}  # for export
 
-        self.plot.setMouseEnabled(y=False)
-        self.plot.setAutoVisible(y=True)
-        self.plot.enableAutoRange(y=True)
         self.plot.setLimits(yMin=0.0)
+        self.setAutoScaleY(True)
 
         self.legend_items: dict[str, MultipleItemSampleProxy] = {}
         self.limit_items: list[pyqtgraph.PlotCurveItem] = []
