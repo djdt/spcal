@@ -141,6 +141,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             dlg.open()
             event.accept()
         else:
+            from spcal.gui.dialogs.imageexport import ImageExportDialog
+            dlg = ImageExportDialog(self,parent=self.parent())
+            dlg.open()
             super().mouseDoubleClickEvent(event)
 
     def setXAxisRange(self, min: float, max: float) -> None:
