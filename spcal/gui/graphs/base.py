@@ -36,8 +36,8 @@ class AxisEditDialog(QtWidgets.QDialog):
         self.button_box.rejected.connect(self.reject)
 
         layout = QtWidgets.QFormLayout()
-        layout.addRow("min", self.spinbox_lo)
-        layout.addRow("max", self.spinbox_hi)
+        layout.addRow("min:", self.spinbox_lo)
+        layout.addRow("max:", self.spinbox_hi)
         layout.addRow(self.button_box)
         self.setLayout(layout)
 
