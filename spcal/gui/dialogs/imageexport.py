@@ -6,11 +6,10 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 
 class ImageExportDialog(QtWidgets.QDialog):
     def __init__(
-        self, graph: pyqtgraph.GraphicsView, parent: QtWidgets.QWidget | None = None
+        self, graph: SinglePlotGraphicsView, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent)
         self.graph = graph
-        self.scene = graph.scene()
 
         size = self.graph.viewport().rect()
 
@@ -23,7 +22,7 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.spinbox_size_y.setValue(size.height())
 
         self.spinbox_dpi = QtWidgets.QSpinBox()
-        # 96, 10000)
+        self.spinbox_dpi.setRange(96, 1200)
         self.spinbox_dpi.setValue(96)
 
         self.button_box = QtWidgets.QDialogButtonBox(
@@ -49,55 +48,50 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def accept(self) -> None:
-        self.render()
-        super().accept()
+        self.prepareForRender()
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.render)
+        self.timer.start(100)
 
-    def scaleFonts(self, points: float, dpi: float) -> None:
-        size = points / 96.0 * dpi
-        for item in self.scene.items():
-            if isinstance(item, pyqtgraph.AxisItem):
-                item.setStyle(
-                    tickLength=int(size),
-                    tickTextHeight=int(size),
-                    tickFont=QtGui.QFont("sans", size)
-                )
-            elif isinstance(item, QtWidgets.QGraphicsTextItem):
-                item.setFont(QtGui.QFont("sans", size))
-            elif isinstance(item, pyqtgraph.LabelItem):
-                item.setText(item.text, family="sans", size=f"{size}pt")
-                item.item.setFont(QtGui.QFont("sans", size))
-                item.item.setPlainText(item.text)
 
-    def render(self):
-        original_size = self.graph.size()
-        image = QtGui.QImage(
+    def prepareForRender(self) -> None:
+        self.original_size = self.graph.size()
+        self.original_font = QtGui.QFont(self.graph.font)
+        self.image = QtGui.QImage(
             self.spinbox_size_x.value(),
             self.spinbox_size_y.value(),
             QtGui.QImage.Format.Format_ARGB32,
         )
-        image.fill(QtGui.QColor(0, 0, 0, 0))
-        painter = QtGui.QPainter(image)
+        self.image.fill(QtGui.QColor(0, 0, 0, 0))
+
+        resized_font = QtGui.QFont(self.original_font)
+        resized_font.setPointSizeF(
+            self.original_font.pointSizeF() / 96.0 * self.spinbox_dpi.value()
+        )
+        self.graph.setFont(resized_font)
+        self.graph.resize(self.image.size())
+
+    def render(self):
+        print("we have reached render")
+        painter = QtGui.QPainter(self.image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
 
-        self.graph.resize(image.size())
-        self.scaleFonts(10.0, 300.0)
+        # # We can then scale everything to the approriate dpi (assume 96 standard)
+        # # this doesn't work as AxisItems don't correctly resize, not sure how to fix
+        # could try using a timer?
 
-        # Set font prior, in program is required
-        # We can then scale everything to the approriate dpi (assume 96 standard)
-
-        # print(image.dotsPerMeterY() * 0.0254)
-        # image.setDotsPerMeterY(200.0 / 0.0254)
-        # image.setDotsPerMeterX(200.0 / 0.0254)
-        #
-
-
-        self.scene.render(
+        self.graph.scene().prepareForPaint()
+        self.graph.scene().render(
             painter,
-            QtCore.QRectF(image.rect()),
+            QtCore.QRectF(self.image.rect()),
             self.graph.viewRect(),
             QtCore.Qt.AspectRatioMode.KeepAspectRatio,
         )
         painter.end()
-        image.save("/home/tom/Downloads/out.png")
-        self.graph.resize(original_size)
+        self.image.save("/home/tom/Downloads/out.png")
+        self.graph.setFont(self.original_font)
+        self.graph.resize(self.original_size)
+
+        super().accept()
