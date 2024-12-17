@@ -415,6 +415,13 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_options["composition"]["minimum size"] = size
         self.drawGraphCompositions()
 
+    def setGraphFont(self, font: QtGui.QFont) -> None:
+        self.graph_composition.setFont(font)
+        self.graph_hist.setFont(font)
+        self.graph_pca.setFont(font)
+        self.graph_scatter.setFont(font)
+        self.graph_stack.setFont(font)
+
     def setHistDrawMode(self, mode: str) -> None:
         self.graph_options["histogram"]["mode"] = mode
         self.drawGraphHist()

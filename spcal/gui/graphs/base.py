@@ -14,6 +14,7 @@ class AxisEditDialog(QtWidgets.QDialog):
         self,
         view_range: tuple[float, float],
         view_limit: tuple[float, float],
+        font: QtGui.QFont | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -55,9 +56,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         xunits: str | None = None,
         yunits: str | None = None,
         viewbox: pyqtgraph.ViewBox | None = None,
+        font: QtGui.QFont | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(background="white", parent=parent)
+
+        if font is None:
+            font = QtGui.QFont()
 
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
@@ -84,6 +89,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )
 
+        self.setFont(font)
         self.setCentralWidget(self.plot)
 
         self.action_auto_scale_y = create_action(
@@ -142,22 +148,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             event.accept()
         else:
             from spcal.gui.dialogs.imageexport import ImageExportDialog
-            dlg = ImageExportDialog(self,parent=self.parent())
+
+            dlg = ImageExportDialog(self, parent=self.parent())
             dlg.open()
             super().mouseDoubleClickEvent(event)
-
-    def setXAxisRange(self, min: float, max: float) -> None:
-        scale = self.xaxis.scale
-        if min > max:
-            min, max = max, min
-        self.plot.getViewBox().setRange(xRange=(min / scale, max / scale))
-
-    def setYAxisRange(self, min: float, max: float) -> None:
-        scale = self.yaxis.scale
-        self.setAutoScaleY(False)
-        if min > max:
-            min, max = max, min
-        self.plot.getViewBox().setRange(yRange=(min / scale, max / scale))
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         if self.xaxis.contains(
@@ -184,6 +178,19 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         event.accept()
         menu.popup(event.globalPos())
+
+    def setXAxisRange(self, min: float, max: float) -> None:
+        scale = self.xaxis.scale
+        if min > max:
+            min, max = max, min
+        self.plot.getViewBox().setRange(xRange=(min / scale, max / scale))
+
+    def setYAxisRange(self, min: float, max: float) -> None:
+        scale = self.yaxis.scale
+        self.setAutoScaleY(False)
+        if min > max:
+            min, max = max, min
+        self.plot.getViewBox().setRange(yRange=(min / scale, max / scale))
 
     def setAutoScaleY(self, auto_scale: bool) -> None:
         self.action_auto_scale_y.setChecked(auto_scale)
@@ -226,6 +233,22 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def dataRect(self) -> QtCore.QRectF:
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
+
+    def setFont(self, font: QtGui.QFont) -> None:
+        self.font = font
+
+        self.xaxis.setTickFont(font)
+        self.xaxis.label.setFont(font)
+        self.yaxis.setTickFont(font)
+        self.yaxis.label.setFont(font)
+        self.plot.titleLabel.setFont(font)
+
+        if self.plot.legend is not None:
+            self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
+            for item, label in self.plot.legend.items:
+                label.setText(label.text)  # force update of label
+
+        self.plot.update()
 
     def exportData(self) -> None:
         dir = QtCore.QSettings().value("RecentFiles/1/path", None)

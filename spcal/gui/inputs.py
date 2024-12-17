@@ -56,7 +56,12 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph = ParticleView()
+        settings = QtCore.QSettings()
+        font = QtGui.QFont(
+            settings.value("GraphFont/Family", "SansSerif"),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+        )
+        self.graph = ParticleView(font=font)
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.graph.requestPeakProperties.connect(self.dialogDataProperties)
@@ -201,6 +206,9 @@ class InputWidget(QtWidgets.QWidget):
     def setDrawMode(self, mode: str) -> None:
         self.draw_mode = mode
         self.redraw()
+
+    def setGraphFont(self, font: QtGui.QFont) -> None:
+        self.graph.setFont(font)
 
     def redraw(self) -> None:
         self.drawGraph()
