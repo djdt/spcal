@@ -252,9 +252,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
             for item, label in self.plot.legend.items:
                 label.setText(label.text)  # force update of label
-            self.plot.legend.layout.invalidate()
-
-        self.plot.update()
+            self.plot.legend.updateSize()  # size is broken
 
     def exportData(self) -> None:
         dir = QtCore.QSettings().value("RecentFiles/1/path", None)
