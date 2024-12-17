@@ -7,8 +7,8 @@ from spcal.cluster import cluster_information, prepare_data_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
-from spcal.gui.util import create_action
 from spcal.gui.modelviews import BasicTable
+from spcal.gui.util import create_action
 
 
 class CompositionDetailDialog(QtWidgets.QDialog):
@@ -48,8 +48,10 @@ class CompositionDetailDialog(QtWidgets.QDialog):
 
 
 class CompositionView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("Detection Compositions", parent=parent)
+    def __init__(
+        self, font: QtGui.QFont | None = None, parent: QtWidgets.QWidget | None = None
+    ):
+        super().__init__("Detection Compositions", font=font, parent=parent)
         self.plot.setMouseEnabled(x=False, y=False)
         self.plot.setAspectLocked(1.0)
         self.plot.legend.setSampleType(StaticRectItemSample)

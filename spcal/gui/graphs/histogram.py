@@ -9,12 +9,15 @@ from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
 class HistogramView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self, font: QtGui.QFont | None = None, parent: QtWidgets.QWidget | None = None
+    ):
         super().__init__(
             "Histogram",
             xlabel="Signal (counts)",
             ylabel="No. Events",
             viewbox=ViewBoxForceScaleAtZero(),
+            font=font,
             parent=parent,
         )
         self.plot.setLimits(xMin=0.0, yMin=0.0)

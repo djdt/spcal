@@ -15,6 +15,7 @@ class ParticleView(SinglePlotGraphicsView):
     def __init__(
         self,
         xscale: float = 1.0,
+        font: QtGui.QFont | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(
@@ -22,6 +23,7 @@ class ParticleView(SinglePlotGraphicsView):
             xlabel="Time",
             xunits="s",
             ylabel="Intensity (counts)",
+            font=font,
             parent=parent,
         )
         self.xaxis.setScale(xscale)

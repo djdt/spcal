@@ -76,8 +76,10 @@ class PCAArrow(QtWidgets.QGraphicsPathItem):
 
 
 class PCAView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("PCA", xlabel="PC 1", ylabel="PC 2", parent=parent)
+    def __init__(
+        self, font: QtGui.QFont | None = None, parent: QtWidgets.QWidget | None = None
+    ):
+        super().__init__("PCA", xlabel="PC 1", ylabel="PC 2", font=font, parent=parent)
 
         self.scatter: pyqtgraph.ScatterPlotItem | None = None
 
