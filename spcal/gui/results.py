@@ -428,7 +428,6 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_stack.setFont(font)
         self.redraw()  # fixes legend
 
-
     def setHistDrawMode(self, mode: str) -> None:
         self.graph_options["histogram"]["mode"] = mode
         self.drawGraphHist()
