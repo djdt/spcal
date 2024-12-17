@@ -63,6 +63,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         if font is None:
             font = QtGui.QFont()
+        self.font = font
 
         pen = QtGui.QPen(QtCore.Qt.black, 1.0)
         pen.setCosmetic(True)
@@ -89,7 +90,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
         )
 
-        self.setFont(font)
+        self.setFont(self.font)
         self.setCentralWidget(self.plot)
 
         self.action_auto_scale_y = create_action(
