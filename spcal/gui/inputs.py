@@ -209,6 +209,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def setGraphFont(self, font: QtGui.QFont) -> None:
         self.graph.setFont(font)
+        self.redraw()  # fixes legend
 
     def redraw(self) -> None:
         self.drawGraph()

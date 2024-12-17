@@ -108,10 +108,16 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph_hist = HistogramView()
-        self.graph_composition = CompositionView()
-        self.graph_scatter = ScatterView()
-        self.graph_pca = PCAView()
+        settings = QtCore.QSettings()
+        font = QtGui.QFont(
+            settings.value("GraphFont/Family", "SansSerif"),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+        )
+
+        self.graph_hist = HistogramView(font=font)
+        self.graph_composition = CompositionView(font=font)
+        self.graph_scatter = ScatterView(font=font)
+        self.graph_pca = PCAView(font=font)
 
         self.combo_scatter_x = QtWidgets.QComboBox()
         self.combo_scatter_x.currentIndexChanged.connect(self.drawGraphScatter)
@@ -419,8 +425,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_composition.setFont(font)
         self.graph_hist.setFont(font)
         self.graph_pca.setFont(font)
-        self.graph_scatter.setFont(font)
         self.graph_stack.setFont(font)
+        self.redraw()  # fixes legend
+
 
     def setHistDrawMode(self, mode: str) -> None:
         self.graph_options["histogram"]["mode"] = mode
