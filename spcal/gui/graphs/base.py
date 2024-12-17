@@ -238,16 +238,21 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
 
-        self.xaxis.setTickFont(font)
+        self.xaxis.setStyle(tickFont=font, tickTextHeight=font.pointSize())
         self.xaxis.label.setFont(font)
-        self.yaxis.setTickFont(font)
+        self.yaxis.setStyle(tickFont=font, tickTextHeight=font.pointSize())
         self.yaxis.label.setFont(font)
-        self.plot.titleLabel.setFont(font)
+        self.plot.titleLabel.setText(
+            self.plot.titleLabel.text,
+            family=font.family(),
+            size=f"{font.pointSize()}pt",
+        )
 
         if self.plot.legend is not None:
             self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
             for item, label in self.plot.legend.items:
                 label.setText(label.text)  # force update of label
+            self.plot.legend.layout.invalidate()
 
         self.plot.update()
 
