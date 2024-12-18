@@ -239,16 +239,22 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is None:
             return
 
+        # store items
         items = []
         for item, label in self.plot.legend.items:
             items.append((item, label.text))
-
+        # clear
         self.plot.legend.clear()
-
+        # re-add
         for item, text in items:
             self.scene().addItem(item)
             item.show()
             self.plot.legend.addItem(item, text)
+        # fix label heights
+        for item, label in self.plot.legend.items:
+            label.setGeometry(label.itemRect())
+
+            self.plot.legend.updateSize()
 
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
