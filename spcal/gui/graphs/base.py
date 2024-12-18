@@ -87,7 +87,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.setMenuEnabled(False)
         self.plot.hideButtons()
         self.plot.addLegend(
-            offset=(-5, 5), verSpacing=-5, colCount=1, labelTextColor="black"
+            offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black"
         )
 
         self.setFont(self.font)
@@ -235,6 +235,21 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
+    def redrawLegend(self) -> None:
+        if self.plot.legend is None:
+            return
+
+        items = []
+        for item, label in self.plot.legend.items:
+            items.append((item, label.text))
+
+        self.plot.legend.clear()
+
+        for item, text in items:
+            self.scene().addItem(item)
+            item.show()
+            self.plot.legend.addItem(item, text)
+
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
 
@@ -250,9 +265,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         if self.plot.legend is not None:
             self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
-            for item, label in self.plot.legend.items:
-                label.setText(label.text)  # force update of label
-            self.plot.legend.updateSize()  # size is broken
+            self.redrawLegend()
 
     def exportData(self) -> None:
         dir = QtCore.QSettings().value("RecentFiles/1/path", None)
