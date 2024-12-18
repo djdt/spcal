@@ -14,6 +14,15 @@ qtable = np.load(
 def zero_trunc_quantile(
     lam: np.ndarray | float, y: np.ndarray | float
 ) -> np.ndarray | float:
+    """Returns the zero-truncated Poisson quantile.
+
+    Args:
+        lam: Poisson rate parameter(s)
+        y: quantile(s) of non-truncated dist
+
+    Returns:
+        quantile(s) of the zero-truncated dist
+    """
     k0 = np.exp(-lam)
     return np.maximum((y - k0) / (1.0 - k0), 0.0)
 
