@@ -251,10 +251,14 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             item.show()
             self.plot.legend.addItem(item, text)
         # fix label heights
+        height = 0.0
         for item, label in self.plot.legend.items:
-            label.setGeometry(label.itemRect())
+            height = height + label.itemRect().height()
 
-        self.plot.legend.updateSize()
+        geometry = self.plot.legend.geometry()
+        self.plot.legend.setGeometry(
+            geometry.x(), geometry.y(), geometry.width(), height
+        )
 
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
