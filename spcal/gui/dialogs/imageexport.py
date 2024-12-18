@@ -1,4 +1,3 @@
-import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
@@ -10,8 +9,7 @@ class ImageExportDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.graph = graph
-
-        size = self.graph.viewport().rect()
+        size = graph.viewport().rect()
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
@@ -54,7 +52,6 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.timer.timeout.connect(self.render)
         self.timer.start(100)
 
-
     def prepareForRender(self) -> None:
         self.original_size = self.graph.size()
         self.original_font = QtGui.QFont(self.graph.font)
@@ -69,18 +66,17 @@ class ImageExportDialog(QtWidgets.QDialog):
         resized_font.setPointSizeF(
             self.original_font.pointSizeF() / 96.0 * self.spinbox_dpi.value()
         )
-        self.graph.setFont(resized_font)
         self.graph.resize(self.image.size())
+        self.graph.setFont(resized_font)
+
+    def postRender(self) -> None:
+        self.graph.resize(self.original_size)
+        self.graph.setFont(self.original_font)
 
     def render(self):
-        print("we have reached render")
         painter = QtGui.QPainter(self.image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
-
-        # # We can then scale everything to the approriate dpi (assume 96 standard)
-        # # this doesn't work as AxisItems don't correctly resize, not sure how to fix
-        # could try using a timer?
 
         self.graph.scene().prepareForPaint()
         self.graph.scene().render(
@@ -91,7 +87,10 @@ class ImageExportDialog(QtWidgets.QDialog):
         )
         painter.end()
         self.image.save("/home/tom/Downloads/out.png")
-        self.graph.setFont(self.original_font)
-        self.graph.resize(self.original_size)
+
+        self.post_timer = QtCore.QTimer()
+        self.post_timer.setSingleShot(True)
+        self.post_timer.timeout.connect(self.postRender)
+        self.post_timer.start(100)
 
         super().accept()
