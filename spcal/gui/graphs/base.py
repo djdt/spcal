@@ -254,7 +254,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         for item, label in self.plot.legend.items:
             label.setGeometry(label.itemRect())
 
-            self.plot.legend.updateSize()
+        self.plot.legend.updateSize()
 
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
