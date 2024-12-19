@@ -50,8 +50,9 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     assert not options.check_window.isEnabled()
     options.limit_method.setCurrentText("Compound Poisson")
     assert options.check_iterative.isEnabled()
+    assert options.check_window.isEnabled()
+    options.compound_poisson.method.setCurrentIndex(0)
     assert not options.check_window.isEnabled()
-    options.limit_method.setCurrentIndex(0)
 
     qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)
     assert options.celldiameter.value() == 1

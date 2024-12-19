@@ -12,6 +12,7 @@ a = Analysis(
     datas=[
         ("spcal/resources/app.ico", "spcal/resources"),
         ("spcal/resources/npdb.npz", "spcal/resources"),
+        ("spcal/resources/cpln_quantiles.npz", "spcal/resources"),
     ],
     hiddenimports=["bottleneck"],
 )

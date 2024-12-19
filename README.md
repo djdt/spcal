@@ -42,3 +42,4 @@ Documentation on usage, examples and a programming reference can be found at htt
 ## Publications
 
 * [Lockwood, T. E.; Gonzalez de Vega, R.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544.](https://doi.org/10.1039/D1JA00297J)
+* [Lockwood, T. E.; Schlatt, L.; Clases, D. SPCal – an Open Source, Easy-to-Use Processing Platform for ICP-TOFMS-Based Single Event Data. J. Anal. At. Spectrom. 2024](https://doi.org/10.1039/D4JA00241E)

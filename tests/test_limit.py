@@ -61,30 +61,57 @@ def test_limit_from_gaussian():
     assert np.isclose(lim.detection_threshold, limit)
 
 
-def test_limit_from_compound_poisson():
-    # LN approximation
+def test_limit_from_compound_poisson_approximation():
+    true_q = 75.5861212  # from simulated data (1e10 samples)
+    sigma = 0.41
+
     lim = SPCalLimit.fromCompoundPoisson(
         x,
         alpha=0.001,
+        method="approximation",
         max_iters=1,
         single_ion_dist=None,
-        sigma=0.1,
+        sigma=sigma,
     )
     assert lim.name == "CompoundPoisson"
     assert np.isclose(
-        lim.detection_threshold, 73.3671, rtol=0.01
+        lim.detection_threshold, true_q, rtol=1e-2
     )  # from simulation of 1e9 samples
 
-    # Nu Instruments style SIS
-    sis = np.random.lognormal(10.0, 0.1, size=1000000)
+
+def test_limit_from_compound_poisson_lookup_table():
+    true_q = 75.6605430  # from simulated data (1e9 samples)
+    sigma = 0.405  # not in table
+
     lim = SPCalLimit.fromCompoundPoisson(
         x,
         alpha=0.001,
+        method="lookup table",
+        max_iters=1,
+        single_ion_dist=None,
+        sigma=sigma,
+    )
+    assert lim.name == "CompoundPoisson"
+    assert np.isclose(
+        lim.detection_threshold, true_q, rtol=1e-3
+    )  # from simulation of 1e9 samples
+
+
+def test_limit_from_compound_poisson_simulation():
+    true_q = 75.5861212
+    sigma = 0.41
+
+    # Nu Instruments style SIS
+    sis = np.random.lognormal(10.0, sigma, size=1000000)
+    lim = SPCalLimit.fromCompoundPoisson(
+        x,
+        alpha=0.001,
+        method="simulation",
         max_iters=1,
         single_ion_dist=sis,
     )
     assert np.isclose(
-        lim.detection_threshold, 73.3671, rtol=0.05
+        lim.detection_threshold, true_q, rtol=1e-1
     )  # from simulation of 1e9 samples, lowered tolerance due to random error
 
     # TOFWERK style SIS
@@ -94,12 +121,25 @@ def test_limit_from_compound_poisson():
     lim = SPCalLimit.fromCompoundPoisson(
         x,
         alpha=0.001,
+        method="simulation",
         max_iters=1,
         single_ion_dist=sis,
     )
     assert np.isclose(
-        lim.detection_threshold, 73.3671, rtol=0.05
+        lim.detection_threshold, true_q, rtol=1e-1
     )  # from simulation of 1e9 samples, lowered tolerance due to random error
+
+
+def test_limit_from_compound_poisson_errors():
+    with pytest.raises(ValueError):
+        SPCalLimit.fromCompoundPoisson(
+            x,
+            alpha=0.001,
+            method="simulation",
+            max_iters=1,
+            single_ion_dist=None,
+            sigma=0.4,
+        )
 
 
 def test_limit_windowed():

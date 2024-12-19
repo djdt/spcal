@@ -1,5 +1,7 @@
 import numpy as np
 
+from spcal.lib.spcalext import poisson_quantile
+
 
 def pdf(k: np.ndarray, lam: float) -> np.ndarray:
     """Poisson probability mass function.
@@ -15,13 +17,14 @@ def pdf(k: np.ndarray, lam: float) -> np.ndarray:
     """
     assert np.issubdtype(k.dtype, np.integer)
     assert np.all(k >= 0)
+    j = np.arange(0, np.amax(k) + 1)
 
     # There will be overflows for high lam during factorial and power
-    with np.errstate(over="ignore"):
-        fk = np.cumprod(np.where(k == 0, 1, k), dtype=np.float64)
-        pdf = np.zeros(k.size, dtype=np.float64)
-        np.divide(lam**k * np.exp(-lam), fk, where=np.isfinite(fk), out=pdf)
-    return pdf
+    with np.errstate(invalid="ignore", over="ignore"):
+        top = lam**j
+        bottom = np.cumprod(np.where(j == 0, 1, j), dtype=np.float64)
+        pdf = top / bottom * np.exp(-lam)
+    return pdf[k]
 
 
 def cdf(k: np.ndarray, lam: float) -> np.ndarray:
@@ -41,3 +44,8 @@ def cdf(k: np.ndarray, lam: float) -> np.ndarray:
 
     j = np.arange(0, np.amax(k) + 1)
     return np.cumsum(pdf(j, lam))[k]
+
+
+def quantile(q: float, lam: float) -> int:
+    """Poisson quantile function"""
+    return poisson_quantile(q, lam)
