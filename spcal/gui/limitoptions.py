@@ -65,9 +65,11 @@ class CompoundPoissonOptions(LimitOptions):
         self.lognormal_sigma.valueChanged.connect(self.limitOptionsChanged)
 
         self.method = QtWidgets.QComboBox()
-        self.method.addItems(["LN Approximation", "Simulation"])
+        self.method.addItems(["Approximation", "Lookup Table", "Simulation"])
+        self.method.setCurrentText("Lookup Table")
         self.method.currentIndexChanged.connect(self.limitOptionsChanged)
-        item = self.method.model().item(1)
+        # diabale simulation
+        item = self.method.model().item(2)
         item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
 
         self.label_sis = QtWidgets.QLabel("Not loaded.")
@@ -185,7 +187,7 @@ class CompoundPoissonOptions(LimitOptions):
         if np.any(self.single_ion_dist != sia):
             self.single_ion_dist = sia
             self.limitOptionsChanged.emit()
-            item = self.method.model().item(1)
+            item = self.method.model().item(2)
             if self.single_ion_dist is None:
                 item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
                 self.label_sis.setText("Not loaded.")
@@ -196,10 +198,13 @@ class CompoundPoissonOptions(LimitOptions):
     def state(self) -> dict:
         return {
             "alpha": self.alpha.value(),
+            "method": self.method.currentText().lower(),
             "sigma": self.lognormal_sigma.value(),
-            "single ion": self.single_ion_dist
-            if self.single_ion_dist is not None
-            else np.array([]),  # No None
+            "single ion": (
+                self.single_ion_dist
+                if self.single_ion_dist is not None
+                else np.array([])
+            ),  # No None
             "simulate": self.method.currentIndex() == 1,
         }
 
@@ -207,6 +212,9 @@ class CompoundPoissonOptions(LimitOptions):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
+        if "method" in state:
+            text = " ".join(x.capitalize() for x in state["method"].split(" "))
+            self.method.setCurrentText(text)
         if "sigma" in state:
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion" in state:
@@ -222,11 +230,11 @@ class CompoundPoissonOptions(LimitOptions):
         self.limitOptionsChanged.emit()
 
     def isComplete(self) -> bool:
-        if self.method.currentText() == "LN Approximation":
-            if not self.lognormal_sigma.hasAcceptableInput():
+        if self.method.currentText() == "Simulation":
+            if self.single_ion_dist is None:
                 return False
         else:
-            if self.single_ion_dist is None:
+            if not self.lognormal_sigma.hasAcceptableInput():
                 return False
 
         return self.alpha.hasAcceptableInput()

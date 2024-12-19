@@ -2,9 +2,12 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <cmath>
 #include <execution>
+#include <iostream>
 #include <numeric>
 #include <ranges>
+#include <vector>
 
 namespace py = pybind11;
 /* Based off of the scipy implementation
@@ -128,9 +131,8 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   auto sortexc = std::execution::par_unseq;
 #endif
   std::sort(sortexc, zd_idx.begin(), zd_idx.end(),
-            [](const std::pair<double, int> &a, const std::pair<double, int> &b) {
-              return a.first < b.first;
-            });
+            [](const std::pair<double, int> &a,
+               const std::pair<double, int> &b) { return a.first < b.first; });
   auto Z = py::array_t<int>({n - 1, 2});
   auto z = Z.mutable_unchecked<2>();
   auto ZD = py::array_t<double>(n - 1);
@@ -269,6 +271,24 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
   return argmax;
 }
 
+double poisson_quantile(double q, double lam) {
+  double k = 0.0;
+  long double pdf = std::expl(-lam);
+  long double cdf = pdf;
+
+  while (cdf < q) {
+    k += 1.0;
+    pdf *= lam / k;
+    if (!std::isnormal(pdf)) {
+      std::cerr << "poisson_qunatile: error calculating quantile for lambda="
+                << lam << std::endl;
+      break;
+    }
+    cdf += pdf;
+  }
+  return k;
+}
+
 PYBIND11_MODULE(spcalext, mod) {
   mod.doc() = "extension module for SPCal.";
 
@@ -280,4 +300,6 @@ PYBIND11_MODULE(spcalext, mod) {
           "Cluster using MST linkage.");
   mod.def("maxima", &maxima,
           "Calculates to maxima between pairs of start and end positions.");
+  mod.def("poisson_quantile", &poisson_quantile,
+          "Quantile (k) for a given q and lambda.");
 }
