@@ -273,7 +273,7 @@ py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
 
 double poisson_quantile(double q, double lam) {
   double k = 0.0;
-  long double pdf = std::expl(-lam);
+  long double pdf = std::exp(static_cast<long double>(-lam));
   long double cdf = pdf;
 
   while (cdf < q) {
