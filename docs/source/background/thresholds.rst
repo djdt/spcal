@@ -53,6 +53,27 @@ The log-normal approximation works by closely approximating the SIA with a log-n
 Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting :term:`detection threshold` for the sum of log-normal distributions.
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
+Lookup Table
+^^^^^^^^^^^^
+Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA can be approximated using a log-normal distribution. The lookup table is a 3-dimensional array of quantiles calculated for a zero-truncated compound-Poisson-log-normal distribution. Each quantile comes from a simulation of :math:`10^{10}` values using the parameters in the table below, using the computational facilities of the UTS eResearch High Performance Computer Cluster. Values between simulated points are interpolated at a sub 0.2 % error.
+
+
+.. list-table:: Parameters in the lookup table.
+   :header-rows: 1
+
+   * - Parameter
+     - Range
+     - No. Values
+   * - :math:`\lambda`
+     - 0.001 - 100 (geometric)
+     - 71
+   * - :math:`\sigma`
+     - 0.25 -- 0.65 (linear)
+     - 41
+   * - :math:`\alpha`
+     - 0.999 -- :math:`10^{-7}` (logistic)
+     - 101
+
 Threshold selection
 -------------------
 

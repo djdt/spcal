@@ -64,13 +64,13 @@ Compound-Poisson options
     * - :math:`\alpha`
       - The (Type I) :term:`error rate`.
     * - Method
-      - The method used: log-normal approximation or simulation.
+      - The method used: lookup table, log-normal approximation or simulation.
     * - SIA :math:`\sigma`
-      - The shape parameter used in the log-normal approximation.
+      - The shape parameter used in the lookup table and log-normal approximation.
     * - SIA Dist
       - The distribution used in the simulation, must be loaded from a file.
 
-Details on the method :term:`detection threshold` is calculated using Compound-Poisson statistics can be found in :ref:`Thresholds for spICP-MS`.
+Details on the method used to calculated the :term:`detection threshold` using Compound-Poisson statistics can be found in :ref:`Thresholds for spICP-MS`.
 To load a SIA distribution press the left-most button. This will start a dialog to import data.
 The loaded distribution can be viewed using the center button, or cleared using the right-most button.
 
@@ -122,7 +122,7 @@ Windowed thresholding is performed by calculating the local signal mean and :ter
 Larger windows are less affected by local changes, but take longer to compute.
 
 .. note::
-    Windowed thresholding is not availble for Compound-Poisson thresholds.
+    Windowed thresholding is only availble for Compound-Poisson thresholds when using the 'Lookup Table' method.
 
 Iterative thresholding
 ----------------------
