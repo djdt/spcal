@@ -1,13 +1,60 @@
+import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.detection import detection_maxima
+from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.graphs.particle import ParticleView
+
+
+def draw_particle_view(
+    responses: np.ndarray,
+    detections: np.ndarray,
+    regions: np.ndarray,
+    # signals: dict[str, np.ndarray],
+    # results: dict[str, SPCalResult],
+    dwell: float,
+    font: QtGui.QFont,
+    pen_size: float,
+    trim_regions: dict[str, tuple[float, float]],
+) -> ParticleView:
+
+    graph = ParticleView(xscale=dwell, font=font)
+
+    scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
+
+    names = tuple(responses.dtype.names)
+
+    xs = np.arange(responses.size)
+
+    for name in names:
+        index = names.index(name)
+        pen = QtGui.QPen(QtGui.QColor(scheme[index % len(scheme)]), pen_size)
+        graph.drawSignal(name, xs, responses[name], pen=pen)
+
+    for name in detections.dtype.names:
+        index = names.index(name)
+        brush = QtGui.QBrush(QtGui.QColor(scheme[index % len(scheme)]))
+        symbol = symbols[index % len(symbols)]
+        trim = trim_regions[name]
+
+        maxima = (
+            detection_maxima(responses[name][trim[0] : trim[1]], regions[name])
+            + trim[0]
+        )
+        graph.drawMaxima(
+            name,
+            xs[maxima],
+            responses[name][maxima],
+            brush=brush,
+            symbol=symbol,
+        )
+    return graph
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    def __init__(
-        self, graph: SinglePlotGraphicsView, parent: QtWidgets.QWidget | None = None
-    ):
+    def __init__(self, input, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.graph = self.createGraphCopy(graph)
         # self.graph = graph
@@ -48,48 +95,48 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
-    def createGraphCopy(self, graph: SinglePlotGraphicsView) -> SinglePlotGraphicsView:
-        copy = SinglePlotGraphicsView(
-            graph.plot.titleLabel.text,
-            graph.xaxis.labelText,
-            graph.yaxis.labelText,
-            graph.xaxis.labelUnits,
-            graph.yaxis.labelUnits,
-        )
-        for item in graph.plot.items:
-            if isinstance(item, pyqtgraph.PlotCurveItem):
-                pen = item.opts["pen"]
-                # resize pen
-                curve = pyqtgraph.PlotCurveItem(
-                    x=item.xData,
-                    y=item.yData,
-                    pen=pen,
-                    connect="all",
-                    skipFiniteCheck=True,
-                )
-                copy.plot.addItem(curve)
-            elif isinstance(item, pyqtgraph.ScatterPlotItem):
-                brush = item.opts["brush"]
-                scatter = pyqtgraph.ScatterPlotItem(
-                    x=item.data["x"],
-                    y=item.data["y"],
-                    size=item.opts["size"],
-                    symbol=item.opts["symbol"],
-                    pen=None,
-                    brush=brush,
-                )
-                copy.plot.addItem(scatter)
-
-        limits = graph.plot.vb.state["limits"]
-        copy.plot.vb.setLimits(
-            xMin=limits["xLimits"][0],
-            xMax=limits["xLimits"][1],
-            yMin=limits["yLimits"][0],
-            yMax=limits["yLimits"][1],
-        )
-        view_range = graph.plot.vb.state["viewRange"]
-        copy.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1])
-        return copy
+    # def createGraphCopy(self, graph: SinglePlotGraphicsView) -> SinglePlotGraphicsView:
+    #     copy = SinglePlotGraphicsView(
+    #         graph.plot.titleLabel.text,
+    #         graph.xaxis.labelText,
+    #         graph.yaxis.labelText,
+    #         graph.xaxis.labelUnits,
+    #         graph.yaxis.labelUnits,
+    #     )
+    #     for item in graph.plot.items:
+    #         if isinstance(item, pyqtgraph.PlotCurveItem):
+    #             pen = item.opts["pen"]
+    #             # resize pen
+    #             curve = pyqtgraph.PlotCurveItem(
+    #                 x=item.xData,
+    #                 y=item.yData,
+    #                 pen=pen,
+    #                 connect="all",
+    #                 skipFiniteCheck=True,
+    #             )
+    #             copy.plot.addItem(curve)
+    #         elif isinstance(item, pyqtgraph.ScatterPlotItem):
+    #             brush = item.opts["brush"]
+    #             scatter = pyqtgraph.ScatterPlotItem(
+    #                 x=item.data["x"],
+    #                 y=item.data["y"],
+    #                 size=item.opts["size"],
+    #                 symbol=item.opts["symbol"],
+    #                 pen=None,
+    #                 brush=brush,
+    #             )
+    #             copy.plot.addItem(scatter)
+    #
+    #     limits = graph.plot.vb.state["limits"]
+    #     copy.plot.vb.setLimits(
+    #         xMin=limits["xLimits"][0],
+    #         xMax=limits["xLimits"][1],
+    #         yMin=limits["yLimits"][0],
+    #         yMax=limits["yLimits"][1],
+    #     )
+    #     view_range = graph.plot.vb.state["viewRange"]
+    #     copy.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1])
+    #     return copy
 
     def accept(self) -> None:
         self.render()
@@ -126,9 +173,10 @@ class ImageExportDialog(QtWidgets.QDialog):
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
 
-        graph = self.createGraphCopy(self.graph)
-        graph.resize(image.size())
-        graph.show()
+        graph = draw_particle_view()
+        # graph = self.createGraphCopy(self.graph)
+        # graph.resize(image.size())
+        # graph.show()
 
         graph.scene().prepareForPaint()
         graph.scene().render(
