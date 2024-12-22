@@ -154,10 +154,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             dlg.open()
             event.accept()
         else:
-            # from spcal.gui.dialogs.imageexport import ImageExportDialog
-            #
-            # dlg = ImageExportDialog(self, parent=self.parent())
-            # dlg.open()
             self.requestImageExport.emit()
             super().mouseDoubleClickEvent(event)
 
@@ -336,6 +332,30 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             )
         else:
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+
+    def exportImage(self, path: Path) -> None:
+        size = self.viewport().size()
+        image = QtGui.QImage(size, QtGui.QImage.Format.Format_ARGB32)
+        image.fill(QtGui.QColor(0, 0, 0, 0))
+
+        painter = QtGui.QPainter(image)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
+
+        # Setup for export
+        for item in self.plot.items:
+            if hasattr(item, "_exportOpts"):
+                item._exportOpts = {}
+
+        self.scene().prepareForPaint()
+        self.scene().render(
+            painter,
+            QtCore.QRectF(image.rect()),
+            self.viewRect(),
+            QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+        )
+        painter.end()
+        image.save(str(path.resolve()))
 
     def dataForExport(self) -> dict[str, np.ndarray]:
         return self.export_data

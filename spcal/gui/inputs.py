@@ -9,6 +9,7 @@ from spcal.detection import accumulate_detections, combine_detections, detection
 from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.graphs import color_schemes, symbols
+from spcal.gui.graphs.export import draw_particle_view
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
@@ -65,6 +66,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.graph.requestPeakProperties.connect(self.dialogDataProperties)
+        self.graph.requestImageExport.connect(self.exportGraphImage)
         self.last_region: tuple[int, int] | None = None
 
         self.io = io_stack
@@ -271,6 +273,37 @@ class InputWidget(QtWidgets.QWidget):
             return
 
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
+        dlg.exec()
+
+    def exportGraphImage(self) -> None:
+        from spcal.gui.dialogs.imageexport import ImageExportDialog
+
+        def export(path: Path, size: QtCore.QSize, dpi: float) -> None:
+            dpi_scale = dlg.spinbox_dpi.value() / 96.0
+            xrange, yrange = self.graph.plot.viewRange()
+            resized_font = QtGui.QFont(self.graph.font)
+            resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
+
+            graph = draw_particle_view(
+                {name: self.asResult(name) for name in self.draw_names},
+                self.regions,
+                dwell=float(self.options.dwelltime.value() or 1.0),
+                font=resized_font,
+                scale=dpi_scale,
+            )
+            view_range = self.graph.plot.vb.state["viewRange"]
+            graph.plot.vb.setRange(
+                xRange=view_range[0], yRange=view_range[1], padding=0.0
+            )
+            graph.xaxis.setScale(dpi_scale)
+            graph.yaxis.setScale(dpi_scale)
+            graph.resize(size)
+            graph.show()
+
+            graph.exportImage(path)
+
+        dlg = ImageExportDialog(self.graph.viewport().size(), parent=self)
+        dlg.exportSettingsSelected.connect(export)
         dlg.exec()
 
     def addExpression(self, name: str, expr: str) -> None:
