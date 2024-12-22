@@ -271,13 +271,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.font = font
 
         fm = QtGui.QFontMetrics(font)
-        print(
-            fm.height(),
-            fm.xHeight(),
-            fm.maxWidth(),
-            fm.averageCharWidth(),
-            fm.lineWidth(),
-        )
         pen: QtGui.QPen = self.xaxis.tickPen()
         pen.setWidthF(fm.lineWidth())
 
