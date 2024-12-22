@@ -1,64 +1,62 @@
+from pathlib import Path
+
 import numpy as np
-import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import detection_maxima
 from spcal.gui.graphs import color_schemes, symbols
-from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.inputs import InputWidget
+from spcal.result import SPCalResult
 
 
 def draw_particle_view(
-    responses: np.ndarray,
-    detections: np.ndarray,
+    results: dict[str, SPCalResult],
     regions: np.ndarray,
-    # signals: dict[str, np.ndarray],
-    # results: dict[str, SPCalResult],
     dwell: float,
     font: QtGui.QFont,
-    pen_size: float,
-    trim_regions: dict[str, tuple[float, float]],
+    scale: float,
+    draw_markers: bool = False,
 ) -> ParticleView:
 
     graph = ParticleView(xscale=dwell, font=font)
 
     scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
 
-    names = tuple(responses.dtype.names)
+    names = tuple(results.keys())
+    xs = np.arange(results[names[0]].events)
 
-    xs = np.arange(responses.size)
-
-    for name in names:
+    for name, result in results.items():
         index = names.index(name)
-        pen = QtGui.QPen(QtGui.QColor(scheme[index % len(scheme)]), pen_size)
-        graph.drawSignal(name, xs, responses[name], pen=pen)
+        pen = QtGui.QPen(QtGui.QColor(scheme[index % len(scheme)]), 2.0 * scale)
+        pen.setCosmetic(True)
+        graph.drawSignal(name, xs, result.responses, pen=pen)
 
-    for name in detections.dtype.names:
-        index = names.index(name)
-        brush = QtGui.QBrush(QtGui.QColor(scheme[index % len(scheme)]))
-        symbol = symbols[index % len(symbols)]
-        trim = trim_regions[name]
+    if draw_markers:
+        for name, result in results.items():
+            index = names.index(name)
+            brush = QtGui.QBrush(QtGui.QColor(scheme[index % len(scheme)]))
+            symbol = symbols[index % len(symbols)]
 
-        maxima = (
-            detection_maxima(responses[name][trim[0] : trim[1]], regions[name])
-            + trim[0]
-        )
-        graph.drawMaxima(
-            name,
-            xs[maxima],
-            responses[name][maxima],
-            brush=brush,
-            symbol=symbol,
-        )
+            maxima = detection_maxima(
+                result.responses, regions[np.flatnonzero(result.detections)]
+            )
+            graph.drawMaxima(
+                name,
+                xs[maxima],
+                result.responses[maxima],
+                brush=brush,
+                symbol=symbol,
+                size=6.0 * scale,
+            )
     return graph
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    def __init__(self, input, parent: QtWidgets.QWidget | None = None):
+    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float)
+
+    def __init__(self, size: QtCore.QSize, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.graph = self.createGraphCopy(graph)
-        # self.graph = graph
-        size = graph.viewport().rect()
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
@@ -77,6 +75,8 @@ class ImageExportDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Close,
         )
 
+        self.check_transparent = QtWidgets.QCheckBox("Transparent background")
+
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -88,107 +88,17 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout_form = QtWidgets.QFormLayout()
         layout_form.addRow("Size:", layout_size)
         layout_form.addRow("DPI:", self.spinbox_dpi)
+        layout_form.addRow(self.check_transparent)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.graph)
         layout.addLayout(layout_form)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
-    # def createGraphCopy(self, graph: SinglePlotGraphicsView) -> SinglePlotGraphicsView:
-    #     copy = SinglePlotGraphicsView(
-    #         graph.plot.titleLabel.text,
-    #         graph.xaxis.labelText,
-    #         graph.yaxis.labelText,
-    #         graph.xaxis.labelUnits,
-    #         graph.yaxis.labelUnits,
-    #     )
-    #     for item in graph.plot.items:
-    #         if isinstance(item, pyqtgraph.PlotCurveItem):
-    #             pen = item.opts["pen"]
-    #             # resize pen
-    #             curve = pyqtgraph.PlotCurveItem(
-    #                 x=item.xData,
-    #                 y=item.yData,
-    #                 pen=pen,
-    #                 connect="all",
-    #                 skipFiniteCheck=True,
-    #             )
-    #             copy.plot.addItem(curve)
-    #         elif isinstance(item, pyqtgraph.ScatterPlotItem):
-    #             brush = item.opts["brush"]
-    #             scatter = pyqtgraph.ScatterPlotItem(
-    #                 x=item.data["x"],
-    #                 y=item.data["y"],
-    #                 size=item.opts["size"],
-    #                 symbol=item.opts["symbol"],
-    #                 pen=None,
-    #                 brush=brush,
-    #             )
-    #             copy.plot.addItem(scatter)
-    #
-    #     limits = graph.plot.vb.state["limits"]
-    #     copy.plot.vb.setLimits(
-    #         xMin=limits["xLimits"][0],
-    #         xMax=limits["xLimits"][1],
-    #         yMin=limits["yLimits"][0],
-    #         yMax=limits["yLimits"][1],
-    #     )
-    #     view_range = graph.plot.vb.state["viewRange"]
-    #     copy.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1])
-    #     return copy
-
     def accept(self) -> None:
-        self.render()
-        # self.timer = QtCore.QTimer()
-        # self.timer.setSingleShot(True)
-        # self.timer.timeout.connect(self.render)
-        # self.timer.start(100)
+        self.exportSettingsSelected.emit(
+            Path("/home/tom/Downloads/out.png"),
+            QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value()),
+            self.spinbox_dpi.value(),
+        )
         super().accept()
-
-    def prepareForRender(self) -> None:
-        self.original_size = self.graph.size()
-        self.original_font = QtGui.QFont(self.graph.font)
-
-        resized_font = QtGui.QFont(self.original_font)
-        resized_font.setPointSizeF(
-            self.original_font.pointSizeF() / 96.0 * self.spinbox_dpi.value()
-        )
-        self.graph.resize(self.image.size())
-        self.graph.setFont(resized_font)
-
-    def postRender(self) -> None:
-        self.graph.resize(self.original_size)
-        self.graph.setFont(self.original_font)
-
-    def render(self):
-        image = QtGui.QImage(
-            self.spinbox_size_x.value(),
-            self.spinbox_size_y.value(),
-            QtGui.QImage.Format.Format_ARGB32,
-        )
-        image.fill(QtGui.QColor(0, 0, 0, 0))
-
-        painter = QtGui.QPainter(image)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
-
-        graph = draw_particle_view()
-        # graph = self.createGraphCopy(self.graph)
-        # graph.resize(image.size())
-        # graph.show()
-
-        graph.scene().prepareForPaint()
-        graph.scene().render(
-            painter,
-            QtCore.QRectF(image.rect()),
-            graph.viewRect(),
-            QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-        )
-        painter.end()
-        image.save("/home/tom/Downloads/out.png")
-
-        # self.post_timer = QtCore.QTimer()
-        # self.post_timer.setSingleShot(True)
-        # self.post_timer.timeout.connect(self.postRender)
-        # self.post_timer.start(100)
