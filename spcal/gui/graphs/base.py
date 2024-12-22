@@ -48,6 +48,8 @@ class AxisEditDialog(QtWidgets.QDialog):
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
+    requestImageExport = QtCore.Signal()
+
     def __init__(
         self,
         title: str,
@@ -72,9 +74,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
+        # self.xaxis.label.setFont(font)
+        # self.xaxis.setStyle(tickFont=font, tickTextHeight=int(font.pixelSize() * 1.2))
 
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
         self.yaxis.setLabel(ylabel, units=yunits)
+        # self.yaxis.setStyle(tickFont=font, tickTextHeight=int(font.pixelSize() * 1.2))
+        self.yaxis.label.setFont(font)
 
         self.plot = pyqtgraph.PlotItem(
             title=title,
@@ -148,10 +154,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             dlg.open()
             event.accept()
         else:
-            from spcal.gui.dialogs.imageexport import ImageExportDialog
-
-            dlg = ImageExportDialog(self, parent=self.parent())
-            dlg.open()
+            # from spcal.gui.dialogs.imageexport import ImageExportDialog
+            #
+            # dlg = ImageExportDialog(self, parent=self.parent())
+            # dlg.open()
+            self.requestImageExport.emit()
             super().mouseDoubleClickEvent(event)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
@@ -238,7 +245,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def redrawLegend(self) -> None:
         if self.plot.legend is None:
             return
-
         # store items
         items = []
         for item, label in self.plot.legend.items:
@@ -255,6 +261,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         for item, label in self.plot.legend.items:
             height = height + label.itemRect().height()
 
+        # fix broken geometry calculations
         geometry = self.plot.legend.geometry()
         self.plot.legend.setGeometry(
             geometry.x(), geometry.y(), geometry.width(), height
@@ -263,10 +270,29 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def setFont(self, font: QtGui.QFont) -> None:
         self.font = font
 
-        self.xaxis.setStyle(tickFont=font, tickTextHeight=font.pointSize())
+        fm = QtGui.QFontMetrics(font)
+        print(
+            fm.height(),
+            fm.xHeight(),
+            fm.maxWidth(),
+            fm.averageCharWidth(),
+            fm.lineWidth(),
+        )
+        pen: QtGui.QPen = self.xaxis.tickPen()
+        pen.setWidthF(fm.lineWidth())
+
+        self.xaxis.setStyle(tickFont=font)
+        # height calculation in pyqtgraph breaks for larger fonts
+        self.xaxis.setHeight(fm.height() * 2)
+        self.xaxis.setTickPen(pen)
         self.xaxis.label.setFont(font)
-        self.yaxis.setStyle(tickFont=font, tickTextHeight=font.pointSize())
+
+        self.yaxis.setStyle(tickFont=font)
+        # estimate max width
+        self.yaxis.setWidth(fm.tightBoundingRect("8888").width() * 2)
+        self.yaxis.setTickPen(pen)
         self.yaxis.label.setFont(font)
+
         self.plot.titleLabel.setText(
             self.plot.titleLabel.text,
             family=font.family(),
