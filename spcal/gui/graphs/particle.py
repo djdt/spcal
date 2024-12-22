@@ -1,4 +1,3 @@
-
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -121,12 +120,13 @@ class ParticleView(SinglePlotGraphicsView):
         y: np.ndarray,
         brush: QtGui.QBrush | None = None,
         symbol: str = "t",
+        size: float = 6.0,
     ) -> None:
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.red)
 
         scatter = pyqtgraph.ScatterPlotItem(
-            x=x, y=y, size=6, symbol=symbol, pen=None, brush=brush
+            x=x, y=y, size=size, symbol=symbol, pen=None, brush=brush
         )
         self.plot.addItem(scatter)
 
