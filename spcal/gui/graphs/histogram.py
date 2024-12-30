@@ -38,8 +38,11 @@ class HistogramView(SinglePlotGraphicsView):
         limits_visible: bool = True,
         draw_filtered: bool = False,
     ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black)
+            pen.setCosmetic(True)
         if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.black)
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
         fm = QtGui.QFontMetrics(self.font)
 
@@ -67,19 +70,19 @@ class HistogramView(SinglePlotGraphicsView):
             legend = HistogramItemSample([curve], size=fm.height())
 
         if draw_fit is not None:
-            pen = QtGui.QPen(brush.color().darker(), 2.0)
-            pen.setCosmetic(True)
+            fit_pen = QtGui.QPen(brush.color().darker(), 2.0 * pen.widthF())
+            fit_pen.setCosmetic(True)
             curve = self.drawFit(
-                hist, edges, data.size, fit_type=draw_fit, pen=pen, visible=fit_visible
+                hist, edges, data.size, fit_type=draw_fit, pen=fit_pen, visible=fit_visible
             )
             legend.setFit(curve)
 
         if draw_limits is not None:
-            pen = QtGui.QPen(brush.color().darker(), 2.0)
-            pen.setCosmetic(True)
-            pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+            lim_pen = QtGui.QPen(brush.color().darker(), 2.0 * pen.widthF())
+            lim_pen.setCosmetic(True)
+            lim_pen.setStyle(QtCore.Qt.PenStyle.DashLine)
             for label, lim in draw_limits.items():
-                limit = self.drawLimit(lim, label, pen=pen, visible=limits_visible)
+                limit = self.drawLimit(lim, label, pen=lim_pen, visible=limits_visible)
                 legend.addLimit(limit)
 
         self.plot.legend.addItem(legend, name)

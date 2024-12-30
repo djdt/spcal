@@ -67,6 +67,7 @@ def draw_histogram_view(
     filter_idx: np.ndarray | None = None,
     histogram_options: dict | None = None,
     font: QtGui.QFont | None = None,
+    scale: float = 1.0,
     colors: list[QtGui.QColor] | None = None,
 ) -> HistogramView | None:
 
@@ -182,8 +183,11 @@ def draw_histogram_view(
 
         # Auto SI prefix does not work with squared (or cubed) units
         graph.xaxis.enableAutoSIPrefix(key not in ["signal", "volume"])
-
         graph.xaxis.setLabel(text=label, units=unit)
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, scale)
+        pen.setCosmetic(True)
+
         graph.draw(
             data[graph_idx[name]] * modifier,
             filtered_data=data[np.setdiff1d(non_zero, filter_idx, assume_unique=True)]
@@ -191,6 +195,7 @@ def draw_histogram_view(
             bins=bins,
             bar_width=width,
             bar_offset=offset,
+            pen=pen,
             brush=QtGui.QBrush(colors[i]),
             name=name,
             draw_fit=options["fit"],
