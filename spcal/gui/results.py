@@ -15,6 +15,7 @@ from spcal.gui.dialogs.graphoptions import (
 )
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
+from spcal.gui.graphs.draw import draw_histogram_view
 from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.pca import PCAView
 from spcal.gui.graphs.scatter import ScatterView
@@ -115,6 +116,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
 
         self.graph_hist = HistogramView(font=font)
+        self.graph_hist.requestImageExport.connect(self.exportGraphHistImage)
         self.graph_composition = CompositionView(font=font)
         self.graph_scatter = ScatterView(font=font)
         self.graph_pca = PCAView(font=font)
@@ -571,124 +573,175 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraphHist(self) -> None:
         self.graph_hist.clear()
         mode = self.mode.currentText()
-
-        label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
-        bin_width = self.graph_options["histogram"]["bin widths"][key]
-
+        label, unit, modifier = self.mode_labels[mode]
         names = (
             [self.io.combo_name.currentText()]
             if self.graph_options["histogram"]["mode"] == "single"
             else self.results.keys()
         )
-        graph_data = {
-            k: np.maximum(0.0, v)
-            for k, v in self.resultsForKey(key).items()
-            if k in names
-        }
-        idx = self.filterIndicies()
-        graph_idx = {
-            k: np.intersect1d(idx, np.nonzero(v), assume_unique=True)
-            for k, v in graph_data.items()
-        }
-        for k, v in graph_idx.items():
-            if v.size == 0:
-                graph_data.pop(k)
+        colors = [self.colorForName(name) for name in names]
 
-        if len(graph_data) == 0:
-            return
-
-        # median FD bin width
-        if bin_width is None:
-            bin_width = np.median(
-                [
-                    2.0
-                    * np.subtract(
-                        *np.percentile(graph_data[name][graph_idx[name]], [75, 25])
-                    )
-                    / np.cbrt(graph_idx[name].size)
-                    for name in graph_data
-                ]
-            )
-        # Limit maximum / minimum number of bins
-        data_range = 0.0
-        for name, data in graph_data.items():
-            ptp = np.percentile(
-                data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
-            ) - np.amin(data[graph_idx[name]])
-            if ptp > data_range:
-                data_range = ptp
-
-        if data_range == 0.0:  # prevent drawing if no range, i.e. one point
-            return
-
-        min_bins, max_bins = 10, 1000
-        if bin_width < data_range / max_bins:
-            logger.warning(
-                f"drawGraphHist: exceeded maximum bins, setting to {max_bins}"
-            )
-            bin_width = data_range / max_bins
-        elif bin_width > data_range / min_bins:
-            logger.warning(
-                f"drawGraphHist: less than minimum bins, setting to {min_bins}"
-            )
-            bin_width = data_range / min_bins
-        bin_width *= modifier  # convert to base unit (kg -> g)
-
-        for i, (name, data) in enumerate(graph_data.items()):
-            color = self.colorForName(name)
-            max_bin = np.percentile(
-                data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
-            )
-            bins = np.arange(
-                data.min() * modifier, max_bin * modifier + bin_width, bin_width
-            )
-            if bins.size == 1:
-                bins = np.array([bins[0], max_bin])
-            bins -= bins[0] % bin_width  # align bins
-            if self.graph_options["histogram"]["mode"] == "overlay":
-                width = 1.0 / len(graph_data)
-                offset = i * width
-            elif self.graph_options["histogram"]["mode"] == "single":
-                width = 1.0
-                offset = 0.0
-            else:
-                raise ValueError("drawGraphHist: invalid draw mode")
-
-            lod = self.results[name].convertTo(
-                self.results[name].limits.detection_limit, key
-            )
-
-            non_zero = np.flatnonzero(data)
-
-            limits = {"mean": np.mean(data[graph_idx[name]]) * modifier}
-            if isinstance(lod, np.ndarray):
-                limits["LOD (mean)"] = np.nanmean(lod) * modifier
-            else:
-                limits["LOD"] = lod * modifier
-
-            # Auto SI prefix does not work with squared (or cubed) units
-            self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
-
-            self.graph_hist.xaxis.setLabel(text=label, units=unit)
-            self.graph_hist.draw(
-                data[graph_idx[name]] * modifier,
-                filtered_data=data[np.setdiff1d(non_zero, idx, assume_unique=True)]
-                * modifier,
-                bins=bins,
-                bar_width=width,
-                bar_offset=offset,
-                brush=QtGui.QBrush(color),
-                name=name,
-                draw_fit=self.graph_options["histogram"]["fit"],
-                fit_visible=self.graph_options["histogram"]["mode"] == "single",
-                draw_limits=limits,
-                limits_visible=self.graph_options["histogram"]["mode"] == "single",
-                draw_filtered=self.graph_options["histogram"]["draw filtered"],
-            )
-
+        draw_histogram_view(
+            self.graph_hist,
+            {k: v for k, v in self.results.items() if k in names},
+            key,
+            (label, unit, modifier),
+            filter_idx=self.filterIndicies(),
+            histogram_options=self.graph_options["histogram"],
+            colors=colors,
+        )
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
         self.graph_hist.zoomReset()
+
+    def exportGraphHistImage(self) -> None:
+        from spcal.gui.dialogs.imageexport import ImageExportDialog
+
+        def export(path: Path, size: QtCore.QSize, dpi: float) -> None:
+            dpi_scale = dlg.spinbox_dpi.value() / 96.0
+            xrange, yrange = self.graph_hist.plot.viewRange()
+            resized_font = QtGui.QFont(self.graph_hist.font)
+            resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
+
+            mode = self.mode.currentText()
+            key = self.mode_keys[mode]
+            label, unit, modifier = self.mode_labels[mode]
+            names = (
+                [self.io.combo_name.currentText()]
+                if self.graph_options["histogram"]["mode"] == "single"
+                else self.results.keys()
+            )
+            colors = [self.colorForName(name) for name in names]
+
+            graph = draw_histogram_view(
+                None,
+                {k: v for k, v in self.results.items() if k in names},
+                key,
+                (label, unit, modifier),
+                filter_idx=self.filterIndicies(),
+                histogram_options=self.graph_options["histogram"],
+                colors=colors,
+                font=resized_font
+            )
+            if graph is None:
+                return
+
+            view_range = self.graph_hist.plot.vb.state["viewRange"]
+            graph.plot.vb.setRange(
+                xRange=view_range[0], yRange=view_range[1], padding=0.0
+            )
+            graph.resize(size)
+            graph.show()  # required to draw correctly?
+            graph.exportImage(path)
+
+        dlg = ImageExportDialog(self.graph_hist.viewport().size(), parent=self)
+        dlg.exportSettingsSelected.connect(export)
+        dlg.exec()
+        # graph_data = {
+        #     k: np.maximum(0.0, v)
+        #     for k, v in self.resultsForKey(key).items()
+        #     if k in names
+        # }
+        # idx = self.filterIndicies()
+        # graph_idx = {
+        #     k: np.intersect1d(idx, np.nonzero(v), assume_unique=True)
+        #     for k, v in graph_data.items()
+        # }
+        # for k, v in graph_idx.items():
+        #     if v.size == 0:
+        #         graph_data.pop(k)
+        #
+        # if len(graph_data) == 0:
+        #     return
+        #
+        # # median FD bin width
+        # if bin_width is None:
+        #     bin_width = np.median(
+        #         [
+        #             2.0
+        #             * np.subtract(
+        #                 *np.percentile(graph_data[name][graph_idx[name]], [75, 25])
+        #             )
+        #             / np.cbrt(graph_idx[name].size)
+        #             for name in graph_data
+        #         ]
+        #     )
+        # # Limit maximum / minimum number of bins
+        # data_range = 0.0
+        # for name, data in graph_data.items():
+        #     ptp = np.percentile(
+        #         data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
+        #     ) - np.amin(data[graph_idx[name]])
+        #     if ptp > data_range:
+        #         data_range = ptp
+        #
+        # if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+        #     return
+        #
+        # min_bins, max_bins = 10, 1000
+        # if bin_width < data_range / max_bins:
+        #     logger.warning(
+        #         f"drawGraphHist: exceeded maximum bins, setting to {max_bins}"
+        #     )
+        #     bin_width = data_range / max_bins
+        # elif bin_width > data_range / min_bins:
+        #     logger.warning(
+        #         f"drawGraphHist: less than minimum bins, setting to {min_bins}"
+        #     )
+        #     bin_width = data_range / min_bins
+        # bin_width *= modifier  # convert to base unit (kg -> g)
+        #
+        # for i, (name, data) in enumerate(graph_data.items()):
+        #     color = self.colorForName(name)
+        #     max_bin = np.percentile(
+        #         data[graph_idx[name]], self.graph_options["histogram"]["percentile"]
+        #     )
+        #     bins = np.arange(
+        #         data.min() * modifier, max_bin * modifier + bin_width, bin_width
+        #     )
+        #     if bins.size == 1:
+        #         bins = np.array([bins[0], max_bin])
+        #     bins -= bins[0] % bin_width  # align bins
+        #     if self.graph_options["histogram"]["mode"] == "overlay":
+        #         width = 1.0 / len(graph_data)
+        #         offset = i * width
+        #     elif self.graph_options["histogram"]["mode"] == "single":
+        #         width = 1.0
+        #         offset = 0.0
+        #     else:
+        #         raise ValueError("drawGraphHist: invalid draw mode")
+        #
+        #     lod = self.results[name].convertTo(
+        #         self.results[name].limits.detection_limit, key
+        #     )
+        #
+        #     non_zero = np.flatnonzero(data)
+        #
+        #     limits = {"mean": np.mean(data[graph_idx[name]]) * modifier}
+        #     if isinstance(lod, np.ndarray):
+        #         limits["LOD (mean)"] = np.nanmean(lod) * modifier
+        #     else:
+        #         limits["LOD"] = lod * modifier
+        #
+        #     # Auto SI prefix does not work with squared (or cubed) units
+        #     self.graph_hist.xaxis.enableAutoSIPrefix(mode not in ["Signal", "Volume"])
+        #
+        #     self.graph_hist.xaxis.setLabel(text=label, units=unit)
+        #     self.graph_hist.draw(
+        #         data[graph_idx[name]] * modifier,
+        #         filtered_data=data[np.setdiff1d(non_zero, idx, assume_unique=True)]
+        #         * modifier,
+        #         bins=bins,
+        #         bar_width=width,
+        #         bar_offset=offset,
+        #         brush=QtGui.QBrush(color),
+        #         name=name,
+        #         draw_fit=self.graph_options["histogram"]["fit"],
+        #         fit_visible=self.graph_options["histogram"]["mode"] == "single",
+        #         draw_limits=limits,
+        #         limits_visible=self.graph_options["histogram"]["mode"] == "single",
+        #         draw_filtered=self.graph_options["histogram"]["draw filtered"],
+        #     )
 
     def drawGraphCompositions(self) -> None:
         # composition view
