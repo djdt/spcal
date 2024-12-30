@@ -9,7 +9,7 @@ from spcal.detection import accumulate_detections, combine_detections, detection
 from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.graphs import color_schemes, symbols
-from spcal.gui.graphs.export import draw_particle_view
+from spcal.gui.graphs.draw import draw_particle_view
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
