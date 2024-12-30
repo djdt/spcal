@@ -53,7 +53,7 @@ def draw_particle_view(
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float)
+    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float, QtGui.QColor)
 
     def __init__(self, size: QtCore.QSize, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -96,9 +96,14 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def accept(self) -> None:
+        if self.check_transparent.isChecked():
+            background = QtCore.Qt.GlobalColor.transparent
+        else:
+            background = QtCore.Qt.GlobalColor.white
         self.exportSettingsSelected.emit(
             Path("/home/tom/Downloads/out.png"),
             QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value()),
             self.spinbox_dpi.value(),
+            QtGui.QColor(background),
         )
         super().accept()

@@ -333,10 +333,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
-    def exportImage(self, path: Path) -> None:
+    def exportImage(self, path: Path, background: QtGui.QColor | None = None) -> None:
+        if background is None:
+            background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
+
         size = self.viewport().size()
         image = QtGui.QImage(size, QtGui.QImage.Format.Format_ARGB32)
-        image.fill(QtGui.QColor(0, 0, 0, 0))
+        image.fill(background)
 
         painter = QtGui.QPainter(image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)

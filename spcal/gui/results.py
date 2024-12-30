@@ -597,7 +597,9 @@ class ResultsWidget(QtWidgets.QWidget):
     def exportGraphHistImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
-        def export(path: Path, size: QtCore.QSize, dpi: float) -> None:
+        def export(
+            path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+        ) -> None:
             dpi_scale = dlg.spinbox_dpi.value() / 96.0
             xrange, yrange = self.graph_hist.plot.viewRange()
             resized_font = QtGui.QFont(self.graph_hist.font)
@@ -621,7 +623,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 filter_idx=self.filterIndicies(),
                 histogram_options=self.graph_options["histogram"],
                 colors=colors,
-                font=resized_font
+                font=resized_font,
             )
             if graph is None:
                 return
@@ -632,7 +634,7 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             graph.resize(size)
             graph.show()  # required to draw correctly?
-            graph.exportImage(path)
+            graph.exportImage(path, background=background)
 
         dlg = ImageExportDialog(self.graph_hist.viewport().size(), parent=self)
         dlg.exportSettingsSelected.connect(export)
