@@ -41,6 +41,8 @@ class HistogramView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.black)
 
+        fm = QtGui.QFontMetrics(self.font)
+
         hist, edges = np.histogram(data, bins)
         curve = self.drawData(
             hist,
@@ -60,9 +62,9 @@ class HistogramView(SinglePlotGraphicsView):
                 pen=pen,
                 brush=QtGui.QBrush(QtGui.QColor(128, 128, 128, 128)),
             )
-            legend = HistogramItemSample([curve, curve_filt])
+            legend = HistogramItemSample([curve, curve_filt], size=fm.height())
         else:
-            legend = HistogramItemSample([curve])
+            legend = HistogramItemSample([curve], size=fm.height())
 
         if draw_fit is not None:
             pen = QtGui.QPen(brush.color().darker(), 2.0)
@@ -192,6 +194,7 @@ class HistogramView(SinglePlotGraphicsView):
             labelOpts={"position": pos, "color": "black"},
             pen=pen,
         )
+        line.label.setFont(self.font)
         line.setVisible(visible)
         self.plot.addItem(line)
         return line
