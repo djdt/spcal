@@ -291,12 +291,11 @@ class InputWidget(QtWidgets.QWidget):
                 font=resized_font,
                 scale=dpi_scale,
             )
+
             view_range = self.graph.plot.vb.state["viewRange"]
             graph.plot.vb.setRange(
                 xRange=view_range[0], yRange=view_range[1], padding=0.0
             )
-            graph.xaxis.setScale(dpi_scale)
-            graph.yaxis.setScale(dpi_scale)
             graph.resize(size)
             graph.show()
 
