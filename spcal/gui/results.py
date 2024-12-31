@@ -600,7 +600,7 @@ class ResultsWidget(QtWidgets.QWidget):
         def export(
             path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
         ) -> None:
-            dpi_scale = dlg.spinbox_dpi.value() / 96.0
+            dpi_scale = dpi / 96.0
             xrange, yrange = self.graph_hist.plot.viewRange()
             resized_font = QtGui.QFont(self.graph_hist.font)
             resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
@@ -623,6 +623,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 filter_idx=self.filterIndicies(),
                 histogram_options=self.graph_options["histogram"],
                 colors=colors,
+                scale=dpi_scale,
                 font=resized_font,
             )
             if graph is None:
@@ -636,7 +637,8 @@ class ResultsWidget(QtWidgets.QWidget):
             graph.show()  # required to draw correctly?
             graph.exportImage(path, background=background)
 
-        dlg = ImageExportDialog(self.graph_hist.viewport().size(), parent=self)
+        path = Path(self.sample.import_options["path"])
+        dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
         dlg.exportSettingsSelected.connect(export)
         dlg.exec()
 

@@ -278,16 +278,20 @@ class InputWidget(QtWidgets.QWidget):
     def exportGraphImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
-        def export(path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor) -> None:
-            dpi_scale = dlg.spinbox_dpi.value() / 96.0
+        def export(
+            path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+        ) -> None:
+            dpi_scale = dpi / 96.0
             xrange, yrange = self.graph.plot.viewRange()
             resized_font = QtGui.QFont(self.graph.font)
             resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
 
             graph = draw_particle_view(
+                None,
                 {name: self.asResult(name) for name in self.draw_names},
                 self.regions,
                 dwell=float(self.options.dwelltime.value() or 1.0),
+                draw_markers=True,
                 font=resized_font,
                 scale=dpi_scale,
             )
@@ -301,7 +305,8 @@ class InputWidget(QtWidgets.QWidget):
 
             graph.exportImage(path, background=background)
 
-        dlg = ImageExportDialog(self.graph.viewport().size(), parent=self)
+        path = Path(self.import_options["path"])
+        dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
         dlg.exportSettingsSelected.connect(export)
         dlg.exec()
 
