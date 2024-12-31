@@ -131,7 +131,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.exportData,
         )
         self.action_export_image = create_action(
-            "image-export",
+            "viewimage",
             "Export Image",
             "Save the image to file, at a specified size and DPI.",
             self.requestImageExport,
@@ -343,7 +343,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
-    def exportImage(self, path: Path, background: QtGui.QColor | None = None) -> None:
+    def exportImage(
+        self, path: Path | str, background: QtGui.QColor | None = None
+    ) -> None:
+        path = Path(path)
+
         if background is None:
             background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
 
