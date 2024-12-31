@@ -20,6 +20,7 @@ class HistogramView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
+        self.has_image_export = True
         self.plot.setLimits(xMin=0.0, yMin=0.0)
 
     def draw(

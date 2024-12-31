@@ -71,6 +71,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         pen.setCosmetic(True)
 
         self.export_data: dict[str, np.ndarray] = {}
+        self.has_image_export = False
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
@@ -129,6 +130,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "Save currently loaded data to file.",
             self.exportData,
         )
+        self.action_export_image = create_action(
+            "image-export",
+            "Export Image",
+            "Save the image to file, at a specified size and DPI.",
+            self.requestImageExport,
+        )
 
         self.context_menu_actions: list[QtGui.QAction] = []
 
@@ -154,7 +161,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             dlg.open()
             event.accept()
         else:
-            self.requestImageExport.emit()
             super().mouseDoubleClickEvent(event)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
@@ -171,9 +177,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is not None:
             menu.addAction(self.action_show_legend)
 
-        if self.readyForExport():
+        if self.has_image_export or self.readyForExport():
             menu.addSeparator()
+
+        if self.readyForExport():
             menu.addAction(self.action_export_data)
+        if self.has_image_export:
+            menu.addAction(self.action_export_image)
 
         if len(self.context_menu_actions) > 0:
             menu.addSeparator()

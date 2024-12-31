@@ -25,6 +25,7 @@ class ParticleView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
+        self.has_image_export = True
         self.xaxis.setScale(xscale)
         self.xaxis.enableAutoSIPrefix(False)
 
