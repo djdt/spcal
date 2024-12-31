@@ -56,7 +56,6 @@ class ImageExportDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        size: QtCore.QSize,
         path: Path | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -68,9 +67,9 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.path = path
 
         settings = QtCore.QSettings()
-        size_x = int(settings.value("ImageExport/SizeX", 1960))
-        size_y = int(settings.value("ImageExport/SizeY", 1200))
-        dpi = int(settings.value("ImageExport/DPI", 600))
+        size_x = int(settings.value("ImageExport/SizeX", 800))
+        size_y = int(settings.value("ImageExport/SizeY", 600))
+        dpi = int(settings.value("ImageExport/DPI", 96))
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
