@@ -74,7 +74,12 @@ class HistogramView(SinglePlotGraphicsView):
             fit_pen = QtGui.QPen(brush.color().darker(), 2.0 * pen.widthF())
             fit_pen.setCosmetic(True)
             curve = self.drawFit(
-                hist, edges, data.size, fit_type=draw_fit, pen=fit_pen, visible=fit_visible
+                hist,
+                edges,
+                data.size,
+                fit_type=draw_fit,
+                pen=fit_pen,
+                visible=fit_visible,
             )
             legend.setFit(curve)
 
