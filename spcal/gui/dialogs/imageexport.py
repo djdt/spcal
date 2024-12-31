@@ -6,7 +6,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.detection import detection_maxima
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
-from spcal.gui.inputs import InputWidget
 from spcal.result import SPCalResult
 
 
@@ -55,23 +54,38 @@ def draw_particle_view(
 class ImageExportDialog(QtWidgets.QDialog):
     exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float, QtGui.QColor)
 
-    def __init__(self, size: QtCore.QSize, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        size: QtCore.QSize,
+        path: Path | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent)
+        self.setWindowTitle("Image Export")
+
+        if path is None:
+            path = Path("image.png")
+        self.path = path
+
+        settings = QtCore.QSettings()
+        size_x = int(settings.value("ImageExport/SizeX", 1960))
+        size_y = int(settings.value("ImageExport/SizeY", 1200))
+        dpi = int(settings.value("ImageExport/DPI", 600))
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
-        self.spinbox_size_x.setValue(size.width())
+        self.spinbox_size_x.setValue(size_x)
 
         self.spinbox_size_y = QtWidgets.QSpinBox()
         self.spinbox_size_y.setRange(100, 10000)
-        self.spinbox_size_y.setValue(size.height())
+        self.spinbox_size_y.setValue(size_y)
 
         self.spinbox_dpi = QtWidgets.QSpinBox()
         self.spinbox_dpi.setRange(96, 1200)
-        self.spinbox_dpi.setValue(96)
+        self.spinbox_dpi.setValue(dpi)
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Close,
         )
 
@@ -96,14 +110,19 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def accept(self) -> None:
+        path, ok = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export Image", str(self.path.absolute()), "PNG Images (*.png)"
+        )
+        if not ok:
+            return
+
+        size = QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value())
+
         if self.check_transparent.isChecked():
             background = QtCore.Qt.GlobalColor.transparent
         else:
             background = QtCore.Qt.GlobalColor.white
         self.exportSettingsSelected.emit(
-            Path("/home/tom/Downloads/out.png"),
-            QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value()),
-            self.spinbox_dpi.value(),
-            QtGui.QColor(background),
+            path, size, self.spinbox_dpi.value(), QtGui.QColor(background)
         )
         super().accept()
