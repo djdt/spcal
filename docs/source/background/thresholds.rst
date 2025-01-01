@@ -58,6 +58,8 @@ Lookup Table
 Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA can be approximated using a log-normal distribution. The lookup table is a 3-dimensional array of quantiles calculated for a zero-truncated compound-Poisson-log-normal distribution. Each quantile comes from a simulation of :math:`10^{10}` values using the parameters in the table below, using the computational facilities of the UTS eResearch High Performance Computer Cluster. Values between simulated points are interpolated at a sub 0.2 % error.
 
 
+
+
 .. list-table:: Parameters in the lookup table.
    :header-rows: 1
 
@@ -70,9 +72,16 @@ Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA 
    * - :math:`\sigma`
      - 0.25 -- 0.65 (linear)
      - 41
-   * - :math:`\alpha`
+   * - :math:`\alpha` (zero-truncated)
      - 0.999 -- :math:`10^{-7}` (logistic)
      - 101
+
+
+.. figure:: ../images/lookup_minimum_alpha.png
+   :width: 640px
+   :align: center
+
+   The minimum valid alpha value (α) varies with the signal mean (λ). As λ decreases, the number of zero values increases and thus the zero-truncated α value used in the lookup table will represent a smaller (non-zero-truncated) Compound-Poisson α.
 
 Threshold selection
 -------------------
