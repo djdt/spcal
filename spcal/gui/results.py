@@ -116,7 +116,7 @@ class ResultsWidget(QtWidgets.QWidget):
         )
 
         self.graph_hist = HistogramView(font=font)
-        self.graph_hist.requestImageExport.connect(self.exportGraphHistImage)
+        self.graph_hist.requestImageExport.connect(self.dialogExportGraphHistImage)
         self.graph_composition = CompositionView(font=font)
         self.graph_scatter = ScatterView(font=font)
         self.graph_pca = PCAView(font=font)
@@ -594,53 +594,51 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
         self.graph_hist.zoomReset()
 
-    def exportGraphHistImage(self) -> None:
+    def dialogExportGraphHistImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
-
-        def export(
-            path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
-        ) -> None:
-            dpi_scale = dpi / 96.0
-            xrange, yrange = self.graph_hist.plot.viewRange()
-            resized_font = QtGui.QFont(self.graph_hist.font)
-            resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
-
-            mode = self.mode.currentText()
-            key = self.mode_keys[mode]
-            label, unit, modifier = self.mode_labels[mode]
-            names = (
-                [self.io.combo_name.currentText()]
-                if self.graph_options["histogram"]["mode"] == "single"
-                else self.results.keys()
-            )
-            colors = [self.colorForName(name) for name in names]
-
-            graph = draw_histogram_view(
-                None,
-                {k: v for k, v in self.results.items() if k in names},
-                key,
-                (label, unit, modifier),
-                filter_idx=self.filterIndicies(),
-                histogram_options=self.graph_options["histogram"],
-                colors=colors,
-                scale=dpi_scale,
-                font=resized_font,
-            )
-            if graph is None:
-                return
-
-            view_range = self.graph_hist.plot.vb.state["viewRange"]
-            graph.plot.vb.setRange(
-                xRange=view_range[0], yRange=view_range[1], padding=0.0
-            )
-            graph.resize(size)
-            graph.show()  # required to draw correctly?
-            graph.exportImage(path, background=background)
 
         path = Path(self.sample.import_options["path"])
         dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
-        dlg.exportSettingsSelected.connect(export)
+        dlg.exportSettingsSelected.connect(self.exportGraphHistImage)
         dlg.exec()
+
+    def exportGraphHistImage(
+        self, path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+    ) -> None:
+        dpi_scale = dpi / 96.0
+        xrange, yrange = self.graph_hist.plot.viewRange()
+        resized_font = QtGui.QFont(self.graph_hist.font)
+        resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
+
+        mode = self.mode.currentText()
+        key = self.mode_keys[mode]
+        label, unit, modifier = self.mode_labels[mode]
+        names = (
+            [self.io.combo_name.currentText()]
+            if self.graph_options["histogram"]["mode"] == "single"
+            else self.results.keys()
+        )
+        colors = [self.colorForName(name) for name in names]
+
+        graph = draw_histogram_view(
+            None,
+            {k: v for k, v in self.results.items() if k in names},
+            key,
+            (label, unit, modifier),
+            filter_idx=self.filterIndicies(),
+            histogram_options=self.graph_options["histogram"],
+            colors=colors,
+            scale=dpi_scale,
+            font=resized_font,
+        )
+        if graph is None:
+            return
+
+        view_range = self.graph_hist.plot.vb.state["viewRange"]
+        graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
+        graph.resize(size)
+        graph.show()  # required to draw correctly?
+        graph.exportImage(path, background=background)
 
     def drawGraphCompositions(self) -> None:
         # composition view

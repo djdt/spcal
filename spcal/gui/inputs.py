@@ -66,7 +66,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.graph.requestPeakProperties.connect(self.dialogDataProperties)
-        self.graph.requestImageExport.connect(self.exportGraphImage)
+        self.graph.requestImageExport.connect(self.dialogExportGraphImage)
         self.last_region: tuple[int, int] | None = None
 
         self.io = io_stack
@@ -275,40 +275,39 @@ class InputWidget(QtWidgets.QWidget):
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-    def exportGraphImage(self) -> None:
+
+    def dialogExportGraphImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
-
-        def export(
-            path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
-        ) -> None:
-            dpi_scale = dpi / 96.0
-            xrange, yrange = self.graph.plot.viewRange()
-            resized_font = QtGui.QFont(self.graph.font)
-            resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
-
-            graph = draw_particle_view(
-                None,
-                {name: self.asResult(name) for name in self.draw_names},
-                self.regions,
-                dwell=float(self.options.dwelltime.value() or 1.0),
-                draw_markers=True,
-                font=resized_font,
-                scale=dpi_scale,
-            )
-
-            view_range = self.graph.plot.vb.state["viewRange"]
-            graph.plot.vb.setRange(
-                xRange=view_range[0], yRange=view_range[1], padding=0.0
-            )
-            graph.resize(size)
-            graph.show()
-
-            graph.exportImage(path, background=background)
 
         path = Path(self.import_options["path"])
         dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
-        dlg.exportSettingsSelected.connect(export)
+        dlg.exportSettingsSelected.connect(self.exportGraphImage)
         dlg.exec()
+
+    def exportGraphImage(
+        self, path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+    ) -> None:
+        dpi_scale = dpi / 96.0
+        xrange, yrange = self.graph.plot.viewRange()
+        resized_font = QtGui.QFont(self.graph.font)
+        resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
+
+        graph = draw_particle_view(
+            None,
+            {name: self.asResult(name) for name in self.draw_names},
+            self.regions,
+            dwell=float(self.options.dwelltime.value() or 1.0),
+            draw_markers=True,
+            font=resized_font,
+            scale=dpi_scale,
+        )
+
+        view_range = self.graph.plot.vb.state["viewRange"]
+        graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
+        graph.resize(size)
+        graph.show()
+
+        graph.exportImage(path, background=background)
 
     def addExpression(self, name: str, expr: str) -> None:
         self.current_expr[name] = expr
