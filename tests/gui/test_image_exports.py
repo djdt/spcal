@@ -29,7 +29,7 @@ def test_image_export_particle_single(
         tmp_path.joinpath("image_export_particle_single.png"),
         QtCore.QSize(600, 400),
         96,
-        QtGui.QColor(QtCore.Qt.GlobalColor.white),
+        {"transparent background": True},
     )
 
 
@@ -42,7 +42,11 @@ def test_image_export_particle_multiple(
         tmp_path.joinpath("image_export_particle_multiple.png"),
         QtCore.QSize(600, 400),
         96,
-        QtGui.QColor(QtCore.Qt.GlobalColor.white),
+        {
+            "transparent background": False,
+            "show detections": False,
+            "show legend": False,
+        },
     )
 
 
@@ -56,7 +60,7 @@ def test_image_export_histogram_single(
         tmp_path.joinpath("image_export_hist_single.png"),
         QtCore.QSize(600, 400),
         96,
-        QtGui.QColor(QtCore.Qt.GlobalColor.white),
+        {"transparent background": True},
     )
 
 
@@ -70,5 +74,10 @@ def test_image_export_histogram_multiple(
         tmp_path.joinpath("image_export_hist_multiple.png"),
         QtCore.QSize(600, 400),
         96,
-        QtGui.QColor(QtCore.Qt.GlobalColor.white),
+        {
+            "show legend": False,
+            "show fit": False,
+            "show limits": False,
+            "transparent background": True,
+        },
     )
