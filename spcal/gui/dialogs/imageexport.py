@@ -10,11 +10,12 @@ from spcal.result import SPCalResult
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float, QtGui.QColor)
+    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float, dict)
 
     def __init__(
         self,
         path: Path | None = None,
+        options: dict[str, bool] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -22,6 +23,9 @@ class ImageExportDialog(QtWidgets.QDialog):
 
         if path is None:
             path = Path("image.png")
+        if options is None:
+            options = {"transparent background": False}
+
         self.path = path
 
         settings = QtCore.QSettings()
@@ -37,6 +41,14 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.spinbox_size_y.setRange(100, 10000)
         self.spinbox_size_y.setValue(size_y)
 
+        # self.spinbox_x0 = QtWidgets.QDoubleSpinBox()
+        # self.spinbox_x0.setRange(xmin, xmax)
+        # self.spinbox_x0.setValue(x0)
+        #
+        # self.spinbox_x1 = QtWidgets.QDoubleSpinBox()
+        # self.spinbox_x1.setRange(xmin, xmax)
+        # self.spinbox_x1.setValue(x1)
+
         self.spinbox_dpi = QtWidgets.QSpinBox()
         self.spinbox_dpi.setRange(96, 1200)
         self.spinbox_dpi.setValue(dpi)
@@ -46,7 +58,11 @@ class ImageExportDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Close,
         )
 
-        self.check_transparent = QtWidgets.QCheckBox("Transparent background")
+        self.options = {}
+        for option, on in options.items():
+            self.options[option] = QtWidgets.QCheckBox(option)
+            self.options[option].setChecked(on)
+        # self.check_transparent = QtWidgets.QCheckBox("Transparent background")
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -59,10 +75,19 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout_form = QtWidgets.QFormLayout()
         layout_form.addRow("Size:", layout_size)
         layout_form.addRow("DPI:", self.spinbox_dpi)
-        layout_form.addRow(self.check_transparent)
+        # layout_form.addRow(self.check_transparent)
+
+        layout_options = QtWidgets.QVBoxLayout()
+        layout_options.addStretch(1)
+        for option in self.options.values():
+            layout_options.addWidget(option, 0)
+
+        layout_horz = QtWidgets.QHBoxLayout()
+        layout_horz.addLayout(layout_form)
+        layout_horz.addLayout(layout_options)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(layout_form)
+        layout.addLayout(layout_horz)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
@@ -75,11 +100,17 @@ class ImageExportDialog(QtWidgets.QDialog):
 
         size = QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value())
 
-        if self.check_transparent.isChecked():
-            background = QtCore.Qt.GlobalColor.transparent
-        else:
-            background = QtCore.Qt.GlobalColor.white
-        self.exportSettingsSelected.emit(
-            path, size, self.spinbox_dpi.value(), QtGui.QColor(background)
-        )
+        options = {option: cbox.isChecked() for option, cbox in self.options.items()}
+
+        # if self.check_transparent.isChecked():
+        #     background = QtCore.Qt.GlobalColor.transparent
+        # else:
+        #     background = QtCore.Qt.GlobalColor.white
+        self.exportSettingsSelected.emit(path, size, self.spinbox_dpi.value(), options)
+
+        settings = QtCore.QSettings()
+        settings.setValue("ImageExport/SizeX", size.width())
+        settings.setValue("ImageExport/SizeY", size.height())
+        settings.setValue("ImageExport/DPI", self.spinbox_dpi.value())
+
         super().accept()

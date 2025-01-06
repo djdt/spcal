@@ -275,17 +275,28 @@ class InputWidget(QtWidgets.QWidget):
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-
     def dialogExportGraphImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
         path = Path(self.import_options["path"])
-        dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
+        dlg = ImageExportDialog(
+            path.with_name(path.stem + "_image.png"),
+            parent=self,
+            options={
+                "show legend": self.graph.plot.legend.isVisible(),
+                "show detections": True,
+                "transparent background": False,
+            },
+        )
         dlg.exportSettingsSelected.connect(self.exportGraphImage)
         dlg.exec()
 
     def exportGraphImage(
-        self, path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+        self,
+        path: Path,
+        size: QtCore.QSize,
+        dpi: float,
+        options: dict[str, bool],
     ) -> None:
         dpi_scale = dpi / 96.0
         xrange, yrange = self.graph.plot.viewRange()
@@ -297,15 +308,21 @@ class InputWidget(QtWidgets.QWidget):
             {name: self.asResult(name) for name in self.draw_names},
             self.regions,
             dwell=float(self.options.dwelltime.value() or 1.0),
-            draw_markers=True,
+            draw_markers=options["show detections"],
             font=resized_font,
             scale=dpi_scale,
         )
 
         view_range = self.graph.plot.vb.state["viewRange"]
         graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
+        graph.plot.legend.setVisible(options["show legend"])
         graph.resize(size)
         graph.show()
+
+        if options["transparent background"]:
+            background = QtCore.Qt.GlobalColor.transparent
+        else:
+            background = QtCore.Qt.GlobalColor.white
 
         graph.exportImage(path, background=background)
 
