@@ -216,7 +216,7 @@ class SPCalLimit(object):
                 https://doi.org/10.1002/2016JA022563
             Lockwood, T. E.; Schlatt, L.; Clases, D. SPCal – an Open Source, Easy-to-Use
                 Processing Platform for ICP-TOFMS-Based Single Event Data. J. Anal. At.
-                Spectrom. 2024.
+                Spectrom. 2025, 40, 130-136.
                 https://doi.org/10.1039/D4JA00241E.
         """
         if size is None:
