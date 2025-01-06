@@ -308,18 +308,18 @@ class InputWidget(QtWidgets.QWidget):
             {name: self.asResult(name) for name in self.draw_names},
             self.regions,
             dwell=float(self.options.dwelltime.value() or 1.0),
-            draw_markers=options["show detections"],
+            draw_markers=options.get("show detections", True),
             font=resized_font,
             scale=dpi_scale,
         )
 
         view_range = self.graph.plot.vb.state["viewRange"]
         graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
-        graph.plot.legend.setVisible(options["show legend"])
+        graph.plot.legend.setVisible(options.get("show legend", True))
         graph.resize(size)
         graph.show()
 
-        if options["transparent background"]:
+        if options.get("transparent background", False):
             background = QtCore.Qt.GlobalColor.transparent
         else:
             background = QtCore.Qt.GlobalColor.white
