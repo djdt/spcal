@@ -1,12 +1,6 @@
 from pathlib import Path
 
-import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
-
-from spcal.detection import detection_maxima
-from spcal.gui.graphs import color_schemes, symbols
-from spcal.gui.graphs.particle import ParticleView
-from spcal.result import SPCalResult
+from PySide6 import QtCore, QtWidgets
 
 
 class ImageExportDialog(QtWidgets.QDialog):
@@ -102,10 +96,6 @@ class ImageExportDialog(QtWidgets.QDialog):
 
         options = {option: cbox.isChecked() for option, cbox in self.options.items()}
 
-        # if self.check_transparent.isChecked():
-        #     background = QtCore.Qt.GlobalColor.transparent
-        # else:
-        #     background = QtCore.Qt.GlobalColor.white
         self.exportSettingsSelected.emit(path, size, self.spinbox_dpi.value(), options)
 
         settings = QtCore.QSettings()
