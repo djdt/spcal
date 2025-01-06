@@ -35,7 +35,7 @@ def draw_particle_view(
 
     for color, (name, result) in zip(colors, results.items()):
         index = names.index(name)
-        pen = QtGui.QPen(color, 2.0 * scale)
+        pen = QtGui.QPen(color, 1.2 * scale)
         pen.setCosmetic(True)
         graph.drawSignal(name, xs, result.responses, pen=pen)
 
@@ -54,7 +54,7 @@ def draw_particle_view(
                 result.responses[maxima],
                 brush=brush,
                 symbol=symbol,
-                size=6.0 * scale,
+                size=8.0 * scale,
             )
     return graph
 
