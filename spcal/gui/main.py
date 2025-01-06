@@ -197,6 +197,13 @@ class SPCalWindow(QtWidgets.QMainWindow):
             self.setSignificantFigures,
         )
 
+        self.action_font = create_action(
+            "font",
+            "Graph Font",
+            "Choose the font to use for text in graphs.",
+            self.setGraphFont,
+        )
+
         # Help
         self.action_log = create_action(
             "dialog-information",
@@ -249,6 +256,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         menu_cs.setToolTip("Change the colorscheme of the input and result graphs.")
         menu_cs.addActions(self.action_color_scheme.actions())
 
+        menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
 
         menuhelp = self.menuBar().addMenu("&Help")
@@ -424,6 +432,21 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.sample.redraw()
         self.reference.redraw()
         self.results.redraw()
+
+    def setGraphFont(self) -> None:
+        settings = QtCore.QSettings()
+        current = QtGui.QFont(
+            settings.value("GraphFont/Family", "SansSerif"),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+        )
+
+        ok, font = QtWidgets.QFontDialog.getFont(current, parent=self)
+        if ok:
+            settings.setValue("GraphFont/Family", font.family())
+            settings.setValue("GraphFont/PointSize", font.pointSize())
+            self.sample.setGraphFont(font)
+            self.reference.setGraphFont(font)
+            self.results.setGraphFont(font)
 
     def setSignificantFigures(self) -> None:
         settings = QtCore.QSettings()

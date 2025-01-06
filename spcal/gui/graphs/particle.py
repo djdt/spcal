@@ -1,4 +1,3 @@
-
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -15,6 +14,7 @@ class ParticleView(SinglePlotGraphicsView):
     def __init__(
         self,
         xscale: float = 1.0,
+        font: QtGui.QFont | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(
@@ -22,16 +22,17 @@ class ParticleView(SinglePlotGraphicsView):
             xlabel="Time",
             xunits="s",
             ylabel="Intensity (counts)",
+            font=font,
             parent=parent,
         )
+        self.has_image_export = True
         self.xaxis.setScale(xscale)
+        self.xaxis.enableAutoSIPrefix(False)
 
         self.raw_signals: dict[str, np.ndarray] = {}  # for export
 
-        self.plot.setMouseEnabled(y=False)
-        self.plot.setAutoVisible(y=True)
-        self.plot.enableAutoRange(y=True)
         self.plot.setLimits(yMin=0.0)
+        self.setAutoScaleY(True)
 
         self.legend_items: dict[str, MultipleItemSampleProxy] = {}
         self.limit_items: list[pyqtgraph.PlotCurveItem] = []
@@ -120,12 +121,13 @@ class ParticleView(SinglePlotGraphicsView):
         y: np.ndarray,
         brush: QtGui.QBrush | None = None,
         symbol: str = "t",
+        size: float = 6.0,
     ) -> None:
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.red)
 
         scatter = pyqtgraph.ScatterPlotItem(
-            x=x, y=y, size=6, symbol=symbol, pen=None, brush=brush
+            x=x, y=y, size=size, symbol=symbol, pen=None, brush=brush
         )
         self.plot.addItem(scatter)
 

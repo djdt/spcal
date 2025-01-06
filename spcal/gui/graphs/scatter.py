@@ -6,8 +6,10 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 
 
 class ScatterView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("Scatter", parent=parent)
+    def __init__(
+        self, font: QtGui.QFont | None = None, parent: QtWidgets.QWidget | None = None
+    ):
+        super().__init__("Scatter", font=font, parent=parent)
 
     def drawData(
         self,

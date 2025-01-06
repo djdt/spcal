@@ -9,6 +9,7 @@ from spcal.detection import accumulate_detections, combine_detections, detection
 from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.graphs import color_schemes, symbols
+from spcal.gui.graphs.draw import draw_particle_view
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
@@ -56,10 +57,16 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
         self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
 
-        self.graph = ParticleView()
+        settings = QtCore.QSettings()
+        font = QtGui.QFont(
+            settings.value("GraphFont/Family", "SansSerif"),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+        )
+        self.graph = ParticleView(font=font)
         self.graph.regionChanged.connect(self.saveTrimRegion)
         self.graph.regionChanged.connect(self.updateLimits)
         self.graph.requestPeakProperties.connect(self.dialogDataProperties)
+        self.graph.requestImageExport.connect(self.dialogExportGraphImage)
         self.last_region: tuple[int, int] | None = None
 
         self.io = io_stack
@@ -202,6 +209,10 @@ class InputWidget(QtWidgets.QWidget):
         self.draw_mode = mode
         self.redraw()
 
+    def setGraphFont(self, font: QtGui.QFont) -> None:
+        self.graph.setFont(font)
+        self.redraw()  # fixes legend
+
     def redraw(self) -> None:
         self.drawGraph()
         self.drawDetections()
@@ -263,6 +274,57 @@ class InputWidget(QtWidgets.QWidget):
 
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
+
+    def dialogExportGraphImage(self) -> None:
+        from spcal.gui.dialogs.imageexport import ImageExportDialog
+
+        path = Path(self.import_options["path"])
+        dlg = ImageExportDialog(
+            path.with_name(path.stem + "_image.png"),
+            parent=self,
+            options={
+                "show legend": self.graph.plot.legend.isVisible(),
+                "show detections": True,
+                "transparent background": False,
+            },
+        )
+        dlg.exportSettingsSelected.connect(self.exportGraphImage)
+        dlg.exec()
+
+    def exportGraphImage(
+        self,
+        path: Path,
+        size: QtCore.QSize,
+        dpi: float,
+        options: dict[str, bool],
+    ) -> None:
+        dpi_scale = dpi / 96.0
+        xrange, yrange = self.graph.plot.viewRange()
+        resized_font = QtGui.QFont(self.graph.font)
+        resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
+
+        graph = draw_particle_view(
+            None,
+            {name: self.asResult(name) for name in self.draw_names},
+            self.regions,
+            dwell=float(self.options.dwelltime.value() or 1.0),
+            show_markers=options.get("show detections", True),
+            font=resized_font,
+            scale=dpi_scale,
+        )
+
+        view_range = self.graph.plot.vb.state["viewRange"]
+        graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
+        graph.plot.legend.setVisible(options.get("show legend", True))
+        graph.resize(size)
+        graph.show()
+
+        if options.get("transparent background", False):
+            background = QtCore.Qt.GlobalColor.transparent
+        else:
+            background = QtCore.Qt.GlobalColor.white
+
+        graph.exportImage(path, background=background)
 
     def addExpression(self, name: str, expr: str) -> None:
         self.current_expr[name] = expr

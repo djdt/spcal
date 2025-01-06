@@ -1,4 +1,3 @@
-
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -32,6 +31,8 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         histograms: list[pyqtgraph.PlotDataItem],
         fit: pyqtgraph.PlotCurveItem | None = None,
         limits: list[pyqtgraph.InfiniteLine] | None = None,
+        size: float = 20.0,
+        pad: float = 2.0,
     ):
         super().__init__(histograms[0])
         self.other_items = histograms[1:]
@@ -40,8 +41,8 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         if limits is not None:
             self.item_limits.extend(limits)
 
-        self.size = 20.0
-        self.pad = 2.0
+        self.size = size
+        self.pad = pad
         self.setFixedWidth(self.size * 2 + self.pad)
 
     def setLimitsVisible(self, visible: bool):
