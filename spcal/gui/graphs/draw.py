@@ -17,7 +17,7 @@ def draw_particle_view(
     results: dict[str, SPCalResult],
     regions: np.ndarray,
     dwell: float,
-    draw_markers: bool = False,
+    show_markers: bool = False,
     font: QtGui.QFont | None = None,
     scale: float = 1.0,
     colors: list[QtGui.QColor] | None = None,
@@ -39,7 +39,7 @@ def draw_particle_view(
         pen.setCosmetic(True)
         graph.drawSignal(name, xs, result.responses, pen=pen)
 
-    if draw_markers:
+    if show_markers:
         for color, (name, result) in zip(colors, results.items()):
             index = names.index(name)
             brush = QtGui.QBrush(color)
@@ -69,6 +69,8 @@ def draw_histogram_view(
     font: QtGui.QFont | None = None,
     scale: float = 1.0,
     colors: list[QtGui.QColor] | None = None,
+    show_fit: bool = True,
+    show_limits: bool = True,
 ) -> HistogramView | None:
 
     # defaults
@@ -199,9 +201,9 @@ def draw_histogram_view(
             brush=QtGui.QBrush(colors[i]),
             name=name,
             draw_fit=options["fit"],
-            fit_visible=options["mode"] == "single",
+            fit_visible=show_fit,
             draw_limits=limits,
-            limits_visible=options["mode"] == "single",
+            limits_visible=show_limits,
             draw_filtered=options["draw filtered"],
         )
     return graph

@@ -572,14 +572,11 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def drawGraphHist(self) -> None:
         self.graph_hist.clear()
+        is_single = self.graph_options["histogram"]["mode"] == "single"
         mode = self.mode.currentText()
         key = self.mode_keys[mode]
         label, unit, modifier = self.mode_labels[mode]
-        names = (
-            [self.io.combo_name.currentText()]
-            if self.graph_options["histogram"]["mode"] == "single"
-            else self.results.keys()
-        )
+        names = [self.io.combo_name.currentText()] if is_single else self.results.keys()
         colors = [self.colorForName(name) for name in names]
 
         draw_histogram_view(
@@ -590,6 +587,8 @@ class ResultsWidget(QtWidgets.QWidget):
             filter_idx=self.filterIndicies(),
             histogram_options=self.graph_options["histogram"],
             colors=colors,
+            show_fit=is_single,
+            show_limits=is_single,
         )
         self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
         self.graph_hist.zoomReset()
@@ -597,13 +596,24 @@ class ResultsWidget(QtWidgets.QWidget):
     def dialogExportGraphHistImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
+        is_single = self.graph_options["histogram"]["mode"] == "single"
+
         path = Path(self.sample.import_options["path"])
-        dlg = ImageExportDialog(path.with_name(path.stem + "_image.png"), parent=self)
+        dlg = ImageExportDialog(
+            path.with_name(path.stem + "_image.png"),
+            parent=self,
+            options={
+                "show legend": self.graph_hist.plot.legend.isVisible(),
+                "show fit": is_single,
+                "show limits": is_single,
+                "transparent background": False,
+            },
+        )
         dlg.exportSettingsSelected.connect(self.exportGraphHistImage)
         dlg.exec()
 
     def exportGraphHistImage(
-        self, path: Path, size: QtCore.QSize, dpi: float, background: QtGui.QColor
+        self, path: Path, size: QtCore.QSize, dpi: float, options: dict[str, bool]
     ) -> None:
         dpi_scale = dpi / 96.0
         xrange, yrange = self.graph_hist.plot.viewRange()
@@ -630,14 +640,22 @@ class ResultsWidget(QtWidgets.QWidget):
             colors=colors,
             scale=dpi_scale,
             font=resized_font,
+            show_fit=options.get("show fit", True),
+            show_limits=options.get("show limits", True),
         )
         if graph is None:
             return
 
         view_range = self.graph_hist.plot.vb.state["viewRange"]
         graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
+        graph.plot.legend.setVisible(options.get("show legend", True))
         graph.resize(size)
         graph.show()  # required to draw correctly?
+
+        if options.get("transparent background", False):
+            background = QtCore.Qt.GlobalColor.transparent
+        else:
+            background = QtCore.Qt.GlobalColor.white
         graph.exportImage(path, background=background)
 
     def drawGraphCompositions(self) -> None:

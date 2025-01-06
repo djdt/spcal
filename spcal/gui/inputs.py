@@ -308,7 +308,7 @@ class InputWidget(QtWidgets.QWidget):
             {name: self.asResult(name) for name in self.draw_names},
             self.regions,
             dwell=float(self.options.dwelltime.value() or 1.0),
-            draw_markers=options.get("show detections", True),
+            show_markers=options.get("show detections", True),
             font=resized_font,
             scale=dpi_scale,
         )
