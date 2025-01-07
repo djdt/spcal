@@ -295,7 +295,16 @@ class InputWidget(QtWidgets.QWidget):
 
             self.exportGraphImage(path, size, dpi, options)
 
+        settings = QtCore.QSettings()
+        size = QtCore.QSize(
+            int(settings.value("ImageExport/SizeX", 800)),
+            int(settings.value("ImageExport/SizeY", 600)),
+        )
+        dpi = int(settings.value("ImageExport/DPI", 96))
+
         dlg = ImageExportDialog(
+            size=size,
+            dpi=dpi,
             options={
                 "show legend": self.graph.plot.legend.isVisible(),
                 "show detections": True,

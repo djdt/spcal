@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide6 import QtCore, QtWidgets
 
 
@@ -9,24 +7,18 @@ class ImageExportDialog(QtWidgets.QDialog):
     def __init__(
         self,
         size: QtCore.QSize | None = None,
-        dpi: int | None = None,
+        dpi: int = 96,
         options: dict[str, bool] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Image Export")
 
+        if size is None:
+            size = QtCore.QSize(800, 600)
+
         if options is None:
             options = {"transparent background": False}
-
-        settings = QtCore.QSettings()
-        if size is None:
-            size = QtCore.QSize(
-                int(settings.value("ImageExport/SizeX", 800)),
-                int(settings.value("ImageExport/SizeY", 600)),
-            )
-        if dpi is None:
-            dpi = int(settings.value("ImageExport/DPI", 96))
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)

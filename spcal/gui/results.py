@@ -613,8 +613,17 @@ class ResultsWidget(QtWidgets.QWidget):
 
             self.exportGraphHistImage(path, size, dpi, options)
 
+        settings = QtCore.QSettings()
+        size = QtCore.QSize(
+            int(settings.value("ImageExport/SizeX", 800)),
+            int(settings.value("ImageExport/SizeY", 600)),
+        )
+        dpi = int(settings.value("ImageExport/DPI", 96))
+
         is_single = self.graph_options["histogram"]["mode"] == "single"
         dlg = ImageExportDialog(
+            size=size,
+            dpi=dpi,
             options={
                 "show legend": self.graph_hist.plot.legend.isVisible(),
                 "show fit": is_single,
