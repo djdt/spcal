@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtWidgets
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    exportSettingsSelected = QtCore.Signal(QtCore.QSize, int, dict)
+    exportSettingsSelected = QtCore.Signal(QtCore.QSize, int, object)  # object for dict
 
     def __init__(
         self,
