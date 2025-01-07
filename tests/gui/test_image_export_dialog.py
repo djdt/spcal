@@ -6,10 +6,14 @@ from spcal.gui.dialogs.imageexport import ImageExportDialog
 
 def test_image_export_dialog(qtbot: QtBot):
     options = {"test option 1": False, "test option 2": False, "test option 3": True}
-    dlg = ImageExportDialog(options=options)
+    dlg = ImageExportDialog(size=QtCore.QSize(100, 100), dpi=100, options=options)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.show()
+
+    assert dlg.spinbox_size_x.value() == 100
+    assert dlg.spinbox_size_y.value() == 100
+    assert dlg.spinbox_dpi.value() == 100
 
     for option, on in options.items():
         assert option in dlg.options
