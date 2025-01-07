@@ -8,6 +8,8 @@ class ImageExportDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
+        size: QtCore.QSize | None = None,
+        dpi: int | None = None,
         options: dict[str, bool] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -18,17 +20,21 @@ class ImageExportDialog(QtWidgets.QDialog):
             options = {"transparent background": False}
 
         settings = QtCore.QSettings()
-        size_x = int(settings.value("ImageExport/SizeX", 800))
-        size_y = int(settings.value("ImageExport/SizeY", 600))
-        dpi = int(settings.value("ImageExport/DPI", 96))
+        if size is None:
+            size = QtCore.QSize(
+                int(settings.value("ImageExport/SizeX", 800)),
+                int(settings.value("ImageExport/SizeY", 600)),
+            )
+        if dpi is None:
+            dpi = int(settings.value("ImageExport/DPI", 96))
 
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
-        self.spinbox_size_x.setValue(size_x)
+        self.spinbox_size_x.setValue(size.width())
 
         self.spinbox_size_y = QtWidgets.QSpinBox()
         self.spinbox_size_y.setRange(100, 10000)
-        self.spinbox_size_y.setValue(size_y)
+        self.spinbox_size_y.setValue(size.height())
 
         # self.spinbox_x0 = QtWidgets.QDoubleSpinBox()
         # self.spinbox_x0.setRange(xmin, xmax)
