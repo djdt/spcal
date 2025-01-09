@@ -5,10 +5,12 @@ import numpy as np
 from spcal.calc import interpolate_3d
 from spcal.dists import lognormal, poisson
 
-qtable = np.load(
+_qtable = np.load(
     files("spcal.resources").joinpath("cpln_quantiles.npz").open("rb"),
     allow_pickle=False,
 )
+# we must load the qtable data into memory to prevent errors on multithreaded read
+qtable = {file: _qtable[file] for file in _qtable.files}
 
 
 def zero_trunc_quantile(
