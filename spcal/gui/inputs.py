@@ -533,14 +533,17 @@ class InputWidget(QtWidgets.QWidget):
             raise ValueError("dwell is None")
         self.graph.xaxis.setScale(dwell)
 
+        ymax = 0.0
         for i, name in enumerate(self.draw_names):
             ys = self.responses[name]
+            ymax = max(ymax, np.amax(ys))
             pen = QtGui.QPen(self.colorForName(name), 1.0)
             pen.setCosmetic(True)
             self.graph.drawSignal(name, self.events, ys, pen=pen)
 
         self.graph.region.setBounds((self.events[0], self.events[-1]))
         self.graph.setDataLimits(xMin=0.0, xMax=1.0)
+        self.graph.setLimits(yMax=10.0*ymax)
 
         region = (
             (self.events[0], self.events[-1])
