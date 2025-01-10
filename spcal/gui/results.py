@@ -590,7 +590,7 @@ class ResultsWidget(QtWidgets.QWidget):
             show_fit=is_single,
             show_limits=is_single,
         )
-        self.graph_hist.setDataLimits(xMax=1.0, yMax=1.1)
+        self.graph_hist.setDataLimits(xMax=1.0)
         self.graph_hist.zoomReset()
 
     def dialogExportGraphHistImage(self) -> None:

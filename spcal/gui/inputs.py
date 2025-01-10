@@ -543,7 +543,6 @@ class InputWidget(QtWidgets.QWidget):
 
         self.graph.region.setBounds((self.events[0], self.events[-1]))
         self.graph.setDataLimits(xMin=0.0, xMax=1.0)
-        self.graph.setLimits(yMax=1e10)
 
         region = (
             (self.events[0], self.events[-1])
