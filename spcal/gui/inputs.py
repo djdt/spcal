@@ -540,7 +540,7 @@ class InputWidget(QtWidgets.QWidget):
             self.graph.drawSignal(name, self.events, ys, pen=pen)
 
         self.graph.region.setBounds((self.events[0], self.events[-1]))
-        self.graph.setDataLimits(xMin=0.0, xMax=1.0, yMax=1.05)
+        self.graph.setDataLimits(xMin=0.0, xMax=1.0)
 
         region = (
             (self.events[0], self.events[-1])
