@@ -5,14 +5,10 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
-import numpy
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal.resources
+import spcal.resources  # import to load
 from spcal.gui.main import SPCalWindow
-
-import pyqtgraph  # isort:skip
-
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
@@ -53,6 +49,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+
+    # prevent print group separators, they are buggy in Qt6 validators
+    locale = QtCore.QLocale.system()
+    locale.setNumberOptions(
+        locale.NumberOption.OmitGroupSeparator
+        | locale.NumberOption.RejectGroupSeparator
+    )
+    QtCore.QLocale.setDefault(locale)
 
     app = QtWidgets.QApplication(args.qtargs)
     app.setApplicationName("SPCal")
