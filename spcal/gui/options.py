@@ -94,9 +94,9 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs.layout().addRow("", self.efficiency_method)
 
         self.window_size = ValueWidget(
-            1000, format=".0f", validator=QtGui.QIntValidator(3, 1000000)
+            1000, format=("f", 0), validator=QtGui.QIntValidator(3, 1000000)
         )
-        self.window_size.setEditFormat(".0f")
+        self.window_size.setEditFormat(0, format="f")
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
         self.check_window = QtWidgets.QCheckBox("Use window")
@@ -357,7 +357,7 @@ class OptionsWidget(QtWidgets.QWidget):
         if num is None:
             num = int(QtCore.QSettings().value("SigFigs", 4))
         for widget in self.findChildren(ValueWidget):
-            if widget.view_format.endswith("g"):
+            if widget.view_format[1] == "g":
                 widget.setViewFormat(num)
 
     def setAdvancedOptions(self, accumlation_method: str, points_required: int) -> None:
