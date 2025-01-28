@@ -130,6 +130,8 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
             return False
         if options["other peaks"] != ["OH+"]:
             return False
+        if options["single ion dist"] is not None:
+            return False
         return True
 
     path = Path(__file__).parent.parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
