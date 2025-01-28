@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 
 import numpy as np
 from PySide6 import QtCore
@@ -8,6 +9,12 @@ from spcal.gui.inputs import InputWidget, ReferenceWidget
 from spcal.gui.main import SPCalWindow
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_locale():
+    QtCore.QLocale.setDefault(QtCore.QLocale.Language.C)
+
 
 
 def click_though_options(qtbot: QtBot, options: OptionsWidget):
@@ -157,6 +164,7 @@ def test_spcal_no_data(qtbot: QtBot):
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.reference))
     assert not window.tabs.isTabEnabled(window.tabs.indexOf(window.results))
 
+    print(window.locale())
     click_though_options(qtbot, window.options)
     assert not window.options.isComplete()
 
