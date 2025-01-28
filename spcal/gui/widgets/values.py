@@ -85,7 +85,7 @@ class ValueWidget(ValidColorLineEdit):
         if self.text() == "":
             self.setValue(None)
         elif self.hasAcceptableInput():
-            self.setValue(float(self.text()))
+            self.setValue(self.locale().toDouble(self.text())[0])
         self.valueChanged.connect(self.updateTextFromValue)
 
     def updateTextFromValue(self) -> None:
@@ -115,7 +115,7 @@ class ValueWidget(ValidColorLineEdit):
         rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
 
         err_str = self.locale().toString(
-            float(self._error), int(self.view_format[0]), self.view_format[1]
+            float(self._error), self.view_format[0], self.view_format[1]
         )
         text = fm.elidedText(
             f" ± {err_str}", QtCore.Qt.TextElideMode.ElideRight, rect.width()
