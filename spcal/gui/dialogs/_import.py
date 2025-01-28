@@ -860,17 +860,19 @@ class TofwerkImportDialog(_ImportDialogBase):
         return isotopes is not None and self.dwelltime.hasAcceptableInput()
 
     def importOptions(self) -> dict:
+        single_ion_dist = None
         if "SingleIon" in self.h5 and "Data" in self.h5["SingleIon"]:
-            single_ion = self.h5["SingleIon"]["Data"][:]
-        else:
-            single_ion = float(self.h5["FullSpectra"].attrs["Single Ion Signal"][0])
+            single_ion_dist = self.h5["SingleIon"]["Data"][:]
+
+        single_ion_area = float(self.h5["FullSpectra"].attrs["Single Ion Signal"][0])
         return {
             "importer": "tofwerk",
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "isotopes": self.table.selectedIsotopes(),
             "other peaks": self.combo_other_peaks.checkedItems(),
-            "single ion dist": single_ion,
+            "single ion dist": single_ion_dist,
+            "single ion area": single_ion_area,
             "accumulations": factor_extraction_to_acquisition(self.h5),
         }
 
