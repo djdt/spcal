@@ -42,7 +42,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         self.results: list[tuple[int, float]] = []
 
         self.screening_ppm = ValueWidget(
-            screening_ppm, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=".1f"
+            screening_ppm, validator=QtGui.QDoubleValidator(0, 1e6, 1), format=("f", 1)
         )
         self.screening_ppm.valueChanged.connect(self.completeChanged)
         self.screening_ppm.setToolTip(
@@ -52,7 +52,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         self.data_size = ValueWidget(
             minimum_data_size,
             validator=QtGui.QIntValidator(1, 100_000_000),
-            format=".0f",
+            format=("f", 0),
         )
         self.data_size.valueChanged.connect(self.completeChanged)
         self.data_size.setToolTip(
