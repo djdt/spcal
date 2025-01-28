@@ -105,8 +105,8 @@ def test_units_sync(qtbot: QtBot):
 def test_units_view_format(qtbot: QtBot):
     w = UnitsWidget({"a": 1.0, "b": 1.0})
     w.setValue(1.01)
-    w.setViewFormat(".1f")
+    w.setViewFormat(1, "f")
     assert w.lineedit.text() == "1.0"
-    w.setViewFormat(".2f")
+    w.setViewFormat(2, "f")
     assert w.lineedit.text() == "1.01"
-    w.setEditFormat(".1f")  # not tested
+    w.setEditFormat(1, "f")  # not tested
