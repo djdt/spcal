@@ -14,7 +14,7 @@ class ValueWidget(ValidColorLineEdit):
         self,
         value: float | None = None,
         validator: QtGui.QValidator | None = None,
-        format: str | int = 6,
+        format: int | tuple[str, int] = 6,
         color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -28,8 +28,8 @@ class ValueWidget(ValidColorLineEdit):
             validator = QtGui.QDoubleValidator(0.0, 1e99, 12)
         self.setValidator(validator)
 
-        self.view_format = format if isinstance(format, str) else f".{format}g"
-        self.edit_format = ".12g"
+        self.view_format = ("g", format) if isinstance(format, int) else format
+        self.edit_format = ("g", 16)
 
         self.textEdited.connect(self.updateValueFromText)
         self.valueChanged.connect(self.updateTextFromValue)
@@ -42,18 +42,12 @@ class ValueWidget(ValidColorLineEdit):
             self._last_edit_value = self._value
             self.valueEdited.emit(self._value)
 
-    def setViewFormat(self, format: str | int) -> None:
-        if isinstance(format, str):
-            self.view_format = format
-        else:
-            self.view_format = f".{format}g"
+    def setViewFormat(self, precision: int, format: str = "g") -> None:
+        self.view_format = (format, precision)
         self.updateTextFromValue()
 
-    def setEditFormat(self, format: str | int) -> None:
-        if isinstance(format, str):
-            self.edit_format = format
-        else:
-            self.edit_format = f".{format}g"
+    def setEditFormat(self, precision: int, format: str = "g") -> None:
+        self.edit_format = (format, precision)
 
     def value(self) -> float | None:
         return self._value
@@ -97,8 +91,10 @@ class ValueWidget(ValidColorLineEdit):
     def updateTextFromValue(self) -> None:
         format = self.edit_format if self.isEditMode() else self.view_format
         value = self.value()
-        text = f"{value:{format}}" if value is not None else ""
-        self.setText(text)
+        if value is None:
+            self.setText("")
+        else:
+            self.setText(self.locale().toString(float(value), format[0], format[1]))
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         super().paintEvent(event)
@@ -118,10 +114,11 @@ class ValueWidget(ValidColorLineEdit):
         rect = rect.marginsRemoved(self.textMargins())
         rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
 
+        err_str = self.locale().toString(
+            float(self._error), int(self.view_format[0]), self.view_format[1]
+        )
         text = fm.elidedText(
-            f" ± {self._error:{self.view_format}}",
-            QtCore.Qt.TextElideMode.ElideRight,
-            rect.width(),
+            f" ± {err_str}", QtCore.Qt.TextElideMode.ElideRight, rect.width()
         )
 
         painter = QtGui.QPainter(self)

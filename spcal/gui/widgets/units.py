@@ -18,7 +18,7 @@ class UnitsWidget(QtWidgets.QWidget):
         default_unit: str | None = None,
         base_value: float | None = None,
         validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
-        format: str | int = 6,
+        format: int | tuple[str, int] = 6,
         color_invalid: QtGui.QColor | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -61,11 +61,11 @@ class UnitsWidget(QtWidgets.QWidget):
         layout.addWidget(self.combo, 0)
         self.setLayout(layout)
 
-    def setViewFormat(self, format: str | int) -> None:
-        self.lineedit.setViewFormat(format)
+    def setViewFormat(self, precision: int, format: str = "g") -> None:
+        self.lineedit.setViewFormat(precision, format)
 
-    def setEditFormat(self, format: str | int) -> None:
-        self.lineedit.setEditFormat(format)
+    def setEditFormat(self, precision: int, format: str = "g") -> None:
+        self.lineedit.setEditFormat(precision, format)
 
     def value(self) -> float | None:
         return self.lineedit.value()

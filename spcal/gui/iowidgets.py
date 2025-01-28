@@ -36,7 +36,7 @@ class IOWidget(QtWidgets.QWidget):
         if num is None:
             num = int(QtCore.QSettings().value("SigFigs", 4))
         for widget in self.findChildren(ValueWidget):
-            if widget.view_format.endswith("g"):
+            if widget.view_format[1] == "g":
                 widget.setViewFormat(num)
 
     def isComplete(self) -> bool:
@@ -134,7 +134,7 @@ class SampleIOWidget(IOWidget):
         self.inputs.layout().addRow("Ionic response:", self.response)
         self.inputs.layout().addRow("Mass fraction:", self.massfraction)
 
-        self.count = ValueWidget(0, format="d")
+        self.count = ValueWidget(0, format=("f", 0))
         self.count.setReadOnly(True)
         self.background_count = ValueWidget(format=sf)
         self.background_count.setReadOnly(True)
@@ -411,7 +411,7 @@ class ResultIOWidget(IOWidget):
         self.outputs = QtWidgets.QGroupBox("Outputs")
         self.outputs.setLayout(QtWidgets.QHBoxLayout())
 
-        self.count = ValueWidget(format=".0f")
+        self.count = ValueWidget(format=("f", 0))
         self.count.setReadOnly(True)
         self.count_label = OverLabel(self.count, "")
         self.number = UnitsWidget(
@@ -508,7 +508,7 @@ class ResultIOWidget(IOWidget):
 
         self.count.setValue(int(count))
         self.count.setError(int(np.round(count_error, 0)))
-        self.count_label.setText(f"({count_percent:{self.count.view_format}} %)")
+        self.count_label.setText(f"({count_percent:.2f} %)")
         self.number.setBaseValue(number_conc)
         if number_conc is not None:
             self.number.setBaseError(number_conc * relative_error)
