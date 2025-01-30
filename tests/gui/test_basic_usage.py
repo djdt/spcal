@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
@@ -23,6 +24,7 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
         options.check_window.click()
     assert options.check_window.isChecked()
     assert options.window_size.isEnabled()
+    assert options.window_size.text() == "1000"
     qtbot.keyClick(options.window_size, QtCore.Qt.Key_Backspace)
     assert options.window_size.value() == 100
 
@@ -145,7 +147,16 @@ def click_though_results(qtbot: QtBot, results: ResultsWidget):
     results.scatter_fit_degree.setValue(2)
 
 
-def test_spcal_no_data(qtbot: QtBot):
+@pytest.mark.parametrize(
+    "test_locales",
+    [
+        QtCore.QLocale.Language.English,
+        QtCore.QLocale.Language.Spanish,
+        QtCore.QLocale.Language.German,
+    ],
+    indirect=True,
+)
+def test_spcal_no_data(qtbot: QtBot, test_locales):
     window = SPCalWindow()
     qtbot.add_widget(window)
     with qtbot.wait_exposed(window):
@@ -208,7 +219,7 @@ def test_spcal_no_data(qtbot: QtBot):
     window.resetInputs()
 
 
-def test_spcal_single_quad_data(qtbot: QtBot):
+def test_spcal_single_quad_data(qtbot: QtBot, test_locales):
     window = SPCalWindow()
     qtbot.add_widget(window)
     with qtbot.wait_exposed(window):

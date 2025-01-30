@@ -43,13 +43,13 @@ def test_value_widget(qtbot: QtBot):
     assert w.error() == 0.123456789
     w.repaint()
 
-    w.setViewFormat(".0f")
+    w.setViewFormat(0, format="f")
     assert w.text() == "0"
 
     w.setEditFormat(1)
     w.setFocus()
     assert w.text() == "0.1"
     w.clearFocus()
-    w.setEditFormat(".0f")
+    w.setEditFormat(0, format="f")
     w.setFocus()
     assert w.text() == "0"
