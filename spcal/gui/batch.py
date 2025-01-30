@@ -188,9 +188,53 @@ def process_text_file(
 
     # === Export images ===
     if "size" in image_kws:
-        from spcal.gui.graphs.draw import draw_particle_view
-        view = draw_particle_view(None, results)
+        from spcal.gui.graphs.draw import draw_histogram_view
 
+        dpi_scale = image_kws["dpi"] / 96.0
+        font = QtGui.QFont(
+            QtCore.QSettings().value("GraphFont/Family", "SansSerif"),
+            pointSize=int(QtCore.QSettings().value("GraphFont/PointSize", 10)),
+        )
+        font.setPointSizeF(font.pointSize() * dpi_scale)
+
+        for name, result in results.items():
+            for key, (label, unit, modifier) in zip(
+                ResultsWidget.mode_keys.values(), ResultsWidget.mode_labels.values()
+            ):
+                if not result.canCalibrate(key):
+                    continue
+                # should give filter idx
+                filter_idx = np.intersect1d(
+                    result.indicies, np.flatnonzero(result.detections > 0)
+                )
+                view = draw_histogram_view(
+                    None,
+                    {name: result},
+                    key,
+                    (label, unit, modifier),
+                    filter_idx=filter_idx,
+                    histogram_options=image_kws["histogram"],
+                    font=font,
+                    scale=dpi_scale,
+                    show_fit=image_kws["options"].get("show fit", True),
+                    show_limits=image_kws["options"].get("show limits", True),
+                )
+                if view is None:
+                    continue
+
+                view.plot.legend.setVisible(
+                    image_kws["options"].get("show legend", True)
+                )
+                view.resize(image_kws["size"])
+                view.show()  # required to draw correctly?
+
+                if image_kws["options"].get("transparent background", False):
+                    background = QtCore.Qt.GlobalColor.transparent
+                else:
+                    background = QtCore.Qt.GlobalColor.white
+
+                image_path = outpath.with_name(outpath.stem + f"_{name}_{key}.png")
+                view.exportImage(image_path, background=background)
 
 
 def process_nu_file(
@@ -390,10 +434,10 @@ class BatchProcessDialog(QtWidgets.QDialog):
             "options": {
                 "transparent background": False,
                 "show legend": True,
-                "show detections": True,
                 "histogram show fit": True,
                 "histogram show limits": True,
             },
+            "histogram": self.results.graph_options["histogram"],
         }
 
         self.inputs.layout().addRow("Output Name:", self.output_name)
