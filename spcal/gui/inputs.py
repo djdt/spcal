@@ -213,10 +213,18 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.setFont(font)
         self.redraw()  # fixes legend
 
-    def redraw(self) -> None:
+    def redraw(self, save_range: bool = True) -> None:
+        (xmin, xmax), (ymin, ymax) = self.graph.plot.viewRange()
         self.drawGraph()
         self.drawDetections()
         self.drawLimits()
+        if save_range:
+            if self.graph.plot.vb.state["autoVisibleOnly"][1]:
+                self.graph.plot.vb.setRange(xRange=(xmin, xmax), padding=0.0)
+            else:
+                self.graph.plot.vb.setRange(
+                    xRange=(xmin, xmax), yRange=(ymin, ymax), padding=0.0
+                )
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if (
