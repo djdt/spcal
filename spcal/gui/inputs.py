@@ -435,7 +435,9 @@ class InputWidget(QtWidgets.QWidget):
                     integrate=True,
                 )
 
-        self.detections, self.labels, self.regions = combine_detections(d, l, self.original_regions)
+        self.detections, self.labels, self.regions = combine_detections(
+            d, l, self.original_regions
+        )
 
         self.detectionsChanged.emit()
 
