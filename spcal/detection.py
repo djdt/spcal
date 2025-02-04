@@ -27,7 +27,6 @@ def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
         ends = np.concatenate((ends, [diff.size]))  # type: ignore
     return np.stack((starts, ends), axis=1)
 
-
 def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
     """Label regions 1 ... regions.size. Unlabled areas are 0.
 
@@ -52,6 +51,11 @@ def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
     # Cumsum to label
     labels = np.cumsum(labels)
     return labels
+
+
+def split_detections(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
+    # maximum signal indicies
+    midx = detection_maxima(y, regions)
 
 
 def accumulate_detections(
