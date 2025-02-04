@@ -89,7 +89,7 @@ def accumulate_detections(
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
 
-    # Get maximum in each region
+    # Get number above limit in each region
     detections = np.add.reduceat(y > limit_detection, indicies)[::2]
     # Remove regions without minimum_size values above detection limit
     regions = regions[detections >= points_required]
