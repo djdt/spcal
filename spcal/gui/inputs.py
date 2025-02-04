@@ -49,6 +49,7 @@ class InputWidget(QtWidgets.QWidget):
         self.detections = np.array([])
         self.labels = np.array([])
         self.regions = np.array([])
+        self.original_regions: dict[str, np.ndarray] = {}  # regions before combination
         self.limits: dict[str, SPCalLimit] = {}
 
         self.draw_mode = "overlay"
@@ -416,7 +417,7 @@ class InputWidget(QtWidgets.QWidget):
         )
 
     def updateDetections(self) -> None:
-        d, l, r = {}, {}, {}
+        d, l, self.original_regions = {}, {}, {}
         acc_method = self.options.limit_accumulation
         points_req = self.options.points_required
         for name in self.names:
@@ -426,7 +427,7 @@ class InputWidget(QtWidgets.QWidget):
             limit_accumulation = np.minimum(limit_accumulation, limit_detection)
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
-                d[name], l[name], r[name] = accumulate_detections(
+                d[name], l[name], self.original_regions[name] = accumulate_detections(
                     responses,
                     limit_accumulation,
                     limit_detection,
@@ -434,7 +435,7 @@ class InputWidget(QtWidgets.QWidget):
                     integrate=True,
                 )
 
-        self.detections, self.labels, self.regions = combine_detections(d, l, r)
+        self.detections, self.labels, self.regions = combine_detections(d, l, self.original_regions)
 
         self.detectionsChanged.emit()
 
