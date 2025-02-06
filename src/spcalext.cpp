@@ -7,6 +7,7 @@
 #include <iostream>
 #include <numeric>
 #include <ranges>
+#include <thread>
 #include <vector>
 
 namespace py = pybind11;
@@ -289,6 +290,56 @@ double poisson_quantile(double q, double lam) {
   return k;
 }
 
+py::tuple peak_prominence(py::array_t<float> values, py::array_t<int> indicies,
+                          double minimum) {
+
+  if (values.ndim() != 1)
+    throw std::runtime_error("values must have 1 dim");
+  if (indicies.ndim() != 1)
+    throw std::runtime_error("indicies must have 1 dim");
+
+  auto m = values.shape(0);
+  auto n = indicies.shape(0);
+
+  auto prom_array = py::array_t<double>(n);
+  auto left_array = py::array_t<int>(n);
+  auto right_array = py::array_t<int>(n);
+
+  auto y = values.unchecked<1>();
+  auto idx = indicies.unchecked<1>();
+
+  auto lefts = left_array.mutable_unchecked<1>();
+  auto rights = right_array.mutable_unchecked<1>();
+  auto proms = prom_array.mutable_unchecked<1>();
+
+  for (py::ssize_t i = 0; i < n; ++i) {
+    double peak_height = y[idx[i]];
+
+    int left = idx[i];
+    int left_minima = left;
+    int iter = 0;
+    while (left > 0 && y[left - 1] <= peak_height && y[left] > minimum) {
+      left -= 1;
+      if (y[left] < y[left_minima]) {
+        left_minima = left;
+      }
+    }
+    int right = idx[i];
+    int right_minima = right;
+    iter = 0;
+    while (right < m - 1 && y[right + 1] <= peak_height && y[right] > minimum) {
+      right += 1;
+      if (y[right] < y[right_minima]) {
+        right_minima = right;
+      }
+    }
+    lefts[i] = left_minima;
+    rights[i] = right_minima;
+    proms[i] = peak_height - std::max(y[left_minima], y[right_minima]);
+  }
+  return py::make_tuple(prom_array, left_array, right_array);
+}
+
 PYBIND11_MODULE(spcalext, mod) {
   mod.doc() = "extension module for SPCal.";
 
@@ -302,4 +353,6 @@ PYBIND11_MODULE(spcalext, mod) {
           "Calculates to maxima between pairs of start and end positions.");
   mod.def("poisson_quantile", &poisson_quantile,
           "Quantile (k) for a given q and lambda.");
+  mod.def("peak_prominence", &peak_prominence,
+          "Calculate the peak prominence at given indicies.");
 }
