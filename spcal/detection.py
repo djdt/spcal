@@ -2,7 +2,8 @@
 
 import numpy as np
 
-from spcal.lib.spcalext import maxima
+from spcal.dists import normal
+from spcal.lib.spcalext import maxima, peak_prominence
 
 
 def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
@@ -26,6 +27,7 @@ def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
         # -1 for reduceat
         ends = np.concatenate((ends, [diff.size]))  # type: ignore
     return np.stack((starts, ends), axis=1)
+
 
 def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
     """Label regions 1 ... regions.size. Unlabled areas are 0.
@@ -53,11 +55,6 @@ def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
     return labels
 
 
-def split_detections(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
-    # maximum signal indicies
-    midx = detection_maxima(y, regions)
-
-
 def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: float | np.ndarray,
@@ -83,24 +80,45 @@ def accumulate_detections(
         labels of regions
         regions [starts, ends]
     """
+
+    def local_maxima(x: np.ndarray):
+        return np.logical_and(
+            np.r_[False, x[1:] > x[:-1]], np.r_[x[:-1] > x[1:], False]
+        )
+
     if np.any(limit_accumulation > limit_detection):
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
-    regions = _contiguous_regions(y, limit_accumulation)
+    # psf = normal.pdf(np.linspace(-2, 2, 5))
+    # ysm = np.convolve(y, psf / psf.sum(), mode="same")
+
+    possible_detections = np.flatnonzero(
+        np.logical_and(y > limit_detection, local_maxima(y))
+    )
+    prominence, lefts, rights = peak_prominence(
+        y.astype(np.float32), possible_detections.astype(np.int32), limit_accumulation
+    )
+    regions = np.stack(
+        (lefts[prominence > limit_detection], rights[prominence > limit_detection]),
+        axis=1,
+    )
+    #
+    # regions = _contiguous_regions(y, limit_accumulation)
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
-
-    # Get maximum in each region
-    detections = np.add.reduceat(y > limit_detection, indicies)[::2]
-    # Remove regions without minimum_size values above detection limit
-    regions = regions[detections >= points_required]
-
-    indicies = regions.ravel()
-    if indicies.size > 0 and indicies[-1] == y.size:
-        indicies = indicies[:-1]
+    # print(lefts.size, lefts[prominence > limit_detection].size)
+    #
+    # # Get maximum in each region
+    # detections = np.add.reduceat(y > limit_detection, indicies)[::2]
+    # # Remove regions without minimum_size values above detection limit
+    # regions = regions[detections >= points_required]
+    #
+    # indicies = regions.ravel()
+    # if indicies.size > 0 and indicies[-1] == y.size:
+    #     indicies = indicies[:-1]
 
     # Sum regions
     if integrate:
