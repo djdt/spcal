@@ -327,7 +327,8 @@ py::tuple peak_prominence(py::array_t<float> values, py::array_t<int> indicies,
     int right = idx[i];
     int right_minima = right;
     iter = 0;
-    while (right < m - 1 && y[right + 1] <= peak_height && y[right] > minimum) {
+    while (right < m - 1 && y[right + 1] <= peak_height &&
+           y[right + 1] > minimum) {
       right += 1;
       if (y[right] < y[right_minima]) {
         right_minima = right;
