@@ -3,7 +3,7 @@
 import numpy as np
 
 from spcal.dists import normal
-from spcal.lib.spcalext import maxima, peak_prominence
+from spcal.lib.spcalext import label_regions, maxima, peak_prominence
 
 
 def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
@@ -27,32 +27,6 @@ def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
         # -1 for reduceat
         ends = np.concatenate((ends, [diff.size]))  # type: ignore
     return np.stack((starts, ends), axis=1)
-
-
-def _label_regions(regions: np.ndarray, size: int) -> np.ndarray:
-    """Label regions 1 ... regions.size. Unlabled areas are 0.
-
-    Args:
-        regions: from `get_contiguous_regions`
-        size: size of array
-
-    Returns:
-        labeled regions
-    """
-    labels = np.zeros(size, dtype=np.int16)
-    if regions.size == 0:
-        return labels
-
-    ix = np.arange(1, regions.shape[0] + 1)
-
-    starts, ends = regions[:, 0], regions[:, 1]
-    ends = ends[ends < size]
-    # Set start, end pairs to +i, -i.
-    labels[starts] = ix
-    labels[ends] = -ix[: ends.size]  # possible over end
-    # Cumsum to label
-    labels = np.cumsum(labels)
-    return labels
 
 
 def accumulate_detections(
@@ -91,34 +65,47 @@ def accumulate_detections(
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
-    # psf = normal.pdf(np.linspace(-2, 2, 5))
-    # ysm = np.convolve(y, psf / psf.sum(), mode="same")
+    # todo: see if smoothing required
+    psf = normal.pdf(np.linspace(-2, 2, 5))
+    ysm = np.convolve(y, psf / psf.sum(), mode="same")
 
     possible_detections = np.flatnonzero(
-        np.logical_and(y > limit_detection, local_maxima(y))
+        np.logical_and(y > limit_detection, local_maxima(ysm))
     )
     prominence, lefts, rights = peak_prominence(
-        y.astype(np.float32), possible_detections.astype(np.int32), limit_accumulation
+        ysm, possible_detections, limit_accumulation
     )
-    regions = np.stack(
-        (lefts[prominence > limit_detection], rights[prominence > limit_detection]),
-        axis=1,
+
+    detected = prominence > limit_detection
+
+    prominence, lefts, rights = (
+        prominence[detected],
+        lefts[detected],
+        rights[detected],
     )
-    #
-    # regions = _contiguous_regions(y, limit_accumulation)
+
+    # fix any overlapped peaks, prefering most prominent
+    right_larger = prominence[:-1] < prominence[1:]
+    lefts[1:][right_larger] = np.maximum(
+        lefts[1:][right_larger], rights[:-1][right_larger]
+    )
+    rights[:-1][~right_larger] = np.minimum(
+        lefts[1:][~right_larger], rights[:-1][~right_larger]
+    )
+
+    regions = np.stack((lefts, rights + 1), axis=1)
+
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
-    # print(lefts.size, lefts[prominence > limit_detection].size)
-    #
-    # # Get maximum in each region
-    # detections = np.add.reduceat(y > limit_detection, indicies)[::2]
-    # # Remove regions without minimum_size values above detection limit
-    # regions = regions[detections >= points_required]
-    #
-    # indicies = regions.ravel()
-    # if indicies.size > 0 and indicies[-1] == y.size:
-    #     indicies = indicies[:-1]
+
+    if points_required > 1:
+        detections = np.add.reduceat(y > limit_detection, indicies)[::2]
+        regions = regions[detections >= points_required]
+
+        indicies = regions.ravel()
+        if indicies.size > 0 and indicies[-1] == y.size:
+            indicies = indicies[:-1]
 
     # Sum regions
     if integrate:
@@ -127,7 +114,7 @@ def accumulate_detections(
         sums = np.add.reduceat(y, indicies)[::2]
 
     # Create a label array of detections
-    labels = _label_regions(regions, y.size)
+    labels = label_regions(regions, y.size)
 
     return sums, labels, regions
 
@@ -160,6 +147,8 @@ def combine_detections(
         )
     names = list(sums.keys())
 
+    # todo: find a way to preserve touching regions
+
     # Get regions from all elements
     # Some regions may overlap, these will be combined
     any_label = np.zeros(labels[names[0]].size, dtype=np.int8)
@@ -167,7 +156,7 @@ def combine_detections(
         any_label[labels[name] > 0] = 1
 
     all_regions = _contiguous_regions(any_label, 0)
-    any_label = _label_regions(all_regions, any_label.size)
+    any_label = label_regions(all_regions, any_label.size)
 
     # Init to zero, summed later
     combined = np.zeros(
