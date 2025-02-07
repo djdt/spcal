@@ -14,15 +14,15 @@ namespace py = pybind11;
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
-inline py::ssize_t condensed_index(py::ssize_t i, py::ssize_t j,
-                                   py::ssize_t n) {
+inline py::ssize_t condensed_index(const py::ssize_t i, py::ssize_t const j,
+                                   const py::ssize_t n) {
   if (i < j)
     return n * i - (i * (i + 1) / 2) + (j - i - 1);
   else
     return n * j - (j * (j + 1) / 2) + (i - j - 1);
 }
 
-py::array_t<double> pairwise_euclidean(py::array_t<double> X) {
+py::array_t<double> pairwise_euclidean(const py::array_t<double> &X) {
   if (X.ndim() != 2)
     throw std::runtime_error("X must have 2 dims");
 
@@ -59,7 +59,7 @@ inline int find_root(std::vector<int> &parents, int x) {
   return x;
 }
 
-void label(py::array_t<int> &Z, int n) {
+void label(py::array_t<int> &Z, const int n) {
   if (Z.ndim() != 2 || Z.shape(1) != 2)
     throw std::runtime_error("Z must have shape (n, 2)");
 
@@ -86,9 +86,9 @@ void label(py::array_t<int> &Z, int n) {
   }
 }
 
-py::tuple mst_linkage(py::array_t<double> Dists, int n) {
+py::tuple mst_linkage(const py::array_t<double> &dists_array, const int n) {
 
-  auto dists = Dists.unchecked<1>();
+  auto dists = dists_array.unchecked<1>();
 
   auto z1 = std::vector<int>(n - 1);
   auto z2 = std::vector<int>(n - 1);
@@ -150,8 +150,9 @@ py::tuple mst_linkage(py::array_t<double> Dists, int n) {
   return py::make_tuple(Z, ZD);
 }
 
-py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
-                                     double cluster_dist) {
+py::array_t<int> cluster_by_distance(const py::array_t<int> &Z,
+                                     const py::array_t<double> &ZD,
+                                     const double cluster_dist) {
   if (Z.ndim() != 2 || Z.shape(1) != 2)
     throw std::runtime_error("Z must have shape (n, 2)");
   if (Z.shape(0) != ZD.shape(0))
@@ -246,7 +247,8 @@ py::array_t<int> cluster_by_distance(py::array_t<int> Z, py::array_t<double> ZD,
   return T;
 }
 
-py::array_t<int> maxima(py::array_t<double> values, py::array_t<int> regions) {
+py::array_t<int> maxima(const py::array_t<double> &values,
+                        const py::array_t<int> &regions) {
   py::buffer_info vbuf = values.request(), rbuf = regions.request();
 
   if (vbuf.ndim != 1)
@@ -290,8 +292,9 @@ double poisson_quantile(double q, double lam) {
   return k;
 }
 
-py::tuple peak_prominence(py::array_t<float> values, py::array_t<int> indicies,
-                          double minimum) {
+py::tuple peak_prominence(const py::array_t<double> &values,
+                          const py::array_t<int> &indicies,
+                          const double minimum) {
 
   if (values.ndim() != 1)
     throw std::runtime_error("values must have 1 dim");
@@ -320,17 +323,16 @@ py::tuple peak_prominence(py::array_t<float> values, py::array_t<int> indicies,
     int iter = 0;
     while (left > 0 && y[left - 1] <= peak_height && y[left] > minimum) {
       left -= 1;
-      if (y[left] < y[left_minima]) {
+      if (y[left] <= y[left_minima]) {
         left_minima = left;
       }
     }
     int right = idx[i];
     int right_minima = right;
     iter = 0;
-    while (right < m - 1 && y[right + 1] <= peak_height &&
-           y[right + 1] > minimum) {
+    while (right < m - 1 && y[right + 1] <= peak_height && y[right] > minimum) {
       right += 1;
-      if (y[right] < y[right_minima]) {
+      if (y[right] <= y[right_minima]) {
         right_minima = right;
       }
     }
@@ -339,6 +341,67 @@ py::tuple peak_prominence(py::array_t<float> values, py::array_t<int> indicies,
     proms[i] = peak_height - std::max(y[left_minima], y[right_minima]);
   }
   return py::make_tuple(prom_array, left_array, right_array);
+}
+
+py::array_t<int> label_regions(const py::array_t<int> &regions_array,
+                               const py::ssize_t size) {
+  if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
+    throw std::runtime_error("regions must have shape (N, 2)");
+  }
+
+  py::array_t<int> label_array(size);
+  label_array[py::make_tuple(py::ellipsis())] = 0;
+  auto n = regions_array.shape(0);
+
+  auto regions = regions_array.unchecked<2>();
+  auto labels = label_array.mutable_unchecked<1>();
+
+  int region = 1;
+  for (py::ssize_t i = 0; i < n; ++i) {
+    for (py::ssize_t j = regions(i, 0); j < regions(i, 1); ++j) {
+      labels[j] = region;
+    }
+    region++;
+  }
+  return label_array;
+}
+
+py::array_t<int> combined_regions(const py::list &regions_list) {
+
+  std::vector<int> lefts;
+  std::vector<int> rights;
+
+  std::vector<py::detail::unchecked_reference<int, 2>> regions;
+  regions.reserve(regions_list.size());
+  std::vector<int> current_pos(regions_list.size());
+  for (int i = 0; i < current_pos.size(); ++i) {
+    regions.push_back(
+        static_cast<py::array_t<int>>(regions_list[i]).unchecked<2>());
+    current_pos[i] = 0;
+  }
+
+  int left = std::numeric_limits<int>::max();
+  int right = 0;
+  while (true) {
+    // leftmost region
+    int leftmost = 0;
+    for (int i = 0; i < current_pos.size(); ++i) {
+      if (regions[i](current_pos[i], 0) < left) {
+        left = regions[i](current_pos[i], 0);
+        right = regions[i](current_pos[i], 0);
+        leftmost = i;
+      }
+    }
+    bool changed = false;
+    while (!changed) {
+      for (int i = 0; i < current_pos.size(); ++i) {
+        if (regions[i](current_pos[i], 1) > right) {
+          right = regions[i](current_pos[i]++, 0);
+          changed = true;
+        }
+      }
+    }
+  }
 }
 
 PYBIND11_MODULE(spcalext, mod) {
@@ -356,4 +419,6 @@ PYBIND11_MODULE(spcalext, mod) {
           "Quantile (k) for a given q and lambda.");
   mod.def("peak_prominence", &peak_prominence,
           "Calculate the peak prominence at given indicies.");
+  mod.def("label_regions", &label_regions,
+          "Label regions 1 to size, points outside all regions are 0.");
 }
