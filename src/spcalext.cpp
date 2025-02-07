@@ -320,7 +320,6 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 
     int left = idx[i];
     int left_minima = left;
-    int iter = 0;
     while (left > 0 && y[left - 1] <= peak_height && y[left] > minimum) {
       left -= 1;
       if (y[left] <= y[left_minima]) {
@@ -329,7 +328,6 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     }
     int right = idx[i];
     int right_minima = right;
-    iter = 0;
     while (right < m - 1 && y[right + 1] <= peak_height && y[right] > minimum) {
       right += 1;
       if (y[right] <= y[right_minima]) {
@@ -368,40 +366,82 @@ py::array_t<int> label_regions(const py::array_t<int> &regions_array,
 
 py::array_t<int> combined_regions(const py::list &regions_list) {
 
-  std::vector<int> lefts;
-  std::vector<int> rights;
-
   std::vector<py::detail::unchecked_reference<int, 2>> regions;
   regions.reserve(regions_list.size());
-  std::vector<int> current_pos(regions_list.size());
-  for (int i = 0; i < current_pos.size(); ++i) {
+  std::vector<int> indicies(regions_list.size());
+
+  py::ssize_t max_size = 0;
+
+  for (size_t i = 0; i < indicies.size(); ++i) {
     regions.push_back(
         static_cast<py::array_t<int>>(regions_list[i]).unchecked<2>());
-    current_pos[i] = 0;
+    indicies[i] = 0;
+    max_size = std::max(max_size, regions[i].size());
   }
 
-  int left = std::numeric_limits<int>::max();
-  int right = 0;
-  while (true) {
-    // leftmost region
-    int leftmost = 0;
-    for (int i = 0; i < current_pos.size(); ++i) {
-      if (regions[i](current_pos[i], 0) < left) {
-        left = regions[i](current_pos[i], 0);
-        right = regions[i](current_pos[i], 0);
-        leftmost = i;
-      }
-    }
-    bool changed = false;
-    while (!changed) {
-      for (int i = 0; i < current_pos.size(); ++i) {
-        if (regions[i](current_pos[i], 1) > right) {
-          right = regions[i](current_pos[i]++, 0);
-          changed = true;
+  auto combined = new std::vector<int>;
+  combined->reserve(max_size);
+
+  bool finished = false;
+  int iter = 0;
+  while (iter++ < 100 && !finished) {
+    int left = std::numeric_limits<int>::max();
+    int leftmost_idx = 0;
+    int s, e;
+    // find leftmost region
+    for (size_t i = 0; i < indicies.size(); ++i) {
+      if (indicies[i] < regions[i].shape(0)) {
+        s = regions[i](indicies, 0);
+        if (s < left) {
+          left = s;
+          leftmost_idx = i;
         }
       }
     }
+
+    int right = regions[leftmost_idx](indicies[leftmost_idx]++, 1);
+
+    bool changed = true;
+    while (changed) {
+      changed = false;
+      for (size_t i = 0; i < indicies.size(); ++i) {
+        if (indicies[i] < regions[i].shape(0)) {
+          s = regions[i](indicies, 0);
+          e = regions[i](indicies, 1);
+
+          if (s < right && e >= right) { // region is overlapping
+            right = e;
+            indicies[i] += 1;
+            changed = true;
+          } else if (e < right) { // region is passed
+            indicies[i] += 1;
+          }
+        }
+      }
+    }
+
+    combined->push_back(left);
+    combined->push_back(right);
+
+    // check if all regions are at end
+    finished = true;
+    for (int i = 0; i < indicies.size(); ++i) {
+      if (indicies[i] < regions[i].shape(0)) {
+        finished = false;
+      }
+    }
   }
+
+  py::capsule free_when_done(combined, [](void *f) {
+    delete reinterpret_cast<std::vector<int> *>(f);
+  });
+
+  std::array<size_t, 2> shape = {0, 2};
+  shape[0] = combined->size();
+  std::array<size_t, 2> stride = {0, sizeof(int)};
+  stride[0] = shape[0] * sizeof(int);
+
+  return py::array_t<int>(shape, stride, combined->data(), free_when_done);
 }
 
 PYBIND11_MODULE(spcalext, mod) {
