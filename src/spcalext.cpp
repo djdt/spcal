@@ -364,56 +364,64 @@ py::array_t<int> label_regions(const py::array_t<int> &regions_array,
   return label_array;
 }
 
-py::array_t<int> combined_regions(const py::list &regions_list) {
+py::array_t<int> combine_regions(const py::list &regions_list,
+                                 const int allowed_overlap) {
 
   std::vector<py::detail::unchecked_reference<int, 2>> regions;
-  regions.reserve(regions_list.size());
   std::vector<int> indicies(regions_list.size());
 
   py::ssize_t max_size = 0;
-
-  for (size_t i = 0; i < indicies.size(); ++i) {
-    regions.push_back(
-        static_cast<py::array_t<int>>(regions_list[i]).unchecked<2>());
-    indicies[i] = 0;
-    max_size = std::max(max_size, regions[i].size());
+  for (const auto &obj : regions_list) {
+    const auto &array = py::cast<py::array_t<int>>(obj);
+    regions.push_back(array.unchecked<2>());
+    max_size = std::max(max_size, array.size());
   }
 
   auto combined = new std::vector<int>;
   combined->reserve(max_size);
 
-  bool finished = false;
   int iter = 0;
-  while (iter++ < 100 && !finished) {
+  while (iter++ < max_size) {
     int left = std::numeric_limits<int>::max();
+    int right = 0;
     int leftmost_idx = 0;
     int s, e;
+
     // find leftmost region
+    bool finished = true;
     for (size_t i = 0; i < indicies.size(); ++i) {
       if (indicies[i] < regions[i].shape(0)) {
-        s = regions[i](indicies, 0);
+        s = regions[i](indicies[i], 0);
+        e = regions[i](indicies[i], 1);
+
         if (s < left) {
           left = s;
+          right = e;
           leftmost_idx = i;
         }
+        finished = false;
       }
     }
+    if (finished) {
+      break;
+    }
+    indicies[leftmost_idx] += 1;
 
-    int right = regions[leftmost_idx](indicies[leftmost_idx]++, 1);
-
+    // find overlapping regions
     bool changed = true;
     while (changed) {
       changed = false;
       for (size_t i = 0; i < indicies.size(); ++i) {
         if (indicies[i] < regions[i].shape(0)) {
-          s = regions[i](indicies, 0);
-          e = regions[i](indicies, 1);
+          s = regions[i](indicies[i], 0);
+          e = regions[i](indicies[i], 1);
 
-          if (s < right && e >= right) { // region is overlapping
+          if (s < right - allowed_overlap &&
+              e >= right) { // region is overlapping
             right = e;
             indicies[i] += 1;
             changed = true;
-          } else if (e < right) { // region is passed
+          } else if (e < right - allowed_overlap) { // region is passed
             indicies[i] += 1;
           }
         }
@@ -422,24 +430,21 @@ py::array_t<int> combined_regions(const py::list &regions_list) {
 
     combined->push_back(left);
     combined->push_back(right);
-
-    // check if all regions are at end
-    finished = true;
-    for (int i = 0; i < indicies.size(); ++i) {
-      if (indicies[i] < regions[i].shape(0)) {
-        finished = false;
-      }
-    }
   }
+
+  if (iter == max_size) {
+    throw std::runtime_error("max iterations reached");
+  }
+
+  // create numpy array to return
+  combined->shrink_to_fit();
+  std::array<size_t, 2> shape = {0, 2};
+  shape[0] = combined->size() / 2;
+  std::array<size_t, 2> stride = {2 * sizeof(int), sizeof(int)};
 
   py::capsule free_when_done(combined, [](void *f) {
     delete reinterpret_cast<std::vector<int> *>(f);
   });
-
-  std::array<size_t, 2> shape = {0, 2};
-  shape[0] = combined->size();
-  std::array<size_t, 2> stride = {0, sizeof(int)};
-  stride[0] = shape[0] * sizeof(int);
 
   return py::array_t<int>(shape, stride, combined->data(), free_when_done);
 }
@@ -461,4 +466,6 @@ PYBIND11_MODULE(spcalext, mod) {
           "Calculate the peak prominence at given indicies.");
   mod.def("label_regions", &label_regions,
           "Label regions 1 to size, points outside all regions are 0.");
+  mod.def("combine_regions", &combine_regions,
+          "Combine a list of regions, merging overlaps.");
 }
