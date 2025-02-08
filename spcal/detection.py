@@ -66,8 +66,8 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
     # todo: see if smoothing required
-    psf = normal.pdf(np.linspace(-2, 2, 5))
-    ysm = np.convolve(y, psf / psf.sum(), mode="same")
+    # psf = normal.pdf(np.linspace(-2, 2, 5))
+    # ysm = np.convolve(y, psf / psf.sum(), mode="same")
 
     possible_detections = np.flatnonzero(
         np.logical_and(y > limit_detection, local_maxima(y))
