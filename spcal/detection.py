@@ -66,17 +66,17 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
     # todo: see if smoothing required
-    psf = normal.pdf(np.linspace(-2, 2, 5))
-    ysm = np.convolve(y, psf / psf.sum(), mode="same")
+    # psf = normal.pdf(np.linspace(-2, 2, 5))
+    # ysm = np.convolve(y, psf / psf.sum(), mode="same")
 
     possible_detections = np.flatnonzero(
-        np.logical_and(y > limit_detection, local_maxima(ysm))
+        np.logical_and(y > limit_detection, local_maxima(y))
     )
     prominence, lefts, rights = peak_prominence(
-        ysm, possible_detections, limit_accumulation
+        y, possible_detections, limit_accumulation
     )
 
-    detected = prominence > limit_detection
+    detected = prominence > limit_detection * 0.9
 
     prominence, lefts, rights = (
         prominence[detected],
