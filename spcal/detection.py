@@ -38,13 +38,14 @@ def accumulate_detections(
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
     points_required: int = 1,
+    promience_required: float | np.ndarray | None = None,
     integrate: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Peak prominence is calculated for all points above the ``limit_detection``,
     with widths bound by the ``limit_accumulation``.
-    Detections are peaks with a prominence greater than ``limit_detection`` and at
+    Detections are peaks with a prominence greater than ``promience_required`` and at
     least ``points_required`` points above the ``limit_detection``.
 
     Args:
@@ -52,6 +53,7 @@ def accumulate_detections(
         limit_accumulation: minimum accumulation value(s)
         limit_detection: minimum detection value(s)
         points_required: no. points > limit_detection to be detected
+        prominence_required: minimum prominence for peaks
         integrate: integrate, otherwise sum
 
     Returns:
@@ -69,6 +71,8 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
+    if promience_required is None:
+        promience_required = limit_detection
 
     # todo: see if smoothing required
     # todo: perfoemance of possible_detections, detections and sum
@@ -78,12 +82,16 @@ def accumulate_detections(
     possible_detections = np.flatnonzero(
         np.logical_and(y > limit_detection, local_maxima(y))
     )
+
     prominence, lefts, rights = peak_prominence(
         y, possible_detections, limit_accumulation
     )
 
-    detected = prominence >= limit_detection
-
+    # if promience_required is array, use mid points
+    if isinstance(promience_required, np.ndarray):
+        detected = prominence >= promience_required[lefts + (rights - lefts) // 2]
+    else:
+        detected = prominence >= promience_required
     prominence, lefts, rights = (
         prominence[detected],
         lefts[detected],
