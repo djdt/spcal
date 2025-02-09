@@ -1,8 +1,12 @@
 import numpy as np
 
-from spcal.lib.spcalext import (
+from spcal.lib.spcalext.clusterings import (
     cluster_by_distance,
-    maxima,
+    mst_linkage,
+    pairwise_euclidean,
+)
+from spcal.lib.spcalext.detection import (
+    cluster_by_distance,
     mst_linkage,
     pairwise_euclidean,
 )
