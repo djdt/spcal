@@ -43,8 +43,7 @@ py::array_t<long> maxima(const py::array_t<double> &values,
 }
 
 py::tuple peak_prominence(const py::array_t<double> &values,
-                          const py::array_t<long> &indicies,
-                          const double minimum) {
+                          const py::array_t<long> &indicies) {
 
   if (values.ndim() != 1)
     throw std::runtime_error("values must have 1 dim");
@@ -70,7 +69,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 
     int left = idx[i];
     int left_minima = left;
-    while (left > 0 && y(left - 1) <= peak_height && y(left) > minimum) {
+    while (left > 0 && y(left - 1) <= peak_height) {
       left -= 1;
       if (y(left) <= y(left_minima)) {
         left_minima = left;
@@ -78,7 +77,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     }
     int right = idx[i];
     int right_minima = right;
-    while (right < m - 1 && y(right + 1) <= peak_height && y(right) > minimum) {
+    while (right < m - 1 && y(right + 1) <= peak_height) {
       right += 1;
       if (y(right) <= y(right_minima)) {
         right_minima = right;
