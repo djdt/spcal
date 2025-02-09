@@ -1,5 +1,4 @@
-clang
-%cpp -std=c++23
+clang++
+%cpp -std=c++2a
 -Iinclude
 -isystem/usr/include/python3.12/
--isystem/usr/lib/python3.12/site-packages/numpy/core/include/
