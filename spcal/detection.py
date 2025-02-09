@@ -42,9 +42,10 @@ def accumulate_detections(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
-    Contiguous regions above ``limit_accumulation`` that contain at least
-    ``points_required`` values above ``limit_detection`` are summed or integrated
-    (sum - ``limit_accumulation``).
+    Peak prominence is calculated for all points above the ``limit_detection``,
+    with widths bound by the ``limit_accumulation``.
+    Detections are peaks with a prominence greater than ``limit_detection`` and at
+    least ``points_required`` points above the ``limit_detection``.
 
     Args:
         y: array
@@ -70,6 +71,7 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: minimum size must be >= 1")
 
     # todo: see if smoothing required
+    # todo: perfoemance of possible_detections, detections and sum
     # psf = normal.pdf(np.linspace(-2, 2, 5))
     # ysm = np.convolve(y, psf / psf.sum(), mode="same")
 
@@ -80,7 +82,7 @@ def accumulate_detections(
         y, possible_detections, limit_accumulation
     )
 
-    detected = prominence > limit_detection * 0.9
+    detected = prominence >= limit_detection
 
     prominence, lefts, rights = (
         prominence[detected],
