@@ -2,8 +2,12 @@
 
 import numpy as np
 
-from spcal.dists import normal
-from spcal.lib.spcalext import combine_regions, label_regions, maxima, peak_prominence
+from spcal.lib.spcalext.detection import (
+    combine_regions,
+    label_regions,
+    maxima,
+    peak_prominence,
+)
 
 
 def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
@@ -140,74 +144,16 @@ def combine_detections(
         combined regions
 
     """
-    import time
-
     if not all(k in regions.keys() for k in sums.keys()):  # pragma: no cover
         raise ValueError(
             "detection_element_combined: labels and regions must have all of sums keys."
         )
     names = list(sums.keys())
 
-    # todo: find a way to preserve touching regions
-
     # Get regions from all elements
-    # Some regions may overlap, these will be combined
-    t0 = time.time()
-    any_label = np.zeros(labels[names[0]].size, dtype=np.int8)
-    for name in names:
-        any_label[labels[name] > 0] = 1
+    all_regions = combine_regions(list(regions.values()), 2)
 
-    all_regions = _contiguous_regions(any_label, 0)
-    t1 = time.time()
-    print(list(regions.values())[0])
-    all_regions = combine_regions(list(regions.values()))
-    # current_pos = np.zeros(len(regions), dtype=int)
-    # new = []
-    # iter = 0
-    # while True:
-    #     iter += 1
-    #     if np.all(current_pos == [x.shape[0] for x in regions.values()]):
-    #         break
-    #
-    #     left, right = np.inf, 0
-    #     leftmost = 0
-    #     for i, regs in enumerate(regions.values()):
-    #         if current_pos[i] == regs.shape[0]:
-    #             continue
-    #         # left most current region
-    #         s, e = regs[current_pos[i]]
-    #         if s < left:
-    #             left = s
-    #             right = e
-    #             leftmost = i
-    #
-    #     current_pos[leftmost] += 1
-    #     changed = True
-    #     while changed:
-    #         changed = False
-    #         # print("start while", right)
-    #         for i, regs in enumerate(regions.values()):
-    #             # print("loop", i)
-    #             if current_pos[i] == regs.shape[0]:
-    #                 continue
-    #             # new_right = right
-    #             s, e = regs[current_pos[i]]
-    #             if s < right and e >= right:
-    #                 right = max(right, e)
-    #                 current_pos[i] += 1
-    #                 changed = True
-    #                 print("\t\t changed ")
-    #             elif e < right:
-    #                 current_pos[i] += 1
-    #
-    #     new.append((left, right))
-    #     all_regions = np.array(new)
-    print(all_regions, any_label.size)
-    t2 = time.time()
-    print("old", t1 - t0)
-    print("new", t2 - t1)
-
-    any_label = label_regions(all_regions, any_label.size)
+    any_label = label_regions(all_regions, next(iter(labels.values())).size)
 
     # Init to zero, summed later
     combined = np.zeros(
