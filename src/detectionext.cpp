@@ -8,20 +8,23 @@
 #include <ranges>
 #include <vector>
 
+#include <iostream>
+
 namespace py = pybind11;
 /* Based off of the scipy implementation
  * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
-py::array_t<int> maxima(const py::array_t<double> &values,
-                        const py::array_t<int> &regions) {
-  py::buffer_info vbuf = values.request(), rbuf = regions.request();
+py::array_t<long> maxima(const py::array_t<double> &values,
+                         const py::array_t<long> &regions) {
+  py::buffer_info vbuf = values.request();
+  py::buffer_info rbuf = regions.request();
 
   if (vbuf.ndim != 1)
     throw std::runtime_error("values must have 1 dim");
   if (rbuf.ndim != 2 || rbuf.shape[1] != 2)
     throw std::runtime_error("regions must have shape (n, 2)");
 
-  auto argmax = py::array_t<int>(rbuf.shape[0]);
+  auto argmax = py::array_t<long>(rbuf.shape[0]);
 
   auto v = values.unchecked<1>();
   auto r = regions.unchecked<2>();
@@ -40,7 +43,7 @@ py::array_t<int> maxima(const py::array_t<double> &values,
 }
 
 py::tuple peak_prominence(const py::array_t<double> &values,
-                          const py::array_t<int> &indicies,
+                          const py::array_t<long> &indicies,
                           const double minimum) {
 
   if (values.ndim() != 1)
@@ -52,8 +55,8 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   auto n = indicies.shape(0);
 
   auto prom_array = py::array_t<double>(n);
-  auto left_array = py::array_t<int>(n);
-  auto right_array = py::array_t<int>(n);
+  auto left_array = py::array_t<long>(n);
+  auto right_array = py::array_t<long>(n);
 
   auto y = values.unchecked<1>();
   auto idx = indicies.unchecked<1>();
@@ -67,34 +70,34 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 
     int left = idx[i];
     int left_minima = left;
-    while (left > 0 && y[left - 1] <= peak_height && y[left] > minimum) {
+    while (left > 0 && y(left - 1) <= peak_height && y(left) > minimum) {
       left -= 1;
-      if (y[left] <= y[left_minima]) {
+      if (y(left) <= y(left_minima)) {
         left_minima = left;
       }
     }
     int right = idx[i];
     int right_minima = right;
-    while (right < m - 1 && y[right + 1] <= peak_height && y[right] > minimum) {
+    while (right < m - 1 && y(right + 1) <= peak_height && y(right) > minimum) {
       right += 1;
-      if (y[right] <= y[right_minima]) {
+      if (y(right) <= y(right_minima)) {
         right_minima = right;
       }
     }
     lefts[i] = left_minima;
     rights[i] = right_minima;
-    proms[i] = peak_height - std::max(y[left_minima], y[right_minima]);
+    proms[i] = peak_height - std::max(y(left_minima), y(right_minima));
   }
   return py::make_tuple(prom_array, left_array, right_array);
 }
 
-py::array_t<int> label_regions(const py::array_t<int> &regions_array,
-                               const py::ssize_t size) {
+py::array_t<long> label_regions(const py::array_t<long> &regions_array,
+                                const py::size_t size) {
   if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
     throw std::runtime_error("regions must have shape (N, 2)");
   }
 
-  py::array_t<int> label_array(size);
+  py::array_t<long> label_array(size);
   label_array[py::make_tuple(py::ellipsis())] = 0;
   auto n = regions_array.shape(0);
 
@@ -111,28 +114,32 @@ py::array_t<int> label_regions(const py::array_t<int> &regions_array,
   return label_array;
 }
 
-py::array_t<int> combine_regions(const py::list &regions_list,
-                                 const int allowed_overlap) {
+py::array_t<long> combine_regions(const py::list &regions_list,
+                                  const int allowed_overlap) {
 
-  std::vector<py::detail::unchecked_reference<int, 2>> regions;
-  std::vector<int> indicies(regions_list.size());
+  std::vector<py::detail::unchecked_reference<long, 2>> regions;
+  std::vector<py::ssize_t> indicies(regions_list.size());
 
   py::ssize_t max_size = 0;
-  for (const auto &obj : regions_list) {
-    const auto &array = py::cast<py::array_t<int>>(obj);
+  for (const py::handle &obj : regions_list) {
+    auto array = py::array_t < long,
+         py::array::c_style | py::array::forcecast > ::ensure(obj);
+    if (!array || array.ndim() != 2 || array.shape(1) != 2) {
+      throw std::runtime_error("invalid shape or ndim");
+    }
     regions.push_back(array.unchecked<2>());
     max_size = std::max(max_size, array.size());
   }
 
-  auto combined = new std::vector<int>;
+  auto combined = new std::vector<long>;
   combined->reserve(max_size);
 
   int iter = 0;
   while (iter++ < max_size) {
-    int left = std::numeric_limits<int>::max();
-    int right = 0;
-    int leftmost_idx = 0;
-    int s, e;
+    long left = std::numeric_limits<long>::max();
+    long right = 0;
+    py::ssize_t leftmost_idx = 0;
+    long s, e;
 
     // find leftmost region
     bool finished = true;
@@ -185,15 +192,15 @@ py::array_t<int> combine_regions(const py::list &regions_list,
 
   // create numpy array to return
   combined->shrink_to_fit();
-  std::array<size_t, 2> shape = {0, 2};
+  std::array<py::ssize_t, 2> shape = {0, 2};
   shape[0] = combined->size() / 2;
-  std::array<size_t, 2> stride = {2 * sizeof(int), sizeof(int)};
+  std::array<py::ssize_t, 2> stride = {2 * sizeof(long), sizeof(long)};
 
   py::capsule free_when_done(combined, [](void *f) {
-    delete reinterpret_cast<std::vector<int> *>(f);
+    delete reinterpret_cast<std::vector<long> *>(f);
   });
 
-  return py::array_t<int>(shape, stride, combined->data(), free_when_done);
+  return py::array_t<long>(shape, stride, combined->data(), free_when_done);
 }
 
 void init_detection(py::module_ &mod) {
