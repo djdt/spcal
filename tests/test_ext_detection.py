@@ -9,15 +9,15 @@ from spcal.lib.spcalext.detection import (
 
 
 def test_combine_regions():
-    x = np.array([[0, 10], [30, 40], [50, 60]])
-    y = np.array([[5, 15], [35, 45], [50, 60]])
-    z = np.array([[10, 20], [58, 62]])
+    x = np.array([[0, 10], [30, 40], [50, 60], [60, 70]])
+    y = np.array([[5, 15], [35, 45], [50, 61]])
+    z = np.array([[10, 20], [56, 58]])
+
+    c = combine_regions([x, y, z], 0)
+    assert np.all(c == [[0, 20], [30, 45], [50, 70]])
 
     c = combine_regions([x, y, z], 1)
-    assert np.all(c == [[0, 20], [30, 45], [50, 62]])
-
-    c = combine_regions([x, y, z], 3)
-    assert np.all(c == [[0, 20], [30, 45], [50, 60], [58, 62]])
+    assert np.all(c == [[0, 20], [30, 45], [50, 61], [60, 70]])
 
 
 def test_label_regions():
@@ -27,14 +27,7 @@ def test_label_regions():
 
 
 def test_peak_prominence():
-    y = np.array(
-        [0, 0, 0, 1, 2, 3, 2, 3, 1, 3, 5, 6, 5, 3, 2, 3, 1, 0, 0, 0], dtype=float
-    )
-    prom, left, right = peak_prominence(y, np.array([5, 11]), 0.5)
-    assert np.allclose(prom, [2.0, 6.0])
-    assert np.all(left == [2, 2])
-    assert np.all(right == [8, 17])
-
+    # separate
     y = np.array(
         [0, 0, 0, 1, 0, 0, 7, 1, 0, 0, 1, 0, 0, 2, 3, 3, 1, 1, 2, 1], dtype=float
     )
@@ -42,6 +35,15 @@ def test_peak_prominence():
     assert np.allclose(prom, [7.0, 2.0])
     assert np.all(left == [5, 12])
     assert np.all(right == [8, 19])
+
+    # joined
+    y = np.array(
+        [0, 0, 0, 1, 2, 3, 2, 3, 1, 3, 5, 6, 5, 3, 2, 3, 1, 0, 0, 0], dtype=float
+    )
+    prom, left, right = peak_prominence(y, np.array([5, 11]), 0.5)
+    assert np.allclose(prom, [2.0, 6.0])
+    assert np.all(left == [2, 2])
+    assert np.all(right == [8, 17])
 
 
 def test_maxima():
