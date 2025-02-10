@@ -14,6 +14,17 @@ def test_combine_regions():
     c = detection.combine_regions([x, y, z], 1)
     assert np.all(c == [[0, 20], [30, 45], [50, 61], [60, 70]])
 
+    # bad overlap
+    x = np.array([[0, 20], [30, 40]])
+    y = np.array([[0, 15]])
+    c = detection.combine_regions([x, y], 0)
+    assert np.all(c == [[0, 20], [30, 40]])
+
+    x = np.array([[0, 20], [30, 40]])
+    y = np.array([[0, 18]])
+    c = detection.combine_regions([x, y], 3)
+    assert np.all(c == [[0, 20], [30, 40]])
+
 
 def test_label_regions():
     r = np.array([[0, 4], [6, 8], [8, 9]])
