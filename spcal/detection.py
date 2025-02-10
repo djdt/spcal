@@ -2,12 +2,7 @@
 
 import numpy as np
 
-from spcal.lib.spcalext.detection import (
-    combine_regions,
-    label_regions,
-    maxima,
-    peak_prominence,
-)
+from spcal.lib.spcalext import detection as ext
 
 
 def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
@@ -83,7 +78,7 @@ def accumulate_detections(
         np.logical_and(y > limit_detection, local_maxima(y))
     )
 
-    prominence, lefts, rights = peak_prominence(
+    prominence, lefts, rights = ext.peak_prominence(
         y, possible_detections, min_value=limit_accumulation
     )
 
@@ -129,7 +124,7 @@ def accumulate_detections(
         sums = np.add.reduceat(y, indicies)[::2]
 
     # Create a label array of detections
-    labels = label_regions(regions, y.size)
+    labels = ext.label_regions(regions, y.size)
 
     return sums, labels, regions
 
@@ -163,9 +158,9 @@ def combine_detections(
     names = list(sums.keys())
 
     # Get regions from all elements
-    all_regions = combine_regions(list(regions.values()), 0)
+    all_regions = ext.combine_regions(list(regions.values()), 0)
 
-    any_label = label_regions(all_regions, next(iter(labels.values())).size)
+    any_label = ext.label_regions(all_regions, next(iter(labels.values())).size)
 
     # Init to zero, summed later
     combined = np.zeros(
@@ -193,5 +188,5 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         idx of maxima
     """
 
-    idx = maxima(y, regions)
+    idx = ext.maxima(y, regions)
     return idx
