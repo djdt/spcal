@@ -83,9 +83,7 @@ def accumulate_detections(
         np.logical_and(y > limit_detection, local_maxima(y))
     )
 
-    prominence, lefts, rights = peak_prominence(
-        y, possible_detections, limit_accumulation
-    )
+    prominence, lefts, rights = peak_prominence(y, possible_detections)
 
     # if promience_required is array, use mid points
     if isinstance(promience_required, np.ndarray):
