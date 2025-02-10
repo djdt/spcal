@@ -69,7 +69,6 @@ def test_peak_prominence_dropped_peaks():
     for ax in [0, 1, 2]:
         prom, left, right = detection.peak_prominence(y[:, ax], np.arange(5, 1000, 10))
         assert prom.size == 100
-    assert False
 
 
 def test_maxima():
