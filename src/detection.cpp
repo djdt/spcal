@@ -131,7 +131,7 @@ py::array_t<long> combine_regions(const py::list &regions_list,
   std::vector<py::detail::unchecked_reference<long, 2>> regions;
   std::vector<py::ssize_t> indicies(regions_list.size());
 
-  py::ssize_t max_size = 0;
+  py::ssize_t total_peaks = 0;
   for (const py::handle &obj : regions_list) {
     auto array = py::array_t < long,
          py::array::c_style | py::array::forcecast > ::ensure(obj);
@@ -139,14 +139,14 @@ py::array_t<long> combine_regions(const py::list &regions_list,
       throw std::runtime_error("invalid shape or ndim");
     }
     regions.push_back(array.unchecked<2>());
-    max_size = std::max(max_size, array.size());
+    total_peaks += array.shape(0);
   }
 
-  auto combined = new std::vector<long>;
-  combined->reserve(max_size);
+  std::vector<long> *combined = new std::vector<long>;
+  combined->reserve(total_peaks * 2);
 
   int iter = 0;
-  while (iter++ < max_size) {
+  while (iter++ < total_peaks) {
     long left = std::numeric_limits<long>::max();
     long right = 0;
     py::ssize_t leftmost_idx = 0;
@@ -181,41 +181,37 @@ py::array_t<long> combine_regions(const py::list &regions_list,
           s = regions[i](indicies[i], 0);
           e = regions[i](indicies[i], 1);
 
-          if (s < right - allowed_overlap &&
-              e >= right) { // region is overlapping
+          if (s < right - allowed_overlap && e >= right) { // overlapping
             right = e;
             indicies[i] += 1;
             changed = true;
-          } else if (e < right) { // region is passed
+          } else if (e <= right) { // region is passed
             indicies[i] += 1;
           }
         }
       }
     }
-
     combined->push_back(left);
     combined->push_back(right);
   }
 
-  if (iter == max_size) {
-    throw std::runtime_error("max iterations reached");
-  }
+  combined->shrink_to_fit();
 
+  auto &_comb_ref = *combined;
   // deal with any overlaps created by allowed_overlaps
   if (allowed_overlap > 0) {
     // check each pair left right overlap , and  save ,mid point
-    for (size_t i = 0; i < combined.size(); ++i) {
+    for (size_t i = 0; i < _comb_ref.size() - 2; i += 2) {
       // (l, r), (lw, r2)
-      if (combined[i + 1] > combined[i + 2]) { // r1 > l2
-        long mid = (combined[i + 1] + combined[i + 2]) / 2 + 1;
-        combined[i + 1] = mid;
-        combined[i + 2] = mid;
+      if (_comb_ref[i + 1] > _comb_ref[i + 2]) { // r1 > l2
+        long mid = (_comb_ref[i + 1] + _comb_ref[i + 2]) / 2 + 1;
+        _comb_ref[i + 1] = mid; // r1 => mid
+        _comb_ref[i + 2] = mid; // l2 => mid
       }
     }
   }
 
   // create numpy array to return
-  combined->shrink_to_fit();
   std::array<py::ssize_t, 2> shape = {0, 2};
   shape[0] = combined->size() / 2;
   std::array<py::ssize_t, 2> stride = {2 * sizeof(long), sizeof(long)};
