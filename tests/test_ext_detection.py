@@ -75,5 +75,5 @@ def test_peak_prominence_dropped_peaks():
 def test_maxima():
     a = np.arange(10.0)
     b = np.array([[1, 3], [2, 4], [3, 7], [9, 9]])
-    m = maxima(a, b)
+    m = detection.maxima(a, b)
     assert np.all(m == [2, 3, 6, 9])
