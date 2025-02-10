@@ -44,7 +44,16 @@ py::array_t<long> maxima(const py::array_t<double> &values,
 
 py::tuple peak_prominence(const py::array_t<double> &values,
                           const py::array_t<long> &indicies,
-                          const long max_width) {
+                          const long max_width, const double min_value) {
+  /*
+   * Find the peak prominences at given indicies.
+   *
+   * @param values array of values
+   * @param indicies location of peaks
+   * @param max_width the maximum distance to search
+   * @param min_value the minimum value at peak base
+   * @returns prominence, left indicies, right indices
+   */
 
   if (values.ndim() != 1)
     throw std::runtime_error("values must have 1 dim");
@@ -70,7 +79,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 
     int left = idx[i];
     int left_minima = left;
-    while (left > 0 && y(left - 1) <= peak_height &&
+    while (left > 0 && y(left - 1) <= peak_height && y(left) > min_value &&
            idx[i] - left < max_width) {
       left -= 1;
       if (y(left) < y(left_minima)) {
@@ -80,7 +89,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     int right = idx[i];
     int right_minima = right;
     while (right < m - 1 && y(right + 1) <= peak_height &&
-           right - idx[i] < max_width) {
+           y(right) > min_value && right - idx[i] < max_width) {
       right += 1;
       if (y(right) < y(right_minima)) {
         right_minima = right;
@@ -210,7 +219,7 @@ void init_detection(py::module_ &mod) {
           "Calculates to maxima between pairs of start and end positions.");
   mod.def("peak_prominence", &peak_prominence,
           "Calculate the peak prominence at given indicies.", py::arg(),
-          py::arg(), py::arg("max_width") = 50l);
+          py::arg(), py::arg("max_width") = 50, py::arg("min_value") = 0.0);
   mod.def("label_regions", &label_regions,
           "Label regions 1 to size, points outside all regions are 0.");
   mod.def("combine_regions", &combine_regions,
