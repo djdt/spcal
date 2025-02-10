@@ -71,7 +71,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     int left_minima = left;
     while (left > 0 && y(left - 1) <= peak_height) {
       left -= 1;
-      if (y(left) <= y(left_minima)) {
+      if (y(left) < y(left_minima)) {
         left_minima = left;
       }
     }
@@ -79,7 +79,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     int right_minima = right;
     while (right < m - 1 && y(right + 1) <= peak_height) {
       right += 1;
-      if (y(right) <= y(right_minima)) {
+      if (y(right) < y(right_minima)) {
         right_minima = right;
       }
     }
