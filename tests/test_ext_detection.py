@@ -28,22 +28,34 @@ def test_label_regions():
 
 def test_peak_prominence():
     # separate
-    y = np.array(
+    y = np.array(  # ,  |  v     |           |     v     |
         [0, 0, 0, 1, 0, 0, 7, 1, 0, 0, 1, 0, 0, 2, 3, 3, 1, 1, 2, 1], dtype=float
     )
-    prom, left, right = peak_prominence(y, np.array([6, 14]), 0.5)
+    prom, left, right = peak_prominence(y, np.array([6, 14]))
     assert np.allclose(prom, [7.0, 2.0])
     assert np.all(left == [5, 12])
-    assert np.all(right == [8, 19])
+    assert np.all(right == [8, 16])
 
     # joined
-    y = np.array(
-        [0, 0, 0, 1, 2, 3, 2, 3, 1, 3, 5, 6, 5, 3, 2, 3, 1, 0, 0, 0], dtype=float
+    y = np.array(  # ,  |  v                    |  v     |
+        [0, 0, 0, 1, 0, 0, 7, 6, 4, 3, 5, 6, 5, 2, 3, 3, 1, 1, 2, 1], dtype=float
     )
-    prom, left, right = peak_prominence(y, np.array([5, 11]), 0.5)
-    assert np.allclose(prom, [2.0, 6.0])
-    assert np.all(left == [2, 2])
-    assert np.all(right == [8, 17])
+    prom, left, right = peak_prominence(y, np.array([6, 14]))
+    assert np.allclose(prom, [6.0, 1.0])
+    assert np.all(left == [5, 13])
+    assert np.all(right == [16, 16])
+
+
+def test_peak_prominence_dropped_peaks():
+    y = np.full((1000, 3), 0.01, dtype=np.float32)
+    y[5::10, 0] += 100 + np.arange(0, 100)
+    y[5::10, 1] += 100 + np.arange(0, 100) * 2
+    y[5::10, 2] += 100 + np.tile([10, 20, 30, 40, 50], 20)
+
+    for ax in [0, 1, 2]:
+        prom, left, right = peak_prominence(y[:, ax], np.arange(5, 1000, 10))
+        assert prom.size == 100
+    assert False
 
 
 def test_maxima():
