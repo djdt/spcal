@@ -5,29 +5,6 @@ import numpy as np
 from spcal.lib.spcalext import detection as ext
 
 
-def _contiguous_regions(x: np.ndarray, limit: float | np.ndarray) -> np.ndarray:
-    """Returns start and end points of regions in x that are greater than limit.
-    Indexs to the start point and point after region.
-
-    Args:
-        x: array
-        limit: minimum value in regions
-
-    Returns:
-        regions [start, end]
-    """
-
-    # Get start and end positions of regions above accumulation limit
-    diff = np.diff((x > limit).astype(np.int8), prepend=0)
-    starts = np.flatnonzero(diff == 1)
-    ends = np.flatnonzero(diff == -1)
-    # Stack into pairs of start, end. If no final end position set it as end of array.
-    if starts.size != ends.size:
-        # -1 for reduceat
-        ends = np.concatenate((ends, [diff.size]))  # type: ignore
-    return np.stack((starts, ends), axis=1)
-
-
 def accumulate_detections(
     y: np.ndarray,
     limit_accumulation: float | np.ndarray,
