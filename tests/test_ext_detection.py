@@ -4,26 +4,126 @@ from spcal.lib.spcalext import detection
 
 
 def test_combine_regions():
-    x = np.array([[0, 10], [30, 40], [50, 60], [60, 70]])
-    y = np.array([[5, 15], [35, 45], [50, 61]])
-    z = np.array([[10, 20], [56, 58]])
+    # singular
+    a = np.array([[0, 10]])
+    b = np.array([[20, 30]])
+    c = np.array([[40, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 10], [20, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 10], [20, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 10], [20, 30], [40, 50]])
 
-    c = detection.combine_regions([x, y, z], 0)
-    assert np.all(c == [[0, 20], [30, 45], [50, 70]])
+    # overlapping singular
+    a = np.array([[0, 10], [20, 30], [40, 50]])
+    b = np.array([[0, 10], [20, 30], [40, 50]])
+    c = np.array([[0, 10], [20, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == a)
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == a)
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == a)
 
-    c = detection.combine_regions([x, y, z], 1)
-    assert np.all(c == [[0, 20], [30, 45], [50, 61], [60, 70]])
+    # overlapping 1:2
+    a = np.array([[0, 20]])
+    b = np.array([[10, 30]])
+    c = np.array([[40, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 16], [16, 30], [40, 50]])
 
-    # bad overlap
-    x = np.array([[0, 20], [30, 40]])
-    y = np.array([[0, 15]])
-    c = detection.combine_regions([x, y], 0)
-    assert np.all(c == [[0, 20], [30, 40]])
+    # overlapping 1:2:3
+    a = np.array([[0, 20]])
+    b = np.array([[10, 30]])
+    c = np.array([[20, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 16], [16, 26], [26, 50]])
 
-    x = np.array([[0, 20], [30, 40]])
-    y = np.array([[0, 18]])
-    c = detection.combine_regions([x, y], 3)
-    assert np.all(c == [[0, 20], [30, 40]])
+    # overlapping 2:3
+    a = np.array([[0, 10]])
+    b = np.array([[20, 40]])
+    c = np.array([[30, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 10], [20, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 10], [20, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 10], [20, 36], [36, 50]])
+
+    # inside 1:2
+    a = np.array([[0, 30]])
+    b = np.array([[10, 20]])
+    c = np.array([[40, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 30], [40, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 30], [40, 50]])
+
+    # inside 1:2:3
+    a = np.array([[2, 30]])
+    b = np.array([[10, 40]])
+    c = np.array([[0, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == c)
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == c)
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == c)
+
+    # inside 1:2 overlapping 3
+    a = np.array([[0, 40]])
+    b = np.array([[10, 30]])
+    c = np.array([[20, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 50]])
+
+    # inside 1:2:3 overlapping 2:3
+    a = np.array([[0, 50]])
+    b = np.array([[10, 30]])
+    c = np.array([[20, 40]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 50]])
+
+    # overlapping 1:2 inside 2:3
+    a = np.array([[0, 30]])
+    b = np.array([[20, 50]])
+    c = np.array([[30, 40]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 26], [26, 50]])
+
+    # touching
+    a = np.array([[0, 20]])
+    b = np.array([[20, 30]])
+    c = np.array([[30, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 20], [20, 30], [30, 50]])
+    d = detection.combine_regions([a, b, c], 5)
+    assert np.all(d == [[0, 20], [20, 30], [30, 50]])
+    d = detection.combine_regions([a, b, c], 15)
+    assert np.all(d == [[0, 20], [20, 30], [30, 50]])
 
 
 def test_label_regions():
