@@ -186,7 +186,7 @@ py::array_t<long> combine_regions(const py::list &regions_list,
             right = e;
             indicies[i] += 1;
             changed = true;
-          } else if (e < right - allowed_overlap) { // region is passed
+          } else if (e < right) { // region is passed
             indicies[i] += 1;
           }
         }
@@ -199,6 +199,19 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 
   if (iter == max_size) {
     throw std::runtime_error("max iterations reached");
+  }
+
+  // deal with any overlaps created by allowed_overlaps
+  if (allowed_overlap > 0) {
+    // check each pair left right overlap , and  save ,mid point
+    for (size_t i = 0; i < combined.size(); ++i) {
+      // (l, r), (lw, r2)
+      if (combined[i + 1] > combined[i + 2]) { // r1 > l2
+        long mid = (combined[i + 1] + combined[i + 2]) / 2 + 1;
+        combined[i + 1] = mid;
+        combined[i + 2] = mid;
+      }
+    }
   }
 
   // create numpy array to return
@@ -223,5 +236,6 @@ void init_detection(py::module_ &mod) {
   mod.def("label_regions", &label_regions,
           "Label regions 1 to size, points outside all regions are 0.");
   mod.def("combine_regions", &combine_regions,
-          "Combine a list of regions, merging overlaps.");
+          "Combine a list of regions, merging overlaps.", py::arg(),
+          py::arg("allowed_overlap") = 0);
 }
