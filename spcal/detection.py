@@ -44,7 +44,7 @@ def accumulate_detections(
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
     if promience_required is None:
-        promience_required = limit_detection
+        promience_required = limit_detection - limit_accumulation
 
     # todo: see if smoothing required
     # todo: perfoemance of possible_detections, detections and sum
