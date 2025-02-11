@@ -215,7 +215,7 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 
   auto &_comb_ref = *combined;
   // deal with any overlaps created by allowed_overlaps
-  if (allowed_overlap > 0) {
+  if (allowed_overlap > 0 && combined->size() > 2) {
     // check each pair left right overlap , and  save ,mid point
     for (size_t i = 0; i < _comb_ref.size() - 2; i += 2) {
       // (l, r), (lw, r2)
