@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import peak_prominences
 
 from spcal.lib.spcalext import detection
 
@@ -165,7 +166,6 @@ def test_peak_prominence():
         [0, 0, 1, 1, 5, 9, 7, 3, 2, 1, 1, 1, 1, 0, 1, 1, 1, 2, 3, 1], dtype=float
     )
     prom, left, right = detection.peak_prominence(y, np.array([5]), min_value=1)
-    print(prom, left, right)
     assert np.allclose(prom, [8.0])
     assert np.all(left == [3])
     assert np.all(right == [9])
@@ -180,6 +180,18 @@ def test_peak_prominence_dropped_peaks():
     for ax in [0, 1, 2]:
         prom, left, right = detection.peak_prominence(y[:, ax], np.arange(5, 1000, 10))
         assert prom.size == 100
+
+
+def test_peak_prominence_scipy():
+    x = np.random.random(100)
+    y = np.random.choice(100, 10)
+
+    p1, l1, r1 = detection.peak_prominence(x, y)
+    p2, l2, r2 = peak_prominences(x, y)
+
+    assert np.allclose(p1, p2)
+    assert np.all(l1 == l2)
+    assert np.all(r1 == r2)
 
 
 def test_maxima():
