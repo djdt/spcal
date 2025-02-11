@@ -38,7 +38,6 @@ py::array_t<long> maxima(const py::array_t<double> &values,
   return argmax;
 }
 
-#include <iostream>
 py::tuple peak_prominence(const py::array_t<double> &values,
                           const py::array_t<long> &indicies,
                           const long max_width, const py::object &min_base) {
