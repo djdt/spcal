@@ -26,7 +26,6 @@ def test_combine_regions():
     assert np.all(d == a)
     d = detection.combine_regions([a, b, c], 15)
     assert np.all(d == a)
-    print(d)
 
     # overlapping 1:2
     a = np.array([[0, 20]])
