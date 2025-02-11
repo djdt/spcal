@@ -162,13 +162,19 @@ def test_peak_prominence():
     assert np.all(right == [13])
 
     # min=1
-    y = np.array(
-        [0, 0, 1, 1, 5, 9, 7, 3, 2, 1, 1, 1, 1, 0, 1, 1, 1, 2, 3, 1], dtype=float
-    )
-    prom, left, right = detection.peak_prominence(y, np.array([5]), min_value=1)
+    prom, left, right = detection.peak_prominence(y, np.array([5]), min_base=1.0)
     assert np.allclose(prom, [8.0])
     assert np.all(left == [3])
     assert np.all(right == [9])
+
+    # min=array
+    min = np.array(
+        [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5], dtype=float
+    )
+    prom, left, right = detection.peak_prominence(y, np.array([5]), min_base=min)
+    assert np.allclose(prom, [6.0])
+    assert np.all(left == [1])
+    assert np.all(right == [7])
 
 
 def test_peak_prominence_dropped_peaks():
