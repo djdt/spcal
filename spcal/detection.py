@@ -143,10 +143,10 @@ def combine_detections(
     combined = np.zeros(
         all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
     )
-    region_used = np.zeros(all_regions.shape[0])
+    # region_used = np.zeros(all_regions.shape[0])
     for name in names:
-        idx = np.searchsorted(all_regions[:, 0], regions[name][:, 0], side="right") - 1
-        np.add.at(region_used, idx, 1)
+        idx = np.searchsorted(all_regions[:, 0], regions[name][:, 1], side="left") - 1
+        # np.add.at(region_used, idx, 1)
         np.add.at(combined[name], idx, sums[name])
 
     return combined, any_label, all_regions
