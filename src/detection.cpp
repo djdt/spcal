@@ -68,10 +68,12 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     if (min_array.size() != values.size()) { // check shape
       throw std::runtime_error("min_base must be same size as values");
     }
-  } else if (py::isinstance<py::float_>(min_base)) {
-    min_value = min_base.cast<double>();
   } else {
-    throw std::runtime_error("min_base must be array or float");
+    try {
+      min_value = min_base.cast<double>();
+    } catch (const std::exception &) {
+      throw std::runtime_error("min_base must be array or float");
+    }
   }
   auto m = values.shape(0);
   auto n = indicies.shape(0);
