@@ -26,6 +26,7 @@ def test_combine_regions():
     assert np.all(d == a)
     d = detection.combine_regions([a, b, c], 15)
     assert np.all(d == a)
+    print(d)
 
     # overlapping 1:2
     a = np.array([[0, 20]])
@@ -125,6 +126,13 @@ def test_combine_regions():
     assert np.all(d == [[0, 20], [20, 30], [30, 50]])
     d = detection.combine_regions([a, b, c], 15)
     assert np.all(d == [[0, 20], [20, 30], [30, 50]])
+
+    # negative width error
+    a = np.array([[0, 50]])
+    b = np.array([[20, 30], [30, 40]])
+    c = np.array([[40, 50]])
+    d = detection.combine_regions([a, b, c])
+    assert np.all(d == [[0, 50]])
 
 
 def test_label_regions():

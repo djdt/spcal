@@ -199,12 +199,13 @@ py::array_t<long> combine_regions(const py::list &regions_list,
           s = regions[i](indicies[i], 0);
           e = regions[i](indicies[i], 1);
 
-          if (s < right - allowed_overlap && e >= right) { // overlapping
+          if (e <= right) { // passed
+            indicies[i] += 1;
+            changed = true;
+          } else if (s < right - allowed_overlap) { // overlap
             right = e;
             indicies[i] += 1;
             changed = true;
-          } else if (e <= right) { // region is passed
-            indicies[i] += 1;
           }
         }
       }
