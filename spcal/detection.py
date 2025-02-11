@@ -58,7 +58,6 @@ def accumulate_detections(
     prominence, lefts, rights = ext.peak_prominence(
         y, possible_detections, min_base=limit_accumulation
     )
-    rights += 1  # we index as start:end
 
     # if promience_required is array, use mid points
     if isinstance(promience_required, np.ndarray):
@@ -86,8 +85,8 @@ def accumulate_detections(
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
 
-    detections = np.add.reduceat(y > limit_detection, indicies)[::2]
-    regions = regions[detections >= points_required]
+    num_detections = np.add.reduceat(y > limit_detection, indicies)[::2]
+    regions = regions[num_detections >= points_required]
 
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
