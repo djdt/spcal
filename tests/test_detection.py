@@ -79,6 +79,7 @@ def test_detection_maxima():
 
 
 def test_combine_detections():
+    # within allowed overlap
     sums = {
         "A": np.array([3.0, 3.0, 3.0]),
         "B": np.array([3.0, 3.0, 3.0]),
@@ -105,3 +106,39 @@ def test_combine_detections():
     assert np.all(
         cregions == [[0, 3], [3, 5], [5, 6], [7, 10], [11, 14], [14, 16], [16, 19]]
     )
+
+    sums = {
+        "A": np.array([3.0, 2.0]),
+        "B": np.array([3.0, 2.0]),
+        "C": np.array([3.0, 2.0]),
+    }
+    labels = {
+        "A": np.array([0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0]),
+        "B": np.array([0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0]),
+        "C": np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 0]),
+    }
+    regions = {
+        "A": np.array([[0, 3], [14, 16]]),
+        "B": np.array([[5, 8], [12, 14]]),
+        "C": np.array([[9, 12], [16, 18]]),
+    }
+
+    csums, clabels, cregions = detection.combine_detections(sums, labels, regions)
+    assert np.all(csums["A"] == [3.0, 0.0, 0.0, 0.0, 2.0, 0.0])
+    assert np.all(csums["B"] == [0.0, 3.0, 0.0, 2.0, 0.0, 0.0])
+    assert np.all(csums["C"] == [0.0, 0.0, 3.0, 0.0, 0.0, 2.0])
+
+    # sums overlaps
+    sums = {"A": np.array([3.0, 3.0]), "B": np.array([3.0, 3.0])}
+    labels = {
+        "A": np.array([1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0]),
+        "B": np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 2, 0]),
+    }
+    regions = {
+        "A": np.array([[0, 6], [6, 14]]),
+        "B": np.array([[2, 10], [14, 18]]),
+    }
+
+    csums, clabels, cregions = detection.combine_detections(sums, labels, regions)
+    assert np.all(csums["A"] == [6.0, 0.0])
+    assert np.all(csums["B"] == [3.0, 3.0])
