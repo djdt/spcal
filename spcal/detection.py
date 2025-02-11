@@ -36,7 +36,7 @@ def accumulate_detections(
 
     def local_maxima(x: np.ndarray):
         return np.logical_and(
-            np.r_[False, x[1:] >= x[:-1]], np.r_[x[:-1] >= x[1:], False]
+            np.r_[True, x[1:] >= x[:-1]], np.r_[x[:-1] >= x[1:], True]
         )
 
     if np.any(limit_accumulation > limit_detection):
