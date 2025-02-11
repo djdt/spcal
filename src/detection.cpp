@@ -8,11 +8,7 @@
 #include <ranges>
 #include <vector>
 
-#include <iostream>
-
 namespace py = pybind11;
-/* Based off of the scipy implementation
- * https://github.com/scipy/scipy/blob/v1.9.3/scipy/cluster/_hierarchy.pyx */
 
 py::array_t<long> maxima(const py::array_t<double> &values,
                          const py::array_t<long> &regions) {
