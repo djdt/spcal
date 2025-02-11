@@ -1,4 +1,4 @@
 clang++
 %cpp -std=c++2a
 -Iinclude
--isystem/usr/include/python3.12/
+-isystem/usr/include/python3.13/
