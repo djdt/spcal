@@ -1,13 +1,12 @@
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from spcal import detection, poisson
 
 
 def test_noise_level():
-    """Tests detections / integrations staty the same when noise levels rise.
+    """Tests detections / integrations stay the same when noise levels rise.
     Going further beyond the limit of crit will start to integrate noise.
     """
     data = np.load(Path(__file__).parent.joinpath("data/agilent_au_data.npz"))
@@ -36,11 +35,6 @@ def test_noise_level():
             noise_yc + noise_ub,
             integrate=True,
         )
-
-        plt.plot(noise_x[:300], c="k")
-        plt.scatter(regions.flat, np.ones(regions.size))
-        plt.xlim(0, 300)
-        plt.show()
 
         # Less than 1% change in number of detections
         assert abs(truth - detections.size) / truth < 0.01
