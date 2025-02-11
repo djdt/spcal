@@ -56,7 +56,7 @@ def accumulate_detections(
     )
 
     prominence, lefts, rights = ext.peak_prominence(
-        y, possible_detections, min_value=limit_accumulation
+        y, possible_detections, min_base=limit_accumulation
     )
 
     # if promience_required is array, use mid points
@@ -135,7 +135,7 @@ def combine_detections(
     names = list(sums.keys())
 
     # Get regions from all elements
-    all_regions = ext.combine_regions(list(regions.values()), 0)
+    all_regions = ext.combine_regions(list(regions.values()), 2)
 
     any_label = ext.label_regions(all_regions, next(iter(labels.values())).size)
 
