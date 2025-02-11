@@ -62,6 +62,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   py::array_t<double> min_array;
 
   if (py::isinstance<py::array>(min_base)) {
+    min_is_array = true;
     min_array = py::array_t < double,
     py::array::c_style | py::array::forcecast > ::ensure(min_base);
     if (min_array.size() != values.size()) { // check shape
@@ -94,7 +95,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     int left_minima = left;
     while (left > 0 && y(left - 1) <= peak_height &&
            idx[i] - left < max_width &&
-           ((min_is_array && y(left) > min(left)) || (y(left) > min_value))) {
+           (min_is_array ? y(left) > min(left) : y(left) > min_value)) {
       left -= 1;
       if (y(left) < y(left_minima)) {
         left_minima = left;
@@ -102,10 +103,9 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     }
     int right = idx[i];
     int right_minima = right;
-    while (
-        right < m - 1 && y(right + 1) <= peak_height &&
-        right - idx[i] < max_width &&
-        ((min_is_array && y(right) > min(right)) || (y(right) > min_value))) {
+    while (right < m - 1 && y(right + 1) <= peak_height &&
+           right - idx[i] < max_width &&
+           (min_is_array ? y(right) > min(right) : y(right) > min_value)) {
       right += 1;
       if (y(right) < y(right_minima)) {
         right_minima = right;
