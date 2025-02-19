@@ -177,7 +177,7 @@ def get_signals_from_nu_data(integs: list[np.ndarray], num_acc: int) -> np.ndarr
     for integ in integs:
         signals[(integ["acq_number"] // num_acc) - 1] = integ["result"]["signal"]
 
-    return signals
+    return signals / num_acc
 
 
 def get_masses_from_nu_data(
