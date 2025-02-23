@@ -86,6 +86,10 @@ def test_import_dialog_nu(qtbot: QtBot):
             return False
         if options["dwelltime"] != 8.289e-5:
             return False
+        # This checks that SIA is applied correctly
+        if not np.isclose(data["Ag107"][3], 0.3941041):
+            return False
+
         return True
 
     path = Path(__file__).parent.parent.joinpath("data/nu")

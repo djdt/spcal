@@ -745,7 +745,8 @@ class NuImportDialog(_ImportDialogBase):
         #     self.signals = self.signals[:end]
 
         # Divide by the single ion area to convert to counts
-        self.signals /= self.info["AverageSingleIonArea"]
+        for name in self.signals.dtype.names:
+            self.signals[name] /= self.info["AverageSingleIonArea"]
 
         options = self.importOptions()
         self.dataImported.emit(self.signals, options)
