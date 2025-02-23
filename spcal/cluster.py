@@ -2,7 +2,11 @@
 
 import numpy as np
 
-from spcal.lib.spcalext import cluster_by_distance, mst_linkage, pairwise_euclidean
+from spcal.lib.spcalext.clustering import (
+    cluster_by_distance,
+    mst_linkage,
+    pairwise_euclidean,
+)
 
 
 def prepare_data_for_clustering(data: np.ndarray | dict[str, np.ndarray]) -> np.ndarray:

@@ -1,6 +1,6 @@
 import numpy as np
 
-from spcal.lib.spcalext import poisson_quantile
+from spcal.lib.spcalext.dists import poisson_quantile
 
 
 def pdf(k: np.ndarray, lam: float) -> np.ndarray:
