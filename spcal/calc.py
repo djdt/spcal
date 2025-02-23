@@ -19,6 +19,39 @@ def is_integer_or_near(x: np.ndarray, max_deviation: float = 1e-3) -> np.ndarray
     return np.abs(x - np.round(x)) <= max_deviation
 
 
+def search_sorted_closest(
+    x: np.ndarray, v: np.ndarray, check_max_diff: float | None = None
+):
+    """Get the idx of the closest values in ``x`` for ``v``.
+
+    If ``check_max_diff`` is a value, the maximum distance must be lower.
+
+    Args:
+        x: sorted array
+        y: values to find closest idx of in x
+        check_max_diff: if not None, check maximum diff is less than this
+
+    Returns:
+        idx of closest ``x`` values for ``v``
+
+    Raises:
+        ValueError if ``check_max_diff`` is not None and max diff greater.
+    """
+    idx = np.searchsorted(x, v, side="left")
+    prev_less = np.abs(v - x[np.maximum(idx - 1, 0)]) < np.abs(
+        v - x[np.minimum(idx, len(x) - 1)]
+    )
+    prev_less = (idx == len(x)) | prev_less
+    idx[prev_less] -= 1
+
+    if check_max_diff is not None:
+        diffs = np.abs(x[idx] - v)
+        if np.any(diffs > check_max_diff):
+            raise ValueError("could not find value closer than 'check_max_diff'")
+
+    return idx
+
+
 def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> float:
     """Calculates the otsu threshold.
 
