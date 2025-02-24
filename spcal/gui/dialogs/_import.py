@@ -9,6 +9,7 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.calc import search_sorted_closest
 from spcal.gui.dialogs.nontarget import NonTargetScreeningDialog
 from spcal.gui.graphs import viridis_32
 from spcal.gui.util import Worker, create_action
@@ -436,7 +437,6 @@ class NuImportDialog(_ImportDialogBase):
         self.running = False
 
         self.threadpool = QtCore.QThreadPool()
-        self.results: list[np.ndarray] = []
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -482,27 +482,32 @@ class NuImportDialog(_ImportDialogBase):
             "Method:", QtWidgets.QLabel(method[method.rfind("\\") + 1 :])
         )
         self.box_info.layout().addRow(
-            "Number Events:",
+            "Events:",
             QtWidgets.QLabel(str(self.info["ActualRecordLength"])),
         )
         self.box_info.layout().addRow(
-            "Number Integrations:",
+            "Integrations:",
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
 
         self.cycle_number = QtWidgets.QSpinBox()
-        self.cycle_number.setValue(1)
         self.cycle_number.setRange(1, self.info["CyclesWritten"])
+        self.cycle_number.setValue(1)
 
         self.segment_number = QtWidgets.QSpinBox()
-        self.segment_number.setValue(1)
         self.segment_number.setRange(1, len(self.info["SegmentInfo"]))
+        self.segment_number.setValue(1)
+
+        # self.file_number = QtWidgets.QSpinBox()
+        # self.file_number.setRange(1, len(self.index))
+        # self.file_number.setValue(len(self.index))
 
         self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
         self.checkbox_blanking.setChecked(True)
 
         self.box_options.layout().addRow("Cycle:", self.cycle_number)
         self.box_options.layout().addRow("Segment:", self.segment_number)
+        # self.box_options.layout().addRow("Max file:", self.file_number)
         self.box_options.layout().addRow(self.checkbox_blanking)
 
         self.dwelltime.setBaseValue(nu.get_dwelltime_from_info(self.info))
@@ -603,21 +608,31 @@ class NuImportDialog(_ImportDialogBase):
         self.progress.reset()
         self.running = False
 
+        self.signals = None
+
         self.setControlsEnabled(True)
 
     def accept(self) -> None:
-        def read_signals(
-            root: Path, idx: dict, cyc_number: int | None, seg_number: int | None
-        ):
+        def read_signals_and_idx(
+            root: Path,
+            idx: dict,
+            cyc_number: int | None,
+            seg_number: int | None,
+            num_acc: int,
+            selected_mass_idx: np.ndarray,
+        ) -> tuple[np.ndarray, np.ndarray]:
             path = root.joinpath(f"{idx['FileNum']}.integ")
-            data = nu.read_nu_integ_binary(
+            integ = nu.read_nu_integ_binary(
                 path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
             )
             if cyc_number is not None:
-                data = data[data["cyc_number"] == cyc_number]
+                integ = integ[integ["cyc_number"] == cyc_number]
             if seg_number is not None:
-                data = data[data["seg_number"] == seg_number]
-            return data
+                integ = integ[integ["seg_number"] == seg_number]
+
+            signals = integ["result"]["signal"][:, selected_mass_idx]
+            mass_idx = (integ["acq_number"] // num_acc) - 1
+            return signals, mass_idx
 
         self.setControlsEnabled(False)
 
@@ -625,10 +640,29 @@ class NuImportDialog(_ImportDialogBase):
         self.running = True
         self.progress.setValue(0)
         self.progress.setMaximum(len(self.index))
-        self.results.clear()
+
+        isotopes = self.table.selectedIsotopes()
+        assert isotopes is not None
+        selected_masses = {f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes}
+        dtype = np.dtype(
+            {
+                "names": list(selected_masses.keys()),
+                "formats": [np.float32 for _ in selected_masses.keys()],
+            }
+        )
+        selected_idx = search_sorted_closest(
+            self.masses, np.array(list(selected_masses.values())), check_max_diff=0.1
+        )
+        num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+
+        self.signals = np.full(self.info["TotalAcquisitions"], np.nan, dtype=dtype)
 
         for idx in self.index:
             path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
+            # if idx["FileNum"] > self.file_number.value():
+            #     self.progress.setValue(self.progress.value() + 1)
+            #     continue
+            # elif not path.exists():
             if not path.exists():
                 logger.warning(
                     f"NuImportDialog: missing integ file {idx['FileNum']}, skipping"
@@ -636,56 +670,28 @@ class NuImportDialog(_ImportDialogBase):
                 self.progress.setValue(self.progress.value() + 1)
                 continue
             worker = Worker(
-                read_signals,
+                read_signals_and_idx,
                 self.file_path,
                 idx,
                 self.cycle_number.value(),
                 self.segment_number.value(),
+                num_acc,
+                selected_idx,
             )
             worker.setAutoDelete(True)
+            worker.signals.result.connect(self.addDataToSignals)
             worker.signals.finished.connect(self.threadComplete)
             worker.signals.exception.connect(self.threadFailed)
-            worker.signals.result.connect(self.appendResult)
             self.threadpool.start(worker)
 
-    def appendResult(self, x: np.ndarray) -> None:
-        # connecting to self.results.append does not work
-        self.results.append(x)
-
-    def finalise(self) -> None:
-        if not self.threadpool.waitForDone(1000):
-            logger.warning("could not remove all threads at finalise")
-        self.running = False
+    def addDataToSignals(self, result: tuple[np.ndarray, np.ndarray]) -> None:
+        if self.aborted:
+            return
 
         try:
-            num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-            signals = nu.get_signals_from_nu_data(self.results, num_acc)
-            signals /= self.info["AverageSingleIonArea"]
-
-            if self.checkbox_blanking.isChecked():  # auto-blank
-                autob_events = nu.collect_nu_autob_data(
-                    self.file_path,
-                    self.autob_index,
-                    cyc_number=self.cycle_number.value(),
-                    seg_number=self.segment_number.value(),
-                )
-                signals = nu.blank_nu_signal_data(
-                    autob_events,
-                    signals,
-                    self.masses,
-                    num_acc,
-                    self.info["BlMassCalStartCoef"],
-                    self.info["BlMassCalEndCoef"],
-                )
-
-            isotopes = self.table.selectedIsotopes()
-            assert isotopes is not None
-
-            selected_masses = {
-                f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes
-            }
-            data = nu.select_nu_signals(self.masses, signals, selected_masses)
-
+            x, idx = result[0], result[1]
+            for i, name in enumerate(self.signals.dtype.names):
+                self.signals[name][idx] = x[:, i]
         except Exception as e:
             logger.exception(e)
             msg = QtWidgets.QMessageBox(
@@ -696,22 +702,66 @@ class NuImportDialog(_ImportDialogBase):
             )
             msg.exec()
             self.abort()
-            return
+
+    def finalise(self) -> None:
+        if not self.threadpool.waitForDone(1000):
+            logger.warning("could not remove all threads at finalise")
+
+        self.threadpool.clear()
+        self.running = False
+
+        if self.checkbox_blanking.isChecked():  # auto-blank
+            try:
+                autob_events = nu.collect_nu_autob_data(
+                    self.file_path,
+                    self.autob_index,
+                    cyc_number=self.cycle_number.value(),
+                    seg_number=self.segment_number.value(),
+                )
+                num_acc = (
+                    self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+                )
+                self.signals = nu.blank_nu_signal_data(
+                    autob_events,
+                    self.signals,
+                    self.masses,
+                    num_acc,
+                    self.info["BlMassCalStartCoef"],
+                    self.info["BlMassCalEndCoef"],
+                )
+            except Exception as e:
+                logger.exception(e)
+                msg = QtWidgets.QMessageBox(
+                    QtWidgets.QMessageBox.Warning, "Import Failed", str(e), parent=self
+                )
+                msg.exec()
+                self.abort()
+                return
+
+        # if self.file_number.value() < len(self.index):
+        #     end = (
+        #         self.index[self.file_number.value() + 1]["FirstAcqNum"] // num_acc
+        #     ) - 1
+        #     self.signals = self.signals[:end]
+
+        # Divide by the single ion area to convert to counts
+        for name in self.signals.dtype.names:
+            self.signals[name] /= self.info["AverageSingleIonArea"]
 
         options = self.importOptions()
-        self.dataImported.emit(data, options)
+        self.dataImported.emit(self.signals, options)
         logger.info(
-            f"Nu instruments data loaded from {self.file_path} ({data.size} events)."
+            f"Nu instruments data loaded from {self.file_path} "
+            f"({self.info['TotalAcquisitions']} events)."
         )
-        self.results.clear()
+
         super().accept()
 
     def reject(self) -> None:
         if self.running:
             self.abort()
-            self.results.clear()
         else:
-            self.results.clear()
+            self.signals = None
             super().reject()
 
 

@@ -82,10 +82,14 @@ def test_import_dialog_nu(qtbot: QtBot):
     def check_data(data: np.ndarray, options: dict):
         if data.dtype.names != ("Ag107", "Au197"):
             return False
-        if data.size != 15474:
+        if data.size != 706078:
             return False
         if options["dwelltime"] != 8.289e-5:
             return False
+        # This checks that SIA is applied correctly
+        if not np.isclose(data["Ag107"][3], 0.3941041):
+            return False
+
         return True
 
     path = Path(__file__).parent.parent.joinpath("data/nu")
