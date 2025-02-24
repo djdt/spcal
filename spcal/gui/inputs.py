@@ -49,6 +49,7 @@ class InputWidget(QtWidgets.QWidget):
         self.detections = np.array([])
         self.labels = np.array([])
         self.regions = np.array([])
+        self.original_regions: dict[str, np.ndarray] = {}  # regions before combination
         self.limits: dict[str, SPCalLimit] = {}
 
         self.draw_mode = "overlay"
@@ -213,10 +214,18 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.setFont(font)
         self.redraw()  # fixes legend
 
-    def redraw(self) -> None:
+    def redraw(self, save_range: bool = True) -> None:
+        (xmin, xmax), (ymin, ymax) = self.graph.plot.viewRange()
         self.drawGraph()
         self.drawDetections()
         self.drawLimits()
+        if save_range:
+            if self.graph.plot.vb.state["autoVisibleOnly"][1]:
+                self.graph.plot.vb.setRange(xRange=(xmin, xmax), padding=0.0)
+            else:
+                self.graph.plot.vb.setRange(
+                    xRange=(xmin, xmax), yRange=(ymin, ymax), padding=0.0
+                )
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
         if (
@@ -440,7 +449,7 @@ class InputWidget(QtWidgets.QWidget):
         )
 
     def updateDetections(self) -> None:
-        d, l, r = {}, {}, {}
+        d, l, self.original_regions = {}, {}, {}
         acc_method = self.options.limit_accumulation
         points_req = self.options.points_required
         for name in self.names:
@@ -450,7 +459,7 @@ class InputWidget(QtWidgets.QWidget):
             limit_accumulation = np.minimum(limit_accumulation, limit_detection)
             responses = self.trimmedResponse(name)
             if responses.size > 0 and name in self.limits:
-                d[name], l[name], r[name] = accumulate_detections(
+                d[name], l[name], self.original_regions[name] = accumulate_detections(
                     responses,
                     limit_accumulation,
                     limit_detection,
@@ -458,7 +467,9 @@ class InputWidget(QtWidgets.QWidget):
                     integrate=True,
                 )
 
-        self.detections, self.labels, self.regions = combine_detections(d, l, r)
+        self.detections, self.labels, self.regions = combine_detections(
+            d, l, self.original_regions
+        )
 
         self.detectionsChanged.emit()
 

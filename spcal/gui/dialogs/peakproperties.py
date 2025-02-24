@@ -40,6 +40,12 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.table.setHorizontalHeaderLabels(["min", "max", "mean", "std", "median"])
         self.table.setVerticalHeaderLabels(["width", "height", "skew"])
 
+        self.use_combined = QtWidgets.QCheckBox("Use combined peak regions.")
+        self.use_combined.setToolTip(
+            "Combine overlapping regions of different elements."
+        )
+        self.use_combined.checkStateChanged.connect(self.updateValues)
+
         self.width_units = QtWidgets.QComboBox()
         self.width_units.addItems(list(time_units.keys()))
         self.width_units.setCurrentText("μs")
@@ -51,6 +57,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
         width_layout = QtWidgets.QHBoxLayout()
         width_layout.addStretch(1)
+        width_layout.addWidget(self.use_combined)
         width_layout.addWidget(
             QtWidgets.QLabel("Width units:"), 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
@@ -75,7 +82,11 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             return
 
         response = self.input.responses[name]
-        regions = self.input.regions[detected]
+        if self.use_combined.isChecked():
+            regions = self.input.regions[detected]
+        else:
+            regions = self.input.original_regions[name]
+
         trim = self.input.trimRegion(name)
         maxima = detection_maxima(response[trim[0] : trim[1]], regions) + trim[0]
 

@@ -1,8 +1,7 @@
 import numpy as np
 
-from spcal.lib.spcalext import (
+from spcal.lib.spcalext.clustering import (
     cluster_by_distance,
-    maxima,
     mst_linkage,
     pairwise_euclidean,
 )
@@ -42,10 +41,3 @@ def test_cluster_by_distance():
     assert np.all(T == [1, 1, 1, 2, 2, 3, 4, 5])
     T = cluster_by_distance(Z, ZD, 0.2)
     assert np.all(T == [1, 1, 1, 1, 1, 1, 1, 1])
-
-
-def test_maxima():
-    a = np.arange(10.0)
-    b = np.array([[1, 3], [2, 4], [3, 7], [9, 9]])
-    m = maxima(a, b)
-    assert np.all(m == [2, 3, 6, 9])
