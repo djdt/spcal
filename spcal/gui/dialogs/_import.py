@@ -621,6 +621,7 @@ class NuImportDialog(_ImportDialogBase):
             num_acc: int,
             selected_mass_idx: np.ndarray,
         ) -> tuple[np.ndarray, np.ndarray]:
+            t0 = time.time()
             path = root.joinpath(f"{idx['FileNum']}.integ")
             integ = nu.read_nu_integ_binary(
                 path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
@@ -632,6 +633,7 @@ class NuImportDialog(_ImportDialogBase):
 
             signals = integ["result"]["signal"][:, selected_mass_idx]
             mass_idx = (integ["acq_number"] // num_acc) - 1
+            t1 = time.time()
             return signals, mass_idx
 
         self.setControlsEnabled(False)
@@ -643,19 +645,16 @@ class NuImportDialog(_ImportDialogBase):
 
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
-        selected_masses = {f"{i['Symbol']}{i['Isotope']}": i["Mass"] for i in isotopes}
-        dtype = np.dtype(
-            {
-                "names": list(selected_masses.keys()),
-                "formats": [np.float32 for _ in selected_masses.keys()],
-            }
-        )
         selected_idx = search_sorted_closest(
-            self.masses, np.array(list(selected_masses.values())), check_max_diff=0.1
+            self.masses, np.array([i["Mass"] for i in isotopes]), check_max_diff=0.1
         )
         num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
 
-        self.signals = np.full(self.info["TotalAcquisitions"], np.nan, dtype=dtype)
+        self.signals = np.full(
+            (self.info["TotalAcquisitions"], len(selected_idx)),
+            np.nan,
+            dtype=np.float32,
+        )
 
         for idx in self.index:
             path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
@@ -690,8 +689,7 @@ class NuImportDialog(_ImportDialogBase):
 
         try:
             x, idx = result[0], result[1]
-            for i, name in enumerate(self.signals.dtype.names):
-                self.signals[name][idx] = x[:, i]
+            self.signals[idx] = x
         except Exception as e:
             logger.exception(e)
             msg = QtWidgets.QMessageBox(
@@ -710,8 +708,13 @@ class NuImportDialog(_ImportDialogBase):
         self.threadpool.clear()
         self.running = False
 
+        isotopes = self.table.selectedIsotopes()
+        assert isotopes is not None
+
         if self.checkbox_blanking.isChecked():  # auto-blank
             try:
+                selected_masses = np.array([i["Mass"] for i in isotopes])
+
                 autob_events = nu.collect_nu_autob_data(
                     self.file_path,
                     self.autob_index,
@@ -721,14 +724,16 @@ class NuImportDialog(_ImportDialogBase):
                 num_acc = (
                     self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
                 )
+
                 self.signals = nu.blank_nu_signal_data(
                     autob_events,
                     self.signals,
-                    self.masses,
+                    selected_masses,
                     num_acc,
                     self.info["BlMassCalStartCoef"],
                     self.info["BlMassCalEndCoef"],
                 )
+
             except Exception as e:
                 logger.exception(e)
                 msg = QtWidgets.QMessageBox(
@@ -745,8 +750,16 @@ class NuImportDialog(_ImportDialogBase):
         #     self.signals = self.signals[:end]
 
         # Divide by the single ion area to convert to counts
-        for name in self.signals.dtype.names:
-            self.signals[name] /= self.info["AverageSingleIonArea"]
+        self.signals /= self.info["AverageSingleIonArea"]
+
+        dtype = np.dtype(
+            {
+                "names": [f"{i['Symbol']}{i['Isotope']}" for i in isotopes],
+                "formats": [np.float32 for _ in isotopes],
+            }
+        )
+
+        self.signals = rfn.unstructured_to_structured(self.signals, dtype=dtype)
 
         options = self.importOptions()
         self.dataImported.emit(self.signals, options)
