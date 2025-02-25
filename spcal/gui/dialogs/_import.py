@@ -621,7 +621,6 @@ class NuImportDialog(_ImportDialogBase):
             num_acc: int,
             selected_mass_idx: np.ndarray,
         ) -> tuple[np.ndarray, np.ndarray]:
-            t0 = time.time()
             path = root.joinpath(f"{idx['FileNum']}.integ")
             integ = nu.read_nu_integ_binary(
                 path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
@@ -633,7 +632,6 @@ class NuImportDialog(_ImportDialogBase):
 
             signals = integ["result"]["signal"][:, selected_mass_idx]
             mass_idx = (integ["acq_number"] // num_acc) - 1
-            t1 = time.time()
             return signals, mass_idx
 
         self.setControlsEnabled(False)
