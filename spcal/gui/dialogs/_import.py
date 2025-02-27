@@ -616,8 +616,8 @@ class NuImportDialog(_ImportDialogBase):
         def read_signals_and_idx(
             root: Path,
             idx: dict,
-            cyc_number: int | None,
-            seg_number: int | None,
+            cyc_number: int,
+            seg_number: int,
             num_acc: int,
             selected_mass_idx: np.ndarray,
         ) -> tuple[np.ndarray, np.ndarray]:
@@ -625,10 +625,10 @@ class NuImportDialog(_ImportDialogBase):
             integ = nu.read_nu_integ_binary(
                 path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
             )
-            if cyc_number is not None:
-                integ = integ[integ["cyc_number"] == cyc_number]
-            if seg_number is not None:
-                integ = integ[integ["seg_number"] == seg_number]
+            integ = integ[
+                (integ["cyc_number"] == cyc_number)
+                & (integ["seg_number"] == seg_number)
+            ]
 
             signals = integ["result"]["signal"][:, selected_mass_idx]
             mass_idx = (integ["acq_number"] // num_acc) - 1
