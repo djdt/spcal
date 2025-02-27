@@ -13,6 +13,7 @@ from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.imageexport import ImageExportDialog
+from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
@@ -428,7 +429,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
         layout_image = QtWidgets.QHBoxLayout()
         layout_image.addWidget(self.check_image)
         layout_image.addWidget(self.button_image)
+
         self.image_options = {
+            "graph": None,
             "size": QtCore.QSize(800, 600),
             "dpi": 96,
             "options": {
@@ -705,6 +708,17 @@ class BatchProcessDialog(QtWidgets.QDialog):
         else:
             self.summary_path = None
             summary = None
+
+        if self.check_image.isChecked():
+            dpi_scale = self.image_options["dpi"] / 96.0
+            font = QtGui.QFont(
+                QtCore.QSettings().value("GraphFont/Family", "SansSerif"),
+                pointSize=int(QtCore.QSettings().value("GraphFont/PointSize", 10)),
+            )
+            font.setPointSizeF(font.pointSize() * dpi_scale)
+            self.image_options["graph"] = HistogramView(font=font)
+        else:
+            self.image_options["graph"] = None
 
         for path, outpath in zip(infiles, outfiles):
             worker = Worker(
