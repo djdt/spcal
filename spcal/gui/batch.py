@@ -484,7 +484,8 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         outputs = []
         for file in files:
-            outname = self.output_name.text().replace("%", file.stem)
+            stem = file.name if file.is_dir() else file.stem
+            outname = self.output_name.text().replace("%", stem)
             if outdir == "":
                 outdir = file.parent
             outputs.append(Path(outdir, outname))
