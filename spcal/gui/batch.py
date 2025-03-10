@@ -608,7 +608,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         if self.check_summary.isChecked():
             tstr = datetime.datetime.strftime(
-                datetime.datetime.now(), "%Y-%m-%dT%H:%M:%S"
+                datetime.datetime.now(), "%Y-%m-%dT%H_%M_%S"
             )
             self.summary_path = outfiles[0].parent.joinpath(f"batch_summary_{tstr}.csv")
             summary = self.summary_path.open("w")
