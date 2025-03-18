@@ -296,16 +296,9 @@ class TextImportDialog(_ImportDialogBase):
         self.spinbox_first_line.setValue(first_data_line)
         self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
 
-        # self.le_ignore_columns = QtWidgets.QLineEdit()
-        # self.le_ignore_columns.setValidator(
-        #     QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
-        # )
-        # self.le_ignore_columns.textChanged.connect(self.updateTableIgnores)
-
         self.box_options.layout().addRow("Intensity Units:", self.combo_intensity_units)
         self.box_options.layout().addRow("Delimiter:", self.combo_delimiter)
         self.box_options.layout().addRow("Import From Row:", self.spinbox_first_line)
-        # self.box_options.layout().addRow("Ignore Columns:", self.le_ignore_columns)
 
         self.fillTable()
         self.guessUseColumnsFromTable()
