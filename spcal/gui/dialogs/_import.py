@@ -168,6 +168,74 @@ class _ImportDialogBase(QtWidgets.QDialog):
         raise NotImplementedError
 
 
+class CheckableHeader(QtWidgets.QHeaderView):
+    checkStateChanged = QtCore.Signal(int, QtCore.Qt.CheckState)
+
+    def __init__(
+        self,
+        orientation: QtCore.Qt.Orientation,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(orientation, parent)
+
+        self._checked: dict[int, QtCore.Qt.CheckState] = {}
+
+    def checkState(self, logicalIndex: int) -> QtCore.Qt.CheckState:
+        assert logicalIndex >= 0 and logicalIndex < self.count()
+        return self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
+
+    def setCheckState(self, logicalIndex: int, state: QtCore.Qt.CheckState) -> None:
+        assert logicalIndex >= 0 and logicalIndex < self.count()
+        if self.checkState(logicalIndex) != state:
+            self._checked[logicalIndex] = state
+            self.checkStateChanged.emit(logicalIndex, state)
+
+    def paintSection(
+        self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
+    ) -> None:
+        painter.save()
+        super().paintSection(painter, rect, logicalIndex)
+        painter.restore()
+
+        option = QtWidgets.QStyleOptionButton()
+        option.rect = QtCore.QRect(rect.left() + 2, rect.center().y() - 10, 20, 20)
+        # option.rect = QtCore.QRect(3, 1, 20, 20)  # may have to be adapt
+        option.state = QtWidgets.QStyle.State_Enabled | QtWidgets.QStyle.State_Active
+
+        state = self.checkState(logicalIndex)
+        if state == QtCore.Qt.CheckState.Checked:
+            option.state |= QtWidgets.QStyle.State_On
+        elif state == QtCore.Qt.CheckState.Unchecked:
+            option.state |= QtWidgets.QStyle.State_Off
+        else:
+            option.state |= QtWidgets.QStyle.State_NoChange
+
+        self.style().drawControl(QtWidgets.QStyle.CE_CheckBox, option, painter)
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        logicalIndex = self.logicalIndexAt(event.pos())
+
+        if logicalIndex >= 0 and logicalIndex < self.count():
+            state = self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
+
+            if QtCore.Qt.KeyboardModifier.ShiftModifier & event.modifiers():
+                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
+
+                for idx in range(0, self.count()):
+                    if idx == logicalIndex:
+                        continue
+                    self.setCheckState(idx, QtCore.Qt.CheckState.Unchecked)
+
+            elif state == QtCore.Qt.CheckState.Checked:
+                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Unchecked)
+            else:
+                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
+
+            self.viewport().update()
+        else:
+            super().mousePressEvent(event)
+
+
 class TextImportDialog(_ImportDialogBase):
     dataImported = QtCore.Signal(np.ndarray, dict)
 
@@ -207,6 +275,9 @@ class TextImportDialog(_ImportDialogBase):
         self.table.setColumnCount(column_count)
         self.table.setRowCount(header_row_count)
         self.table.setFont(QtGui.QFont("Courier"))
+        self.table_header = CheckableHeader(QtCore.Qt.Orientation.Horizontal)
+        self.table.setHorizontalHeader(self.table_header)
+        self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
         self.box_info.layout().addRow("Line Count:", QtWidgets.QLabel(str(line_count)))
 
@@ -223,21 +294,21 @@ class TextImportDialog(_ImportDialogBase):
         self.spinbox_first_line = QtWidgets.QSpinBox()
         self.spinbox_first_line.setRange(1, header_row_count - 1)
         self.spinbox_first_line.setValue(first_data_line)
-        self.spinbox_first_line.valueChanged.connect(self.updateTableIgnores)
+        self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
 
-        self.le_ignore_columns = QtWidgets.QLineEdit()
-        self.le_ignore_columns.setValidator(
-            QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
-        )
-        self.le_ignore_columns.textChanged.connect(self.updateTableIgnores)
+        # self.le_ignore_columns = QtWidgets.QLineEdit()
+        # self.le_ignore_columns.setValidator(
+        #     QtGui.QRegularExpressionValidator(QtCore.QRegularExpression("[0-9;]+"))
+        # )
+        # self.le_ignore_columns.textChanged.connect(self.updateTableIgnores)
 
         self.box_options.layout().addRow("Intensity Units:", self.combo_intensity_units)
         self.box_options.layout().addRow("Delimiter:", self.combo_delimiter)
         self.box_options.layout().addRow("Import From Row:", self.spinbox_first_line)
-        self.box_options.layout().addRow("Ignore Columns:", self.le_ignore_columns)
+        # self.box_options.layout().addRow("Ignore Columns:", self.le_ignore_columns)
 
         self.fillTable()
-        self.guessIgnoreColumnsFromTable()
+        self.guessUseColumnsFromTable()
 
         self.layout_body.addWidget(self.table)
 
@@ -259,12 +330,11 @@ class TextImportDialog(_ImportDialogBase):
             delimiter = "\t"
         return delimiter
 
-    def ignoreColumns(self) -> list[int]:
-        return [int(i) - 1 for i in self.le_ignore_columns.text().split(";") if i != ""]
-
     def useColumns(self) -> list[int]:
         return [
-            c for c in range(self.table.columnCount()) if c not in self.ignoreColumns()
+            k
+            for k, v in self.table_header._checked.items()
+            if v == QtCore.Qt.CheckState.Checked
         ]
 
     def names(self) -> list[str]:
@@ -287,13 +357,13 @@ class TextImportDialog(_ImportDialogBase):
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
-        self.updateTableIgnores()
+        self.updateTableUseColumns()
 
         if self.dwelltime.value() is None:
             self.guessDwelltimeFromTable()
             self.dwelltime.setBestUnit()
 
-    def updateTableIgnores(self) -> None:
+    def updateTableUseColumns(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
         for row in range(self.table.rowCount()):
             for col in range(self.table.columnCount()):
@@ -304,19 +374,21 @@ class TextImportDialog(_ImportDialogBase):
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
-                if row < header_row or col in self.ignoreColumns():
+                if row < header_row or col not in self.useColumns():
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEnabled)
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemIsEnabled)
 
-    def guessIgnoreColumnsFromTable(self) -> None:
-        ignores = []
+    def guessUseColumnsFromTable(self) -> None:
+        columns = []
         header_row = self.spinbox_first_line.value() - 1
         for col in range(self.table.columnCount()):
             text = self.table.item(header_row, col).text().lower()
-            if any(x in text for x in ["time", "index"]):
-                ignores.append(col + 1)
-        self.le_ignore_columns.setText(";".join(str(x) for x in ignores) + ";")
+            if not any(x in text for x in ["time", "index"]):
+                columns.append(col)
+
+        for col in columns:
+            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
 
     def guessDwelltimeFromTable(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
@@ -348,7 +420,6 @@ class TextImportDialog(_ImportDialogBase):
             "path": self.file_path,
             "dwelltime": self.dwelltime.baseValue(),
             "delimiter": self.delimiter(),
-            "ignores": self.ignoreColumns(),
             "columns": self.useColumns(),
             "first line": self.spinbox_first_line.value(),
             "cps": self.combo_intensity_units.currentText() == "CPS",
@@ -379,7 +450,10 @@ class TextImportDialog(_ImportDialogBase):
             return
 
         self.combo_delimiter.setCurrentText(delimiter)
-        self.le_ignore_columns.setText(";".join(str(i + 1) for i in options["ignores"]))
+
+        for col in options["columns"]:
+            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+
         for oldname, name in options["names"].items():
             for col in range(self.table.columnCount()):
                 item = self.table.item(self.spinbox_first_line.value() - 1, col)
@@ -403,10 +477,10 @@ class TextImportDialog(_ImportDialogBase):
     def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
         options = self.importOptions()
 
-        mask = np.ones(len(options["columns"]), dtype=bool)
-        mask[idx] = 0
-        ignores = options["ignores"] + list(np.array(options["columns"])[mask])
-        self.le_ignore_columns.setText(";".join(str(i + 1) for i in ignores) + ";")
+        columns = options["columns"][idx]
+        self.table_header._checked = {}
+        for col in columns:
+            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
 
     def accept(self) -> None:
         options = self.importOptions()
