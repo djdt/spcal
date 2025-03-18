@@ -27,7 +27,6 @@ def test_batch_export(tmp_path: Path, qtbot: QtBot):
             {
                 "path": path,
                 "columns": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                "ignores": [0],
                 "first line": 0,
                 "names": {data.dtype.names[0]: data.dtype.names[0]},
                 "cps": False,
@@ -79,7 +78,6 @@ def test_batch_export_no_detections(tmp_path: Path, qtbot: QtBot):
             {
                 "path": path,
                 "columns": [2],
-                "ignores": [0, 1],
                 "first line": 0,
                 "names": {data.dtype.names[0]: data.dtype.names[0]},
                 "cps": False,
