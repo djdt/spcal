@@ -486,7 +486,6 @@ class TextImportDialog(_ImportDialogBase):
 
     def accept(self) -> None:
         options = self.importOptions()
-        print('on accept', options)
 
         data = read_single_particle_file(
             options["path"],
