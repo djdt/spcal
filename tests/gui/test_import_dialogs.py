@@ -37,7 +37,7 @@ def test_import_dialog_text_nu(qtbot: QtBot):
     assert dlg.combo_intensity_units.currentText() == "Counts"
     assert dlg.delimiter() == ","
     assert dlg.spinbox_first_line.value() == 1
-    assert dlg.ignoreColumns() == [0]
+    assert dlg.useColumns() == [1, 2, 3]
 
     dlg.dwelltime.setBaseValue(None)
     assert not dlg.isComplete()
@@ -45,8 +45,15 @@ def test_import_dialog_text_nu(qtbot: QtBot):
     assert dlg.isComplete()
 
     # Change some params
-    dlg.le_ignore_columns.setText("1;3;")
-    assert dlg.ignoreColumns() == [0, 2]
+    pos = QtCore.QPoint(
+        dlg.table_header.sectionPosition(2) + dlg.table_header.sectionSize(2) // 2,
+        dlg.table_header.sizeHint().height() // 2,
+    )
+    with qtbot.wait_signal(dlg.table_header.checkStateChanged, timeout=2000):
+        qtbot.mouseClick(
+            dlg.table_header.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pos
+        )
+    assert dlg.useColumns() == [1, 3]
     dlg.table.item(0, 1).setText("Ag")
     dlg.table.item(0, 3).setText("Au")
 
@@ -72,7 +79,7 @@ def test_import_dialog_text_tofwerk(qtbot: QtBot):
     assert dlg.combo_intensity_units.currentText() == "Counts"
     assert dlg.delimiter() == ","
     assert dlg.spinbox_first_line.value() == 1
-    assert dlg.ignoreColumns() == [0, 1]
+    assert dlg.useColumns() == [2]
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
