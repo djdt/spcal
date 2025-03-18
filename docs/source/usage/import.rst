@@ -20,7 +20,8 @@ Opening a text file will start the text import wizard. This wizard allows you to
 The wizard will attempt to guess the correct options when the file is loaded, a description of each option is shown in :numref:`tabtextoptions`.
 The wizard displays the first 10 lines from the file (:numref:`text import wizard`) and is used to identify and remove non-data rows and columns before import.
 In the example in :numref:`text import wizard`, there are 0 header rows so import proceed from row 1, and column 1 consists of non-particle data.
-The first non-header row should contain the names of each column and is editable by double-clicking.
+The first non-header row should contain the names of each column and can be edited by double-clicking the name.
+Columns can be selected or ignore using their corresponding checkboxes, to quickly select one column click it while holding the *Shift* key.
 
 .. _tabtextoptions:
 .. list-table:: Options for the text import wizard.
@@ -36,8 +37,6 @@ The first non-header row should contain the names of each column and is editable
       - The delimiter character.
     * - Import From Row
       - Skips the first *x* rows of the file (the header). The first non-skipped row should be the column names.
-    * - Ignore Columns
-      - A ``;`` delimited list of which columns to ignore. For example time or index rows should not be imported.
 
 .. warning::
    The :term:`dwelltime` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
