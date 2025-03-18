@@ -190,31 +190,23 @@ class CheckableHeader(QtWidgets.QHeaderView):
             self._checked[logicalIndex] = state
             self.checkStateChanged.emit(logicalIndex, state)
 
-    def paintSection(
-        self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
-    ) -> None:
-        painter.save()
-        super().paintSection(painter, rect, logicalIndex)
-        painter.restore()
-
+    def sectionSizeFromContents(self, logicalIndex: int) -> QtCore.QSize:
+        size = super().sectionSizeFromContents(logicalIndex)
         option = QtWidgets.QStyleOptionButton()
-        option.rect = QtCore.QRect(rect.left() + 2, rect.center().y() - 10, 20, 20)
-        # option.rect = QtCore.QRect(3, 1, 20, 20)  # may have to be adapt
-        option.state = QtWidgets.QStyle.State_Enabled | QtWidgets.QStyle.State_Active
-
-        state = self.checkState(logicalIndex)
-        if state == QtCore.Qt.CheckState.Checked:
-            option.state |= QtWidgets.QStyle.State_On
-        elif state == QtCore.Qt.CheckState.Unchecked:
-            option.state |= QtWidgets.QStyle.State_Off
-        else:
-            option.state |= QtWidgets.QStyle.State_NoChange
-
-        self.style().drawControl(QtWidgets.QStyle.CE_CheckBox, option, painter)
+        cb_size = self.style().sizeFromContents(
+            QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
+        )
+        size.setWidth(size.width() + cb_size.width())
+        return size
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
-        logicalIndex = self.logicalIndexAt(event.pos())
+        if self.cursor().shape() in [  # resizing, ignore custom code
+            QtCore.Qt.CursorShape.SplitHCursor,
+            QtCore.Qt.CursorShape.SplitVCursor,
+        ]:
+            return super().mousePressEvent(event)
 
+        logicalIndex = self.logicalIndexAt(event.pos())
         if logicalIndex >= 0 and logicalIndex < self.count():
             state = self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
 
@@ -232,8 +224,37 @@ class CheckableHeader(QtWidgets.QHeaderView):
                 self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
 
             self.viewport().update()
+
+    def paintSection(
+        self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
+    ) -> None:
+        painter.save()
+        super().paintSection(painter, rect, logicalIndex)
+        painter.restore()
+
+        size = super().sectionSizeFromContents(logicalIndex)
+        option = QtWidgets.QStyleOptionButton()
+        cb_size = self.style().sizeFromContents(
+            QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
+        )
+
+        option.rect = QtCore.QRect(
+            rect.left(),
+            rect.center().y() - cb_size.height() // 2,
+            cb_size.width(),
+            cb_size.height(),
+        )
+        option.state = QtWidgets.QStyle.State_Enabled | QtWidgets.QStyle.State_Active
+
+        state = self.checkState(logicalIndex)
+        if state == QtCore.Qt.CheckState.Checked:
+            option.state |= QtWidgets.QStyle.State_On
+        elif state == QtCore.Qt.CheckState.Unchecked:
+            option.state |= QtWidgets.QStyle.State_Off
         else:
-            super().mousePressEvent(event)
+            option.state |= QtWidgets.QStyle.State_NoChange
+
+        self.style().drawControl(QtWidgets.QStyle.CE_CheckBox, option, painter)
 
 
 class TextImportDialog(_ImportDialogBase):
