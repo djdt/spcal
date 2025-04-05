@@ -34,6 +34,54 @@ def is_nu_directory(path: Path) -> bool:
     return True
 
 
+def get_blanking_regions(
+    autob_events: list[np.ndarray],
+    num_acc: int,
+    start_coef: tuple[float, float],
+    end_coef: tuple[float, float],
+) -> tuple[list[tuple[int, int]], list[np.ndarray]]:
+    """Extract blanking regions from autoblank data.
+
+    Args:
+        autob: list of events from `read_nu_autob_binary`
+        num_acc: number of accumulations per acquisition
+        start_coef: blanker open coefs 'BlMassCalStartCoef'
+        end_coef: blanker close coefs 'BlMassCalEndCoef'
+
+    Returns:
+        list of (start, end) of each region, array of (start, end) masses
+    """
+    regions: list[tuple[int, int]] = []
+    mass_regions = []
+
+    start_event = None
+    for event in autob_events:
+        if event["type"] == 0 and start_event is None:
+            start_event = event
+        elif event["type"] == 1 and start_event is not None:
+            regions.append(
+                (
+                    int(start_event["acq_number"][0] // num_acc) - 1,
+                    int(event["acq_number"][0] // num_acc) - 1,
+                )
+            )
+
+            start_masses = (
+                start_coef[0] + start_coef[1] * start_event["edges"][0][::2] * 1.25
+            ) ** 2
+            end_masses = (
+                end_coef[0] + end_coef[1] * start_event["edges"][0][1::2] * 1.25
+            ) ** 2
+            valid = start_masses < end_masses
+            mass_regions.append(
+                np.stack([start_masses[valid], end_masses[valid]], axis=1)
+            )
+
+            start_event = None
+
+    return regions, mass_regions
+
+
 def blank_nu_signal_data(
     autob_events: list[np.ndarray],
     signals: np.ndarray,
@@ -47,7 +95,7 @@ def blank_nu_signal_data(
 
     Args:
         autob: list of events from `read_nu_autob_binary`
-        integ_data: concatenated data from `read_nu_integ_data_binary`
+        signals: 2d array of signals from `get_signals_from_nu_data`
         masses: 1d array of masses, from `get_masses_from_nu_data`
         num_acc: number of accumulations per acquisition
         start_coef: blanker open coefs 'BlMassCalStartCoef'
@@ -56,30 +104,15 @@ def blank_nu_signal_data(
     Returns:
         blanked data
     """
-    start_event = None
-    for event in autob_events:
-        if event["type"] == 0 and start_event is None:
-            start_event = event
-        elif event["type"] == 1 and start_event is not None:
-            start_masses = (
-                start_coef[0] + start_coef[1] * start_event["edges"][0][::2] * 1.25
-            ) ** 2
-            end_masses = (
-                end_coef[0] + end_coef[1] * start_event["edges"][0][1::2] * 1.25
-            ) ** 2
-            mass_idx = np.searchsorted(masses, (start_masses, end_masses))
-            # There are a bunch of useless blanking regions
-            mass_idx = mass_idx[:, mass_idx[0] != mass_idx[1]]
-
-            acq_start, acq_end = (
-                int(start_event["acq_number"][0] // num_acc) - 1,
-                int(event["acq_number"][0] // num_acc) - 1,
-            )
-
-            for s, e in mass_idx.T:
-                signals[acq_start:acq_end, s:e] = np.nan
-
-            start_event = None
+    regions, mass_regions_list = get_blanking_regions(
+        autob_events, num_acc, start_coef, end_coef
+    )
+    for region, mass_regions in zip(regions, mass_regions_list):
+        mass_idx = np.searchsorted(masses, mass_regions)
+        # There are a bunch of useless blanking regions
+        mass_idx = mass_idx[mass_idx[:, 0] != mass_idx[:, 1]]
+        for s, e in mass_idx:
+            signals[region[0] : region[1], s:e] = np.nan
 
     return signals
 
