@@ -215,3 +215,52 @@ def test_batch_export_tofwerk(tmp_path: Path, qtbot: QtBot):
         dlg.start()
 
     assert tmp.stat().st_size > 0
+
+
+def test_batch_export_images(tmp_path: Path, qtbot: QtBot):
+    window = SPCalWindow()
+    qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
+
+    assert not window.action_open_batch.isEnabled()
+
+    path = Path(__file__).parent.parent.joinpath("data/text/tof_mix_au_ag_auag.csv")
+
+    data = read_single_particle_file(path, columns=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+
+    with qtbot.wait_signal(window.sample.detectionsChanged):
+        window.sample.loadData(
+            data,
+            {
+                "path": path,
+                "columns": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "first line": 0,
+                "names": {data.dtype.names[0]: data.dtype.names[0]},
+                "cps": False,
+                "delimiter": ",",
+                "importer": "text",
+                "dwelltime": 1e-4,
+            },
+        )
+
+    assert window.action_open_batch.isEnabled()
+
+    tmp = tmp_path.joinpath("batch_export_images.csv")
+    dlg = window.dialogBatchProcess()
+    qtbot.add_widget(dlg)
+    dlg.files.addItems([str(path)])
+
+    dlg.check_image.setChecked(True)
+
+    dlg.output_name.setText(tmp.name)
+    dlg.output_dir.setText(str(tmp_path))
+
+    assert not tmp.exists()
+
+    with qtbot.wait_signal(dlg.processingFinshed):
+        dlg.start()
+
+    assert tmp.with_name("batch_export_images_Ag107_signal.png").exists()
+    assert tmp.with_name("batch_export_images_Ag109_signal.png").exists()
+    assert tmp.with_name("batch_export_images_Au197_signal.png").exists()
