@@ -25,27 +25,113 @@ MAX_RECENT_FILES = 10
 
 
 from spcal.gui.widgets import CollapsableWidget
+from spcal.gui.widgets.values import ValueWidget
+from spcal.gui.widgets.units import UnitsWidget
+from spcal.gui.limitoptions import GaussianOptions, PoissonOptions, CompoundPoissonOptions
+
+from spcal.siunits import time_units
+
+sf = 4
 
 
-class SPCalOptionsDock(QtWidgets.QDockWidget):
+class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setWindowTitle("Instrument Options")
+
+        layout = QtWidgets.QFormLayout()
+
+        uptake_units = {
+            "ml/min": 1e-3 / 60.0,
+            "ml/s": 1e-3,
+            "L/min": 1.0 / 60.0,
+            "L/s": 1.0,
+        }
+
+        # load stored options
+        settings = QtCore.QSettings()
+
+        # Instrument wide options
+        self.dwelltime = UnitsWidget(
+            time_units,
+            default_unit="ms",
+            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
+            format=sf,
+        )
+        self.dwelltime.setReadOnly(True)
+
+        self.uptake = UnitsWidget(
+            uptake_units,
+            default_unit="ml/min",
+            format=sf,
+        )
+        self.efficiency = ValueWidget(
+            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
+        )
+
+        self.dwelltime.setToolTip(
+            "ICP-MS dwell-time, updated from imported files if time column exists."
+        )
+        self.uptake.setToolTip("ICP-MS sample flow rate.")
+        self.efficiency.setToolTip(
+            "Transport efficiency. Can be calculated using a reference particle."
+        )
+
+        self.efficiency_method = QtWidgets.QComboBox()
+        self.efficiency_method.addItems(
+            ["Manual Input", "Reference Particle", "Mass Response"]
+        )
+        # self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
+        # for i, tooltip in enumerate(
+        #     [
+        #         "Manually enter the transport efficiency.",
+        #         "Calculate the efficiency using a reference particle.",
+        #         "Use the mass response of a reference particle.",
+        #     ]
+        # ):
+        #     self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+        # self.efficiency_method.setToolTip(
+        #     self.efficiency_method.currentData(QtCore.Qt.ToolTipRole)
+        # )
+        # self.efficiency_method.currentIndexChanged.connect(
+        #     lambda i: self.efficiency_method.setToolTip(
+        #         self.efficiency_method.itemData(i, QtCore.Qt.ToolTipRole)
+        #     )
+        # )
+
+        # Complete Changed
+        # self.uptake.baseValueChanged.connect(self.optionsChanged)
+        # self.efficiency.valueChanged.connect(self.optionsChanged)
+
+        layout.addRow("Event time", self.dwelltime)
+        layout.addRow("Uptake", self.uptake)
+        layout.addRow("Efficiency", self.efficiency)
+
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        self.setWidget(widget)
+
+class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Limit Options")
 
         layout = QtWidgets.QVBoxLayout()
 
-        gaussian_options = CollapsableWidget("Gaussian Limit Options")
-        gaussian_options.area.setLayout(QtWidgets.QVBoxLayout())
-        gaussian_options.area.layout().addWidget(QtWidgets.QLabel("Option1"))
-        gaussian_options.area.layout().addWidget(QtWidgets.QLabel("Option2"))
-        gaussian_options.area.layout().addWidget(QtWidgets.QLabel("Option3"))
-        poisson_options = CollapsableWidget("Poisson Limit Options")
-        poisson_options.area.setLayout(QtWidgets.QVBoxLayout())
-        poisson_options.area.layout().addWidget(QtWidgets.QLabel("Option1"))
-        poisson_options.area.layout().addWidget(QtWidgets.QLabel("Option2"))
-        poisson_options.area.layout().addWidget(QtWidgets.QLabel("Option3"))
+        self.gaussian = GaussianOptions()
+        self.poisson = PoissonOptions()
+        self.compound = CompoundPoissonOptions()
 
-        layout.addWidget(gaussian_options)
-        layout.addWidget(poisson_options)
+        gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
+        gaussian_collapse.setWidget(self.gaussian)
+        poisson_collapse = CollapsableWidget("Poisson Limit Options")
+        poisson_collapse.setWidget(self.poisson)
+        compound_collapse = CollapsableWidget("Compound Poisson Limit Options")
+        compound_collapse.setWidget(self.compound)
+
+        layout.addWidget(gaussian_collapse)
+        layout.addWidget(poisson_collapse)
+        layout.addWidget(compound_collapse)
         layout.addStretch(1)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
@@ -104,7 +190,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # self.tabs.setTabEnabled(self.tabs.indexOf(self.reference), False)
         # self.tabs.setTabEnabled(self.tabs.indexOf(self.results), False)
         #
-        self.options = SPCalOptionsDock()
+        self.instrument_options = SPCalInstrumentOptionsDock()
+        self.options = SPCalLimitOptionsDock()
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options)
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.options)
         widget = QtWidgets.QWidget()
 
