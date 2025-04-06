@@ -287,17 +287,41 @@ class InputWidget(QtWidgets.QWidget):
     def dialogExportGraphImage(self) -> None:
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
-        path = Path(self.import_options["path"])
+        def get_path_and_export(size: QtCore.QSize, dpi: int, options: dict) -> None:
+            path = Path(self.import_options["path"])
+            path = path.with_name(path.stem + "_signal.png")
+            path, ok = QtWidgets.QFileDialog.getSaveFileName(
+                self, "Export Image", str(path.absolute()), "PNG Images (*.png)"
+            )
+            if not ok:
+                return
+
+            # Save defaults
+            settings = QtCore.QSettings()
+            settings.setValue("ImageExport/SizeX", size.width())
+            settings.setValue("ImageExport/SizeY", size.height())
+            settings.setValue("ImageExport/DPI", dpi)
+
+            self.exportGraphImage(path, size, dpi, options)
+
+        settings = QtCore.QSettings()
+        size = QtCore.QSize(
+            int(settings.value("ImageExport/SizeX", 800)),
+            int(settings.value("ImageExport/SizeY", 600)),
+        )
+        dpi = int(settings.value("ImageExport/DPI", 96))
+
         dlg = ImageExportDialog(
-            path.with_name(path.stem + "_image.png"),
-            parent=self,
+            size=size,
+            dpi=dpi,
             options={
                 "show legend": self.graph.plot.legend.isVisible(),
                 "show detections": True,
                 "transparent background": False,
             },
+            parent=self,
         )
-        dlg.exportSettingsSelected.connect(self.exportGraphImage)
+        dlg.exportSettingsSelected.connect(get_path_and_export)
         dlg.exec()
 
     def exportGraphImage(

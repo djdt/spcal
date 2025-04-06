@@ -12,6 +12,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.detection import accumulate_detections, combine_detections
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.imageexport import ImageExportDialog
+from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
 from spcal.gui.io import get_open_spcal_paths, is_spcal_path
 from spcal.gui.options import OptionsWidget
@@ -162,6 +164,7 @@ def process_text_file(
     trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
+    image_kws: dict,
 ) -> None:
     data = read_single_particle_file(
         path,
@@ -184,6 +187,56 @@ def process_text_file(
     if summary is not None:
         append_results_summary(summary, results, output_kws["units_for_results"])
 
+    # === Export images ===
+    if "size" in image_kws:
+        from spcal.gui.graphs.draw import draw_histogram_view
+
+        dpi_scale = image_kws["dpi"] / 96.0
+        font = QtGui.QFont(
+            QtCore.QSettings().value("GraphFont/Family", "SansSerif"),
+            pointSize=int(QtCore.QSettings().value("GraphFont/PointSize", 10)),
+        )
+        font.setPointSizeF(font.pointSize() * dpi_scale)
+
+        for name, result in results.items():
+            for key, (label, unit, modifier) in zip(
+                ResultsWidget.mode_keys.values(), ResultsWidget.mode_labels.values()
+            ):
+                if not result.canCalibrate(key):
+                    continue
+                # should give filter idx
+                filter_idx = np.intersect1d(
+                    result.indicies, np.flatnonzero(result.detections > 0)
+                )
+                view = draw_histogram_view(
+                    None,
+                    {name: result},
+                    key,
+                    (label, unit, modifier),
+                    filter_idx=filter_idx,
+                    histogram_options=image_kws["histogram"],
+                    font=font,
+                    scale=dpi_scale,
+                    show_fit=image_kws["options"].get("show fit", True),
+                    show_limits=image_kws["options"].get("show limits", True),
+                )
+                if view is None:
+                    continue
+
+                view.plot.legend.setVisible(
+                    image_kws["options"].get("show legend", True)
+                )
+                view.resize(image_kws["size"])
+                view.show()  # required to draw correctly?
+
+                if image_kws["options"].get("transparent background", False):
+                    background = QtCore.Qt.GlobalColor.transparent
+                else:
+                    background = QtCore.Qt.GlobalColor.white
+
+                image_path = outpath.with_name(outpath.stem + f"_{name}_{key}.png")
+                view.exportImage(image_path, background=background)
+
 
 def process_nu_file(
     path: Path,
@@ -193,6 +246,7 @@ def process_nu_file(
     trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
+    image_kws: dict,
 ) -> None:
     masses, signals, info = read_nu_directory(
         path,
@@ -229,6 +283,7 @@ def process_tofwerk_file(
     trim: tuple[int, int],
     process_kws: dict,
     output_kws: dict,
+    image_kws: dict,
 ) -> None:
     with h5py.File(path, "r") as h5:
         peak_labels = h5["PeakData"]["PeakTable"]["label"].astype("U256")
@@ -360,12 +415,41 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.output_name.setToolTip("Use '%' to represent the input file name.")
         self.output_name.textChanged.connect(self.completeChanged)
 
+        # Image export options
+        self.check_image = QtWidgets.QCheckBox("Export images.")
+        self.button_image = QtWidgets.QPushButton("Options...")
+        self.button_image.setEnabled(False)
+        self.check_image.checkStateChanged.connect(
+            lambda state: self.button_image.setEnabled(
+                state == QtCore.Qt.CheckState.Checked
+            )
+        )
+        self.button_image.pressed.connect(self.dialogImageExportOptions)
+
+        layout_image = QtWidgets.QHBoxLayout()
+        layout_image.addWidget(self.check_image)
+        layout_image.addWidget(self.button_image)
+
+        self.image_options = {
+            "graph": None,
+            "size": QtCore.QSize(800, 600),
+            "dpi": 96,
+            "options": {
+                "transparent background": False,
+                "show legend": True,
+                "histogram show fit": True,
+                "histogram show limits": True,
+            },
+            "histogram": self.results.graph_options["histogram"],
+        }
+
         self.inputs.layout().addRow("Output Name:", self.output_name)
         self.inputs.layout().addRow("Output Directory:", self.output_dir)
         self.inputs.layout().addWidget(self.button_output)
         self.inputs.layout().addRow(self.trim_left)
         self.inputs.layout().addRow(self.trim_right)
         self.inputs.layout().addRow(self.check_summary)
+        self.inputs.layout().addRow(layout_image)
 
         best_units = self.results.bestUnitsForResults()
         _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
@@ -461,11 +545,20 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         return True
 
-    # def singleFileModeChanged(self, state: QtCore.Qt.CheckState) -> None:
-    #     is_single_file = state == QtCore.Qt.CheckState.Checked
-    #     self.check_export_inputs.setEnabled(not is_single_file)
-    #     self.check_export_arrays.setEnabled(not is_single_file)
-    #     self.check_export_compositions.setEnabled(not is_single_file)
+    def dialogImageExportOptions(self) -> None:
+        def set_image_options(size: QtCore.QSize, dpi: int, options: dict) -> None:
+            self.image_options["size"] = size
+            self.image_options["dpi"] = dpi
+            self.image_options["options"] = options
+
+        dlg = ImageExportDialog(
+            size=self.image_options["size"],
+            dpi=self.image_options["dpi"],
+            options=self.image_options["options"],
+            parent=self,
+        )
+        dlg.exportSettingsSelected.connect(set_image_options)
+        dlg.exec()
 
     def dialogLoadFiles(self) -> None:
         paths = get_open_spcal_paths(self, "Batch Process Files")
@@ -617,6 +710,17 @@ class BatchProcessDialog(QtWidgets.QDialog):
             self.summary_path = None
             summary = None
 
+        if self.check_image.isChecked():
+            dpi_scale = self.image_options["dpi"] / 96.0
+            font = QtGui.QFont(
+                QtCore.QSettings().value("GraphFont/Family", "SansSerif"),
+                pointSize=int(QtCore.QSettings().value("GraphFont/PointSize", 10)),
+            )
+            font.setPointSizeF(font.pointSize() * dpi_scale)
+            self.image_options["graph"] = HistogramView(font=font)
+        else:
+            self.image_options["graph"] = None
+
         for path, outpath in zip(infiles, outfiles):
             worker = Worker(
                 fn,
@@ -652,6 +756,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "output_compositions": self.check_export_compositions.isChecked(),
                     "output_arrays": self.check_export_arrays.isChecked(),
                 },
+                image_kws=self.image_options if self.check_image.isChecked() else {},
             )
             worker.setAutoDelete(True)
             worker.signals.finished.connect(self.workerComplete)

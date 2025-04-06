@@ -1,39 +1,32 @@
-from pathlib import Path
-
 from PySide6 import QtCore, QtWidgets
 
 
 class ImageExportDialog(QtWidgets.QDialog):
-    exportSettingsSelected = QtCore.Signal(Path, QtCore.QSize, float, dict)
+    exportSettingsSelected = QtCore.Signal(QtCore.QSize, int, object)  # object for dict
 
     def __init__(
         self,
-        path: Path | None = None,
+        size: QtCore.QSize | None = None,
+        dpi: int = 96,
         options: dict[str, bool] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Image Export")
 
-        if path is None:
-            path = Path("image.png")
+        if size is None:
+            size = QtCore.QSize(800, 600)
+
         if options is None:
             options = {"transparent background": False}
 
-        self.path = path
-
-        settings = QtCore.QSettings()
-        size_x = int(settings.value("ImageExport/SizeX", 800))
-        size_y = int(settings.value("ImageExport/SizeY", 600))
-        dpi = int(settings.value("ImageExport/DPI", 96))
-
         self.spinbox_size_x = QtWidgets.QSpinBox()
         self.spinbox_size_x.setRange(100, 10000)
-        self.spinbox_size_x.setValue(size_x)
+        self.spinbox_size_x.setValue(size.width())
 
         self.spinbox_size_y = QtWidgets.QSpinBox()
         self.spinbox_size_y.setRange(100, 10000)
-        self.spinbox_size_y.setValue(size_y)
+        self.spinbox_size_y.setValue(size.height())
 
         # self.spinbox_x0 = QtWidgets.QDoubleSpinBox()
         # self.spinbox_x0.setRange(xmin, xmax)
@@ -56,7 +49,6 @@ class ImageExportDialog(QtWidgets.QDialog):
         for option, on in options.items():
             self.options[option] = QtWidgets.QCheckBox(option)
             self.options[option].setChecked(on)
-        # self.check_transparent = QtWidgets.QCheckBox("Transparent background")
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -69,7 +61,6 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout_form = QtWidgets.QFormLayout()
         layout_form.addRow("Size:", layout_size)
         layout_form.addRow("DPI:", self.spinbox_dpi)
-        # layout_form.addRow(self.check_transparent)
 
         layout_options = QtWidgets.QVBoxLayout()
         layout_options.addStretch(1)
@@ -86,21 +77,8 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def accept(self) -> None:
-        path, ok = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Export Image", str(self.path.absolute()), "PNG Images (*.png)"
-        )
-        if not ok:
-            return
-
         size = QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value())
-
         options = {option: cbox.isChecked() for option, cbox in self.options.items()}
-
-        self.exportSettingsSelected.emit(path, size, self.spinbox_dpi.value(), options)
-
-        settings = QtCore.QSettings()
-        settings.setValue("ImageExport/SizeX", size.width())
-        settings.setValue("ImageExport/SizeY", size.height())
-        settings.setValue("ImageExport/DPI", self.spinbox_dpi.value())
+        self.exportSettingsSelected.emit(size, self.spinbox_dpi.value(), options)
 
         super().accept()
