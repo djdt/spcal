@@ -11,7 +11,7 @@ class CollapsableWidget(QtWidgets.QWidget):
         parent: parent widget
     """
 
-    def __init__(self, title: str, parent: QtWidgets.QWidget):
+    def __init__(self, title: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
         self.button = QtWidgets.QToolButton()
@@ -22,12 +22,12 @@ class CollapsableWidget(QtWidgets.QWidget):
         self.button.setText(title)
         self.button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
 
-        self.line = QtWidgets.QFrame()
-        self.line.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum
-        )
-        self.line.setFrameShape(QtWidgets.QFrame.HLine)
-        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        # self.line = QtWidgets.QFrame()
+        # self.line.setSizePolicy(
+        #     QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum
+        # )
+        # self.line.setFrameShape(QtWidgets.QFrame.HLine)
+        # self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
 
         self.area = QtWidgets.QWidget()
 
@@ -35,7 +35,7 @@ class CollapsableWidget(QtWidgets.QWidget):
 
         layout_line = QtWidgets.QHBoxLayout()
         layout_line.addWidget(self.button, 0, QtCore.Qt.AlignLeft)
-        layout_line.addWidget(self.line, 1)
+        # layout_line.addWidget(self.line, 1)
         layout_line.setAlignment(QtCore.Qt.AlignTop)
 
         layout = QtWidgets.QVBoxLayout()
@@ -46,7 +46,10 @@ class CollapsableWidget(QtWidgets.QWidget):
 
         self.area.hide()
 
-        self.parent().layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+    # def changeEvent(self, event: QtCore.QEvent) -> None:
+    #     super().changeEvent(event)
+    #     if event.type() == QtCore.QEvent.Type.ParentChange:
+    #         self.parent().layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
 
     def collapse(self, down: bool) -> None:  # pragma: no cover, trivial
         self.button.setArrowType(QtCore.Qt.DownArrow if down else QtCore.Qt.RightArrow)
