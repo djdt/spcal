@@ -57,8 +57,8 @@ class UnitsWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.lineedit, 1)
-        layout.addWidget(self.combo, 0)
+        layout.addWidget(self.lineedit, 3)
+        layout.addWidget(self.combo, 1)
         self.setLayout(layout)
 
     def setViewFormat(self, precision: int, format: str = "g") -> None:
