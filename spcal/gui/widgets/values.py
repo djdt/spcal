@@ -112,7 +112,8 @@ class ValueWidget(ValidColorLineEdit):
             QtWidgets.QStyle.SubElement.SE_LineEditContents, panel, self
         )
         rect = rect.marginsRemoved(self.textMargins())
-        rect.setX(rect.x() + fm.horizontalAdvance(self.text()))
+        # secret QlineEditPrivate::horizontalMargin is 2
+        rect.setX(rect.x() + 2.0 + fm.horizontalAdvance(self.text()))
 
         err_str = self.locale().toString(
             float(self._error), self.view_format[0], self.view_format[1]
@@ -122,5 +123,6 @@ class ValueWidget(ValidColorLineEdit):
         )
 
         painter = QtGui.QPainter(self)
+        painter.setClipRect(rect)
         painter.setPen(self.palette().text().color())
         painter.drawText(rect, self.alignment(), text)
