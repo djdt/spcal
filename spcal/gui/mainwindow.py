@@ -24,103 +24,105 @@ logger = logging.getLogger(__name__)
 MAX_RECENT_FILES = 10
 
 
+from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
+from spcal.gui.limitoptions import (
+    CompoundPoissonOptions,
+    GaussianOptions,
+    PoissonOptions,
+)
 from spcal.gui.widgets import CollapsableWidget
-from spcal.gui.widgets.values import ValueWidget
 from spcal.gui.widgets.units import UnitsWidget
-from spcal.gui.limitoptions import GaussianOptions, PoissonOptions, CompoundPoissonOptions
-
+from spcal.gui.widgets.values import ValueWidget
 from spcal.siunits import time_units
 
 sf = 4
 
-
-class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.setWindowTitle("Instrument Options")
-
-        layout = QtWidgets.QFormLayout()
-
-        uptake_units = {
-            "ml/min": 1e-3 / 60.0,
-            "ml/s": 1e-3,
-            "L/min": 1.0 / 60.0,
-            "L/s": 1.0,
-        }
-
-        # load stored options
-        settings = QtCore.QSettings()
-
-        # Instrument wide options
-        self.dwelltime = UnitsWidget(
-            time_units,
-            default_unit="ms",
-            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
-            format=sf,
-        )
-        self.dwelltime.setReadOnly(True)
-
-        self.uptake = UnitsWidget(
-            uptake_units,
-            default_unit="ml/min",
-            format=sf,
-        )
-        self.efficiency = ValueWidget(
-            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
-        )
-
-        self.dwelltime.setToolTip(
-            "ICP-MS dwell-time, updated from imported files if time column exists."
-        )
-        self.uptake.setToolTip("ICP-MS sample flow rate.")
-        self.efficiency.setToolTip(
-            "Transport efficiency. Can be calculated using a reference particle."
-        )
-
-        self.efficiency_method = QtWidgets.QComboBox()
-        self.efficiency_method.addItems(
-            ["Manual Input", "Reference Particle", "Mass Response"]
-        )
-        # self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
-        # for i, tooltip in enumerate(
-        #     [
-        #         "Manually enter the transport efficiency.",
-        #         "Calculate the efficiency using a reference particle.",
-        #         "Use the mass response of a reference particle.",
-        #     ]
-        # ):
-        #     self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
-        # self.efficiency_method.setToolTip(
-        #     self.efficiency_method.currentData(QtCore.Qt.ToolTipRole)
-        # )
-        # self.efficiency_method.currentIndexChanged.connect(
-        #     lambda i: self.efficiency_method.setToolTip(
-        #         self.efficiency_method.itemData(i, QtCore.Qt.ToolTipRole)
-        #     )
-        # )
-
-        # Complete Changed
-        # self.uptake.baseValueChanged.connect(self.optionsChanged)
-        # self.efficiency.valueChanged.connect(self.optionsChanged)
-
-        layout.addRow("Event time", self.dwelltime)
-        layout.addRow("Uptake", self.uptake)
-        layout.addRow("Efficiency", self.efficiency)
-
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        self.setWidget(widget)
 
 class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Limit Options")
 
-        layout = QtWidgets.QVBoxLayout()
+        self.window_size = ValueWidget(
+            1000, format=("f", 0), validator=QtGui.QIntValidator(3, 1000000)
+        )
+        self.window_size.setEditFormat(0, format="f")
+        self.window_size.setToolTip("Size of window for moving thresholds.")
+        self.window_size.setEnabled(False)
+        self.check_window = QtWidgets.QCheckBox("Use window")
+        self.check_window.setToolTip(
+            "Calculate threhold for each point using data from surrounding points."
+        )
+        self.check_window.toggled.connect(self.window_size.setEnabled)
+
+        layout_window_size = QtWidgets.QHBoxLayout()
+        layout_window_size.addWidget(self.window_size, 1)
+        layout_window_size.addWidget(self.check_window, 1)
+
+        self.limit_method = QtWidgets.QComboBox()
+        self.limit_method.addItems(
+            [
+                "Automatic",
+                "Highest",
+                "Compound Poisson",
+                "Gaussian",
+                "Poisson",
+                "Manual Input",
+            ]
+        )
+        self.limit_method.setItemData(
+            0,
+            "Automatically determine the best method.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_method.setItemData(
+            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
+        )
+        self.limit_method.setItemData(
+            2,
+            "Estimate ToF limits using a compound distribution based on the "
+            "number of accumulations and the single ion distribution..",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_method.setItemData(
+            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
+        )
+        self.limit_method.setItemData(
+            4,
+            "Threshold using Formula C from the MARLAP manual.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_method.setItemData(
+            5,
+            "Manually define limits in the sample and reference tabs.",
+            QtCore.Qt.ToolTipRole,
+        )
+        self.limit_method.setToolTip(
+            self.limit_method.currentData(QtCore.Qt.ToolTipRole)
+        )
+        self.limit_method.currentIndexChanged.connect(
+            lambda i: self.limit_method.setToolTip(
+                self.limit_method.itemData(i, QtCore.Qt.ToolTipRole)
+            )
+        )
+
+        self.check_iterative = QtWidgets.QCheckBox("Iterative")
+        self.check_iterative.setToolTip("Iteratively filter on non detections.")
+
+        self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
+        # self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
 
         self.gaussian = GaussianOptions()
         self.poisson = PoissonOptions()
         self.compound = CompoundPoissonOptions()
+
+        self.save_button = QtWidgets.QToolButton()
+        self.save_button.setAutoRaise(True)
+        self.save_button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.save_button.setIcon(QtGui.QIcon.fromTheme("document-save"))
+
+        buttons_layout = QtWidgets.QHBoxLayout()
+        buttons_layout.addWidget(self.save_button)
 
         gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
         gaussian_collapse.setWidget(self.gaussian)
@@ -129,10 +131,17 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         compound_collapse = CollapsableWidget("Compound Poisson Limit Options")
         compound_collapse.setWidget(self.compound)
 
-        layout.addWidget(gaussian_collapse)
-        layout.addWidget(poisson_collapse)
-        layout.addWidget(compound_collapse)
-        layout.addStretch(1)
+        layout = QtWidgets.QFormLayout()
+        layout.addRow(buttons_layout)
+
+        layout.addRow("Window size:", layout_window_size)
+        layout.addRow("Method:", self.limit_method)
+
+        layout.addRow(gaussian_collapse)
+        layout.addRow(poisson_collapse)
+        layout.addRow(compound_collapse)
+        # layout.addStretch(1)
+        layout.addRow(self.button_advanced_options)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setWidget(widget)
@@ -192,7 +201,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         #
         self.instrument_options = SPCalInstrumentOptionsDock()
         self.options = SPCalLimitOptionsDock()
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options)
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
+        )
         self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.options)
         widget = QtWidgets.QWidget()
 
