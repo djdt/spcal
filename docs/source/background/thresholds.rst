@@ -70,7 +70,7 @@ Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA 
      - 0.001 - 100 (geometric)
      - 71
    * - :math:`\sigma`
-     - 0.25 -- 0.65 (linear)
+     - 0.25 -- 0.95 (linear)
      - 41
    * - :math:`\alpha` (zero-truncated)
      - 0.999 -- :math:`10^{-7}` (logistic)

@@ -36,7 +36,7 @@ def compound_poisson_lognormal_quantile_lookup(
 
     Interpolates values from a simulation of 1e10 zero-truncated values.
     The lookup table spans lambda values from 0.01 to 100.0, sigmas of
-    0.25 to 0.65 and zt-quantiles of 1e-3 to 1.0 - 1e-7.
+    0.25 to 0.95 and zt-quantiles of 1e-3 to 1.0 - 1e-7.
     Maximum error is ~ 0.2 %.
 
     Args:

@@ -187,7 +187,7 @@ class SPCalLimit(object):
         If 'approximation' is passed the log-normal approximation described in the SPCal
         ToF paper is used, assuming the SIS is a lognormal with shape ``sigma``.
         If 'lookup table' is passed the threshold is interpolated from a table of
-        pre-computed values spanning lambda (0.01 - 100.0), sigma (0.3 - 0.6) and alpha
+        pre-computed values spanning lambda (0.01 - 100.0), sigma (0.3 - 0.9) and alpha
         (1e-7 - (1.0 - 1e-7)).
         If 'simulation' is passed, the background is simulated using the provdied
         ``single_ion_dist`` distribution. This should only be performed for alpha values
