@@ -118,7 +118,9 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
 
         self.save_button = QtWidgets.QToolButton()
         self.save_button.setAutoRaise(True)
-        self.save_button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.save_button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
         self.save_button.setIcon(QtGui.QIcon.fromTheme("document-save"))
 
         buttons_layout = QtWidgets.QHBoxLayout()
@@ -145,7 +147,6 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setWidget(widget)
-
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):

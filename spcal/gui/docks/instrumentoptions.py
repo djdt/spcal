@@ -1,5 +1,9 @@
+import configparser
+from pathlib import Path
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.siunits import time_units
 
@@ -143,8 +147,23 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
         self.save_button = QtWidgets.QToolButton()
         self.save_button.setAutoRaise(True)
-        self.save_button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.save_button.setPopupMode(
+            QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup
+        )
         self.save_button.setIcon(QtGui.QIcon.fromTheme("document-save"))
+
+        self.action_save = create_action(
+            "document-save",
+            "Save Options",
+            "Save instrument options to a file.",
+            lambda: self.saveToFile(),
+        )
+        self.action_load = create_action(
+            "document-open",
+            "Load Options",
+            "Load instrument options from a file.",
+            self.loadFromFile,
+        )
 
         buttons_layout = QtWidgets.QHBoxLayout()
         buttons_layout.addWidget(self.save_button)
@@ -163,66 +182,72 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(form_layout)
-        layout.addWidget(self.save_button, QtCore.Qt.AlignmentFlag.AlignBottom | QtCore.Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(
+            self.save_button,
+            QtCore.Qt.AlignmentFlag.AlignBottom | QtCore.Qt.AlignmentFlag.AlignLeft,
+        )
 
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setWidget(widget)
 
-    # def state(self) -> dict:
-    #     state_dict = {
-    #         "uptake": self.uptake.baseValue(),
-    #         "dwelltime": self.dwelltime.baseValue(),
-    #         "efficiency": self.efficiency.value(),
-    #         "efficiency method": self.efficiency_method.currentText(),
-    #         "window size": self.window_size.value(),
-    #         "use window": self.check_window.isChecked(),
-    #         "limit method": self.limit_method.currentText(),
-    #         "accumulation method": self.limit_accumulation,
-    #         "points required": self.points_required,
-    #         "iterative": self.check_iterative.isChecked(),
-    #         "cell diameter": self.celldiameter.baseValue(),
-    #         "compound poisson": self.compound_poisson.state(),
-    #         "gaussian": self.gaussian.state(),
-    #         "poisson": self.poisson.state(),
-    #     }
-    #     return {k: v for k, v in state_dict.items() if v is not None}
-    #
-    # def setState(self, state: dict) -> None:
-    #     self.blockSignals(True)
-    #     if "uptake" in state:
-    #         self.uptake.setBaseValue(state["uptake"])
-    #         self.uptake.setBestUnit()
-    #     if "dwelltime" in state:
-    #         self.dwelltime.setBaseValue(state["dwelltime"])
-    #         self.dwelltime.setBestUnit()
-    #     if "efficiency" in state:
-    #         self.efficiency.setValue(state["efficiency"])
-    #
-    #     self.efficiency_method.setCurrentText(state["efficiency method"])
-    #
-    #     if "window size" in state:
-    #         self.window_size.setValue(state["window size"])
-    #     self.check_window.setChecked(bool(state["use window"]))
-    #     self.check_iterative.setChecked(bool(state["iterative"]))
-    #
-    #     if "accumulation method" in state:
-    #         self.limit_accumulation = state["accumulation method"]
-    #     if "points required" in state:
-    #         self.points_required = state["points required"]
-    #
-    #     if "cell diameter" in state:
-    #         self.celldiameter.setBaseValue(state["cell diameter"])
-    #         self.celldiameter.setBestUnit()
-    #
-    #
-    #     self.blockSignals(False)
-    #
-    #     # Separate for useManualLimits signal
-    #     self.limit_method.setCurrentText(state["limit method"])
-    #
-    #     self.optionsChanged.emit()
-    #     self.limitOptionsChanged.emit()
+        self.save_button.setDefaultAction(self.action_save)
+        self.save_button.addAction(self.action_load)
+
+    def saveToFile(self, file: str | Path | None = None) -> None:
+        state = self.state()
+
+        if file is None:
+            # maybe add a global?
+            settings = QtCore.QSettings()
+            num = settings.beginReadArray("RecentFiles")
+            settings.setArrayIndex(0)
+            if num > 0:
+                dir = settings.value("Path")
+            else:
+                dir = ""
+
+            file, filter = QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "Save Instrument Options",
+                str(Path(dir).with_suffix(".spcalio")),
+                "SPCal Instrument Options (*.spcalio)",
+            )
+
+        if file != "":
+            config = configparser.ConfigParser()
+            config["Instrument Options"] = state
+            with open(file, "w") as fp:
+                config.write(fp)
+
+    def loadFromFile(self, file: str | Path) -> None:
+        print("LOAD")
+        pass
+
+    def state(self) -> dict:
+        state_dict = {
+            "uptake": self.uptake.baseValue(),
+            "dwelltime": self.dwelltime.baseValue(),
+            "efficiency": self.efficiency.value(),
+            "efficiency method": self.efficiency_method.currentText(),
+        }
+        return {k: v for k, v in state_dict.items() if v is not None}
+
+    def setState(self, state: dict) -> None:
+        self.blockSignals(True)
+        if "uptake" in state:
+            self.uptake.setBaseValue(state["uptake"])
+            self.uptake.setBestUnit()
+        if "dwelltime" in state:
+            self.dwelltime.setBaseValue(state["dwelltime"])
+            self.dwelltime.setBestUnit()
+        if "efficiency" in state:
+            self.efficiency.setValue(state["efficiency"])
+
+        self.efficiency_method.setCurrentText(state["efficiency method"])
+        self.blockSignals(False)
+
+        self.optionsChanged.emit()
 
     def efficiencyMethodChanged(self, method: str) -> None:
         if method == "Manual Input":
