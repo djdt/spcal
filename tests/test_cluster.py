@@ -35,3 +35,12 @@ def test_prepare_data_for_clustering():
 
     assert np.all(pd[:, 0] == np.arange(5) / (np.arange(5) + 1))
     assert np.all(pd[:, 1] == np.ones(5) / (np.arange(5) + 1))
+
+
+def test_agglomerative_cluster_zero_and_one():
+    a = np.array([[0.1]])
+    T = agglomerative_cluster(a, 0.5)
+    assert T == 0
+    a = np.array([[]])
+    T = agglomerative_cluster(a, 0.5)
+    assert T.size == 0
