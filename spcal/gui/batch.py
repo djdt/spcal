@@ -744,6 +744,9 @@ class BatchProcessDialog(QtWidgets.QDialog):
                         if self.options.window_size.isEnabled()
                         else 0
                     ),
+                    "limit_iterations": (
+                        100 if self.options.check_iterative.isChecked() else 1
+                    ),
                     "compositions_params": {
                         "distance": self.results.graph_options["composition"][
                             "distance"
