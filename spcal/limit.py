@@ -266,8 +266,9 @@ class SPCalLimit(object):
                     1.0 - alpha, lam, mu, sigma
                 )
             elif method == "lookup table":
+                mu = np.full_like(lam, -0.5 * sigma**2)
                 threshold = compound_poisson_lognormal_quantile_lookup(
-                    1.0 - alpha, lam, sigma
+                    1.0 - alpha, lam, mu, np.full_like(lam, sigma)
                 )
             elif method == "simulation":
                 q0 = zero_trunc_quantile(lam, 1.0 - alpha)
