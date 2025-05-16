@@ -108,7 +108,7 @@ def compound_poisson_lognormal_quantile_approximation(
     weights /= weights.sum()
 
     # Get the sum LN for each value of the Poisson
-    mus, sigmas = sum_iid_lognormals(k, np.log(1.0) - 0.5 * sigma**2, sigma)
+    mus, sigmas = sum_iid_lognormals(k, mu, sigma)
     # The quantile of the last log-normal, must be lower than this
     upper_q = lognormal.quantile(q0, mus[-1], sigmas[-1])
 
