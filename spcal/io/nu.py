@@ -457,7 +457,8 @@ def single_ion_distribution(
         xs = np.linspace(0, x, 100)
         return 1.0 / gamma(a) * np.trapezoid(np.exp(-xs) * xs ** (a - 1), x=xs)
 
-    pzeros = np.count_nonzero(counts, axis=0) / counts.shape[0]
+    zeros = np.count_nonzero(counts == 0, axis=0)
+    pzeros = zeros / np.count_nonzero(~np.isnan(counts), axis=0)
     poi2 = np.array([incgamma(2 + 1, pz) for pz in pzeros])
     x = counts[:, (poi2 > 1e-5) & (poi2 < 1e-3)]
 
