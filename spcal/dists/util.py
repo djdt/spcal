@@ -30,7 +30,10 @@ def zero_trunc_quantile(
 
 
 def compound_poisson_lognormal_quantile_lookup(
-    q: float, lam: np.ndarray | float, mu: np.ndarray | float, sigma: np.ndarray | float
+    q: np.ndarray | float,
+    lam: np.ndarray | float,
+    mu: np.ndarray | float,
+    sigma: np.ndarray | float,
 ) -> np.ndarray | float:
     """The quantile of a compound Poisson-Lognormal distribution.
 
