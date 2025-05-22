@@ -206,7 +206,7 @@ class CheckableHeader(QtWidgets.QHeaderView):
         ]:
             return super().mousePressEvent(event)
 
-        logicalIndex = self.logicalIndexAt(event.pos())
+        logicalIndex = self.logicalIndexAt(event.position().toPoint())
         if logicalIndex >= 0 and logicalIndex < self.count():
             state = self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
 

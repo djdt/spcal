@@ -92,7 +92,7 @@ def test_compound_poisson_lognormal_quantile_approximation():
         for sigma in sigmas:
             for q in qs:
                 mu = np.log(1.0) - 0.5 * sigma**2
-                qtrue = util.compound_poisson_lognormal_quantile_lookup(q, lam, sigma)
+                qtrue = util.compound_poisson_lognormal_quantile_lookup(q, lam, mu, sigma)
                 qaprx = util.compound_poisson_lognormal_quantile_approximation(
                     q, lam, mu, sigma
                 )

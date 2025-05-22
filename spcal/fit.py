@@ -4,21 +4,7 @@ from typing import Callable
 
 import numpy as np
 
-
-def normal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
-    """Probabilty density function of a normal distribution."""
-    return 1.0 / (sigma * np.sqrt(2.0 * np.pi)) * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
-
-
-def lognormal_pdf(x: np.ndarray, mu: float, sigma: float) -> np.ndarray:
-    """Probabilty density function of a log-normal distribution."""
-    with np.errstate(invalid="ignore"):
-        logx = np.log(x)
-    return (
-        1.0
-        / (x * sigma * np.sqrt(2.0 * np.pi))
-        * np.exp(-0.5 * ((logx - mu) / sigma) ** 2)
-    )
+from spcal.dists import lognormal, normal
 
 
 def nelder_mead(
@@ -130,7 +116,7 @@ def fit_normal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     ) -> float:
         if mu <= 0 or sigma <= 0:
             return np.inf
-        return np.sum(np.square(y - normal_pdf(x * scale, mu, sigma)))
+        return np.sum(np.square(y - normal.pdf(x * scale, mu, sigma)))
 
     assert x.size == y.size
     # Guess for result
@@ -159,9 +145,9 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, loc: float = 0.0
     ) -> float:
         xl = x + loc
-        if sigma <= 0.0 or any(xl < 0.0):
+        if sigma <= 0.0 or any(xl <= 0.0):
             return np.inf
-        return np.sum(np.square(y - lognormal_pdf(xl, mu, sigma)))
+        return np.sum(np.square(y - lognormal.pdf(xl, mu, sigma)))
 
     assert x.size == y.size
     # Guess for result

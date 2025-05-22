@@ -224,7 +224,8 @@ class SPCalLimit(object):
 
         # Make sure weights are set correctly
         weights = None
-        if single_ion_dist is not None:
+        average_single_ion = np.array([])
+        if single_ion_dist is not None and single_ion_dist.size > 0:
             if single_ion_dist.ndim == 2:  # histogram of (bins, counts)
                 weights = single_ion_dist[:, 1] / single_ion_dist[:, 1].sum()
                 single_ion_dist = single_ion_dist[:, 0]
@@ -266,10 +267,13 @@ class SPCalLimit(object):
                     1.0 - alpha, lam, mu, sigma
                 )
             elif method == "lookup table":
+                mu = np.full_like(lam, -0.5 * sigma**2)
                 threshold = compound_poisson_lognormal_quantile_lookup(
-                    1.0 - alpha, lam, sigma
+                    1.0 - alpha, lam, mu, np.full_like(lam, sigma)
                 )
             elif method == "simulation":
+                if average_single_ion.size == 0:
+                    raise ValueError("invalid single ion dist")
                 q0 = zero_trunc_quantile(lam, 1.0 - alpha)
                 if q0 < 0.0:  # pragma: no cover
                     threshold = 0.0
