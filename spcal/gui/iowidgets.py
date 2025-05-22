@@ -488,7 +488,7 @@ class ResultIOWidget(IOWidget):
 
         mean = np.mean(values)
         median = np.median(values)
-        std = np.std(values)
+        std = np.std(values, mean=mean)
 
         mean_lod = np.mean(lod)
 
