@@ -427,12 +427,14 @@ class ResultIOWidget(IOWidget):
         )
         self.background.setReadOnly(True)
 
-        self.lod = UnitsWidget(size_units, default_unit="nm", format=sf)
-        self.lod.setReadOnly(True)
         self.mean = UnitsWidget(size_units, default_unit="nm", format=sf)
         self.mean.setReadOnly(True)
         self.median = UnitsWidget(size_units, default_unit="nm", format=sf)
         self.median.setReadOnly(True)
+        self.mode = UnitsWidget(size_units, default_unit="nm", format=sf)
+        self.mode.setReadOnly(True)
+        self.lod = UnitsWidget(size_units, default_unit="nm", format=sf)
+        self.lod.setReadOnly(True)
 
         layout_outputs_left = QtWidgets.QFormLayout()
         layout_outputs_left.addRow("No. Detections:", self.count_label)
@@ -443,6 +445,7 @@ class ResultIOWidget(IOWidget):
         layout_outputs_right = QtWidgets.QFormLayout()
         layout_outputs_right.addRow("Mean:", self.mean)
         layout_outputs_right.addRow("Median:", self.median)
+        layout_outputs_right.addRow("Mode:", self.mode)
         layout_outputs_right.addRow("LOD:", self.lod)
 
         self.outputs.layout().addLayout(layout_outputs_left)
@@ -457,6 +460,7 @@ class ResultIOWidget(IOWidget):
         self.mean.setBaseValue(None)
         self.mean.setBaseError(None)
         self.median.setBaseValue(None)
+        self.mode.setBaseValue(None)
         self.lod.setBaseValue(None)
 
         self.count.setValue(0)
@@ -490,20 +494,26 @@ class ResultIOWidget(IOWidget):
         median = np.median(values)
         std = np.std(values, mean=mean)
 
+        hist, edges = np.histogram(values, bins="auto")
+        mode_idx = np.argmax(hist)
+        mode = (edges[mode_idx] + edges[mode_idx + 1]) / 2.0
+
         mean_lod = np.mean(lod)
 
         relative_error = count_error / count
 
-        for te in [self.mean, self.median, self.lod]:
+        for te in [self.mean, self.median, self.mode, self.lod]:
             te.setUnits(units)
 
         self.mean.setBaseValue(mean)
         self.mean.setBaseError(std)
         self.median.setBaseValue(median)
+        self.mode.setBaseValue(mode)
         self.lod.setBaseValue(mean_lod)
 
         unit = self.mean.setBestUnit()
         self.median.setUnit(unit)
+        self.mode.setUnit(unit)
         self.lod.setUnit(unit)
 
         self.count.setValue(int(count))
