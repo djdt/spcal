@@ -276,7 +276,9 @@ class TextImportDialog(_ImportDialogBase):
         for line in self.file_header:
             try:
                 delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
-                float(line.split(delimiter)[-1])
+                tokens = line.split(delimiter)
+                for token in tokens:
+                    float(token)
                 break
             except (ValueError, StopIteration):
                 pass
