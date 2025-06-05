@@ -52,6 +52,20 @@ def search_sorted_closest(
     return idx
 
 
+def mode(x: np.ndarray) -> float:
+    """Calculates the mode of 'x'.
+
+    Args:
+        x: array
+
+    Returns:
+        mode
+    """
+    hist, edges = np.histogram(x, bins="auto")
+    mode_idx = np.argmax(hist)
+    return (edges[mode_idx] + edges[mode_idx + 1]) / 2.0
+
+
 def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> float:
     """Calculates the otsu threshold.
 

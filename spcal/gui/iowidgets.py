@@ -9,6 +9,7 @@ from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDataba
 from spcal.gui.util import create_action
 from spcal.gui.widgets import EditableComboBox, OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
+from spcal.calc import mode
 
 logger = logging.getLogger(__name__)
 
@@ -493,10 +494,7 @@ class ResultIOWidget(IOWidget):
         mean = np.mean(values)
         median = np.median(values)
         std = np.std(values, mean=mean)
-
-        hist, edges = np.histogram(values, bins="auto")
-        mode_idx = np.argmax(hist)
-        mode = (edges[mode_idx] + edges[mode_idx + 1]) / 2.0
+        _mode = mode(values)
 
         mean_lod = np.mean(lod)
 
@@ -508,7 +506,7 @@ class ResultIOWidget(IOWidget):
         self.mean.setBaseValue(mean)
         self.mean.setBaseError(std)
         self.median.setBaseValue(median)
-        self.mode.setBaseValue(mode)
+        self.mode.setBaseValue(_mode)
         self.lod.setBaseValue(mean_lod)
 
         unit = self.mean.setBestUnit()

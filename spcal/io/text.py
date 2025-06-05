@@ -10,6 +10,7 @@ from typing import Any, Callable, Set, TextIO
 import numpy as np
 
 from spcal.result import SPCalResult
+from spcal.calc import mode
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +208,7 @@ def append_results_summary(
             f"{file},Ionic background,{unit}/L,",
         )
 
-        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+        for label, ufunc in zip(["Mean", "Median", "Mode"], [np.mean, np.median, mode]):
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]
                 _write_if_exists(
@@ -394,7 +395,7 @@ def export_single_particle_results(
         )
         fp.write("#\n")
 
-        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+        for label, ufunc in zip(["Mean", "Median", "Mode"], [np.mean, np.median, mode]):
             fp.write(f"# {label},{','.join(results.keys())}\n")
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]
