@@ -22,7 +22,6 @@ def draw_particle_view(
     scale: float = 1.0,
     colors: list[QtGui.QColor] | None = None,
 ) -> ParticleView:
-
     if graph is None:
         graph = ParticleView(xscale=dwell, font=font)
 
@@ -72,7 +71,6 @@ def draw_histogram_view(
     show_fit: bool = True,
     show_limits: bool = True,
 ) -> HistogramView | None:
-
     # defaults
     options: dict = {
         "draw filtered": False,
@@ -158,9 +156,8 @@ def draw_histogram_view(
 
     for i, (name, data) in enumerate(graph_data.items()):
         max_bin = np.percentile(data[graph_idx[name]], options["percentile"])
-        bins = np.arange(
-            data.min() * modifier, max_bin * modifier + bin_width, bin_width
-        )
+        min_bin = np.amin(data[data > 0.0])
+        bins = np.arange(min_bin * modifier, max_bin * modifier + bin_width, bin_width)
         if bins.size == 1:
             bins = np.array([bins[0], max_bin])
         bins -= bins[0] % bin_width  # align bins

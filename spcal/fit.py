@@ -144,8 +144,8 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
     def gradient(
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, loc: float = 0.0
     ) -> float:
-        xl = x + loc
-        if sigma <= 0.0 or any(xl <= 0.0):
+        xl = x - loc
+        if sigma <= 0.0:
             return np.inf
         return np.sum(np.square(y - lognormal.pdf(xl, mu, sigma)))
 
@@ -157,8 +157,8 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
         [
             [mu, s, 0.0],
             [np.log(np.max(x)), s, 0.0],
-            [mu, 1.0, 0.0],
-            [mu, s, np.max(x) / 2.0],
+            [mu, 10.0, 0.0],
+            [mu, s, np.max(x)],
         ]
     )
 
