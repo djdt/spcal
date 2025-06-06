@@ -167,7 +167,9 @@ class HistogramView(SinglePlotGraphicsView):
             ys = normal.pdf(xs * fit[2], fit[0], fit[1])
         elif fit_type == "log normal":
             fit = fit_lognormal(centers, hist)
-            ys = lognormal.pdf(xs - fit[2], fit[0], fit[1])
+            xs_fit = xs - fit[2]
+            xs_fit[xs_fit <= 0.0] = np.nan
+            ys = lognormal.pdf(xs_fit, fit[0], fit[1])
         else:
             raise ValueError(f"drawFit: unknown fit {fit_type}")
 
