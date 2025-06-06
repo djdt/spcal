@@ -145,7 +145,7 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
         x: np.ndarray, y: np.ndarray, mu: float, sigma: float, loc: float = 0.0
     ) -> float:
         xl = x - loc
-        if sigma <= 0.0:
+        if sigma <= 0.0 or np.any(xl <= 0.0):
             return np.inf
         return np.sum(np.square(y - lognormal.pdf(xl, mu, sigma)))
 
