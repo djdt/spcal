@@ -15,7 +15,7 @@ results = {
     "a": SPCalResult(
         "a.csv",
         np.ones(100),
-        np.array([5, 5, 5, 5, 0]),
+        np.array([5.0, 5, 5, 5, 0]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
         inputs_kws={
@@ -28,7 +28,7 @@ results = {
     "b": SPCalResult(
         "b.csv",
         np.full(100, 0.5),
-        np.array([0, 9, 9, 9, 9]),
+        np.array([0.0, 8, 9, 9, 10]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, 9.0, "Limit", {}),
         inputs_kws={
@@ -167,7 +167,7 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "# Mean,a,b\n"
         assert fp.readline() == "#,5,9,counts\n"
         assert fp.readline() == "#,,4.5e-19,kg\n"
-        assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.4100003e-07,m\n"
         assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
@@ -177,6 +177,13 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "#,,4.413041e-07,m\n"
         assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
+
+        assert fp.readline() == "# Mode,a,b\n"
+        assert fp.readline() == "#,5,9.25,counts\n"
+        assert fp.readline() == "#,,4.625e-19,kg\n"
+        assert fp.readline() == "#,,4.4479151e-07,m\n"
+        assert fp.readline() == "#,,4.625e-18,m³\n"
+        assert fp.readline() == "#,,4.4165497e-08,mol/L\n"
 
         assert fp.readline() == "# Limits of detection,a,b\n"
         assert fp.readline() == "#,7.5 - 9.5,8.5,counts\n"
@@ -240,10 +247,10 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         assert fp.readline() == "s,counts,counts,kg,m,m³,mol/L\n"
         # Todo, compute these
         assert fp.readline() == "0.1,5,,,,,\n"
-        assert fp.readline() == "0.2,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.2,5,8,4e-19,4.2431377e-07,4e-18,3.8197186e-08\n"
         assert fp.readline() == "0.3,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
         assert fp.readline() == "0.4,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
-        assert fp.readline() == "0.5,,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.5,,10,5e-19,4.5707815e-07,5e-18,4.7746483e-08\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -281,7 +288,7 @@ def test_export_singleparticle_compositions(tmp_path: Path):
             fp.readline()
         # fp.readline()
         assert fp.readline() == "# Peak composition,count,a,error,b,error\n"
-        assert fp.readline() == "# Signal,3,0.3571,0,0.6429,0\n"
+        assert fp.readline() == "# Signal,3,0.3663,0.01295,0.6337,0.01295\n"
         assert fp.readline() == ",1,0,0,1,0\n"
         assert fp.readline() == ",1,1,0,0,0\n"
         # No mass / size since only one element
@@ -359,6 +366,10 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
 
         assert fp.readline() == "# Median,a,b\n"
         assert fp.readline() == "#,1,1,counts\n"
+
+        assert fp.readline() == "# Mode,a,b\n"
+        assert fp.readline() == "#,1,1,counts\n"
+
         fp.readline()  # lod
         fp.readline()  # lod
         fp.readline()
