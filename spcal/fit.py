@@ -157,7 +157,7 @@ def fit_lognormal(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
         [
             [mu, s, 0.0],
             [np.log(np.max(x)), s, 0.0],
-            [mu, 10.0, 0.0],
+            [mu, 1.0, 0.0],
             [mu, s, np.max(x)],
         ]
     )
