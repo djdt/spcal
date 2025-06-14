@@ -5,6 +5,7 @@ import pytest
 
 from spcal.io.text import (
     export_single_particle_results,
+    guess_text_parameters,
     is_text_file,
     read_single_particle_file,
 )
@@ -383,3 +384,67 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
         assert fp.readline() == "0.5,,1\n"
         fp.readline()
         assert fp.readline() == "# End of export"
+
+
+def test_guess_text_parameters():
+    agilent_header = [
+        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
+        "Intensity Vs Time,CPS",
+        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+        "Time [Sec],S32 -> 48,Gd156 -> 172",
+        "0.2312,12274.84,20",
+        "0.4402,12304.86,30",
+        "0.6492,12114.71,40",
+        "0.8582,12244.81,10",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(agilent_header)
+    assert delim == ","
+    assert skip_rows == 4
+    assert columns == 3
+
+    agilent_header_with_delims = [
+        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run,0.1,\tok.b\\001SMPL.d",
+        "Intensity Vs Time,CPS",
+        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+        "Time [Sec],S32 -> 48,Gd156 -> 172",
+        "0.2312,12274.84,20",
+        "0.4402,12304.86,30",
+        "0.6492,12114.71,40",
+        "0.8582,12244.81,10",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(agilent_header_with_delims)
+    assert delim == ","
+    assert skip_rows == 4
+    assert columns == 3
+
+    tofwerk_header = [
+        "Index,timestamp (s),[197Au]+ (cts)",
+        "0,0,0",
+        "1,0.0009999,0",
+        "2,0.0019998,0",
+        "3,0.0029997,0",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(tofwerk_header)
+    assert delim == ","
+    assert skip_rows == 1
+    assert columns == 3
+
+    nu_header = [
+        "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
+        "0.09704,0,0,0",
+        "0.14556,0,0,0",
+        "0.19408,0,0,0",
+    ]
+    delim, skip_rows, columns = guess_text_parameters(nu_header)
+    assert delim == ","
+    assert skip_rows == 1
+    assert columns == 4
+
+    onecol_header = ["Name", "1", "2", "3"]
+    delim, skip_rows, columns = guess_text_parameters(onecol_header)
+    assert delim == ""
+    assert skip_rows == 1
+    assert columns == 1

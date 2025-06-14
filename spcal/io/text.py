@@ -9,8 +9,8 @@ from typing import Any, Callable, Set, TextIO
 
 import numpy as np
 
-from spcal.result import SPCalResult
 from spcal.calc import mode
+from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,43 @@ def is_text_file(path: Path) -> bool:
     if path.is_dir() or not path.exists():
         return False
     return True
+
+
+def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
+    """Guesses the delimiter, skip_rows and column count.
+
+    Args:
+        lines: list of lines in file or header
+
+    Returns:
+        delimiter, skip_rows, column_count
+    """
+    skip_rows = 0
+
+    delimiter = ""
+    for line in lines:
+        try:
+            delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
+            tokens = line.split(delimiter)
+            for token in tokens:
+                float(token)
+            break
+        except StopIteration:  # special case where only one column exists
+            try:
+                float(line)
+                break
+            except ValueError:
+                pass
+        except ValueError:
+            pass
+        skip_rows += 1
+
+    if delimiter == "":
+        column_count = 1
+    else:
+        column_count = max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
+
+    return delimiter, skip_rows, column_count
 
 
 def _write_if_exists(

@@ -20,7 +20,7 @@ from spcal.gui.widgets import (
     UnitsWidget,
 )
 from spcal.io import nu
-from spcal.io.text import read_single_particle_file
+from spcal.io.text import guess_text_parameters, read_single_particle_file
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.npdb import db
 from spcal.siunits import time_units
@@ -270,21 +270,9 @@ class TextImportDialog(_ImportDialogBase):
         ]
 
         # Guess the delimiter, skip rows and count from header
-        first_data_line = 0
-
-        delimiter = "\t"
-        for line in self.file_header:
-            try:
-                delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
-                tokens = line.split(delimiter)
-                for token in tokens:
-                    float(token)
-                break
-            except (ValueError, StopIteration):
-                pass
-            first_data_line += 1
-
-        column_count = max([line.count(delimiter) for line in self.file_header]) + 1
+        delimiter, first_data_line, column_count = guess_text_parameters(
+            self.file_header
+        )
 
         with self.file_path.open("rb") as fp:
             line_count = 0
