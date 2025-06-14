@@ -497,7 +497,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.show()
         return dlg
 
-    def dialogExportResults(self) -> None:
+    def dialogExportResults(self) -> ExportDialog:
         path = Path(self.sample.label_file.text())
 
         regions = self.sample.regions
@@ -514,6 +514,7 @@ class ResultsWidget(QtWidgets.QWidget):
             parent=self,
         )
         dlg.open()
+        return dlg
 
     # def dialogexport_single_particle_results(self) -> None:
     #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
