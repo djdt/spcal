@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def is_integer_or_near(x: np.ndarray, max_deviation: float = 1e-3) -> np.ndarray:
+def is_integer_or_near(x: np.ndarray | float, max_deviation: float = 1e-3) -> np.ndarray | float:
     """Test if float data is 'near' integer.
     Near integers values are those less than `max_deviation` from a whole number.
 
