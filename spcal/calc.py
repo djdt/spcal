@@ -3,7 +3,9 @@
 import numpy as np
 
 
-def is_integer_or_near(x: np.ndarray | float, max_deviation: float = 1e-3) -> np.ndarray | float:
+def is_integer_or_near(
+    x: np.ndarray | float, max_deviation: float = 1e-3
+) -> np.ndarray | float:
     """Test if float data is 'near' integer.
     Near integers values are those less than `max_deviation` from a whole number.
 
@@ -52,7 +54,7 @@ def search_sorted_closest(
     return idx
 
 
-def mode(x: np.ndarray) -> float:
+def mode(x: np.ndarray, bins: int | np.ndarray | str = "auto") -> float:
     """Calculates the mode of 'x'.
 
     Args:
@@ -61,7 +63,7 @@ def mode(x: np.ndarray) -> float:
     Returns:
         mode
     """
-    hist, edges = np.histogram(x, bins="auto")
+    hist, edges = np.histogram(x, bins=bins)
     mode_idx = np.argmax(hist)
     return (edges[mode_idx] + edges[mode_idx + 1]) / 2.0
 

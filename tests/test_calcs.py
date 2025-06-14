@@ -18,6 +18,17 @@ def test_is_integer_or_near():
         calc.is_integer_or_near(1.0, max_deviation=-0.1)
 
 
+def test_mode():
+    x = np.array([0.1, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8, 0.9, 1.0, 2.0])
+    assert np.isclose(calc.mode(x), 0.3, atol=0.01)
+
+    # Testing against true random values doesn't work, unless a huge sample
+    np.random.seed(976832)
+    x = np.random.uniform(0.0, 1.0, size=1000)
+    x[np.random.choice(x.size, 100)] = 0.3
+    assert np.isclose(calc.mode(x), 0.3, atol=0.01)
+
+
 def test_otsu():
     x = np.cos(np.linspace(0, np.pi, 1000, endpoint=True))
     t = calc.otsu(x, nbins=256)
