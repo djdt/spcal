@@ -272,12 +272,15 @@ def extract_compound_poisson_lognormal_parameters_iterative(
     dilation: int = 50,
     max_iters: int = 100,
     iter_eps: float = 1e-3,
+    bounds: np.ndarray | None = None,
 ) -> tuple[float, float, float]:
     """Finds the parameters of compound Poisson -- lognormal distributed data, ``x``.
 
     Parameters are iterative found using ``extract_compound_poisson_lognormal_parameters``,
     a threshold based on these parameters is set then the parameters extracted again.
     This is repeated until either the threshold or both µ and σ no longer change.
+    Parameters can be confined using the ``bounds`` argument, useful for reducing iterations
+    in samples with many paraticles. By default only σ is bounded, 0.2 -- 1.0.
 
     Args:
         x: data
@@ -285,6 +288,7 @@ def extract_compound_poisson_lognormal_parameters_iterative(
         dilation: number of points to remove around detected peaks
         max_iters: maximum number of iterations
         iter_eps: smallest change in threshold allowed
+        bounds: array of shape (3, 2) of parameter bounds
 
     Returns:
         lam, mu, sigma
@@ -295,12 +299,15 @@ def extract_compound_poisson_lognormal_parameters_iterative(
     iters = 0
 
     params = np.full(3, np.inf)
-    previous_params = np.zeros(3)
+    previous_params = np.zeros(3, dtype=float)
+
+    if bounds is None:
+        bounds = np.array([[0.0, np.inf], [-np.inf, np.inf], [0.2, 1.0]])
 
     while (
         (
             np.all(np.abs(previous_threshold - threshold) > iter_eps)
-            and np.all(np.abs(previous_params[1:] - params[1:]) > iter_eps)
+            and np.any(np.abs(previous_params[1:] - params[1:]) > iter_eps)
         )
         and iters < max_iters
     ) or iters == 0:
@@ -310,11 +317,13 @@ def extract_compound_poisson_lognormal_parameters_iterative(
         mask = expand_mask(x > threshold, dilation)
 
         params = extract_compound_poisson_lognormal_parameters(x, ~mask)
+        params = np.clip(params, bounds[:, 0], bounds[:, 1])
 
         threshold = compound_poisson_lognormal_quantile_lookup(  # type: ignore
             1.0 - alpha, params[0], params[1], params[2]
         )
 
+        print(params, threshold, iters)
         iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
