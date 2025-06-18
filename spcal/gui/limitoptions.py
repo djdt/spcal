@@ -64,6 +64,9 @@ class CompoundPoissonOptions(LimitOptions):
         )
         self.lognormal_sigma.valueChanged.connect(self.limitOptionsChanged)
 
+        self.extract_sigma = QtWidgets.QCheckBox("Automatic")
+        self.extract_sigma.stateChanged.connect(self.limitOptionsChanged)
+
         self.method = QtWidgets.QComboBox()
         self.method.addItems(["Approximation", "Lookup Table", "Simulation"])
         self.method.setCurrentText("Lookup Table")
@@ -97,13 +100,17 @@ class CompoundPoissonOptions(LimitOptions):
             [self.action_open_si, self.action_show_si, self.action_clear_si]
         )
 
+        layout_sigma = QtWidgets.QHBoxLayout()
+        layout_sigma.addWidget(self.lognormal_sigma)
+        layout_sigma.addWidget(self.extract_sigma)
+
         layout_sia = QtWidgets.QHBoxLayout()
         layout_sia.setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
         layout_sia.addWidget(self.label_sis, 1)
         layout_sia.addWidget(self.toolbar, 0)
 
         self.layout().addRow("Method:", self.method)
-        self.layout().addRow("SIA σ:", self.lognormal_sigma)
+        self.layout().addRow("SIA σ:", layout_sigma)
         self.layout().addRow("SIA Dist:", layout_sia)
 
     def loadSingleIonData(self) -> None:
@@ -200,6 +207,7 @@ class CompoundPoissonOptions(LimitOptions):
             "alpha": self.alpha.value(),
             "method": self.method.currentText().lower(),
             "sigma": self.lognormal_sigma.value(),
+            "extract sigma": self.extract_sigma.isChecked(),
             "single ion": (
                 self.single_ion_dist
                 if self.single_ion_dist is not None

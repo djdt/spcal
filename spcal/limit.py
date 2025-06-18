@@ -11,6 +11,7 @@ from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
     compound_poisson_lognormal_quantile_approximation,
     compound_poisson_lognormal_quantile_lookup,
+    extract_compound_poisson_lognormal_parameters_iterative,
     simulate_zt_compound_poisson,
     zero_trunc_quantile,
 )
@@ -142,6 +143,7 @@ class SPCalLimit(object):
                 method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
+                extract_sigma=compound_kws.get("extract sigma", False),
                 window_size=window_size,
                 max_iters=max_iters,
             )
@@ -172,6 +174,7 @@ class SPCalLimit(object):
         method: str = "lookup table",
         single_ion_dist: np.ndarray | None = None,
         sigma: float = 0.45,
+        extract_sigma: bool = False,
         size: int | None = None,
         window_size: int = 0,
         max_iters: int = 1,
@@ -243,6 +246,12 @@ class SPCalLimit(object):
         if method == "simulation" and single_ion_dist is None:
             raise ValueError("method 'simulation' requires a valid 'single_ion_dist")
 
+        if extract_sigma:
+            # add test for zeros
+            _, _, sigma = extract_compound_poisson_lognormal_parameters_iterative(
+                responses
+            )
+
         while (
             np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
         ) or iters == 0:
@@ -279,7 +288,10 @@ class SPCalLimit(object):
                     threshold = 0.0
                 else:
                     sim = simulate_zt_compound_poisson(
-                        lam, single_ion_dist, weights=weights, size=size  # type: ignore
+                        lam,
+                        single_ion_dist,
+                        weights=weights,
+                        size=size,  # type: ignore
                     )
                     sim /= average_single_ion
                     threshold = float(np.quantile(sim, q0))
@@ -294,7 +306,7 @@ class SPCalLimit(object):
             lam,
             threshold,
             name="CompoundPoisson",
-            params={"alpha": alpha, "iters": iters - 1},
+            params={"alpha": alpha, "iters": iters - 1, "sigma": sigma},
         )
 
     @classmethod
@@ -493,6 +505,7 @@ class SPCalLimit(object):
                 method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
+                extract_sigma=compound_kws.get("extract sigma", False),
                 window_size=window_size,
                 max_iters=max_iters,
             )
