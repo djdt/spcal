@@ -21,6 +21,31 @@ def is_integer_or_near(
     return np.abs(x - np.round(x)) <= max_deviation
 
 
+def expand_mask(mask: np.ndarray, size: int, axis: int = 0) -> np.ndarray:
+    """Grows mask values in ``mask`` by ``size`` on either side.
+
+    Used to expand the regions where peaks are detected, to exclude nearby data.
+    This is equivalent to ``scipy.ndimage.binary_dilation`` except faster.
+
+    Args:
+        mask: a 1d or 2d-array of boolean type of shape (samples, features)
+        size: size to expand on both sides
+
+    Returns:
+        mask dilated by ``size``, same shape as ``mask``
+    """
+    new_mask = np.astype(mask, bool, copy=True)
+
+    idx = np.nonzero(mask)
+    view = np.lib.stride_tricks.sliding_window_view(
+        new_mask, size, axis=0, writeable=True
+    )
+    view[(np.clip(idx[0] + 1, 0, mask.shape[0] - size), *idx[1:])] = True
+    view[(np.clip(idx[0] - size, 0, mask.shape[0] - size), *idx[1:])] = True
+
+    return new_mask
+
+
 def search_sorted_closest(
     x: np.ndarray, v: np.ndarray, check_max_diff: float | None = None
 ):

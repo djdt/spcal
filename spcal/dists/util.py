@@ -2,7 +2,7 @@ from importlib.resources import files
 
 import numpy as np
 
-from spcal.calc import interpolate_3d
+from spcal.calc import expand_mask, interpolate_3d
 from spcal.dists import lognormal, poisson
 
 _qtable = np.load(
@@ -208,3 +208,116 @@ def sum_iid_lognormals(
         return np.log(Sp) - 0.5 * sigma2_s, np.sqrt(sigma2_s)
     else:
         raise NotImplementedError
+
+
+def extract_compound_poisson_lognormal_parameters(
+    x: np.ndarray, mask: np.ndarray | None = None
+) -> np.ndarray:
+    """Finds the parameters of compound-Poisson-lognormal distributed data, ``x``.
+
+    .. math::
+        N &~ Poisson(\\lambda) \\
+        X &~ Lognormal(\\mu, \\sigma) \\
+        Y &= \\sum{N}{n=1} X_{n}
+
+    The value of :math:`\\lambda` is extracted using the percentage of zeros in ``x``.
+
+    .. math::
+        \\lambda = -\\log{P(0)}
+
+    The expected value and variance of the underlying lognormal are extracted from the
+    mean and variance of ``x``.
+
+    .. math::
+        E(Y) &= \\lambda E(X) \\
+        V(Y) &= \\lambda E(X^2)
+
+    Parameters :math:`\\mu` and :math:`\\sigma` are then extracted using the method of
+    moments.
+
+    Args:
+        x: raw ICP-ToF signal of shape (samples, features)
+        mask: mask of valid values, defaults to all non-nan
+
+    Returns:
+        array of [(lambda, mu, sigma), ...]
+    """
+    if mask is None:
+        mask = ~np.isnan(x)
+    else:
+        mask = np.logical_and(~np.isnan(x), mask)
+
+    zeros = np.count_nonzero(np.logical_and(mask, x == 0), axis=0)
+    pzero = zeros / np.count_nonzero(mask, axis=0)
+    lam = -np.log(pzero)
+
+    if np.any(pzero > 1.0 - 1e-3):
+        print("warning: only non zero points")
+    elif np.any(pzero < 1e-3):
+        print("warning: no zero values")
+
+    mean = np.mean(x, axis=0, where=mask)
+
+    EX = mean / lam
+    EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
+
+    mu = np.log(EX**2 / np.sqrt(EX2))
+    sigma = np.sqrt(np.log(EX2 / EX**2))
+    return np.asarray((lam, mu, sigma))
+
+
+def extract_compound_poisson_lognormal_parameters_iterative(
+    x: np.ndarray,
+    alpha: float = 1e-4,
+    dilation: int = 50,
+    max_iters: int = 100,
+    iter_eps: float = 1e-3,
+) -> tuple[float, float, float]:
+    """Finds the parameters of compound Poisson -- lognormal distributed data, ``x``.
+
+    Parameters are iterative found using ``extract_compound_poisson_lognormal_parameters``,
+    a threshold based on these parameters is set then the parameters extracted again.
+    This is repeated until either the threshold or both µ and σ no longer change.
+
+    Args:
+        x: data
+        alpha: alpha value to use during thresholding
+        dilation: number of points to remove around detected peaks
+        max_iters: maximum number of iterations
+        iter_eps: smallest change in threshold allowed
+
+    Returns:
+        lam, mu, sigma
+    """
+
+    threshold: float = np.inf
+    previous_threshold: float = 0.0
+    iters = 0
+
+    params = np.full(3, np.inf)
+    previous_params = np.zeros(3)
+
+    while (
+        (
+            np.all(np.abs(previous_threshold - threshold) > iter_eps)
+            and np.all(np.abs(previous_params[1:] - params[1:]) > iter_eps)
+        )
+        and iters < max_iters
+    ) or iters == 0:
+        previous_params = params
+        previous_threshold = threshold
+
+        mask = expand_mask(x > threshold, dilation)
+
+        params = extract_compound_poisson_lognormal_parameters(x, ~mask)
+
+        threshold = compound_poisson_lognormal_quantile_lookup(  # type: ignore
+            1.0 - alpha, params[0], params[1], params[2]
+        )
+
+        iters += 1
+
+        if iters == max_iters and max_iters != 1:  # pragma: no cover
+            print("iterative_extraction: reached max_iters")
+
+    return params[0], params[1], params[2]
