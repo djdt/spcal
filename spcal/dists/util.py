@@ -323,7 +323,6 @@ def extract_compound_poisson_lognormal_parameters_iterative(
             1.0 - alpha, params[0], params[1], params[2]
         )
 
-        print(params, threshold, iters)
         iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
