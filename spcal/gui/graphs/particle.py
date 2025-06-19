@@ -31,7 +31,7 @@ class ParticleView(SinglePlotGraphicsView):
 
         self.raw_signals: dict[str, np.ndarray] = {}  # for export
 
-        self.plot.setLimits(yMin=0.0)
+        self.plot.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
         self.setAutoScaleY(True)
 
         self.legend_items: dict[str, MultipleItemSampleProxy] = {}
