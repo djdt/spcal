@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from scipy import stats
 from scipy.special import erf as erf_sp
@@ -92,9 +94,29 @@ def test_compound_poisson_lognormal_quantile_approximation():
         for sigma in sigmas:
             for q in qs:
                 mu = np.log(1.0) - 0.5 * sigma**2
-                qtrue = util.compound_poisson_lognormal_quantile_lookup(q, lam, mu, sigma)
+                qtrue = util.compound_poisson_lognormal_quantile_lookup(
+                    q, lam, mu, sigma
+                )
                 qaprx = util.compound_poisson_lognormal_quantile_approximation(
                     q, lam, mu, sigma
                 )
                 # within 5 %
                 assert np.isclose(qaprx, qtrue, rtol=0.05)
+
+
+def test_extract_compound_poisson_lognormal_parameters_iterative():
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        x = data[file]
+
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(x)
+        assert np.allclose(params, predicted, atol=0.02)
+
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations_peaks.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        x = data[file]
+
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(x)
+        assert np.allclose(params, predicted, atol=0.02)
