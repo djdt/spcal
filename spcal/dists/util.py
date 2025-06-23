@@ -216,8 +216,8 @@ def extract_compound_poisson_lognormal_parameters(
     """Finds the parameters of compound-Poisson-lognormal distributed data, ``x``.
 
     .. math::
-        N &~ Poisson(\\lambda) \\
-        X &~ Lognormal(\\mu, \\sigma) \\
+        N &\\sim Poisson(\\lambda) \\\\
+        X &\\sim Lognormal(\\mu, \\sigma) \\\\
         Y &= \\sum{N}{n=1} X_{n}
 
     The value of :math:`\\lambda` is extracted using the percentage of zeros in ``x``.
@@ -229,7 +229,7 @@ def extract_compound_poisson_lognormal_parameters(
     mean and variance of ``x``.
 
     .. math::
-        E(Y) &= \\lambda E(X) \\
+        E(Y) &= \\lambda E(X) \\\\
         V(Y) &= \\lambda E(X^2)
 
     Parameters :math:`\\mu` and :math:`\\sigma` are then extracted using the method of
