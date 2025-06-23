@@ -273,6 +273,8 @@ class TextImportDialog(_ImportDialogBase):
         delimiter, first_data_line, column_count = guess_text_parameters(
             self.file_header
         )
+        if delimiter == "":
+            delimiter = ","
 
         with self.file_path.open("rb") as fp:
             line_count = 0
