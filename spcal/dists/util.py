@@ -218,7 +218,7 @@ def extract_compound_poisson_lognormal_parameters(
     .. math::
         N &\\sim Poisson(\\lambda) \\\\
         X &\\sim Lognormal(\\mu, \\sigma) \\\\
-        Y &= \\sum{N}{n=1} X_{n}
+        Y &= \\sum_{n=1}^{N} X_{n}
 
     The value of :math:`\\lambda` is extracted using the percentage of zeros in ``x``.
 
