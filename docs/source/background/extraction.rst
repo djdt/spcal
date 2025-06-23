@@ -38,7 +38,7 @@ We can then use the laws of total expectation and variance to calculate expected
    E[X^2] &= \frac{V[Y]}{\lambda}
 
 
-Finally we can recover the lognormal parmaters :math:`\mu` and :math:`\sigma` using their method of moments.
+Finally we can recover the lognormal parameters :math:`\mu` and :math:`\sigma` using their method of moments.
 
 .. math::
    \mu &= \log{\frac{E[X]^2}{\sqrt{E[X^2]}}} \\
@@ -57,7 +57,7 @@ Automatic calculation of SIA shape in SPCal
 
    Extraction of compound-Poisson-lognormal parameters requires a sufficient number of non-zero values. For data with a very low mean the extracted shape may be inaccurate.
 
-The above method can be used to extract the shape parameter from data loaded into SPCal, eliminating the need toi measure it separately and providing a per-mass shape.
+The above method can be used to extract the shape parameter from data loaded into SPCal, eliminating the need to measure it separately and providing a per-mass shape.
 Checking the *Automatic* checkbox next to the *SIA σ* option will enable automatic extraction for data detected as compound-Poisson.
 
 
