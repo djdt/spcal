@@ -67,6 +67,8 @@ Compound-Poisson options
       - The method used: lookup table, log-normal approximation or simulation.
     * - SIA :math:`\sigma`
       - The shape parameter used in the lookup table and log-normal approximation.
+    * - Automatic
+      - Enable recovery of :math:`\sigma` from data. See :ref:`Recovery of compound-Poisson-lognormal parameters`.
     * - SIA Dist
       - The distribution used in the simulation, must be loaded from a file.
 
