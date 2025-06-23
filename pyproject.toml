@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "spcal"
 version = "1.4.3"
 dependencies = [
-    "numpy>=2.0.0",
-    "PySide6>=6.9.2,<6.9.1",
-    "pyqtgraph>=0.13.4",
+    "numpy >= 2.0.0",
+    "PySide6 != 6.9.1",
+    "pyqtgraph >= 0.13.4",
     "bottleneck",
     "h5py",
 ]
