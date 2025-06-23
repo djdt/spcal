@@ -15,6 +15,15 @@ These pages discuss the use and implementation of Gaussian, Poisson and Compound
 .. toctree::
    thresholds
 
+Parameter Recovery
+------------------
+
+The methods used in SPCal for thresholding ICP-TOF data require knowledge of the underlying distribution.
+Here we explain how we can recover this knowledge from existing data and use it to accurately threhold.
+
+.. toctree::
+   extraction
+
 Publications
 ------------
 

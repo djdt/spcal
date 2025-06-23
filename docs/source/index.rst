@@ -8,7 +8,7 @@ Some features include:
 
 * :ref:`Thresholding<Thresholding Options>` using Gaussian, Poisson and Compound-Poisson statistics.
 
-* :ref:`Extraction of compound-Poisson-lognormal parameters` used in thresholding ICP-TOF data.
+* :ref:`Recovery of compound-Poisson-lognormal parameters` used in thresholding ICP-TOF data.
 
 * Multiple :ref:`Calibration` pathways.
 
