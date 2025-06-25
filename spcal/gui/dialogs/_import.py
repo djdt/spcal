@@ -646,7 +646,7 @@ class NuImportDialog(_ImportDialogBase):
         self.table.setSelectedIsotopes(options["isotopes"])
         self.cycle_number.setValue(options["cycle"])
         self.segment_number.setValue(options["segment"])
-        self.checkbox_blanking.setChecked(options["blanking"])
+        self.checkbox_blanking.setChecked(bool(options["blanking"]))
 
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
