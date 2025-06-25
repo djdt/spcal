@@ -461,12 +461,9 @@ def single_ion_distribution(
     zeros = np.count_nonzero(counts == 0, axis=0)
     pzeros = zeros / np.count_nonzero(~np.isnan(counts), axis=0)
     lams = -np.log(pzeros)
-    print(lams.shape)
     poi1 = np.array([incgamma(1 + 1, lam) for lam in lams])
     poi2 = np.array([incgamma(2 + 1, lam) for lam in lams])
-    print(poi1.shape)
     x = counts[:, np.logical_and((poi1 > 1e-5), (poi2 < 1e-3))]
-    print(np.count_nonzero(np.logical_and((poi1 > 1e-5), (poi2 < 1e-3))))
 
     hist, bins = np.histogram(x[x > 0], bins=bins)
     return np.stack(((bins[1:] + bins[:-1]) / 2.0, hist), axis=1)
