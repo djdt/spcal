@@ -11,6 +11,32 @@ from spcal.gui.dialogs._import import (
 )
 
 
+def test_import_dialog_options_inherit(qtbot: QtBot):
+    path = Path(__file__).parent.parent.joinpath("data/text/icap_cps_test.csv")
+    dlg = TextImportDialog(path)
+    qtbot.add_widget(dlg)
+    dlg.setImportOptions(
+        {
+            "columns": [2],
+            "cps": True,
+            "delimiter": ";",
+            "dwelltime": 1e-3,
+            "first line": 2,
+            "importer": "text",
+            "names": {"80Se_|_80Se.16O": "80Se_|_80Se.16O"},
+            "path": Path("fakepath.csv"),
+        },
+        path=False,
+        dwelltime=dlg.dwelltime.value() is None,
+    )
+    assert np.isclose(dlg.dwelltime.baseValue(), 1e-3)
+    assert dlg.combo_intensity_units.currentText() == "CPS"
+    assert dlg.useColumns() == [2]
+    assert dlg.delimiter() == ";"
+    assert dlg.spinbox_first_line.value() == 2
+    assert dlg.names() == ["80Se_|_80Se.16O"]
+
+
 def test_import_dialog_text_nu(qtbot: QtBot):
     def check_data(data: np.ndarray, options: dict):
         if data.dtype.names != ("Ag", "Au"):
