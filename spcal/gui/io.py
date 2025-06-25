@@ -87,7 +87,9 @@ def get_import_dialog_for_path(
 
     if import_options is not None:
         try:
-            dlg.setImportOptions(import_options, path=False, dwelltime=False)
+            dlg.setImportOptions(
+                import_options, path=False, dwelltime=dlg.dwelltime.value() is None
+            )
         except (ValueError, KeyError):
             pass
     if screening_options is not None:
