@@ -441,33 +441,24 @@ class TextImportDialog(_ImportDialogBase):
         elif delimiter == "\t":
             delimiter = "Tab"
 
-        # Check that the new file contains the same names (same file type)
-        same = True
         spinbox_first_line = self.spinbox_first_line.value()
         self.spinbox_first_line.setValue(options["first line"])
 
         self.table_header._checked = {}
         for col in options["columns"]:
-            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+            if col < self.table.columnCount():
+                self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
 
-        for col in range(self.table.columnCount()):
-            item = self.table.item(self.spinbox_first_line.value() - 1, col)
-            if item is not None and item.text() not in options["names"]:
-                same = False
-                break
-
-        if not same:
-            self.spinbox_first_line.setValue(spinbox_first_line)
-            return
-
+        self.spinbox_first_line.setValue(spinbox_first_line)
         self.combo_delimiter.setCurrentText(delimiter)
+        self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
 
         for oldname, name in options["names"].items():
             for col in range(self.table.columnCount()):
                 item = self.table.item(self.spinbox_first_line.value() - 1, col)
                 if item is not None and item.text() == oldname:
                     item.setText(name)
-        self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
+
 
     def dataForScreening(self, size: int) -> np.ndarray:
         options = self.importOptions()
