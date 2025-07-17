@@ -28,6 +28,9 @@ Publication = "https://doi.org/10.1039/D1JA00297J"
 [project.scripts]
 spcal = "spcal.__main__:main"
 
+[tool.setuptools.package-data]
+"spcal.resources" = ["*.npz"]
+
 [tool.pytest.ini_options]
 filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
