@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import re
@@ -401,11 +402,28 @@ class TextImportDialog(_ImportDialogBase):
         for col in range(self.table.columnCount()):
             text = self.table.item(header_row, col).text().lower()
             if "time" in text:
+                # First try parsing as a datetime, for new Thermo exports
+                time_texts = [
+                    self.table.item(row, col).text().replace(",", ".")
+                    for row in range(header_row + 1, self.table.rowCount())
+                ]
                 try:
                     times = [
-                        float(self.table.item(row, col).text().replace(",", "."))
-                        for row in range(header_row + 1, self.table.rowCount())
+                        datetime.datetime.combine(
+                            datetime.datetime.fromordinal(1),
+                            datetime.time.fromisoformat(time),
+                        )
+                        for time in time_texts
                     ]
+                    self.dwelltime.setBaseValue(
+                        np.round(np.mean(np.diff(times)) / np.timedelta64(1, "s"), 6)  # type: ignore
+                    )
+                    return
+                except ValueError:
+                    pass
+                # Try as a float, with factors from header
+                try:
+                    times = [float(time) for time in time_texts]
                 except ValueError:
                     continue
                 if "ms" in text:
@@ -417,7 +435,7 @@ class TextImportDialog(_ImportDialogBase):
                 self.dwelltime.setBaseValue(
                     np.round(np.mean(np.diff(times)) * factor, 6)  # type: ignore
                 )
-                break
+                return
 
     def importOptions(self) -> dict:
         # key names added at import
@@ -458,7 +476,6 @@ class TextImportDialog(_ImportDialogBase):
                 item = self.table.item(self.spinbox_first_line.value() - 1, col)
                 if item is not None and item.text() == oldname:
                     item.setText(name)
-
 
     def dataForScreening(self, size: int) -> np.ndarray:
         options = self.importOptions()

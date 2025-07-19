@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spcal"
-version = "1.4.5"
+version = "1.4.6"
 dependencies = [
     "numpy >= 2.0.0",
     "PySide6 != 6.9.1",
@@ -32,6 +32,7 @@ spcal = "spcal.__main__:main"
 "spcal.resources" = ["*.npz"]
 
 [tool.pytest.ini_options]
+pythonpath = [".", "tests"]
 filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
     "ignore:Failed to disconnect .* from signal:RuntimeWarning",

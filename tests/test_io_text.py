@@ -387,6 +387,14 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
 
 
 def test_guess_text_parameters():
+    onecol_header = ["Name", "1", "2", "3"]
+    delim, skip_rows, columns = guess_text_parameters(onecol_header)
+    assert delim == ""
+    assert skip_rows == 1
+    assert columns == 1
+
+
+def test_guess_text_parameters_agilent():
     agilent_header = [
         "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
         "Intensity Vs Time,CPS",
@@ -419,6 +427,36 @@ def test_guess_text_parameters():
     assert skip_rows == 4
     assert columns == 3
 
+
+def test_guess_text_parameters_nu():
+    nu_header = [
+        "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
+        "0.09704,0,0,0",
+        "0.14556,0,0,0",
+        "0.19408,0,0,0",
+    ]
+    delim, skip_rows, columns = guess_text_parameters(nu_header)
+    assert delim == ","
+    assert skip_rows == 1
+    assert columns == 4
+
+
+def test_guess_text_parameters_thermo_new_icap():
+    icap_header = [
+        "sep=,",
+        "Number,Time 80Se | 80Se.16O,Intensity (cps) 80Se | 80Se.16O",
+        "1,00:00:00.0000500,0",
+        "2,00:00:00.0001000,0",
+        "3,00:00:00.0001500,0",
+        "4,00:00:00.0002000,0",
+    ]
+    delim, skip_rows, columns = guess_text_parameters(icap_header)
+    assert delim == ","
+    assert skip_rows == 2
+    assert columns == 3
+
+
+def test_guess_text_parameters_tofwerk():
     tofwerk_header = [
         "Index,timestamp (s),[197Au]+ (cts)",
         "0,0,0",
@@ -431,20 +469,3 @@ def test_guess_text_parameters():
     assert delim == ","
     assert skip_rows == 1
     assert columns == 3
-
-    nu_header = [
-        "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
-        "0.09704,0,0,0",
-        "0.14556,0,0,0",
-        "0.19408,0,0,0",
-    ]
-    delim, skip_rows, columns = guess_text_parameters(nu_header)
-    assert delim == ","
-    assert skip_rows == 1
-    assert columns == 4
-
-    onecol_header = ["Name", "1", "2", "3"]
-    delim, skip_rows, columns = guess_text_parameters(onecol_header)
-    assert delim == ""
-    assert skip_rows == 1
-    assert columns == 1
