@@ -1,6 +1,7 @@
 import numpy as np
 
 from spcal import fit
+from spcal.dists import lognormal, normal
 
 
 def test_neadler_mean():
@@ -14,5 +15,28 @@ def test_neadler_mean():
 
     args = fit.nelder_mead(gradient, x, y, simplex)
 
-    assert np.isclose(args[0], 3.0)
-    assert np.isclose(args[1], 4.0, atol=1e-3)
+    assert np.allclose(args, [3.0, 4.0], atol=1e-3)
+
+
+def test_fit_normal():
+    x = np.linspace(-10.0, 10.0, 100)
+    y = normal.pdf(x, mu=2.3, sigma=3.4)
+    args = fit.fit_normal(x, y)
+    assert np.allclose(args, [2.3, 3.4, 1.0], atol=1e-3)
+
+    y *= 0.5
+
+    args = fit.fit_normal(x, y)
+    assert np.allclose(args, [4.6, 6.8, 2.0], atol=1e-3)
+
+
+def test_fit_lognormal():
+    x = np.linspace(0.001, 30.0, 100)
+    y = lognormal.pdf(x, mu=2.3, sigma=1.2)
+    args = fit.fit_lognormal(x, y)
+    assert np.allclose(args, [2.3, 1.2, 0.0], atol=1e-3)
+
+    x += 10.0
+
+    args = fit.fit_lognormal(x, y)
+    assert np.allclose(args, [2.3, 1.2, 10.0], atol=1e-3)

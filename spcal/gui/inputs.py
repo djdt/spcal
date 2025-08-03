@@ -493,7 +493,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             window_size = 0
         window_size = int(window_size or 0)
-        max_iter = 10 if self.options.check_iterative.isChecked() else 1
+        max_iter = 100 if self.options.check_iterative.isChecked() else 1
 
         self.limits.clear()
 

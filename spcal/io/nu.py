@@ -454,12 +454,16 @@ def single_ion_distribution(
     """
 
     def incgamma(a: float, x: float) -> float:
-        xs = np.linspace(0, x, 100)
-        return 1.0 / gamma(a) * np.trapezoid(np.exp(-xs) * xs ** (a - 1), x=xs)
+        t = np.linspace(0.0, x, 100)
+        y = t ** (a - 1.0) * np.exp(-t)
+        return np.trapezoid(y, t) / gamma(a)
 
-    pzeros = np.count_nonzero(counts, axis=0) / counts.shape[0]
-    poi2 = np.array([incgamma(2 + 1, pz) for pz in pzeros])
-    x = counts[:, (poi2 > 1e-5) & (poi2 < 1e-3)]
+    zeros = np.count_nonzero(counts == 0, axis=0)
+    pzeros = zeros / np.count_nonzero(~np.isnan(counts), axis=0)
+    lams = -np.log(pzeros)
+    poi1 = np.array([incgamma(1 + 1, lam) for lam in lams])
+    poi2 = np.array([incgamma(2 + 1, lam) for lam in lams])
+    x = counts[:, np.logical_and((poi1 > 1e-5), (poi2 < 1e-3))]
 
     hist, bins = np.histogram(x[x > 0], bins=bins)
     return np.stack(((bins[1:] + bins[:-1]) / 2.0, hist), axis=1)

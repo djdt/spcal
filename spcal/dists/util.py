@@ -30,7 +30,10 @@ def zero_trunc_quantile(
 
 
 def compound_poisson_lognormal_quantile_lookup(
-    q: float, lam: np.ndarray | float, sigma: float
+    q: np.ndarray | float,
+    lam: np.ndarray | float,
+    mu: np.ndarray | float,
+    sigma: np.ndarray | float,
 ) -> np.ndarray | float:
     """The quantile of a compound Poisson-Lognormal distribution.
 
@@ -42,25 +45,32 @@ def compound_poisson_lognormal_quantile_lookup(
     Args:
         q: quantile
         lam: mean of the Poisson distribution
+        mu: log mean of the log-normal distribution
         sigma: log stddev of the log-normal distribution
 
     Returns:
         the ``q`` th value of the compound Poisson-Lognormal
     """
     lam = np.atleast_1d(lam)
+    mu = np.atleast_1d(mu)
+    sigma = np.atleast_1d(sigma)
+
     q0 = np.atleast_1d(zero_trunc_quantile(lam, q))
     nonzero = q0 > 0.0
 
     qs = np.zeros_like(lam)
     qs[nonzero] = interpolate_3d(
         lam[nonzero],
-        np.full_like(lam[nonzero], sigma),
+        sigma[nonzero],
         q0[nonzero],
         qtable["lambdas"],
         qtable["sigmas"],
         qtable["ys"],
         qtable["quantiles"],
     )
+    # data collected for mean of 1.0 (mu = -0.5 * sigma**2) rescale to mu
+    qs *= np.exp(mu + 0.5 * sigma**2)
+
     if len(qs) == 1:
         return qs[0]
     return qs
@@ -108,7 +118,7 @@ def compound_poisson_lognormal_quantile_approximation(
     weights /= weights.sum()
 
     # Get the sum LN for each value of the Poisson
-    mus, sigmas = sum_iid_lognormals(k, np.log(1.0) - 0.5 * sigma**2, sigma)
+    mus, sigmas = sum_iid_lognormals(k, mu, sigma)
     # The quantile of the last log-normal, must be lower than this
     upper_q = lognormal.quantile(q0, mus[-1], sigmas[-1])
 

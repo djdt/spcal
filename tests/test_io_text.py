@@ -5,6 +5,7 @@ import pytest
 
 from spcal.io.text import (
     export_single_particle_results,
+    guess_text_parameters,
     is_text_file,
     read_single_particle_file,
 )
@@ -15,7 +16,7 @@ results = {
     "a": SPCalResult(
         "a.csv",
         np.ones(100),
-        np.array([5, 5, 5, 5, 0]),
+        np.array([5.0, 5, 5, 5, 0]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, np.array([8.0, 10.0]), "Limit", {"kw1": 1.0, "window": 9}),
         inputs_kws={
@@ -28,7 +29,7 @@ results = {
     "b": SPCalResult(
         "b.csv",
         np.full(100, 0.5),
-        np.array([0, 9, 9, 9, 9]),
+        np.array([0.0, 8, 9, 9, 10]),
         np.concatenate((np.zeros(40), np.ones(10), np.zeros(50))),
         SPCalLimit(0.5, 9.0, "Limit", {}),
         inputs_kws={
@@ -167,7 +168,7 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "# Mean,a,b\n"
         assert fp.readline() == "#,5,9,counts\n"
         assert fp.readline() == "#,,4.5e-19,kg\n"
-        assert fp.readline() == "#,,4.413041e-07,m\n"
+        assert fp.readline() == "#,,4.4100003e-07,m\n"
         assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
 
@@ -177,6 +178,13 @@ def test_export_singleparticle_results(tmp_path: Path):
         assert fp.readline() == "#,,4.413041e-07,m\n"
         assert fp.readline() == "#,,4.5e-18,m³\n"
         assert fp.readline() == "#,,4.2971835e-08,mol/L\n"
+
+        assert fp.readline() == "# Mode,a,b\n"
+        assert fp.readline() == "#,5,9.25,counts\n"
+        assert fp.readline() == "#,,4.625e-19,kg\n"
+        assert fp.readline() == "#,,4.4479151e-07,m\n"
+        assert fp.readline() == "#,,4.625e-18,m³\n"
+        assert fp.readline() == "#,,4.4165497e-08,mol/L\n"
 
         assert fp.readline() == "# Limits of detection,a,b\n"
         assert fp.readline() == "#,7.5 - 9.5,8.5,counts\n"
@@ -240,10 +248,10 @@ def test_export_singleparticle_arrays(tmp_path: Path):
         assert fp.readline() == "s,counts,counts,kg,m,m³,mol/L\n"
         # Todo, compute these
         assert fp.readline() == "0.1,5,,,,,\n"
-        assert fp.readline() == "0.2,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.2,5,8,4e-19,4.2431377e-07,4e-18,3.8197186e-08\n"
         assert fp.readline() == "0.3,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
         assert fp.readline() == "0.4,5,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
-        assert fp.readline() == "0.5,,9,4.5e-19,4.413041e-07,4.5e-18,4.2971835e-08\n"
+        assert fp.readline() == "0.5,,10,5e-19,4.5707815e-07,5e-18,4.7746483e-08\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
@@ -281,7 +289,7 @@ def test_export_singleparticle_compositions(tmp_path: Path):
             fp.readline()
         # fp.readline()
         assert fp.readline() == "# Peak composition,count,a,error,b,error\n"
-        assert fp.readline() == "# Signal,3,0.3571,0,0.6429,0\n"
+        assert fp.readline() == "# Signal,3,0.3663,0.01295,0.6337,0.01295\n"
         assert fp.readline() == ",1,0,0,1,0\n"
         assert fp.readline() == ",1,1,0,0,0\n"
         # No mass / size since only one element
@@ -359,6 +367,10 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
 
         assert fp.readline() == "# Median,a,b\n"
         assert fp.readline() == "#,1,1,counts\n"
+
+        assert fp.readline() == "# Mode,a,b\n"
+        assert fp.readline() == "#,1,1,counts\n"
+
         fp.readline()  # lod
         fp.readline()  # lod
         fp.readline()
@@ -372,3 +384,88 @@ def test_export_singleparticle_results_filtered(tmp_path: Path):
         assert fp.readline() == "0.5,,1\n"
         fp.readline()
         assert fp.readline() == "# End of export"
+
+
+def test_guess_text_parameters():
+    onecol_header = ["Name", "1", "2", "3"]
+    delim, skip_rows, columns = guess_text_parameters(onecol_header)
+    assert delim == ""
+    assert skip_rows == 1
+    assert columns == 1
+
+
+def test_guess_text_parameters_agilent():
+    agilent_header = [
+        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
+        "Intensity Vs Time,CPS",
+        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+        "Time [Sec],S32 -> 48,Gd156 -> 172",
+        "0.2312,12274.84,20",
+        "0.4402,12304.86,30",
+        "0.6492,12114.71,40",
+        "0.8582,12244.81,10",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(agilent_header)
+    assert delim == ","
+    assert skip_rows == 4
+    assert columns == 3
+
+    agilent_header_with_delims = [
+        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run,0.1,\tok.b\\001SMPL.d",
+        "Intensity Vs Time,CPS",
+        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+        "Time [Sec],S32 -> 48,Gd156 -> 172",
+        "0.2312,12274.84,20",
+        "0.4402,12304.86,30",
+        "0.6492,12114.71,40",
+        "0.8582,12244.81,10",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(agilent_header_with_delims)
+    assert delim == ","
+    assert skip_rows == 4
+    assert columns == 3
+
+
+def test_guess_text_parameters_nu():
+    nu_header = [
+        "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
+        "0.09704,0,0,0",
+        "0.14556,0,0,0",
+        "0.19408,0,0,0",
+    ]
+    delim, skip_rows, columns = guess_text_parameters(nu_header)
+    assert delim == ","
+    assert skip_rows == 1
+    assert columns == 4
+
+
+def test_guess_text_parameters_thermo_new_icap():
+    icap_header = [
+        "sep=,",
+        "Number,Time 80Se | 80Se.16O,Intensity (cps) 80Se | 80Se.16O",
+        "1,00:00:00.0000500,0",
+        "2,00:00:00.0001000,0",
+        "3,00:00:00.0001500,0",
+        "4,00:00:00.0002000,0",
+    ]
+    delim, skip_rows, columns = guess_text_parameters(icap_header)
+    assert delim == ","
+    assert skip_rows == 2
+    assert columns == 3
+
+
+def test_guess_text_parameters_tofwerk():
+    tofwerk_header = [
+        "Index,timestamp (s),[197Au]+ (cts)",
+        "0,0,0",
+        "1,0.0009999,0",
+        "2,0.0019998,0",
+        "3,0.0029997,0",
+    ]
+
+    delim, skip_rows, columns = guess_text_parameters(tofwerk_header)
+    assert delim == ","
+    assert skip_rows == 1
+    assert columns == 3

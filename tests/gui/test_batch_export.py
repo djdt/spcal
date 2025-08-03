@@ -264,3 +264,57 @@ def test_batch_export_images(tmp_path: Path, qtbot: QtBot):
     assert tmp.with_name("batch_export_images_Ag107_signal.png").exists()
     assert tmp.with_name("batch_export_images_Ag109_signal.png").exists()
     assert tmp.with_name("batch_export_images_Au197_signal.png").exists()
+
+
+def test_batch_export_difference(tmp_path: Path, qtbot: QtBot):
+    window = SPCalWindow()
+    qtbot.add_widget(window)
+    with qtbot.wait_exposed(window):
+        window.show()
+
+    # This was causing differences
+    window.options.check_iterative.setChecked(True)
+
+    path = Path(__file__).parent.parent.joinpath("data/text/text_batch_difference.csv")
+    data = read_single_particle_file(path, columns=(1,), first_line=4)
+
+    with qtbot.wait_signal(window.sample.detectionsChanged):
+        window.sample.loadData(
+            data,
+            {
+                "path": path,
+                "columns": [1],
+                "first line": 4,
+                "names": {"Fe56__56": "Fe56__56"},
+                "cps": False,
+                "delimiter": ",",
+                "importer": "text",
+                "dwelltime": 1e-4,
+            },
+        )
+
+    tmp_results = tmp_path.joinpath("batch_diff_results.csv")
+    tmp_batch = tmp_path.joinpath("batch_diff_batch.csv")
+
+    window.results.updateResults()
+    dlg = window.results.dialogExportResults()
+    dlg.lineedit_path.setText(str(tmp_results))
+    dlg.accept()
+
+    dlg = window.dialogBatchProcess()
+    qtbot.add_widget(dlg)
+    dlg.files.addItems([str(path)])
+    dlg.check_summary.setChecked(True)
+
+    dlg.output_name.setText(tmp_batch.name)
+    dlg.output_dir.setText(str(tmp_path))
+
+    with qtbot.wait_signal(dlg.processingFinshed):
+        dlg.start()
+
+    assert tmp_results.exists()
+    assert tmp_batch.exists()
+
+    with tmp_batch.open() as fp1, tmp_batch.open() as fp2:
+        for line1, line2 in zip(fp1.readlines(), fp2.readlines()):
+            assert line1 == line2

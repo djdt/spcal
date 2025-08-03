@@ -3,7 +3,9 @@
 import numpy as np
 
 
-def is_integer_or_near(x: np.ndarray, max_deviation: float = 1e-3) -> np.ndarray:
+def is_integer_or_near(
+    x: np.ndarray | float, max_deviation: float = 1e-3
+) -> np.ndarray | float:
     """Test if float data is 'near' integer.
     Near integers values are those less than `max_deviation` from a whole number.
 
@@ -50,6 +52,20 @@ def search_sorted_closest(
             raise ValueError("could not find value closer than 'check_max_diff'")
 
     return idx
+
+
+def mode(x: np.ndarray, bins: int | np.ndarray | str = "auto") -> float:
+    """Calculates the mode of 'x'.
+
+    Args:
+        x: array
+
+    Returns:
+        mode
+    """
+    hist, edges = np.histogram(x, bins=bins)
+    mode_idx = np.argmax(hist)
+    return (edges[mode_idx] + edges[mode_idx + 1]) / 2.0
 
 
 def otsu(x: np.ndarray, remove_nan: bool = False, nbins: str | int = "fd") -> float:

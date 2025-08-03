@@ -117,6 +117,7 @@ def test_sample_with_reference(qtbot: QtBot):
     # Should test all outputs here
     assert np.isclose(window.results.io["Au"].mean.baseValue(), 2017.0, atol=1)
     assert np.isclose(window.results.io["Au"].median.baseValue(), 2010.2, atol=1)
+    assert np.isclose(window.results.io["Au"].mode.baseValue(), 2207.2, atol=1)
     assert np.isclose(
         window.results.io["Au"].lod.baseValue(), limit - data["Au"].mean(), atol=0.1
     )

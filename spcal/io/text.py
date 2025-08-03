@@ -1,6 +1,5 @@
 """Reading and writing single particle data from and to csv files."""
 
-# import csv
 import datetime
 import importlib.metadata
 import logging
@@ -9,6 +8,7 @@ from typing import Any, Callable, Set, TextIO
 
 import numpy as np
 
+from spcal.calc import mode
 from spcal.result import SPCalResult
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,49 @@ def is_text_file(path: Path) -> bool:
     if path.is_dir() or not path.exists():
         return False
     return True
+
+
+def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
+    """Guesses the delimiter, skip_rows and column count.
+
+    Args:
+        lines: list of lines in file or header
+
+    Returns:
+        delimiter, skip_rows, column_count
+    """
+
+    def is_number_or_time(x: str) -> bool:
+        try:
+            float(x)
+            return True
+        except ValueError:
+            pass
+        try:
+            datetime.time.fromisoformat(x)
+            return True
+        except ValueError:
+            return False
+
+    skip_rows = 0
+
+    delimiter = ""
+    for line in lines:
+        try:
+            delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
+            tokens = line.split(delimiter)
+            if all(is_number_or_time(token) for token in tokens):
+                break
+        except StopIteration:  # special case where only one column exists
+            if is_number_or_time(line):
+                break
+        skip_rows += 1
+
+    column_count = 1
+    if delimiter != "":
+        column_count = max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
+
+    return delimiter, skip_rows, column_count
 
 
 def _write_if_exists(
@@ -207,7 +250,7 @@ def append_results_summary(
             f"{file},Ionic background,{unit}/L,",
         )
 
-        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+        for label, ufunc in zip(["Mean", "Median", "Mode"], [np.mean, np.median, mode]):
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]
                 _write_if_exists(
@@ -394,7 +437,7 @@ def export_single_particle_results(
         )
         fp.write("#\n")
 
-        for label, ufunc in zip(["Mean", "Median"], [np.mean, np.median]):
+        for label, ufunc in zip(["Mean", "Median", "Mode"], [np.mean, np.median, mode]):
             fp.write(f"# {label},{','.join(results.keys())}\n")
             for key in SPCalResult.base_units.keys():
                 unit, factor = result_units[key]

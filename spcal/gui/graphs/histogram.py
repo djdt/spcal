@@ -2,7 +2,8 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.fit import fit_lognormal, fit_normal, lognormal_pdf, normal_pdf
+from spcal.dists import lognormal, normal
+from spcal.fit import fit_lognormal, fit_normal
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import HistogramItemSample
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
@@ -163,10 +164,12 @@ class HistogramView(SinglePlotGraphicsView):
         xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
         if fit_type == "normal":
             fit = fit_normal(centers, hist)
-            ys = normal_pdf(xs * fit[2], fit[0], fit[1])
+            ys = normal.pdf(xs * fit[2], fit[0], fit[1])
         elif fit_type == "log normal":
             fit = fit_lognormal(centers, hist)
-            ys = lognormal_pdf(xs + fit[2], fit[0], fit[1])
+            xs_fit = xs - fit[2]
+            xs_fit[xs_fit <= 0.0] = np.nan
+            ys = lognormal.pdf(xs_fit, fit[0], fit[1])
         else:
             raise ValueError(f"drawFit: unknown fit {fit_type}")
 
