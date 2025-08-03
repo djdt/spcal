@@ -4,18 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spcal"
-version = "1.4.3"
+version = "1.4.6"
 dependencies = [
-    "numpy>=2.0.0",
-    "PySide6",
-    "pyqtgraph>=0.13.4",
+    "numpy >= 2.0.0",
+    "PySide6 != 6.9.1",
+    "pyqtgraph >= 0.13.4",
     "bottleneck",
     "h5py",
 ]
 description = "Software for processing spICP-MS data."
 readme = "README.md"
 requires-python = ">= 3.10"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
 authors = [{name = "Thomas Lockwood", email = "thomas.lockwood@uts.edu.au"}]
 
 [project.optional-dependencies]
@@ -28,7 +28,11 @@ Publication = "https://doi.org/10.1039/D1JA00297J"
 [project.scripts]
 spcal = "spcal.__main__:main"
 
+[tool.setuptools.package-data]
+"spcal.resources" = ["*.npz"]
+
 [tool.pytest.ini_options]
+pythonpath = [".", "tests"]
 filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
     "ignore:Failed to disconnect .* from signal:RuntimeWarning",

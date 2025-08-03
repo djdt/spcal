@@ -1,6 +1,5 @@
 """Reading and writing single particle data from and to csv files."""
 
-# import csv
 import datetime
 import importlib.metadata
 import logging
@@ -33,6 +32,19 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
     Returns:
         delimiter, skip_rows, column_count
     """
+
+    def is_number_or_time(x: str) -> bool:
+        try:
+            float(x)
+            return True
+        except ValueError:
+            pass
+        try:
+            datetime.time.fromisoformat(x)
+            return True
+        except ValueError:
+            return False
+
     skip_rows = 0
 
     delimiter = ""
@@ -40,22 +52,15 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
         try:
             delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
             tokens = line.split(delimiter)
-            for token in tokens:
-                float(token)
-            break
-        except StopIteration:  # special case where only one column exists
-            try:
-                float(line)
+            if all(is_number_or_time(token) for token in tokens):
                 break
-            except ValueError:
-                pass
-        except ValueError:
-            pass
+        except StopIteration:  # special case where only one column exists
+            if is_number_or_time(line):
+                break
         skip_rows += 1
 
-    if delimiter == "":
-        column_count = 1
-    else:
+    column_count = 1
+    if delimiter != "":
         column_count = max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
 
     return delimiter, skip_rows, column_count
