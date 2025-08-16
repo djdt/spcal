@@ -247,10 +247,17 @@ class SPCalLimit(object):
             raise ValueError("method 'simulation' requires a valid 'single_ion_dist")
 
         if extract_sigma:
-            # add test for zeros
-            _, _, sigma = extract_compound_poisson_lognormal_parameters_iterative(
-                responses
-            )
+            num_nonzero = np.count_nonzero(responses == 0)
+            if (
+                num_nonzero < 8000
+            ):  # approximate amount of non zero values for a 2 % error in sigma
+                logger.warning(
+                    "insufficient nonzero values for < 2 % error in sigma, using default"
+                )
+            else:
+                _, _, sigma = extract_compound_poisson_lognormal_parameters_iterative(
+                    responses
+                )
 
         while (
             np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
