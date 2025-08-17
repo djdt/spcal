@@ -256,7 +256,7 @@ class SPCalLimit(object):
                 )
             else:
                 _, _, sigma = extract_compound_poisson_lognormal_parameters_iterative(
-                    responses
+                    responses, alpha=alpha
                 )
 
         while (
