@@ -1,9 +1,12 @@
+import logging
 from importlib.resources import files
 
 import numpy as np
 
 from spcal.calc import expand_mask, interpolate_3d
 from spcal.dists import lognormal, poisson
+
+logger = logging.getLogger(__name__)
 
 _qtable = np.load(
     files("spcal.resources").joinpath("cpln_quantiles.npz").open("rb"),
@@ -251,10 +254,8 @@ def extract_compound_poisson_lognormal_parameters(
     pzero = zeros / np.count_nonzero(mask, axis=0)
     lam = -np.log(pzero)
 
-    if np.any(pzero > 1.0 - 1e-3):
-        print("warning: only non zero points")
-    elif np.any(pzero < 1e-3):
-        print("warning: no zero values")
+    if np.any(pzero < 1e-3):
+        logger.warning("low number of non zero values")
 
     mean = np.mean(x, axis=0, where=mask)
 
@@ -268,10 +269,10 @@ def extract_compound_poisson_lognormal_parameters(
 
 def extract_compound_poisson_lognormal_parameters_iterative(
     x: np.ndarray,
-    alpha: float = 1e-4,
+    alpha: float = 1e-5,
     dilation: int = 50,
     max_iters: int = 100,
-    iter_eps: float = 1e-3,
+    iter_eps: float = 1e-2,
     bounds: np.ndarray | None = None,
 ) -> tuple[float, float, float]:
     """Finds the parameters of compound Poisson -- lognormal distributed data, ``x``.
@@ -293,7 +294,6 @@ def extract_compound_poisson_lognormal_parameters_iterative(
     Returns:
         lam, mu, sigma
     """
-
     threshold: float = np.inf
     previous_threshold: float = 0.0
     iters = 0
@@ -326,6 +326,6 @@ def extract_compound_poisson_lognormal_parameters_iterative(
         iters += 1
 
         if iters == max_iters and max_iters != 1:  # pragma: no cover
-            print("iterative_extraction: reached max_iters")
+            logger.warning("iterative extraction reached max_iters")
 
     return params[0], params[1], params[2]
