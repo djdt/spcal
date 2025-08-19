@@ -96,17 +96,17 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.updateTable()
 
     def updateHistogram(self) -> None:
-        if self.counts.size == 0:
-            self.view.clear()
-        else:
+        self.view.clear()
+        if self.counts.size > 0:
             self.view.draw(self.counts[self.counts > 0])
 
     def updateScatter(self) -> None:
+        self.scatter.clear()
         self.scatter.drawData(self.masses, self.sigmas)
 
     def updateTable(self) -> None:
+        self.table.clear()
         if self.counts.size == 0 or self.lams.size == 0:
-            self.table.clear()
             return
         self.table.setRowCount(self.lams.size)
 
