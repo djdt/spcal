@@ -49,8 +49,8 @@ class SingleIonView(SinglePlotGraphicsView):
                 antialias=True,
             )
         elif data.ndim == 1:
-            hist, edges = np.histogram(data)
-            self.drawHist(hist, edges, pen=pen, brush=brush)
+            hist, edges = np.histogram(data, bins=100)
+            curve = self.drawHist(hist, edges, pen=pen, brush=brush)
         else:
             hist, edges = data[:-1, 1], data[:, 0]
             curve = self.drawHist(hist, edges, pen=pen, brush=brush)
