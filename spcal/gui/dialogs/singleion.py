@@ -2,7 +2,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.scatter import ScatterView
@@ -21,7 +21,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
 
-        self.view = SingleIonView()
+        self.hist = SingleIonView()
         self.scatter = ScatterView()
         self.table = BasicTable()
         self.table.setColumnCount(4)
@@ -29,6 +29,8 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.masses = np.array([])
         self.counts = np.array([])
+
+        controls_box = QtWidgets.QGroupBox()
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Reset
@@ -38,14 +40,18 @@ class SingleIonDialog(QtWidgets.QDialog):
         )
         self.button_box.clicked.connect(self.buttonPressed)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.view, 1)
-        layout.addWidget(self.scatter, 0)
-        layout.addWidget(self.table, 0)
-        layout.addWidget(self.button_box, 0)
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(controls_box, 0, 0)
+        layout.addWidget(self.scatter, 0, 1)
+        layout.addWidget(self.hist, 1, 0)
+        layout.addWidget(self.table, 1, 1)
+        layout.addWidget(self.button_box, 2, 0, 1, 2)
+
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 2)
         self.setLayout(layout)
 
-        self.loadSingleIonData("/home/tom/Downloads/11-40-53 10ppb unatt")
+        self.loadSingleIonData("/home/tom/Downloads/11-43-47 1ppb att")
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
         sb = self.button_box.standardButton(button)
@@ -80,32 +86,43 @@ class SingleIonDialog(QtWidgets.QDialog):
                     data
                     * h5["FullSpectra"].attrs["Single Ion Signal"][0]
                     * tofwerk.factor_extraction_to_acquisition(h5)
-                )
+                ).reshape(-1, self.masses.size)
         else:
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
         # Remove clearly gaussian signals
         zeros = np.count_nonzero(self.counts == 0, axis=0)
         self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
+        self.updateHistogram()
+        self.updateExtractedParameters()
+
+    def updateExtractedParameters(self) -> None:
         self.lams, self.mus, self.sigmas = (
             extract_compound_poisson_lognormal_parameters(self.counts)
         )
 
-        self.updateHistogram()
         self.updateScatter()
         self.updateTable()
 
     def updateHistogram(self) -> None:
-        self.view.clear()
+        self.hist.clear()
         if self.counts.size > 0:
-            self.view.draw(self.counts[self.counts > 0])
+            self.hist.draw(self.counts[self.counts > 0])
 
     def updateScatter(self) -> None:
         self.scatter.clear()
-        self.scatter.drawData(self.masses, self.sigmas)
+        valid = np.logical_and(
+            np.logical_and((self.sigmas > 0.2), (self.sigmas < 0.95)),
+            (self.lams > 0.01),
+        )
+        self.scatter.drawData(self.masses[valid], self.sigmas[valid])
+        self.scatter.drawData(
+            self.masses[~valid],
+            self.sigmas[~valid],
+            brush=QtGui.QBrush(QtCore.Qt.GlobalColor.red),
+        )
 
     def updateTable(self) -> None:
-        self.table.clear()
         if self.counts.size == 0 or self.lams.size == 0:
             return
         self.table.setRowCount(self.lams.size)
