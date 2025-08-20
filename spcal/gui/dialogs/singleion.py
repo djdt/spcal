@@ -14,6 +14,7 @@ from spcal.io import nu, tofwerk
 
 class SingleIonDialog(QtWidgets.QDialog):
     distributionSelected = QtCore.Signal(np.ndarray)
+    extractedParameters = QtCore.Signal(np.ndarray)
 
     def __init__(
         self, dist: np.ndarray | None = None, parent: QtWidgets.QWidget | None = None
@@ -50,8 +51,6 @@ class SingleIonDialog(QtWidgets.QDialog):
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 2)
         self.setLayout(layout)
-
-        self.loadSingleIonData("/home/tom/Downloads/11-43-47 1ppb att")
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
         sb = self.button_box.standardButton(button)
@@ -100,6 +99,10 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.lams, self.mus, self.sigmas = (
             extract_compound_poisson_lognormal_parameters(self.counts)
         )
+        self.valid = np.logical_and(
+            np.logical_and(self.sigmas > 0.2, self.sigmas < 0.95),
+            np.logical_and(self.lams > 0.01, self.lams < 10.0),
+        )
 
         self.updateScatter()
         self.updateTable()
@@ -111,14 +114,10 @@ class SingleIonDialog(QtWidgets.QDialog):
 
     def updateScatter(self) -> None:
         self.scatter.clear()
-        valid = np.logical_and(
-            np.logical_and((self.sigmas > 0.2), (self.sigmas < 0.95)),
-            (self.lams > 0.01),
-        )
-        self.scatter.drawData(self.masses[valid], self.sigmas[valid])
+        self.scatter.drawData(self.masses[self.valid], self.sigmas[self.valid])
         self.scatter.drawData(
-            self.masses[~valid],
-            self.sigmas[~valid],
+            self.masses[~self.valid],
+            self.sigmas[~self.valid],
             brush=QtGui.QBrush(QtCore.Qt.GlobalColor.red),
         )
 
@@ -136,7 +135,17 @@ class SingleIonDialog(QtWidgets.QDialog):
                 self.table.setItem(i, j, item)
 
     def accept(self) -> None:
-        self.distributionSelected.emit([])
+        self.distributionSelected.emit(self.counts)
+        self.extractedParameters.emit(
+            np.stack(
+                (
+                    self.masses[self.valid],
+                    self.mus[self.valid],
+                    self.sigmas[self.valid],
+                ),
+                axis=1,
+            )
+        )
         super().accept()
 
 
@@ -144,6 +153,7 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonDialog()
+    win.loadSingleIonData("/home/tom/Downloads/11-43-47 1ppb att")
     win.show()
 
     app.exec()
