@@ -7,6 +7,70 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
+class SingleIonScatterView(SinglePlotGraphicsView):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(
+            "Single Ion Distribution",
+            xlabel="Single Ion Signal",
+            ylabel="No. Events",
+            viewbox=ViewBoxForceScaleAtZero(),
+            parent=parent,
+        )
+
+        self.points: pyqtgraph.PlotCurveItem | None = None
+        self.max_diff: pyqtgraph.PlotCurveItem | None = None
+        self.plot.setLimits(xMin=0.0, yMin=0.0)
+
+    def drawData(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> None:
+        if self.points is not None:
+            self.plot.removeItem(self.points)
+
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+
+        self.points = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
+        self.plot.addItem(self.points)
+
+        self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
+
+    def setValid(self, valid: np.ndarray) -> None:
+        if self.points is None:
+            return
+        brush_valid = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+        brush_invalid = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+        brushes = [brush_valid if x else brush_invalid for x in valid]
+        self.points.setBrush(brushes)
+
+    def drawMaxDifference(self, poly: np.polynomial.Polynomial, max_difference: float, pen: QtGui.QPen | None = None) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+            pen.setCosmetic(True)
+
+        if self.max_diff is None:
+            self.max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs")
+            self.plot.addItem(self.max_diff)
+
+        xs = [poly.domain[0], poly.domain[-1], poly.domain[0], poly.domain[-1]]
+        ys = poly(xs)
+        ys += [
+            max_difference,
+            max_difference,
+            -max_difference,
+            -max_difference,
+        ]
+        self.max_diff.setData(x=xs,y=ys)
+        self.max_diff.setPen(pen)
+
+
 class SingleIonHistogramView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(
