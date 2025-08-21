@@ -38,7 +38,7 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
-        controls_layout.addRow("Max σ difference:", self.max_sigma_difference)
+        controls_layout.addRow("Max σ distance:", self.max_sigma_difference)
         controls_box.setLayout(controls_layout)
 
         self.button_box = QtWidgets.QDialogButtonBox(
