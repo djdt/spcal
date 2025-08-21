@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.scatter import ScatterView
-from spcal.gui.graphs.singleion import SingleIonView
+from spcal.gui.graphs.singleion import SingleIonHistogramView
 from spcal.gui.io import get_open_spcal_path
 from spcal.gui.modelviews import BasicTable
 from spcal.io import nu, tofwerk
@@ -22,7 +22,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
 
-        self.hist = SingleIonView()
+        self.hist = SingleIonHistogramView()
         self.scatter = ScatterView()
         self.table = BasicTable()
         self.table.setColumnCount(4)
@@ -101,9 +101,10 @@ class SingleIonDialog(QtWidgets.QDialog):
         )
         self.valid = np.logical_and(
             np.logical_and(self.sigmas > 0.2, self.sigmas < 0.95),
-            np.logical_and(self.lams > 0.01, self.lams < 10.0),
+            np.logical_and(self.lams > 0.005, self.lams < 10.0),
         )
 
+        self.hist.drawLognormalFit(np.mean(self.mus[self.valid]), np.mean(self.sigmas[self.valid]))
         self.updateScatter()
         self.updateTable()
 
@@ -120,6 +121,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             self.sigmas[~self.valid],
             brush=QtGui.QBrush(QtCore.Qt.GlobalColor.red),
         )
+        self.scatter.drawFit(self.masses[self.valid], self.sigmas[self.valid])
 
     def updateTable(self) -> None:
         if self.counts.size == 0 or self.lams.size == 0:
