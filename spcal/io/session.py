@@ -25,7 +25,7 @@ def cast_structured_array_types(
     new_dtype = np.dtype(
         {
             "names": list(fields.keys()),
-            "formats": [field[0].char.translate(trans) for field in fields.values()],
+            "formats": [field[0].str.translate(trans) for field in fields.values()],
         }
     )
     return x.astype(new_dtype)
@@ -198,6 +198,7 @@ def saveSession(
 
                 import_group = input_group.create_group("import options")
                 for key, val in sanitiseImportOptions(input.import_options).items():
+                    print(key, val, flush=True)
                     import_group.attrs[key] = val
 
                 element_group = input_group.create_group("elements")
