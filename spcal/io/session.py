@@ -111,6 +111,8 @@ def sanitiseImportOptions(options: dict) -> dict:
             val = val.astype(
                 [(d[0], "S2") if d[0] == "Symbol" else d for d in val.dtype.descr]
             )
+        elif val is None:
+            val = "None"
         safe[key] = val
     return flatten_dict(safe)
 
@@ -124,6 +126,8 @@ def restoreImportOptions(options: dict) -> dict:
             val = val.astype(
                 [(d[0], "U2") if d[0] == "Symbol" else d for d in val.dtype.descr]
             )
+        elif val == "None":
+            val = None
         restored[key] = val
     return restored
 
@@ -161,6 +165,7 @@ def saveSession(
 
                 import_group = input_group.create_group("import options")
                 for key, val in sanitiseImportOptions(input.import_options).items():
+                    print(key, "=", val, type(val))
                     import_group.attrs[key] = val
 
                 element_group = input_group.create_group("elements")
