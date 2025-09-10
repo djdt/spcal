@@ -1,16 +1,34 @@
 """Save and restore SPCal sessions."""
 
-from PySide6 import QtWidgets
-
+import re
 from pathlib import Path
 
 import h5py
 import numpy as np
+from PySide6 import QtWidgets
 
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.result import ClusterFilter, Filter
+
+
+def cast_structured_array_types(
+    x: np.ndarray, char_casts: dict[str, str]
+) -> np.ndarray:
+    fields = x.dtype.fields
+    if fields is None:
+        raise ValueError("must be structured array")
+
+    trans = str.maketrans(char_casts)
+
+    new_dtype = np.dtype(
+        {
+            "names": list(fields.keys()),
+            "formats": [field[0].str.translate(trans) for field in fields.values()],
+        }
+    )
+    return x.astype(new_dtype)
 
 
 def flatten_dict(d: dict, prefix: str = "", sep: str = "/") -> dict:
@@ -106,25 +124,43 @@ def restoreClusterFilters(data: np.ndarray) -> list[ClusterFilter]:
 def sanitiseImportOptions(options: dict) -> dict:
     safe = {}
     for key, val in options.items():
-        if key == "path":  # convert Path to str
+        if isinstance(val, Path):
+            key = key + "<from Path>"
             val = str(val)
-        elif key == "isotopes":  # hdf5 can't store 'U' arrays
-            val = val.astype(
-                [(d[0], "S2") if d[0] == "Symbol" else d for d in val.dtype.descr]
-            )
+        elif isinstance(val, np.ndarray):
+            if val.dtype.names is not None and any(
+                "U" in x for _, x in val.dtype.descr
+            ):
+                val = cast_structured_array_types(val, {"U": "S"})
+                key = key + "<from arrayU>"
+            elif val.dtype.kind == "U":
+                val = val.astype("S")
+                key = key + "<from arrayU>"
+        elif val is None:
+            key = key + "<from None>"
+            val = "None"
         safe[key] = val
     return flatten_dict(safe)
 
 
 def restoreImportOptions(options: dict) -> dict:
+    re_type = re.compile("(\\w+)(?:\\<from (\\w+)\\>)?")
+
     restored = {}
     for key, val in unflatten_dict(options).items():
-        if key == "path":  # convert str to Path
+        m = re_type.match(key)
+        if m is None:
+            raise KeyError(f"invalid type ({type(key)}) for {key}")
+        key, type_token = m.groups()
+        if type_token == "Path":
             val = Path(val)
-        elif key == "isotopes":  # restore 'U' array
-            val = val.astype(
-                [(d[0], "U2") if d[0] == "Symbol" else d for d in val.dtype.descr]
-            )
+        elif type_token == "arrayU":
+            if val.dtype.names is not None:
+                val = cast_structured_array_types(val, {"S": "U"})
+            else:
+                val = val.astype("U")
+        elif type_token == "None":
+            val = None
         restored[key] = val
     return restored
 
@@ -162,6 +198,7 @@ def saveSession(
 
                 import_group = input_group.create_group("import options")
                 for key, val in sanitiseImportOptions(input.import_options).items():
+                    print(key, val, flush=True)
                     import_group.attrs[key] = val
 
                 element_group = input_group.create_group("elements")
