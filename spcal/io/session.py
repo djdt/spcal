@@ -1,11 +1,10 @@
 """Save and restore SPCal sessions."""
 
-from PySide6 import QtWidgets
-
 from pathlib import Path
 
 import h5py
 import numpy as np
+from PySide6 import QtWidgets
 
 from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
 from spcal.gui.options import OptionsWidget
