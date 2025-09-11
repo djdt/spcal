@@ -344,7 +344,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def exportImage(
-        self, path: Path | str, background: QtGui.QColor | None = None
+        self, path: Path | str, background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None
     ) -> None:
         path = Path(path)
 

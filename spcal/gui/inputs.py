@@ -55,12 +55,12 @@ class InputWidget(QtWidgets.QWidget):
         self.draw_mode = "overlay"
 
         self.graph_toolbar = QtWidgets.QToolBar()
-        self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
-        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        self.graph_toolbar.setOrientation(QtCore.Qt.Orientation.Vertical)
+        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
 
         settings = QtCore.QSettings()
         font = QtGui.QFont(
-            settings.value("GraphFont/Family", "SansSerif"),
+            str(settings.value("GraphFont/Family", "SansSerif")),
             pointSize=int(settings.value("GraphFont/PointSize", 10)),
         )
         self.graph = ParticleView(font=font)
@@ -129,15 +129,15 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.addActions(action_group_graph_view.actions())
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding
         )
         self.graph_toolbar.addWidget(spacer)
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
         # Layouts
 
-        self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignLeft)
-        self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignLeft)
+        self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
 
         layout_graph = QtWidgets.QHBoxLayout()
         layout_graph.addWidget(self.graph_toolbar, 0)
@@ -168,17 +168,17 @@ class InputWidget(QtWidgets.QWidget):
         return self.io.enabledNames()
 
     @property
-    def draw_names(self) -> tuple[str, ...]:
+    def draw_names(self) -> list[str]:
         if self.draw_mode == "single":
             name = self.io.combo_name.currentText()
             if name != "<element>":
-                return (name,)
+                return [name]
             else:
-                return tuple()
+                return []
         return self.enabled_names
 
     def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
+        scheme = color_schemes[str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
     def updateNames(self, names: dict[str, str]) -> None:
@@ -275,7 +275,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg.open()
         return dlg
 
-    def dialogDataProperties(self) -> QtWidgets.QDialog:
+    def dialogDataProperties(self) -> QtWidgets.QDialog | None:
         from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 
         if len(self.detection_names) == 0:
@@ -302,7 +302,7 @@ class InputWidget(QtWidgets.QWidget):
             settings.setValue("ImageExport/SizeY", size.height())
             settings.setValue("ImageExport/DPI", dpi)
 
-            self.exportGraphImage(path, size, dpi, options)
+            self.exportGraphImage(Path(path), size, dpi, options)
 
         settings = QtCore.QSettings()
         size = QtCore.QSize(
