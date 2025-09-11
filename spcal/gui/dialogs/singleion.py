@@ -31,14 +31,17 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.counts = np.array([])
 
         self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
-        self.max_sigma_difference.setRange(0.0, 1.0)
-        self.max_sigma_difference.setValue(0.2)
+        self.max_sigma_difference.setRange(0.01, 1.0)
+        self.max_sigma_difference.setValue(0.1)
         self.max_sigma_difference.setSingleStep(0.01)
         self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
+        self.check_average_sigma = QtWidgets.QCheckBox("Use average SIA shape.")
+
         controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
-        controls_layout.addRow("Max σ distance:", self.max_sigma_difference)
+        controls_layout.addRow("Max dist. from mean:", self.max_sigma_difference)
+        controls_layout.addRow(self.check_average_sigma)
         controls_box.setLayout(controls_layout)
 
         self.button_box = QtWidgets.QDialogButtonBox(
@@ -129,11 +132,17 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.scatter.setValid(self.valid)
         self.scatter.drawMaxDifference(poly, self.max_sigma_difference.value())
+        if np.count_nonzero(self.valid) > 0:
+            self.hist.drawLognormalFit(
+                np.mean(self.mus[self.valid]), np.mean(self.sigmas[self.valid])
+            )
+        elif self.hist.fit_curve is not None:
+            self.hist.fit_curve.clear()
 
     def updateHistogram(self) -> None:
-        self.hist.clear()
         if self.counts.size > 0:
-            self.hist.draw(self.counts[self.counts > 0])
+            hist, edges = np.histogram(self.counts[self.counts > 0], bins=100)
+            self.hist.drawHist(hist, edges)
 
     def updateTable(self) -> None:
         if self.counts.size == 0 or self.lams.size == 0:
@@ -167,7 +176,8 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonDialog()
-    win.loadSingleIonData("/home/tom/Downloads/11-43-47 1ppb att")
+    win.loadSingleIonData("/home/tom/Downloads/Raw data/NT012A/11-43-47 1ppb att")
+    # win.loadSingleIonData("/home/tom/Downloads/Raw data/NT032/14-38-46 1 ppb unatt")
     win.show()
 
     app.exec()

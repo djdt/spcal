@@ -10,16 +10,21 @@ from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 class SingleIonScatterView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(
-            "Single Ion Distribution",
-            xlabel="Single Ion Signal",
-            ylabel="No. Events",
+            "Extracted Parameters",
+            xlabel="m/z",
+            ylabel="Shape (σ)",
             viewbox=ViewBoxForceScaleAtZero(),
             parent=parent,
         )
 
-        self.points: pyqtgraph.PlotCurveItem | None = None
+        self.points: pyqtgraph.ScatterPlotItem | None = None
         self.max_diff: pyqtgraph.PlotCurveItem | None = None
         self.plot.setLimits(xMin=0.0, yMin=0.0)
+
+    def clear(self) -> None:
+        super().clear()
+        self.points = None
+        self.max_diff = None
 
     def drawData(
         self,
@@ -50,7 +55,12 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         brushes = [brush_valid if x else brush_invalid for x in valid]
         self.points.setBrush(brushes)
 
-    def drawMaxDifference(self, poly: np.polynomial.Polynomial, max_difference: float, pen: QtGui.QPen | None = None) -> None:
+    def drawMaxDifference(
+        self,
+        poly: np.polynomial.Polynomial,
+        max_difference: float,
+        pen: QtGui.QPen | None = None,
+    ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
@@ -67,45 +77,30 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             -max_difference,
             -max_difference,
         ]
-        self.max_diff.setData(x=xs,y=ys)
+        self.max_diff.setData(x=xs, y=ys)
         self.max_diff.setPen(pen)
 
 
 class SingleIonHistogramView(SinglePlotGraphicsView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(
-            "Single Ion Distribution",
-            xlabel="Single Ion Signal",
+            "Signal Distribution",
+            xlabel="Raw Signal",
             ylabel="No. Events",
             viewbox=ViewBoxForceScaleAtZero(),
             parent=parent,
         )
         self.plot.setLimits(xMin=0.0, yMin=0.0)
 
-        self.hist, self.edges = None, None
+        self._hist, self._edges = None, None
 
-    def draw(
-        self,
-        data: np.ndarray,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.gray)
+        self.hist_curve: pyqtgraph.PlotCurveItem | None = None
+        self.fit_curve: pyqtgraph.PlotCurveItem | None = None
 
-        if data.ndim == 1:
-            hist, edges = np.histogram(data, bins=100)
-            curve = self.drawHist(hist, edges, pen=pen, brush=brush)
-        else:
-            hist, edges = data[:-1, 1], data[:, 0]
-            curve = self.drawHist(hist, edges, pen=pen, brush=brush)
-
-        self.hist, self.edges = hist, edges
-
-        return curve
+    def clear(self) -> None:
+        super().clear()
+        self.hist_curve = None
+        self.fit_curve = None
 
     def drawHist(
         self,
@@ -115,7 +110,7 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         bar_offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
+    ) -> None:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
@@ -137,18 +132,21 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
         y[1:-1:2] = hist
 
-        curve = pyqtgraph.PlotCurveItem(
-            x=x,
-            y=y,
-            stepMode="center",
-            fillLevel=0,
-            fillOutline=True,
-            pen=pen,
-            brush=brush,
-            skipFiniteCheck=True,
-        )
-        self.plot.addItem(curve)
-        return curve
+        if self.hist_curve is None:
+            self.hist_curve = pyqtgraph.PlotCurveItem(
+                x=x,
+                y=y,
+                stepMode="center",
+                fillLevel=0,
+                fillOutline=True,
+                pen=pen,
+                brush=brush,
+                skipFiniteCheck=True,
+            )
+            self.plot.addItem(self.hist_curve)
+        else:
+            self.hist_curve.setData(x=x, y=y, pen=pen, brush=brush)
+        self._hist, self._edges = hist, edges
 
     def drawLognormalFit(
         self,
@@ -156,26 +154,28 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         sigma: float,
         normalise: bool = True,
         pen: QtGui.QPen | None = None,
-    ) -> pyqtgraph.PlotCurveItem | None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 2.0)
             pen.setCosmetic(True)
 
-        if self.hist is None or self.edges is None:
+        if self._hist is None or self._edges is None:
             return None
 
-        xs = np.linspace(self.edges[0], self.edges[-1], 1000)
+        xs = np.linspace(self._edges[0], self._edges[-1], 1000)
         ys = lognormal.pdf(xs, mu, sigma)
 
-        density_factor = 1.0 / (np.sum(self.hist) * (self.edges[1] - self.edges[0]))
+        density_factor = 1.0 / (np.sum(self._hist) * (self._edges[1] - self._edges[0]))
         ys /= density_factor
 
         if normalise:
             xmax = xs[np.argmax(ys)]
-            ys = ys / ys.max() * self.hist[np.searchsorted(self.edges, xmax)]
+            ys = ys / ys.max() * self._hist[np.searchsorted(self._edges, xmax)]
 
-        curve = pyqtgraph.PlotCurveItem(
-            x=xs, y=ys, pen=pen, connect="all", skipFiniteCheck=True
-        )
-        self.plot.addItem(curve)
-        return curve
+        if self.fit_curve is None:
+            self.fit_curve = pyqtgraph.PlotCurveItem(
+                pen=pen, connect="all", skipFiniteCheck=True
+            )
+            self.plot.addItem(self.fit_curve)
+
+        self.fit_curve.setData(x=xs, y=ys)
