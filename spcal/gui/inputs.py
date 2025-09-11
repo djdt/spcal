@@ -381,7 +381,7 @@ class InputWidget(QtWidgets.QWidget):
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options
         if "names" not in self.import_options:
-            self.import_options["names"] = {n: n for n in data.dtype.names}
+            self.import_options["names"] = {str(n): str(n) for n in data.dtype.names}
         self.label_file.setText(str(options["path"]))
 
         self.options.blockSignals(True)
