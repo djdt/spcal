@@ -22,6 +22,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.setWindowTitle("Single Ion Distribution")
 
         self.hist = SingleIonHistogramView()
+        self.hist.plot.setMouseEnabled(x=False, y=False)
         self.scatter = SingleIonScatterView()
         self.table = BasicTable()
         self.table.setColumnCount(4)
