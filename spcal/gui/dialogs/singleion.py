@@ -39,6 +39,29 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.max_sigma_difference.setSingleStep(0.01)
         self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
+        self.minimum_value = QtWidgets.QDoubleSpinBox()
+        self.minimum_value.setRange(0.0, 1e9)
+        self.minimum_value.setValue(0.0)
+        self.minimum_value.setStepType(
+            QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
+        )
+        self.minimum_value.editingFinished.connect(self.updateExtractedParameters)
+        self.minimum_value.editingFinished.connect(self.updateMinMaxValueRanges)
+
+        self.maximum_value = QtWidgets.QDoubleSpinBox()
+        self.maximum_value.setRange(0.0, 1e9)
+        self.maximum_value.setValue(0.0)
+        self.maximum_value.setStepType(
+            QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
+        )
+        self.maximum_value.editingFinished.connect(self.updateExtractedParameters)
+        self.maximum_value.editingFinished.connect(self.updateMinMaxValueRanges)
+
+        layout_range = QtWidgets.QHBoxLayout()
+        layout_range.addWidget(self.minimum_value)
+        layout_range.addWidget(QtWidgets.QLabel("-"))
+        layout_range.addWidget(self.maximum_value)
+
         self.check_average_sigma = QtWidgets.QCheckBox("Use average SIA shape.")
 
         self.check_restrict = QtWidgets.QCheckBox("Restrict to single ion signals.")
@@ -49,6 +72,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
         controls_layout.addRow("Max dist. from mean:", self.max_sigma_difference)
+        controls_layout.addRow("Valid value range:", layout_range)
         controls_layout.addRow(self.check_restrict)
         controls_layout.addRow(self.label_average)
         controls_layout.addRow(self.check_average_sigma)
@@ -114,9 +138,16 @@ class SingleIonDialog(QtWidgets.QDialog):
         else:
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
+
         # Remove clearly gaussian signals
         zeros = np.count_nonzero(self.counts == 0, axis=0)
         self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
+
+        max = np.amax(self.counts)
+        self.minimum_value.setRange(0.0, max)
+        self.maximum_value.setRange(0.0, max)
+        self.minimum_value.setValue(0.0)
+        self.maximum_value.setValue(max)
         # self.updateHistogram()
         self.updateExtractedParameters()
 
@@ -124,9 +155,13 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.scatter.clear()
         if not self.max_sigma_difference.hasAcceptableInput():
             return
-        # mask = np.logical_or(self.counts == 0, self.counts > 1000)
+        mask = np.logical_and(
+            self.counts >= self.minimum_value.value(),
+            self.counts <= self.maximum_value.value(),
+        )
+        mask = np.logical_or(self.counts == 0, mask)
         self.lams, self.mus, self.sigmas = (
-            extract_compound_poisson_lognormal_parameters(self.counts)
+            extract_compound_poisson_lognormal_parameters(self.counts, mask)
         )
 
         self.scatter.drawData(self.masses, self.sigmas)
@@ -164,9 +199,14 @@ class SingleIonDialog(QtWidgets.QDialog):
         if np.count_nonzero(self.valid) > 0:
             counts = self.counts[:, self.valid]
 
+            mask = np.logical_and(
+                counts > self.minimum_value.value(),
+                counts <= self.maximum_value.value()
+            )
+
             hist, edges = np.histogram(
-                counts[counts > 0],
-                bins=100,
+                counts[mask],
+                bins=200,
                 density=True,
             )
             self.hist.drawHist(hist, edges)
@@ -183,6 +223,14 @@ class SingleIonDialog(QtWidgets.QDialog):
                 item = self.table.item(i, j)
                 if item is not None:
                     item.setForeground(color)
+
+    def updateMinMaxValueRanges(self) -> None:
+        if self.minimum_value.hasAcceptableInput():
+            min = self.minimum_value.value()
+            self.maximum_value.setRange(min, 1e9)
+        if self.maximum_value.hasAcceptableInput():
+            max = self.maximum_value.value()
+            self.minimum_value.setRange(0.0, max)
 
     def updateHistogram(self) -> None:
         if self.counts.size > 0:
