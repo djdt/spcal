@@ -6,7 +6,6 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
-from spcal.gui.graphs.singleion import SingleIonView
 from spcal.gui.io import get_open_spcal_path
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ValueWidget
@@ -176,7 +175,7 @@ class CompoundPoissonOptions(LimitOptions):
         if self.single_ion_dist is None:
             return
 
-        view = SingleIonView()
+        view = SingleIonHistogramView()
         view.draw(self.single_ion_dist)
 
         dlg = QtWidgets.QDialog(self)

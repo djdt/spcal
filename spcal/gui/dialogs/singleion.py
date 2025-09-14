@@ -4,7 +4,9 @@ import h5py
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
-from spcal.dists.util import extract_compound_poisson_lognormal_parameters
+from spcal.dists.util import (
+    extract_compound_poisson_lognormal_parameters,
+)
 from spcal.gui.graphs.singleion import SingleIonHistogramView, SingleIonScatterView
 from spcal.gui.io import get_open_spcal_path
 from spcal.gui.modelviews import BasicTable
@@ -39,9 +41,16 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.check_average_sigma = QtWidgets.QCheckBox("Use average SIA shape.")
 
+        self.check_restrict = QtWidgets.QCheckBox("Restrict to single ion signals.")
+        self.check_restrict.checkStateChanged.connect(self.updateValidParameters)
+
+        self.label_average = QtWidgets.QLabel()
+
         controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
         controls_layout.addRow("Max dist. from mean:", self.max_sigma_difference)
+        controls_layout.addRow(self.check_restrict)
+        controls_layout.addRow(self.label_average)
         controls_layout.addRow(self.check_average_sigma)
         controls_box.setLayout(controls_layout)
 
@@ -85,7 +94,8 @@ class SingleIonDialog(QtWidgets.QDialog):
         # todo: add a progress bar
 
         if nu.is_nu_directory(path):
-            self.masses, self.counts, _ = nu.read_nu_directory(path, raw=True)
+            self.masses, self.counts, info = nu.read_nu_directory(path, raw=True)
+            self.reported_mu = np.log(info["AverageSingleIonArea"])
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:
                 if "PeakData" in h5["PeakData"]:
@@ -98,19 +108,23 @@ class SingleIonDialog(QtWidgets.QDialog):
                     * h5["FullSpectra"].attrs["Single Ion Signal"][0]
                     * tofwerk.factor_extraction_to_acquisition(h5)
                 ).reshape(-1, self.masses.size)
+                self.reported_mu = np.log(
+                    h5["FullSpectra"].attrs["Single Ion Signal"][0]
+                )
         else:
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
         # Remove clearly gaussian signals
         zeros = np.count_nonzero(self.counts == 0, axis=0)
         self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
-        self.updateHistogram()
+        # self.updateHistogram()
         self.updateExtractedParameters()
 
     def updateExtractedParameters(self) -> None:
         self.scatter.clear()
         if not self.max_sigma_difference.hasAcceptableInput():
             return
+        # mask = np.logical_or(self.counts == 0, self.counts > 1000)
         self.lams, self.mus, self.sigmas = (
             extract_compound_poisson_lognormal_parameters(self.counts)
         )
@@ -127,18 +141,48 @@ class SingleIonDialog(QtWidgets.QDialog):
             np.logical_and(self.lams > 0.005, self.lams < 10.0),
         )
         poly = np.polynomial.Polynomial.fit(self.masses[valid], self.sigmas[valid], 1)
+
         self.valid = (
             np.abs(self.sigmas - poly(self.masses)) < self.max_sigma_difference.value()
         )
 
+        if self.check_restrict.isChecked():
+            p0 = np.exp(-self.lams)
+            p2 = (self.lams**2 * p0) / 2.0
+            p2 = (self.lams**2 * p0) / 2.0
+            single_ions = np.logical_and(p0 > 1e-2, p2 < 1e-3)
+            self.valid = np.logical_and(self.valid, single_ions)
+
         self.scatter.setValid(self.valid)
         self.scatter.drawMaxDifference(poly, self.max_sigma_difference.value())
+
+        mean_mu, mean_sigma = (
+            np.mean(self.mus[self.valid]),
+            np.mean(self.sigmas[self.valid]),
+        )
+
         if np.count_nonzero(self.valid) > 0:
-            self.hist.drawLognormalFit(
-                np.mean(self.mus[self.valid]), np.mean(self.sigmas[self.valid])
+            counts = self.counts[:, self.valid]
+
+            hist, edges = np.histogram(
+                counts[counts > 0],
+                bins=100,
+                density=True,
             )
+            self.hist.drawHist(hist, edges)
         elif self.hist.fit_curve is not None:
-            self.hist.fit_curve.clear()
+            self.hist.hist_curve.clear()
+
+        self.label_average.setText(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
+
+        base = self.table.palette().text()
+        bad = self.table.palette().placeholderText()
+        for i in range(self.valid.size):
+            color = base if self.valid[i] else bad
+            for j in range(self.table.rowCount()):
+                item = self.table.item(i, j)
+                if item is not None:
+                    item.setForeground(color)
 
     def updateHistogram(self) -> None:
         if self.counts.size > 0:
@@ -174,11 +218,14 @@ class SingleIonDialog(QtWidgets.QDialog):
 
 
 if __name__ == "__main__":
+    # options
+    # 1. manual input of single SIA shape (like old)
+    # 2.
     app = QtWidgets.QApplication()
 
     win = SingleIonDialog()
-    win.loadSingleIonData("/home/tom/Downloads/Raw data/NT012A/11-43-47 1ppb att")
-    # win.loadSingleIonData("/home/tom/Downloads/Raw data/NT032/14-38-46 1 ppb unatt")
+    # win.loadSingleIonData("/home/tom/Downloads/Raw data/NT012A/11-43-47 1ppb att")
+    win.loadSingleIonData("/home/tom/Downloads/Raw data/NT032/14-35-55 10 ppb unatt")
     win.show()
 
     app.exec()

@@ -2,9 +2,34 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.dists import lognormal
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
+
+
+def zero_truncated_compound_poisson_lognormal(
+    size: int, lam: float, mu: float, sigma: float
+) -> np.ndarray:
+    """Draw values from a zero-truncated compound-Poisson-lognormal.
+
+    This is the same as ``compound_poisson_lognormal`` except all Poisson values
+    must be 1 or greater.
+
+    Args:
+        size: number of values
+        lam: the expected value of the Poisson
+        mu: the location of the lognormal
+        sigma: the shape of the lognormal
+
+    Returns:
+        values of size ``size``
+    """
+    x = np.zeros(size, dtype=np.float32)
+    u = np.random.uniform(np.exp(-lam), 1.0, size=size)
+    zp = 1 + np.random.poisson(lam - (-np.log(u)))
+
+    for i in range(1, zp.max()):
+        x[zp >= i] += np.random.lognormal(mu, sigma, size=np.count_nonzero(zp >= i))
+    return x
 
 
 class SingleIonScatterView(SinglePlotGraphicsView):
@@ -96,11 +121,13 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
 
         self.hist_curve: pyqtgraph.PlotCurveItem | None = None
         self.fit_curve: pyqtgraph.PlotCurveItem | None = None
+        self.fit_curves = []
 
     def clear(self) -> None:
         super().clear()
         self.hist_curve = None
         self.fit_curve = None
+        self.fit_curves.clear()
 
     def drawHist(
         self,
@@ -147,35 +174,3 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         else:
             self.hist_curve.setData(x=x, y=y, pen=pen, brush=brush)
         self._hist, self._edges = hist, edges
-
-    def drawLognormalFit(
-        self,
-        mu: float,
-        sigma: float,
-        normalise: bool = True,
-        pen: QtGui.QPen | None = None,
-    ):
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 2.0)
-            pen.setCosmetic(True)
-
-        if self._hist is None or self._edges is None:
-            return None
-
-        xs = np.linspace(self._edges[0], self._edges[-1], 1000)
-        ys = lognormal.pdf(xs, mu, sigma)
-
-        density_factor = 1.0 / (np.sum(self._hist) * (self._edges[1] - self._edges[0]))
-        ys /= density_factor
-
-        if normalise:
-            xmax = xs[np.argmax(ys)]
-            ys = ys / ys.max() * self._hist[np.searchsorted(self._edges, xmax)]
-
-        if self.fit_curve is None:
-            self.fit_curve = pyqtgraph.PlotCurveItem(
-                pen=pen, connect="all", skipFiniteCheck=True
-            )
-            self.plot.addItem(self.fit_curve)
-
-        self.fit_curve.setData(x=xs, y=ys)
