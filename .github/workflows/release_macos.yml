@@ -24,7 +24,7 @@ jobs:
       shell: bash
       env:
        CC: gcc-15
-       CXX: g++15
+       CXX: g++-15
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
