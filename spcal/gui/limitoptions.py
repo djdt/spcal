@@ -11,6 +11,8 @@ from spcal.gui.util import create_action
 from spcal.gui.widgets import ValueWidget
 from spcal.io import nu, tofwerk
 
+from spcal.gui.dialogs.singleion import SingleIonDialog
+
 logger = logging.getLogger(__name__)
 
 
