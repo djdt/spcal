@@ -18,6 +18,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel pyinstaller pybind11
           brew install tbb
+          brew link tbb
     - name: Install project
       run: |
         pip install . -v
