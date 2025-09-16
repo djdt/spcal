@@ -37,7 +37,8 @@ jobs:
     - name: Upload binary
       id: upload
       run: |
-        gh release upload "$TAG_NAME" "./dist/spcal_$SPCAL_VERSION"
+        mv "./dist/spcal_$SPCAL_VERSION" "./dist/spcal_macos_$SPCAL_VERSION"
+        gh release upload "$TAG_NAME" "./dist/spcal_macos_$SPCAL_VERSION"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SPCAL_VERSION: ${{ steps.set-output.outputs.SPCAL_VERSION }}
