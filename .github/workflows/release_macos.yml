@@ -18,7 +18,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel pyinstaller pybind11
           brew install tbb
-          brew link tbb
     - name: Install project
       run: |
         pip install . -v
@@ -27,6 +26,7 @@ jobs:
       env:
        CC: gcc-15
        CXX: g++-15
+       LDFLAGS: "-L/opt/homebrew/lib"
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
