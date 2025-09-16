@@ -22,8 +22,9 @@ jobs:
         pip install . -v
         python setup.py build_ext --inplace
       shell: bash
-      CC: gcc-15
-      CXX: g++15
+      env:
+       CC: gcc-15
+       CXX: g++15
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
