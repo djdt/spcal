@@ -19,8 +19,11 @@ jobs:
           pip install wheel pyinstaller pybind11
     - name: Install project
       run: |
-        pip install . --config-settings="--build-option=build_ext --define SEQSORT" -v
-        python setup.py build_ext --inplace --define SEQSORT
+        pip install . -v
+        python setup.py build_ext --inplace
+      shell: bash
+      CC: gcc-15
+      CXX: g++15
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
