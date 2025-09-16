@@ -33,11 +33,11 @@ jobs:
     - name: Set output version
       id: set-output
       run : |
-        echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$env:GITHUB_OUTPUT"
+        echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$GITHUB_OUTPUT"
     - name: Upload binary
       id: upload
       run: |
-        gh release upload "$env:TAG_NAME" "./dist/spcal_$env:SPCAL_VERSION"
+        gh release upload "$TAG_NAME" "./dist/spcal_$SPCAL_VERSION"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SPCAL_VERSION: ${{ steps.set-output.outputs.SPCAL_VERSION }}
