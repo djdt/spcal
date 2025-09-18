@@ -30,7 +30,11 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_accumulation = settings.value(
             "Threshold/AccumulationMethod", "Signal Mean"
         )
-        self.points_required = int(settings.value("Threshold/PointsRequired", 1))
+        self.points_required = int(settings.value("Threshold/PointsRequired", 1))  # type: ignore
+
+        self.prominence_required = float(
+            settings.value("Threshold/ProminenceRequired", 0.2)
+        )  # type: ignore
 
         sf = int(settings.value("SigFigs", 4))
 
@@ -72,13 +76,13 @@ class OptionsWidget(QtWidgets.QWidget):
                 "Use the mass response of a reference particle.",
             ]
         ):
-            self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ToolTipRole)
+            self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ItemDataRole.ToolTipRole)
         self.efficiency_method.setToolTip(
-            self.efficiency_method.currentData(QtCore.Qt.ToolTipRole)
+            self.efficiency_method.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
         )
         self.efficiency_method.currentIndexChanged.connect(
             lambda i: self.efficiency_method.setToolTip(
-                self.efficiency_method.itemData(i, QtCore.Qt.ToolTipRole)
+                self.efficiency_method.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
             )
         )
 
@@ -123,36 +127,36 @@ class OptionsWidget(QtWidgets.QWidget):
         self.limit_method.setItemData(
             0,
             "Automatically determine the best method.",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
-            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
+            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ItemDataRole.ToolTipRole
         )
         self.limit_method.setItemData(
             2,
             "Estimate ToF limits using a compound distribution based on the "
             "number of accumulations and the single ion distribution..",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
-            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
+            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ItemDataRole.ToolTipRole
         )
         self.limit_method.setItemData(
             4,
             "Threshold using Formula C from the MARLAP manual.",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
             5,
             "Manually define limits in the sample and reference tabs.",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setToolTip(
-            self.limit_method.currentData(QtCore.Qt.ToolTipRole)
+            self.limit_method.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
         )
         self.limit_method.currentIndexChanged.connect(
             lambda i: self.limit_method.setToolTip(
-                self.limit_method.itemData(i, QtCore.Qt.ToolTipRole)
+                self.limit_method.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
             )
         )
 
@@ -231,6 +235,7 @@ class OptionsWidget(QtWidgets.QWidget):
             "limit method": self.limit_method.currentText(),
             "accumulation method": self.limit_accumulation,
             "points required": self.points_required,
+            "prominence required": self.prominence_required,
             "iterative": self.check_iterative.isChecked(),
             "cell diameter": self.celldiameter.baseValue(),
             "compound poisson": self.compound_poisson.state(),
@@ -261,6 +266,8 @@ class OptionsWidget(QtWidgets.QWidget):
             self.limit_accumulation = state["accumulation method"]
         if "points required" in state:
             self.points_required = state["points required"]
+        if "prominence required" in state:
+            self.prominence_required = state["prominence required"]
 
         if "cell diameter" in state:
             self.celldiameter.setBaseValue(state["cell diameter"])
@@ -360,14 +367,25 @@ class OptionsWidget(QtWidgets.QWidget):
             if widget.view_format[1] == "g":
                 widget.setViewFormat(num)
 
-    def setAdvancedOptions(self, accumlation_method: str, points_required: int) -> None:
+    def setAdvancedOptions(
+        self, accumlation_method: str, points_required: int, prominence_required: float
+    ) -> None:
         self.limit_accumulation = accumlation_method
         self.points_required = points_required
+        self.prominence_required = prominence_required
+
+        settings = QtCore.QSettings()
+        settings.setValue("Threshold/PointsRequired", points_required)
+        settings.setValue("Threshold/ProminenceRequired", prominence_required)
+
         self.limitOptionsChanged.emit()
 
     def dialogAdvancedOptions(self) -> None:
         dlg = AdvancedThresholdOptions(
-            self.limit_accumulation, self.points_required, parent=self
+            self.limit_accumulation,
+            self.points_required,
+            self.prominence_required,
+            parent=self,
         )
         dlg.optionsSelected.connect(self.setAdvancedOptions)
         dlg.open()

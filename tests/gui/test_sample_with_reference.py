@@ -37,6 +37,9 @@ def test_sample_with_reference(qtbot: QtBot):
     assert not window.options.dwelltime.hasAcceptableInput()
     assert not window.options.efficiency.isEnabled()
 
+    # set the prominence to 0, later addition
+    window.options.prominence_required = 0.0
+
     window.sample.loadData(data, {"path": "test/data.csv", "dwelltime": dwelltime})
     assert window.sample.io.names() == ["Au", "Ag"]
 
