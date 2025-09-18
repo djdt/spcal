@@ -275,7 +275,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg.open()
         return dlg
 
-    def dialogDataProperties(self) -> QtWidgets.QDialog:
+    def dialogDataProperties(self) -> QtWidgets.QDialog | None:
         from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 
         if len(self.detection_names) == 0:
