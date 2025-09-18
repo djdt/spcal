@@ -247,7 +247,7 @@ void init_detection(py::module_ &mod) {
           "Calculates to maxima between pairs of start and end positions.");
   mod.def("peak_prominence", &peak_prominence,
           "Calculate the peak prominence at given indicies.", py::arg(),
-          py::arg(), py::arg("max_width") = 50, py::arg("min_base") = 0.0);
+          py::arg(), py::arg("max_width") = 100, py::arg("min_base") = 0.0);
   mod.def("label_regions", &label_regions,
           "Label regions 1 to size, points outside all regions are 0.");
   mod.def("combine_regions", &combine_regions,
