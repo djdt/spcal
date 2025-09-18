@@ -25,6 +25,16 @@ if opts.debug:
     exe = EXE(pyz, a.scripts, exclude_binaries=True, name=name)
     coll = COLLECT(exe, a.binaries, a.datas, name=name + "_debug")
 elif opts.bundle:
+    exe = EXE(
+        pyz,
+        a.scripts,
+        exclude_binaries=True,
+        name=name,
+        debug=False,
+        upx_exclude=["Qt*.dll", "PySide*.pyd"],
+        console=False,
+        icon="app.ico",
+    )
     coll = COLLECT(exe, a.binaries, a.datas)
     app = BUNDLE(
         coll,
