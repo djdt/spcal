@@ -452,6 +452,7 @@ class InputWidget(QtWidgets.QWidget):
         d, l, self.original_regions = {}, {}, {}
         acc_method = self.options.limit_accumulation
         points_req = self.options.points_required
+        prominence_req = self.options.prominence_required
         for name in self.names:
             limit_accumulation = self.limits[name].accumulationLimit(acc_method)
             limit_detection = self.limits[name].detection_threshold
@@ -464,6 +465,7 @@ class InputWidget(QtWidgets.QWidget):
                     limit_accumulation,
                     limit_detection,
                     points_required=points_req,
+                    prominence_required=prominence_req,
                     integrate=True,
                 )
 

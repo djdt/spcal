@@ -45,6 +45,7 @@ def process_data(
     limit_method: str,
     acc_method: str,
     points_req: int,
+    prominence_req: float,
     compositions_params: dict,
     limit_params: dict[str, dict],
     limit_window_size: int = 0,
@@ -82,6 +83,7 @@ def process_data(
             limits[name].accumulationLimit(acc_method),
             limits[name].detection_threshold,
             points_required=points_req,
+            prominence_required=prominence_req,
             integrate=True,
         )
 
@@ -738,6 +740,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
                     "limit_method": self.options.limit_method.currentText(),
                     "acc_method": self.options.limit_accumulation,
                     "points_req": self.options.points_required,
+                    "prominence_req": self.options.prominence_required,
                     "limit_params": limit_params.copy(),
                     "limit_window_size": (
                         (self.options.window_size.value() or 0)
