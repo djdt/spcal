@@ -10,22 +10,23 @@ def accumulate_detections(
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
     points_required: int = 1,
-    promience_required: float | np.ndarray | None = None,
+    prominence_required: float = 0.2,
     integrate: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Peak prominence is calculated for all points above the ``limit_detection``,
     with widths bound by the ``limit_accumulation``.
-    Detections are peaks with a prominence greater than ``promience_required`` and at
-    least ``points_required`` points above the ``limit_detection``.
+    Detections are peaks with at least ``points_required`` points above the ``limit_detection``.
+    Peaks with overlapping prominences with at least ``prominence_required`` of the maxium height
+    will be split.
 
     Args:
         y: array
         limit_accumulation: minimum accumulation value(s)
         limit_detection: minimum detection value(s)
         points_required: no. points > limit_detection to be detected
-        prominence_required: minimum prominence for peaks
+        prominence_required: minimum fraction of max prominence for overlapping peaks
         integrate: integrate, otherwise sum
 
     Returns:
@@ -43,13 +44,10 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
-    if promience_required is None:
-        promience_required = limit_detection - limit_accumulation
-
-    # todo: see if smoothing required
-    # todo: perfoemance of possible_detections, detections and sum
-    # psf = normal.pdf(np.linspace(-2, 2, 5))
-    # ysm = np.convolve(y, psf / psf.sum(), mode="same")
+    if prominence_required < 0.0 or prominence_required > 1.0:
+        raise ValueError(
+            "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
+        )
 
     possible_detections = np.flatnonzero(
         np.logical_and(y > limit_detection, local_maxima(y))
@@ -59,18 +57,36 @@ def accumulate_detections(
         y, possible_detections, min_base=limit_accumulation
     )
 
-    # if promience_required is array, use mid points
-    if isinstance(promience_required, np.ndarray):
-        detected = prominence >= promience_required[lefts + (rights - lefts) // 2]
+    # First we remove any peaks lower than the lod - base
+    min_prominence = limit_detection - limit_accumulation
+    if isinstance(min_prominence, np.ndarray):
+        detected = prominence >= min_prominence[lefts + (rights - lefts) // 2]
     else:
-        detected = prominence >= promience_required
+        detected = prominence >= min_prominence
     prominence, lefts, rights = (
         prominence[detected],
         lefts[detected],
         rights[detected],
     )
 
-    # fix any overlapped peaks, prefering most prominent
+    # Overlapping peaks have the same left or right edge
+    _, idx, inv = np.unique(rights, return_index=True, return_inverse=True)
+    max_prominence = np.maximum.reduceat(prominence, idx)[inv]
+    detected = prominence >= max_prominence * prominence_required
+
+    _, idx, inv = np.unique(lefts[detected], return_index=True, return_inverse=True)
+    max_prominence = np.maximum.reduceat(prominence[detected], idx)[inv]
+    new_detected = prominence[detected] >= max_prominence * prominence_required
+
+    # update detections with logical and
+    detected[detected] &= new_detected
+    prominence, lefts, rights = (
+        prominence[detected],
+        lefts[detected],
+        rights[detected],
+    )
+
+    # split any overlapped peaks, prefering most prominent
     right_larger = prominence[:-1] < prominence[1:]
     lefts[1:][right_larger] = np.maximum(
         lefts[1:][right_larger], rights[:-1][right_larger]
@@ -79,6 +95,7 @@ def accumulate_detections(
         lefts[1:][~right_larger], rights[:-1][~right_larger]
     )
 
+    # convert to pairs of left and right edge
     regions = np.stack((lefts, rights), axis=1)
 
     indicies = regions.ravel()

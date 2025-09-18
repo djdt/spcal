@@ -4,12 +4,13 @@ from spcal.gui.widgets import ValueWidget
 
 
 class AdvancedThresholdOptions(QtWidgets.QDialog):
-    optionsSelected = QtCore.Signal(str, int)
+    optionsSelected = QtCore.Signal(str, int, float)
 
     def __init__(
         self,
         accumulation_method: str,
         points_required: int,
+        prominence_required: float,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -24,22 +25,24 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
         self.limit_accumulation.setItemData(
             0,
             "Sum contiguous regions above the detection threshold.",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_accumulation.setItemData(
             1,
             "Sum contiguous regions above the midpoint of the threshold and mean.",
-            QtCore.Qt.ToolTipRole,
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_accumulation.setItemData(
-            2, "Sum contiguous regions above the signal mean.", QtCore.Qt.ToolTipRole
+            2,
+            "Sum contiguous regions above the signal mean.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_accumulation.setToolTip(
-            self.limit_accumulation.currentData(QtCore.Qt.ToolTipRole)
+            self.limit_accumulation.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
         )
         self.limit_accumulation.currentIndexChanged.connect(
             lambda i: self.limit_accumulation.setToolTip(
-                self.limit_accumulation.itemData(i, QtCore.Qt.ToolTipRole)
+                self.limit_accumulation.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
             )
         )
 
@@ -48,6 +51,14 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
         self.points_req.setValue(points_required)
         self.points_req.setToolTip(
             "Number of points > threshold to be considered a detection"
+        )
+
+        self.prominence_req = QtWidgets.QSpinBox()
+        self.prominence_req.setRange(0, 100)
+        self.prominence_req.setValue(int(prominence_required * 100))
+        self.prominence_req.setSuffix(" %")
+        self.prominence_req.setToolTip(
+            "Minimum fraction of largest overlapping peak before splitting."
         )
 
         self.button_box = QtWidgets.QDialogButtonBox(
@@ -60,12 +71,15 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
         layout = QtWidgets.QFormLayout()
         layout.addRow("Accumulation method:", self.limit_accumulation)
         layout.addRow("Points required:", self.points_req)
+        layout.addRow("Prominence required:", self.prominence_req)
         layout.addRow(self.button_box)
         self.setLayout(layout)
 
     def accept(self) -> None:
         self.optionsSelected.emit(
-            self.limit_accumulation.currentText(), self.points_req.value()
+            self.limit_accumulation.currentText(),
+            self.points_req.value(),
+            self.prominence_req.value() / 100.0,
         )
         super().accept()
 

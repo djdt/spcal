@@ -10,7 +10,7 @@ if compiler == "msvc":
     cxx_std = "latest"
     extra_link_args = []
 else:
-    cxx_std = "23"
+    cxx_std = 23
     extra_link_args = ["-ltbb"]
 
 spcalext = Pybind11Extension(

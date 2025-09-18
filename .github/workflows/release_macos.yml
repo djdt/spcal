@@ -1,4 +1,4 @@
-name: Release Windows Exec
+name: Release MacOS Exec
 on:
   workflow_dispatch:
   release:
@@ -17,21 +17,28 @@ jobs:
       run: |
           python -m pip install --upgrade pip
           pip install wheel pyinstaller pybind11
+          brew install tbb
     - name: Install project
       run: |
-        pip install . --config-settings="--build-option=build_ext --define SEQSORT" -v
-        python setup.py build_ext --inplace --define SEQSORT
+        pip install . -v
+        python setup.py build_ext --inplace
+      shell: bash
+      env:
+       CC: gcc-15
+       CXX: g++-15
+       LDFLAGS: "-L/opt/homebrew/lib"
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
     - name: Set output version
       id: set-output
       run : |
-        echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$env:GITHUB_OUTPUT"
+        echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$GITHUB_OUTPUT"
     - name: Upload binary
       id: upload
       run: |
-        gh release upload "$env:TAG_NAME" "./dist/spcal_macos_$env:SPCAL_VERSION"
+        mv "./dist/spcal_$SPCAL_VERSION" "./dist/spcal_macos_$SPCAL_VERSION"
+        gh release upload "$TAG_NAME" "./dist/spcal_macos_$SPCAL_VERSION"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SPCAL_VERSION: ${{ steps.set-output.outputs.SPCAL_VERSION }}
