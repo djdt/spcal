@@ -35,7 +35,13 @@ elif opts.bundle:
         console=False,
         icon="app.ico",
     )
-    coll = COLLECT(exe, a.binaries, a.datas)
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        name=name,
+        upx_exclude=["Qt*.dll", "PySide*.pyd"],
+    )
     app = BUNDLE(
         coll,
         name="spcal.app",
