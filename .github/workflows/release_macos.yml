@@ -29,7 +29,7 @@ jobs:
        LDFLAGS: "-L/opt/homebrew/lib"
     - name: Build exec
       run: |
-        pyinstaller --clean -y spcal.spec
+        pyinstaller --clean -y spcal_macos.spec
     - name: Set output version
       id: set-output
       run : |
