@@ -45,7 +45,9 @@ def accumulate_detections(
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
     if prominence_required < 0.0 or prominence_required > 1.0:
-        raise ValueError("accumulate_detections: prominence_required must be in the range (0.0, 1.0)")
+        raise ValueError(
+            "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
+        )
 
     possible_detections = np.flatnonzero(
         np.logical_and(y > limit_detection, local_maxima(y))
@@ -56,7 +58,11 @@ def accumulate_detections(
     )
 
     # First we remove any peaks lower than the lod - base
-    detected = prominence > (limit_detection - limit_accumulation)
+    min_prominence = limit_detection - limit_accumulation
+    if isinstance(min_prominence, np.ndarray):
+        detected = prominence >= min_prominence[lefts + (rights - lefts) // 2]
+    else:
+        detected = prominence >= min_prominence
     prominence, lefts, rights = (
         prominence[detected],
         lefts[detected],
