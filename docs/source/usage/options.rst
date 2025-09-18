@@ -53,6 +53,9 @@ SPCal also allows editing of the *Accumulation method*, to set the :term:`accumu
 
 Settings the *Required points* to greater than 1 will require detected regions to contain at least this many points.
 
+Setting the *Required prominence* will limit how overlapping peaks are split. To be split, a peak must have this percent of the maximum overlapping peak.
+To disable peak splitting you can set this to 100 %.
+
 Both the :term:`accumulation threshold` and :term:`required points` controls are found in the thresholding *Advanced Options* dialog.
 
 Compound-Poisson options
