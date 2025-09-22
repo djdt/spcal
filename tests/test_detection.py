@@ -65,6 +65,36 @@ def test_accumulate_detections_multiple_points():
         _, _, _ = detection.accumulate_detections(x, 0.5, 1, points_required=0)
 
 
+def test_accumulate_detections_prominence():
+    x = np.array([0, 0, 5, 2, 6, 2, 0, 0, 5, 4, 3, 2, 0, 0, 5, 4, 6, 0]).astype(float)
+
+    sums, labels, regions = detection.accumulate_detections(
+        x, 0.5, 1.0, prominence_required=0.0
+    )
+    assert np.all(sums == [5.0, 10.0, 14.0, 5.0, 10.0])
+    assert np.all(labels == [0, 1, 1, 2, 2, 2, 0, 3, 3, 3, 3, 3, 0, 4, 4, 5, 5, 0])
+
+    sums, labels, regions = detection.accumulate_detections(
+        x, 0.5, 1.0, prominence_required=0.2
+    )
+    assert np.all(sums == [5.0, 10.0, 14.0, 15.0])
+    assert np.all(labels == [0, 1, 1, 2, 2, 2, 0, 3, 3, 3, 3, 3, 0, 4, 4, 4, 4, 0])
+
+    sums, labels, regions = detection.accumulate_detections(
+        x, 0.5, 1.0, prominence_required=1.0
+    )
+    assert np.all(sums == [15.0, 14.0, 15.0])
+    assert np.all(labels == [0, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 0, 3, 3, 3, 3, 0])
+
+
+    # strange case with same max peak
+    x = np.array([0,0,3,5,2,5,1,0,0,0,5,6,5,0]).astype(float)
+    sums, labels, regions = detection.accumulate_detections(
+        x, 0.5, 1.0, prominence_required=0.0
+    )
+    assert np.all(sums == [16.0, 16.0])
+
+
 def test_detection_maxima():
     x = np.array([2.0, 1.0, 0.0, 2.0, 3.0, 5.0, 2.0, 3.0, 0.0, 3.0, 0.0])
     regions = np.array([[1, 2], [3, 8], [9, 10]])
