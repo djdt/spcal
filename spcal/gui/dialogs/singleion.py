@@ -78,6 +78,11 @@ class SingleIonDialog(QtWidgets.QDialog):
         controls_layout.addRow(self.check_average_sigma)
         controls_box.setLayout(controls_layout)
 
+
+        hist_controls_box = QtWidgets.QGroupBox("Histogram Controls")
+        hist_controls_box_layout = QtWidgets.QFormLayout()
+        hist_controls_box_layout.setLayout(hist_controls_box_layout)
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Open
@@ -273,7 +278,7 @@ if __name__ == "__main__":
 
     win = SingleIonDialog()
     # win.loadSingleIonData("/home/tom/Downloads/Raw data/NT012A/11-43-47 1ppb att")
-    win.loadSingleIonData("/home/tom/Downloads/Raw data/NT032/14-35-55 10 ppb unatt")
+    win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
     win.show()
 
     app.exec()
