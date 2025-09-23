@@ -38,18 +38,18 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             "Extracted Parameters",
             xlabel="m/z",
             ylabel="Shape (σ)",
-            viewbox=ViewBoxForceScaleAtZero(),
             parent=parent,
         )
 
         self.points: pyqtgraph.ScatterPlotItem | None = None
-        self.max_diff: pyqtgraph.PlotCurveItem | None = None
+        self.lines: dict[str, pyqtgraph.PlotCurveItem] = {}
+
         self.plot.setLimits(xMin=0.0, yMin=0.0)
 
     def clear(self) -> None:
         super().clear()
         self.points = None
-        self.max_diff = None
+        self.lines.clear()
 
     def drawData(
         self,
@@ -90,9 +90,10 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
 
-        if self.max_diff is None:
-            self.max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs")
-            self.plot.addItem(self.max_diff)
+        if "max_diff" not in self.lines:
+            max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs")
+            self.plot.addItem(max_diff)
+            self.lines["max_diff"] = max_diff
 
         xs = [poly.domain[0], poly.domain[-1], poly.domain[0], poly.domain[-1]]
         ys = poly(xs)
@@ -102,8 +103,22 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             -max_difference,
             -max_difference,
         ]
-        self.max_diff.setData(x=xs, y=ys)
-        self.max_diff.setPen(pen)
+        self.lines["max_diff"].setData(x=xs, y=ys)
+        self.lines["max_diff"].setPen(pen)
+
+    def drawInterpolationLine(
+        self, xs: np.ndarray, ys: np.ndarray, pen: QtGui.QPen | None = None
+    ) -> None:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.blue, 1.0)
+            pen.setCosmetic(True)
+
+        if "interp" not in self.lines:
+            interp = pyqtgraph.PlotCurveItem(x=xs, y=ys, pen=pen, skipFiniteCheck=True)
+            self.plot.addItem(interp)
+            self.lines["interp"] = interp
+        else:
+            self.lines["interp"].setData(x=xs, y=ys)
 
 
 class SingleIonHistogramView(SinglePlotGraphicsView):
