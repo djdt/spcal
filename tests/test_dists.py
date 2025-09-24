@@ -110,7 +110,9 @@ def test_extract_compound_poisson_lognormal_parameters_iterative():
         params = [float(x) for x in file.split(",")]
         x = data[file]
 
-        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(x)
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(
+            x, alpha=1e-4, iter_eps=1e-3
+        )
         assert np.allclose(params, predicted, atol=0.02)
 
     data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations_peaks.npz"))
@@ -118,5 +120,7 @@ def test_extract_compound_poisson_lognormal_parameters_iterative():
         params = [float(x) for x in file.split(",")]
         x = data[file]
 
-        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(x)
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(
+            x, alpha=1e-4, iter_eps=1e-3
+        )
         assert np.allclose(params, predicted, atol=0.02)
