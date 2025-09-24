@@ -139,6 +139,10 @@ def test_label_regions():
     labels = detection.label_regions(r, 10)
     assert np.all(labels == [1, 1, 1, 1, 0, 0, 2, 2, 3, 0])
 
+    r = np.array([[0, 4], [3, 5], [8, 9]])
+    labels = detection.label_regions(r, 10)
+    assert np.all(labels == [1, 1, 1, 2, 2, 0, 0, 0, 3, 0])
+
 
 def test_peak_prominence():
     # separate

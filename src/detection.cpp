@@ -26,7 +26,7 @@ py::array_t<long> maxima(const py::array_t<double> &values,
   auto r = regions.unchecked<2>();
   auto m = argmax.mutable_unchecked<1>();
 
-  for (py::ssize_t i = 0; i < r.shape(0); ++i) {
+  tbb::parallel_for(py::ssize_t(0), r.shape(0), [&](py::ssize_t i) {
     int max_idx = r(i, 0);
     for (int j = r(i, 0) + 1; j < r(i, 1); ++j) {
       if (v[j] > v[max_idx]) {
@@ -34,7 +34,7 @@ py::array_t<long> maxima(const py::array_t<double> &values,
       }
     }
     m[i] = max_idx;
-  }
+  });
   return argmax;
 }
 
@@ -63,8 +63,9 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 
   if (py::isinstance<py::array>(min_base)) {
     min_is_array = true;
-    min_array = py::array_t < double,
-    py::array::c_style | py::array::forcecast > ::ensure(min_base);
+    min_array =
+        py::array_t<double, py::array::c_style | py::array::forcecast>::ensure(
+            min_base);
     if (min_array.size() != values.size()) { // check shape
       throw std::runtime_error("min_base must be same size as values");
     }
@@ -90,7 +91,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   auto rights = right_array.mutable_unchecked<1>();
   auto proms = prom_array.mutable_unchecked<1>();
 
-  for (py::ssize_t i = 0; i < n; ++i) {
+  tbb::parallel_for(py::ssize_t(0), n, [&](py::ssize_t i) {
     double peak_height = y[idx[i]];
 
     int left = idx[i];
@@ -116,11 +117,11 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     lefts[i] = left_minima;
     rights[i] = right_minima;
     proms[i] = peak_height - std::max(y(left_minima), y(right_minima));
-  }
+  });
   return py::make_tuple(prom_array, left_array, right_array);
 }
 
-py::array_t<long> label_regions(const py::array_t<long> &regions_array,
+py::array_t<long> label_regions2(const py::array_t<long> &regions_array,
                                 const py::size_t size) {
   if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
     throw std::runtime_error("regions must have shape (N, 2)");
@@ -143,6 +144,28 @@ py::array_t<long> label_regions(const py::array_t<long> &regions_array,
   return label_array;
 }
 
+py::array_t<long> label_regions(const py::array_t<long> &regions_array,
+                                 const py::size_t size) {
+  if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
+    throw std::runtime_error("regions must have shape (N, 2)");
+  }
+
+  py::array_t<long> label_array(size);
+  label_array[py::make_tuple(py::ellipsis())] = 0;
+  auto n = regions_array.shape(0);
+
+  auto regions = regions_array.unchecked<2>();
+  auto labels = label_array.mutable_unchecked<1>();
+
+  int region = 1;
+  tbb::parallel_for(py::ssize_t(0), n, [&](py::ssize_t i) {
+    for (py::ssize_t j = regions(i, 0); j < regions(i, 1); ++j) {
+      labels[j] = i + 1;
+    }
+  });
+  return label_array;
+}
+
 py::array_t<long> combine_regions(const py::list &regions_list,
                                   const int allowed_overlap) {
 
@@ -151,8 +174,9 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 
   py::ssize_t total_peaks = 0;
   for (const py::handle &obj : regions_list) {
-    auto array = py::array_t < long,
-         py::array::c_style | py::array::forcecast > ::ensure(obj);
+    auto array =
+        py::array_t<long, py::array::c_style | py::array::forcecast>::ensure(
+            obj);
     if (!array || array.ndim() != 2 || array.shape(1) != 2) {
       throw std::runtime_error("invalid shape or ndim");
     }
@@ -249,6 +273,8 @@ void init_detection(py::module_ &mod) {
           "Calculate the peak prominence at given indicies.", py::arg(),
           py::arg(), py::arg("max_width") = 100, py::arg("min_base") = 0.0);
   mod.def("label_regions", &label_regions,
+          "Label regions 1 to size, points outside all regions are 0.");
+  mod.def("label_regions2", &label_regions2,
           "Label regions 1 to size, points outside all regions are 0.");
   mod.def("combine_regions", &combine_regions,
           "Combine a list of regions, merging overlaps.", py::arg(),

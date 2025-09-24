@@ -91,6 +91,15 @@ def accumulate_detections(
     lefts[1:][right_larger] = np.maximum(
         lefts[1:][right_larger], rights[:-1][right_larger]
     )
+
+    # remove unions
+    unions = lefts == rights
+    lefts, rights, right_larger = (
+        lefts[~unions],
+        rights[~unions],
+        right_larger[~unions[:-1]],
+    )
+
     rights[:-1][~right_larger] = np.minimum(
         lefts[1:][~right_larger], rights[:-1][~right_larger]
     )
