@@ -259,8 +259,9 @@ def extract_compound_poisson_lognormal_parameters(
 
     mean = np.mean(x, axis=0, where=mask)
 
-    EX = mean / lam
-    EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
+    with np.errstate(divide="ignore", invalid="ignore"):
+        EX = mean / lam
+        EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
 
     mu = np.log(EX**2 / np.sqrt(EX2))
     sigma = np.sqrt(np.log(EX2 / EX**2))
