@@ -9,7 +9,6 @@ from spcal.dists.util import (
 )
 from spcal.gui.graphs.singleion import SingleIonHistogramView, SingleIonScatterView
 from spcal.gui.io import get_open_spcal_path
-from spcal.gui.modelviews import BasicTable
 from spcal.io import nu, tofwerk
 
 
@@ -26,18 +25,9 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.hist = SingleIonHistogramView()
         self.hist.plot.setMouseEnabled(x=False, y=False)
         self.scatter = SingleIonScatterView()
-        self.table = BasicTable()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["m/z", "λ", "µ", "σ"])
 
         self.masses = np.array([])
         self.counts = np.array([])
-
-        self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
-        self.max_sigma_difference.setRange(0.01, 1.0)
-        self.max_sigma_difference.setValue(0.1)
-        self.max_sigma_difference.setSingleStep(0.01)
-        self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
         self.minimum_value = QtWidgets.QDoubleSpinBox()
         self.minimum_value.setRange(0.0, 1e9)
@@ -45,8 +35,8 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.minimum_value.setStepType(
             QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
         )
-        self.minimum_value.editingFinished.connect(self.updateExtractedParameters)
-        self.minimum_value.editingFinished.connect(self.updateMinMaxValueRanges)
+        self.minimum_value.valueChanged.connect(self.updateExtractedParameters)
+        self.minimum_value.valueChanged.connect(self.updateMinMaxValueRanges)
 
         self.maximum_value = QtWidgets.QDoubleSpinBox()
         self.maximum_value.setRange(0.0, 1e9)
@@ -54,34 +44,38 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.maximum_value.setStepType(
             QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
         )
-        self.maximum_value.editingFinished.connect(self.updateExtractedParameters)
-        self.maximum_value.editingFinished.connect(self.updateMinMaxValueRanges)
+        self.maximum_value.valueChanged.connect(self.updateExtractedParameters)
+        self.maximum_value.valueChanged.connect(self.updateMinMaxValueRanges)
 
         layout_range = QtWidgets.QHBoxLayout()
         layout_range.addWidget(self.minimum_value)
         layout_range.addWidget(QtWidgets.QLabel("-"))
         layout_range.addWidget(self.maximum_value)
 
-        self.check_average_sigma = QtWidgets.QCheckBox("Use average SIA shape.")
-
         self.check_restrict = QtWidgets.QCheckBox("Restrict to single ion signals.")
         self.check_restrict.checkStateChanged.connect(self.updateValidParameters)
 
-        self.label_average = QtWidgets.QLabel()
+        hist_controls_box = QtWidgets.QGroupBox()
+        hist_controls_box_layout = QtWidgets.QFormLayout()
+        hist_controls_box_layout.addRow("Range:", layout_range)
+        hist_controls_box_layout.addRow(self.check_restrict)
+        hist_controls_box.setLayout(hist_controls_box_layout)
+
+        self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
+        self.max_sigma_difference.setRange(0.01, 1.0)
+        self.max_sigma_difference.setValue(0.1)
+        self.max_sigma_difference.setSingleStep(0.01)
+        self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
+
+        self.combo_interp = QtWidgets.QComboBox()
+        self.combo_interp.addItems(["Linear", "Moving Average", "Savitzky-Golay"])
+        self.combo_interp.currentTextChanged.connect(self.updateScatterInterp)
 
         controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
-        controls_layout.addRow("Max dist. from mean:", self.max_sigma_difference)
-        controls_layout.addRow("Valid value range:", layout_range)
-        controls_layout.addRow(self.check_restrict)
-        controls_layout.addRow(self.label_average)
-        controls_layout.addRow(self.check_average_sigma)
+        controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
+        controls_layout.addRow("Interpolation:", self.combo_interp)
         controls_box.setLayout(controls_layout)
-
-
-        hist_controls_box = QtWidgets.QGroupBox("Histogram Controls")
-        hist_controls_box_layout = QtWidgets.QFormLayout()
-        hist_controls_box_layout.setLayout(hist_controls_box_layout)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Reset
@@ -92,14 +86,14 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.button_box.clicked.connect(self.buttonPressed)
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(controls_box, 0, 0)
+        layout.addWidget(self.hist, 0, 0)
+        layout.addWidget(hist_controls_box, 1, 0)
         layout.addWidget(self.scatter, 0, 1)
-        layout.addWidget(self.hist, 1, 0)
-        layout.addWidget(self.table, 1, 1)
+        layout.addWidget(controls_box, 1, 1)
         layout.addWidget(self.button_box, 2, 0, 1, 2)
 
-        layout.setColumnStretch(0, 1)
-        layout.setColumnStretch(1, 2)
+        layout.setColumnStretch(0, 2)
+        layout.setColumnStretch(1, 3)
         self.setLayout(layout)
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
@@ -112,6 +106,14 @@ class SingleIonDialog(QtWidgets.QDialog):
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Close:
             self.reject()
 
+    def updateMinMaxValueRanges(self) -> None:
+        if self.minimum_value.hasAcceptableInput():
+            min = self.minimum_value.value()
+            self.maximum_value.setRange(min, 1e9)
+        if self.maximum_value.hasAcceptableInput():
+            max = self.maximum_value.value()
+            self.minimum_value.setRange(0.0, max)
+
     def loadSingleIonData(self, path: str | Path | None = None) -> None:
         if path is None:
             path = get_open_spcal_path(self, "Single Ion Data")
@@ -120,29 +122,31 @@ class SingleIonDialog(QtWidgets.QDialog):
         else:
             path = Path(path)
 
-        # todo: add a progress bar
-
         if nu.is_nu_directory(path):
             self.masses, self.counts, info = nu.read_nu_directory(path, raw=True)
             self.reported_mu = np.log(info["AverageSingleIonArea"])
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:
-                if "PeakData" in h5["PeakData"]:
-                    data = h5["PeakData"]["PeakData"]
+                if "PeakData" in h5["PeakData"]:  # type: ignore
+                    data = h5["PeakData"]["PeakData"]  # type: ignore
                 else:  # pragma: no cover, covered above
                     data = tofwerk.integrate_tof_data(h5)
-                self.masses = np.asarray(h5["PeakData"]["PeakTable"]["mass"])
+                self.masses = np.asarray(h5["PeakData"]["PeakTable"]["mass"])  # type: ignore
                 self.counts = (
                     data
-                    * h5["FullSpectra"].attrs["Single Ion Signal"][0]
+                    * h5["FullSpectra"].attrs["Single Ion Signal"][0]  # type: ignore
                     * tofwerk.factor_extraction_to_acquisition(h5)
                 ).reshape(-1, self.masses.size)
                 self.reported_mu = np.log(
-                    h5["FullSpectra"].attrs["Single Ion Signal"][0]
+                    h5["FullSpectra"].attrs["Single Ion Signal"][0]  # type: ignore
                 )
         else:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Invalid File",
+                f"'{path.stem}' is not a valid TOF data file.\nOnly Nu Instruments and TOFWERK data is supported.",
+            )
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
-
 
         # Remove clearly gaussian signals
         zeros = np.count_nonzero(self.counts == 0, axis=0)
@@ -153,7 +157,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.maximum_value.setRange(0.0, max)
         self.minimum_value.setValue(0.0)
         self.maximum_value.setValue(max)
-        # self.updateHistogram()
+
         self.updateExtractedParameters()
 
     def updateExtractedParameters(self) -> None:
@@ -170,7 +174,6 @@ class SingleIonDialog(QtWidgets.QDialog):
         )
 
         self.scatter.drawData(self.masses, self.sigmas)
-        self.updateTable()
 
         self.updateValidParameters()
 
@@ -180,6 +183,9 @@ class SingleIonDialog(QtWidgets.QDialog):
             np.logical_and(self.sigmas > 0.2, self.sigmas < 0.95),
             np.logical_and(self.lams > 0.005, self.lams < 10.0),
         )
+        if not np.any(valid):
+            return
+
         poly = np.polynomial.Polynomial.fit(self.masses[valid], self.sigmas[valid], 1)
 
         self.valid = (
@@ -201,12 +207,46 @@ class SingleIonDialog(QtWidgets.QDialog):
             np.mean(self.sigmas[self.valid]),
         )
 
+        self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
+
+        self.updateScatterInterp()
+        self.updateHistogram()
+
+    def updateScatterInterp(self) -> None:
+        _xs = self.masses[self.valid]
+        _ys = self.sigmas[self.valid]
+        interp = self.combo_interp.currentText()
+
+        if interp == "Linear":
+            xs, ys = _xs, _ys
+        elif interp == "Moving Average":
+            xs = np.arange(_xs.min(), _xs.max() + 1, 1.0)
+            ys = np.interp(xs, _xs, _ys)
+
+            ma = np.convolve(ys, np.ones(5) / 5.0, mode="valid")
+            ys[2:-2] = ma
+        elif interp == "Savitzky-Golay":
+            t = np.arange(7)
+            poly = np.polynomial.Polynomial.fit(t, [0, 0, 0, 1, 0, 0, 0], 2)
+            psf = poly(t)
+
+            xs = np.arange(_xs.min(), _xs.max() + 1, 1)
+            ys = np.interp(xs, _xs, _ys)
+
+            sg = np.convolve(ys, psf, mode="valid")
+            ys[3:-3] = sg
+        else:
+            raise ValueError(f"unknown interpolation '{interp}'")
+
+        self.scatter.drawInterpolationLine(xs, ys)
+
+    def updateHistogram(self) -> None:
         if np.count_nonzero(self.valid) > 0:
             counts = self.counts[:, self.valid]
 
             mask = np.logical_and(
                 counts > self.minimum_value.value(),
-                counts <= self.maximum_value.value()
+                counts <= self.maximum_value.value(),
             )
 
             hist, edges = np.histogram(
@@ -215,45 +255,8 @@ class SingleIonDialog(QtWidgets.QDialog):
                 density=True,
             )
             self.hist.drawHist(hist, edges)
-        elif self.hist.fit_curve is not None:
+        elif self.hist.hist_curve is not None:
             self.hist.hist_curve.clear()
-
-        self.label_average.setText(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
-
-        base = self.table.palette().text()
-        bad = self.table.palette().placeholderText()
-        for i in range(self.valid.size):
-            color = base if self.valid[i] else bad
-            for j in range(self.table.rowCount()):
-                item = self.table.item(i, j)
-                if item is not None:
-                    item.setForeground(color)
-
-    def updateMinMaxValueRanges(self) -> None:
-        if self.minimum_value.hasAcceptableInput():
-            min = self.minimum_value.value()
-            self.maximum_value.setRange(min, 1e9)
-        if self.maximum_value.hasAcceptableInput():
-            max = self.maximum_value.value()
-            self.minimum_value.setRange(0.0, max)
-
-    def updateHistogram(self) -> None:
-        if self.counts.size > 0:
-            hist, edges = np.histogram(self.counts[self.counts > 0], bins=100)
-            self.hist.drawHist(hist, edges)
-
-    def updateTable(self) -> None:
-        if self.counts.size == 0 or self.lams.size == 0:
-            return
-        self.table.setRowCount(self.lams.size)
-
-        for i in range(self.table.rowCount()):
-            for j, v in enumerate(
-                [self.masses[i], self.lams[i], self.mus[i], self.sigmas[i]]
-            ):
-                item = QtWidgets.QTableWidgetItem(f"{v:.4f}")
-                item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-                self.table.setItem(i, j, item)
 
     def accept(self) -> None:
         self.distributionSelected.emit(self.counts)
