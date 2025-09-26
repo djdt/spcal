@@ -121,7 +121,7 @@ def test_export_singleparticle_inputs(tmp_path: Path):
         assert fp.readline() == "# Time,100,100,s\n"
         assert fp.readline() == "# Uptake,60,60,ml/min\n"
         fp.readline()
-        assert fp.readline() == "# Limit method,Limit (kw1=1.0;window=9),Limit\n"
+        assert fp.readline() == "# Limit method,Limit (kw1=1;window=9),Limit\n"
         fp.readline()
         assert fp.readline() == "# End of export"
 
