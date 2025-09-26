@@ -1,17 +1,23 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include <algorithm>
+#include <tbb/tbb.h>
+
 #include <cmath>
-#include <execution>
-#include <numeric>
-#include <ranges>
 #include <vector>
 
 namespace py = pybind11;
 
 py::array_t<long> maxima(const py::array_t<double> &values,
                          const py::array_t<long> &regions) {
+  /*
+   * The maxima of values between pairs of start and end indicies.
+   *
+   * @param values array of values
+   * @param regions location of start, end of shape (n, 2)
+   * @returns maximum values
+   */
+
   py::buffer_info vbuf = values.request();
   py::buffer_info rbuf = regions.request();
 
@@ -26,7 +32,7 @@ py::array_t<long> maxima(const py::array_t<double> &values,
   auto r = regions.unchecked<2>();
   auto m = argmax.mutable_unchecked<1>();
 
-  tbb::parallel_for(py::ssize_t(0), r.shape(0), [&](py::ssize_t i) {
+  tbb::parallel_for(py::ssize_t(0), rbuf.shape[0], [&](py::ssize_t i) {
     int max_idx = r(i, 0);
     for (int j = r(i, 0) + 1; j < r(i, 1); ++j) {
       if (v[j] > v[max_idx]) {
@@ -51,9 +57,12 @@ py::tuple peak_prominence(const py::array_t<double> &values,
    * @returns prominence, left indicies, right indices
    */
 
-  if (values.ndim() != 1)
+  py::buffer_info vbuf = values.request();
+  py::buffer_info ibuf = indicies.request();
+
+  if (vbuf.ndim != 1)
     throw std::runtime_error("values must have 1 dim");
-  if (indicies.ndim() != 1)
+  if (ibuf.ndim != 1)
     throw std::runtime_error("indicies must have 1 dim");
 
   // default for min_value if double
@@ -76,8 +85,8 @@ py::tuple peak_prominence(const py::array_t<double> &values,
       throw std::runtime_error("min_base must be array or float");
     }
   }
-  auto m = values.shape(0);
-  auto n = indicies.shape(0);
+  auto m = vbuf.shape[0];
+  auto n = ibuf.shape[0];
 
   auto prom_array = py::array_t<double>(n);
   auto left_array = py::array_t<long>(n);
@@ -121,43 +130,21 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   return py::make_tuple(prom_array, left_array, right_array);
 }
 
-py::array_t<long> label_regions2(const py::array_t<long> &regions_array,
-                                const py::size_t size) {
-  if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
-    throw std::runtime_error("regions must have shape (N, 2)");
-  }
-
-  py::array_t<long> label_array(size);
-  label_array[py::make_tuple(py::ellipsis())] = 0;
-  auto n = regions_array.shape(0);
-
-  auto regions = regions_array.unchecked<2>();
-  auto labels = label_array.mutable_unchecked<1>();
-
-  int region = 1;
-  for (py::ssize_t i = 0; i < n; ++i) {
-    for (py::ssize_t j = regions(i, 0); j < regions(i, 1); ++j) {
-      labels[j] = region;
-    }
-    region++;
-  }
-  return label_array;
-}
-
 py::array_t<long> label_regions(const py::array_t<long> &regions_array,
-                                 const py::size_t size) {
-  if (regions_array.ndim() != 2 || regions_array.shape(1) != 2) {
+                                const py::size_t size) {
+
+  py::buffer_info rbuf = regions_array.request();
+  if (rbuf.ndim != 2 || rbuf.shape[1] != 2) {
     throw std::runtime_error("regions must have shape (N, 2)");
   }
 
   py::array_t<long> label_array(size);
   label_array[py::make_tuple(py::ellipsis())] = 0;
-  auto n = regions_array.shape(0);
+  auto n = rbuf.shape[0];
 
   auto regions = regions_array.unchecked<2>();
   auto labels = label_array.mutable_unchecked<1>();
 
-  int region = 1;
   tbb::parallel_for(py::ssize_t(0), n, [&](py::ssize_t i) {
     for (py::ssize_t j = regions(i, 0); j < regions(i, 1); ++j) {
       labels[j] = i + 1;
@@ -177,11 +164,12 @@ py::array_t<long> combine_regions(const py::list &regions_list,
     auto array =
         py::array_t<long, py::array::c_style | py::array::forcecast>::ensure(
             obj);
-    if (!array || array.ndim() != 2 || array.shape(1) != 2) {
+    py::buffer_info abuf = array.request();
+    if (!array || abuf.ndim != 2 || abuf.shape[1] != 2) {
       throw std::runtime_error("invalid shape or ndim");
     }
     regions.push_back(array.unchecked<2>());
-    total_peaks += array.shape(0);
+    total_peaks += abuf.shape[0];
   }
 
   std::vector<long> *combined = new std::vector<long>;
@@ -273,8 +261,6 @@ void init_detection(py::module_ &mod) {
           "Calculate the peak prominence at given indicies.", py::arg(),
           py::arg(), py::arg("max_width") = 100, py::arg("min_base") = 0.0);
   mod.def("label_regions", &label_regions,
-          "Label regions 1 to size, points outside all regions are 0.");
-  mod.def("label_regions2", &label_regions2,
           "Label regions 1 to size, points outside all regions are 0.");
   mod.def("combine_regions", &combine_regions,
           "Combine a list of regions, merging overlaps.", py::arg(),

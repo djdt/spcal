@@ -5,6 +5,7 @@ import numpy as np
 
 from spcal.calc import expand_mask, interpolate_3d
 from spcal.dists import lognormal, poisson
+from spcal.lib.spcalext import extraction as ext
 
 logger = logging.getLogger(__name__)
 
@@ -243,29 +244,34 @@ def extract_compound_poisson_lognormal_parameters(
         mask: mask of valid values, defaults to all non-nan
 
     Returns:
-        array of [(lambda, mu, sigma), ...]
+        array of [..., (lambda, mu, sigma)]
     """
+    x = np.atleast_2d(x)
+
     if mask is None:
         mask = ~np.isnan(x)
     else:
         mask = np.logical_and(~np.isnan(x), mask)
 
-    zeros = np.count_nonzero(np.logical_and(mask, x == 0), axis=0)
-    pzero = zeros / np.count_nonzero(mask, axis=0)
-    lam = -np.log(pzero)
+    params = ext.extract_cpln_parameters(x, mask)
+    return params
 
-    if np.any(pzero < 1e-3):
-        logger.warning("low number of non zero values")
-
-    mean = np.mean(x, axis=0, where=mask)
-
-    with np.errstate(divide="ignore", invalid="ignore"):
-        EX = mean / lam
-        EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
-
-    mu = np.log(EX**2 / np.sqrt(EX2))
-    sigma = np.sqrt(np.log(EX2 / EX**2))
-    return np.asarray((lam, mu, sigma))
+    # zeros = np.count_nonzero(np.logical_and(mask, x == 0), axis=0)
+    # pzero = zeros / np.count_nonzero(mask, axis=0)
+    # lam = -np.log(pzero)
+    #
+    # if np.any(pzero < 1e-3):
+    #     logger.warning("low number of non zero values")
+    #
+    # mean = np.mean(x, axis=0, where=mask)
+    #
+    # with np.errstate(divide="ignore", invalid="ignore"):
+    #     EX = mean / lam
+    #     EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
+    #
+    # mu = np.log(EX**2 / np.sqrt(EX2))
+    # sigma = np.sqrt(np.log(EX2 / EX**2))
+    # return np.asarray((lam, mu, sigma))
 
 
 def extract_compound_poisson_lognormal_parameters_iterative(

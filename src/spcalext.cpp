@@ -11,6 +11,7 @@
 namespace py = pybind11;
 
 void init_clustering(py::module_ &mod);
+void init_extraction(py::module_ &mod);
 void init_dists(py::module_ &mod);
 void init_detection(py::module_ &mod);
 
@@ -20,6 +21,10 @@ PYBIND11_MODULE(spcalext, mod) {
   auto mod_cluster =
       mod.def_submodule("clustering", "agglomerative clustering extension");
   init_clustering(mod_cluster);
+
+  auto mod_extraction =
+      mod.def_submodule("extraction", "cpln parameter extraction");
+  init_extraction(mod_extraction);
 
   auto mod_detection =
       mod.def_submodule("detection", "particle detection extension");

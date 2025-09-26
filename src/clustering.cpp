@@ -1,11 +1,10 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include <algorithm>
+#include <tbb/tbb.h>
+
 #include <cmath>
 #include <execution>
-#include <numeric>
-#include <ranges>
 #include <vector>
 
 namespace py = pybind11;
@@ -30,18 +29,16 @@ py::array_t<double> pairwise_euclidean(const py::array_t<double> &X) {
   auto x = X.unchecked<2>();
   auto d = dists.mutable_unchecked<1>();
 
-  auto idx = std::ranges::views::iota(static_cast<py::ssize_t>(0), n);
-  std::for_each(std::execution::par_unseq, idx.begin(), idx.end(),
-                [&](py::ssize_t i) {
-                  for (py::ssize_t j = i + 1; j < n; ++j) {
-                    double sum = 0.0;
-                    for (py::ssize_t k = 0; k < m; ++k) {
-                      double dist = x(i, k) - x(j, k);
-                      sum += dist * dist;
-                    }
-                    d(condensed_index(i, j, n)) = std::sqrt(sum);
-                  }
-                });
+  tbb::parallel_for(py::ssize_t(0), n, [&](py::ssize_t i) {
+    for (py::ssize_t j = i + 1; j < n; ++j) {
+      double sum = 0.0;
+      for (py::ssize_t k = 0; k < m; ++k) {
+        double dist = x(i, k) - x(j, k);
+        sum += dist * dist;
+      }
+      d(condensed_index(i, j, n)) = std::sqrt(sum);
+    }
+  });
   return dists;
 }
 
@@ -101,8 +98,7 @@ py::tuple mst_linkage(const py::array_t<double> &dists_array, const int n) {
     double min = std::numeric_limits<double>::infinity();
     merged[x] = true;
 
-    auto jdx = std::ranges::views::iota(0, n);
-    std::for_each(std::execution::seq, jdx.begin(), jdx.end(), [&](int j) {
+    tbb::parallel_for(0, n, [&](int j) {
       if (merged[j])
         return;
       double dist = dists(condensed_index(x, j, n));
