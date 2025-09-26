@@ -56,7 +56,9 @@ class InputWidget(QtWidgets.QWidget):
 
         self.graph_toolbar = QtWidgets.QToolBar()
         self.graph_toolbar.setOrientation(QtCore.Qt.Orientation.Vertical)
-        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.graph_toolbar.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
 
         settings = QtCore.QSettings()
         font = QtGui.QFont(
@@ -129,15 +131,20 @@ class InputWidget(QtWidgets.QWidget):
         self.graph_toolbar.addActions(action_group_graph_view.actions())
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Expanding
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Expanding,
         )
         self.graph_toolbar.addWidget(spacer)
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
         # Layouts
 
-        self.io.layout_top.insertWidget(0, self.button_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
-        self.io.layout_top.insertWidget(1, self.label_file, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.io.layout_top.insertWidget(
+            0, self.button_file, 0, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
+        self.io.layout_top.insertWidget(
+            1, self.label_file, 1, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
         layout_graph = QtWidgets.QHBoxLayout()
         layout_graph.addWidget(self.graph_toolbar, 0)
@@ -178,7 +185,9 @@ class InputWidget(QtWidgets.QWidget):
         return self.enabled_names
 
     def colorForName(self, name: str) -> QtGui.QColor:
-        scheme = color_schemes[str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))]
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
     def updateNames(self, names: dict[str, str]) -> None:
@@ -489,10 +498,9 @@ class InputWidget(QtWidgets.QWidget):
                 return
 
         if self.options.window_size.isEnabled():
-            window_size = self.options.window_size.value() or 0
+            window_size = int(self.options.window_size.value() or 0)
         else:
             window_size = 0
-        window_size = int(window_size or 0)
         max_iter = 100 if self.options.check_iterative.isChecked() else 1
 
         self.limits.clear()
@@ -501,10 +509,25 @@ class InputWidget(QtWidgets.QWidget):
         gaussian_kws = self.options.gaussian.state()
         poisson_kws = self.options.poisson.state()
 
-        for name in self.names:
+        default_sigma = compound_kws["sigma"]
+
+        for i, name in enumerate(self.names):
             response = self.trimmedResponse(name)
             if response.size == 0:
                 continue
+
+            # Update pre-mass sigma if possible
+            if (
+                "single ion parameters" in compound_kws
+                and compound_kws["single ion parameters"].size > 0
+                and "isotopes" in self.import_options
+            ):
+                mz = self.import_options["isotopes"][i]["Mass"]
+                params = compound_kws["single ion parameters"]
+                sigma = np.interp(mz, params[:, 0], params[:, 2])
+                compound_kws["sigma"] = sigma
+            else:
+                compound_kws["sigma"] = default_sigma
 
             if method == "Manual Input":
                 limit = self.io[name].lod_count.value()

@@ -11,8 +11,6 @@ from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
     compound_poisson_lognormal_quantile_approximation,
     compound_poisson_lognormal_quantile_lookup,
-    simulate_zt_compound_poisson,
-    zero_trunc_quantile,
 )
 from spcal.poisson import currie, formula_a, formula_c, stapleton_approximation
 
@@ -187,9 +185,6 @@ class SPCalLimit(object):
         If 'lookup table' is passed the threshold is interpolated from a table of
         pre-computed values spanning lambda (0.01 - 100.0), sigma (0.3 - 0.9) and alpha
         (1e-7 - (1.0 - 1e-7)).
-        If 'simulation' is passed, the background is simulated using the provdied
-        ``single_ion_dist`` distribution. This should only be performed for alpha values
-        >1e-3 due to the time required for accurate simulation.
         The 'lookup' method is fastest and can be used with windowed thresholding.
 
         A good value for ``sigma`` is 0.45, for both Nu Instruments and TOFWERK ToFs.
@@ -197,7 +192,7 @@ class SPCalLimit(object):
         Args:
             responses: single-particle data
             alpha: type I error rate
-            method: method used ('approximation', 'lookup table', 'simulation')
+            method: method used ('approximation', 'lookup table')
             single_ion_parameters: single ion distribution
             sigma: sigma of SIA, used for compound log-normal approx
             size: size of simulation, larger values will give more consistent quantiles
@@ -220,15 +215,7 @@ class SPCalLimit(object):
         if size is None:
             size = responses.size
 
-        # Make sure weights are set correctly
-        weights = None
-        average_single_ion = np.array([])
-        if single_ion_dist is not None and single_ion_dist.size > 0:
-            if single_ion_dist.ndim == 2:  # histogram of (bins, counts)
-                weights = single_ion_dist[:, 1] / single_ion_dist[:, 1].sum()
-                single_ion_dist = single_ion_dist[:, 0]
-            average_single_ion = np.average(single_ion_dist, weights=weights)
-
+        lam = 0
         threshold: float | np.ndarray = np.inf
         prev_threshold: float | np.ndarray = np.inf
         iters = 0
@@ -238,8 +225,6 @@ class SPCalLimit(object):
                 "window size is not available for methods other than 'lookup table'"
             )
             window_size = 0
-        if method == "simulation" and single_ion_dist is None:
-            raise ValueError("method 'simulation' requires a valid 'single_ion_dist")
 
         while (
             np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
@@ -269,21 +254,6 @@ class SPCalLimit(object):
                 threshold = compound_poisson_lognormal_quantile_lookup(
                     1.0 - alpha, lam, mu, np.full_like(lam, sigma)
                 )
-            elif method == "simulation":
-                if average_single_ion.size == 0:
-                    raise ValueError("invalid single ion dist")
-                q0 = zero_trunc_quantile(lam, 1.0 - alpha)
-                if q0 < 0.0:  # pragma: no cover
-                    threshold = 0.0
-                else:
-                    sim = simulate_zt_compound_poisson(
-                        lam,
-                        single_ion_dist,
-                        weights=weights,
-                        size=size,  # type: ignore
-                    )
-                    sim /= average_single_ion
-                    threshold = float(np.quantile(sim, q0))
             else:
                 raise ValueError(f"unknown method '{method}'")
             iters += 1
@@ -492,7 +462,6 @@ class SPCalLimit(object):
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
                 method=compound_kws.get("method", "lookup table"),
-                single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 window_size=window_size,
                 max_iters=max_iters,

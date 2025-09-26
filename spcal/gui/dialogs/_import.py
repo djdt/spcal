@@ -50,7 +50,7 @@ class _ImportDialogBase(QtWidgets.QDialog):
         # These keywords are updated externally
         self.screening_poisson_kws = {"alpha": 1e-3}
         self.screening_gaussian_kws = {"alpha": 1e-7}
-        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45, "single ion": None}
+        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45}
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -137,8 +137,6 @@ class _ImportDialogBase(QtWidgets.QDialog):
             self.screening_gaussian_kws = options["gaussian_kws"]
         if "compound_kws" in options:
             self.screening_compound_kws = options["compound_kws"]
-            if not self.screening_compound_kws["simulate"]:  # Keep as None
-                self.screening_compound_kws["single ion"] = None
 
     def dialogScreenData(self) -> NonTargetScreeningDialog:
         dlg = NonTargetScreeningDialog(
