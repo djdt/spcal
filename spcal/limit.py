@@ -143,7 +143,6 @@ class SPCalLimit(object):
                 method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
-                extract_sigma=compound_kws.get("extract sigma", False),
                 window_size=window_size,
                 max_iters=max_iters,
             )
@@ -174,7 +173,6 @@ class SPCalLimit(object):
         method: str = "lookup table",
         single_ion_dist: np.ndarray | None = None,
         sigma: float = 0.45,
-        extract_sigma: bool = False,
         size: int | None = None,
         window_size: int = 0,
         max_iters: int = 1,
@@ -245,19 +243,6 @@ class SPCalLimit(object):
             window_size = 0
         if method == "simulation" and single_ion_dist is None:
             raise ValueError("method 'simulation' requires a valid 'single_ion_dist")
-
-        if extract_sigma:
-            num_nonzero = np.count_nonzero(responses > 0)
-            if (
-                num_nonzero < 7000
-            ):  # approximate amount of non zero values for a 2 % error in sigma
-                logger.warning(
-                    f"insufficient nonzero values ({num_nonzero}) for sub 2 % error in sigma, using default"
-                )
-            else:
-                _, _, sigma = extract_compound_poisson_lognormal_parameters_iterative(
-                    responses, alpha=alpha
-                )
 
         while (
             np.all(np.abs(prev_threshold - threshold) > iter_eps) and iters < max_iters
@@ -512,7 +497,6 @@ class SPCalLimit(object):
                 method=compound_kws.get("method", "lookup table"),
                 single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
-                extract_sigma=compound_kws.get("extract sigma", False),
                 window_size=window_size,
                 max_iters=max_iters,
             )
