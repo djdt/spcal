@@ -13,7 +13,8 @@ from spcal.io import nu, tofwerk
 
 
 class SingleIonDialog(QtWidgets.QDialog):
-    distributionSelected = QtCore.Signal(np.ndarray)
+    # distributionSelected = QtCore.Signal(np.ndarray)
+    resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
 
     def __init__(
@@ -100,7 +101,9 @@ class SingleIonDialog(QtWidgets.QDialog):
         sb = self.button_box.standardButton(button)
 
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
-            pass
+            self.resetRequested.emit()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Apply:
+            self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
             self.loadSingleIonData()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Close:
@@ -170,7 +173,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         )
         mask = np.logical_or(self.counts == 0, mask)
         self.lams, self.mus, self.sigmas = (
-            extract_compound_poisson_lognormal_parameters(self.counts, mask)
+            extract_compound_poisson_lognormal_parameters(self.counts, mask).T
         )
 
         self.scatter.drawData(self.masses, self.sigmas)
@@ -213,10 +216,15 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.updateHistogram()
 
     def updateScatterInterp(self) -> None:
-        _xs = self.masses[self.valid]
-        _ys = self.sigmas[self.valid]
-        interp = self.combo_interp.currentText()
+        xs, ys = self.interpolatedParameters(
+            self.masses[self.valid], self.sigmas[self.valid]
+        )
+        self.scatter.drawInterpolationLine(xs, ys)
 
+    def interpolatedParameters(
+        self, _xs: np.ndarray, _ys: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        interp = self.combo_interp.currentText()
         if interp == "Linear":
             xs, ys = _xs, _ys
         elif interp == "Moving Average":
@@ -237,8 +245,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             ys[3:-3] = sg
         else:
             raise ValueError(f"unknown interpolation '{interp}'")
-
-        self.scatter.drawInterpolationLine(xs, ys)
+        return xs, ys
 
     def updateHistogram(self) -> None:
         if np.count_nonzero(self.valid) > 0:
@@ -259,17 +266,14 @@ class SingleIonDialog(QtWidgets.QDialog):
             self.hist.hist_curve.clear()
 
     def accept(self) -> None:
-        self.distributionSelected.emit(self.counts)
-        self.parametersExtracted.emit(
-            np.stack(
-                (
-                    self.masses[self.valid],
-                    self.mus[self.valid],
-                    self.sigmas[self.valid],
-                ),
-                axis=1,
-            )
+        # self.distributionSelected.emit(self.counts)
+        _, mu = self.interpolatedParameters(
+            self.masses[self.valid], self.mus[self.valid]
         )
+        mz, sigma = self.interpolatedParameters(
+            self.masses[self.valid], self.sigmas[self.valid]
+        )
+        self.parametersExtracted.emit(np.stack((mz, mu, sigma), axis=1))
         super().accept()
 
 
