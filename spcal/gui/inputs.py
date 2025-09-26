@@ -387,8 +387,6 @@ class InputWidget(QtWidgets.QWidget):
         self.options.blockSignals(True)
         self.options.dwelltime.setBaseValue(options["dwelltime"])
 
-        if "single ion dist" in options:
-            self.options.compound_poisson.setSingleIon(options["single ion dist"])
         self.options.blockSignals(False)
 
         self.responses = data

@@ -11,7 +11,6 @@ from spcal.calc import is_integer_or_near
 from spcal.dists.util import (
     compound_poisson_lognormal_quantile_approximation,
     compound_poisson_lognormal_quantile_lookup,
-    extract_compound_poisson_lognormal_parameters_iterative,
     simulate_zt_compound_poisson,
     zero_trunc_quantile,
 )
@@ -141,7 +140,6 @@ class SPCalLimit(object):
                 responses,
                 alpha=compound_kws.get("alpha", 1e-6),
                 method=compound_kws.get("method", "lookup table"),
-                single_ion_dist=compound_kws.get("single ion", None),
                 sigma=compound_kws.get("sigma", 0.45),
                 window_size=window_size,
                 max_iters=max_iters,
@@ -171,7 +169,6 @@ class SPCalLimit(object):
         responses: np.ndarray,
         alpha: float = 1e-6,
         method: str = "lookup table",
-        single_ion_dist: np.ndarray | None = None,
         sigma: float = 0.45,
         size: int | None = None,
         window_size: int = 0,
@@ -201,8 +198,8 @@ class SPCalLimit(object):
             responses: single-particle data
             alpha: type I error rate
             method: method used ('approximation', 'lookup table', 'simulation')
-            single_ion: single ion distribution
-            sigma: sigma of SIS, used for compound log-normal approx
+            single_ion_parameters: single ion distribution
+            sigma: sigma of SIA, used for compound log-normal approx
             size: size of simulation, larger values will give more consistent quantiles
             window_size: size of moving window, for method 'lookup table' only
             max_iters: number of iterations, set to 1 for no iters
