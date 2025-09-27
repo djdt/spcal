@@ -8,6 +8,25 @@
 
 namespace py = pybind11;
 
+py::array_t<bool> local_maxima(const py::array_t<double> &values) {
+  py::buffer_info vbuf = values.request();
+  if (vbuf.ndim != 1)
+    throw std::runtime_error("values must have 1 dim");
+
+  py::array_t maxima = py::array_t<bool>(vbuf.shape);
+
+  auto v = values.unchecked<1>();
+  auto m = maxima.mutable_unchecked<1>();
+
+  m(0) = v(0) >= v(1);
+  m(vbuf.shape[0] - 1) = v(vbuf.shape[0] - 1) >= v(vbuf.shape[0] - 2);
+
+  tbb::parallel_for(py::ssize_t(1), vbuf.shape[0] - 1, [&](py::ssize_t i) {
+    m(i) = (v(i) >= v(i - 1)) && (v(i) >= v(i + 1));
+  });
+
+  return maxima;
+}
 py::array_t<long> maxima(const py::array_t<double> &values,
                          const py::array_t<long> &regions) {
   /*

@@ -35,11 +35,6 @@ def accumulate_detections(
         regions [starts, ends]
     """
 
-    def local_maxima(x: np.ndarray):
-        return np.logical_and(
-            np.r_[True, x[1:] >= x[:-1]], np.r_[x[:-1] >= x[1:], True]
-        )
-
     if np.any(limit_accumulation > limit_detection):
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
@@ -50,7 +45,7 @@ def accumulate_detections(
         )
 
     possible_detections = np.flatnonzero(
-        np.logical_and(y > limit_detection, local_maxima(y))
+        np.logical_and(y > limit_detection, ext.local_maxima(y))
     )
 
     prominence, lefts, rights = ext.peak_prominence(
