@@ -168,7 +168,6 @@ class SPCalLimit(object):
         alpha: float = 1e-6,
         method: str = "lookup table",
         sigma: float = 0.45,
-        size: int | None = None,
         window_size: int = 0,
         max_iters: int = 1,
     ) -> "SPCalLimit":
@@ -195,7 +194,6 @@ class SPCalLimit(object):
             method: method used ('approximation', 'lookup table')
             single_ion_parameters: single ion distribution
             sigma: sigma of SIA, used for compound log-normal approx
-            size: size of simulation, larger values will give more consistent quantiles
             window_size: size of moving window, for method 'lookup table' only
             max_iters: number of iterations, set to 1 for no iters
 
@@ -212,9 +210,6 @@ class SPCalLimit(object):
                 Spectrom. 2025, 40, 130-136.
                 https://doi.org/10.1039/D4JA00241E.
         """
-        if size is None:
-            size = responses.size
-
         lam = 0
         threshold: float | np.ndarray = np.inf
         prev_threshold: float | np.ndarray = np.inf
