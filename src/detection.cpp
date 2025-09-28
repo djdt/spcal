@@ -8,24 +8,26 @@
 
 namespace py = pybind11;
 
-py::array_t<bool> local_maxima(const py::array_t<double> &values) {
-  py::buffer_info vbuf = values.request();
+py::array_t<bool> local_maxima(const py::array_t<double> &values_array) {
+  py::buffer_info vbuf = values_array.request();
   if (vbuf.ndim != 1)
     throw std::runtime_error("values must have 1 dim");
 
-  py::array_t maxima = py::array_t<bool>(vbuf.shape);
+  py::array_t<bool> maxima_array = py::array_t<bool>(vbuf.shape);
 
-  auto v = values.unchecked<1>();
-  auto m = maxima.mutable_unchecked<1>();
+  auto values = values_array.unchecked<1>();
+  auto maxima = maxima_array.mutable_unchecked<1>();
 
-  m(0) = v(0) >= v(1);
-  m(vbuf.shape[0] - 1) = v(vbuf.shape[0] - 1) >= v(vbuf.shape[0] - 2);
+  maxima(0) = values(0) >= values(1);
+  maxima(vbuf.shape[0] - 1) =
+      values(vbuf.shape[0] - 1) > values(vbuf.shape[0] - 2);
 
   tbb::parallel_for(py::ssize_t(1), vbuf.shape[0] - 1, [&](py::ssize_t i) {
-    m(i) = (v(i) >= v(i - 1)) && (v(i) >= v(i + 1));
+    double val = values(i);
+    maxima(i) = (val > values(i - 1)) && (val >= values(i + 1));
   });
 
-  return maxima;
+  return maxima_array;
 }
 py::array_t<long> maxima(const py::array_t<double> &values,
                          const py::array_t<long> &regions) {
@@ -94,7 +96,7 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     min_array =
         py::array_t<double, py::array::c_style | py::array::forcecast>::ensure(
             min_base);
-    if (min_array.size() != values.size()) { // check shape
+    if (min_array.size() != vbuf.size) { // check shape
       throw std::runtime_error("min_base must be same size as values");
     }
   } else {
@@ -104,12 +106,9 @@ py::tuple peak_prominence(const py::array_t<double> &values,
       throw std::runtime_error("min_base must be array or float");
     }
   }
-  auto m = vbuf.shape[0];
-  auto n = ibuf.shape[0];
-
-  auto prom_array = py::array_t<double>(n);
-  auto left_array = py::array_t<long>(n);
-  auto right_array = py::array_t<long>(n);
+  auto prom_array = py::array_t<double>(ibuf.shape[0]);
+  auto left_array = py::array_t<long>(ibuf.shape[0]);
+  auto right_array = py::array_t<long>(ibuf.shape[0]);
 
   auto y = values.unchecked<1>();
   auto idx = indicies.unchecked<1>();
@@ -119,14 +118,14 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   auto rights = right_array.mutable_unchecked<1>();
   auto proms = prom_array.mutable_unchecked<1>();
 
-  tbb::parallel_for(py::ssize_t(0), n, [&](py::ssize_t i) {
+  tbb::parallel_for(py::ssize_t(0), ibuf.shape[0], [&](py::ssize_t i) {
     double peak_height = y[idx[i]];
 
     int left = idx[i];
     int left_minima = left;
     while (left > 0 && y(left - 1) <= peak_height &&
            idx[i] - left < max_width &&
-           (min_is_array ? y(left) > min(left) : y(left) > min_value)) {
+           y(left) > (min_is_array ? min(left) : min_value)) {
       left -= 1;
       if (y(left) < y(left_minima)) {
         left_minima = left;
@@ -134,9 +133,9 @@ py::tuple peak_prominence(const py::array_t<double> &values,
     }
     int right = idx[i];
     int right_minima = right;
-    while (right < m - 1 && y(right + 1) <= peak_height &&
+    while (right < vbuf.shape[0] - 1 && y(right + 1) <= peak_height &&
            right - idx[i] < max_width &&
-           (min_is_array ? y(right) > min(right) : y(right) > min_value)) {
+           y(right) > (min_is_array ? min(right) : min_value)) {
       right += 1;
       if (y(right) < y(right_minima)) {
         right_minima = right;
@@ -149,9 +148,70 @@ py::tuple peak_prominence(const py::array_t<double> &values,
   return py::make_tuple(prom_array, left_array, right_array);
 }
 
+py::tuple split_peaks(const py::array_t<double> &prominence_array,
+                      const py::array_t<long> &left_array,
+                      const py::array_t<long> &right_array,
+                      const double required_prominence) {
+  py::buffer_info pbuf = prominence_array.request();
+  py::buffer_info lbuf = left_array.request();
+  py::buffer_info rbuf = right_array.request();
+  // for l, r in lefts, rights
+  // py::buffer_info lbuf = left_array.request();
+  std::vector<long> *split_left = new std::vector<long>;
+  std::vector<long> *split_right = new std::vector<long>;
+  split_left->reserve(pbuf.size);
+  split_right->reserve(pbuf.size);
+
+  auto prom = prominence_array.unchecked<1>();
+  auto lefts = left_array.unchecked<1>();
+  auto rights = right_array.unchecked<1>();
+
+  py::ssize_t i = 0;
+  while (i < pbuf.shape[0]) {
+    long new_left = lefts(i);
+    long new_right = rights(i);
+
+    double max_prom = prom(i);
+    // find overlaps and max prominence
+    py::ssize_t j = i + 1;
+    while ((j < lbuf.shape[0]) && (lefts(j) < new_right)) {
+      max_prom = std::max(max_prom, prom(j));
+      new_right = std::max(new_right, rights(j));
+      ++j;
+    }
+    split_left->push_back(new_left);
+    for (py::ssize_t k = i + 1; k < j; ++k) {
+      if ((lefts(k) != lefts(k - 1) && (rights(k) != rights(k - 1))) &&
+          (prom(k - 1) >= max_prom * required_prominence)) {
+        new_left = rights(k - 1);
+        if (lefts(k) > new_left)
+          new_left = std::min(new_left, lefts(k));
+        split_left->push_back(new_left);
+        split_right->push_back(new_left);
+      }
+    }
+    split_right->push_back(new_right);
+    i = j;
+  }
+  split_left->shrink_to_fit();
+  split_right->shrink_to_fit();
+  // create numpy array to return
+  py::capsule free_when_done_left(split_left, [](void *f) {
+    delete reinterpret_cast<std::vector<long> *>(f);
+  });
+  py::capsule free_when_done_right(split_right, [](void *f) {
+    delete reinterpret_cast<std::vector<long> *>(f);
+  });
+
+  return py::make_tuple(
+      py::array_t<long>({split_left->size()}, {sizeof(long)},
+                        split_left->data(), free_when_done_left),
+      py::array_t<long>({split_right->size()}, {sizeof(long)},
+                        split_right->data(), free_when_done_right));
+}
+
 py::array_t<long> label_regions(const py::array_t<long> &regions_array,
                                 const py::size_t size) {
-
   py::buffer_info rbuf = regions_array.request();
   if (rbuf.ndim != 2 || rbuf.shape[1] != 2) {
     throw std::runtime_error("regions must have shape (N, 2)");
@@ -174,7 +234,6 @@ py::array_t<long> label_regions(const py::array_t<long> &regions_array,
 
 py::array_t<long> combine_regions(const py::list &regions_list,
                                   const int allowed_overlap) {
-
   std::vector<py::detail::unchecked_reference<long, 2>> regions;
   std::vector<py::ssize_t> indicies(regions_list.size());
 
@@ -274,6 +333,8 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 }
 
 void init_detection(py::module_ &mod) {
+  mod.def("maxima_at", &maxima_at, "Boolean array of local maxima.");
+  mod.def("local_maxima", &local_maxima, "Boolean array of local maxima.");
   mod.def("maxima", &maxima,
           "Calculates to maxima between pairs of start and end positions.");
   mod.def("peak_prominence", &peak_prominence,
@@ -284,4 +345,5 @@ void init_detection(py::module_ &mod) {
   mod.def("combine_regions", &combine_regions,
           "Combine a list of regions, merging overlaps.", py::arg(),
           py::arg("allowed_overlap") = 0);
+  mod.def("split_peaks", &split_peaks, "split_peaks");
 }
