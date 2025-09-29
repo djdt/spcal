@@ -88,6 +88,7 @@ class CompoundPoissonOptions(LimitOptions):
     def setSingleIonParameters(self, params: np.ndarray) -> None:
         self.single_ion_parameters = params
         self.lognormal_sigma.setEnabled(self.single_ion_parameters.size < 2)
+        self.limitOptionsChanged.emit()
 
     def state(self) -> dict:
         return {
