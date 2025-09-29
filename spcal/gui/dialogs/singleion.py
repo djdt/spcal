@@ -18,7 +18,8 @@ class SingleIonDialog(QtWidgets.QDialog):
     parametersExtracted = QtCore.Signal(np.ndarray)
 
     def __init__(
-        self, dist: np.ndarray | None = None, parent: QtWidgets.QWidget | None = None
+        self,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
