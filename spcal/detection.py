@@ -117,7 +117,9 @@ def accumulate_detections(
 
     # Sum regions
     if integrate:
-        sums = np.add.reduceat(np.clip(y - limit_accumulation, 0.0, None), indicies)[
+        base = y - limit_accumulation
+        base[base<0.0] = 0.0
+        sums = np.add.reduceat(base, indicies)[
             ::2
         ]
     else:
