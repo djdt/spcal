@@ -30,8 +30,8 @@ py::array_t<bool> local_maxima(const py::array_t<double> &values_array) {
   return maxima_array;
 }
 
-py::array_t<long> maxima(const py::array_t<double> &values,
-                         const py::array_t<long> &regions) {
+py::array_t<long> max_between(const py::array_t<double> &values,
+                              const py::array_t<long> &regions) {
   /*
    * The maxima of values between pairs of start and end indicies.
    *
@@ -341,8 +341,8 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 
 void init_detection(py::module_ &mod) {
   mod.def("local_maxima", &local_maxima, "Boolean array of local maxima.");
-  mod.def("maxima", &maxima,
-          "Calculates to maxima between pairs of start and end positions.");
+  mod.def("max_between", &max_between,
+          "Calculates the maxima between pairs of start and end positions.");
   mod.def("peak_prominence", &peak_prominence,
           "Calculate the peak prominence at given indicies.", py::arg(),
           py::arg(), py::arg("max_width") = 100, py::arg("min_base") = 0.0);
