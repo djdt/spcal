@@ -29,6 +29,7 @@ py::array_t<bool> local_maxima(const py::array_t<double> &values_array) {
 
   return maxima_array;
 }
+
 py::array_t<long> maxima(const py::array_t<double> &values,
                          const py::array_t<long> &regions) {
   /*
@@ -152,11 +153,18 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
                       const py::array_t<long> &left_array,
                       const py::array_t<long> &right_array,
                       const double required_prominence) {
+  /* Split overlaping peaks that are a feaction the max prominence.
+   * @param prominence
+   * @param left
+   * @param right
+   * @param required_prominence fraction of max overlap prominence to split
+   *
+   * @returns new left and right arrays
+   */
   py::buffer_info pbuf = prominence_array.request();
   py::buffer_info lbuf = left_array.request();
   py::buffer_info rbuf = right_array.request();
-  // for l, r in lefts, rights
-  // py::buffer_info lbuf = left_array.request();
+
   std::vector<long> *split_left = new std::vector<long>;
   std::vector<long> *split_right = new std::vector<long>;
   split_left->reserve(pbuf.size);
@@ -181,11 +189,10 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
     }
     split_left->push_back(new_left);
     for (py::ssize_t k = i + 1; k < j; ++k) {
-      if ((lefts(k) != lefts(k - 1) && (rights(k) != rights(k - 1))) &&
-          (prom(k - 1) >= max_prom * required_prominence)) {
-        new_left = rights(k - 1);
-        if (lefts(k) > new_left)
-          new_left = std::min(new_left, lefts(k));
+      if ((lefts(k) == lefts(k - 1)) && ((rights(k) == rights(k - 1))))
+        continue;
+      if (prom(k) >= max_prom * required_prominence) {
+        new_left = lefts(k) > new_left ? lefts(k) : rights(k);
         split_left->push_back(new_left);
         split_right->push_back(new_left);
       }
@@ -333,7 +340,6 @@ py::array_t<long> combine_regions(const py::list &regions_list,
 }
 
 void init_detection(py::module_ &mod) {
-  mod.def("maxima_at", &maxima_at, "Boolean array of local maxima.");
   mod.def("local_maxima", &local_maxima, "Boolean array of local maxima.");
   mod.def("maxima", &maxima,
           "Calculates to maxima between pairs of start and end positions.");
@@ -345,5 +351,7 @@ void init_detection(py::module_ &mod) {
   mod.def("combine_regions", &combine_regions,
           "Combine a list of regions, merging overlaps.", py::arg(),
           py::arg("allowed_overlap") = 0);
-  mod.def("split_peaks", &split_peaks, "split_peaks");
+  mod.def("split_peaks", &split_peaks,
+          "Split overlapping peaks with some fraction of the maximum overlap "
+          "prominence.");
 }
