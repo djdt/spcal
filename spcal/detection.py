@@ -44,18 +44,19 @@ def accumulate_detections(
             "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
         )
 
-    possible_detections = np.flatnonzero(
-        np.logical_and(y > limit_detection, ext.local_maxima(y))
-    )
+    above = np.greater(y, limit_detection)
+
+    possible_detections = np.flatnonzero(np.logical_and(above, ext.local_maxima(y)))
 
     prominence, lefts, rights = ext.peak_prominence(
         y, possible_detections, min_base=limit_accumulation
     )
 
-    # First we remove any peaks lower than the lod - base
     min_prominence = limit_detection - limit_accumulation
+
+    # First we remove any peaks lower than the lod - base
     if isinstance(min_prominence, np.ndarray):
-        detected = prominence >= min_prominence[lefts + (rights - lefts) // 2]
+        detected = prominence >= min_prominence[possible_detections]
     else:
         detected = prominence >= min_prominence
     prominence, lefts, rights = (
@@ -64,50 +65,14 @@ def accumulate_detections(
         rights[detected],
     )
 
-    # Overlapping peaks have the same left or right edge
-    _, idx, inv = np.unique(rights, return_index=True, return_inverse=True)
-    max_prominence = np.maximum.reduceat(prominence, idx)[inv]
-    detected = prominence >= max_prominence * prominence_required
-
-    _, idx, inv = np.unique(lefts[detected], return_index=True, return_inverse=True)
-    max_prominence = np.maximum.reduceat(prominence[detected], idx)[inv]
-    new_detected = prominence[detected] >= max_prominence * prominence_required
-
-    # update detections with logical and
-    detected[detected] &= new_detected
-    prominence, lefts, rights = (
-        prominence[detected],
-        lefts[detected],
-        rights[detected],
-    )
-
-    # split any overlapped peaks, prefering most prominent
-    right_larger = prominence[:-1] < prominence[1:]
-    lefts[1:][right_larger] = np.maximum(
-        lefts[1:][right_larger], rights[:-1][right_larger]
-    )
-
-    # remove unions
-    unions = lefts == rights
-    lefts, rights, right_larger = (
-        lefts[~unions],
-        rights[~unions],
-        right_larger[~unions[:-1]],
-    )
-
-    rights[:-1][~right_larger] = np.minimum(
-        lefts[1:][~right_larger], rights[:-1][~right_larger]
-    )
-
-    # convert to pairs of left and right edge
+    lefts, rights = ext.split_peaks(prominence, lefts, rights, prominence_required)
     regions = np.stack((lefts, rights), axis=1)
 
     indicies = regions.ravel()
     if indicies.size > 0 and indicies[-1] == y.size:
         indicies = indicies[:-1]
-
     # Get number above limit in each region
-    num_detections = np.add.reduceat(y > limit_detection, indicies)[::2]
+    num_detections = np.add.reduceat(above, indicies)[::2]
     # Remove regions without minimum_size values above detection limit
     regions = regions[num_detections >= points_required]
 
@@ -118,10 +83,8 @@ def accumulate_detections(
     # Sum regions
     if integrate:
         base = y - limit_accumulation
-        base[base<0.0] = 0.0
-        sums = np.add.reduceat(base, indicies)[
-            ::2
-        ]
+        base[base < 0.0] = 0.0
+        sums = np.add.reduceat(base, indicies)[::2]
     else:
         sums = np.add.reduceat(y, indicies)[::2]
 
@@ -190,5 +153,5 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         idx of maxima
     """
 
-    idx = ext.maxima(y, regions)
+    idx = ext.max_between(y, regions)
     return idx
