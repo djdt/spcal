@@ -116,6 +116,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         sb = self.button_box.standardButton(button)
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.clear()
+            self.resetRequested.emit()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Apply:
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
@@ -315,8 +316,6 @@ class SingleIonDialog(QtWidgets.QDialog):
                 self.masses[self.valid], self.sigmas[self.valid]
             )
             self.parametersExtracted.emit(np.stack((mz, mu, sigma), axis=1))
-        else:
-            self.resetRequested.emit()
         super().accept()
 
 
