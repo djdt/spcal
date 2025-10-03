@@ -116,16 +116,16 @@ class BasicTable(QtWidgets.QTableWidget):
 
         menu.popup(event.globalPos())
 
-    def keyPressEvent(self, event: QtCore.QEvent) -> None:  # pragma: no cover
-        if event.key() in [QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # pragma: no cover
+        if event.key() in [QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return]:
             self._advance()
-        elif event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
+        elif event.key() in [QtCore.Qt.Key.Key_Backspace, QtCore.Qt.Key.Key_Delete]:
             self._delete()
-        elif event.matches(QtGui.QKeySequence.Copy):
+        elif event.matches(QtGui.QKeySequence.StandardKey.Copy):
             self._copy()
-        elif event.matches(QtGui.QKeySequence.Cut):
+        elif event.matches(QtGui.QKeySequence.StandardKey.Cut):
             self._cut()
-        elif event.matches(QtGui.QKeySequence.Paste):
+        elif event.matches(QtGui.QKeySequence.StandardKey.Paste):
             self._paste()
         else:
             super().keyPressEvent(event)
@@ -179,7 +179,10 @@ class BasicTable(QtWidgets.QTableWidget):
         for row, row_text in enumerate(text[0].split("\n")):
             for column, text in enumerate(row_text.split("\t")):
                 item = self.item(start_row + row, start_column + column)
-                if item is not None and QtCore.Qt.ItemIsEditable & item.flags():
+                if (
+                    item is not None
+                    and QtCore.Qt.ItemFlag.ItemIsEditable & item.flags()
+                ):
                     item.setText(text)
 
     # def columnText(self, column: int) -> list[str]:

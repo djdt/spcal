@@ -12,7 +12,7 @@ from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.draw import draw_particle_view
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
-from spcal.gui.iowidgets import IOStack, ReferenceIOStack, SampleIOStack
+from spcal.gui.iowidgets import ReferenceIOStack, SampleIOStack
 from spcal.gui.options import OptionsWidget
 from spcal.gui.util import create_action
 from spcal.gui.widgets import ElidedLabel
@@ -33,7 +33,7 @@ class InputWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        io_stack: IOStack,
+        io_stack: SampleIOStack,
         options: OptionsWidget,
         color_scheme: str = "IBM Carbon",
         parent: QtWidgets.QWidget | None = None,
