@@ -114,6 +114,7 @@ class CompoundPoissonOptions(LimitOptions):
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion parameters" in state:
             self.single_ion_parameters = state["single ion parameters"]
+            self.lognormal_sigma.setEnabled(self.single_ion_parameters.size == 0)
 
         self.blockSignals(False)
         self.limitOptionsChanged.emit()
