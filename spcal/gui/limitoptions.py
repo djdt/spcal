@@ -18,7 +18,7 @@ class LimitOptions(QtWidgets.QGroupBox):
         self, name: str, alpha: float = 0.001, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(name, parent=parent)
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         self.alpha = ValueWidget(
             alpha, validator=QtGui.QDoubleValidator(1e-16, 0.5, 9), format=sf
         )
@@ -28,6 +28,9 @@ class LimitOptions(QtWidgets.QGroupBox):
         layout = QtWidgets.QFormLayout()
         layout.addRow("α (Type I):", self.alpha)
         self.setLayout(layout)
+
+    def layout(self) -> QtWidgets.QFormLayout:
+        return super().layout()
 
     def state(self) -> dict:
         return {"alpha": self.alpha.value()}
@@ -46,7 +49,7 @@ class LimitOptions(QtWidgets.QGroupBox):
 class CompoundPoissonOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("Compound Poisson", 1e-6, parent=parent)
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         self.single_ion_parameters = np.array([])  # array of (..., [mz, mu,sigma )
 
@@ -75,10 +78,12 @@ class CompoundPoissonOptions(LimitOptions):
 
     def dialogSingleIon(self) -> SingleIonDialog:
         dlg = SingleIonDialog(
+            self.single_ion_parameters,
             parent=self,
         )
         dlg.parametersExtracted.connect(self.setSingleIonParameters)
         dlg.resetRequested.connect(self.clearSingleIon)
+
         dlg.open()
         return dlg
 
@@ -128,7 +133,7 @@ class GaussianOptions(LimitOptions):
         super().__init__("Gaussian", 2.867e-7, parent=parent)  # 5.0 sigma
         self.alpha.valueChanged.connect(self.updateSigma)
 
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         self.sigma = ValueWidget(
             5.0, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
         )
