@@ -156,7 +156,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         zeros = np.count_nonzero(self.counts == 0, axis=0)
         self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
 
-        max = np.amax(self.counts)
+        max = np.nanmax(self.counts)
         self.minimum_value.setRange(0.0, max)
         self.maximum_value.setRange(0.0, max)
         self.minimum_value.setValue(0.0)
