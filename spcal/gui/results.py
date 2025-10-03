@@ -930,6 +930,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.results.clear()
         self._clusters = None
 
+        if self.sample.responses.size == 0:
+            return
+
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
         dwelltime = self.options.dwelltime.baseValue()
