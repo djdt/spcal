@@ -1,54 +1,27 @@
 import logging
-from typing import Iterator, Type
+from typing import Iterator
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.particle
+from spcal.calc import mode
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.util import create_action
 from spcal.gui.widgets import EditableComboBox, OverLabel, UnitsWidget, ValueWidget
 from spcal.siunits import mass_concentration_units, size_units
-from spcal.calc import mode
 
 logger = logging.getLogger(__name__)
 
 
-class IOWidget(QtWidgets.QWidget):
+class SampleIOWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     request = QtCore.Signal(str)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
-    def clearInputs(self) -> None:
-        raise NotImplementedError
-
-    def clearOutputs(self) -> None:
-        raise NotImplementedError
-
-    def updateInputs(self) -> None:
-        raise NotImplementedError
-
-    def updateOutputs(self) -> None:
-        raise NotImplementedError
-
-    def setSignificantFigures(self, num: int | None = None) -> None:
-        if num is None:
-            num = int(QtCore.QSettings().value("SigFigs", 4))
-        for widget in self.findChildren(ValueWidget):
-            if widget.view_format[1] == "g":
-                widget.setViewFormat(num)
-
-    def isComplete(self) -> bool:
-        return True
-
-
-class SampleIOWidget(IOWidget):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         self.action_density = create_action(
             "folder-database",
@@ -69,8 +42,6 @@ class SampleIOWidget(IOWidget):
             lambda: self.request.emit("ionic response"),
         )
 
-        self.inputs = QtWidgets.QGroupBox("Inputs")
-        self.inputs.setLayout(QtWidgets.QFormLayout())
         self.density = UnitsWidget(
             {"g/cm³": 1e-3 * 1e6, "kg/m³": 1.0},
             default_unit="g/cm³",
@@ -130,10 +101,13 @@ class SampleIOWidget(IOWidget):
         self.response.baseValueChanged.connect(self.optionsChanged)
         self.massfraction.valueChanged.connect(self.optionsChanged)
 
-        self.inputs.layout().addRow("Density:", self.density)
-        self.inputs.layout().addRow("Molar mass:", self.molarmass)
-        self.inputs.layout().addRow("Ionic response:", self.response)
-        self.inputs.layout().addRow("Mass fraction:", self.massfraction)
+        self.inputs = QtWidgets.QGroupBox("Inputs")
+        input_layout = QtWidgets.QFormLayout()
+        input_layout.addRow("Density:", self.density)
+        input_layout.addRow("Molar mass:", self.molarmass)
+        input_layout.addRow("Ionic response:", self.response)
+        input_layout.addRow("Mass fraction:", self.massfraction)
+        self.inputs.setLayout(input_layout)
 
         self.count = ValueWidget(0, format=("f", 0))
         self.count.setReadOnly(True)
@@ -144,10 +118,11 @@ class SampleIOWidget(IOWidget):
         self.lod_label = OverLabel(self.lod_count, "")
 
         self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QFormLayout())
-        self.outputs.layout().addRow("Particle count:", self.count)
-        self.outputs.layout().addRow("Background count:", self.background_count)
-        self.outputs.layout().addRow("Detection threshold:", self.lod_label)
+        output_layout = QtWidgets.QFormLayout()
+        output_layout.addRow("Particle count:", self.count)
+        output_layout.addRow("Background count:", self.background_count)
+        output_layout.addRow("Detection threshold:", self.lod_label)
+        self.outputs.setLayout(output_layout)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.inputs)
@@ -165,6 +140,13 @@ class SampleIOWidget(IOWidget):
         if not self.lod_count.isReadOnly():  # Editable lod, save
             state_dict["lod"] = self.lod_count.value()
         return {k: v for k, v in state_dict.items() if v is not None}
+
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        if num is None:
+            num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+        for widget in self.findChildren(ValueWidget):
+            if widget.view_format[1] == "g":
+                widget.setViewFormat(num)
 
     def setState(self, state: dict) -> None:
         self.blockSignals(True)
@@ -230,7 +212,10 @@ class SampleIOWidget(IOWidget):
     ) -> None:
         bg_values = responses[labels == 0]
         if np.count_nonzero(np.isfinite(bg_values)) > 0:
-            background, background_std = np.nanmean(bg_values), np.nanstd(bg_values)
+            background, background_std = (
+                float(np.nanmean(bg_values)),
+                float(np.nanstd(bg_values)),
+            )
         else:
             background, background_std = None, None
 
@@ -254,7 +239,7 @@ class ReferenceIOWidget(SampleIOWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
 
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         self.concentration = UnitsWidget(
             units=mass_concentration_units,
@@ -270,9 +255,11 @@ class ReferenceIOWidget(SampleIOWidget):
         self.concentration.baseValueChanged.connect(self.optionsChanged)
         self.diameter.baseValueChanged.connect(self.optionsChanged)
 
-        self.inputs.layout().setRowVisible(self.molarmass, False)
-        self.inputs.layout().insertRow(0, "Concentration:", self.concentration)
-        self.inputs.layout().insertRow(1, "Diameter:", self.diameter)
+        input_layout = self.inputs.layout()
+        assert isinstance(input_layout, QtWidgets.QFormLayout)
+        input_layout.setRowVisible(self.molarmass, False)
+        input_layout.insertRow(0, "Concentration:", self.concentration)
+        input_layout.insertRow(1, "Diameter:", self.diameter)
 
         self.check_use_efficiency_for_all = QtWidgets.QCheckBox(
             "Calibrate for all elements."
@@ -305,9 +292,11 @@ class ReferenceIOWidget(SampleIOWidget):
         )
         self.massresponse.setReadOnly(True)
 
-        self.outputs.layout().addRow("Trans. Efficiency:", self.efficiency_label)
-        self.outputs.layout().addRow("", self.check_use_efficiency_for_all)
-        self.outputs.layout().addRow("Mass Response:", self.massresponse)
+        output_layout = self.outputs.layout()
+        assert isinstance(output_layout, QtWidgets.QFormLayout)
+        output_layout.addRow("Trans. Efficiency:", self.efficiency_label)
+        output_layout.addRow("", self.check_use_efficiency_for_all)
+        output_layout.addRow("Mass Response:", self.massresponse)
 
     def state(self) -> dict:
         state_dict = super().state()
@@ -369,7 +358,7 @@ class ReferenceIOWidget(SampleIOWidget):
         mass_fraction = self.massfraction.value()
         if mass_fraction is not None:
             self.massresponse.setBaseValue(
-                mass * mass_fraction / np.mean(detections[detections > 0])
+                float(mass * mass_fraction / np.mean(detections[detections > 0]))
             )
 
         # If concentration defined use conc method
@@ -377,7 +366,7 @@ class ReferenceIOWidget(SampleIOWidget):
         response = self.response.baseValue()
         if concentration is not None and uptake is not None:
             efficiency = spcal.particle.nebulisation_efficiency_from_concentration(
-                np.count_nonzero(detections),
+                int(np.count_nonzero(detections)),
                 concentration=concentration,
                 mass=mass,
                 flow_rate=uptake,
@@ -401,16 +390,11 @@ class ReferenceIOWidget(SampleIOWidget):
         return super().isComplete() and self.diameter.hasAcceptableInput()
 
 
-class ResultIOWidget(IOWidget):
-    optionsChanged = QtCore.Signal(str)
-
+class ResultIOWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
 
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
-
-        self.outputs = QtWidgets.QGroupBox("Outputs")
-        self.outputs.setLayout(QtWidgets.QHBoxLayout())
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         self.count = ValueWidget(format=("f", 0))
         self.count.setReadOnly(True)
@@ -449,13 +433,23 @@ class ResultIOWidget(IOWidget):
         layout_outputs_right.addRow("Mode:", self.mode)
         layout_outputs_right.addRow("LOD:", self.lod)
 
-        self.outputs.layout().addLayout(layout_outputs_left)
-        self.outputs.layout().addLayout(layout_outputs_right)
+        self.outputs = QtWidgets.QGroupBox("Outputs")
+        output_layout = QtWidgets.QHBoxLayout()
+        output_layout.addLayout(layout_outputs_left)
+        output_layout.addLayout(layout_outputs_right)
+        self.outputs.setLayout(output_layout)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.outputs)
 
         self.setLayout(layout)
+
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        if num is None:
+            num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+        for widget in self.findChildren(ValueWidget):
+            if widget.view_format[1] == "g":
+                widget.setViewFormat(num)
 
     def clearOutputs(self) -> None:
         self.mean.setBaseValue(None)
@@ -486,7 +480,6 @@ class ResultIOWidget(IOWidget):
         background_conc: float | None = None,
         background_error: float | None = None,
     ) -> None:
-
         if values.size == 0:  # will never be visible / enabled
             self.clearOutputs()
             return
@@ -503,11 +496,11 @@ class ResultIOWidget(IOWidget):
         for te in [self.mean, self.median, self.mode, self.lod]:
             te.setUnits(units)
 
-        self.mean.setBaseValue(mean)
-        self.mean.setBaseError(std)
-        self.median.setBaseValue(median)
+        self.mean.setBaseValue(float(mean))
+        self.mean.setBaseError(float(std))
+        self.median.setBaseValue(float(median))
         self.mode.setBaseValue(_mode)
-        self.lod.setBaseValue(mean_lod)
+        self.lod.setBaseValue(float(mean_lod))
 
         unit = self.mean.setBestUnit()
         self.median.setUnit(unit)
@@ -539,24 +532,26 @@ class ResultIOWidget(IOWidget):
         self.background.setUnit(unit)
 
 
-class IOStack(QtWidgets.QWidget):
+class SampleIOStack(QtWidgets.QWidget):
     nameChanged = QtCore.Signal(str)
     namesEdited = QtCore.Signal(dict)
     enabledNamesChanged = QtCore.Signal()
 
     optionsChanged = QtCore.Signal(str)
 
+    requestIonicResponseTool = QtCore.Signal()
+    limitsChanged = QtCore.Signal()
+
     def __init__(
         self,
-        io_widget_type: Type[IOWidget],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
 
-        self.io_widget_type = io_widget_type
-
         self.combo_name = EditableComboBox(self)
-        self.combo_name.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+        self.combo_name.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
         self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]+"))
 
         self.stack = QtWidgets.QStackedWidget()
@@ -570,7 +565,9 @@ class IOStack(QtWidgets.QWidget):
         self.repopulate([""])
 
         self.layout_top = QtWidgets.QHBoxLayout()
-        self.layout_top.addWidget(self.combo_name, 0, QtCore.Qt.AlignRight)
+        self.layout_top.addWidget(
+            self.combo_name, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(self.layout_top)
@@ -580,30 +577,37 @@ class IOStack(QtWidgets.QWidget):
     def __contains__(self, name: str) -> bool:
         return self.combo_name.findText(name) != -1
 
-    def __getitem__(self, name: str) -> IOWidget:
+    def __getitem__(self, name: str) -> SampleIOWidget:
         return self.stack.widget(self.combo_name.findText(name))  # type: ignore
 
-    def __iter__(self) -> Iterator[IOWidget]:
+    def __iter__(self) -> Iterator[SampleIOWidget]:
         for i in range(self.stack.count()):
-            yield self.stack.widget(i)
+            yield self.stack.widget(i)  # type: ignore
 
     def names(self) -> list[str]:
         return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
 
     def enabledNames(self) -> list[str]:
-        return [
-            self.combo_name.itemText(i)
-            for i in range(self.combo_name.count())
-            if self.combo_name.model().item(i).isEnabled()
-        ]
+        names = []
+        model = self.combo_name.model()
+        for i in range(self.combo_name.count()):
+            if model.flags(model.index(i, 0)) & QtCore.Qt.ItemFlag.ItemIsEnabled:
+                names.append(self.combo_name.itemText(i))
+        return names
 
-    def widgets(self) -> list[IOWidget]:
+    def widgets(self) -> list[SampleIOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
     def handleRequest(self, request: str, value: None = None) -> None:
-        raise NotImplementedError
+        if request == "ionic response":
+            self.requestIonicResponseTool.emit()
 
-    def repopulate(self, names: list[str]) -> None:
+    def clear(self) -> None:
+        for widget in self.widgets():
+            widget.clearInputs()
+            widget.clearOutputs()
+
+    def repopulate(self, names: list[str], widget_type: type = SampleIOWidget) -> None:
         self.blockSignals(True)
         old_widgets = {
             name: widget for name, widget in zip(self.names(), self.widgets())
@@ -618,7 +622,7 @@ class IOStack(QtWidgets.QWidget):
             if name in old_widgets:
                 widget = old_widgets[name]
             else:
-                widget = self.io_widget_type()
+                widget = widget_type()
                 widget.optionsChanged.connect(self.onWidgetOptionChanged)
                 widget.request.connect(self.handleRequest)
             self.stack.addWidget(widget)
@@ -626,7 +630,7 @@ class IOStack(QtWidgets.QWidget):
 
     def onWidgetOptionChanged(self) -> None:
         widget = self.sender()
-        if not isinstance(widget, self.io_widget_type):
+        if not isinstance(widget, SampleIOWidget):
             raise ValueError("invalid widget triggered onWidgetOptionsChanged")
         name = self.combo_name.itemText(self.stack.indexOf(widget))
         self.optionsChanged.emit(name)
@@ -634,22 +638,6 @@ class IOStack(QtWidgets.QWidget):
     def setSignificantFigures(self, num: int | None = None) -> None:
         for widget in self.widgets():
             widget.setSignificantFigures(num)
-
-    def resetInputs(self) -> None:
-        for widget in self.widgets():
-            widget.resetInputs()
-
-
-class SampleIOStack(IOStack):
-    requestIonicResponseTool = QtCore.Signal()
-    limitsChanged = QtCore.Signal()
-
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(SampleIOWidget, parent=parent)
-
-    def handleRequest(self, request: str, value: None = None) -> None:
-        if request == "ionic response":
-            self.requestIonicResponseTool.emit()
 
     def setResponses(self, responses: dict[str, float]) -> None:
         for name, response in responses.items():
@@ -668,19 +656,12 @@ class SampleIOStack(IOStack):
             widget.lod_count.setReadOnly(not editable)
 
 
-class ReferenceIOStack(IOStack):
-    requestIonicResponseTool = QtCore.Signal()
-    limitsChanged = QtCore.Signal()
-
+class ReferenceIOStack(SampleIOStack):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         self.button_group_check_efficiency = QtWidgets.QButtonGroup()
         self.button_group_check_efficiency.setExclusive(False)
         self.button_group_check_efficiency.buttonClicked.connect(self.buttonClicked)
-        super().__init__(ReferenceIOWidget, parent=parent)
-
-    def handleRequest(self, request: str, value: None = None) -> None:
-        if request == "ionic response":
-            self.requestIonicResponseTool.emit()
+        super().__init__(parent=parent)
 
     def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
         assert isinstance(button, QtWidgets.QCheckBox)
@@ -689,6 +670,7 @@ class ReferenceIOStack(IOStack):
             # Don't allow partial
             button.setCheckState(QtCore.Qt.CheckState.Checked)
         for b in self.button_group_check_efficiency.buttons():
+            assert isinstance(b, QtWidgets.QCheckBox)
             if b == button:
                 continue
             if button.checkState() == QtCore.Qt.CheckState.Checked:
@@ -697,31 +679,139 @@ class ReferenceIOStack(IOStack):
                 b.setCheckState(QtCore.Qt.CheckState.Unchecked)
         self.button_group_check_efficiency.blockSignals(False)
 
-    def repopulate(self, names: list[str]) -> None:
-        super().repopulate(names)
+    def repopulate(
+        self, names: list[str], widget_type: type = ReferenceIOWidget
+    ) -> None:
+        super().repopulate(names, ReferenceIOWidget)
         for name in names:
+            io = self.stack.widget(self.combo_name.findText(name))
+            if not isinstance(io, ReferenceIOWidget):
+                raise TypeError("ReferenceIOStack must use ReferenceIOWidget")
             self.button_group_check_efficiency.addButton(
-                self[name].check_use_efficiency_for_all
+                io.check_use_efficiency_for_all
             )
 
-    def setResponses(self, responses: dict[str, float]) -> None:
-        for name, response in responses.items():
-            if name in self:
-                self[name].response.setBaseValue(response)
 
-    def setLimitsEditable(self, editable: bool) -> None:
-        for widget in self.widgets():
-            if editable:
-                widget.lod_count.valueChanged.connect(self.limitsChanged)
-            else:
-                try:
-                    widget.lod_count.valueChanged.disconnect(self.limitsChanged)
-                except RuntimeError:
-                    pass
-            widget.lod_count.setReadOnly(not editable)
+class ResultIOStack(QtWidgets.QWidget):
+    nameChanged = QtCore.Signal(str)
+    modeChanged = QtCore.Signal(str)
 
+    namesEdited = QtCore.Signal(dict)
+    enabledNamesChanged = QtCore.Signal()
 
-class ResultIOStack(IOStack):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(ResultIOWidget, parent=parent)
+    def __init__(
+        self,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+
+        self.combo_name = EditableComboBox(self)
+        self.combo_name.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        self.combo_name.setValidator(QtGui.QRegularExpressionValidator("[^\\s]+"))
         self.combo_name.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.NoContextMenu)
+
+        self.stack = QtWidgets.QStackedWidget()
+        self.combo_name.currentIndexChanged.connect(self.stack.setCurrentIndex)
+        self.combo_name.currentIndexChanged.connect(  # Otherwise emitted when 1 item and edit
+            lambda i: self.nameChanged.emit(self.combo_name.itemText(i))
+        )
+        self.combo_name.enabledTextsChanged.connect(self.enabledNamesChanged)
+        self.combo_name.textsEdited.connect(self.namesEdited)
+
+        self.mode = QtWidgets.QComboBox()
+        self.mode.addItems(["Signal", "Mass", "Size", "Volume", "Concentration"])
+        self.mode.setItemData(
+            0, "Accumulated detection signal.", QtCore.Qt.ItemDataRole.ToolTipRole
+        )
+        self.mode.setItemData(
+            1,
+            "Particle mass, requires calibration.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.mode.setItemData(
+            2,
+            "Particle size, requires calibration.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.mode.setItemData(
+            3,
+            "Particle volume, requires calibration.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.mode.setItemData(
+            4,
+            "Intracellular concentration, requires cell diameter and molarmass.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.mode.setCurrentText("Signal")
+        self.mode.currentTextChanged.connect(self.modeChanged)
+
+        self.repopulate([""])
+
+        self.layout_top = QtWidgets.QHBoxLayout()
+        self.layout_top.addWidget(
+            self.combo_name, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        self.layout_top.insertWidget(
+            0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignmentFlag.AlignLeft
+        )
+        self.layout_top.insertWidget(1, self.mode, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
+        self.layout_top.insertStretch(2, 1)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(self.layout_top)
+        layout.addWidget(self.stack, 1)
+        self.setLayout(layout)
+
+    def __contains__(self, name: str) -> bool:
+        return self.combo_name.findText(name) != -1
+
+    def __getitem__(self, name: str) -> ResultIOWidget:
+        return self.stack.widget(self.combo_name.findText(name))  # type: ignore
+
+    def __iter__(self) -> Iterator[ResultIOWidget]:
+        for i in range(self.stack.count()):
+            yield self.stack.widget(i)  # type: ignore
+
+    def names(self) -> list[str]:
+        return [self.combo_name.itemText(i) for i in range(self.combo_name.count())]
+
+    def enabledNames(self) -> list[str]:
+        names = []
+        model = self.combo_name.model()
+        for i in range(self.combo_name.count()):
+            if model.flags(model.index(i, 0)) & QtCore.Qt.ItemFlag.ItemIsEnabled:
+                names.append(self.combo_name.itemText(i))
+        return names
+
+    def widgets(self) -> list[ResultIOWidget]:
+        return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
+
+    def repopulate(self, names: list[str]) -> None:
+        self.blockSignals(True)
+        old_widgets = {
+            name: widget for name, widget in zip(self.names(), self.widgets())
+        }
+
+        self.combo_name.clear()
+        while self.stack.count() > 0:
+            self.stack.removeWidget(self.stack.widget(0))
+
+        for i, name in enumerate(names):
+            self.combo_name.addItem(name)
+            if name in old_widgets:
+                widget = old_widgets[name]
+            else:
+                widget = ResultIOWidget()
+            self.stack.addWidget(widget)
+        self.blockSignals(False)
+
+    def setSignificantFigures(self, num: int | None = None) -> None:
+        for widget in self.widgets():
+            widget.setSignificantFigures(num)
+
+    def clear(self) -> None:
+        for widget in self.widgets():
+            widget.clearOutputs()

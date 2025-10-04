@@ -106,13 +106,15 @@ class ResultsWidget(QtWidgets.QWidget):
         }
 
         self.graph_toolbar = QtWidgets.QToolBar()
-        self.graph_toolbar.setOrientation(QtCore.Qt.Vertical)
-        self.graph_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        self.graph_toolbar.setOrientation(QtCore.Qt.Orientation.Vertical)
+        self.graph_toolbar.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
 
         settings = QtCore.QSettings()
         font = QtGui.QFont(
-            settings.value("GraphFont/Family", "SansSerif"),
-            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+            str(settings.value("GraphFont/Family", "SansSerif")),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
         self.graph_hist = HistogramView(font=font)
@@ -173,31 +175,10 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.io = ResultIOStack()
         self.io.nameChanged.connect(self.updateGraphsForName)
-
-        self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(list(self.mode_keys.keys()))
-        self.mode.setItemData(0, "Accumulated detection signal.", QtCore.Qt.ToolTipRole)
-        self.mode.setItemData(
-            1, "Particle mass, requires calibration.", QtCore.Qt.ToolTipRole
-        )
-        self.mode.setItemData(
-            2, "Particle size, requires calibration.", QtCore.Qt.ToolTipRole
-        )
-        self.mode.setItemData(
-            3,
-            "Particle volume, requires calibration.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.mode.setItemData(
-            4,
-            "Intracellular concentration, requires cell diameter and molarmass.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.mode.setCurrentText("Signal")
-        self.mode.currentIndexChanged.connect(self.updateOutputs)
-        self.mode.currentIndexChanged.connect(self.updateScatterElements)
-        self.mode.currentIndexChanged.connect(self.updatePCAElements)
-        self.mode.currentIndexChanged.connect(self.redraw)
+        self.io.modeChanged.connect(self.updateOutputs)
+        self.io.modeChanged.connect(self.updateScatterElements)
+        self.io.modeChanged.connect(self.updatePCAElements)
+        self.io.modeChanged.connect(self.redraw)
 
         self.label_file = QtWidgets.QLabel()
 
@@ -292,7 +273,8 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.addSeparator()
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Expanding,
         )
         self.graph_toolbar.addWidget(spacer)
 
@@ -304,16 +286,11 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_toolbar.addAction(self.action_graph_zoomout)
 
         # Layouts
-
-        self.io.layout_top.insertWidget(
-            0, QtWidgets.QLabel("Mode:"), 0, QtCore.Qt.AlignLeft
-        )
-        self.io.layout_top.insertWidget(1, self.mode, 0, QtCore.Qt.AlignLeft)
-        self.io.layout_top.insertStretch(2, 1)
-
         layout_filename = QtWidgets.QHBoxLayout()
-        layout_filename.addWidget(self.label_file, 1, QtCore.Qt.AlignLeft)
-        layout_filename.addWidget(self.button_export, 0, QtCore.Qt.AlignRight)
+        layout_filename.addWidget(self.label_file, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        layout_filename.addWidget(
+            self.button_export, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         # layout_chart_options = QtWidgets.QHBoxLayout()
         # layout_chart_options.addWidget(self.button_export_image)
@@ -461,7 +438,9 @@ class ResultsWidget(QtWidgets.QWidget):
     # Dialogs
     def dialogGraphOptions(
         self,
-    ) -> HistogramOptionsDialog | CompositionsOptionsDialog | None:
+    ) -> (
+        HistogramOptionsDialog | CompositionsOptionsDialog | ScatterOptionsDialog | None
+    ):
         if self.graph_stack.currentWidget() == self.graph_hist:
             dlg = HistogramOptionsDialog(
                 self.graph_options["histogram"]["fit"],
@@ -492,7 +471,7 @@ class ResultsWidget(QtWidgets.QWidget):
             )
             dlg.weightingChanged.connect(self.setScatterWeighting)
             dlg.drawFilteredChanged.connect(self.setScatterDrawFiltered)
-        else:  # Todo: scatter
+        else:
             return None
         dlg.show()
         return dlg
@@ -501,9 +480,9 @@ class ResultsWidget(QtWidgets.QWidget):
         path = Path(self.sample.label_file.text())
 
         regions = self.sample.regions
-        times = self.options.dwelltime.baseValue() * (
-            regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0
-        )
+        dwell = self.options.dwelltime.baseValue()
+        assert dwell is not None
+        times = dwell * (regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0)
 
         dlg = ExportDialog(
             path.with_name(path.stem + "_results.csv"),
@@ -574,7 +553,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraphHist(self) -> None:
         self.graph_hist.clear()
         is_single = self.graph_options["histogram"]["mode"] == "single"
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
         label, unit, modifier = self.mode_labels[mode]
         names = [self.io.combo_name.currentText()] if is_single else self.results.keys()
@@ -612,21 +591,22 @@ class ResultsWidget(QtWidgets.QWidget):
             settings.setValue("ImageExport/SizeY", size.height())
             settings.setValue("ImageExport/DPI", dpi)
 
-            self.exportGraphHistImage(path, size, dpi, options)
+            self.exportGraphHistImage(Path(path), size, dpi, options)
 
         settings = QtCore.QSettings()
         size = QtCore.QSize(
-            int(settings.value("ImageExport/SizeX", 800)),
-            int(settings.value("ImageExport/SizeY", 600)),
+            int(settings.value("ImageExport/SizeX", 800)),  # type: ignore
+            int(settings.value("ImageExport/SizeY", 600)),  # type: ignore
         )
-        dpi = int(settings.value("ImageExport/DPI", 96))
+        dpi = int(settings.value("ImageExport/DPI", 96))  # type: ignore
 
         is_single = self.graph_options["histogram"]["mode"] == "single"
+        legend = self.graph_hist.plot.legend
         dlg = ImageExportDialog(
             size=size,
             dpi=dpi,
             options={
-                "show legend": self.graph_hist.plot.legend.isVisible(),
+                "show legend": legend is not None and legend.isVisible(),
                 "show fit": is_single,
                 "show limits": is_single,
                 "transparent background": False,
@@ -639,12 +619,13 @@ class ResultsWidget(QtWidgets.QWidget):
     def exportGraphHistImage(
         self, path: Path, size: QtCore.QSize, dpi: float, options: dict[str, bool]
     ) -> None:
+        assert self.graph_hist.plot.vb is not None
         dpi_scale = dpi / 96.0
-        xrange, yrange = self.graph_hist.plot.viewRange()
-        resized_font = QtGui.QFont(self.graph_hist.font)
+        xrange, yrange = self.graph_hist.plot.vb.viewRange()
+        resized_font = QtGui.QFont(self.graph_hist.font)  # type: ignore
         resized_font.setPointSizeF(resized_font.pointSizeF() * dpi_scale)
 
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
         label, unit, modifier = self.mode_labels[mode]
         names = (
@@ -667,12 +648,13 @@ class ResultsWidget(QtWidgets.QWidget):
             show_fit=options.get("show fit", True),
             show_limits=options.get("show limits", True),
         )
-        if graph is None:
+        if graph is None or graph.plot.vb is None:
             return
 
         view_range = self.graph_hist.plot.vb.state["viewRange"]
         graph.plot.vb.setRange(xRange=view_range[0], yRange=view_range[1], padding=0.0)
-        graph.plot.legend.setVisible(options.get("show legend", True))
+        if graph.plot.legend is not None:
+            graph.plot.legend.setVisible(options.get("show legend", True))
         graph.resize(size)
         graph.show()  # required to draw correctly?
 
@@ -685,7 +667,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraphCompositions(self) -> None:
         # composition view
         self.graph_composition.clear()
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
         label, _, _ = self.mode_labels[mode]
@@ -712,7 +694,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def drawGraphPCA(self) -> None:
         self.graph_pca.clear()
 
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
         label, unit, modifier = self.mode_labels[mode]
@@ -724,7 +706,7 @@ class ResultsWidget(QtWidgets.QWidget):
             graph_data[k] = v[idx]
 
         X = np.stack(list(graph_data.values()), axis=1)
-        brush = QtGui.QBrush(QtCore.Qt.black)
+        brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
         self.graph_pca.draw(X, brush=brush, feature_names=list(graph_data.keys()))
 
@@ -744,7 +726,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_scatter.clear()
 
         # Set the elements
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         label, unit, modifier = self.mode_labels[mode]
         key = self.mode_keys[mode]
 
@@ -779,7 +761,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 y[filtered],
                 logx=self.check_scatter_logx.isChecked(),
                 logy=self.check_scatter_logy.isChecked(),
-                pen=QtGui.QPen(QtCore.Qt.gray),
+                pen=QtGui.QPen(QtCore.Qt.GlobalColor.gray),
             )
         if num_valid > 2:
             self.graph_scatter.drawFit(
@@ -796,7 +778,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def graphZoomReset(self) -> None:
         widget = self.graph_stack.currentWidget()
         if hasattr(widget, "zoomReset"):
-            widget.zoomReset()
+            widget.zoomReset()  # type: ignore , tested with hasattr
         else:
             child = widget.findChild(SinglePlotGraphicsView)
             if child is not None:
@@ -818,7 +800,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.drawGraphHist()
 
     def updateScatterElements(self) -> None:
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
         elements = [
@@ -837,7 +819,7 @@ class ResultsWidget(QtWidgets.QWidget):
             combo.blockSignals(False)
 
     def updatePCAElements(self) -> None:
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
         elements = ["None", "Total"] + [
@@ -854,7 +836,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.combo_pca_colour.blockSignals(False)
 
     def updateOutputs(self) -> None:
-        mode = self.mode.currentText()
+        mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
         units = self.mode_units[mode]
 
@@ -930,6 +912,9 @@ class ResultsWidget(QtWidgets.QWidget):
         self.results.clear()
         self._clusters = None
 
+        if self.sample.responses.size == 0:
+            return
+
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
         dwelltime = self.options.dwelltime.baseValue()
@@ -990,9 +975,9 @@ class ResultsWidget(QtWidgets.QWidget):
             ["mass", "size", "volume", "cell_concentration"], [1, 2, 3, 4]
         ):
             enabled = any(result.canCalibrate(key) for result in self.results.values())
-            if not enabled and self.mode.currentIndex() == index:
-                self.mode.setCurrentIndex(0)
-            self.mode.model().item(index).setEnabled(enabled)
+            if not enabled and self.io.mode.currentIndex() == index:
+                self.io.mode.setCurrentIndex(0)
+            self.io.mode.model().item(index).setEnabled(enabled)
 
         # Only enable composition view and stack if more than one element
         nresults = sum(result.indicies.size > 0 for result in self.results.values())

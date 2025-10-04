@@ -27,16 +27,16 @@ class OptionsWidget(QtWidgets.QWidget):
 
         # load stored options
         settings = QtCore.QSettings()
-        self.limit_accumulation = settings.value(
-            "Threshold/AccumulationMethod", "Signal Mean"
+        self.limit_accumulation = str(
+            settings.value("Threshold/AccumulationMethod", "Signal Mean")
         )
         self.points_required = int(settings.value("Threshold/PointsRequired", 1))  # type: ignore
 
         self.prominence_required = float(
-            settings.value("Threshold/ProminenceRequired", 0.2)
+            settings.value("Threshold/ProminenceRequired", 0.2)  # type: ignore
         )  # type: ignore
 
-        sf = int(settings.value("SigFigs", 4))
+        sf = int(settings.value("SigFigs", 4))  # type: ignore
 
         # Instrument wide options
         self.dwelltime = UnitsWidget(
@@ -76,7 +76,9 @@ class OptionsWidget(QtWidgets.QWidget):
                 "Use the mass response of a reference particle.",
             ]
         ):
-            self.efficiency_method.setItemData(i, tooltip, QtCore.Qt.ItemDataRole.ToolTipRole)
+            self.efficiency_method.setItemData(
+                i, tooltip, QtCore.Qt.ItemDataRole.ToolTipRole
+            )
         self.efficiency_method.setToolTip(
             self.efficiency_method.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
         )
@@ -91,11 +93,12 @@ class OptionsWidget(QtWidgets.QWidget):
         self.efficiency.valueChanged.connect(self.optionsChanged)
 
         self.inputs = QtWidgets.QGroupBox("Instrument Options")
-        self.inputs.setLayout(QtWidgets.QFormLayout())
-        self.inputs.layout().addRow("Uptake:", self.uptake)
-        self.inputs.layout().addRow("Dwell time:", self.dwelltime)
-        self.inputs.layout().addRow("Trans. Efficiency:", self.efficiency)
-        self.inputs.layout().addRow("", self.efficiency_method)
+        input_layout = QtWidgets.QFormLayout()
+        input_layout.addRow("Uptake:", self.uptake)
+        input_layout.addRow("Dwell time:", self.dwelltime)
+        input_layout.addRow("Trans. Efficiency:", self.efficiency)
+        input_layout.addRow("", self.efficiency_method)
+        self.inputs.setLayout(input_layout)
 
         self.window_size = ValueWidget(
             1000, format=("f", 0), validator=QtGui.QIntValidator(3, 1000000)
@@ -130,7 +133,9 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
-            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ItemDataRole.ToolTipRole
+            1,
+            "Use the highest of Gaussian and Poisson.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
             2,
@@ -139,7 +144,9 @@ class OptionsWidget(QtWidgets.QWidget):
             QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
-            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ItemDataRole.ToolTipRole
+            3,
+            "Threshold using the mean and standard deviation.",
+            QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.limit_method.setItemData(
             4,
@@ -193,13 +200,14 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.limit_inputs = QtWidgets.QGroupBox("Threshold Options")
-        self.limit_inputs.setLayout(QtWidgets.QFormLayout())
-        self.limit_inputs.layout().addRow("Window size:", layout_window_size)
-        self.limit_inputs.layout().addRow("Threshold method:", layout_method)
-        self.limit_inputs.layout().addRow(layout_button)
-        self.limit_inputs.layout().addRow(self.compound_poisson)
-        self.limit_inputs.layout().addRow(self.gaussian)
-        self.limit_inputs.layout().addRow(self.poisson)
+        limit_layout = QtWidgets.QFormLayout()
+        limit_layout.addRow("Window size:", layout_window_size)
+        limit_layout.addRow("Threshold method:", layout_method)
+        limit_layout.addRow(layout_button)
+        limit_layout.addRow(self.compound_poisson)
+        limit_layout.addRow(self.gaussian)
+        limit_layout.addRow(self.poisson)
+        self.limit_inputs.setLayout(limit_layout)
 
         self.celldiameter = UnitsWidget(
             units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
@@ -211,8 +219,9 @@ class OptionsWidget(QtWidgets.QWidget):
         )
 
         self.misc_inputs = QtWidgets.QGroupBox("Cell Options")
-        self.misc_inputs.setLayout(QtWidgets.QFormLayout())
-        self.misc_inputs.layout().addRow("Cell diameter:", self.celldiameter)
+        misc_layout = QtWidgets.QFormLayout()
+        misc_layout.addRow("Cell diameter:", self.celldiameter)
+        self.misc_inputs.setLayout(misc_layout)
 
         layout_left = QtWidgets.QVBoxLayout()
         layout_left.addWidget(self.limit_inputs)
@@ -362,7 +371,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def setSignificantFigures(self, num: int | None = None) -> None:
         if num is None:
-            num = int(QtCore.QSettings().value("SigFigs", 4))
+            num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         for widget in self.findChildren(ValueWidget):
             if widget.view_format[1] == "g":
                 widget.setViewFormat(num)

@@ -35,6 +35,7 @@ class SingleIonDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
+        params: np.ndarray | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -46,6 +47,11 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.masses = np.array([])
         self.counts = np.array([])
+
+        self.lams = np.array([])
+        self.mus = np.array([])
+        self.sigmas = np.array([])
+        self.valid = np.array([])
 
         self.minimum_value = QtWidgets.QDoubleSpinBox()
         self.minimum_value.setRange(0.0, 1e9)
@@ -73,17 +79,18 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.check_restrict = QtWidgets.QCheckBox("Restrict to single ion signals.")
         self.check_restrict.checkStateChanged.connect(self.updateValidParameters)
 
-        hist_controls_box = QtWidgets.QGroupBox()
+        self.hist_controls_box = QtWidgets.QGroupBox()
         hist_controls_box_layout = QtWidgets.QFormLayout()
         hist_controls_box_layout.addRow("Range:", layout_range)
         hist_controls_box_layout.addRow(self.check_restrict)
-        hist_controls_box.setLayout(hist_controls_box_layout)
+        self.hist_controls_box.setLayout(hist_controls_box_layout)
 
         self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
         self.max_sigma_difference.setRange(0.01, 1.0)
         self.max_sigma_difference.setValue(0.1)
         self.max_sigma_difference.setSingleStep(0.01)
         self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
+
 
         self.smoothing = OddValueSpinBox()
         self.smoothing.setSpecialValueText("None")
@@ -92,15 +99,12 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.smoothing.setSingleStep(1)
         self.smoothing.valueChanged.connect(self.updateScatterInterp)
 
-        # self.combo_interp = QtWidgets.QComboBox()
-        # self.combo_interp.addItems(["Linear", "Moving Average", "Savitzky-Golay"])
-        # self.combo_interp.currentTextChanged.connect(self.updateScatterInterp)
-        #
-        controls_box = QtWidgets.QGroupBox()
+        self.controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
         controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
         controls_layout.addRow("Smoothing:", self.smoothing)
-        controls_box.setLayout(controls_layout)
+        self.controls_box.setLayout(controls_layout)
+        self.enableControls(False)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Reset
@@ -109,22 +113,29 @@ class SingleIonDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Close
         )
         self.button_box.clicked.connect(self.buttonPressed)
+        self.button_box.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Apply
+        ).setEnabled(False)
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(self.hist, 0, 0)
-        layout.addWidget(hist_controls_box, 1, 0)
+        layout.addWidget(self.hist_controls_box, 1, 0)
         layout.addWidget(self.scatter, 0, 1)
-        layout.addWidget(controls_box, 1, 1)
+        layout.addWidget(self.controls_box, 1, 1)
         layout.addWidget(self.button_box, 2, 0, 1, 2)
 
         layout.setColumnStretch(0, 2)
         layout.setColumnStretch(1, 3)
         self.setLayout(layout)
 
+        # A 'read-only' mode for existing parameters
+        if params is not None and params.size > 0:
+            self.scatter.drawData(params[:, 0], params[:, 2])
+
     def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
         sb = self.button_box.standardButton(button)
-
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.clear()
             self.resetRequested.emit()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Apply:
             self.accept()
@@ -132,6 +143,30 @@ class SingleIonDialog(QtWidgets.QDialog):
             self.loadSingleIonData()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Close:
             self.reject()
+
+    def completeChanged(self):
+        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Apply)
+        button.setEnabled(self.isComplete())
+
+    def isComplete(self) -> bool:
+        return bool(self.valid.size > 0 and np.any(self.valid))
+
+    def enableControls(self, enabled: bool) -> None:
+        self.controls_box.setEnabled(enabled)
+        self.hist_controls_box.setEnabled(enabled)
+
+    def clear(self) -> None:
+        self.masses = np.array([])
+        self.counts = np.array([])
+        self.lams = np.array([])
+        self.mus = np.array([])
+        self.sigmas = np.array([])
+        self.valid = np.array([])
+
+        self.hist.clear()
+        self.scatter.clear()
+
+        self.enableControls(False)
 
     def updateMinMaxValueRanges(self) -> None:
         if self.minimum_value.hasAcceptableInput():
@@ -179,13 +214,14 @@ class SingleIonDialog(QtWidgets.QDialog):
         zeros = np.count_nonzero(self.counts == 0, axis=0)
         self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
 
-        max = np.amax(self.counts)
+        max = np.nanmax(self.counts)
         self.minimum_value.setRange(0.0, max)
         self.maximum_value.setRange(0.0, max)
         self.minimum_value.setValue(0.0)
         self.maximum_value.setValue(max)
 
         self.updateExtractedParameters()
+        self.enableControls(True)
 
     def updateExtractedParameters(self) -> None:
         self.scatter.clear()
@@ -236,6 +272,8 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
 
+        self.completeChanged()
+
         self.updateScatterInterp()
         self.updateHistogram()
 
@@ -281,14 +319,14 @@ class SingleIonDialog(QtWidgets.QDialog):
             self.hist.hist_curve.clear()
 
     def accept(self) -> None:
-        # self.distributionSelected.emit(self.counts)
-        _, mu = self.interpolatedParameters(
-            self.masses[self.valid], self.mus[self.valid]
-        )
-        mz, sigma = self.interpolatedParameters(
-            self.masses[self.valid], self.sigmas[self.valid]
-        )
-        self.parametersExtracted.emit(np.stack((mz, mu, sigma), axis=1))
+        if self.masses.size > 0:
+            _, mu = self.interpolatedParameters(
+                self.masses[self.valid], self.mus[self.valid]
+            )
+            mz, sigma = self.interpolatedParameters(
+                self.masses[self.valid], self.sigmas[self.valid]
+            )
+            self.parametersExtracted.emit(np.stack((mz, mu, sigma), axis=1))
         super().accept()
 
 
