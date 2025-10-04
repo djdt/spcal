@@ -3,6 +3,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 from PySide6 import QtCore, QtWidgets
+from PySide6.QtGui import QValidator
 
 from spcal.dists.util import (
     extract_compound_poisson_lognormal_parameters,
@@ -10,6 +11,21 @@ from spcal.dists.util import (
 from spcal.gui.graphs.singleion import SingleIonHistogramView, SingleIonScatterView
 from spcal.gui.io import get_open_spcal_path
 from spcal.io import nu, tofwerk
+
+
+class OddValueSpinBox(QtWidgets.QSpinBox):
+    def stepBy(self, steps: int) -> None:
+        steps = steps * self.singleStep() * 2
+        self.setValue(self.value() + steps)
+
+    def validate(self, input: str, pos: int) -> QValidator.State:
+        try:
+            value = int(input)
+        except ValueError:
+            return QValidator.State.Invalid
+        if value % 2 != 1:
+            return QValidator.State.Intermediate
+        return QValidator.State.Acceptable
 
 
 class SingleIonDialog(QtWidgets.QDialog):
@@ -75,14 +91,18 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.max_sigma_difference.setSingleStep(0.01)
         self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
-        self.combo_interp = QtWidgets.QComboBox()
-        self.combo_interp.addItems(["Linear", "Moving Average", "Savitzky-Golay"])
-        self.combo_interp.currentTextChanged.connect(self.updateScatterInterp)
+
+        self.smoothing = OddValueSpinBox()
+        self.smoothing.setSpecialValueText("None")
+        self.smoothing.setRange(1, 9)
+        self.smoothing.setValue(-1)
+        self.smoothing.setSingleStep(1)
+        self.smoothing.valueChanged.connect(self.updateScatterInterp)
 
         self.controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
         controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
-        controls_layout.addRow("Interpolation:", self.combo_interp)
+        controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
         self.enableControls(False)
 
@@ -258,35 +278,26 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.updateHistogram()
 
     def updateScatterInterp(self) -> None:
-        xs, ys = self.interpolatedParameters(
+        xs, ys = self.smoothedParameters(
             self.masses[self.valid], self.sigmas[self.valid]
         )
         self.scatter.drawInterpolationLine(xs, ys)
 
-    def interpolatedParameters(
-        self, _xs: np.ndarray, _ys: np.ndarray
+    def smoothedParameters(
+        self, xs: np.ndarray, ys: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
-        interp = self.combo_interp.currentText()
-        if interp == "Linear":
-            xs, ys = _xs, _ys
-        elif interp == "Moving Average":
-            xs = np.arange(_xs.min(), _xs.max() + 1, 1.0)
-            ys = np.interp(xs, _xs, _ys)
-
-            ma = np.convolve(ys, np.ones(5) / 5.0, mode="valid")
-            ys[2:-2] = ma
-        elif interp == "Savitzky-Golay":
-            t = np.arange(7)
-            poly = np.polynomial.Polynomial.fit(t, [0, 0, 0, 1, 0, 0, 0], 2)
-            psf = poly(t)
-
-            xs = np.arange(_xs.min(), _xs.max() + 1, 1)
-            ys = np.interp(xs, _xs, _ys)
-
-            sg = np.convolve(ys, psf, mode="valid")
-            ys[3:-3] = sg
+        smoothing = self.smoothing.value()
+        if smoothing < 3:
+            return xs, ys
+        elif smoothing % 2 == 1:
+            _xs = np.arange(xs[0], xs[-1] + 1.0, 0.5)
+            _ys = np.interp(_xs, xs, ys)
+            _ys[smoothing // 2 - 1 : -(smoothing // 2 + 1)] = np.convolve(
+                _ys, np.ones(smoothing) / smoothing, mode="valid"
+            )
+            return xs, np.interp(xs, _xs, _ys)
         else:
-            raise ValueError(f"unknown interpolation '{interp}'")
+            raise ValueError(f"invalid smoothing window {smoothing}")
         return xs, ys
 
     def updateHistogram(self) -> None:
