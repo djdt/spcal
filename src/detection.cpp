@@ -184,7 +184,6 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
     py::ssize_t j = i + 1;
     while ((j < lbuf.shape[0]) && (lefts(j) < new_right)) {
       max_prom = std::max(max_prom, prom(j));
-      new_right = std::max(new_right, rights(j));
       ++j;
     }
     split_left->push_back(new_left);
@@ -192,7 +191,12 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
       if ((lefts(k) == lefts(k - 1)) && ((rights(k) == rights(k - 1))))
         continue;
       if (prom(k) >= max_prom * required_prominence) {
-        new_left = lefts(k) > new_left ? lefts(k) : rights(k);
+        if (lefts(k) > new_left) {
+          new_left = lefts(k);
+        } else {
+          new_left = std::min(rights(k), new_right);
+          new_right = std::max(rights(k), new_right);
+        }
         split_left->push_back(new_left);
         split_right->push_back(new_left);
       }
