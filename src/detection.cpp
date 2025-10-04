@@ -152,12 +152,12 @@ py::tuple peak_prominence(const py::array_t<double> &values,
 py::tuple split_peaks(const py::array_t<double> &prominence_array,
                       const py::array_t<long> &left_array,
                       const py::array_t<long> &right_array,
-                      const double required_prominence) {
+                      const double prominence_required) {
   /* Split overlaping peaks that are a feaction the max prominence.
    * @param prominence
    * @param left
    * @param right
-   * @param required_prominence fraction of max overlap prominence to split
+   * @param prominence_required fraction of max overlap prominence to split
    *
    * @returns new left and right arrays
    */
@@ -176,32 +176,48 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
 
   py::ssize_t i = 0;
   while (i < pbuf.shape[0]) {
-    long new_left = lefts(i);
-    long new_right = rights(i);
 
     double max_prom = prom(i);
     // find overlaps and max prominence
     py::ssize_t j = i + 1;
-    while ((j < lbuf.shape[0]) && (lefts(j) < new_right)) {
+    while ((j < lbuf.shape[0]) && (lefts(j) < rights(i))) {
       max_prom = std::max(max_prom, prom(j));
       ++j;
     }
-    split_left->push_back(new_left);
-    for (py::ssize_t k = i + 1; k < j; ++k) {
-      if ((lefts(k) == lefts(k - 1)) && ((rights(k) == rights(k - 1))))
-        continue;
-      if (prom(k) >= max_prom * required_prominence) {
-        if (lefts(k) > new_left) {
-          new_left = lefts(k);
-        } else {
-          new_left = std::min(rights(k), new_right);
-          new_right = std::max(rights(k), new_right);
+    // early exit for single peak
+    if (j == i + 1) {
+      split_left->push_back(lefts(i));
+      split_right->push_back(rights(i));
+    } else {
+      // limit to unique peaks with required prominence
+      std::vector<py::ssize_t> valid;
+      for (py::ssize_t k = i; k < j; ++k) {
+        if ((k > 0) && (lefts(k) == lefts(k - 1)) &&
+            ((rights(k) == rights(k - 1)))) {
+          continue;
         }
-        split_left->push_back(new_left);
-        split_right->push_back(new_left);
+        if (prom(k) >= max_prom * prominence_required) {
+          valid.push_back(k);
+        }
       }
+
+      long current_left = lefts(valid[0]);
+      long current_right = rights(valid[0]);
+
+      split_left->push_back(current_left);
+      for (py::ssize_t k = 1; k < valid.size(); ++k) {
+        py::ssize_t idx = valid[k];
+        if (lefts(idx) > current_left) {
+          current_left = lefts(idx);
+        } else {
+          current_left = std::min(rights(idx), current_right);
+          current_right = std::max(rights(idx), current_right);
+        }
+        split_left->push_back(current_left);
+        split_right->push_back(current_left);
+      }
+      split_right->push_back(current_right);
     }
-    split_right->push_back(new_right);
     i = j;
   }
   split_left->shrink_to_fit();
