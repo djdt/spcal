@@ -80,6 +80,8 @@ class CompoundPoissonOptions(LimitOptions):
         dlg.parametersExtracted.connect(self.setSingleIonParameters)
         dlg.resetRequested.connect(self.clearSingleIon)
         dlg.open()
+        if self.single_ion_parameters.size == 0:
+            dlg.loadSingleIonData()
         return dlg
 
     def clearSingleIon(self) -> None:
