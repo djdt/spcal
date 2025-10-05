@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from scipy.signal import peak_prominences
 
@@ -211,8 +213,8 @@ def test_peak_prominence_scipy():
     assert np.all(r1 == r2)
 
 
-def test_maxima():
+def test_maxima_between():
     a = np.arange(10.0)
     b = np.array([[1, 3], [2, 4], [3, 7], [9, 9]])
-    m = detection.maxima(a, b)
+    m = detection.maxima_between(a, b)
     assert np.all(m == [2, 3, 6, 9])

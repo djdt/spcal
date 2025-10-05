@@ -153,5 +153,5 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
         idx of maxima
     """
 
-    idx = ext.max_between(y, regions)
+    idx = ext.maxima_between(y, regions)
     return idx
