@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -86,9 +88,8 @@ def test_accumulate_detections_prominence():
     assert np.all(sums == [15.0, 14.0, 15.0])
     assert np.all(labels == [0, 1, 1, 1, 1, 1, 0, 2, 2, 2, 2, 2, 0, 3, 3, 3, 3, 0])
 
-
     # strange case with same max peak
-    x = np.array([0,0,3,5,2,5,1,0,0,0,5,6,5,0]).astype(float)
+    x = np.array([0, 0, 3, 5, 2, 5, 1, 0, 0, 0, 5, 6, 5, 0]).astype(float)
     sums, labels, regions = detection.accumulate_detections(
         x, 0.5, 1.0, prominence_required=0.0
     )
@@ -172,3 +173,30 @@ def test_combine_detections():
     csums, clabels, cregions = detection.combine_detections(sums, labels, regions)
     assert np.all(csums["A"] == [6.0, 0.0])
     assert np.all(csums["B"] == [3.0, 3.0])
+
+
+def test_single_particle_peak_splitting():
+    path = Path(__file__).parent.joinpath("data/ti_split_peaks.npz")
+    x = np.load(path)
+    loa, lod = 19.90, 45.0
+
+    # Split peak, largest on left
+    sums, labels, regions = detection.accumulate_detections(
+        x["a"], loa, lod, prominence_required=0.2, points_required=1
+    )
+    assert sums.size == 2
+    assert regions[0][1] == regions[1][0]
+
+    # Two peaks, with many maxima
+    sums, labels, regions = detection.accumulate_detections(
+        x["b"], loa, lod, prominence_required=0.2, points_required=1
+    )
+    assert sums.size == 2
+    assert regions[0][1] < regions[1][0]
+
+    # Split peak, largest on right, another peak
+    sums, labels, regions = detection.accumulate_detections(
+        x["c"], loa, lod, prominence_required=0.2, points_required=1
+    )
+    assert sums.size == 3
+    assert regions[0][1] == regions[1][0]
