@@ -1,16 +1,16 @@
 from pathlib import Path
-from statistics import NormalDist
-from typing import Any, Callable
+import re
+import datetime
 
+import h5py
 import numpy as np
-import bottleneck as bn
-
-from spcal.detection import accumulate_detections, combine_detections
+from numpy.lib import recfunctions as rfn
 
 import logging
 
-from spcal import poisson
-from spcal.dists.util import compound_poisson_lognormal_quantile_lookup
+from spcal.io import nu, tofwerk
+from spcal.npdb import db
+from spcal.calc import search_sorted_closest
 
 logger = logging.getLogger(__name__)
 
@@ -19,451 +19,247 @@ class SPCalDataFile(object):
     def __init__(
         self,
         path: Path,
-        signals: np.ndarray,
-        isotopes: np.ndarray,
-        event_time: float,
-        times: np.ndarray | None = None,
+        event_times: np.ndarray | float | None = None,
         instrument_type: str | None = None,
     ):
         self.path = path
         self.instrument_type = instrument_type
 
-        self.signals = signals
-        self.isotopes = isotopes
+        self._times = None
+        self._event_time = None
+        if isinstance(event_times, np.ndarray):
+            self._times = event_times
+        else:
+            self._event_time = event_times
 
-        self.event_time = event_time
-
-        self._times = times
-
-    @property
-    def masses(self) -> np.ndarray:
-        return self.isotopes["Mass"]
-
-    @property
-    def names(self) -> list[str]:
-        return [f"{isotope['Symbol']}{isotope['Isotope']}" for isotope in self.isotopes]
+    def __getitem__(self, isotope: str) -> np.ndarray:
+        raise NotImplementedError
 
     @property
-    def num_events(self) -> int:
-        return self.signals.shape[0]
+    def event_time(self) -> float:
+        if self._event_time is None:
+            self._event_time = float(np.mean(np.diff(self.event_times)))
+        return self._event_time
 
     @property
-    def num_isotopes(self) -> int:
-        return self.signals.shape[1]
-
-    @property
-    def times(self) -> np.ndarray:
+    def event_times(self) -> np.ndarray:
         if self._times is None:
             self._times = np.arange(self.num_events) * self.event_time
         return self._times
 
-    def indexForName(self, name: str) -> int:
-        return self.names.index(name)
+    @property
+    def isotopes(self) -> list[str]:
+        raise NotImplementedError
 
-    def indexForIsotope(self, isotope: np.ndarray) -> int:
-        index = np.flatnonzero(
-            np.logical_and(
-                self.isotopes["Symbol"] == isotope["Symbol"],
-                self.isotopes["Isotope"] == isotope["Isotope"],
-            )
-        )
-        assert index.size == 1
-        return index[0]
+    @property
+    def num_events(self) -> int:
+        raise NotImplementedError
+
+    def isotopeMass(self, isotope: str) -> float:
+        raise NotImplementedError
 
     def isTOF(self) -> bool:
         return self.instrument_type == "TOF"
 
 
-class SPCalLimit(object):
-    ITER_EPS = 1e-2
-
+class SPCalTextDataFile(SPCalDataFile):
     def __init__(
         self,
-        name: str,
-        mean_signal: float | np.ndarray | None = None,
-        detection_threshold: float | np.ndarray | None = None,
-        signals: np.ndarray | None = None,
-        window_size: int = 0,
-        max_iterations: int = 1,
-    ):
-        self.name = name
-
-        self.window_size = window_size
-        self.max_iterations = max_iterations
-
-        self.iterations_required = 0
-
-        if mean_signal is not None and detection_threshold is not None:
-            self.mean_signal = mean_signal
-            self.detection_threshold = detection_threshold
-        elif signals is not None:
-            self.mean_signal, self.detection_threshold = self.calculate(signals)
-        else:
-            raise ValueError(
-                "either mean_signal and detection_threshold or signals must be provided"
-            )
-
-    def __str__(self) -> str:
-        return (
-            f"SPCalLimit({self.name}, mean={self.mean_signal:.4g}, "
-            f"threshold={self.detection_threshold:.4g})"
-        )
-
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
-        raise NotImplementedError
-
-    def windowedThresholdFunction(
-        self, signals: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        raise NotImplementedError
-
-    def calculate(
-        self, signals: np.ndarray
-    ) -> tuple[float | np.ndarray, float | np.ndarray]:
-        mu, threshold, prev_threshold = 0.0, np.inf, np.inf
-        self.iterations_required = 0
-        if self.window_size != 0:
-            halfwin = self.window_size // 2
-            padded_signal = np.pad(signals, [halfwin, halfwin], mode="reflect")
-
-        while (
-            np.all(np.abs(prev_threshold - threshold) > SPCalLimit.ITER_EPS)
-            and self.iterations_required < self.max_iterations
-        ) or self.iterations_required == 0:
-            prev_threshold = threshold
-
-            if self.window_size == 0:
-                mu, threshold = self.thresholdFunction(signals[signals < threshold])
-            else:
-                mu, threshold = self.windowedThresholdFunction(
-                    np.where(padded_signal > threshold, padded_signal, np.nan),  # type: ignore , is bound
-                )
-
-            self.iterations_required += 1
-
-        if (
-            self.iterations_required == self.max_iterations and self.max_iterations != 1
-        ):  # pragma: no cover
-            logger.warning(f"reached iteration of {self.max_iterations}")
-
-        return mu, threshold
-
-
-class SPCalGaussianLimit(SPCalLimit):
-    def __init__(
-        self,
+        path: Path,
         signals: np.ndarray,
-        alpha: float = 1e-3,
-        window_size: int = 0,
-        max_iterations: int = 1,
+        event_times: np.ndarray | float | None = None,
+        delimiter: str = ",",
+        skip_rows: int = 1,
+        cps: bool = False,
+        instrument_type: str | None = None,
     ):
-        self.z = NormalDist().inv_cdf(1.0 - alpha)
-        self.alpha = alpha
+        super().__init__(path, event_times=event_times, instrument_type=instrument_type)
 
-        super().__init__(
-            "Gaussian",
-            signals=signals,
-            window_size=window_size,
-            max_iterations=max_iterations,
-        )
+        self.signals = signals
 
-    @staticmethod
-    def isGaussianDistributed(signals: np.ndarray) -> bool:
-        nonzero_response = signals > 0.0
-        nonzero_count = np.count_nonzero(nonzero_response)
-        low_signals = signals[np.logical_and(nonzero_response, signals <= 5.0)]
-        # Less than 5% of nonzero values are below 5, equivilent to background of ~ 10
-        return bool(nonzero_count > 0 and low_signals.size / nonzero_count < 0.05)
+        self.delimter = delimiter
+        self.skip_row = skip_rows
+        self.cps = cps
 
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
-        mu = bn.nanmean(signals)
-        return mu, mu + bn.nanstd(signals) * self.z
+    def __getitem__(self, isotope: str) -> np.ndarray:
+        return self.signals[isotope]
 
-    def windowedThresholdFunction(
-        self, signals: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        halfwin = self.window_size // 2
-        mu = bn.move_mean(signals, self.window_size, min_count=halfwin + 1)[
-            2 * halfwin :
-        ]
-        std = bn.move_std(signals, self.window_size, min_count=halfwin + 1)[
-            2 * halfwin :
-        ]
-        return mu, mu + std * self.z
-
-
-class SPCalPoissonLimit(SPCalLimit):
-    FUNCTIONS = {
-        "currie": poisson.currie,
-        "formula a": poisson.formula_a,
-        "formula c": poisson.formula_c,
-        "stapleton": poisson.stapleton_approximation,
-    }
-
-    def __init__(
-        self,
-        signals: np.ndarray,
-        function: str = "formula c",
-        alpha: float = 1e-3,
-        window_size: int = 0,
-        max_iterations: int = 1,
-    ):
-        if function not in SPCalPoissonLimit.FUNCTIONS.keys():
-            raise ValueError(
-                "fomula must be one of", ", ".join(SPCalPoissonLimit.FUNCTIONS.keys())
-            )
-
-        self.function = function
-        self.alpha = alpha
-
-        self.beta = 0.05
-        self.t_sample = 1.0
-        self.t_blank = 1.0
-        self.eta = 2.0
-        self.epsilon = 0.5
-
-        super().__init__(
-            "Poisson",
-            signals=signals,
-            window_size=window_size,
-            max_iterations=max_iterations,
-        )
-
-    def poissonFunctionArgs(self) -> dict:
-        if self.function == "currie":
-            return {"beta": self.beta, "eta": self.eta, "epsilon": self.epsilon}
-        else:
-            return {
-                "beta": self.beta,
-                "t_sample": self.t_sample,
-                "t_blank": self.t_blank,
-            }
-
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
-        mu = bn.nanmean(signals)
-        sc, _ = self.FUNCTIONS[self.function](
-            mu, alpha=self.alpha, **self.poissonFunctionArgs()
-        )
-        return mu, np.ceil(mu + sc)
-
-    def windowedThresholdFunction(
-        self, signals: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        halfwin = self.window_size // 2
-        mu = bn.move_mean(signals, self.window_size, min_count=halfwin + 1)[
-            2 * halfwin :
-        ]
-        sc, _ = self.FUNCTIONS[self.function](
-            mu, alpha=self.alpha, **self.poissonFunctionArgs()
-        )
-        return mu, np.ceil(mu + sc)
-
-
-class SPCalCompoundPoissonLimit(SPCalLimit):
-    def __init__(
-        self,
-        signals: np.ndarray,
-        sigma: float = 0.5,
-        alpha: float = 1e-3,
-        window_size: int = 0,
-        max_iterations: int = 1,
-    ):
-        self.alpha = alpha
-        self.sigma = sigma
-        super().__init__(
-            "CompoundPoisson",
-            signals=signals,
-            window_size=window_size,
-            max_iterations=max_iterations,
-        )
-
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
-        lam = bn.nanmean(signals)
-        mu = np.log(lam) - 0.5 * self.sigma**2
-        return lam, float(
-            compound_poisson_lognormal_quantile_lookup(
-                1.0 - self.alpha, lam, mu, self.sigma
-            )
-        )
-
-    def windowedThresholdFunction(
-        self, signals: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        halfwin = self.window_size // 2
-        lam = bn.move_mean(signals, self.window_size, min_count=halfwin + 1)[
-            2 * halfwin :
-        ]
-        mu = np.full_like(lam, -0.5 * self.sigma**2)
-        return lam, compound_poisson_lognormal_quantile_lookup(  # type: ignore , is array
-            1.0 - self.alpha, lam, mu, np.full_like(lam, self.sigma)
-        )
-
-
-class SPCalProcessingResult(object):
-    def __init__(
-        self,
-        signal: np.ndarray,
-        limit: SPCalLimit,
-        detections: np.ndarray,
-        labels: np.ndarray,
-        regions: np.ndarray,
-        indicies: np.ndarray | None = None,
-    ):
-        self.signal = signal
-        self.detections = detections
-        self.labels = labels
-        self.regions = regions
-
-        self.indicies = indicies
+    @property
+    def names(self) -> list[str]:
+        return list(self.signals.dtype.names or [])
 
     @property
     def num_events(self) -> int:
-        return self.signal.shape[0]
+        return self.signals.shape[0]
+
+    @classmethod
+    def load(
+        cls,
+        path: Path,
+        delimiter: str = ",",
+        skip_rows: int = 1,
+        cps: bool = False,
+        max_rows: int | None = None,
+    ) -> "SPCalTextDataFile":
+        def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
+            for line in fp:
+                if delimiter != ",":
+                    yield line.replace(",", ".")
+                else:
+                    yield line
+
+        def iso_time_to_float_seconds(text: str) -> float:
+            time = datetime.time.fromisoformat(text)
+            return (
+                time.hour * 3600.0
+                + time.minute * 60.0
+                + time.second
+                + time.microsecond * 1e-6
+            )
+
+        with path.open("r") as fp:
+            for i in range(skip_rows - 1):
+                fp.readline()
+
+            header = fp.readline().strip().split(delimiter)
+            converters = {i: lambda s: float(s or 0.0) for i in range(len(header))}
+            dtype = np.float32
+
+            data_start_pos = fp.tell()
+            peek = fp.readline()
+            if "00:" in peek:  # we are dealing with a thremo iCap export
+                converters = {1: lambda s: iso_time_to_float_seconds(s)}
+            fp.seek(data_start_pos)
+
+            gen = replace_comma_decimal(fp, delimiter)
+
+            signals = np.genfromtxt(  # type: ignore
+                gen,
+                delimiter=delimiter,
+                names=header,
+                dtype=dtype,
+                max_rows=max_rows,
+                converters=converters,  # type: ignore , works
+                invalid_raise=False,
+                loose=True,
+            )
+
+        assert signals.dtype.names is not None
+
+        times = None
+        for name in signals.dtype.names:
+            if "time" in name.lower():
+                times = signals[name]
+                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
+                if m is not None:
+                    if m.group(1) in ["ms"]:
+                        times *= 1e-3
+                    elif m.group(1) in ["us", "µs"]:
+                        times *= 1e-6
+                    elif m.group(1) in ["ns"]:
+                        times *= 1e-9
+                signals = rfn.drop_fields(signals, [name])
+                break
+
+        return cls(path, signals, event_times=times)
 
 
-class SPCalProcessingMethod(object):
+class SPCalNuDataFile(SPCalDataFile):
+    """Data file for data from a Nu Instruments Vitesse.
+
+    Attributes:
+        isotope_table: dict of {isotope name: (index in signals, isotope mass)}
+    """
+
+    re_isotope = re.compile("(\\d+)([A-Z][a-z]?)")
+
     def __init__(
         self,
-        limit_method: str = "automatic",
-        limit_accumulation_method: str = "signal mean",
-        gaussian_kws: dict[str, Any] | None = None,
-        poisson_kws: dict[str, Any] | None = None,
-        compound_poisson_kws: dict[str, Any] | None = None,
-        window_size: int = 0,
-        max_iterations: int = 1,
-        points_required: int = 1,
-        prominence_required: float = 0.2,
+        path: Path,
+        signals: np.ndarray,
+        masses: np.ndarray,
+        info: dict,
+        max_mass_diff: float = 0.05,
     ):
-        # deafult kws
-        if gaussian_kws is None:
-            gaussian_kws = {"alpha": 2.867e-7, "windows_size": 0}
-        if poisson_kws is None:
-            poisson_kws = {"alpha": 1e-3, "function": "formula c"}
-        if compound_poisson_kws is None:
-            compound_poisson_kws = {"alpha": 1e-6, "sigma": 0.5}
+        super().__init__(path, instrument_type="TOF")
 
-        self.limit_method = limit_method
-        self.window_size = window_size
-        self.max_iterations = max_iterations
+        self.info = info
 
-        self.gaussian_kws = gaussian_kws
-        self.poisson_kws = poisson_kws
-        self.compound_poisson_kws = compound_poisson_kws
+        self.signals = signals
+        self.masses = masses
+        self.max_mass_diff = max_mass_diff
 
-        self.accumulation_method = limit_accumulation_method
-        self.points_required = points_required
-        self.prominence_required = prominence_required
+        self.isotope_table: dict[str, tuple[int, float]] = {}
+        self.generateIsotopeTable()
 
-        self.sigmas = None
+    def __getitem__(self, isotope: str) -> np.ndarray:
+        return self.signals[:, self.isotope_table[isotope][0]].reshape(-1)
 
-    # def assignCombinedIndicies(self, results: list[SPCalProcessingResult]) -> None:
-    #     regions = [result.regions for result in results]
-    #     all_regions = ext.combine_regions(regions, 2)
-    #
-    #     for result in results:
-    #         idx = np.searchsorted(all_regions[:, 0], result.regions[:, 1], side="left") - 1
-    #         result.
+    @property
+    def isotopes(self) -> list[str]:
+        return list(self.isotope_table.keys())
 
-    def limitsForIsotope(
-        self, data_file: SPCalDataFile, isotope: np.ndarray
-    ) -> SPCalLimit:
-        signals = data_file.signals[:, data_file.indexForIsotope(isotope)]
-        limit_method = self.limit_method
+    def generateIsotopeTable(self) -> None:
+        """Creates a table of isotope names in format '123Ab' to their indicies
+        in signals / masses and their isotopic mass."""
+        natural = db["isotopes"][~np.isnan(db["isotopes"]["Composition"])]
+        indicies = search_sorted_closest(self.masses, natural["Mass"])
+        valid = np.abs(self.masses[indicies] - natural["Mass"]) < self.max_mass_diff
+        self.isotope_table = {
+            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso["Mass"])
+            for iso, idx in zip(natural[valid], indicies[valid])
+        }
 
-        if limit_method == "automatic":
-            if SPCalGaussianLimit.isGaussianDistributed(signals):
-                limit_method = "gaussian"
-            elif data_file.isTOF():
-                limit_method = "compound poisson"
-            else:
-                limit_method = "poisson"
+    def isotopeMass(self, isotope: str) -> float:
+        m = SPCalNuDataFile.re_isotope.match(isotope)
+        if m is None:
+            raise ValueError(f"invalid isotope format {isotope}")
+        return self.isotope_table[isotope][1]
 
-        if limit_method == "gaussian":
-            return SPCalGaussianLimit(
-                signals,
-                **self.gaussian_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
+    @classmethod
+    def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":
+        if path.is_file() and path.stem == "run.info":
+            path = path.parent
+
+        masses, signals, info = nu.read_nu_directory(path, raw=False)
+
+        return cls(path, signals, masses, info, max_mass_diff=max_mass_diff)
+
+
+class SPCalTOFWERKDataFile(SPCalDataFile):
+    def __init__(self, path: Path, h5: h5py.File):
+        super().__init__(path)
+
+        self.h5 = h5
+
+        if "PeakData" in self.h5["PeakData"]:  # type: ignore , supported
+            self.signals: np.ndarray = self.h5["PeakData"]["PeakData"][:]  # type: ignore , returns numpy array
+        elif "ToFData" in self.h5["FullSpectra"]:  # type: ignore , supported
+            logger.warning(
+                f"PeakData missing from TOFWERK file {path.stem}, integrating"
             )
-        elif limit_method == "poisson":
-            if data_file.isTOF():
-                logger.warning(
-                    "Poisson limit created for TOF data file, use Compound-Poisson"
-                )
-            return SPCalPoissonLimit(
-                signals,
-                **self.poisson_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
-            )
-        elif limit_method == "compound poisson":
-            if not data_file.isTOF():
-                logger.warning("Compound-Poisson limit created for non TOF data file")
-            return SPCalCompoundPoissonLimit(
-                signals,
-                **self.compound_poisson_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
-            )
-        elif limit_method == "highest":
-            gaussian = SPCalGaussianLimit(
-                signals,
-                **self.gaussian_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
-            )
-            poisson = SPCalPoissonLimit(
-                signals,
-                **self.poisson_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
-            )
-            if poisson.detection_threshold > gaussian.detection_threshold:
-                return poisson
-            else:
-                return gaussian
+            self.signals = tofwerk.integrate_tof_data(self.h5)
         else:
-            raise ValueError(f"unknown limit method {limit_method}")
-
-    def processDataFile(
-        self, data_file: SPCalDataFile
-    ) -> dict[np.ndarray, SPCalProcessingResult]:
-        results = {}
-
-        for isotope in data_file.isotopes:
-            limit = self.limitsForIsotope(data_file, isotope)
-
-            if self.accumulation_method == "mean signal":
-                limit_accumulation = limit.mean_signal
-            elif self.accumulation_method == "half detection threshold":
-                limit_accumulation = (
-                    limit.mean_signal + limit.detection_threshold
-                ) / 2.0
-            elif self.accumulation_method == "detection threshold":
-                limit_accumulation = limit.detection_threshold
-            else:
-                raise ValueError(
-                    f"unknown accumulation method {self.accumulation_method}"
-                )
-
-            limit_detection = limit.detection_threshold
-            limit_accumulation = np.minimum(limit_accumulation, limit_detection)
-
-            detections, labels, regions = accumulate_detections(
-                data_file.signals[:, data_file.indexForIsotope(isotope)],
-                limit_accumulation=limit_accumulation,
-                limit_detection=limit_detection,
-                points_required=self.points_required,
-                prominence_required=self.prominence_required,
+            raise ValueError(
+                f"PeakData and ToFData are missing, {path.stem} is an invalid file"
             )
 
-            result = SPCalProcessingResult(
-                data_file.signals[:, data_file.indexForIsotope(isotope)],
-                limit,
-                detections,
-                labels,
-                regions,
-            )
-            results[isotope] = result
+    def __getitem__(self, isotope: str) -> np.ndarray:
+        idx = self.isotopes.index(isotope)
+        return self.signals[..., idx].ravel()
 
-        return results
+    @property
+    def isotopes(self) -> list[str]:
+        return [x["label"].decode() for x in self.h5["PeakData"]["PeakTable"]]  # type: ignore , specified in tofdaq
+
+    @property
+    def masses(self) -> np.ndarray:
+        return self.h5["PeakData"]["PeakTable"]["mass"]  # type: ignore , specified in tofdaq
+
+    def isotopeMass(self, isotope: str) -> float:
+        idx = self.h5["PeakData"]["PeakTable"]["label"] == isotope  # type: ignore , is defined
+        return float(self.h5["PeakData"]["PeakTable"][idx]["mass"])  # type: ignore , in tofdaq
+
+    @classmethod
+    def load(cls, path: Path) -> "SPCalTOFWERKDataFile":
+        return cls(path, h5py.File(path))

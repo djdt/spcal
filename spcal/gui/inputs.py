@@ -19,6 +19,7 @@ from spcal.gui.widgets import ElidedLabel
 from spcal.limit import SPCalLimit
 from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
+from spcal.datafile import SPCalDataFile, SPCalProcessingMethod, SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -384,7 +385,7 @@ class InputWidget(QtWidgets.QWidget):
             self.responses = rfn.drop_fields(self.responses, name, usemask=False)
         self.reloadData()
 
-    def loadData(self, data: np.ndarray, options: dict) -> None:
+    def loadData(self, data_file: SPCalDataFile) -> None:
         data = CalculatorDialog.reduceForData(data, self.current_expr)
 
         # Load any values that need to be set from the import dialog inputs

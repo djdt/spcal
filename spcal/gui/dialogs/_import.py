@@ -11,6 +11,7 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import search_sorted_closest
+from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.gui.dialogs.nontarget import NonTargetScreeningDialog
 from spcal.gui.graphs import viridis_32
 from spcal.gui.util import Worker, create_action
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class _ImportDialogBase(QtWidgets.QDialog):
-    dataImported = QtCore.Signal(np.ndarray, dict)
+    dataImported = QtCore.Signal(SPCalDataFile)
     forbidden_names = ["Overlay"]
 
     def __init__(
@@ -66,18 +67,21 @@ class _ImportDialogBase(QtWidgets.QDialog):
         self.button_screen.setDefaultAction(self.action_nontarget_screen)
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            False
+        )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
         self.box_info = QtWidgets.QGroupBox("Information")
-        self.box_info.setLayout(QtWidgets.QFormLayout())
-
-        self.box_info.layout().addRow(
+        box_info_layout = QtWidgets.QFormLayout()
+        box_info_layout.addRow(
             "File Path:", ElidedLabel(str(self.file_path.absolute()))
         )
+        self.box_info.setLayout(box_info_layout)
 
         screen_layout = QtWidgets.QHBoxLayout()
         screen_layout.addWidget(QtWidgets.QLabel("Non-targetted screening:"), 0)
@@ -86,9 +90,10 @@ class _ImportDialogBase(QtWidgets.QDialog):
         )
 
         self.box_options = QtWidgets.QGroupBox("Import Options")
-        self.box_options.setLayout(QtWidgets.QFormLayout())
-        self.box_options.layout().addRow("Dwelltime:", self.dwelltime)
-        self.box_options.layout().addRow(screen_layout)
+        box_options_layout = QtWidgets.QFormLayout()
+        box_options_layout.addRow("Dwelltime:", self.dwelltime)
+        box_options_layout.addRow(screen_layout)
+        self.box_options.setLayout(box_options_layout)
 
         box_layout = QtWidgets.QHBoxLayout()
         box_layout.addWidget(self.box_info, 1)
@@ -104,7 +109,9 @@ class _ImportDialogBase(QtWidgets.QDialog):
 
     def completeChanged(self) -> None:
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
 
     def isComplete(self) -> bool:
         return True
@@ -243,17 +250,22 @@ class CheckableHeader(QtWidgets.QHeaderView):
             cb_size.width(),
             cb_size.height(),
         )
-        option.state = QtWidgets.QStyle.State_Enabled | QtWidgets.QStyle.State_Active
+        option.state = (
+            QtWidgets.QStyle.StateFlag.State_Enabled
+            | QtWidgets.QStyle.StateFlag.State_Active
+        )
 
         state = self.checkState(logicalIndex)
         if state == QtCore.Qt.CheckState.Checked:
-            option.state |= QtWidgets.QStyle.State_On
+            option.state |= QtWidgets.QStyle.StateFlag.State_On
         elif state == QtCore.Qt.CheckState.Unchecked:
-            option.state |= QtWidgets.QStyle.State_Off
+            option.state |= QtWidgets.QStyle.StateFlag.State_Off
         else:
-            option.state |= QtWidgets.QStyle.State_NoChange
+            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange
 
-        self.style().drawControl(QtWidgets.QStyle.CE_CheckBox, option, painter)
+        self.style().drawControl(
+            QtWidgets.QStyle.ControlElement.CE_CheckBox, option, painter
+        )
 
 
 class TextImportDialog(_ImportDialogBase):
@@ -510,6 +522,15 @@ class TextImportDialog(_ImportDialogBase):
         new_names = self.names()
         options["names"] = {old: new for old, new in zip(data.dtype.names, new_names)}
         data = rfn.rename_fields(data, options["names"])
+
+        data_file = SPCalTextDataFile.load(
+            self.file_path,
+            delimiter=self.delimiter(),
+            skip_rows=self.spinbox_first_line.value(),
+            convert_cps=options["cps"]
+        )
+
+        if options 
 
         self.dataImported.emit(data, options)
         logger.info(f"Text data loaded from {self.file_path} ({data.size} events).")
