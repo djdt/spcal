@@ -435,35 +435,3 @@ def select_nu_signals(
         }
     )
     return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
-
-
-def single_ion_distribution(
-    counts: np.ndarray, bins: str | int | np.ndarray = "auto"
-) -> np.ndarray:
-    """Calculates the single ion distribution from calibration data.
-
-    SIA is calculated as an average of all isotopes with a >1e05 and <1e-3
-    chance of containing a two ion event.
-
-    Args:
-        counts: raw ADC counts
-        bins: binning of histogram, see np.histogram_bin_edges
-
-    Returns:
-        array of stacked bin centers and counts
-    """
-
-    def incgamma(a: float, x: float) -> float:
-        t = np.linspace(0.0, x, 100)
-        y = t ** (a - 1.0) * np.exp(-t)
-        return np.trapezoid(y, t) / gamma(a)
-
-    zeros = np.count_nonzero(counts == 0, axis=0)
-    pzeros = zeros / np.count_nonzero(~np.isnan(counts), axis=0)
-    lams = -np.log(pzeros)
-    poi1 = np.array([incgamma(1 + 1, lam) for lam in lams])
-    poi2 = np.array([incgamma(2 + 1, lam) for lam in lams])
-    x = counts[:, np.logical_and((poi1 > 1e-5), (poi2 < 1e-3))]
-
-    hist, bins = np.histogram(x[x > 0], bins=bins)
-    return np.stack(((bins[1:] + bins[:-1]) / 2.0, hist), axis=1)
