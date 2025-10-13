@@ -89,12 +89,20 @@ def _ufunc_or_none(
         return None
     return ufunc(r.calibrated(key)) / factor
 
+def iso_time_to_float_seconds(text: str) -> float:
+    time = datetime.time.fromisoformat(text)
+    return (
+        time.hour * 3600.0
+        + time.minute * 60.0
+        + time.second
+        + time.microsecond * 1e-6
+    )
 
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
     columns: tuple[int, ...] | np.ndarray | None = None,
-    first_line: int = 1,
+    skip_rows: int = 1,
     convert_cps: float | None = None,
     max_rows: int | None = None,
 ) -> np.ndarray:
@@ -111,62 +119,59 @@ def read_single_particle_file(
     Returns:
         data, structred array
     """
-
-    def csv_read_lines(fp, delimiter: str = ",", count: int = 0):
+    def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
         for line in fp:
             if delimiter != ",":
                 yield line.replace(",", ".")
             else:
                 yield line
 
-    path = Path(path)
-    with path.open("r") as fp:
-        gen = csv_read_lines(fp, delimiter)
-        for i in range(first_line - 1):
-            next(gen)
 
-        header = next(gen).strip().split(delimiter)
-        if columns is None:
-            columns = np.arange(len(header))
-        columns = np.asarray(columns)
+    with Path(path).open("r") as fp:
+        for i in range(skip_rows - 1):
+            fp.readline()
 
-        dtype = np.dtype([(header[i], np.float32) for i in columns])
-        try:  # loadtxt is faster than genfromtxt
-            data = np.loadtxt(  # type: ignore
-                gen,
-                delimiter=delimiter,
-                usecols=columns,
-                dtype=dtype,
-                max_rows=max_rows,
-            )
-        except ValueError:  # Rewind and try with genfromtxt
-            logger.warning(
-                "read_single_particle_file: np.loadtxt failed, trying np.genfromtxt"
-            )
-            fp.seek(0)
-            for i in range(first_line):
-                next(gen)
+        header = fp.readline().strip().split(delimiter)
+        converters = {i: lambda s: float(s or 0.0) for i in range(len(header))}
+        dtype = np.float32
 
-            data = np.genfromtxt(  # type: ignore
-                gen,
-                delimiter=delimiter,
-                usecols=columns,
-                dtype=dtype,
-                max_rows=max_rows,
-                converters={c: lambda s: np.float32(s or 0) for c in columns},
-                invalid_raise=False,
-                loose=True,
-            )
+        data_start_pos = fp.tell()
+        peek = fp.readline()
+        if "00:" in peek:  # we are dealing with a thremo iCap export
+            converters = {1: lambda s: iso_time_to_float_seconds(s)}
+        fp.seek(data_start_pos)
 
-    if data.dtype.names is None:
-        data.dtype = dtype
-    data.dtype.names = tuple(name.replace(" ", "_") for name in data.dtype.names)
+        gen = replace_comma_decimal(fp, delimiter)
 
-    if convert_cps is not None:
-        for name in data.dtype.names:
-            data[name] = data[name] * convert_cps  # type: ignore
+        signals = np.genfromtxt(  # type: ignore
+            gen,
+            delimiter=delimiter,
+            names=header,
+            dtype=dtype,
+            max_rows=max_rows,
+            converters=converters,  # type: ignore , works
+            invalid_raise=False,
+            loose=True,
+        )
 
-    return data
+        assert signals.dtype.names is not None
+
+        times = None
+        for name in signals.dtype.names:
+            if "time" in name.lower():
+                times = signals[name]
+                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
+                if m is not None:
+                    if m.group(1) in ["ms"]:
+                        times *= 1e-3
+                    elif m.group(1) in ["us", "µs"]:
+                        times *= 1e-6
+                    elif m.group(1) in ["ns"]:
+                        times *= 1e-9
+                signals = rfn.drop_fields(signals, [name])
+                break
+
+    return signals
 
 
 def append_results_summary(

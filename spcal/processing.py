@@ -1,4 +1,5 @@
 from typing import Any
+from spcal import particle
 from spcal.limit import (
     SPCalLimit,
     SPCalGaussianLimit,
@@ -20,13 +21,15 @@ logger = logging.getLogger(__name__)
 class SPCalProcessingResult(object):
     def __init__(
         self,
-        signals: np.ndarray,
+        isotope: str,
         limit: SPCalLimit,
+        signals: np.ndarray,
         detections: np.ndarray,
         labels: np.ndarray,
         regions: np.ndarray,
         indicies: np.ndarray | None = None,
     ):
+        self.isotope = isotope
         self.signals = signals
 
         self.limit = limit
@@ -35,7 +38,8 @@ class SPCalProcessingResult(object):
         self.labels = labels
         self.regions = regions
 
-        self.indicies = indicies
+        self.peak_indicies = indicies
+        self.filter_indicies = None
 
         self.background = np.nanmean(self.signals[self.labels == 0.0])
         self.background_error = np.nanstd(
@@ -51,20 +55,23 @@ class SPCalProcessingResult(object):
         """Number of valid (non nan) events."""
         return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
 
-    @property
-    def ionic_background(self) -> float | None:
-        """Background in kg/L.
-
-        Requires 'response' input.
-        """
-        if "response" not in self.inputs:
-            return None
-        return self.background / self.inputs["response"]
+    # @property
+    # def ionic_background(self) -> float | None:
+    #     """Background in kg/L.
+    #
+    #     Requires 'response' input.
+    #     """
+    #     if "response" not in self.inputs:
+    #         return None
+    #     return self.background / self.inputs["response"]
 
     @property
     def number(self) -> int:
         """Number of non-zero detections."""
-        return self.indicies.size
+        if self.filter_indicies is None:
+            return self.detections.size
+        else:
+            return self.filter_indicies.size
 
     @property
     def number_error(self) -> int:
@@ -73,29 +80,82 @@ class SPCalProcessingResult(object):
 
 
 class SPCalInstrumentOptions(object):
-    def __init__(self, uptake, efficiency, efficiency_method):
-        pass
-
-class SPCalIsotopeOptions(object):
-    def __init__(self, density, response, molar_mass, mass_fraction):
-        pass
-
-
-class SPCalProcessingMethod(object):
     def __init__(
         self,
-        selected_isotopes: list[str],
-        limit_method: str = "automatic",
-        limit_accumulation_method: str = "signal mean",
-        gaussian_kws: dict[str, Any] | None = None,
-        poisson_kws: dict[str, Any] | None = None,
-        compound_poisson_kws: dict[str, Any] | None = None,
+        event_time: float,
+        total_time: float,
+        uptake: float,
+        efficiency: float,
+        mass_response: float,
+        efficiency_method: str,
+    ):
+        self.event_time = event_time
+        self.total_time = total_time
+
+        self.uptake = uptake
+        self.efficiency = efficiency
+        self.mass_response = mass_response
+
+    def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
+        if key == "signal":
+            return True
+
+        if mode == "efficiency":
+            return (
+                self.event_time is not None
+                and self.uptake is not None
+                and self.efficiency is not None
+            )
+        elif mode == "mass response":
+            return self.mass_response is not None
+        else:
+            raise ValueError(f"unknown calibration mode '{mode}'")
+
+
+class SPCalIsotopeOptions(object):
+    def __init__(
+        self, density, response, molar_mass, mass_fraction, concentration, diameter
+    ):
+        self.density = density
+        self.response = response
+        self.diameter = diameter
+        self.molar_mass = molar_mass
+        self.mass_fraction = mass_fraction
+        self.concentration = concentration
+        self.diameter = diameter
+
+    def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
+        if key == "signal":
+            return True
+
+        if mode == "efficiency":
+            mass_ok = self.response is not None and self.mass_fraction is not None
+        elif mode == "mass response":
+            mass_ok = self.mass_fraction is not None
+        else:
+            raise ValueError(f"unknown calibration mode '{mode}'")
+
+        if key == "mass":
+            return mass_ok
+        elif key in ["size", "volume"]:
+            return mass_ok and self.density is not None
+        else:
+            raise ValueError(f"unknown calibration key '{key}'")
+
+
+class SPCalLimitOptions(object):
+    def __init__(
+        self,
+        method: str = "automatic",
+        gaussian_kws: dict | None = None,
+        poisson_kws: dict | None = None,
+        compound_poisson_kws: dict | None = None,
         window_size: int = 0,
         max_iterations: int = 1,
-        points_required: int = 1,
-        prominence_required: float = 0.2,
         single_ion_parameters: np.ndarray | None = None,
     ):
+        self.method = method
+
         # deafult kws
         _gaussian_kws = {"alpha": 2.867e-7, "windows_size": 0}
         _poisson_kws = {"alpha": 1e-3, "function": "formula c"}
@@ -108,42 +168,38 @@ class SPCalProcessingMethod(object):
         if compound_poisson_kws is not None:
             _compound_poisson_kws.update(compound_poisson_kws)
 
-        self.isotopes = selected_isotopes
-
-        self.limit_method = limit_method
-        self.window_size = window_size
-        self.max_iterations = max_iterations
-
         self.gaussian_kws = _gaussian_kws
         self.poisson_kws = _poisson_kws
         self.compound_poisson_kws = _compound_poisson_kws
 
-        self.accumulation_method = limit_accumulation_method
-        self.points_required = points_required
-        self.prominence_required = prominence_required
+        self.window_size = window_size
+        self.max_iterations = max_iterations
 
-        self.single_ion_parameters = None
+        self.single_ion_parameters = single_ion_parameters
 
-    def limitsForIsotope(self, data_file: SPCalDataFile, isotope: str) -> SPCalLimit:
+    def limitsForIsotope(
+        self, data_file: SPCalDataFile, isotope: str, method: str | None = None
+    ) -> SPCalLimit:
         signals = data_file[isotope]
-        limit_method = self.limit_method
+        if method is None:
+            method = self.method
 
-        if limit_method == "automatic":
+        if method == "automatic":
             if SPCalGaussianLimit.isGaussianDistributed(signals):
-                limit_method = "gaussian"
+                method = "gaussian"
             elif data_file.isTOF():
-                limit_method = "compound poisson"
+                method = "compound poisson"
             else:
-                limit_method = "poisson"
+                method = "poisson"
 
-        if limit_method == "gaussian":
+        if method == "gaussian":
             return SPCalGaussianLimit(
                 signals,
                 **self.gaussian_kws,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif limit_method == "poisson":
+        elif method == "poisson":
             if data_file.isTOF():
                 logger.warning(
                     "Poisson limit created for TOF data file, use Compound-Poisson"
@@ -154,7 +210,7 @@ class SPCalProcessingMethod(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif limit_method == "compound poisson":
+        elif method == "compound poisson":
             if not data_file.isTOF():
                 logger.warning("Compound-Poisson limit created for non-TOF data file")
 
@@ -175,7 +231,7 @@ class SPCalProcessingMethod(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif limit_method == "highest":
+        elif method == "highest":
             gaussian = SPCalGaussianLimit(
                 signals,
                 **self.gaussian_kws,
@@ -193,15 +249,38 @@ class SPCalProcessingMethod(object):
             else:
                 return gaussian
         else:
-            raise ValueError(f"unknown limit method {limit_method}")
+            raise ValueError(f"unknown limit method {method}")
+
+
+class SPCalProcessingMethod(object):
+    def __init__(
+        self,
+        instrument_options: SPCalInstrumentOptions,
+        limit_options: SPCalLimitOptions,
+        isotope_options: dict[str, SPCalIsotopeOptions],
+        selected_isotopes: list[str],
+        accumulation_method: str = "signal mean",
+        points_required: int = 1,
+        prominence_required: float = 0.2,
+        calibration_mode: str = "efficiency",
+    ):
+        self.instrument_options = instrument_options
+        self.limit_options = limit_options
+        self.isotope_options = isotope_options
+
+        self.accumulation_method = accumulation_method
+        self.points_required = points_required
+        self.prominence_required = prominence_required
+
+        self.calibration_mode = calibration_mode
 
     def processDataFile(
-        self, data_file: SPCalDataFile
+        self, data_file: SPCalDataFile, isotopes: list[str], max_size: int | None = None
     ) -> dict[np.ndarray, SPCalProcessingResult]:
         results = {}
 
-        for isotope in self.isotopes:
-            limit = self.limitsForIsotope(data_file, isotope)
+        for isotope in isotopes:
+            limit = self.limit_options.limitsForIsotope(data_file, isotope)
 
             if self.accumulation_method == "mean signal":
                 limit_accumulation = limit.mean_signal
@@ -219,214 +298,79 @@ class SPCalProcessingMethod(object):
             limit_detection = limit.detection_threshold
             limit_accumulation = np.minimum(limit_accumulation, limit_detection)
 
+            signals = data_file[isotope][:max_size]
+
             detections, labels, regions = accumulate_detections(
-                data_file[isotope],
+                signals,
                 limit_accumulation=limit_accumulation,
                 limit_detection=limit_detection,
                 points_required=self.points_required,
                 prominence_required=self.prominence_required,
             )
 
-            result = SPCalProcessingResult(
-                data_file[isotope], limit, detections, labels, regions
+            results[isotope] = SPCalProcessingResult(
+                isotope, limit, signals, detections, labels, regions
             )
-            results[isotope] = result
 
         return results
 
-    def massConcentration(self, result: SPCalProcessingResult) -> float | None:
-        """Total particle concentration in kg/L.
-
-        Requires 'mass' type detections. 'efficiency', 'uptake' and 'time' inupts.
-
-        Returns:
-            concentration or None if unable to calculate
-        """
-        if not self.canCalibrate("mass") or any(
-            x not in self.inputs for x in ["efficiency", "uptake", "time"]
-        ):
-            return None
-
-        return particle.particle_total_concentration(
-            self.asMass(result.detections[result.indicies]),
-            efficiency=self.options.efficiency,
-            flow_rate=self.inputs["uptake"],
-            time=self.inputs["time"],
-        )
-
-    def numberConcentration(self, result: SPCalProcessingResult) -> float | None:
-        """Particle number concentration in #/L.
-
-        Requires 'efficiency', 'uptake' and 'time' inputs.
-
-        Returns:
-            concentration or None if unable to calculate
-        """
-        if any(x not in self.inputs for x in ["efficiency", "uptake", "time"]):
-            return None
-        return np.around(
-            particle.particle_number_concentration(
-                self.number,
-                efficiency=self.inputs["efficiency"],
-                flow_rate=self.inputs["uptake"],
-                time=self.inputs["time"],
-            )
-        )
-
-    # def asCellConcentration(self, value: float | np.ndarray) -> float | np.ndarray:
-    #     """Convert a value to an intracellur concentration in mol/L.
-    #
-    #     Requires 'dwelltime', 'efficiency', 'uptake', 'response', 'mass_fraction',
-    #     'cell_diameter' and 'molar_mass' inputs.
-    #
-    #     Args:
-    #         value: single value or array
-    #
-    #     Returns:
-    #         value
-    #     """
-    #     return particle.cell_concentration(
-    #         self.asMass(value),
-    #         diameter=self.inputs["cell_diameter"],
-    #         molar_mass=self.inputs["molar_mass"],
-    #     )
-
-    def asMass(self, value: float | np.ndarray) -> float | np.ndarray:
-        """Convert value to mass in kg.
-
-        'mass_response' and 'mass_fraction' inputs.
-
-        For ``calibration_mode`` 'efficiency' mode: requires 'dwelltime', 'efficiency',
-        'uptake', 'response' and 'mass_fraction' inputs.
-        For ``calibration_mode`` 'mass response': requires 'mass_response' and
-        'mass_fraction'.
-
-        Args:
-            value: single value or array
-
-        Returns:
-            value
-        """
+    def calibrateToMass(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
         if self.calibration_mode == "efficiency":
             return particle.particle_mass(
-                value,
-                dwell=self.inputs["dwelltime"],
-                efficiency=self.inputs["efficiency"],
-                flow_rate=self.inputs["uptake"],
-                response_factor=self.inputs["response"],
-                mass_fraction=self.inputs["mass_fraction"],
+                signals,
+                dwell=self.instrument_options.event_time,
+                efficiency=self.instrument_options.efficiency,
+                flow_rate=self.instrument_options.uptake,
+                response_factor=self.isotope_options[isotope].response,
+                mass_fraction=self.isotope_options[isotope].mass_fraction,
             )
         else:
-            return value * self.inputs["mass_response"] / self.inputs["mass_fraction"]
+            return (
+                signals
+                * self.instrument_options.mass_response
+                / self.isotope_options[isotope].mass_fraction
+            )
 
-    def asSize(self, value: float | np.ndarray) -> float | np.ndarray:
-        """Convert value to size in m.
-
-        Requires the ``asMass`` and 'density' inputs.
-
-        Args:
-            value: single value or array
-
-        Returns:
-            value
-        """
+    def calibrateToSize(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
         return particle.particle_size(
-            self.asMass(value), density=self.inputs["density"]
+            self.calibrateToMass(signals, isotope),
+            density=self.isotope_options[isotope].density,
         )
 
-    def asVolume(self, value: float | np.ndarray) -> float | np.ndarray:
-        """Convert value to size in m3.
+    def calibrateToVolume(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
+        return (
+            self.calibrateToMass(signals, isotope)
+            * self.isotope_options[isotope].density
+        )
 
-        Requires the ``asMass`` and 'density' inputs.
+    def canCalibrate(self, key: str, isotope: str) -> bool:
+        return self.instrument_options.readyToCalibrate(
+            key, self.calibration_mode
+        ) and self.isotope_options[isotope].readyToCalibrate(key, self.calibration_mode)
 
-        Args:
-            value: single value or array
+    def ionicBackground(self, result: SPCalProcessingResult) -> float:
+        return result.background / self.isotope_options[result.isotope].response
 
-        Returns:
-            value
-        """
-        return self.asMass(value) * self.inputs["density"]
+    def massConcentration(self, result: SPCalProcessingResult) -> float:
+        return particle.particle_total_concentration(
+            self.calibrateToMass(result.detections, result.isotope),
+            self.instrument_options.efficiency,
+            self.instrument_options.uptake,
+            self.instrument_options.total_time,
+        )
 
-    def calibrated(self, key: str, use_indicies: bool = True) -> np.ndarray:
-        """Return calibrated detections.
-
-        Also caches calibrated results.
-
-        Args:
-            key: key of ``base_units``
-            all: only return values at ``self.indicies``
-
-        Returns:
-            array of calibrated detections
-        """
-        if key not in self._cache:
-            self._cache[key] = np.asanyarray(self.convertTo(self.detections, key))
-        if use_indicies:
-            return self._cache[key][self.indicies]
-        else:
-            return self._cache[key]
-
-    def canCalibrate(self, key: str) -> bool:
-        if key == "signal":
-            return True
-
-        # all non signal conversions require mass
-        if self.calibration_mode == "efficiency":
-            mass = all(
-                x in self.inputs
-                for x in [
-                    "dwelltime",
-                    "efficiency",
-                    "uptake",
-                    "response",
-                    "mass_fraction",
-                ]
+    def numberConcentration(self, result: SPCalProcessingResult) -> float:
+        return np.around(
+            particle.particle_number_concentration(
+                result.number,
+                self.instrument_options.efficiency,
+                self.instrument_options.uptake,
+                self.instrument_options.total_time,
             )
-        else:
-            mass = all(x in self.inputs for x in ["mass_response", "mass_fraction"])
-
-        if key == "mass":
-            return mass
-        elif key in ["size", "volume"]:
-            return mass and "density" in self.inputs
-        elif key == "cell_concentration":
-            return (
-                mass and "cell_diameter" in self.inputs and "molar_mass" in self.inputs
-            )
-        else:  # pragma: no cover
-            raise KeyError(f"unknown key '{key}'.")
-
-    def convertTo(self, value: float | np.ndarray, key: str) -> float | np.ndarray:
-        """Helper function to convert to mass, size or conc.
-
-        Args:
-            value: single value or array
-            key: type of conversion {'single', 'mass', 'size', 'volume',
-                                     'cell_concentration'}
-
-        Returns:
-            converted value
-        """
-        if key == "signal":
-            return value
-        elif key == "cell_concentration":
-            return self.asCellConcentration(value)
-        elif key == "mass":
-            return self.asMass(value)
-        elif key == "size":
-            return self.asSize(value)
-        elif key == "volume":
-            return self.asVolume(value)
-        else:
-            raise KeyError(f"convertTo: unknown key '{key}'.")
-
-    @staticmethod
-    def all_valid_indicies(results: list["SPCalResult"]) -> np.ndarray:
-        """Return the indices where any of the results are valid."""
-        if len(results) == 0:
-            return np.array([], dtype=int)
-        size = results[0].detections.size
-        valid = np.zeros(size, dtype=bool)
-        for result in results:
-            valid[result.indicies] = True
-        return np.flatnonzero(valid)
+        )

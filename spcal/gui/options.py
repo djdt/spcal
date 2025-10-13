@@ -7,6 +7,7 @@ from spcal.gui.limitoptions import (
     PoissonOptions,
 )
 from spcal.gui.widgets import UnitsWidget, ValueWidget
+from spcal.processing import SPCalLimitOptions
 from spcal.siunits import time_units
 
 
@@ -232,6 +233,19 @@ class OptionsWidget(QtWidgets.QWidget):
         layout.addLayout(layout_left)
 
         self.setLayout(layout)
+
+    def asInstrumentOptions(self) -> SPCalInstrumentOptions:
+        pass
+
+    def asLimitOptions(self) -> SPCalLimitOptions:
+        return SPCalLimitOptions(
+            method=self.limit_method.currentText().lower(),
+            gaussian_kws=self.gaussian.state(),
+            poisson_kws=self.poisson.state(),
+            compound_poisson_kws=self.compound_poisson.state(),
+            window_size=int(self.window_size.value() or 0),
+            max_iterations=100 if self.check_iterative.isChecked() else 1,
+        )
 
     def state(self) -> dict:
         state_dict = {

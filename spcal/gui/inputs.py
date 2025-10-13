@@ -19,7 +19,8 @@ from spcal.gui.widgets import ElidedLabel
 from spcal.limit import SPCalLimit
 from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
-from spcal.datafile import SPCalDataFile, SPCalProcessingMethod, SPCalProcessingResult
+from spcal.datafile import SPCalDataFile
+from spcal.processing import SPCalProcessingResult,SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 

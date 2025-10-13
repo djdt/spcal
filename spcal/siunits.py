@@ -33,6 +33,6 @@ signal_units = {"counts": 1.0}
 
 size_units = {"nm": 1e-9, "μm": 1e-6, "mm": 1e-3, "m": 1.0}
 
-time_units = {"μs": 1e-6, "ms": 1e-3, "s": 1.0}
+time_units = {"ns": 1e-9, "μs": 1e-6, "ms": 1e-3, "s": 1.0}
 
 volume_units = {"nm³": 1e-27, "μm³": 1e-18, "mm³": 1e-9, "m³": 1.0}

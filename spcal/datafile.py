@@ -19,18 +19,13 @@ class SPCalDataFile(object):
     def __init__(
         self,
         path: Path,
-        event_times: np.ndarray | float | None = None,
+        times: np.ndarray,
         instrument_type: str | None = None,
     ):
         self.path = path
         self.instrument_type = instrument_type
 
-        self._times = None
-        self._event_time = None
-        if isinstance(event_times, np.ndarray):
-            self._times = event_times
-        else:
-            self._event_time = event_times
+        self.times = times
 
     def __getitem__(self, isotope: str) -> np.ndarray:
         raise NotImplementedError
@@ -38,18 +33,16 @@ class SPCalDataFile(object):
     @property
     def event_time(self) -> float:
         if self._event_time is None:
-            self._event_time = float(np.mean(np.diff(self.event_times)))
+            self._event_time = float(np.mean(np.diff(self.times)))
         return self._event_time
-
-    @property
-    def event_times(self) -> np.ndarray:
-        if self._times is None:
-            self._times = np.arange(self.num_events) * self.event_time
-        return self._times
 
     @property
     def isotopes(self) -> list[str]:
         raise NotImplementedError
+
+    @property
+    def preferred_isotopes(self) -> list[str]:
+        return self.isotopes
 
     @property
     def num_events(self) -> int:
@@ -67,13 +60,13 @@ class SPCalTextDataFile(SPCalDataFile):
         self,
         path: Path,
         signals: np.ndarray,
-        event_times: np.ndarray | float | None = None,
+        times: np.ndarray,
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
         instrument_type: str | None = None,
     ):
-        super().__init__(path, event_times=event_times, instrument_type=instrument_type)
+        super().__init__(path, times=times, instrument_type=instrument_type)
 
         self.signals = signals
 
@@ -100,6 +93,7 @@ class SPCalTextDataFile(SPCalDataFile):
         skip_rows: int = 1,
         cps: bool = False,
         max_rows: int | None = None,
+        override_event_time: float | None = None,
     ) -> "SPCalTextDataFile":
         def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
             for line in fp:
@@ -146,22 +140,37 @@ class SPCalTextDataFile(SPCalDataFile):
 
         assert signals.dtype.names is not None
 
-        times = None
-        for name in signals.dtype.names:
-            if "time" in name.lower():
-                times = signals[name]
-                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
-                if m is not None:
-                    if m.group(1) in ["ms"]:
-                        times *= 1e-3
-                    elif m.group(1) in ["us", "µs"]:
-                        times *= 1e-6
-                    elif m.group(1) in ["ns"]:
-                        times *= 1e-9
-                signals = rfn.drop_fields(signals, [name])
-                break
+        if override_event_time is not None:
+            times = np.arange(signals.shape[0]) * override_event_time
+        else:
+            times = None
+            for name in signals.dtype.names:
+                if "time" in name.lower():
+                    times = signals[name]
+                    m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
+                    if m is not None:
+                        if m.group(1) in ["ms"]:
+                            times *= 1e-3
+                        elif m.group(1) in ["us", "µs"]:
+                            times *= 1e-6
+                        elif m.group(1) in ["ns"]:
+                            times *= 1e-9
+                        else:
+                            logger.warning(
+                                f"unit not found in times column for {path.stem}, assuming seconds"
+                            )
+                    signals = rfn.drop_fields(signals, [name])
+                    break
 
-        return cls(path, signals, event_times=times)
+        if times is None:
+            raise ValueError(
+                f"unable to read times in {path.stem} and no override_event_time provided"
+            )
+
+        if cps:
+            signals /= np.diff(times, append=times[-1] - times[-2])
+
+        return cls(path, signals, times, cps=cps)
 
 
 class SPCalNuDataFile(SPCalDataFile):
@@ -177,11 +186,12 @@ class SPCalNuDataFile(SPCalDataFile):
         self,
         path: Path,
         signals: np.ndarray,
+        times: np.ndarray,
         masses: np.ndarray,
         info: dict,
         max_mass_diff: float = 0.05,
     ):
-        super().__init__(path, instrument_type="TOF")
+        super().__init__(path, times, instrument_type="TOF")
 
         self.info = info
 
@@ -189,7 +199,7 @@ class SPCalNuDataFile(SPCalDataFile):
         self.masses = masses
         self.max_mass_diff = max_mass_diff
 
-        self.isotope_table: dict[str, tuple[int, float]] = {}
+        self.isotope_table: dict[str, tuple[int, float, bool]] = {}
         self.generateIsotopeTable()
 
     def __getitem__(self, isotope: str) -> np.ndarray:
@@ -199,6 +209,10 @@ class SPCalNuDataFile(SPCalDataFile):
     def isotopes(self) -> list[str]:
         return list(self.isotope_table.keys())
 
+    @property
+    def preferred_isotopes(self) -> list[str]:
+        return [key for key, val in self.isotope_table.items() if val[2]]
+
     def generateIsotopeTable(self) -> None:
         """Creates a table of isotope names in format '123Ab' to their indicies
         in signals / masses and their isotopic mass."""
@@ -206,7 +220,7 @@ class SPCalNuDataFile(SPCalDataFile):
         indicies = search_sorted_closest(self.masses, natural["Mass"])
         valid = np.abs(self.masses[indicies] - natural["Mass"]) < self.max_mass_diff
         self.isotope_table = {
-            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso["Mass"])
+            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso["Mass"], iso["Preferred"])
             for iso, idx in zip(natural[valid], indicies[valid])
         }
 
@@ -223,26 +237,17 @@ class SPCalNuDataFile(SPCalDataFile):
 
         masses, signals, info = nu.read_nu_directory(path, raw=False)
 
-        return cls(path, signals, masses, info, max_mass_diff=max_mass_diff)
+        return cls(path, signals, times, masses, info, max_mass_diff=max_mass_diff)
 
 
 class SPCalTOFWERKDataFile(SPCalDataFile):
-    def __init__(self, path: Path, h5: h5py.File):
-        super().__init__(path)
+    def __init__(
+        self, path: Path, signals: np.ndarray, times: np.ndarray, peak_table: np.ndarray
+    ):
+        self.signals = signals
+        self.peak_table = peak_table
 
-        self.h5 = h5
-
-        if "PeakData" in self.h5["PeakData"]:  # type: ignore , supported
-            self.signals: np.ndarray = self.h5["PeakData"]["PeakData"][:]  # type: ignore , returns numpy array
-        elif "ToFData" in self.h5["FullSpectra"]:  # type: ignore , supported
-            logger.warning(
-                f"PeakData missing from TOFWERK file {path.stem}, integrating"
-            )
-            self.signals = tofwerk.integrate_tof_data(self.h5)
-        else:
-            raise ValueError(
-                f"PeakData and ToFData are missing, {path.stem} is an invalid file"
-            )
+        super().__init__(path, times)
 
     def __getitem__(self, isotope: str) -> np.ndarray:
         idx = self.isotopes.index(isotope)
@@ -250,16 +255,72 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
 
     @property
     def isotopes(self) -> list[str]:
-        return [x["label"].decode() for x in self.h5["PeakData"]["PeakTable"]]  # type: ignore , specified in tofdaq
+        return [x["label"].decode() for x in self.peak_table]
+
+    @property
+    def preferred_isotopes(self) -> list[str]:
+        preferred = []
+        re_iso = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
+        for isotope in self.isotopes:
+            m = re_iso.match(isotope)
+            if m is None:
+                continue
+            if db["isotopes"][
+                np.logical_and(
+                    db["isotopes"]["Isotope"] == int(m.group(1)),
+                    db["isotopes"]["Symbol"] == m.group(2),
+                )
+            ]["Preferred"]:
+                preferred.append(isotope)
+        return preferred
 
     @property
     def masses(self) -> np.ndarray:
-        return self.h5["PeakData"]["PeakTable"]["mass"]  # type: ignore , specified in tofdaq
+        return self.peak_table["mass"]
 
     def isotopeMass(self, isotope: str) -> float:
-        idx = self.h5["PeakData"]["PeakTable"]["label"] == isotope  # type: ignore , is defined
-        return float(self.h5["PeakData"]["PeakTable"][idx]["mass"])  # type: ignore , in tofdaq
+        return float(self.peak_table[self.peak_table["label"] == isotope]["mass"])
 
     @classmethod
     def load(cls, path: Path) -> "SPCalTOFWERKDataFile":
-        return cls(path, h5py.File(path))
+        with h5py.File(path) as h5:
+            if "PeakData" in h5["PeakData"]:  # type: ignore , supported
+                peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]  # type: ignore , returns numpy array
+            elif "ToFData" in h5["FullSpectra"]:  # type: ignore , supported
+                logger.warning(
+                    f"PeakData missing from TOFWERK file {path.stem}, integrating"
+                )
+                peak_data = tofwerk.integrate_tof_data(h5)
+            else:
+                raise ValueError(
+                    f"PeakData and ToFData are missing, {path.stem} is an invalid file"
+                )
+
+            peak_data = np.reshape(peak_data, (-1, peak_data.shape[-1]))
+
+            peak_table: np.ndarray = h5["PeakData"]["PeakTable"][:]  # type: ignore , defined in tofdaq
+
+
+            time_per_buf: float = h5["TimingData"].attrs["BlockPeriod"][0]  # type: ignore , defined in tofdaq
+            times: np.ndarray = h5["TimingData"]["BufTimes"][:]  # type: ignore , defined in tofdaq
+            times = (
+                times[:, :, None]
+                + np.linspace(0.0, time_per_buf * 1e-9, 1000, endpoint=False)[
+                    None, None, :
+                ]
+            ).ravel()
+
+        return cls(path, signals=peak_data, times=times, peak_table=peak_table)
+
+
+# x = SPCalNuDataFile.load(
+#     Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles")
+# )
+# print(x.isotopes)
+# print(x.preferred_isotopes)
+
+x = SPCalTOFWERKDataFile.load(
+    Path("/home/tom/Downloads/Single cell_blank_2025-08-27_15h39m38s.h5")
+)
+print(x.isotopes)
+print(x.preferred_isotopes)

@@ -22,9 +22,14 @@ from spcal.gui.widgets import (
     UnitsWidget,
 )
 from spcal.io import nu
-from spcal.io.text import guess_text_parameters, read_single_particle_file
+from spcal.io.text import (
+    guess_text_parameters,
+    read_single_particle_file,
+    iso_time_to_float_seconds,
+)
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.npdb import db
+from spcal.processing import SPCalProcessingMethod
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
@@ -39,32 +44,8 @@ class _ImportDialogBase(QtWidgets.QDialog):
     ):
         super().__init__(parent)
 
-        self.action_nontarget_screen = create_action(
-            "view-filter",
-            "Screen",
-            "Select isotopes using a non-targetted screening approach. "
-            "Those with signals above the chosen ppm are selected.",
-            self.dialogScreenData,
-        )
-        self.screening_ppm = 100.0
-        self.screening_data_size = 1_000_000
-        # These keywords are updated externally
-        self.screening_poisson_kws = {"alpha": 1e-3}
-        self.screening_gaussian_kws = {"alpha": 1e-7}
-        self.screening_compound_kws = {"alpha": 1e-6, "sigma": 0.45}
-
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
-
-        self.dwelltime = UnitsWidget(
-            time_units,
-            default_unit="ms",
-            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
-        )
-        self.dwelltime.baseValueChanged.connect(self.completeChanged)
-
-        self.button_screen = QtWidgets.QToolButton()
-        self.button_screen.setDefaultAction(self.action_nontarget_screen)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -76,28 +57,20 @@ class _ImportDialogBase(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        self.box_info = QtWidgets.QGroupBox("Information")
-        box_info_layout = QtWidgets.QFormLayout()
-        box_info_layout.addRow(
+        box_info = QtWidgets.QGroupBox("Information")
+        self.box_info_layout = QtWidgets.QFormLayout()
+        self.box_info_layout.addRow(
             "File Path:", ElidedLabel(str(self.file_path.absolute()))
         )
-        self.box_info.setLayout(box_info_layout)
+        box_info.setLayout(self.box_info_layout)
 
-        screen_layout = QtWidgets.QHBoxLayout()
-        screen_layout.addWidget(QtWidgets.QLabel("Non-targetted screening:"), 0)
-        screen_layout.addWidget(
-            self.button_screen, 0, QtCore.Qt.AlignmentFlag.AlignRight
-        )
-
-        self.box_options = QtWidgets.QGroupBox("Import Options")
-        box_options_layout = QtWidgets.QFormLayout()
-        box_options_layout.addRow("Dwelltime:", self.dwelltime)
-        box_options_layout.addRow(screen_layout)
-        self.box_options.setLayout(box_options_layout)
+        box_options = QtWidgets.QGroupBox("Import Options")
+        self.box_options_layout = QtWidgets.QFormLayout()
+        box_options.setLayout(self.box_options_layout)
 
         box_layout = QtWidgets.QHBoxLayout()
-        box_layout.addWidget(self.box_info, 1)
-        box_layout.addWidget(self.box_options, 1)
+        box_layout.addWidget(box_info, 1)
+        box_layout.addWidget(box_options, 1)
 
         self.layout_body = QtWidgets.QVBoxLayout()
 
@@ -115,63 +88,6 @@ class _ImportDialogBase(QtWidgets.QDialog):
 
     def isComplete(self) -> bool:
         return True
-
-    def importOptions(self) -> dict:
-        raise NotImplementedError
-
-    def setImportOptions(
-        self, options: dict, path: bool = False, dwelltime: bool = True
-    ) -> None:
-        if path:
-            self.file_path = options["path"]
-            title = self.windowTitle()[self.windowTitle().find(":")]
-            self.setWindowTitle(f"{title}: {self.file_path.name}")
-        if dwelltime:
-            self.dwelltime.setBaseValue(options["dwelltime"])
-            self.dwelltime.setBestUnit()
-
-    def setScreeningOptions(
-        self,
-        options: dict,
-    ) -> None:
-        if "ppm" in options:
-            self.screening_ppm = options["ppm"]
-        if "size" in options:
-            self.screening_data_size = options["size"]
-        if "poisson_kws" in options:
-            self.screening_poisson_kws = options["poisson_kws"]
-        if "gaussian_kws" in options:
-            self.screening_gaussian_kws = options["gaussian_kws"]
-        if "compound_kws" in options:
-            self.screening_compound_kws = options["compound_kws"]
-
-    def dialogScreenData(self) -> NonTargetScreeningDialog:
-        dlg = NonTargetScreeningDialog(
-            get_data_function=self.dataForScreening,
-            screening_ppm=self.screening_ppm,
-            minimum_data_size=self.screening_data_size,
-            screening_compound_kws=self.screening_compound_kws,
-            screening_gaussian_kws=self.screening_gaussian_kws,
-            screening_poisson_kws=self.screening_poisson_kws,
-            parent=self,
-        )
-        dlg.ppmSelected.connect(self.setScreeningPpm)
-        dlg.dataSizeSelected.connect(self.setScreeningDataSize)
-        dlg.screeningComplete.connect(self.screenData)
-        dlg.open()
-        return dlg
-
-    def setScreeningPpm(self, ppm: float) -> None:
-        self.screening_ppm = ppm
-
-    def setScreeningDataSize(self, size: int) -> None:
-        self.screening_data_size = size
-
-    def dataForScreening(self, size: int) -> np.ndarray:
-        raise NotImplementedError
-
-    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
-        raise NotImplementedError
 
 
 class CheckableHeader(QtWidgets.QHeaderView):
@@ -270,44 +186,44 @@ class CheckableHeader(QtWidgets.QHeaderView):
 
 class TextImportDialog(_ImportDialogBase):
     dataImported = QtCore.Signal(np.ndarray, dict)
+    HEADER_COUNT = 20
 
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
         super().__init__(path, "SPCal Text Import", parent)
 
-        header_row_count = 10
-
-        self.file_header = [
-            x for _, x in zip(range(header_row_count), self.file_path.open("r"))
-        ]
-
+        self.file_lines = self.file_path.open("r").readlines()
         # Guess the delimiter, skip rows and count from header
         delimiter, first_data_line, column_count = guess_text_parameters(
-            self.file_header
+            self.file_lines[: self.HEADER_COUNT]
         )
+
         if delimiter == "":
             delimiter = ","
-
-        with self.file_path.open("rb") as fp:
-            line_count = 0
-            buffer = bytearray(4086)
-            while fp.readinto(buffer):
-                line_count += buffer.count(b"\n")
 
         self.table = QtWidgets.QTableWidget()
         self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
-        self.table.setRowCount(header_row_count)
+        self.table.setRowCount(self.HEADER_COUNT)
         self.table.setFont(QtGui.QFont("Courier"))
         self.table_header = CheckableHeader(QtCore.Qt.Orientation.Horizontal)
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
-        self.box_info.layout().addRow("Line Count:", QtWidgets.QLabel(str(line_count)))
+        self.box_info_layout.addRow(
+            "Line Count:", QtWidgets.QLabel(str(len(self.file_lines)))
+        )
+
+        self.event_time = UnitsWidget(
+            time_units,
+            default_unit="ms",
+            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
+        )
+        self.event_time.baseValueChanged.connect(self.completeChanged)
 
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
-        if any("cps" in line.lower() for line in self.file_header):
+        if any("cps" in line.lower() for line in self.file_lines[: self.HEADER_COUNT]):
             self.combo_intensity_units.setCurrentText("CPS")
 
         self.combo_delimiter = QtWidgets.QComboBox()
@@ -316,28 +232,22 @@ class TextImportDialog(_ImportDialogBase):
         self.combo_delimiter.currentIndexChanged.connect(self.fillTable)
 
         self.spinbox_first_line = QtWidgets.QSpinBox()
-        self.spinbox_first_line.setRange(1, header_row_count - 1)
+        self.spinbox_first_line.setRange(1, self.HEADER_COUNT - 1)
         self.spinbox_first_line.setValue(first_data_line)
         self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
 
-        self.box_options.layout().addRow("Intensity Units:", self.combo_intensity_units)
-        self.box_options.layout().addRow("Delimiter:", self.combo_delimiter)
-        self.box_options.layout().addRow("Import From Row:", self.spinbox_first_line)
+        self.box_options_layout.addRow("Event time:", self.event_time)
+        self.box_options_layout.addRow("Intensity units:", self.combo_intensity_units)
+        self.box_options_layout.addRow("Delimiter:", self.combo_delimiter)
+        self.box_options_layout.addRow("Import from row:", self.spinbox_first_line)
 
         self.fillTable()
-        self.guessUseColumnsFromTable()
+        self.guessIsotopesFromTable()
 
         self.layout_body.addWidget(self.table)
 
-    def completeChanged(self) -> None:
-        complete = self.isComplete()
-        self.button_screen.setEnabled(complete)
-        super().completeChanged()
-
     def isComplete(self) -> bool:
-        return self.dwelltime.hasAcceptableInput() and not any(
-            x in self.forbidden_names for x in self.names()
-        )
+        return self.event_time.hasAcceptableInput()
 
     def delimiter(self) -> str:
         delimiter = self.combo_delimiter.currentText()
@@ -363,7 +273,10 @@ class TextImportDialog(_ImportDialogBase):
         return names
 
     def fillTable(self) -> None:
-        lines = [line.split(self.delimiter()) for line in self.file_header]
+        lines = [
+            line.split(self.delimiter())
+            for line in self.file_lines[: self.HEADER_COUNT]
+        ]
         col_count = max(len(line) for line in lines)
         self.table.setColumnCount(col_count)
 
@@ -376,9 +289,13 @@ class TextImportDialog(_ImportDialogBase):
         self.table.resizeColumnsToContents()
         self.updateTableUseColumns()
 
-        if self.dwelltime.value() is None:
-            self.guessDwelltimeFromTable()
-            self.dwelltime.setBestUnit()
+        if self.event_time.value() is None:
+            try:
+                val, unit = self.guessEventTimeFromTable()
+                self.event_time.setUnit(unit)
+                self.event_time.setValue(val)
+            except StopIteration:
+                pass
 
     def updateTableUseColumns(self) -> None:
         header_row = self.spinbox_first_line.value() - 1
@@ -388,15 +305,15 @@ class TextImportDialog(_ImportDialogBase):
                 if item is None:
                     continue
                 if row != header_row:
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 else:
-                    item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+                    item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
                 if row < header_row or col not in self.useColumns():
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEnabled)
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
                 else:
-                    item.setFlags(item.flags() | QtCore.Qt.ItemIsEnabled)
+                    item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
-    def guessUseColumnsFromTable(self) -> None:
+    def guessIsotopesFromTable(self) -> None:
         columns = []
         header_row = self.spinbox_first_line.value() - 1
         for col in range(self.table.columnCount()):
@@ -407,133 +324,75 @@ class TextImportDialog(_ImportDialogBase):
         for col in columns:
             self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
 
-    def guessDwelltimeFromTable(self) -> None:
+    def guessEventTimeFromTable(self) -> tuple[float, str]:
         header_row = self.spinbox_first_line.value() - 1
         for col in range(self.table.columnCount()):
             text = self.table.item(header_row, col).text().lower()
             if "time" in text:
-                # First try parsing as a datetime, for new Thermo exports
+                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", text.lower())
+                unit = "s"
+                if m is not None:
+                    if m.group(1) == "ms":
+                        unit = "ms"
+                    elif m.group(1) in ["us", "µs"]:
+                        unit = "µs"
+                    elif m.group(1) == "ns":
+                        unit = "ns"
+
                 time_texts = [
                     self.table.item(row, col).text().replace(",", ".")
                     for row in range(header_row + 1, self.table.rowCount())
                 ]
-                try:
-                    times = [
-                        datetime.datetime.combine(
-                            datetime.datetime.fromordinal(1),
-                            datetime.time.fromisoformat(time),
-                        )
-                        for time in time_texts
-                    ]
-                    self.dwelltime.setBaseValue(
-                        np.round(np.mean(np.diff(times)) / np.timedelta64(1, "s"), 6)  # type: ignore
-                    )
-                    return
-                except ValueError:
-                    pass
-                # Try as a float, with factors from header
-                try:
-                    times = [float(time) for time in time_texts]
-                except ValueError:
-                    continue
-                if "ms" in text:
-                    factor = 1e-3
-                elif "us" in text or "μs" in text:
-                    factor = 1e-6
-                else:  # assume that value is in seconds
-                    factor = 1.0
-                self.dwelltime.setBaseValue(
-                    np.round(np.mean(np.diff(times)) * factor, 6)  # type: ignore
-                )
-                return
+                if "00:" in time_texts[0]:
+                    times = [iso_time_to_float_seconds(tt) for tt in time_texts]
+                else:
+                    times = [float(tt) for tt in time_texts]
 
-    def importOptions(self) -> dict:
-        # key names added at import
-        return {
-            "importer": "text",
-            "path": self.file_path,
-            "dwelltime": self.dwelltime.baseValue(),
-            "delimiter": self.delimiter(),
-            "columns": self.useColumns(),
-            "first line": self.spinbox_first_line.value(),
-            "cps": self.combo_intensity_units.currentText() == "CPS",
-        }
+                return float(np.mean(np.diff(times))), unit
+        raise StopIteration
 
-    def setImportOptions(
-        self, options: dict, path: bool = False, dwelltime: bool = True
-    ) -> None:
-        super().setImportOptions(options, path, dwelltime)
-        delimiter = options["delimiter"]
-        if delimiter == " ":
-            delimiter = "Space"
-        elif delimiter == "\t":
-            delimiter = "Tab"
-
-        spinbox_first_line = self.spinbox_first_line.value()
-        self.spinbox_first_line.setValue(options["first line"])
-
-        self.table_header._checked = {}
-        for col in options["columns"]:
-            if col < self.table.columnCount():
-                self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
-
-        self.spinbox_first_line.setValue(spinbox_first_line)
-        self.combo_delimiter.setCurrentText(delimiter)
-        self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
-
-        for oldname, name in options["names"].items():
-            for col in range(self.table.columnCount()):
-                item = self.table.item(self.spinbox_first_line.value() - 1, col)
-                if item is not None and item.text() == oldname:
-                    item.setText(name)
-
-    def dataForScreening(self, size: int) -> np.ndarray:
-        options = self.importOptions()
-        data, _ = read_single_particle_file(
-            options["path"],
-            delimiter=options["delimiter"],
-            columns=options["columns"],
-            first_line=options["first line"],
-            convert_cps=options["dwelltime"] if options["cps"] else None,
-            max_rows=size,
-        )
-        data = rfn.structured_to_unstructured(data)
-        return data
-
-    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
-        options = self.importOptions()
-
-        columns = options["columns"][idx]
-        self.table_header._checked = {}
-        for col in columns:
-            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+    # def setImportOptions(
+    #     self, options: dict, path: bool = False, dwelltime: bool = True
+    # ) -> None:
+    #     super().setImportOptions(options, path, dwelltime)
+    #     delimiter = options["delimiter"]
+    #     if delimiter == " ":
+    #         delimiter = "Space"
+    #     elif delimiter == "\t":
+    #         delimiter = "Tab"
+    #
+    #     spinbox_first_line = self.spinbox_first_line.value()
+    #     self.spinbox_first_line.setValue(options["first line"])
+    #
+    #     self.table_header._checked = {}
+    #     for col in options["columns"]:
+    #         if col < self.table.columnCount():
+    #             self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+    #
+    #     self.spinbox_first_line.setValue(spinbox_first_line)
+    #     self.combo_delimiter.setCurrentText(delimiter)
+    #     self.combo_intensity_units.setCurrentText("CPS" if options["cps"] else "Counts")
+    #
+    #     for oldname, name in options["names"].items():
+    #         for col in range(self.table.columnCount()):
+    #             item = self.table.item(self.spinbox_first_line.value() - 1, col)
+    #             if item is not None and item.text() == oldname:
+    #                 item.setText(name)
 
     def accept(self) -> None:
-        options = self.importOptions()
-
-        data = read_single_particle_file(
-            options["path"],
-            delimiter=options["delimiter"],
-            columns=options["columns"],
-            first_line=options["first line"],
-            convert_cps=options["dwelltime"] if options["cps"] else None,
-        )
-        assert data.dtype.names is not None
-        new_names = self.names()
-        options["names"] = {old: new for old, new in zip(data.dtype.names, new_names)}
-        data = rfn.rename_fields(data, options["names"])
-
         data_file = SPCalTextDataFile.load(
             self.file_path,
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
-            convert_cps=options["cps"]
+            cps=self.combo_intensity_units.currentText() == "CPS",
         )
+        if data_file._event_time is None:
+            data_file._event_time = self.event_time.value()
 
-        if options 
-
-        self.dataImported.emit(data, options)
-        logger.info(f"Text data loaded from {self.file_path} ({data.size} events).")
+        self.dataImported.emit(data_file)
+        logger.info(
+            f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
+        )
         super().accept()
 
 
