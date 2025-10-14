@@ -1,16 +1,14 @@
-from pathlib import Path
+import logging
 import re
-import datetime
+from pathlib import Path
 
 import h5py
 import numpy as np
 from numpy.lib import recfunctions as rfn
 
-import logging
-
-from spcal.io import nu, tofwerk
-from spcal.npdb import db
 from spcal.calc import search_sorted_closest
+from spcal.io import nu, text, tofwerk
+from spcal.npdb import db
 
 logger = logging.getLogger(__name__)
 
@@ -64,22 +62,27 @@ class SPCalTextDataFile(SPCalDataFile):
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
+        override_event_time: float | None = None,
         instrument_type: str | None = None,
     ):
         super().__init__(path, times=times, instrument_type=instrument_type)
 
+        if signals.dtype.names is None:
+            raise ValueError("expected signals to have a structured dtype")
         self.signals = signals
 
         self.delimter = delimiter
         self.skip_row = skip_rows
         self.cps = cps
+        self.override_event_time = override_event_time
 
     def __getitem__(self, isotope: str) -> np.ndarray:
         return self.signals[isotope]
 
     @property
-    def names(self) -> list[str]:
-        return list(self.signals.dtype.names or [])
+    def isotopes(self) -> list[str]:
+        assert self.signals.dtype.names is not None
+        return list(self.signals.dtype.names)
 
     @property
     def num_events(self) -> int:
@@ -93,24 +96,9 @@ class SPCalTextDataFile(SPCalDataFile):
         skip_rows: int = 1,
         cps: bool = False,
         max_rows: int | None = None,
+        names: list[str] | None = None,
         override_event_time: float | None = None,
     ) -> "SPCalTextDataFile":
-        def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
-            for line in fp:
-                if delimiter != ",":
-                    yield line.replace(",", ".")
-                else:
-                    yield line
-
-        def iso_time_to_float_seconds(text: str) -> float:
-            time = datetime.time.fromisoformat(text)
-            return (
-                time.hour * 3600.0
-                + time.minute * 60.0
-                + time.second
-                + time.microsecond * 1e-6
-            )
-
         with path.open("r") as fp:
             for i in range(skip_rows - 1):
                 fp.readline()
@@ -122,17 +110,18 @@ class SPCalTextDataFile(SPCalDataFile):
             data_start_pos = fp.tell()
             peek = fp.readline()
             if "00:" in peek:  # we are dealing with a thremo iCap export
-                converters = {1: lambda s: iso_time_to_float_seconds(s)}
+                converters = {1: lambda s: text.iso_time_to_float_seconds(s)}
             fp.seek(data_start_pos)
 
-            gen = replace_comma_decimal(fp, delimiter)
+            gen = text.replace_comma_decimal(fp, delimiter)
 
             signals = np.genfromtxt(  # type: ignore
                 gen,
                 delimiter=delimiter,
-                names=header,
+                names=names or header,
                 dtype=dtype,
                 max_rows=max_rows,
+                deletechars="",  # todo: see if this causes any issue with calculator or saving
                 converters=converters,  # type: ignore , works
                 invalid_raise=False,
                 loose=True,
@@ -147,7 +136,7 @@ class SPCalTextDataFile(SPCalDataFile):
             for name in signals.dtype.names:
                 if "time" in name.lower():
                     times = signals[name]
-                    m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
+                    m = re.search("(?<=[\\W_])([nmuµ]?s)\\b", name.lower())
                     if m is not None:
                         if m.group(1) in ["ms"]:
                             times *= 1e-3
@@ -155,6 +144,8 @@ class SPCalTextDataFile(SPCalDataFile):
                             times *= 1e-6
                         elif m.group(1) in ["ns"]:
                             times *= 1e-9
+                        elif m.group(1) in ["s"]:
+                            pass
                         else:
                             logger.warning(
                                 f"unit not found in times column for {path.stem}, assuming seconds"
@@ -164,13 +155,19 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if times is None:
             raise ValueError(
-                f"unable to read times in {path.stem} and no override_event_time provided"
+                f"unable to read times in {path.stem} and no 'override_event_time' provided"
             )
 
         if cps:
             signals /= np.diff(times, append=times[-1] - times[-2])
 
-        return cls(path, signals, times, cps=cps)
+        return cls(
+            path,
+            signals,
+            times,
+            cps=cps,
+            override_event_time=override_event_time,
+        )
 
 
 class SPCalNuDataFile(SPCalDataFile):
@@ -300,7 +297,6 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
 
             peak_table: np.ndarray = h5["PeakData"]["PeakTable"][:]  # type: ignore , defined in tofdaq
 
-
             time_per_buf: float = h5["TimingData"].attrs["BlockPeriod"][0]  # type: ignore , defined in tofdaq
             times: np.ndarray = h5["TimingData"]["BufTimes"][:]  # type: ignore , defined in tofdaq
             times = (
@@ -319,8 +315,9 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
 # print(x.isotopes)
 # print(x.preferred_isotopes)
 
-x = SPCalTOFWERKDataFile.load(
-    Path("/home/tom/Downloads/Single cell_blank_2025-08-27_15h39m38s.h5")
+x = SPCalTextDataFile.load(
+    Path("/home/tom/Documents/python/spcal/tests/data/text/tofwerk_export_au_bg.csv")
+    # Path("/home/tom/Downloads/Single cell_blank_2025-08-27_15h39m38s.h5")
 )
 print(x.isotopes)
 print(x.preferred_isotopes)

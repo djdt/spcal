@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 import re
@@ -12,9 +11,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile, SPCalTextDataFile
-from spcal.gui.dialogs.nontarget import NonTargetScreeningDialog
 from spcal.gui.graphs import viridis_32
-from spcal.gui.util import Worker, create_action
+from spcal.gui.util import Worker
 from spcal.gui.widgets import (
     CheckableComboBox,
     ElidedLabel,
@@ -24,19 +22,17 @@ from spcal.gui.widgets import (
 from spcal.io import nu
 from spcal.io.text import (
     guess_text_parameters,
-    read_single_particle_file,
     iso_time_to_float_seconds,
 )
 from spcal.io.tofwerk import calibrate_mass_to_index, factor_extraction_to_acquisition
 from spcal.npdb import db
-from spcal.processing import SPCalProcessingMethod
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
 
 
 class _ImportDialogBase(QtWidgets.QDialog):
-    dataImported = QtCore.Signal(SPCalDataFile)
+    dataImported = QtCore.Signal(SPCalDataFile, list)
     forbidden_names = ["Overlay"]
 
     def __init__(
@@ -160,24 +156,24 @@ class CheckableHeader(QtWidgets.QHeaderView):
             QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
         )
 
-        option.rect = QtCore.QRect(
+        option.rect = QtCore.QRect(  # type: ignore , works
             rect.left(),
             rect.center().y() - cb_size.height() // 2,
             cb_size.width(),
             cb_size.height(),
         )
-        option.state = (
+        option.state = (  # type: ignore , works
             QtWidgets.QStyle.StateFlag.State_Enabled
             | QtWidgets.QStyle.StateFlag.State_Active
         )
 
         state = self.checkState(logicalIndex)
         if state == QtCore.Qt.CheckState.Checked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_On
+            option.state |= QtWidgets.QStyle.StateFlag.State_On  # type: ignore , works
         elif state == QtCore.Qt.CheckState.Unchecked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_Off
+            option.state |= QtWidgets.QStyle.StateFlag.State_Off  # type: ignore , works
         else:
-            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange
+            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange  # type: ignore , works
 
         self.style().drawControl(
             QtWidgets.QStyle.ControlElement.CE_CheckBox, option, painter
@@ -185,7 +181,6 @@ class CheckableHeader(QtWidgets.QHeaderView):
 
 
 class TextImportDialog(_ImportDialogBase):
-    dataImported = QtCore.Signal(np.ndarray, dict)
     HEADER_COUNT = 20
 
     def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
@@ -220,6 +215,9 @@ class TextImportDialog(_ImportDialogBase):
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.event_time.baseValueChanged.connect(self.completeChanged)
+        self.override_event_time = QtWidgets.QCheckBox("Override")
+        self.override_event_time.setChecked(True)
+        self.override_event_time.checkStateChanged.connect(self.overrideEventTimeChanged)
 
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
@@ -236,7 +234,11 @@ class TextImportDialog(_ImportDialogBase):
         self.spinbox_first_line.setValue(first_data_line)
         self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
 
-        self.box_options_layout.addRow("Event time:", self.event_time)
+        layout_event_time = QtWidgets.QHBoxLayout()
+        layout_event_time.addWidget(self.event_time, 1)
+        layout_event_time.addWidget(self.override_event_time, 0)
+
+        self.box_options_layout.addRow("Event time:", layout_event_time)
         self.box_options_layout.addRow("Intensity units:", self.combo_intensity_units)
         self.box_options_layout.addRow("Delimiter:", self.combo_delimiter)
         self.box_options_layout.addRow("Import from row:", self.spinbox_first_line)
@@ -247,7 +249,10 @@ class TextImportDialog(_ImportDialogBase):
         self.layout_body.addWidget(self.table)
 
     def isComplete(self) -> bool:
-        return self.event_time.hasAcceptableInput()
+        return not self.event_time.isEnabled() or self.event_time.hasAcceptableInput()
+
+    def overrideEventTimeChanged(self) -> None:
+        self.event_time.setEnabled(self.override_event_time.isChecked())
 
     def delimiter(self) -> str:
         delimiter = self.combo_delimiter.currentText()
@@ -266,10 +271,18 @@ class TextImportDialog(_ImportDialogBase):
 
     def names(self) -> list[str]:
         names = []
+        for c in range(self.table.columnCount()):
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                names.append(item.text().replace(" ", "_"))
+        return names
+
+    def selectedNames(self) -> list[str]:
+        names = []
         for c in self.useColumns():
             item = self.table.item(self.spinbox_first_line.value() - 1, c)
             if item is not None:
-                names.append(item.text())
+                names.append(item.text().replace(" ", "_"))
         return names
 
     def fillTable(self) -> None:
@@ -294,7 +307,9 @@ class TextImportDialog(_ImportDialogBase):
                 val, unit = self.guessEventTimeFromTable()
                 self.event_time.setUnit(unit)
                 self.event_time.setValue(val)
+                self.override_event_time.setChecked(False)
             except StopIteration:
+                self.override_event_time.setChecked(True)
                 pass
 
     def updateTableUseColumns(self) -> None:
@@ -385,11 +400,13 @@ class TextImportDialog(_ImportDialogBase):
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
             cps=self.combo_intensity_units.currentText() == "CPS",
+            names=self.names(),
+            override_event_time=self.event_time.value()
+            if self.override_event_time.isChecked()
+            else None,
         )
-        if data_file._event_time is None:
-            data_file._event_time = self.event_time.value()
 
-        self.dataImported.emit(data_file)
+        self.dataImported.emit(data_file, self.selectedNames())
         logger.info(
             f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
         )
@@ -994,3 +1011,11 @@ class TofwerkImportDialog(_ImportDialogBase):
             self.setControlsEnabled(True)
         else:
             super().reject()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+
+    dlg = TextImportDialog(Path("/home/tom/Documents/python/spcal/tests/data/text/tofwerk_export_au_bg.csv"))
+    dlg.open()
+    app.exec()

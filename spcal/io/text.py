@@ -65,6 +65,22 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
 
     return delimiter, skip_rows, column_count
 
+def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
+    for line in fp:
+        if delimiter != ",":
+            yield line.replace(",", ".")
+        else:
+            yield line
+
+def iso_time_to_float_seconds(text: str) -> float:
+    time = datetime.time.fromisoformat(text)
+    return (
+        time.hour * 3600.0
+        + time.minute * 60.0
+        + time.second
+        + time.microsecond * 1e-6
+    )
+
 
 def _write_if_exists(
     fp: TextIO,
@@ -89,14 +105,6 @@ def _ufunc_or_none(
         return None
     return ufunc(r.calibrated(key)) / factor
 
-def iso_time_to_float_seconds(text: str) -> float:
-    time = datetime.time.fromisoformat(text)
-    return (
-        time.hour * 3600.0
-        + time.minute * 60.0
-        + time.second
-        + time.microsecond * 1e-6
-    )
 
 def read_single_particle_file(
     path: Path | str,
@@ -119,14 +127,6 @@ def read_single_particle_file(
     Returns:
         data, structred array
     """
-    def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
-        for line in fp:
-            if delimiter != ",":
-                yield line.replace(",", ".")
-            else:
-                yield line
-
-
     with Path(path).open("r") as fp:
         for i in range(skip_rows - 1):
             fp.readline()
