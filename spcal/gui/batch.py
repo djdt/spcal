@@ -647,7 +647,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
 
         for name in self.sample.responses.dtype.names:
             inputs[name] = {
-                "dwelltime": self.options.dwelltime.baseValue(),
+                "dwelltime": self.options.event_time.baseValue(),
                 "uptake": self.options.uptake.baseValue(),
                 "cell_diameter": self.options.celldiameter.baseValue(),
                 "molar_mass": self.sample.io[name].molarmass.baseValue(),

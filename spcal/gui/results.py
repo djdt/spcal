@@ -480,7 +480,7 @@ class ResultsWidget(QtWidgets.QWidget):
         path = Path(self.sample.label_file.text())
 
         regions = self.sample.regions
-        dwell = self.options.dwelltime.baseValue()
+        dwell = self.options.event_time.baseValue()
         assert dwell is not None
         times = dwell * (regions[:, 0] + (regions[:, 1] - regions[:, 0]) / 2.0)
 
@@ -917,7 +917,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.label_file.setText(f"Results for: {self.sample.label_file.text()}")
 
-        dwelltime = self.options.dwelltime.baseValue()
+        dwelltime = self.options.event_time.baseValue()
         uptake = self.options.uptake.baseValue()
 
         assert dwelltime is not None

@@ -34,7 +34,7 @@ def test_sample_with_reference(qtbot: QtBot):
 
     window.options.efficiency_method.setCurrentText("Reference Particle")
     window.options.uptake.setBaseValue(uptake)
-    assert not window.options.dwelltime.hasAcceptableInput()
+    assert not window.options.event_time.hasAcceptableInput()
     assert not window.options.efficiency.isEnabled()
 
     # set the prominence to 0, later addition
@@ -44,7 +44,7 @@ def test_sample_with_reference(qtbot: QtBot):
     assert window.sample.io.names() == ["Au", "Ag"]
 
     # Check values on load
-    assert window.options.dwelltime.baseValue() == dwelltime
+    assert window.options.event_time.baseValue() == dwelltime
     assert window.sample.io["Au"].density.baseValue() is None
     assert window.sample.io["Au"].molarmass.baseValue() is None
     assert window.sample.io["Au"].response.baseValue() is None

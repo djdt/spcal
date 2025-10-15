@@ -351,7 +351,7 @@ class InputWidget(QtWidgets.QWidget):
             None,
             {name: self.asResult(name) for name in self.draw_names},
             self.regions,
-            dwell=float(self.options.dwelltime.value() or 1.0),
+            dwell=float(self.options.event_time.value() or 1.0),
             show_markers=options.get("show detections", True),
             font=resized_font,
             scale=dpi_scale,
@@ -396,7 +396,7 @@ class InputWidget(QtWidgets.QWidget):
         self.label_file.setText(str(options["path"]))
 
         self.options.blockSignals(True)
-        self.options.dwelltime.setBaseValue(options["dwelltime"])
+        self.options.event_time.setBaseValue(options["dwelltime"])
 
         self.options.blockSignals(False)
 
@@ -588,7 +588,7 @@ class InputWidget(QtWidgets.QWidget):
         if len(self.responses) == 0:
             return
 
-        dwell = self.options.dwelltime.baseValue()
+        dwell = self.options.event_time.baseValue()
         if dwell is None:
             raise ValueError("dwell is None")
         self.graph.xaxis.setScale(dwell)
@@ -712,7 +712,7 @@ class ReferenceWidget(InputWidget):
             self.io[self.names[0]].check_use_efficiency_for_all.setChecked(True)
 
     def updateEfficiency(self, name: str | None = None) -> None:
-        dwell = self.options.dwelltime.baseValue()
+        dwell = self.options.event_time.baseValue()
         if self.responses.size == 0 or dwell is None:
             return
 

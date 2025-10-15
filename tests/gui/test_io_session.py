@@ -87,7 +87,7 @@ def test_restore_session(tmp_session_path: Path, qtbot: QtBot):
     )
 
     assert window.options.efficiency_method.currentText() == "Reference Particle"
-    assert window.options.dwelltime.baseValue() == 0.1
+    assert window.options.event_time.baseValue() == 0.1
     assert window.options.uptake.baseValue() == 0.2
     assert window.options.gaussian.alpha.value() == 0.003
     assert window.options.poisson.alpha.value() == 0.004

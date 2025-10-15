@@ -239,7 +239,6 @@ class OptionsWidget(QtWidgets.QWidget):
             event_time=self.event_time.baseValue(),
             uptake=self.uptake.baseValue(),
             efficiency=self.efficiency.value(),
-            # mass_response=self.mass_
             efficiency_method=self.efficiency_method.currentText(),
         )
 
