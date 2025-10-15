@@ -1,97 +1,30 @@
-from typing import Any
-from spcal import particle
-from spcal.limit import (
-    SPCalLimit,
-    SPCalGaussianLimit,
-    SPCalPoissonLimit,
-    SPCalCompoundPoissonLimit,
-)
-
-from spcal.datafile import SPCalDataFile
-
-from spcal.detection import accumulate_detections
+import logging
 
 import numpy as np
 
-import logging
+from spcal import particle
+from spcal.datafile import SPCalDataFile
+from spcal.detection import accumulate_detections
+from spcal.limit import (
+    SPCalCompoundPoissonLimit,
+    SPCalGaussianLimit,
+    SPCalLimit,
+    SPCalPoissonLimit,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class SPCalProcessingResult(object):
-    def __init__(
-        self,
-        isotope: str,
-        limit: SPCalLimit,
-        signals: np.ndarray,
-        detections: np.ndarray,
-        labels: np.ndarray,
-        regions: np.ndarray,
-        indicies: np.ndarray | None = None,
-    ):
-        self.isotope = isotope
-        self.signals = signals
-
-        self.limit = limit
-
-        self.detections = detections
-        self.labels = labels
-        self.regions = regions
-
-        self.peak_indicies = indicies
-        self.filter_indicies = None
-
-        self.background = np.nanmean(self.signals[self.labels == 0.0])
-        self.background_error = np.nanstd(
-            self.signals[self.labels == 0.0], mean=self.background
-        )
-
-    @property
-    def num_events(self) -> int:
-        return self.signals.shape[0]
-
-    @property
-    def valid_events(self) -> int:
-        """Number of valid (non nan) events."""
-        return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
-
-    # @property
-    # def ionic_background(self) -> float | None:
-    #     """Background in kg/L.
-    #
-    #     Requires 'response' input.
-    #     """
-    #     if "response" not in self.inputs:
-    #         return None
-    #     return self.background / self.inputs["response"]
-
-    @property
-    def number(self) -> int:
-        """Number of non-zero detections."""
-        if self.filter_indicies is None:
-            return self.detections.size
-        else:
-            return self.filter_indicies.size
-
-    @property
-    def number_error(self) -> int:
-        """Sqrt of ``number``."""
-        return np.sqrt(self.number)
 
 
 class SPCalInstrumentOptions(object):
     def __init__(
         self,
         event_time: float,
-        total_time: float,
         uptake: float,
         efficiency: float,
         mass_response: float,
         efficiency_method: str,
     ):
         self.event_time = event_time
-        self.total_time = total_time
-
         self.uptake = uptake
         self.efficiency = efficiency
         self.mass_response = mass_response
@@ -101,11 +34,7 @@ class SPCalInstrumentOptions(object):
             return True
 
         if mode == "efficiency":
-            return (
-                self.event_time is not None
-                and self.uptake is not None
-                and self.efficiency is not None
-            )
+            return self.uptake is not None and self.efficiency is not None
         elif mode == "mass response":
             return self.mass_response is not None
         else:
@@ -252,6 +181,83 @@ class SPCalLimitOptions(object):
             raise ValueError(f"unknown limit method {method}")
 
 
+class SPCalProcessingResult(object):
+    def __init__(
+        self,
+        isotope: str,
+        limit: SPCalLimit,
+        instrument_options: SPCalInstrumentOptions,
+        isotope_options: SPCalIsotopeOptions,
+        signals: np.ndarray,
+        times: np.ndarray,
+        detections: np.ndarray,
+        labels: np.ndarray,
+        regions: np.ndarray,
+        indicies: np.ndarray | None = None,
+    ):
+        self.isotope = isotope
+        self.limit = limit
+        self.instrument_options = instrument_options
+        self.isotope_ooptions = isotope_options
+
+        self.signals = signals
+        self.times = times
+
+        self.detections = detections
+        self.labels = labels
+        self.regions = regions
+
+        self.peak_indicies = indicies
+        self.filter_indicies = None
+
+        self.background = np.nanmean(self.signals[self.labels == 0.0])
+        self.background_error = np.nanstd(
+            self.signals[self.labels == 0.0], mean=self.background
+        )
+
+    @property
+    def num_events(self) -> int:
+        return self.signals.shape[0]
+
+    @property
+    def event_time(self) -> float:
+        if self._event_time is None:
+            self._event_time = float(np.mean(np.diff(self.times)))
+        return self._event_time
+
+    @property
+    def total_time(self) -> float:
+        return self.event_time * self.num_events
+
+    @property
+    def valid_events(self) -> int:
+        """Number of valid (non nan) events."""
+        return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
+
+    # @property
+    # def ionic_background(self) -> float | None:
+    #     """Background in kg/L.
+    #
+    #     Requires 'response' input.
+    #     """
+    #     if "response" not in self.inputs:
+    #         return None
+    #     return self.background / self.inputs["response"]
+
+    @property
+    def number(self) -> int:
+        """Number of non-zero detections."""
+        if self.filter_indicies is None:
+            return self.detections.size
+        else:
+            return self.filter_indicies.size
+
+    @property
+    def number_error(self) -> int:
+        """Sqrt of ``number``."""
+        return np.sqrt(self.number)
+
+
 class SPCalProcessingMethod(object):
     def __init__(
         self,
@@ -299,6 +305,7 @@ class SPCalProcessingMethod(object):
             limit_accumulation = np.minimum(limit_accumulation, limit_detection)
 
             signals = data_file[isotope][:max_size]
+            times = data_file.times[:max_size]
 
             detections, labels, regions = accumulate_detections(
                 signals,
@@ -309,7 +316,15 @@ class SPCalProcessingMethod(object):
             )
 
             results[isotope] = SPCalProcessingResult(
-                isotope, limit, signals, detections, labels, regions
+                isotope,
+                limit,
+                self.instrument_options,
+                self.isotope_options[isotope],
+                signals,
+                times,
+                detections,
+                labels,
+                regions,
             )
 
         return results
@@ -362,7 +377,7 @@ class SPCalProcessingMethod(object):
             self.calibrateToMass(result.detections, result.isotope),
             self.instrument_options.efficiency,
             self.instrument_options.uptake,
-            self.instrument_options.total_time,
+            self.instrument_options.event_time * result.num_events,
         )
 
     def numberConcentration(self, result: SPCalProcessingResult) -> float:
@@ -371,6 +386,6 @@ class SPCalProcessingMethod(object):
                 result.number,
                 self.instrument_options.efficiency,
                 self.instrument_options.uptake,
-                self.instrument_options.total_time,
+                self.instrument_options.event_time * result.num_events,
             )
         )

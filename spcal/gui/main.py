@@ -6,6 +6,7 @@ from types import TracebackType
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
@@ -17,6 +18,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
 from spcal.io.session import restoreSession, saveSession
+from spcal.processing import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,10 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
+
+        self.sample_file : SPCalDataFile  | None = None
+        self.reference_file: SPCalDataFile | None = None
+        # self.method = SPCalProcessingMethod()
 
         self.options = OptionsWidget()
         self.sample = SampleWidget(self.options)
@@ -85,6 +91,11 @@ class SPCalWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+    def updateMethod(self) -> None:
+        instrument_options = self.options.instrumentOptions()
+        limit_optiones = self.options.limitOptions()
+        data_options = s
 
     def updateNames(self, names: dict[str, str]) -> None:
         self.sample.updateNames(names)

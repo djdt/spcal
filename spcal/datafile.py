@@ -35,6 +35,10 @@ class SPCalDataFile(object):
         return self._event_time
 
     @property
+    def total_time(self) -> float:
+        return self.event_time * self.num_events
+
+    @property
     def isotopes(self) -> list[str]:
         raise NotImplementedError
 

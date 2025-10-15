@@ -7,7 +7,7 @@ from spcal.gui.limitoptions import (
     PoissonOptions,
 )
 from spcal.gui.widgets import UnitsWidget, ValueWidget
-from spcal.processing import SPCalLimitOptions
+from spcal.processing import SPCalInstrumentOptions, SPCalLimitOptions
 from spcal.siunits import time_units
 
 
@@ -40,13 +40,13 @@ class OptionsWidget(QtWidgets.QWidget):
         sf = int(settings.value("SigFigs", 4))  # type: ignore
 
         # Instrument wide options
-        self.dwelltime = UnitsWidget(
+        self.event_time = UnitsWidget(
             time_units,
             default_unit="ms",
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
             format=sf,
         )
-        self.dwelltime.setReadOnly(True)
+        self.event_time.setReadOnly(True)
 
         self.uptake = UnitsWidget(
             uptake_units,
@@ -57,7 +57,7 @@ class OptionsWidget(QtWidgets.QWidget):
             validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
         )
 
-        self.dwelltime.setToolTip(
+        self.event_time.setToolTip(
             "ICP-MS dwell-time, updated from imported files if time column exists."
         )
         self.uptake.setToolTip("ICP-MS sample flow rate.")
@@ -96,7 +96,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.inputs = QtWidgets.QGroupBox("Instrument Options")
         input_layout = QtWidgets.QFormLayout()
         input_layout.addRow("Uptake:", self.uptake)
-        input_layout.addRow("Dwell time:", self.dwelltime)
+        input_layout.addRow("Event time:", self.event_time)
         input_layout.addRow("Trans. Efficiency:", self.efficiency)
         input_layout.addRow("", self.efficiency_method)
         self.inputs.setLayout(input_layout)
@@ -234,10 +234,16 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def asInstrumentOptions(self) -> SPCalInstrumentOptions:
-        pass
+    def instrumentOptions(self) -> SPCalInstrumentOptions:
+        return SPCalInstrumentOptions(
+            event_time=self.event_time.baseValue(),
+            uptake=self.uptake.baseValue(),
+            efficiency=self.efficiency.value(),
+            # mass_response=self.mass_
+            efficiency_method=self.efficiency_method.currentText(),
+        )
 
-    def asLimitOptions(self) -> SPCalLimitOptions:
+    def limitOptions(self) -> SPCalLimitOptions:
         return SPCalLimitOptions(
             method=self.limit_method.currentText().lower(),
             gaussian_kws=self.gaussian.state(),
@@ -250,7 +256,7 @@ class OptionsWidget(QtWidgets.QWidget):
     def state(self) -> dict:
         state_dict = {
             "uptake": self.uptake.baseValue(),
-            "dwelltime": self.dwelltime.baseValue(),
+            "dwelltime": self.event_time.baseValue(),
             "efficiency": self.efficiency.value(),
             "efficiency method": self.efficiency_method.currentText(),
             "window size": self.window_size.value(),
@@ -273,8 +279,8 @@ class OptionsWidget(QtWidgets.QWidget):
             self.uptake.setBaseValue(state["uptake"])
             self.uptake.setBestUnit()
         if "dwelltime" in state:
-            self.dwelltime.setBaseValue(state["dwelltime"])
-            self.dwelltime.setBestUnit()
+            self.event_time.setBaseValue(state["dwelltime"])
+            self.event_time.setBestUnit()
         if "efficiency" in state:
             self.efficiency.setValue(state["efficiency"])
 
@@ -353,7 +359,7 @@ class OptionsWidget(QtWidgets.QWidget):
         if method == "Manual Input":
             return all(
                 [
-                    self.dwelltime.hasAcceptableInput(),
+                    self.event_time.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                     self.efficiency.hasAcceptableInput(),
                 ]
@@ -361,14 +367,14 @@ class OptionsWidget(QtWidgets.QWidget):
         elif method == "Reference Particle":
             return all(
                 [
-                    self.dwelltime.hasAcceptableInput(),
+                    self.event_time.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                 ]
             )
         elif method == "Mass Response":
             return all(
                 [
-                    self.dwelltime.hasAcceptableInput(),
+                    self.event_time.hasAcceptableInput(),
                 ]
             )
         else:
@@ -377,7 +383,7 @@ class OptionsWidget(QtWidgets.QWidget):
     def resetInputs(self) -> None:
         self.blockSignals(True)
         self.uptake.setValue(None)
-        self.dwelltime.setValue(None)
+        self.event_time.setValue(None)
         self.efficiency.setValue(None)
         self.celldiameter.setValue(None)
         self.blockSignals(False)
