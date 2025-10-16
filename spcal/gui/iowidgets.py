@@ -86,9 +86,6 @@ class SampleIOWidget(QtWidgets.QWidget):
         )
 
         self.density.setToolTip("Sample particle density.")
-        self.molarmass.setToolTip(
-            "Molecular weight, required to calculate intracellular concentrations."
-        )
         self.response.setToolTip(
             "ICP-MS response for an ionic standard of this element."
         )
@@ -97,14 +94,12 @@ class SampleIOWidget(QtWidgets.QWidget):
         )
 
         self.density.baseValueChanged.connect(self.optionsChanged)
-        self.molarmass.baseValueChanged.connect(self.optionsChanged)
         self.response.baseValueChanged.connect(self.optionsChanged)
         self.massfraction.valueChanged.connect(self.optionsChanged)
 
         self.inputs = QtWidgets.QGroupBox("Inputs")
         input_layout = QtWidgets.QFormLayout()
         input_layout.addRow("Density:", self.density)
-        input_layout.addRow("Molar mass:", self.molarmass)
         input_layout.addRow("Ionic response:", self.response)
         input_layout.addRow("Mass fraction:", self.massfraction)
         self.inputs.setLayout(input_layout)
@@ -133,7 +128,6 @@ class SampleIOWidget(QtWidgets.QWidget):
     def state(self) -> dict:
         state_dict = {
             "density": self.density.baseValue(),
-            "molar mass": self.molarmass.baseValue(),
             "response": self.response.baseValue(),
             "mass fraction": self.massfraction.value(),
         }
@@ -152,8 +146,6 @@ class SampleIOWidget(QtWidgets.QWidget):
         self.blockSignals(True)
         if "density" in state:
             self.density.setBaseValue(state["density"])
-        if "molar mass" in state:
-            self.molarmass.setBaseValue(state["molar mass"])
         if "response" in state:
             self.response.setBaseValue(state["response"])
         if "mass fraction" in state:
