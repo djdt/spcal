@@ -11,7 +11,7 @@ class CollapsableWidget(QtWidgets.QWidget):
         parent: parent widget
     """
 
-    def __init__(self, title: str, parent: QtWidgets.QWidget):
+    def __init__(self, title: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
 
         self.button = QtWidgets.QToolButton()
@@ -21,33 +21,29 @@ class CollapsableWidget(QtWidgets.QWidget):
         self.button.setChecked(False)
         self.button.setText(title)
         self.button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.button.toggled.connect(self.setCollapsed)
 
-        self.line = QtWidgets.QFrame()
-        self.line.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum
-        )
-        self.line.setFrameShape(QtWidgets.QFrame.HLine)
-        self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
-
-        self.area = QtWidgets.QWidget()
-
-        self.button.toggled.connect(self.collapse)
-
-        layout_line = QtWidgets.QHBoxLayout()
-        layout_line.addWidget(self.button, 0, QtCore.Qt.AlignLeft)
-        layout_line.addWidget(self.line, 1)
-        layout_line.setAlignment(QtCore.Qt.AlignTop)
+        self.widget: QtWidgets.QWidget | None = None
 
         layout = QtWidgets.QVBoxLayout()
-        # layout.setContentsMargins(0, 0, 0, 0)
-        layout.addLayout(layout_line, 0)
-        layout.addWidget(self.area, 1)
+        layout.addWidget(self.button, 0, QtCore.Qt.AlignmentFlag.AlignTop)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-        self.area.hide()
+    def setWidget(self, widget: QtWidgets.QWidget) -> None:
+        if self.widget is not None:
+            self.layout().removeWidget(widget)
 
-        self.parent().layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        self.widget = widget
+        self.layout().addWidget(widget, 1)
+        self.widget.setVisible(not self.isCollapsed())
 
-    def collapse(self, down: bool) -> None:  # pragma: no cover, trivial
-        self.button.setArrowType(QtCore.Qt.DownArrow if down else QtCore.Qt.RightArrow)
-        self.area.setVisible(down)
+    def isCollapsed(self) -> bool:
+        return self.button.arrowType() != QtCore.Qt.DownArrow
+
+    def setCollapsed(self, collapsed: bool) -> None:  # pragma: no cover, trivial
+        self.button.setArrowType(
+            QtCore.Qt.DownArrow if collapsed else QtCore.Qt.RightArrow
+        )
+        if self.widget is not None:
+            self.widget.setVisible(collapsed)

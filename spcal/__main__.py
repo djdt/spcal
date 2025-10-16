@@ -8,6 +8,7 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.resources  # import to load
+from spcal.gui.mainwindow import SPCalMainWindow
 from spcal.gui.main import SPCalWindow
 
 logging.captureWarnings(True)
@@ -39,6 +40,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--nohook", action="store_true", help="don't install the execption hook"
     )
+    parser.add_argument("--old-gui", action="store_true")
     parser.add_argument(
         "qtargs", nargs=argparse.REMAINDER, help="arguments to pass to Qt"
     )
@@ -64,7 +66,10 @@ def main(argv: list[str] | None = None) -> int:
     app.setApplicationVersion(importlib.metadata.version("spcal"))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
-    window = SPCalWindow()
+    if args.old_gui:
+        window = SPCalWindow()
+    else:
+        window = SPCalMainWindow()
 
     if not args.nohook:
         sys.excepthook = window.exceptHook
