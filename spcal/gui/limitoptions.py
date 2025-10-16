@@ -17,7 +17,7 @@ class LimitOptions(QtWidgets.QGroupBox):
     def __init__(
         self, name: str, alpha: float = 0.001, parent: QtWidgets.QWidget | None = None
     ):
-        super().__init__(name, parent=parent)
+        super().__init__(parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         self.alpha = ValueWidget(
             alpha, validator=QtGui.QDoubleValidator(1e-16, 0.5, 9), format=sf
@@ -28,9 +28,6 @@ class LimitOptions(QtWidgets.QGroupBox):
         layout = QtWidgets.QFormLayout()
         layout.addRow("α (Type I):", self.alpha)
         self.setLayout(layout)
-
-    def layout(self) -> QtWidgets.QFormLayout:
-        return super().layout()
 
     def state(self) -> dict:
         return {"alpha": self.alpha.value()}
@@ -72,9 +69,11 @@ class CompoundPoissonOptions(LimitOptions):
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addWidget(self.button_sia, 1, QtCore.Qt.AlignmentFlag.AlignRight)
 
-        self.layout().addRow("Method:", self.method)
-        self.layout().addRow("SIA σ:", self.lognormal_sigma)
-        self.layout().addRow(button_layout)
+        layout = self.layout()
+        assert isinstance(layout, QtWidgets.QFormLayout)
+        layout.addRow("Method:", self.method)
+        layout.addRow("SIA σ:", self.lognormal_sigma)
+        layout.addRow(button_layout)
 
     def dialogSingleIon(self) -> SingleIonDialog:
         dlg = SingleIonDialog(
@@ -145,7 +144,9 @@ class GaussianOptions(LimitOptions):
         )
         self.sigma.valueChanged.connect(self.updateAlpha)
 
-        self.layout().addRow("σ:", self.sigma)
+        layout = self.layout()
+        assert isinstance(layout, QtWidgets.QFormLayout)
+        layout.addRow("σ:", self.sigma)
 
     def updateAlpha(self) -> None:
         sigma = self.sigma.value()
@@ -178,7 +179,9 @@ class PoissonOptions(LimitOptions):
         button_layout.addWidget(
             self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        self.layout().addRow(button_layout)
+        layout = self.layout()
+        assert isinstance(layout, QtWidgets.QFormLayout)
+        layout.addRow(button_layout)
 
         self.formula = "Formula C"
         self.eta = 2.0

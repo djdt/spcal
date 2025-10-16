@@ -6,15 +6,18 @@ from types import TracebackType
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.docks.datafile import SPCalDataFilesDock
+from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
+from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.graphs import color_schemes
-from spcal.gui.inputs import ReferenceWidget, SampleWidget
+from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
-from spcal.gui.options import OptionsWidget
-from spcal.gui.results import ResultsWidget
 from spcal.gui.util import create_action
 from spcal.io.session import restoreSession, saveSession
 
@@ -24,129 +27,8 @@ logger = logging.getLogger(__name__)
 MAX_RECENT_FILES = 10
 
 
-from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
-from spcal.gui.limitoptions import (
-    CompoundPoissonOptions,
-    GaussianOptions,
-    PoissonOptions,
-)
-from spcal.gui.widgets import CollapsableWidget
-from spcal.gui.widgets.units import UnitsWidget
-from spcal.gui.widgets.values import ValueWidget
-from spcal.siunits import time_units
-
 sf = 4
 
-
-class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(parent)
-        self.setWindowTitle("Limit Options")
-
-        self.window_size = ValueWidget(
-            1000, format=("f", 0), validator=QtGui.QIntValidator(3, 1000000)
-        )
-        self.window_size.setEditFormat(0, format="f")
-        self.window_size.setToolTip("Size of window for moving thresholds.")
-        self.window_size.setEnabled(False)
-        self.check_window = QtWidgets.QCheckBox("Use window")
-        self.check_window.setToolTip(
-            "Calculate threhold for each point using data from surrounding points."
-        )
-        self.check_window.toggled.connect(self.window_size.setEnabled)
-
-        layout_window_size = QtWidgets.QHBoxLayout()
-        layout_window_size.addWidget(self.window_size, 1)
-        layout_window_size.addWidget(self.check_window, 1)
-
-        self.limit_method = QtWidgets.QComboBox()
-        self.limit_method.addItems(
-            [
-                "Automatic",
-                "Highest",
-                "Compound Poisson",
-                "Gaussian",
-                "Poisson",
-                "Manual Input",
-            ]
-        )
-        self.limit_method.setItemData(
-            0,
-            "Automatically determine the best method.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_method.setItemData(
-            1, "Use the highest of Gaussian and Poisson.", QtCore.Qt.ToolTipRole
-        )
-        self.limit_method.setItemData(
-            2,
-            "Estimate ToF limits using a compound distribution based on the "
-            "number of accumulations and the single ion distribution..",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_method.setItemData(
-            3, "Threshold using the mean and standard deviation.", QtCore.Qt.ToolTipRole
-        )
-        self.limit_method.setItemData(
-            4,
-            "Threshold using Formula C from the MARLAP manual.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_method.setItemData(
-            5,
-            "Manually define limits in the sample and reference tabs.",
-            QtCore.Qt.ToolTipRole,
-        )
-        self.limit_method.setToolTip(
-            self.limit_method.currentData(QtCore.Qt.ToolTipRole)
-        )
-        self.limit_method.currentIndexChanged.connect(
-            lambda i: self.limit_method.setToolTip(
-                self.limit_method.itemData(i, QtCore.Qt.ToolTipRole)
-            )
-        )
-
-        self.check_iterative = QtWidgets.QCheckBox("Iterative")
-        self.check_iterative.setToolTip("Iteratively filter on non detections.")
-
-        self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
-        # self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
-
-        self.gaussian = GaussianOptions()
-        self.poisson = PoissonOptions()
-        self.compound = CompoundPoissonOptions()
-
-        self.save_button = QtWidgets.QToolButton()
-        self.save_button.setAutoRaise(True)
-        self.save_button.setToolButtonStyle(
-            QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly
-        )
-        self.save_button.setIcon(QtGui.QIcon.fromTheme("document-save"))
-
-        buttons_layout = QtWidgets.QHBoxLayout()
-        buttons_layout.addWidget(self.save_button)
-
-        gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
-        gaussian_collapse.setWidget(self.gaussian)
-        poisson_collapse = CollapsableWidget("Poisson Limit Options")
-        poisson_collapse.setWidget(self.poisson)
-        compound_collapse = CollapsableWidget("Compound Poisson Limit Options")
-        compound_collapse.setWidget(self.compound)
-
-        layout = QtWidgets.QFormLayout()
-        layout.addRow(buttons_layout)
-
-        layout.addRow("Window size:", layout_window_size)
-        layout.addRow("Method:", self.limit_method)
-
-        layout.addRow(gaussian_collapse)
-        layout.addRow(poisson_collapse)
-        layout.addRow(compound_collapse)
-        # layout.addStretch(1)
-        layout.addRow(self.button_advanced_options)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        self.setWidget(widget)
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -201,11 +83,27 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # self.tabs.setTabEnabled(self.tabs.indexOf(self.results), False)
         #
         self.instrument_options = SPCalInstrumentOptionsDock()
-        self.options = SPCalLimitOptionsDock()
+        self.limit_options = SPCalLimitOptionsDock()
+
+        self.processing_method = SPCalProcessingMethod(
+            self.instrument_options.asInstrumentOptions(),
+            self.limit_options.asLimitOptions(),
+            {},
+            [],
+            accumulation_method=self.options.limit_accumulation,
+            points_required=self.options.points_required,
+            prominence_required=self.options.prominence_required,
+            calibration_mode="efficiency",
+        )
+
+        self.files = SPCalDataFilesDock()
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
         )
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.options)
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
+        )
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         widget = QtWidgets.QWidget()
 
         layout = QtWidgets.QVBoxLayout()
@@ -216,10 +114,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def updateNames(self, names: dict[str, str]) -> None:
-        self.sample.updateNames(names)
-        self.reference.updateNames(names)
-        self.results.updateNames(names)
+    # def updateNames(self, names: dict[str, str]) -> None:
+    #     self.sample.updateNames(names)
+    #     self.reference.updateNames(names)
+    #     self.results.updateNames(names)
 
     def createMenuBar(self) -> None:
         # File
@@ -227,18 +125,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "document-open",
             "&Open Sample File",
             "Import SP data from a CSV file.",
-            lambda: self.sample.dialogLoadFile(),
+            lambda: self.dialogLoadFile(),
         )
         self.action_open_recent = QtGui.QActionGroup(self)
         self.action_open_recent.triggered.connect(
-            lambda a: self.sample.dialogLoadFile(a.text().replace("&", ""))
+            lambda a: self.dialogLoadFile(a.text().replace("&", ""))
         )
-        self.action_open_reference = create_action(
-            "document-open",
-            "Open &Reference File",
-            "Import reference SP data from a CSV file.",
-            lambda: self.reference.dialogLoadFile(),
-        )
+        # self.action_open_reference = create_action(
+        #     "document-open",
+        #     "Open &Reference File",
+        #     "Import reference SP data from a CSV file.",
+        #     lambda: self.reference.dialogLoadFile(),
+        # )
 
         self.action_open_batch = create_action(
             "document-multiple",
@@ -358,8 +256,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.menu_recent.setIcon(QtGui.QIcon.fromTheme("document-open-recent"))
         self.menu_recent.setEnabled(False)
 
-        menufile.addSeparator()
-        menufile.addAction(self.action_open_reference)
+        # menufile.addSeparator()
+        # menufile.addAction(self.action_open_reference)
         menufile.addSeparator()
         menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
@@ -396,7 +294,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def about(self) -> QtWidgets.QDialog:
         dlg = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Information,
+            QtWidgets.QMessageBox.Icon.Information,
             "About SPCal",
             (
                 "sp/scICP-MS processing.\n"
@@ -409,6 +307,35 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             dlg.setIconPixmap(self.windowIcon().pixmap(64, 64))
         dlg.open()
         return dlg
+
+    def dialogLoadFile(self, path: Path | None = None) -> _ImportDialogBase | None:
+        if path is None:
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
+        else:
+            path = Path(path)
+
+        dlg = get_import_dialog_for_path(
+            self,
+            path,
+            self.sample_file,
+            screening_method=self.processing_method,
+            # screening_options={
+            #     "poisson_kws": dict(self.options.poisson.state()),
+            #     "gaussian_kws": dict(self.options.gaussian.state()),
+            #     "compound_kws": dict(self.options.compound_poisson.state()),
+            # },
+        )
+        dlg.dataImported.connect(self.sampleFileLoaded)
+        dlg.open()
+        return dlg
+
+    def sampleFileLoaded(self, data_file: SPCalDataFile) -> None:
+        self.sample_file = data_file
+
+        self.updateRecentFiles(self.sample_file.path)
+        self.syncSampleAndReference()
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
         self.results.updateResults()  # Force an update
