@@ -30,7 +30,7 @@ class InputWidget(QtWidgets.QWidget):
     detectionsChanged = QtCore.Signal()
     limitsChanged = QtCore.Signal()
 
-    dataLoaded = QtCore.Signal(Path)
+    dataLoaded = QtCore.Signal(SPCalDataFile)
     namesEdited = QtCore.Signal(dict)
 
     def __init__(
@@ -43,16 +43,9 @@ class InputWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setAcceptDrops(True)
 
-        self.import_options: dict = {}
         self.current_expr: dict[str, str] = {}
 
-        self.responses = np.array([])
-        self.events = np.array([])
-        self.detections = np.array([])
-        self.labels = np.array([])
-        self.regions = np.array([])
-        self.original_regions: dict[str, np.ndarray] = {}  # regions before combination
-        self.limits: dict[str, SPCalLimit] = {}
+        self.data_file: SPCalDataFile | None = None
 
         self.draw_mode = "overlay"
 
@@ -193,27 +186,28 @@ class InputWidget(QtWidgets.QWidget):
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
     def updateNames(self, names: dict[str, str]) -> None:
-        if self.responses.dtype.names is not None:
-            self.responses = rfn.rename_fields(self.responses, names)
-        if self.detections.dtype.names is not None:
-            self.detections = rfn.rename_fields(self.detections, names)
-
-        for old, new in names.items():
-            if old == new:
-                continue
-            if old in self.limits:
-                self.limits[new] = self.limits.pop(old)
-            if old in self.current_expr:
-                self.current_expr[new] = self.current_expr.pop(old)
-            if old in self.io:
-                index = self.io.combo_name.findText(old)
-                self.io.combo_name.setItemText(index, new)
-            if "names" in self.import_options:
-                if old in self.import_options["names"].values():
-                    key = next(
-                        k for k, v in self.import_options["names"].items() if v == old
-                    )
-                    self.import_options["names"][key] = new
+        raise NotImplementedError
+        # if self.responses.dtype.names is not None:
+        #     self.responses = rfn.rename_fields(self.responses, names)
+        # if self.detections.dtype.names is not None:
+        #     self.detections = rfn.rename_fields(self.detections, names)
+        #
+        # for old, new in names.items():
+        #     if old == new:
+        #         continue
+        #     if old in self.limits:
+        #         self.limits[new] = self.limits.pop(old)
+        #     if old in self.current_expr:
+        #         self.current_expr[new] = self.current_expr.pop(old)
+        #     if old in self.io:
+        #         index = self.io.combo_name.findText(old)
+        #         self.io.combo_name.setItemText(index, new)
+        #     if "names" in self.import_options:
+        #         if old in self.import_options["names"].values():
+        #             key = next(
+        #                 k for k, v in self.import_options["names"].items() if v == old
+        #             )
+        #             self.import_options["names"][key] = new
 
         self.redraw()
 
@@ -275,7 +269,7 @@ class InputWidget(QtWidgets.QWidget):
         dlg = get_import_dialog_for_path(
             self,
             path,
-            self.import_options,
+            self.data_file,
             screening_options={
                 "poisson_kws": dict(self.options.poisson.state()),
                 "gaussian_kws": dict(self.options.gaussian.state()),
@@ -283,6 +277,7 @@ class InputWidget(QtWidgets.QWidget):
             },
         )
         dlg.dataImported.connect(self.loadData)
+        dlg.dataImported.connect(self.dataFileLoaded)
         dlg.open()
         return dlg
 
@@ -387,7 +382,9 @@ class InputWidget(QtWidgets.QWidget):
         self.reloadData()
 
     def loadData(self, data_file: SPCalDataFile) -> None:
-        data = CalculatorDialog.reduceForData(data, self.current_expr)
+        # data = CalculatorDialog.reduceForData(data, self.current_expr)
+
+        self.data_file = data_file
 
         # Load any values that need to be set from the import dialog inputs
         self.import_options = options

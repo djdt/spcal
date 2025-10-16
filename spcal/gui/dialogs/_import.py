@@ -36,7 +36,10 @@ class _ImportDialogBase(QtWidgets.QDialog):
     forbidden_names = ["Overlay"]
 
     def __init__(
-        self, path: str | Path, title: str, parent: QtWidgets.QWidget | None = None
+        self,
+        path: str | Path,
+        title: str,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
 
@@ -182,18 +185,36 @@ class CheckableHeader(QtWidgets.QHeaderView):
 
 class TextImportDialog(_ImportDialogBase):
     HEADER_COUNT = 20
+    DELIMITERS = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
 
-    def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        path: str | Path,
+        existing_file: SPCalDataFile | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(path, "SPCal Text Import", parent)
 
         self.file_lines = self.file_path.open("r").readlines()
         # Guess the delimiter, skip rows and count from header
+
         delimiter, first_data_line, column_count = guess_text_parameters(
             self.file_lines[: self.HEADER_COUNT]
         )
+        cps = any(
+            "cps" in line.lower() for line in self.file_lines[: self.HEADER_COUNT]
+        )
+        event_time, override = None, None
 
         if delimiter == "":
             delimiter = ","
+
+        if isinstance(existing_file, SPCalTextDataFile):
+            delimiter = existing_file.delimter
+            first_data_line = existing_file.skip_row
+            cps = existing_file.cps
+            event_time = existing_file.event_time
+            override = existing_file.override_event_time
 
         self.table = QtWidgets.QTableWidget()
         self.table.itemChanged.connect(self.completeChanged)
@@ -211,22 +232,29 @@ class TextImportDialog(_ImportDialogBase):
 
         self.event_time = UnitsWidget(
             time_units,
+            base_value=event_time,
             default_unit="ms",
             validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
         )
         self.event_time.baseValueChanged.connect(self.completeChanged)
+        self.event_time.setEnabled(False)
+
         self.override_event_time = QtWidgets.QCheckBox("Override")
-        self.override_event_time.setChecked(True)
-        self.override_event_time.checkStateChanged.connect(self.overrideEventTimeChanged)
+        self.override_event_time.checkStateChanged.connect(
+            self.overrideEventTimeChanged
+        )
+        self.override_event_time.setChecked(override is not None)
 
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
-        if any("cps" in line.lower() for line in self.file_lines[: self.HEADER_COUNT]):
+        if cps:
             self.combo_intensity_units.setCurrentText("CPS")
 
         self.combo_delimiter = QtWidgets.QComboBox()
-        self.combo_delimiter.addItems([",", ";", "Space", "Tab"])
-        self.combo_delimiter.setCurrentIndex([",", ";", " ", "\t"].index(delimiter))
+        self.combo_delimiter.addItems(list(self.DELIMITERS.values()))
+        self.combo_delimiter.setCurrentIndex(
+            list(self.DELIMITERS.keys()).index(delimiter)
+        )
         self.combo_delimiter.currentIndexChanged.connect(self.fillTable)
 
         self.spinbox_first_line = QtWidgets.QSpinBox()
@@ -307,9 +335,7 @@ class TextImportDialog(_ImportDialogBase):
                 val, unit = self.guessEventTimeFromTable()
                 self.event_time.setUnit(unit)
                 self.event_time.setValue(val)
-                self.override_event_time.setChecked(False)
             except StopIteration:
-                self.override_event_time.setChecked(True)
                 pass
 
     def updateTableUseColumns(self) -> None:
@@ -1016,6 +1042,10 @@ class TofwerkImportDialog(_ImportDialogBase):
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
-    dlg = TextImportDialog(Path("/home/tom/Documents/python/spcal/tests/data/text/tofwerk_export_au_bg.csv"))
+    dlg = TextImportDialog(
+        Path(
+            "/home/tom/Documents/python/spcal/tests/data/text/tofwerk_export_au_bg.csv"
+        )
+    )
     dlg.open()
     app.exec()

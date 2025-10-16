@@ -2,6 +2,7 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
+from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs._import import (
     NuImportDialog,
     TextImportDialog,
@@ -11,6 +12,7 @@ from spcal.gui.dialogs._import import (
 from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
+from spcal.processing import SPCalProcessingMethod
 
 np_file_filters = (
     "NP Data Files (*.csv *.info *.h5);;"
@@ -70,8 +72,8 @@ def get_open_spcal_paths(
 def get_import_dialog_for_path(
     parent: QtWidgets.QWidget,
     path: Path,
-    import_options: dict | None = None,
-    screening_options: dict | None = None,
+    data_file: SPCalDataFile | None = None,
+    screening_method: SPCalProcessingMethod | None = None,
 ) -> _ImportDialogBase:
     if path.is_dir():
         if is_nu_directory(path):
@@ -83,17 +85,17 @@ def get_import_dialog_for_path(
     elif is_tofwerk_file(path):
         dlg = TofwerkImportDialog(path, parent)
     elif is_text_file(path):
-        dlg = TextImportDialog(path, parent)
+        dlg = TextImportDialog(path, data_file, parent)
     else:
         raise FileNotFoundError("getImportDialogForPath: invalid file.")
 
-    if import_options is not None:
-        try:
-            dlg.setImportOptions(
-                import_options, path=False, dwelltime=dlg.dwelltime.value() is None
-            )
-        except (ValueError, KeyError):
-            pass
-    if screening_options is not None:
-        dlg.setScreeningOptions(screening_options)
+    # if import_options is not None:
+    #     try:
+    #         dlg.setImportOptions(
+    #             import_options, path=False, dwelltime=dlg.dwelltime.value() is None
+    #         )
+    #     except (ValueError, KeyError):
+    #         pass
+    # if screening_options is not None:
+    #     dlg.setScreeningOptions(screening_options)
     return dlg

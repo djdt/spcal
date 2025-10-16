@@ -25,6 +25,8 @@ class SPCalDataFile(object):
 
         self.times = times
 
+        self._event_time = None
+
     def __getitem__(self, isotope: str) -> np.ndarray:
         raise NotImplementedError
 
@@ -163,7 +165,8 @@ class SPCalTextDataFile(SPCalDataFile):
             )
 
         if cps:
-            signals /= np.diff(times, append=times[-1] - times[-2])
+            for name in signals.dtype.names:  # type: ignore , asserted above
+                signals[name] /= np.diff(times, append=times[-1] - times[-2])
 
         return cls(
             path,

@@ -224,7 +224,7 @@ class OptionsWidget(QtWidgets.QWidget):
             event_time=self.event_time.baseValue(),
             uptake=self.uptake.baseValue(),
             efficiency=self.efficiency.value(),
-            mass_response=self.mass_response,
+            # mass_response=self.mass_response,
         )
 
     def limitOptions(self) -> SPCalLimitOptions:

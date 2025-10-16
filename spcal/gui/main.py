@@ -8,11 +8,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
+from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
 from spcal.gui.inputs import ReferenceWidget, SampleWidget
+from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
@@ -38,25 +40,29 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.currentChanged.connect(self.onTabChanged)
 
-        self.sample_file : SPCalDataFile  | None = None
-        self.reference_file: SPCalDataFile | None = None
-        # self.method = SPCalProcessingMethod()
-
         self.options = OptionsWidget()
         self.sample = SampleWidget(self.options)
         self.reference = ReferenceWidget(self.options)
         self.results = ResultsWidget(self.options, self.sample, self.reference)
+
+        self.sample_file: SPCalDataFile | None = None
+        self.reference_file: SPCalDataFile | None = None
+        self.processing_method = SPCalProcessingMethod(
+            self.options.instrumentOptions(),
+            self.options.limitOptions(),
+            {},
+            [],
+            accumulation_method=self.options.limit_accumulation,
+            points_required=self.options.points_required,
+            prominence_required=self.options.prominence_required,
+            calibration_mode="efficiency",
+        )
 
         self.options.useManualLimits.connect(self.sample.io.setLimitsEditable)
         self.options.useManualLimits.connect(self.reference.io.setLimitsEditable)
 
         self.sample.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
         self.reference.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
-
-        self.sample.dataLoaded.connect(self.syncSampleAndReference)
-        self.reference.dataLoaded.connect(self.syncSampleAndReference)
-        self.sample.dataLoaded.connect(self.updateRecentFiles)
-        self.reference.dataLoaded.connect(self.updateRecentFiles)
 
         self.options.optionsChanged.connect(self.onInputsChanged)
         self.sample.optionsChanged.connect(self.onInputsChanged)
@@ -92,9 +98,57 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def updateMethod(self) -> None:
+    def dialogSampleFile(self, path: Path | None = None) -> _ImportDialogBase | None:
+        if path is None:
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
+        else:
+            path = Path(path)
+
+        dlg = get_import_dialog_for_path(
+            self,
+            path,
+            self.sample_file,
+            screening_method=self.processing_method,
+            # screening_options={
+            #     "poisson_kws": dict(self.options.poisson.state()),
+            #     "gaussian_kws": dict(self.options.gaussian.state()),
+            #     "compound_kws": dict(self.options.compound_poisson.state()),
+            # },
+        )
+        dlg.dataImported.connect(self.sampleFileLoaded)
+        dlg.open()
+        return dlg
+
+    def sampleFileLoaded(self, data_file: SPCalDataFile) -> None:
+        self.sample_file = data_file
+
+        self.updateRecentFiles(self.sample_file.path)
+        self.syncSampleAndReference()
+
+    def referencefileLoaded(self, data_file: SPCalDataFile) -> None:
+        self.reference_file = data_file
+
+        self.updateRecentFiles(self.reference_file.path)
+        self.syncSampleAndReference()
+
+    def processingMethod(self) -> SPCalProcessingMethod | None:
+        if not self.options.isComplete():
+            return None
+
+        if not self.sample.isComplete():
+            return None
+
         instrument_options = self.options.instrumentOptions()
-        limit_optiones = self.options.limitOptions()
+        limit_options = self.options.limitOptions()
+
+        method = SPCalProcessingMethod(
+            instrument_options=instrument_options,
+            limit_options=limit_options,
+        )
+
+    def updateMethod(self) -> None:
         data_options = s
 
     def updateNames(self, names: dict[str, str]) -> None:

@@ -21,13 +21,10 @@ class SPCalInstrumentOptions(object):
         event_time: float,
         uptake: float,
         efficiency: float,
-        mass_response: float,
-        efficiency_method: str,
     ):
         self.event_time = event_time
         self.uptake = uptake
         self.efficiency = efficiency
-        self.mass_response = mass_response
 
     def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
@@ -36,7 +33,8 @@ class SPCalInstrumentOptions(object):
         if mode == "efficiency":
             return self.uptake is not None and self.efficiency is not None
         elif mode == "mass response":
-            return self.mass_response is not None
+            return True
+        #     return self.mass_response is not None
         else:
             raise ValueError(f"unknown calibration mode '{mode}'")
 
