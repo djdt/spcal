@@ -4,7 +4,6 @@ from spcal.gui.objects import DoubleOrPercentValidator
 from spcal.gui.widgets import UnitsWidget
 from spcal.siunits import (
     mass_units,
-    molar_concentration_units,
     signal_units,
     size_units,
     volume_units,
@@ -77,19 +76,12 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             color_invalid=color,
             format=sf,
         )
-        self.width_conc = UnitsWidget(
-            molar_concentration_units,
-            base_value=self.bin_widths["cell_concentration"],
-            color_invalid=color,
-            format=sf,
-        )
 
         for widget in [
             self.width_signal,
             self.width_mass,
             self.width_size,
             self.width_volume,
-            self.width_conc,
         ]:
             widget.setBestUnit()
             widget.lineedit.setPlaceholderText("auto")
@@ -164,7 +156,6 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             "mass": self.width_mass.baseValue(),
             "size": self.width_size.baseValue(),
             "volume": self.width_volume.baseValue(),
-            "cell_concentration": self.width_conc.baseValue(),
         }
 
         percentile = self.spinbox_percentile.value()

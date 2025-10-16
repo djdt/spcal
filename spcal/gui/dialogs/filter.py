@@ -13,7 +13,6 @@ class FilterItemWidget(QtWidgets.QWidget):
         "Intensity": "signal",
         "Mass": "mass",
         "Size": "size",
-        # "Intracellular Conc.": "cell_concentration",
     }
 
     def __init__(

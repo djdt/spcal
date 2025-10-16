@@ -56,17 +56,12 @@ def click_though_options(qtbot: QtBot, options: OptionsWidget):
     options.compound_poisson.method.setCurrentIndex(0)
     assert not options.check_window.isEnabled()
 
-    qtbot.keyClick(options.celldiameter.lineedit, QtCore.Qt.Key_1)
-    assert options.celldiameter.value() == 1
-
 
 def click_though_input(qtbot: QtBot, input: InputWidget):
     for i, io in enumerate(input.io):
         input.io.combo_name.setCurrentIndex(i)
         qtbot.keyClick(io.density.lineedit, QtCore.Qt.Key_1)
         assert io.density.value() == 1
-        qtbot.keyClick(io.molarmass.lineedit, QtCore.Qt.Key_1)
-        assert io.molarmass.value() == 1
         qtbot.keyClick(io.response.lineedit, QtCore.Qt.Key_1)
         assert io.response.value() == 1
         qtbot.keyClick(io.massfraction, QtCore.Qt.Key_Backspace)

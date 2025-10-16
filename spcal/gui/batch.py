@@ -29,7 +29,7 @@ from spcal.io.text import (
 from spcal.io.tofwerk import read_tofwerk_file
 from spcal.limit import SPCalLimit
 from spcal.result import ClusterFilter, Filter, SPCalResult
-from spcal.siunits import mass_units, molar_concentration_units, size_units, time_units
+from spcal.siunits import mass_units, size_units, time_units
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ def process_data(
     # Cluster results
     clusters = {}
     valid = SPCalResult.all_valid_indicies(list(results.values()))
-    for key in ["signal", "mass", "size", "cell_concentration"]:
+    for key in ["signal", "mass", "size"]:
         rdata = {}
         for name, result in results.items():
             if result.canCalibrate(key):
@@ -454,7 +454,7 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.inputs.layout().addRow(layout_image)
 
         best_units = self.results.bestUnitsForResults()
-        _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
+        _units = {"mass": "kg", "size": "m"}
         _units.update({k: v[0] for k, v in best_units.items()})
 
         self.mass_units = QtWidgets.QComboBox()
@@ -463,9 +463,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(size_units.keys())
         self.size_units.setCurrentText(_units["size"])
-        self.conc_units = QtWidgets.QComboBox()
-        self.conc_units.addItems(molar_concentration_units.keys())
-        self.conc_units.setCurrentText(_units["cell_concentration"])
 
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
@@ -481,7 +478,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
         outputs.setLayout(QtWidgets.QFormLayout())
         outputs.layout().addRow("Mass units", self.mass_units)
         outputs.layout().addRow("Size units", self.size_units)
-        outputs.layout().addRow("Conc. units", self.conc_units)
         outputs.layout().addRow(self.check_export_inputs)
         outputs.layout().addRow(self.check_export_arrays)
         outputs.layout().addRow(self.check_export_compositions)
@@ -649,8 +645,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
             inputs[name] = {
                 "dwelltime": self.options.event_time.baseValue(),
                 "uptake": self.options.uptake.baseValue(),
-                "cell_diameter": self.options.celldiameter.baseValue(),
-                "molar_mass": self.sample.io[name].molarmass.baseValue(),
                 "density": self.sample.io[name].density.baseValue(),
                 "response": self.sample.io[name].response.baseValue(),
             }
@@ -686,10 +680,6 @@ class BatchProcessDialog(QtWidgets.QDialog):
             "size": (
                 self.size_units.currentText(),
                 size_units[self.size_units.currentText()],
-            ),
-            "conc": (
-                self.conc_units.currentText(),
-                molar_concentration_units[self.conc_units.currentText()],
             ),
         }
         match self.sample.import_options["importer"]:

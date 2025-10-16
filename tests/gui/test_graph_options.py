@@ -51,7 +51,6 @@ def test_histogram_options_dialog(qtbot: QtBot):
             "mass": None,
             "size": None,
             "volume": None,
-            "cell_concentration": 1e-9,
         },
         percentile=95,
         draw_filtered=False,
@@ -80,8 +79,6 @@ def test_histogram_options_dialog(qtbot: QtBot):
         if widths["size"] != 1e-9:
             return False
         if widths["volume"] != 1e-6:
-            return False
-        if widths["cell_concentration"] != 1e-9:
             return False
         return True
 

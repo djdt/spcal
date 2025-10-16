@@ -119,7 +119,7 @@ class SPCalResult(object):
     """Calculates results from single particle detections.
 
     At minimum `detections` must contain 'signal' key, other
-    valid keys are 'mass', 'size', 'volume', 'cell_concentration'.
+    valid keys are 'mass', 'size', 'volume'.
 
     Attributes:
         file: path of file results are from
@@ -137,7 +137,6 @@ class SPCalResult(object):
         "mass": ("kg", 1.0),
         "size": ("m", 1.0),
         "volume": ("m³", 1.0),
-        "cell_concentration": ("mol/L", 1.0),
     }
 
     def __init__(
@@ -248,24 +247,6 @@ class SPCalResult(object):
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalResult({self.number})"
 
-    def asCellConcentration(self, value: float | np.ndarray) -> float | np.ndarray:
-        """Convert a value to an intracellur concentration in mol/L.
-
-        Requires 'dwelltime', 'efficiency', 'uptake', 'response', 'mass_fraction',
-        'cell_diameter' and 'molar_mass' inputs.
-
-        Args:
-            value: single value or array
-
-        Returns:
-            value
-        """
-        return particle.cell_concentration(
-            self.asMass(value),
-            diameter=self.inputs["cell_diameter"],
-            molar_mass=self.inputs["molar_mass"],
-        )
-
     def asMass(self, value: float | np.ndarray) -> float | np.ndarray:
         """Convert value to mass in kg.
 
@@ -364,10 +345,6 @@ class SPCalResult(object):
             return mass
         elif key in ["size", "volume"]:
             return mass and "density" in self.inputs
-        elif key == "cell_concentration":
-            return (
-                mass and "cell_diameter" in self.inputs and "molar_mass" in self.inputs
-            )
         else:  # pragma: no cover
             raise KeyError(f"unknown key '{key}'.")
 
@@ -376,16 +353,13 @@ class SPCalResult(object):
 
         Args:
             value: single value or array
-            key: type of conversion {'single', 'mass', 'size', 'volume',
-                                     'cell_concentration'}
+            key: type of conversion {'single', 'mass', 'size', 'volume'}
 
         Returns:
             converted value
         """
         if key == "signal":
             return value
-        elif key == "cell_concentration":
-            return self.asCellConcentration(value)
         elif key == "mass":
             return self.asMass(value)
         elif key == "size":

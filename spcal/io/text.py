@@ -332,7 +332,6 @@ def export_single_particle_results(
     """
 
     input_units = {
-        "cell_diameter": ("μm", 1e-6),
         "density": ("g/cm3", 1e3),
         "dwelltime": ("ms", 1e-3),
         "molar_mass": ("g/mol", 1e-3),

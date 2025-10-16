@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.io.text import export_single_particle_results
 from spcal.result import SPCalResult
-from spcal.siunits import mass_units, molar_concentration_units, size_units
+from spcal.siunits import mass_units, size_units
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class ExportDialog(QtWidgets.QDialog):
         self.clusters = clusters
         self.times = times
 
-        _units = {"mass": "kg", "size": "m", "cell_concentration": "mol/L"}
+        _units = {"mass": "kg", "size": "m"}
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
@@ -54,15 +54,11 @@ class ExportDialog(QtWidgets.QDialog):
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(size_units.keys())
         self.size_units.setCurrentText(_units["size"])
-        self.conc_units = QtWidgets.QComboBox()
-        self.conc_units.addItems(molar_concentration_units.keys())
-        self.conc_units.setCurrentText(_units["cell_concentration"])
 
         units_box = QtWidgets.QGroupBox("Output Units")
         units_box.setLayout(QtWidgets.QFormLayout())
         units_box.layout().addRow("Mass units", self.mass_units)
         units_box.layout().addRow("Size units", self.size_units)
-        units_box.layout().addRow("Conc. units", self.conc_units)
 
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
@@ -115,10 +111,6 @@ class ExportDialog(QtWidgets.QDialog):
             "size": (
                 self.size_units.currentText(),
                 size_units[self.size_units.currentText()],
-            ),
-            "conc": (
-                self.conc_units.currentText(),
-                molar_concentration_units[self.conc_units.currentText()],
             ),
         }
 

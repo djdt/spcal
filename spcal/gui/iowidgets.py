@@ -50,16 +50,6 @@ class SampleIOWidget(QtWidgets.QWidget):
         self.density.lineedit.addAction(
             self.action_density, QtWidgets.QLineEdit.ActionPosition.TrailingPosition
         )
-        self.molarmass = UnitsWidget(
-            {"g/mol": 1e-3, "kg/mol": 1.0},
-            default_unit="g/mol",
-            color_invalid=QtGui.QColor(255, 255, 172),
-            format=sf,
-        )
-        self.molarmass.lineedit.addAction(
-            self.action_mass_fraction,
-            QtWidgets.QLineEdit.ActionPosition.TrailingPosition,
-        )
         self.response = UnitsWidget(
             {
                 "counts/(pg/L)": 1e15,
@@ -156,7 +146,6 @@ class SampleIOWidget(QtWidgets.QWidget):
     def clearInputs(self) -> None:
         self.blockSignals(True)
         self.density.setValue(None)
-        self.molarmass.setValue(None)
         self.response.setValue(None)
         self.massfraction.setValue(1.0)
         self.blockSignals(False)
@@ -175,7 +164,6 @@ class SampleIOWidget(QtWidgets.QWidget):
 
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.ratiosSelected.connect(set_mass_fraction)
-        dlg.molarMassSelected.connect(lambda x: self.molarmass.setBaseValue(x / 1000.0))
         dlg.open()
         return dlg
 
@@ -249,7 +237,6 @@ class ReferenceIOWidget(SampleIOWidget):
 
         input_layout = self.inputs.layout()
         assert isinstance(input_layout, QtWidgets.QFormLayout)
-        input_layout.setRowVisible(self.molarmass, False)
         input_layout.insertRow(0, "Concentration:", self.concentration)
         input_layout.insertRow(1, "Diameter:", self.diameter)
 
@@ -713,7 +700,7 @@ class ResultIOStack(QtWidgets.QWidget):
         self.combo_name.textsEdited.connect(self.namesEdited)
 
         self.mode = QtWidgets.QComboBox()
-        self.mode.addItems(["Signal", "Mass", "Size", "Volume", "Concentration"])
+        self.mode.addItems(["Signal", "Mass", "Size", "Volume"])
         self.mode.setItemData(
             0, "Accumulated detection signal.", QtCore.Qt.ItemDataRole.ToolTipRole
         )
@@ -730,11 +717,6 @@ class ResultIOStack(QtWidgets.QWidget):
         self.mode.setItemData(
             3,
             "Particle volume, requires calibration.",
-            QtCore.Qt.ItemDataRole.ToolTipRole,
-        )
-        self.mode.setItemData(
-            4,
-            "Intracellular concentration, requires cell diameter and molarmass.",
             QtCore.Qt.ItemDataRole.ToolTipRole,
         )
         self.mode.setCurrentText("Signal")

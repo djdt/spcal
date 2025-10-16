@@ -26,7 +26,6 @@ from spcal.gui.util import create_action
 from spcal.result import ClusterFilter, Filter, SPCalResult
 from spcal.siunits import (
     mass_units,
-    molar_concentration_units,
     signal_units,
     size_units,
     volume_units,
@@ -41,21 +40,18 @@ class ResultsWidget(QtWidgets.QWidget):
         "Mass": "mass",
         "Size": "size",
         "Volume": "volume",
-        "Concentration": "cell_concentration",
     }
     mode_units = {
         "Signal": signal_units,
         "Mass": mass_units,
         "Size": size_units,
         "Volume": volume_units,
-        "Concentration": molar_concentration_units,
     }
     mode_labels = {  # these differ from SPCalResult.base_units
         "Signal": ("Intensity (counts)", "", 1.0),
         "Mass": ("Mass", "g", 1e3),
         "Size": ("Size", "m", 1.0),
         "Volume": ("Volume", "m³", 1.0),
-        "Concentration": ("Concentration", "mol/L", 1.0),
     }
 
     def __init__(
@@ -84,7 +80,6 @@ class ResultsWidget(QtWidgets.QWidget):
                     "mass": None,
                     "size": None,
                     "volume": None,
-                    "cell_concentration": None,
                 },
                 "percentile": 95.0,
             },
@@ -934,8 +929,6 @@ class ResultsWidget(QtWidgets.QWidget):
             inputs = {
                 "dwelltime": dwelltime,
                 "uptake": uptake,
-                "cell_diameter": self.options.celldiameter.baseValue(),
-                "molar_mass": self.sample.io[name].molarmass.baseValue(),
                 "density": self.sample.io[name].density.baseValue(),
                 "response": self.sample.io[name].response.baseValue(),
                 "time": result.events * dwelltime,
@@ -972,7 +965,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def updateEnabledItems(self) -> None:
         # Only enable modes that have data
         for key, index in zip(
-            ["mass", "size", "volume", "cell_concentration"], [1, 2, 3, 4]
+            ["mass", "size", "volume"], [1, 2, 3, 4]
         ):
             enabled = any(result.canCalibrate(key) for result in self.results.values())
             if not enabled and self.io.mode.currentIndex() == index:
@@ -997,7 +990,6 @@ class ResultsWidget(QtWidgets.QWidget):
                 mass_units,
                 size_units,
                 volume_units,
-                molar_concentration_units,
             ],
         ):
             unit_keys = list(units.keys())

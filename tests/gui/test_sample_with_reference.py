@@ -46,7 +46,6 @@ def test_sample_with_reference(qtbot: QtBot):
     # Check values on load
     assert window.options.event_time.baseValue() == dwelltime
     assert window.sample.io["Au"].density.baseValue() is None
-    assert window.sample.io["Au"].molarmass.baseValue() is None
     assert window.sample.io["Au"].response.baseValue() is None
     assert window.sample.io["Au"].massfraction.value() == 1.0
 

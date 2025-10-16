@@ -81,7 +81,6 @@ def draw_histogram_view(
             "mass": None,
             "size": None,
             "volume": None,
-            "cell_concentration": None,
         },
         "percentile": 95.0,
     }

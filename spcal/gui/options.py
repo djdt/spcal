@@ -210,23 +210,8 @@ class OptionsWidget(QtWidgets.QWidget):
         limit_layout.addRow(self.poisson)
         self.limit_inputs.setLayout(limit_layout)
 
-        self.celldiameter = UnitsWidget(
-            units={"nm": 1e-9, "μm": 1e-6, "m": 1.0},
-            default_unit="μm",
-            color_invalid=QtGui.QColor(255, 255, 172),
-        )
-        self.celldiameter.setToolTip(
-            "Sets the mean particle size and calculates intracellular concentrations."
-        )
-
-        self.misc_inputs = QtWidgets.QGroupBox("Cell Options")
-        misc_layout = QtWidgets.QFormLayout()
-        misc_layout.addRow("Cell diameter:", self.celldiameter)
-        self.misc_inputs.setLayout(misc_layout)
-
         layout_left = QtWidgets.QVBoxLayout()
         layout_left.addWidget(self.limit_inputs)
-        layout_left.addWidget(self.misc_inputs)
 
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.inputs)
@@ -239,7 +224,7 @@ class OptionsWidget(QtWidgets.QWidget):
             event_time=self.event_time.baseValue(),
             uptake=self.uptake.baseValue(),
             efficiency=self.efficiency.value(),
-            efficiency_method=self.efficiency_method.currentText(),
+            mass_response=self.mass_response,
         )
 
     def limitOptions(self) -> SPCalLimitOptions:
@@ -265,7 +250,6 @@ class OptionsWidget(QtWidgets.QWidget):
             "points required": self.points_required,
             "prominence required": self.prominence_required,
             "iterative": self.check_iterative.isChecked(),
-            "cell diameter": self.celldiameter.baseValue(),
             "compound poisson": self.compound_poisson.state(),
             "gaussian": self.gaussian.state(),
             "poisson": self.poisson.state(),
@@ -296,10 +280,6 @@ class OptionsWidget(QtWidgets.QWidget):
             self.points_required = state["points required"]
         if "prominence required" in state:
             self.prominence_required = state["prominence required"]
-
-        if "cell diameter" in state:
-            self.celldiameter.setBaseValue(state["cell diameter"])
-            self.celldiameter.setBestUnit()
 
         self.compound_poisson.setState(state["compound poisson"])
         self.gaussian.setState(state["gaussian"])
@@ -384,7 +364,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.uptake.setValue(None)
         self.event_time.setValue(None)
         self.efficiency.setValue(None)
-        self.celldiameter.setValue(None)
         self.blockSignals(False)
         self.optionsChanged.emit()
 
