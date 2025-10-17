@@ -31,6 +31,13 @@ molar_concentration_units = {
     "mol/L": 1.0,
 }
 
+response_units = {
+    "L/pg": 1e15,
+    "L/ng": 1e12,
+    "L/μg": 1e9,
+    "L/mg": 1e6,
+}
+
 signal_units = {"counts": 1.0}
 
 size_units = {"nm": 1e-9, "μm": 1e-6, "mm": 1e-3, "m": 1.0}

@@ -11,6 +11,7 @@ from spcal.gui.widgets.values import ValueWidget
 class UnitsWidget(QtWidgets.QWidget):
     baseValueChanged = QtCore.Signal(object)
     baseErrorChanged = QtCore.Signal(object)
+    unitChanged = QtCore.Signal(str)
 
     def __init__(
         self,
@@ -45,12 +46,12 @@ class UnitsWidget(QtWidgets.QWidget):
         self.lineedit.errorChanged.connect(self.updateBaseFromError)
 
         self.combo = QtWidgets.QComboBox()
-        self.combo.currentTextChanged.connect(self.unitChanged)
+        self.combo.currentTextChanged.connect(self.onUnitChanged)
 
         self.setUnits(units)
         if default_unit is not None:
             if self.combo.currentText() == default_unit:  # pragma: no cover
-                self.unitChanged(default_unit)
+                self.onUnitChanged(default_unit)
             else:
                 self.setUnit(default_unit)
         self.setBaseValue(base_value)
@@ -95,7 +96,7 @@ class UnitsWidget(QtWidgets.QWidget):
             self._base_error = error
             self.baseErrorChanged.emit(error)
 
-    def unitChanged(self, unit: str) -> None:
+    def onUnitChanged(self, unit: str) -> None:
         bottom = self.valid_base_range[0] / self._units[unit]
         top = self.valid_base_range[1] / self._units[unit]
 
@@ -103,6 +104,8 @@ class UnitsWidget(QtWidgets.QWidget):
         self.lineedit.validator().setTop(top)
         self.updateValueFromBase()
         self.updateErrorFromBase()
+        print('unitchanged', unit)
+        self.unitChanged.emit(unit)
 
     def updateValueFromBase(self) -> None:
         self.lineedit.valueChanged.disconnect(self.updateBaseFromValue)
