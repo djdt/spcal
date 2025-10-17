@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
+from spcal.gui.modelviews import BasicTable
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.gui.widgets.values import ValueWidget
 from spcal.siunits import density_units, response_units
@@ -310,28 +311,61 @@ class UnitsDelegate(QtWidgets.QStyledItemDelegate):
             },
         )
 
+class ComboDelegate(QtWidgets.QStyledItemDelegate):
+    def __init__(self, options: list, parent: QtWidgets.QWidget|None=None):
+        super().__init__(parent=parent)
+        self.options = options
+
+    def createEditor(
+        self,
+        parent: QtWidgets.QWidget,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ) -> QtWidgets.QWidget:
+        editor = QtWidgets.QComboBox(parent=parent)
+        editor.addItems(self.options)
+        return editor
+
+
+    def setEditorData(
+        self,
+        editor: QtWidgets.QWidget,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ) -> None:
+        assert isinstance(editor, QtWidgets.QComboBox)
+        editor.setCurrentText(index.data(QtCore.Qt.ItemDataRole.EditRole))
+
+    def setModelData(
+        self,
+        editor: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ) -> None:
+        assert isinstance(editor, QtWidgets.QComboBox)
+        model.setData(index, editor.currentText(), QtCore.Qt.ItemDataRole.EditRole)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     dlg = QtWidgets.QWidget()
 
-    model = IsotopeOptionsModel()
-    table = QtWidgets.QTableView()
-    table.setModel(model)
-    sf = 4
-    model.base_values = np.full((3, 3), np.nan)
-    model.isotopes = ["Ti42", "Fe56", "Au197"]
-
-    # table = BasicTable(4, 3)
-    # table.setHorizontalHeader(header)
-    # table.setHorizontalHeaderLabels(["Density", "Response", "Mass Fraction"])
-    # table.setVerticalHeaderLabels(["", "Ti42", "Fe56", "Au197"])
-    # model.insertRows(0, 3)
-
-    density_delegate = UnitsDelegate(density_units, "g/cm³")
-    table.setItemDelegateForColumn(0, density_delegate)
-    # # table.setItemDelegateForColumn(2, ValueDelegate())
+    # model = IsotopeOptionsModel()
+    # table = QtWidgets.QTableView()
+    # table.setModel(model)
+    # sf = 4
+    # model.base_values = np.full((3, 3), np.nan)
+    # model.isotopes = ["Ti42", "Fe56", "Au197"]
+    #
+    # # table = BasicTable(4, 3)
+    # # table.setHorizontalHeader(header)
+    # # table.setHorizontalHeaderLabels(["Density", "Response", "Mass Fraction"])
+    # # table.setVerticalHeaderLabels(["", "Ti42", "Fe56", "Au197"])
+    # # model.insertRows(0, 3)
+    #
+    # density_delegate = UnitsDelegate(density_units, "g/cm³")
+    # table.setItemDelegateForColumn(0, density_delegate)
+    table = BasicTable(4, 3)
+    table.setItemDelegateForRow(0, ComboDelegate(list(density_units.keys())))
     # # table.setItemDelegateForColumn(
     # #     1,
     # #     UnitsDelegate(
