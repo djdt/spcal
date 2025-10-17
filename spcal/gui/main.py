@@ -133,21 +133,6 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles(self.reference_file.path)
         self.syncSampleAndReference()
 
-    def processingMethod(self) -> SPCalProcessingMethod | None:
-        if not self.options.isComplete():
-            return None
-
-        if not self.sample.isComplete():
-            return None
-
-        instrument_options = self.options.instrumentOptions()
-        limit_options = self.options.limitOptions()
-
-        method = SPCalProcessingMethod(
-            instrument_options=instrument_options,
-            limit_options=limit_options,
-        )
-
     def updateMethod(self) -> None:
         data_options = s
 

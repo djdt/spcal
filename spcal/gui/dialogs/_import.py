@@ -272,6 +272,7 @@ class TextImportDialog(_ImportDialogBase):
         self.box_options_layout.addRow("Import from row:", self.spinbox_first_line)
 
         self.fillTable()
+
         self.guessIsotopesFromTable()
 
         self.layout_body.addWidget(self.table)
@@ -426,7 +427,7 @@ class TextImportDialog(_ImportDialogBase):
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
             cps=self.combo_intensity_units.currentText() == "CPS",
-            names=self.names(),
+            rename_fields=self.names(),
             override_event_time=self.event_time.value()
             if self.override_event_time.isChecked()
             else None,

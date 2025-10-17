@@ -68,6 +68,8 @@ class SPCalTextDataFile(SPCalDataFile):
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
+        rename_fields: dict[str, str] | None = None,
+        drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
         instrument_type: str | None = None,
     ):
@@ -81,6 +83,8 @@ class SPCalTextDataFile(SPCalDataFile):
         self.skip_row = skip_rows
         self.cps = cps
         self.override_event_time = override_event_time
+        self.rename_fields = rename_fields
+        self.drop_fields = drop_fields
 
     def __getitem__(self, isotope: str) -> np.ndarray:
         return self.signals[isotope]
@@ -101,9 +105,10 @@ class SPCalTextDataFile(SPCalDataFile):
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
-        max_rows: int | None = None,
-        names: list[str] | None = None,
+        rename_fields: list[str] | dict[str, str] | None = None,
+        drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
+        instrument_type: str | None = None,
     ) -> "SPCalTextDataFile":
         with path.open("r") as fp:
             for i in range(skip_rows - 1):
@@ -124,9 +129,8 @@ class SPCalTextDataFile(SPCalDataFile):
             signals = np.genfromtxt(  # type: ignore
                 gen,
                 delimiter=delimiter,
-                names=names or header,
+                names=header,
                 dtype=dtype,
-                max_rows=max_rows,
                 deletechars="",  # todo: see if this causes any issue with calculator or saving
                 converters=converters,  # type: ignore , works
                 invalid_raise=False,
@@ -134,6 +138,14 @@ class SPCalTextDataFile(SPCalDataFile):
             )
 
         assert signals.dtype.names is not None
+
+        if isinstance(rename_fields, list):
+            rename_fields = {old: new for old, new in zip(header, rename_fields)}
+
+        if isinstance(rename_fields, dict):
+            if any(h != old for h, old in zip(header, rename_fields.keys())):
+                logger.warning("mismatch in text header and rename_fields")
+            signals = rfn.rename_fields(signals, rename_fields)
 
         if override_event_time is not None:
             times = np.arange(signals.shape[0]) * override_event_time
@@ -156,7 +168,6 @@ class SPCalTextDataFile(SPCalDataFile):
                             logger.warning(
                                 f"unit not found in times column for {path.stem}, assuming seconds"
                             )
-                    signals = rfn.drop_fields(signals, [name])
                     break
 
         if times is None:
@@ -164,16 +175,32 @@ class SPCalTextDataFile(SPCalDataFile):
                 f"unable to read times in {path.stem} and no 'override_event_time' provided"
             )
 
+        if drop_fields is None:
+            drop_fields = [
+                name
+                for name in signals.dtype.names
+                if any(x in name.lower() for x in ["index", "time"])
+            ]
+        signals = rfn.drop_fields(signals, drop_fields)
+
         if cps:
             for name in signals.dtype.names:  # type: ignore , asserted above
                 signals[name] /= np.diff(times, append=times[-1] - times[-2])
+
+        if instrument_type is None:
+            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
 
         return cls(
             path,
             signals,
             times,
+            delimiter=delimiter,
+            skip_rows=skip_rows,
             cps=cps,
             override_event_time=override_event_time,
+            rename_fields=rename_fields,
+            drop_fields=drop_fields,
+            instrument_type=instrument_type,
         )
 
 

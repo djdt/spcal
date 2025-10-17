@@ -49,9 +49,13 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.setWidget(self.list)
 
     def selectedDataFile(self) -> SPCalDataFile | None:
-        indicies = self.list.selectedIndexes()
-        if len(indicies) != 1:
+        if len(self.data_files) == 0:
             return None
+
+        indicies = self.list.selectedIndexes()
+        if len(indicies) == 0:
+            return self.data_files[0]
+
         return self.data_files[indicies[0].row()]
 
     def closeDataFile(self, widget: QtWidgets.QWidget) -> None:
@@ -62,7 +66,12 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
                 self.data_files.pop(i)
                 break
 
-    def addDataFile(self, data_file):
+        if len(self.list.selectedIndexes()) == 0:
+             item = self.list.item(0)
+             if item is not None:
+                 item.setSelected(True)
+
+    def addDataFile(self, data_file: SPCalDataFile):
         self.data_files.append(data_file)
 
         widget = DataFileListItemWidget(data_file)
@@ -71,7 +80,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         item.setSizeHint(widget.sizeHint())
         self.list.addItem(item)
         self.list.setItemWidget(item, widget)
+        item.setSelected(True)
 
     def onSelectionChanged(self) -> None:
-        print(self.selectedDataFile())
         self.dataFileSelected.emit(self.selectedDataFile())

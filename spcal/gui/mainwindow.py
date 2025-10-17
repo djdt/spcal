@@ -20,6 +20,7 @@ from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.io.session import restoreSession, saveSession
+from spcal.processing import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,10 @@ MAX_RECENT_FILES = 10
 
 
 sf = 4
+
+
+# class SPCalSignalGraph(QtWidgets.QWidget):
+#     def __init__(self,)
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
@@ -90,13 +95,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.limit_options.asLimitOptions(),
             {},
             [],
-            accumulation_method=self.options.limit_accumulation,
-            points_required=self.options.points_required,
-            prominence_required=self.options.prominence_required,
+            accumulation_method=self.limit_options.limit_accumulation,
+            points_required=self.limit_options.points_required,
+            prominence_required=self.limit_options.prominence_required,
             calibration_mode="efficiency",
         )
 
+        self.instrument_options.optionsChanged.connect(self.updateInstrumentOptions)
+
         self.files = SPCalDataFilesDock()
+
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
         )
@@ -118,6 +126,23 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     self.sample.updateNames(names)
     #     self.reference.updateNames(names)
     #     self.results.updateNames(names)
+    def updateInstrumentOptions(self) -> None:
+        self.processing_method.instrument_options = (
+            self.instrument_options.asInstrumentOptions()
+        )
+        self.processing_method.calibration_mode = (
+            self.instrument_options.efficiency_method.currentText().lower()
+        )
+
+    def updateLimitOptions(self) -> None:
+        self.processing_method.limit_options = self.limit_options.asLimitOptions()
+        self.processing_method.accumulation_method = (
+            self.limit_options.limit_accumulation
+        )
+        self.processing_method.points_required = self.limit_options.points_required
+        self.processing_method.prominence_required = (
+            self.limit_options.prominence_required
+        )
 
     def createMenuBar(self) -> None:
         # File
@@ -319,81 +344,78 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg = get_import_dialog_for_path(
             self,
             path,
-            self.sample_file,
+            self.files.selectedDataFile(),
             screening_method=self.processing_method,
-            # screening_options={
-            #     "poisson_kws": dict(self.options.poisson.state()),
-            #     "gaussian_kws": dict(self.options.gaussian.state()),
-            #     "compound_kws": dict(self.options.compound_poisson.state()),
-            # },
         )
         dlg.dataImported.connect(self.sampleFileLoaded)
         dlg.open()
         return dlg
 
     def sampleFileLoaded(self, data_file: SPCalDataFile) -> None:
-        self.sample_file = data_file
-
-        self.updateRecentFiles(self.sample_file.path)
+        self.files.addDataFile(data_file)
+        self.updateRecentFiles(data_file.path)
         self.syncSampleAndReference()
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
-        self.results.updateResults()  # Force an update
-        dlg = BatchProcessDialog(
-            [],
-            self.sample,
-            self.reference,
-            self.options,
-            self.results,
-            parent=self,
-        )
-        dlg.open()
-        return dlg
-
+        raise NotImplementedError
+    #     self.results.updateResults()  # Force an update
+    #     dlg = BatchProcessDialog(
+    #         [],
+    #         self.sample,
+    #         self.reference,
+    #         self.options,
+    #         self.results,
+    #         parent=self,
+    #     )
+    #     dlg.open()
+    #     return dlg
+    #
     def dialogCalculator(self) -> CalculatorDialog:
-        dlg = CalculatorDialog(self.sample.names, self.sample.current_expr, parent=self)
-        dlg.expressionAdded.connect(self.sample.addExpression)
-        dlg.expressionRemoved.connect(self.sample.removeExpression)
-        dlg.expressionAdded.connect(self.reference.addExpression)
-        dlg.expressionRemoved.connect(self.reference.removeExpression)
-        dlg.open()
-        return dlg
+        raise NotImplementedError
+    #     dlg = CalculatorDialog(self.sample.names, self.sample.current_expr, parent=self)
+    #     dlg.expressionAdded.connect(self.sample.addExpression)
+    #     dlg.expressionRemoved.connect(self.sample.removeExpression)
+    #     dlg.expressionAdded.connect(self.reference.addExpression)
+    #     dlg.expressionRemoved.connect(self.reference.removeExpression)
+    #     dlg.open()
+    #     return dlg
 
     def dialogExportData(self) -> None:
-        path, filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            "Save Data As",
-            "",
-            "Numpy Archive (*.npz);;CSV Document(*.csv);;All files(*)",
-        )
-        if path == "":
-            return
-
-        filter_suffix = filter[filter.rfind(".") : -1]
-
-        path = Path(path)
-        if filter_suffix != "":  # append suffix if missing
-            path = path.with_suffix(filter_suffix)
-
-        names = self.sample.responses.dtype.names
-        if path.suffix.lower() == ".csv":
-            trim = self.sample.trimRegion(names[0])
-            header = " ".join(name for name in names)
-            np.savetxt(
-                path,
-                self.sample.responses[trim[0] : trim[1]],
-                delimiter="\t",
-                comments="",
-                header=header,
-                fmt="%.16g",
-            )
-        elif path.suffix.lower() == ".npz":
-            np.savez_compressed(
-                path,
-                **{name: self.sample.trimmedResponse(name) for name in names},
-            )
-        else:
-            raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+        raise NotImplementedError
+    #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
+    #         self,
+    #         "Save Data As",
+    #         "",
+    #         "Numpy Archive (*.npz);;CSV Document(*.csv);;All files(*)",
+    #     )
+    #     if path == "":
+    #         return
+    #
+    #     filter_suffix = filter[filter.rfind(".") : -1]
+    #
+    #     path = Path(path)
+    #     if filter_suffix != "":  # append suffix if missing
+    #         path = path.with_suffix(filter_suffix)
+    #
+    #     names = self.sample.responses.dtype.names
+    #     if path.suffix.lower() == ".csv":
+    #         trim = self.sample.trimRegion(names[0])
+    #         header = " ".join(name for name in names)
+    #         np.savetxt(
+    #             path,
+    #             self.sample.responses[trim[0] : trim[1]],
+    #             delimiter="\t",
+    #             comments="",
+    #             header=header,
+    #             fmt="%.16g",
+    #         )
+    #     elif path.suffix.lower() == ".npz":
+    #         np.savez_compressed(
+    #             path,
+    #             **{name: self.sample.trimmedResponse(name) for name in names},
+    #         )
+    #     else:
+    #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
@@ -406,6 +428,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogIonicResponse(self) -> ResponseDialog:
+        raise NotImplementedError
         dlg = ResponseDialog(parent=self)
         dlg.responsesSelected.connect(self.sample.io.setResponses)
         dlg.responsesSelected.connect(self.reference.io.setResponses)
@@ -413,6 +436,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogSaveSession(self) -> None:
+        raise NotImplementedError
         def onFileSelected(file: str) -> None:
             path = Path(file).with_suffix(".spcal")
             saveSession(path, self.options, self.sample, self.reference, self.results)
@@ -433,6 +457,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.exec()
 
     def dialogLoadSession(self) -> None:
+        raise NotImplementedError
         settings = QtCore.QSettings()
         dir = Path(settings.value("LastSession", ""))
         if dir.is_file():

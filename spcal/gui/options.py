@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.advancedoptions import AdvancedThresholdOptions
-from spcal.gui.limitoptions import (
+from spcal.gui.docks.limitoptions import (
     CompoundPoissonOptions,
     GaussianOptions,
     PoissonOptions,

@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
@@ -281,9 +282,7 @@ class SPCalProcessingMethod(object):
     def processDataFile(
         self, data_file: SPCalDataFile, isotopes: list[str], max_size: int | None = None
     ) -> dict[np.ndarray, SPCalProcessingResult]:
-        results = {}
-
-        for isotope in isotopes:
+        def calculateResult(data_file, isotope, max_size):
             limit = self.limit_options.limitsForIsotope(data_file, isotope)
 
             if self.accumulation_method == "mean signal":
@@ -313,7 +312,7 @@ class SPCalProcessingMethod(object):
                 prominence_required=self.prominence_required,
             )
 
-            results[isotope] = SPCalProcessingResult(
+            return SPCalProcessingResult(
                 isotope,
                 limit,
                 self.instrument_options,
@@ -324,6 +323,15 @@ class SPCalProcessingMethod(object):
                 labels,
                 regions,
             )
+
+        results = {}
+        with ProcessPoolExecutor() as exec:
+            futures = {
+                exec.submit(calculateResult, data_file, isotope, max_size): isotope
+                for isotope in isotopes
+            }
+            for future in as_completed(futures):
+                results[futures[future]] = future.result()
 
         return results
 
