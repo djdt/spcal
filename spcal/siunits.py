@@ -34,7 +34,7 @@ molar_concentration_units = {
 response_units = {
     "L/pg": 1e15,
     "L/ng": 1e12,
-    "L/μg": 1e9,
+    "L/µg": 1e9,
     "L/mg": 1e6,
 }
 
