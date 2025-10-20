@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 class SPCalInstrumentOptions(object):
     def __init__(
         self,
-        event_time: float,
-        uptake: float,
-        efficiency: float,
+        event_time: float | None,
+        uptake: float | None,
+        efficiency: float | None,
     ):
         self.event_time = event_time
         self.uptake = uptake
@@ -42,15 +42,19 @@ class SPCalInstrumentOptions(object):
 
 class SPCalIsotopeOptions(object):
     def __init__(
-        self, density, response, molar_mass, mass_fraction, concentration, diameter
+        self,
+        density: float | None,
+        response: float | None,
+        mass_fraction: float | None,
+        concentration: float | None = None,
+        diameter: float | None = None,
     ):
         self.density = density
         self.response = response
-        self.diameter = diameter
-        self.molar_mass = molar_mass
         self.mass_fraction = mass_fraction
-        self.concentration = concentration
+
         self.diameter = diameter
+        self.concentration = concentration
 
     def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
