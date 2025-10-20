@@ -1,13 +1,14 @@
 import logging
-from typing import Any
+import re
 
-import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.modelviews import BasicTable
-from spcal.gui.widgets.units import UnitsWidget
-from spcal.gui.widgets.values import ValueWidget
-from spcal.siunits import density_units, response_units
+from spcal.processing import SPCalIsotopeOptions
+from spcal.siunits import (
+    density_units,
+    response_units,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -114,235 +115,271 @@ logger = logging.getLogger(__name__)
 #         self.setLayout(layout)
 
 
-class IsotopeOptionsModel(QtCore.QAbstractTableModel):
-    HEADERS = ["Density", "Response", "Mass Fraction"]
+# class UnitsTableModel(QtCore.QAbstractTableModel):
+#     UNITS = {
+#         "Density": density_units,
+#         "Response": response_units,
+#         "Mass Fraction": None,
+#         "Diameter": size_units,
+#         "Concentration": mass_concentration_units,
+#     }
+#
+#     def __init__(self, columns: list[str], parent: QtCore.QObject | None = None):
+#         super().__init__(parent=parent)
+#
+#         self.options: dict[str, SPCalIsotopeOptions] = {}
+#         self.columns = columns
+#
+#     def columnCount(
+#         self,
+#         parent: QtCore.QModelIndex
+#         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+#     ) -> int:
+#         if parent.isValid():
+#             return 0
+#         return len(self.columns)
+#
+#     def rowCount(
+#         self,
+#         parent: QtCore.QModelIndex
+#         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+#     ) -> int:
+#         if parent.isValid():
+#             return 0
+#         return len(self.options)
 
-    def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent=parent)
+# # Data
+# def data(
+# # Data
+# def data(
+#     self,
+#     index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+#     role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+# ):
+#     if not index.isValid():
+#         return None
+#
+#     row, column = index.row(), index.column()
+#
+#     if role == QtCore.Qt.ItemDataRole.UserRole:
+#         value = self.base_values[row, column]
+#         if value is np.nan:
+#             value = None
+#     elif role == QtCore.Qt.ItemDataRole.DisplayRole:
+#         unit = self.units[column]
+#         value = self.base_values[row, column]
+#         if unit is not None:
+#             value /= self.column_units[column][unit]
+#         value = str(value) if not np.isnan(value) else ""
+#     else:  # pragma: no cover
+#         return None
+#     return value
+#
+# def setData(
+#     self,
+#     index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+#     value: Any,
+#     role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+# ) -> bool:
+#     if not index.isValid():
+#         return False
+#
+#     row, column = index.row(), index.column()
+#     if role == QtCore.Qt.ItemDataRole.UserRole:
+#         self.base_values[row, column] = float(value)
+#         self.dataChanged.emit(index, index, [role])
+#         return True
+#     elif role == QtCore.Qt.ItemDataRole.UserRole - 1:
+#         self.units[column] = value
+#         self.dataChanged.emit(index, index, [role])
+#         return True
+#     return False
 
-        self.base_values = np.array([[]])
-        self.isotopes = []
-        self.column_units = [density_units, response_units, None]
-        self.units = ["g/cm³", "L/μg", None]
-
-    def columnCount(
-        self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
-    ) -> int:
-        if parent.isValid():
-            return 0
-        return self.base_values.shape[1]
-
-    def rowCount(
-        self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
-    ) -> int:
-        if parent.isValid():
-            return 0
-        return self.base_values.shape[0]
-
-    # Data
-    def data(
-        self,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ):
-        if not index.isValid():
-            return None
-
-        row, column = index.row(), index.column()
-
-        if role == QtCore.Qt.ItemDataRole.UserRole:
-            value = self.base_values[row, column]
-            if value is np.nan:
-                value = None
-        elif role == QtCore.Qt.ItemDataRole.DisplayRole:
-            unit = self.units[column]
-            value = self.base_values[row, column]
-            if unit is not None:
-                value /= self.column_units[column][unit]
-            value = str(value) if not np.isnan(value) else ""
-        elif role == QtCore.Qt.ItemDataRole.UserRole - 1:
-            value = self.units[column]
-        else:  # pragma: no cover
-            return None
-        return value
-
-    def setData(
-        self,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-        value: Any,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ) -> bool:
-        if not index.isValid():
-            return False
-
-        row, column = index.row(), index.column()
-        if role == QtCore.Qt.ItemDataRole.UserRole:
-            self.base_values[row, column] = float(value)
-            self.dataChanged.emit(index, index, [role])
-            return True
-        elif role == QtCore.Qt.ItemDataRole.UserRole - 1:
-            self.units[column] = value
-            self.dataChanged.emit(index, index, [role])
-            return True
-        return False
-
-    def headerData(
-        self,
-        section: int,
-        orientation: QtCore.Qt.Orientation,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ) -> str:
-        if role == QtCore.Qt.ItemDataRole.DisplayRole:
-            if orientation == QtCore.Qt.Orientation.Horizontal:
-                unit = self.units[section]
-                header = self.HEADERS[section]
-                if unit != "":
-                    header += f" ({unit})"
-                return header
-            else:
-                return self.isotopes[section]
-        return super().headerData(section, orientation, role)
-
-    def flags(
-        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
-    ) -> QtCore.Qt.ItemFlag:
-        return super().flags(index) | QtCore.Qt.ItemFlag.ItemIsEditable
+# def headerData(
+#     self,
+#     section: int,
+#     orientation: QtCore.Qt.Orientation,
+#     role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+# ) -> str:
+#     if role == QtCore.Qt.ItemDataRole.DisplayRole:
+#         if orientation == QtCore.Qt.Orientation.Horizontal:
+#             unit = self.units[section]
+#             header = self.HEADERS[section]
+#             if unit != "":
+#                 header += f" ({unit})"
+#             return header
+#         else:
+#             return self.isotopes[section]
+#     return super().headerData(section, orientation, role)
+#
+# def flags(
+#     self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+# ) -> QtCore.Qt.ItemFlag:
+#     return super().flags(index) | QtCore.Qt.ItemFlag.ItemIsEditable
 
 
-class ValueDelegate(QtWidgets.QStyledItemDelegate):
+class ComboHeaderView(QtWidgets.QHeaderView):
+    """
+    Params:
+        selection_items: dict of section numbers to combobox items
+        orientation: header type, horizontal or vertical
+    """
+
+    sectionChanged = QtCore.Signal(int)
+
     def __init__(
         self,
-        units: dict[str, float],
-        default_unit: str | None = None,
-        format: int = 6,
-        parent: QtCore.QObject | None = None,
+        section_items: dict[int, list[str]],
+        orientation: QtCore.Qt.Orientation = QtCore.Qt.Orientation.Horizontal,
+        parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__(parent)
-        self.default_unit = default_unit
-        self.units = units
-        self.format = format
+        super().__init__(orientation, parent)
 
-    def setDefaultUnit(self, unit: str) -> None:
-        self.default_unit = unit
+        self.section_items = section_items
 
-    def createEditor(
-        self,
-        parent: QtWidgets.QWidget,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> QtWidgets.QWidget:
-        editor = ValueWidget(parent=parent)
-        editor.setFrame(False)
-        return editor
+    def showComboBox(self, section: int) -> None:
+        items = self.section_items.get(section, [])
+        widget = QtWidgets.QComboBox(self)
+        widget.addItems(items)
+        widget.setCurrentText(self.model().headerData(section, self.orientation()))
 
-    def setEditorData(
-        self,
-        editor: QtWidgets.QWidget,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> None:
-        value = index.data(QtCore.Qt.ItemDataRole.UserRole)
-        assert isinstance(editor, ValueWidget)
-        editor.setValue(value)
+        pos = self.sectionViewportPosition(section)
+        size = self.sectionSizeFromContents(section)
 
-    def setModelData(
-        self,
-        editor: QtWidgets.QWidget,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> None:
-        assert isinstance(editor, UnitsWidget)
-        model.setData(index, editor.value(), QtCore.Qt.ItemDataRole.UserRole)
+        widget.setGeometry(QtCore.QRect(pos, 0, size.width(), size.height()))
+        widget.currentTextChanged.connect(
+            lambda value: self.model().setHeaderData(
+                section, self.orientation(), value, QtCore.Qt.ItemDataRole.EditRole
+            )
+        )
+        widget.currentTextChanged.connect(lambda: self.sectionChanged.emit(section))
+        widget.currentTextChanged.connect(widget.deleteLater)
+        widget.showPopup()
 
-
-class UnitsDelegate(QtWidgets.QStyledItemDelegate):
-    def __init__(
-        self,
-        units: dict[str, float],
-        default_unit: str | None = None,
-        format: int = 6,
-        parent: QtCore.QObject | None = None,
-    ):
-        super().__init__(parent)
-        self.units = units
-        self.format = format
-
-    def createEditor(
-        self,
-        parent: QtWidgets.QWidget,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> QtWidgets.QWidget:
-        editor = UnitsWidget(self.units, format=self.format, parent=parent)
-        return editor
-
-    # def closeAndCommitEditor(self) -> None:
-    #     sender = self.sender()
-    #     assert isinstance(sender, UnitsWidget)
-    #     self.commitData.emit(sender)
-
-    def setEditorData(
-        self,
-        editor: QtWidgets.QWidget,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> None:
-        value = index.data(QtCore.Qt.ItemDataRole.UserRole)
-        unit = index.data(QtCore.Qt.ItemDataRole.UserRole - 1)
-        assert isinstance(editor, UnitsWidget)
-        editor.setUnit(unit)
-        editor.setBaseValue(value)
-        editor.lineedit.grabKeyboard()
-
-    def setModelData(
-        self,
-        editor: QtWidgets.QWidget,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> None:
-        assert isinstance(editor, UnitsWidget)
-        model.setItemData(
-            index,
-            {
-                QtCore.Qt.ItemDataRole.UserRole: editor.baseValue(),
-                QtCore.Qt.ItemDataRole.UserRole - 1: editor.unit(),
-            },
+    def sectionSizeFromContents(self, logicalIndex: int) -> QtCore.QSize:
+        size = super().sectionSizeFromContents(logicalIndex)
+        option = QtWidgets.QStyleOptionComboBox()
+        option.initFrom(self)
+        return self.style().sizeFromContents(
+            QtWidgets.QStyle.ContentsType.CT_ComboBox, option, size
         )
 
-class ComboDelegate(QtWidgets.QStyledItemDelegate):
-    def __init__(self, options: list, parent: QtWidgets.QWidget|None=None):
-        super().__init__(parent=parent)
-        self.options = options
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        logicalIndex = self.logicalIndexAt(event.position().toPoint())
+        if logicalIndex in self.section_items:
+            self.showComboBox(logicalIndex)
+        else:
+            super().mousePressEvent(event)
 
-    def createEditor(
-        self,
-        parent: QtWidgets.QWidget,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> QtWidgets.QWidget:
-        editor = QtWidgets.QComboBox(parent=parent)
-        editor.addItems(self.options)
-        return editor
-
-
-    def setEditorData(
-        self,
-        editor: QtWidgets.QWidget,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    def paintSection(
+        self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
     ) -> None:
-        assert isinstance(editor, QtWidgets.QComboBox)
-        editor.setCurrentText(index.data(QtCore.Qt.ItemDataRole.EditRole))
+        option = QtWidgets.QStyleOptionComboBox()
+        option.initFrom(self)
+        option.rect = rect  # type: ignore
+        option.currentText = str(  # type: ignore
+            self.model().headerData(logicalIndex, self.orientation())
+        )
+        if logicalIndex not in self.section_items:
+            option.subControls = (  # type: ignore
+                option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow  # type: ignore
+            )
 
-    def setModelData(
-        self,
-        editor: QtWidgets.QWidget,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> None:
-        assert isinstance(editor, QtWidgets.QComboBox)
-        model.setData(index, editor.currentText(), QtCore.Qt.ItemDataRole.EditRole)
+        if self.hasFocus():
+            option.state = QtWidgets.QStyle.StateFlag.State_Selected  # type: ignore
+
+        self.style().drawComplexControl(
+            QtWidgets.QStyle.ComplexControl.CC_ComboBox, option, painter
+        )
+        self.style().drawControl(
+            QtWidgets.QStyle.ControlElement.CE_ComboBoxLabel, option, painter
+        )
+
+
+# class IsotopeOptionsModel(QtCore.QAbstractItemModel):
+#     def setData(index :QtCore.QModelIndex|QtCore.QPersistentModelIndex, value:Any, role: int = QtCore.Qt.ItemDataRole.EditRole) -> bool:
+#         if not index.isValid():
+#             return False
+#
+#         if role == QtCore.Qt.ItemDataRole.EditRole:
+#             self.
+
+
+class IsotopeOptionTable(BasicTable):
+    HEADER_UNITS = {
+        "Density": density_units,
+        "Response": response_units,
+        "Mass Fraction": None,
+        # "Diameter": size_units,
+        # "Concentration": mass_concentration_units,
+    }
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(0, 3, parent=parent)
+
+        header_items = {}
+        for i, (key, units) in enumerate(self.HEADER_UNITS.items()):
+            if units is None:
+                continue
+            header_items[i] = [f"{key} ({unit})" for unit in units.keys()]
+
+        self.header = ComboHeaderView(header_items)
+        self.current_units = {0: density_units["g/cm³"], 1: response_units["L/µg"]}
+
+        self.header.sectionChanged.connect(self.adjustSectionValues)
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.setHorizontalHeader(self.header)
+        self.setHorizontalHeaderLabels(
+            ["Density (g/cm³)", "Response (L/µg)", "Mass Fraction"]
+        )
+
+    def unitForSection(self, section: int) -> float:
+        text = self.model().headerData(section, QtCore.Qt.Orientation.Horizontal)
+        m = re.match("([\\w ]+) \\((.+)\\)", text)
+        if m is None:
+            return 1.0
+        return self.HEADER_UNITS[m.group(1)][m.group(2)]
+
+    def adjustSectionValues(self, section: int) -> None:
+        if section not in self.current_units:
+            return
+        current = self.current_units[section]
+        new = self.unitForSection(section)
+        self.current_units[section] = new
+
+        for row in range(self.rowCount()):
+            item = self.item(row, section)
+            if item is not None:
+                value = (
+                    float(item.data(QtCore.Qt.ItemDataRole.EditRole)) * current / new
+                )
+                item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
+
+    def baseValueForItem(self, row: int, column: int) -> float | None:
+        item = self.item(row, column)
+        if item is None:
+            return None
+        try:
+            value = float(item.data(QtCore.Qt.ItemDataRole.EditRole))
+            if column in self.current_units:
+                value *= self.current_units[column]
+            return value
+        except ValueError:
+            return None
+
+    def asIsotopeOptions(self) -> dict[str, SPCalIsotopeOptions]:
+        options = {}
+        for row in range(self.rowCount()):
+            label = self.verticalHeaderItem(row).text()
+            options[label] = SPCalIsotopeOptions(
+                self.baseValueForItem(row, 0),
+                self.baseValueForItem(row, 1),
+                self.baseValueForItem(row, 2),
+            )
+        return options
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
@@ -356,16 +393,19 @@ if __name__ == "__main__":
     # model.base_values = np.full((3, 3), np.nan)
     # model.isotopes = ["Ti42", "Fe56", "Au197"]
     #
-    # # table = BasicTable(4, 3)
-    # # table.setHorizontalHeader(header)
-    # # table.setHorizontalHeaderLabels(["Density", "Response", "Mass Fraction"])
+    table = IsotopeOptionTable()
+    table.setRowCount(3)
+    table.setVerticalHeaderLabels(["Ti42", "Fe56", "Au197"])
+    # table.setHorizontalHeader(header)
+    # table.horizontalHeader().sectionPressed.disconnect()
+    # table.setHorizontalHeaderLabels(["Density (g/cm³)", "Response", "Mass Fraction"])
     # # table.setVerticalHeaderLabels(["", "Ti42", "Fe56", "Au197"])
     # # model.insertRows(0, 3)
     #
     # density_delegate = UnitsDelegate(density_units, "g/cm³")
     # table.setItemDelegateForColumn(0, density_delegate)
-    table = BasicTable(4, 3)
-    table.setItemDelegateForRow(0, ComboDelegate(list(density_units.keys())))
+    # table = BasicTable(4, 3)
+    # table.setItemDelegateForRow(0, ComboDelegate(list(density_units.keys())))
     # # table.setItemDelegateForColumn(
     # #     1,
     # #     UnitsDelegate(
