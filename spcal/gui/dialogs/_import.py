@@ -2,17 +2,15 @@ import json
 import logging
 import re
 from pathlib import Path
-from types import TracebackType
 
 import h5py
 import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import search_sorted_closest
-from spcal.datafile import SPCalDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
 from spcal.gui.graphs import viridis_32
-from spcal.gui.util import Worker
+from spcal.gui.modelviews import CheckableHeaderView
 from spcal.gui.widgets import (
     CheckableComboBox,
     ElidedLabel,
@@ -89,100 +87,6 @@ class _ImportDialogBase(QtWidgets.QDialog):
         return True
 
 
-class CheckableHeader(QtWidgets.QHeaderView):
-    checkStateChanged = QtCore.Signal(int, QtCore.Qt.CheckState)
-
-    def __init__(
-        self,
-        orientation: QtCore.Qt.Orientation,
-        parent: QtWidgets.QWidget | None = None,
-    ):
-        super().__init__(orientation, parent)
-
-        self._checked: dict[int, QtCore.Qt.CheckState] = {}
-
-    def checkState(self, logicalIndex: int) -> QtCore.Qt.CheckState:
-        assert logicalIndex >= 0 and logicalIndex < self.count()
-        return self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
-
-    def setCheckState(self, logicalIndex: int, state: QtCore.Qt.CheckState) -> None:
-        assert logicalIndex >= 0 and logicalIndex < self.count()
-        if self.checkState(logicalIndex) != state:
-            self._checked[logicalIndex] = state
-            self.checkStateChanged.emit(logicalIndex, state)
-
-    def sectionSizeFromContents(self, logicalIndex: int) -> QtCore.QSize:
-        size = super().sectionSizeFromContents(logicalIndex)
-        option = QtWidgets.QStyleOptionButton()
-        cb_size = self.style().sizeFromContents(
-            QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
-        )
-        size.setWidth(size.width() + cb_size.width())
-        return size
-
-    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
-        if self.cursor().shape() in [  # resizing, ignore custom code
-            QtCore.Qt.CursorShape.SplitHCursor,
-            QtCore.Qt.CursorShape.SplitVCursor,
-        ]:
-            return super().mousePressEvent(event)
-
-        logicalIndex = self.logicalIndexAt(event.position().toPoint())
-        if logicalIndex >= 0 and logicalIndex < self.count():
-            state = self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
-
-            if QtCore.Qt.KeyboardModifier.ShiftModifier & event.modifiers():
-                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
-
-                for idx in range(0, self.count()):
-                    if idx == logicalIndex:
-                        continue
-                    self.setCheckState(idx, QtCore.Qt.CheckState.Unchecked)
-
-            elif state == QtCore.Qt.CheckState.Checked:
-                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Unchecked)
-            else:
-                self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
-
-            self.viewport().update()
-
-    def paintSection(
-        self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
-    ) -> None:
-        painter.save()
-        super().paintSection(painter, rect, logicalIndex)
-        painter.restore()
-
-        size = super().sectionSizeFromContents(logicalIndex)
-        option = QtWidgets.QStyleOptionButton()
-        cb_size = self.style().sizeFromContents(
-            QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
-        )
-
-        option.rect = QtCore.QRect(  # type: ignore , works
-            rect.left(),
-            rect.center().y() - cb_size.height() // 2,
-            cb_size.width(),
-            cb_size.height(),
-        )
-        option.state = (  # type: ignore , works
-            QtWidgets.QStyle.StateFlag.State_Enabled
-            | QtWidgets.QStyle.StateFlag.State_Active
-        )
-
-        state = self.checkState(logicalIndex)
-        if state == QtCore.Qt.CheckState.Checked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_On  # type: ignore , works
-        elif state == QtCore.Qt.CheckState.Unchecked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_Off  # type: ignore , works
-        else:
-            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange  # type: ignore , works
-
-        self.style().drawControl(
-            QtWidgets.QStyle.ControlElement.CE_CheckBox, option, painter
-        )
-
-
 class TextImportDialog(_ImportDialogBase):
     HEADER_COUNT = 20
     DELIMITERS = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
@@ -222,7 +126,7 @@ class TextImportDialog(_ImportDialogBase):
         self.table.setColumnCount(column_count)
         self.table.setRowCount(self.HEADER_COUNT)
         self.table.setFont(QtGui.QFont("Courier"))
-        self.table_header = CheckableHeader(QtCore.Qt.Orientation.Horizontal)
+        self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
@@ -440,15 +344,60 @@ class TextImportDialog(_ImportDialogBase):
         super().accept()
 
 
+class NuReadIntegsThread(QtCore.QThread):
+    integRead = QtCore.Signal(int)
+
+    def __init__(
+        self,
+        path: Path,
+        index: list[dict],
+        cycle: int | None = None,
+        segment: int | None = None,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent)
+        self.path = path
+        self.index = index
+        self.cyc_number = cycle
+        self.seg_number = segment
+
+        self.datas: list[np.ndarray] = []
+
+    def run(self):
+        for idx in self.index:
+            if self.isInterruptionRequested():
+                break
+            binary_path = self.path.joinpath(f"{idx['FileNum']}.integ")
+            if binary_path.exists():
+                data = nu.read_integ_binary(
+                    binary_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
+                if self.cyc_number is not None:
+                    data = data[data["cyc_number"] == self.cyc_number]
+                if self.seg_number is not None:
+                    data = data[data["seg_number"] == self.seg_number]
+                self.datas.append(data)
+            else:
+                logger.warning(  # pragma: no cover, missing files
+                    f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
+                )
+            self.integRead.emit(idx)
+
+
 class NuImportDialog(_ImportDialogBase):
-    def __init__(self, path: str | Path, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        path: str | Path,
+        existing_file: SPCalDataFile | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(path, "SPCal Nu Instruments Import", parent)
 
         self.progress = QtWidgets.QProgressBar()
-        self.aborted = False
-        self.running = False
-
-        self.threadpool = QtCore.QThreadPool()
+        self.import_thread: NuReadIntegsThread | None = None
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -462,7 +411,7 @@ class NuImportDialog(_ImportDialogBase):
         for idx in self.index:
             first_path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
             if first_path.exists():
-                data = nu.read_nu_integ_binary(
+                data = nu.read_integ_binary(
                     first_path,
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
@@ -473,7 +422,7 @@ class NuImportDialog(_ImportDialogBase):
             raise ValueError("NuImportDialog: no valid integ files found.")
 
         self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
-        self.masses = nu.get_masses_from_nu_data(
+        self.masses = nu.masses_from_integ(
             data[0],
             self.info["MassCalCoefficients"],
             self.segmentDelays(),
@@ -483,6 +432,8 @@ class NuImportDialog(_ImportDialogBase):
         isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
 
         self.table = PeriodicTableSelector(enabled_isotopes=isotopes)
+        if isinstance(existing_file, SPCalNuDataFile):
+            self.table.setSelectedIsotopes(existing_file.isotopes)
         self.table.isotopesChanged.connect(self.completeChanged)
 
         self.layout_body.addWidget(self.table, 1)
@@ -490,25 +441,41 @@ class NuImportDialog(_ImportDialogBase):
 
         # Set info and defaults
         method = self.info["MethodFile"]
-        self.box_info.layout().addRow(
+        self.box_info_layout.addRow(
             "Method:", QtWidgets.QLabel(method[method.rfind("\\") + 1 :])
         )
-        self.box_info.layout().addRow(
+        self.box_info_layout.addRow(
             "Events:",
             QtWidgets.QLabel(str(self.info["ActualRecordLength"])),
         )
-        self.box_info.layout().addRow(
+        # event_time = UnitsWidget(
+        #     default_unit="ms",
+        #     units=time_units,
+        #     base_value=nu.get_dwelltime_from_info(self.info),
+        # )
+        # event_time.setReadOnly(True)
+        # self.box_info_layout.addRow(
+        #     "Event time:",
+        #     event_time,
+        # )
+        self.box_info_layout.addRow(
+            "Event time:",
+            QtWidgets.QLabel(f"{nu.eventtime_from_info(self.info) * 1000} ms"),
+        )
+        self.box_info_layout.addRow(
             "Integrations:",
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
 
         self.cycle_number = QtWidgets.QSpinBox()
-        self.cycle_number.setRange(1, self.info["CyclesWritten"])
-        self.cycle_number.setValue(1)
+        self.cycle_number.setRange(0, self.info["CyclesWritten"])
+        self.cycle_number.setValue(0)
+        self.cycle_number.setSpecialValueText("All")
 
         self.segment_number = QtWidgets.QSpinBox()
-        self.segment_number.setRange(1, len(self.info["SegmentInfo"]))
-        self.segment_number.setValue(1)
+        self.segment_number.setRange(0, len(self.info["SegmentInfo"]))
+        self.segment_number.setValue(0)
+        self.segment_number.setSpecialValueText("All")
 
         # self.file_number = QtWidgets.QSpinBox()
         # self.file_number.setRange(1, len(self.index))
@@ -517,42 +484,39 @@ class NuImportDialog(_ImportDialogBase):
         self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
         self.checkbox_blanking.setChecked(True)
 
-        self.box_options.layout().addRow("Cycle:", self.cycle_number)
-        self.box_options.layout().addRow("Segment:", self.segment_number)
+        self.box_options_layout.addRow("Cycle:", self.cycle_number)
+        self.box_options_layout.addRow("Segment:", self.segment_number)
         # self.box_options.layout().addRow("Max file:", self.file_number)
-        self.box_options.layout().addRow(self.checkbox_blanking)
-
-        self.dwelltime.setBaseValue(nu.get_dwelltime_from_info(self.info))
-        self.dwelltime.setBestUnit()
+        self.box_options_layout.addRow(self.checkbox_blanking)
 
         self.table.setFocus()
 
-    def dataForScreening(self, size: int) -> np.ndarray:
-        options = self.importOptions()
-        integ_size = self.signals.shape[0]
-        _, data, _ = nu.read_nu_directory(
-            options["path"],
-            max_integ_files=int(size / integ_size) + 1,
-            autoblank=False,
-            cycle=options["cycle"],
-            segment=options["segment"],
-        )
-        return data
-
-    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
-        masses = self.masses[idx]
-        unit_masses = np.round(masses).astype(int)
-        isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
-        isotopes = isotopes[isotopes["Preferred"] > 0]  # limit to best isotopes
-        self.table.setSelectedIsotopes(isotopes)
-
-        idx = np.argsort(unit_masses)
-        ppm, unit_masses = ppm[idx], unit_masses[idx]  # sort by mass
-
-        idx = np.searchsorted(unit_masses, isotopes["Isotope"], side="right") - 1
-        cidx = (ppm[idx] / ppm[idx].max() * (len(viridis_32) - 1)).astype(int)
-
-        self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
+    # def dataForScreening(self, size: int) -> np.ndarray:
+    #     options = self.importOptions()
+    #     integ_size = self.signals.shape[0]
+    #     _, data, _ = nu.read_nu_directory(
+    #         options["path"],
+    #         max_integ_files=int(size / integ_size) + 1,
+    #         autoblank=False,
+    #         cycle=options["cycle"],
+    #         segment=options["segment"],
+    #     )
+    #     return data
+    #
+    # def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
+    #     masses = self.masses[idx]
+    #     unit_masses = np.round(masses).astype(int)
+    #     isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
+    #     isotopes = isotopes[isotopes["Preferred"] > 0]  # limit to best isotopes
+    #     self.table.setSelectedIsotopes(isotopes)
+    #
+    #     idx = np.argsort(unit_masses)
+    #     ppm, unit_masses = ppm[idx], unit_masses[idx]  # sort by mass
+    #
+    #     idx = np.searchsorted(unit_masses, isotopes["Isotope"], side="right") - 1
+    #     cidx = (ppm[idx] / ppm[idx].max() * (len(viridis_32) - 1)).astype(int)
+    #
+    #     self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
 
     def segmentDelays(self) -> dict[int, float]:
         return {
@@ -560,231 +524,96 @@ class NuImportDialog(_ImportDialogBase):
         }
 
     def isComplete(self) -> bool:
-        isotopes = self.table.selectedIsotopes()
-        return isotopes is not None and self.dwelltime.hasAcceptableInput()
-
-    def importOptions(self) -> dict:
-        return {
-            "importer": "nu",
-            "path": self.file_path,
-            "dwelltime": self.dwelltime.baseValue(),
-            "isotopes": self.table.selectedIsotopes(),
-            "cycle": self.cycle_number.value(),
-            "segment": self.segment_number.value(),
-            "blanking": self.checkbox_blanking.isChecked(),
-            "single ion area": float(self.info["AverageSingleIonArea"]),
-            "accumulations": int(
-                self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-            ),
-        }
-
-    def setImportOptions(
-        self, options: dict, path: bool = False, dwelltime: bool = True
-    ) -> None:
-        super().setImportOptions(options, path, dwelltime)
-        self.table.setSelectedIsotopes(options["isotopes"])
-        self.cycle_number.setValue(options["cycle"])
-        self.segment_number.setValue(options["segment"])
-        self.checkbox_blanking.setChecked(bool(options["blanking"]))
+        return self.table.selectedIsotopes() is not None
 
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
-        self.dwelltime.setEnabled(enabled)
 
-    def threadComplete(self) -> None:
-        if self.aborted:
-            return
-
+    def updateProgress(self):
         self.progress.setValue(self.progress.value() + 1)
 
-        if self.progress.value() == self.progress.maximum() and self.running:
-            self.finalise()
-
-    def threadFailed(
-        self, etype: type, value: BaseException, tb: TracebackType | None = None
-    ) -> None:
-        if self.aborted:
-            return
-
-        self.abort()
-
-        logger.exception("Thread exception", exc_info=(etype, value, tb))
-        QtWidgets.QMessageBox.critical(self, "Import Failed", str(value))
-
-    def abort(self) -> None:
-        self.aborted = True
-        self.threadpool.clear()
-        self.threadpool.waitForDone()
-        self.progress.reset()
-        self.running = False
-
-        self.signals = None
-
-        self.setControlsEnabled(True)
-
     def accept(self) -> None:
-        def read_signals_and_idx(
-            root: Path,
-            idx: dict,
-            cyc_number: int,
-            seg_number: int,
-            num_acc: int,
-            selected_mass_idx: np.ndarray,
-        ) -> tuple[np.ndarray, np.ndarray]:
-            path = root.joinpath(f"{idx['FileNum']}.integ")
-            integ = nu.read_nu_integ_binary(
-                path, idx["FirstCycNum"], idx["FirstSegNum"], idx["FirstAcqNum"]
-            )
-            integ = integ[
-                (integ["cyc_number"] == cyc_number)
-                & (integ["seg_number"] == seg_number)
-            ]
-
-            signals = integ["result"]["signal"][:, selected_mass_idx]
-            mass_idx = (integ["acq_number"] // num_acc) - 1
-            return signals, mass_idx
-
         self.setControlsEnabled(False)
 
-        self.aborted = False
-        self.running = True
         self.progress.setValue(0)
         self.progress.setMaximum(len(self.index))
 
-        isotopes = self.table.selectedIsotopes()
-        assert isotopes is not None
-        selected_idx = search_sorted_closest(
-            self.masses, np.array([i["Mass"] for i in isotopes]), check_max_diff=0.1
+        cycle = self.cycle_number.value()
+        if cycle == 0:
+            cycle = None
+        segment = self.segment_number.value()
+        if segment == 0:
+            segment = None
+
+        self.import_thread = NuReadIntegsThread(
+            self.file_path, self.index, cycle, segment
         )
-        num_acc = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-
-        self.signals = np.full(
-            (self.info["TotalAcquisitions"], len(selected_idx)),
-            np.nan,
-            dtype=np.float32,
-        )
-
-        for idx in self.index:
-            path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
-            # if idx["FileNum"] > self.file_number.value():
-            #     self.progress.setValue(self.progress.value() + 1)
-            #     continue
-            # elif not path.exists():
-            if not path.exists():
-                logger.warning(
-                    f"NuImportDialog: missing integ file {idx['FileNum']}, skipping"
-                )
-                self.progress.setValue(self.progress.value() + 1)
-                continue
-            worker = Worker(
-                read_signals_and_idx,
-                self.file_path,
-                idx,
-                self.cycle_number.value(),
-                self.segment_number.value(),
-                num_acc,
-                selected_idx,
-            )
-            worker.setAutoDelete(True)
-            worker.signals.result.connect(self.addDataToSignals)
-            worker.signals.finished.connect(self.threadComplete)
-            worker.signals.exception.connect(self.threadFailed)
-            self.threadpool.start(worker)
-
-    def addDataToSignals(self, result: tuple[np.ndarray, np.ndarray]) -> None:
-        if self.aborted:
-            return
-
-        try:
-            x, idx = result[0], result[1]
-            self.signals[idx] = x
-        except Exception as e:
-            logger.exception(e)
-            msg = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Warning,
-                "Import Failed",
-                str(e),
-                parent=self,
-            )
-            msg.exec()
-            self.abort()
+        self.import_thread.integRead.connect(self.updateProgress)
+        self.import_thread.finished.connect(self.finalise)
+        self.import_thread.start()
 
     def finalise(self) -> None:
-        if not self.threadpool.waitForDone(1000):
-            logger.warning("could not remove all threads at finalise")
+        if self.import_thread is None or self.import_thread.isInterruptionRequested():
+            self.progress.reset()
+            self.setControlsEnabled(True)
+            return
 
-        self.threadpool.clear()
-        self.running = False
+        # Get masses from data
+        integs = self.import_thread.datas
 
-        isotopes = self.table.selectedIsotopes()
-        assert isotopes is not None
+        segment_delays = {
+            s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
+        }
 
-        if self.checkbox_blanking.isChecked():  # auto-blank
-            try:
-                selected_masses = np.array([i["Mass"] for i in isotopes])
+        accumulations = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
 
-                autob_events = nu.collect_nu_autob_data(
+        # Get masses from data
+        masses = nu.masses_from_integ(
+            integs[0], self.info["MassCalCoefficients"], segment_delays
+        )[0]
+        signals = nu.signals_from_integs(integs, accumulations)
+
+        times = nu.times_from_integs(integs, self.info) * 1e-9
+
+        # if not raw:
+        signals /= self.info["AverageSingleIonArea"]
+
+        # Blank out overrange regions
+        if self.checkbox_blanking.isChecked():
+            autobs = np.concatenate(
+                nu.read_binaries_in_index(
                     self.file_path,
                     self.autob_index,
-                    cyc_number=self.cycle_number.value(),
-                    seg_number=self.segment_number.value(),
+                    "autob",
+                    nu.read_autob_binary,
+                    cyc_number=self.import_thread.cyc_number,
+                    seg_number=self.import_thread.seg_number,
                 )
-                num_acc = (
-                    self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-                )
+            )
+            signals = nu.apply_autoblanking(
+                autobs,
+                signals,
+                masses,
+                accumulations,
+                self.info["BlMassCalStartCoef"],
+                self.info["BlMassCalEndCoef"],
+            )
 
-                self.signals = nu.blank_nu_signal_data(
-                    autob_events,
-                    self.signals,
-                    selected_masses,
-                    num_acc,
-                    self.info["BlMassCalStartCoef"],
-                    self.info["BlMassCalEndCoef"],
-                )
-
-            except Exception as e:
-                logger.exception(e)
-                msg = QtWidgets.QMessageBox(
-                    QtWidgets.QMessageBox.Warning, "Import Failed", str(e), parent=self
-                )
-                msg.exec()
-                self.abort()
-                return
-
-        # if self.file_number.value() < len(self.index):
-        #     end = (
-        #         self.index[self.file_number.value() + 1]["FirstAcqNum"] // num_acc
-        #     ) - 1
-        #     self.signals = self.signals[:end]
-
-        # Divide by the single ion area to convert to counts
-        self.signals /= self.info["AverageSingleIonArea"]
-
-        dtype = np.dtype(
-            {
-                "names": [f"{i['Symbol']}{i['Isotope']}" for i in isotopes],
-                "formats": [np.float32 for _ in isotopes],
-            }
+        selected_isotopes = self.table.selectedIsotopes()
+        assert selected_isotopes is not None
+        isotopes = [f"{i['Isotope']}{i['Symbol']}" for i in selected_isotopes]
+        self.dataImported.emit(
+            SPCalNuDataFile(self.file_path, signals, times, masses, self.info),
+            isotopes,
         )
-
-        self.signals = rfn.unstructured_to_structured(self.signals, dtype=dtype)
-
-        options = self.importOptions()
-        self.dataImported.emit(self.signals, options)
-        logger.info(
-            f"Nu instruments data loaded from {self.file_path} "
-            f"({self.info['TotalAcquisitions']} events)."
-        )
-
         super().accept()
 
     def reject(self) -> None:
-        if self.running:
-            self.abort()
+        if self.import_thread is not None:
+            self.import_thread.requestInterruption()
         else:
-            self.signals = None
             super().reject()
 
 
