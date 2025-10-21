@@ -132,7 +132,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.name = db["elements"][db["elements"]["Symbol"] == self.symbol]["Name"][0]
         self.number = isotopes["Number"][0]
 
-        self.indicator: QtGui.QColot | None = None
+        self.indicator: QtGui.QColor | None = None
 
         self.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.DelayedPopup)
         self.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
@@ -143,26 +143,34 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.action.setCheckable(True)
         self.setDefaultAction(self.action)
 
-        self.actions = {iso["Isotope"]: self.createAction(iso) for iso in self.isotopes}
+        self.isotope_actions = {
+            iso["Isotope"]: self.createAction(iso) for iso in self.isotopes
+        }
         if enabled is not None:
-            for isotope, action in self.actions.items():
+            for isotope, action in self.isotope_actions.items():
                 action.setEnabled(isotope in enabled["Isotope"])
 
         isotopes_menu = QtWidgets.QMenu("Isotopes", parent=self)
-        isotopes_menu.addActions(list(self.actions.values()))
+        isotopes_menu.addActions(list(self.isotope_actions.values()))
 
         isotopes_menu.installEventFilter(KeepMenuOpenFilter(isotopes_menu))
 
         self.setMenu(isotopes_menu)
-        self.setEnabled(any(action.isEnabled() for action in self.actions.values()))
+        self.setEnabled(
+            any(action.isEnabled() for action in self.isotope_actions.values())
+        )
 
         self.clicked.connect(self.selectPreferredIsotopes)
         self.isotopesChanged.connect(self.updateChecked)
 
     def preferred(self) -> np.ndarray:
+        print("called", self.isotopes)
         pref = self.isotopes["Preferred"] > 0
         if not np.any(pref):
-            return self.isotopes[np.nanargmax(self.isotopes["Composition"])]
+            if np.all(np.isnan(self.isotopes["Composition"])):
+                return self.isotopes[0]
+            else:
+                return self.isotopes[np.nanargmax(self.isotopes["Composition"])]
         return self.isotopes[pref]
 
     def createAction(self, isotope: np.ndarray) -> QtGui.QAction:
@@ -176,16 +184,20 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         return action
 
     def enabledIsotopes(self) -> np.ndarray:
-        nums = np.array([n for n, action in self.actions.items() if action.isEnabled()])
+        nums = np.array(
+            [n for n, action in self.isotope_actions.items() if action.isEnabled()]
+        )
         return self.isotopes[np.isin(self.isotopes["Isotope"], nums)]
 
     def selectedIsotopes(self) -> np.ndarray:
-        nums = np.array([n for n, action in self.actions.items() if action.isChecked()])
+        nums = np.array(
+            [n for n, action in self.isotope_actions.items() if action.isChecked()]
+        )
         return self.isotopes[np.isin(self.isotopes["Isotope"], nums)]
 
     def selectPreferredIsotopes(self, checked: bool) -> None:
         preferred = self.preferred()
-        for num, action in self.actions.items():
+        for num, action in self.isotope_actions.items():
             if checked and np.isin(num, preferred["Isotope"]):
                 action.setChecked(True)
             else:
@@ -294,11 +306,11 @@ class PeriodicTableSelector(QtWidgets.QWidget):
     def setSelectedIsotopes(self, isotopes: np.ndarray | None) -> None:
         self.blockSignals(True)
         for button in self.buttons.values():
-            for action in button.actions.values():
+            for action in button.isotope_actions.values():
                 action.setChecked(False)
         if isotopes is not None:
             for isotope in isotopes:
-                self.buttons[isotope["Symbol"]].actions[isotope["Isotope"]].setChecked(
+                self.buttons[isotope["Symbol"]].isotope_actions[isotope["Isotope"]].setChecked(
                     True
                 )
         self.blockSignals(False)
@@ -328,7 +340,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
                 other_selected = selected[selected["Symbol"] != symbol]["Isotope"]
 
             collisions = 0
-            for num, action in button.actions.items():
+            for num, action in button.isotope_actions.items():
                 if num in other_selected:
                     action.setIcon(QtGui.QIcon.fromTheme("folder-important"))
                     collisions += 1
