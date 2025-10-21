@@ -14,8 +14,10 @@ from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
+from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -31,64 +33,59 @@ MAX_RECENT_FILES = 10
 sf = 4
 
 
-# class SPCalSignalGraph(QtWidgets.QWidget):
-#     def __init__(self,)
+class SPCalSignalGraph(QtWidgets.QWidget):
+    isotopeChanged = QtCore.Signal(str)
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Signal Graph")
+
+        settings = QtCore.QSettings()
+        font = QtGui.QFont(
+            str(settings.value("GraphFont/Family", "SansSerif")),
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
+        )
+
+        self.combo_isotope = QtWidgets.QComboBox()
+        self.combo_isotope.currentTextChanged.connect(self.isotopeChanged)
+
+        self.graph = ParticleView(font=font)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.graph, 1)
+        self.setLayout(layout)
+
+    def setIsotopes(self, isotopes: list[str]):
+        self.combo_isotope.blockSignals(True)
+        self.combo_isotope.clear()
+        self.combo_isotope.addItems(isotopes)
+        self.combo_isotope.blockSignals(False)
+        self.combo_isotope.currentTextChanged.emit(isotopes[0])
+
+    def drawSignal(self, isotope: str, signals: np.ndarray, times: np.ndarray):
+        self.graph.clear()
+        self.graph.drawSignal(isotope, times, signals)
+        self.graph.setDataLimits(xMin=0.0, xMax=1.0)
+        self.graph.region.setBounds((times[0], times[-1]))
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("SPCal")
-        self.resize(1000, 800)
+        self.resize(1600, 900)
 
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        # self.tabs = QtWidgets.QTabWidget()
-        # self.tabs.currentChanged.connect(self.onTabChanged)
-        #
-        # self.options = OptionsWidget()
-        # self.sample = SampleWidget(self.options)
-        # self.reference = ReferenceWidget(self.options)
-        # self.results = ResultsWidget(self.options, self.sample, self.reference)
-        #
-        # self.options.useManualLimits.connect(self.sample.io.setLimitsEditable)
-        # self.options.useManualLimits.connect(self.reference.io.setLimitsEditable)
-        #
-        # self.sample.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
-        # self.reference.io.requestIonicResponseTool.connect(self.dialogIonicResponse)
-        #
-        # self.sample.dataLoaded.connect(self.syncSampleAndReference)
-        # self.reference.dataLoaded.connect(self.syncSampleAndReference)
-        # self.sample.dataLoaded.connect(self.updateRecentFiles)
-        # self.reference.dataLoaded.connect(self.updateRecentFiles)
-        #
-        # self.options.optionsChanged.connect(self.onInputsChanged)
-        # self.sample.optionsChanged.connect(self.onInputsChanged)
-        # self.sample.detectionsChanged.connect(self.onInputsChanged)
-        # self.reference.optionsChanged.connect(self.onInputsChanged)
-        # self.reference.detectionsChanged.connect(self.onInputsChanged)
-        #
-        # self.options.optionsChanged.connect(self.results.requestUpdate)
-        # self.sample.optionsChanged.connect(self.results.requestUpdate)
-        # self.sample.detectionsChanged.connect(self.results.requestUpdate)
-        # self.reference.optionsChanged.connect(self.results.requestUpdate)
-        # self.reference.detectionsChanged.connect(self.results.requestUpdate)
-        #
-        # self.sample.namesEdited.connect(self.updateNames)
-        # self.reference.namesEdited.connect(self.updateNames)
-        # self.results.io.namesEdited.connect(self.updateNames)
-        #
-        # self.tabs.addTab(self.options, "Options")
-        # self.tabs.addTab(self.sample, "Sample")
-        # self.tabs.addTab(self.reference, "Reference")
-        # self.tabs.addTab(self.results, "Results")
-        #
-        # self.tabs.setTabEnabled(self.tabs.indexOf(self.reference), False)
-        # self.tabs.setTabEnabled(self.tabs.indexOf(self.results), False)
-        #
+        self.signal = SPCalSignalGraph()
+        self.signal.isotopeChanged.connect(self.drawIsotope)
+
         self.instrument_options = SPCalInstrumentOptionsDock()
         self.limit_options = SPCalLimitOptionsDock()
+
+        self.isotope_options = SPCalIsotopeOptionsDock()
 
         self.processing_method = SPCalProcessingMethod(
             self.instrument_options.asInstrumentOptions(),
@@ -104,18 +101,32 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.instrument_options.optionsChanged.connect(self.updateInstrumentOptions)
 
         self.files = SPCalDataFilesDock()
+        self.files.dataFileSelected.connect(self.updateForDataFile)
 
         self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
+            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
+            self.files,
+            QtCore.Qt.Orientation.Horizontal,
         )
         self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
+            self.instrument_options,
+            QtCore.Qt.Orientation.Vertical,
         )
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
+            self.limit_options,
+            QtCore.Qt.Orientation.Vertical,
+        )
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
+            self.isotope_options,
+            QtCore.Qt.Orientation.Vertical,
+        )
         widget = QtWidgets.QWidget()
 
         layout = QtWidgets.QVBoxLayout()
-        # layout.addWidget(self.tabs, 1)
+        layout.addWidget(self.signal, 1)
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
@@ -126,6 +137,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     self.sample.updateNames(names)
     #     self.reference.updateNames(names)
     #     self.results.updateNames(names)
+    def updateForDataFile(self, data_file: SPCalDataFile):
+        self.isotope_options.setIsotopes(data_file.isotopes)
+        self.signal.setIsotopes(data_file.isotopes)
+
+    def drawIsotope(self, isotope: str):
+        data_file = self.files.selectedDataFile()
+        if data_file is None:
+            return
+        self.signal.drawSignal(isotope, data_file[isotope], data_file.times)
+
     def updateInstrumentOptions(self) -> None:
         self.processing_method.instrument_options = (
             self.instrument_options.asInstrumentOptions()
@@ -347,6 +368,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.selectedDataFile(),
             screening_method=self.processing_method,
         )
+        print(dlg)
         dlg.dataImported.connect(self.sampleFileLoaded)
         dlg.open()
         return dlg
@@ -354,10 +376,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def sampleFileLoaded(self, data_file: SPCalDataFile) -> None:
         self.files.addDataFile(data_file)
         self.updateRecentFiles(data_file.path)
-        self.syncSampleAndReference()
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
         raise NotImplementedError
+
     #     self.results.updateResults()  # Force an update
     #     dlg = BatchProcessDialog(
     #         [],
@@ -372,6 +394,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #
     def dialogCalculator(self) -> CalculatorDialog:
         raise NotImplementedError
+
     #     dlg = CalculatorDialog(self.sample.names, self.sample.current_expr, parent=self)
     #     dlg.expressionAdded.connect(self.sample.addExpression)
     #     dlg.expressionRemoved.connect(self.sample.removeExpression)
@@ -382,6 +405,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dialogExportData(self) -> None:
         raise NotImplementedError
+
     #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
     #         self,
     #         "Save Data As",
@@ -437,6 +461,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dialogSaveSession(self) -> None:
         raise NotImplementedError
+
         def onFileSelected(file: str) -> None:
             path = Path(file).with_suffix(".spcal")
             saveSession(path, self.options, self.sample, self.reference, self.results)

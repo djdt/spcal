@@ -104,7 +104,6 @@ class UnitsWidget(QtWidgets.QWidget):
         self.lineedit.validator().setTop(top)
         self.updateValueFromBase()
         self.updateErrorFromBase()
-        print('unitchanged', unit)
         self.unitChanged.emit(unit)
 
     def updateValueFromBase(self) -> None:
