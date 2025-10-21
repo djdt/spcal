@@ -4,7 +4,7 @@ import numpy as np
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.main import SPCalWindow
-from spcal.io.nu import read_nu_directory, select_nu_signals
+from spcal.io.nu import read_directory, select_nu_signals
 from spcal.io.text import read_single_particle_file
 from spcal.io.tofwerk import read_tofwerk_file
 
@@ -116,7 +116,7 @@ def test_batch_export_nu(tmp_path: Path, qtbot: QtBot):
 
     path = Path(__file__).parent.parent.joinpath("data/nu")
 
-    masses, signals, info = read_nu_directory(path)
+    masses, signals, info = read_directory(path)
     data = select_nu_signals(masses, signals, selected_masses={"Ar40": 39.96238})
 
     window.options.compound_poisson.alpha.setValue(0.1)

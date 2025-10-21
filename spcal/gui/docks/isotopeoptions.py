@@ -65,7 +65,6 @@ class DoubleSpinBoxDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         assert isinstance(editor, QtWidgets.QDoubleSpinBox)
-        print(editor.value())
         value = editor.value()
         if value == editor.minimum():
             value = None

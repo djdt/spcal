@@ -76,6 +76,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("SPCal")
         self.resize(1600, 900)
 
+        self.setDockNestingEnabled(True)
+
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
@@ -106,22 +108,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
             self.files,
-            QtCore.Qt.Orientation.Horizontal,
         )
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
             self.instrument_options,
-            QtCore.Qt.Orientation.Vertical,
         )
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
             self.limit_options,
-            QtCore.Qt.Orientation.Vertical,
         )
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
             self.isotope_options,
-            QtCore.Qt.Orientation.Vertical,
         )
         widget = QtWidgets.QWidget()
 
@@ -138,8 +136,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     self.reference.updateNames(names)
     #     self.results.updateNames(names)
     def updateForDataFile(self, data_file: SPCalDataFile):
-        self.isotope_options.setIsotopes(data_file.isotopes)
-        self.signal.setIsotopes(data_file.isotopes)
+        self.isotope_options.setIsotopes(data_file.selected_isotopes)
+        self.signal.setIsotopes(data_file.selected_isotopes)
 
     def drawIsotope(self, isotope: str):
         data_file = self.files.selectedDataFile()
@@ -368,12 +366,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.selectedDataFile(),
             screening_method=self.processing_method,
         )
-        print(dlg)
         dlg.dataImported.connect(self.sampleFileLoaded)
         dlg.open()
         return dlg
 
-    def sampleFileLoaded(self, data_file: SPCalDataFile) -> None:
+    def sampleFileLoaded(
+        self, data_file: SPCalDataFile, selected_isotopes: list[str] | None = None
+    ) -> None:
+        if selected_isotopes is None:
+            selected_isotopes = data_file.preferred_isotopes
+        data_file.selected_isotopes = selected_isotopes
         self.files.addDataFile(data_file)
         self.updateRecentFiles(data_file.path)
 

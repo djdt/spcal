@@ -5,10 +5,10 @@ import numpy as np
 import pytest
 
 from spcal.io.nu import (
-    get_dwelltime_from_info,
+    eventtime_from_info,
     is_nu_directory,
     is_nu_run_info_file,
-    read_nu_directory,
+    read_directory,
     select_nu_signals,
     single_ion_distribution,
 )
@@ -29,7 +29,7 @@ def test_is_nu_dir():
 
 def test_io_nu_import():
     path = Path(__file__).parent.joinpath("data/nu")
-    masses, signals, info = read_nu_directory(path, cycle=1, segment=1)
+    masses, signals, info = read_directory(path, cycle=1, segment=1)
     assert masses.size == 194
     assert signals.shape == (15474, 194)
     signals = signals[np.all(~np.isnan(signals), axis=1), :]
@@ -58,12 +58,12 @@ def test_io_nu_import():
     # fmt: on
     assert np.all(signals[:, 193] == 0.0)  # uranium?
 
-    assert np.isclose(get_dwelltime_from_info(info), 8.289e-5)
+    assert np.isclose(eventtime_from_info(info), 8.289e-5)
 
 
 def test_io_nu_import_max_files():
     path = Path(__file__).parent.joinpath("data/nu")
-    masses, signals, info = read_nu_directory(
+    masses, signals, info = read_directory(
         path, max_integ_files=1, cycle=1, segment=1
     )
     assert masses.size == 194
@@ -75,14 +75,14 @@ def test_io_nu_import_autoblank(tmp_path: Path):
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
 
-    masses, signals, info = read_nu_directory(
+    masses, signals, info = read_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1
     )
     # blanking region of mass idx 10-14 at 32204 - 49999
     assert np.all(np.isnan(signals[32204:49999, 0:14]))
     assert np.all(~np.isnan(signals[32204:49999, 14:]))
 
-    masses, signals, info = read_nu_directory(
+    masses, signals, info = read_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank=False
     )
     assert np.all(~np.isnan(signals[32204:49999, 0:14]))
@@ -105,7 +105,7 @@ def test_single_ion_distribution(tmp_path: Path):
     path = Path(__file__).parent.joinpath("data/nu/cal.zip")
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
-    masses, signals, info = read_nu_directory(
+    masses, signals, info = read_directory(
         tmp_path.joinpath("cal"), cycle=1, segment=1
     )
     y = single_ion_distribution(signals)

@@ -20,7 +20,7 @@ from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 from spcal.gui.util import Worker
 from spcal.gui.widgets import AdjustingTextEdit, UnitsWidget
-from spcal.io.nu import read_nu_directory, select_nu_signals
+from spcal.io.nu import read_directory, select_nu_signals
 from spcal.io.text import (
     append_results_summary,
     export_single_particle_results,
@@ -250,7 +250,7 @@ def process_nu_file(
     output_kws: dict,
     image_kws: dict,
 ) -> None:
-    masses, signals, info = read_nu_directory(
+    masses, signals, info = read_directory(
         path,
         autoblank=import_options["blanking"],
         cycle=import_options["cycle"],

@@ -185,7 +185,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             path = Path(path)
 
         if nu.is_nu_directory(path):
-            self.masses, self.counts, info = nu.read_nu_directory(path, raw=True)
+            self.masses, self.counts, info = nu.read_directory(path, raw=True)
             self.reported_mu = np.log(info["AverageSingleIonArea"])
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:

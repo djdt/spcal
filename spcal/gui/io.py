@@ -77,13 +77,13 @@ def get_import_dialog_for_path(
 ) -> _ImportDialogBase:
     if path.is_dir():
         if is_nu_directory(path):
-            dlg = NuImportDialog(path, parent)
+            dlg = NuImportDialog(path, data_file, parent)
         else:
             raise FileNotFoundError("getImportDialogForPath: invalid directory.")
     elif is_nu_run_info_file(path):
-        dlg = NuImportDialog(path.parent, parent)
+        dlg = NuImportDialog(path.parent, data_file, parent)
     elif is_tofwerk_file(path):
-        dlg = TofwerkImportDialog(path, parent)
+        dlg = TofwerkImportDialog(path, data_file, parent)
     elif is_text_file(path):
         dlg = TextImportDialog(path, data_file, parent)
     else:
