@@ -1,6 +1,7 @@
 import logging
 import re
 from pathlib import Path
+from typing import Callable
 
 import h5py
 import numpy as np
@@ -22,6 +23,8 @@ class SPCalDataFile(object):
     ):
         self.path = path
         self.instrument_type = instrument_type
+
+        self.selected_isotopes: list[str] = []
 
         self.times = times
 
@@ -237,6 +240,10 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals[:, self.isotope_table[isotope][0]].reshape(-1)
 
     @property
+    def num_events(self) -> int:
+        return self.signals.shape[0]
+
+    @property
     def isotopes(self) -> list[str]:
         return list(self.isotope_table.keys())
 
@@ -262,11 +269,15 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.isotope_table[isotope][1]
 
     @classmethod
-    def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":
+    def load(
+        cls, path: Path, max_mass_diff: float = 0.05, callback: Callable | None = None
+    ) -> "SPCalNuDataFile":
         if path.is_file() and path.stem == "run.info":
             path = path.parent
 
-        masses, signals, info = nu.read_nu_directory(path, raw=False)
+        masses, signals, times, info = nu.read_directory(
+            path, raw=False, integ_read_callback=callback
+        )
 
         return cls(path, signals, times, masses, info, max_mass_diff=max_mass_diff)
 
@@ -341,17 +352,3 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             ).ravel()
 
         return cls(path, signals=peak_data, times=times, peak_table=peak_table)
-
-
-# x = SPCalNuDataFile.load(
-#     Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles")
-# )
-# print(x.isotopes)
-# print(x.preferred_isotopes)
-
-x = SPCalTextDataFile.load(
-    Path("/home/tom/Documents/python/spcal/tests/data/text/tofwerk_export_au_bg.csv")
-    # Path("/home/tom/Downloads/Single cell_blank_2025-08-27_15h39m38s.h5")
-)
-print(x.isotopes)
-print(x.preferred_isotopes)
