@@ -40,7 +40,8 @@ class SPCalDataFile(object):
 
     @property
     def total_time(self) -> float:
-        return self.event_time * self.num_events
+        return self.times[-1]
+        # return self.event_time * self.num_events
 
     @property
     def isotopes(self) -> list[str]:
