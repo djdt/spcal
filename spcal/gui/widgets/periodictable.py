@@ -164,7 +164,6 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.isotopesChanged.connect(self.updateChecked)
 
     def preferred(self) -> np.ndarray:
-        print("called", self.isotopes)
         pref = self.isotopes["Preferred"] > 0
         if not np.any(pref):
             if np.all(np.isnan(self.isotopes["Composition"])):
