@@ -77,7 +77,7 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
 
     def accept(self) -> None:
         self.optionsSelected.emit(
-            self.limit_accumulation.currentText(),
+            self.limit_accumulation.currentText().lower(),
             self.points_req.value(),
             self.prominence_req.value() / 100.0,
         )
@@ -89,10 +89,10 @@ class AdvancedPoissonOptions(QtWidgets.QWidget):
         super().__init__(parent)
         self.setWindowTitle("Advanced Poisson Options")
 
-        image = QtGui.QImage(image).scaledToWidth(
+        _image = QtGui.QImage(image).scaledToWidth(
             400, QtCore.Qt.TransformationMode.SmoothTransformation
         )
-        pixmap = QtGui.QPixmap(image)
+        pixmap = QtGui.QPixmap(_image)
 
         label = QtWidgets.QLabel()
         label.setPixmap(pixmap)
