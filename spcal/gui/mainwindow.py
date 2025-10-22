@@ -7,9 +7,10 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
+from spcal.detection import detection_maxima
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.docks.datafile import SPCalDataFilesDock
@@ -22,7 +23,11 @@ from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.io.session import restoreSession, saveSession
-from spcal.processing import SPCalProcessingMethod
+from spcal.processing import (
+    SPCalIsotopeOptions,
+    SPCalProcessingMethod,
+    SPCalProcessingResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +68,16 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         self.combo_isotope.blockSignals(False)
         self.combo_isotope.currentTextChanged.emit(isotopes[0])
 
-    def drawSignal(self, isotope: str, signals: np.ndarray, times: np.ndarray):
+    def drawResult(self, result: SPCalProcessingResult):
+        maxima = detection_maxima(result.signals, result.regions)
+        self.graph.drawMaxima(
+            result.isotope, result.times[maxima], result.signals[maxima]
+        )
+        self.graph.drawLimits(
+            result.times, result.limit.mean_signal, result.limit.detection_threshold
+        )
+
+    def drawSignal(self, isotope: str, times: np.ndarray, signals: np.ndarray):
         self.graph.clear()
         self.graph.drawSignal(isotope, times, signals)
         self.graph.setDataLimits(xMin=0.0, xMax=1.0)
@@ -71,6 +85,8 @@ class SPCalSignalGraph(QtWidgets.QWidget):
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
+    resultsChanged = QtCore.Signal(SPCalDataFile)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("SPCal")
@@ -89,18 +105,25 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.isotope_options = SPCalIsotopeOptionsDock()
 
-        self.processing_method = SPCalProcessingMethod(
-            self.instrument_options.asInstrumentOptions(),
-            self.limit_options.asLimitOptions(),
-            {},
-            [],
-            accumulation_method=self.limit_options.limit_accumulation,
-            points_required=self.limit_options.points_required,
-            prominence_required=self.limit_options.prominence_required,
-            calibration_mode="efficiency",
-        )
+        self.processing_methods = {
+            "default": SPCalProcessingMethod(
+                self.instrument_options.asInstrumentOptions(),
+                self.limit_options.asLimitOptions(),
+                {},
+                [],
+                accumulation_method=self.limit_options.limit_accumulation,
+                points_required=self.limit_options.points_required,
+                prominence_required=self.limit_options.prominence_required,
+                calibration_mode="efficiency",
+            )
+        }
+
+        self.processing_results: dict[
+            SPCalDataFile, dict[str, SPCalProcessingResult]
+        ] = {}
 
         self.instrument_options.optionsChanged.connect(self.updateInstrumentOptions)
+        self.limit_options.optionsChanged.connect(self.updateLimitOptions)
 
         self.files = SPCalDataFilesDock()
         self.files.dataFileSelected.connect(self.updateForDataFile)
@@ -135,33 +158,60 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     self.sample.updateNames(names)
     #     self.reference.updateNames(names)
     #     self.results.updateNames(names)
+    # def updateForResults(self, data_file: SPCalDataFile):
+
     def updateForDataFile(self, data_file: SPCalDataFile):
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
+        for isotope in data_file.selected_isotopes:
+            self.isotope_options.setIsotopeOption(
+                isotope, self.processing_methods["default"].isotope_options[isotope]
+            )
         self.signal.setIsotopes(data_file.selected_isotopes)
 
     def drawIsotope(self, isotope: str):
         data_file = self.files.selectedDataFile()
         if data_file is None:
             return
-        self.signal.drawSignal(isotope, data_file[isotope], data_file.times)
+        self.signal.drawSignal(isotope, data_file.times, data_file[isotope])
+        self.signal.drawResult(self.processing_results[data_file][isotope])
 
     def updateInstrumentOptions(self) -> None:
-        self.processing_method.instrument_options = (
-            self.instrument_options.asInstrumentOptions()
-        )
-        self.processing_method.calibration_mode = (
+        self.processing_methods[
+            "default"
+        ].instrument_options = self.instrument_options.asInstrumentOptions()
+        self.processing_methods[
+            "default"
+        ].calibration_mode = (
             self.instrument_options.efficiency_method.currentText().lower()
         )
+        self.reprocess(self.files.selectedDataFile())
 
     def updateLimitOptions(self) -> None:
-        self.processing_method.limit_options = self.limit_options.asLimitOptions()
-        self.processing_method.accumulation_method = (
-            self.limit_options.limit_accumulation
-        )
-        self.processing_method.points_required = self.limit_options.points_required
-        self.processing_method.prominence_required = (
-            self.limit_options.prominence_required
-        )
+        self.processing_methods[
+            "default"
+        ].limit_options = self.limit_options.asLimitOptions()
+        self.processing_methods[
+            "default"
+        ].accumulation_method = self.limit_options.limit_accumulation
+        self.processing_methods[
+            "default"
+        ].points_required = self.limit_options.points_required
+        self.processing_methods[
+            "default"
+        ].prominence_required = self.limit_options.prominence_required
+        self.reprocess(self.files.selectedDataFile())
+
+    def reprocess(self, data_file: SPCalDataFile | None):
+        if data_file is None:
+            files = self.files.data_files
+        else:
+            files = [data_file]
+
+        for file in files:
+            self.processing_results[file] = self.processing_methods[
+                "default"
+            ].processDataFile(file)
+            self.resultsChanged.emit(file)
 
     def createMenuBar(self) -> None:
         # File
@@ -364,7 +414,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self,
             path,
             self.files.selectedDataFile(),
-            screening_method=self.processing_method,
+            screening_method=self.processing_methods["default"],
         )
         dlg.dataImported.connect(self.sampleFileLoaded)
         dlg.open()
@@ -376,6 +426,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if selected_isotopes is None:
             selected_isotopes = data_file.preferred_isotopes
         data_file.selected_isotopes = selected_isotopes
+
+        for isotope in data_file.selected_isotopes:
+            self.processing_methods["default"].isotope_options[isotope] = (
+                SPCalIsotopeOptions(None, None, None)
+            )
+        self.reprocess(data_file)
         self.files.addDataFile(data_file)
         self.updateRecentFiles(data_file.path)
 
@@ -623,7 +679,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self, etype: type, value: BaseException, tb: TracebackType | None = None
     ):  # pragma: no cover
         """Redirect errors to the log."""
-        if etype == KeyboardInterrupt:
+        if etype is KeyboardInterrupt:
             logger.info("Keyboard interrupt, exiting.")
             sys.exit(1)
         logger.exception("Uncaught exception", exc_info=(etype, value, tb))
