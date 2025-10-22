@@ -1,0 +1,268 @@
+import json
+import logging
+from pathlib import Path
+
+import numpy as np
+from PySide6 import QtCore, QtWidgets
+
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
+from spcal.gui.dialogs.io.base import ImportDialogBase
+from spcal.gui.widgets import (
+    PeriodicTableSelector,
+)
+from spcal.io import nu
+from spcal.npdb import db
+
+logger = logging.getLogger(__name__)
+
+
+class NuReadIntegsThread(QtCore.QThread):
+    integRead = QtCore.Signal(int)
+
+    def __init__(
+        self,
+        path: Path,
+        index: list[dict],
+        cycle: int | None = None,
+        segment: int | None = None,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent)
+        self.path = path
+        self.index = index
+        self.cyc_number = cycle
+        self.seg_number = segment
+
+        self.datas: list[np.ndarray] = []
+
+    def run(self):
+        for idx in self.index:
+            if self.isInterruptionRequested():
+                break
+            binary_path = self.path.joinpath(f"{idx['FileNum']}.integ")
+            if binary_path.exists():
+                data = nu.read_integ_binary(
+                    binary_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
+                if self.cyc_number is not None:
+                    data = data[data["cyc_number"] == self.cyc_number]
+                if self.seg_number is not None:
+                    data = data[data["seg_number"] == self.seg_number]
+                self.datas.append(data)
+            else:
+                logger.warning(  # pragma: no cover, missing files
+                    f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
+                )
+            self.integRead.emit(idx)
+
+
+class NuImportDialog(ImportDialogBase):
+    def __init__(
+        self,
+        path: str | Path,
+        existing_file: SPCalDataFile | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(path, "SPCal Nu Instruments Import", parent)
+
+        self.progress = QtWidgets.QProgressBar()
+        self.import_thread: NuReadIntegsThread | None = None
+
+        with self.file_path.joinpath("run.info").open("r") as fp:
+            self.info = json.load(fp)
+        with self.file_path.joinpath("integrated.index").open("r") as fp:
+            self.index = json.load(fp)
+        with self.file_path.joinpath("autob.index").open("r") as fp:
+            self.autob_index = json.load(fp)
+
+        # read first integ
+        data: np.ndarray | None = None
+        for idx in self.index:
+            first_path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
+            if first_path.exists():
+                data = nu.read_integ_binary(
+                    first_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
+                break
+        if data is None:
+            raise ValueError("NuImportDialog: no valid integ files found.")
+
+        self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
+        self.masses = nu.masses_from_integ(
+            data[0],
+            self.info["MassCalCoefficients"],
+            self.segmentDelays(),
+        )[0]
+
+        unit_masses = np.round(self.masses).astype(int)
+        isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
+
+        self.table = PeriodicTableSelector(enabled_isotopes=isotopes)
+        if isinstance(existing_file, SPCalNuDataFile):
+            existing = []
+            for isotope in existing_file.selected_isotopes:
+                m = SPCalNuDataFile.re_isotope.match(isotope)
+                if m is None:
+                    raise ValueError(f"unknown isotope string '{isotope}'")
+                existing.append(
+                    db["isotopes"][
+                        np.logical_and(
+                            db["isotopes"]["Isotope"] == int(m.group(1)),
+                            db["isotopes"]["Symbol"] == m.group(2),
+                        )
+                    ]
+                )
+            self.table.setSelectedIsotopes(np.concatenate(existing))
+        self.table.isotopesChanged.connect(self.completeChanged)
+
+        self.layout_body.addWidget(self.table, 1)
+        self.layout_body.addWidget(self.progress, 0)
+
+        # Set info and defaults
+        method = self.info["MethodFile"]
+        self.box_info_layout.addRow(
+            "Method:", QtWidgets.QLabel(method[method.rfind("\\") + 1 :])
+        )
+        self.box_info_layout.addRow(
+            "Events:",
+            QtWidgets.QLabel(str(self.info["ActualRecordLength"])),
+        )
+        self.box_info_layout.addRow(
+            "Event time:",
+            QtWidgets.QLabel(f"{nu.eventtime_from_info(self.info) * 1000} ms"),
+        )
+        self.box_info_layout.addRow(
+            "Integrations:",
+            QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
+        )
+
+        self.cycle_number = QtWidgets.QSpinBox()
+        self.cycle_number.setRange(0, self.info["CyclesWritten"])
+        self.cycle_number.setValue(0)
+        self.cycle_number.setSpecialValueText("All")
+
+        self.segment_number = QtWidgets.QSpinBox()
+        self.segment_number.setRange(0, len(self.info["SegmentInfo"]))
+        self.segment_number.setValue(0)
+        self.segment_number.setSpecialValueText("All")
+
+        # self.file_number = QtWidgets.QSpinBox()
+        # self.file_number.setRange(1, len(self.index))
+        # self.file_number.setValue(len(self.index))
+
+        # todo: option to remove blanked regions?
+        # self.combo_blanking = QtWidgets.QComboBox()
+        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
+        self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
+        self.checkbox_blanking.setChecked(True)
+
+        self.box_options_layout.addRow("Cycle:", self.cycle_number)
+        self.box_options_layout.addRow("Segment:", self.segment_number)
+        # self.box_options.layout().addRow("Max file:", self.file_number)
+        self.box_options_layout.addRow(self.checkbox_blanking)
+
+        self.table.setFocus()
+
+    def segmentDelays(self) -> dict[int, float]:
+        return {
+            s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
+        }
+
+    def isComplete(self) -> bool:
+        return self.table.selectedIsotopes() is not None
+
+    def setControlsEnabled(self, enabled: bool) -> None:
+        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        button.setEnabled(enabled)
+        self.table.setEnabled(enabled)
+
+    def updateProgress(self):
+        self.progress.setValue(self.progress.value() + 1)
+
+    def accept(self) -> None:
+        self.setControlsEnabled(False)
+
+        self.progress.setValue(0)
+        self.progress.setMaximum(len(self.index))
+
+        cycle = self.cycle_number.value()
+        if cycle == 0:
+            cycle = None
+        segment = self.segment_number.value()
+        if segment == 0:
+            segment = None
+
+        self.import_thread = NuReadIntegsThread(
+            self.file_path, self.index, cycle, segment
+        )
+        self.import_thread.integRead.connect(self.updateProgress)
+        self.import_thread.finished.connect(self.finalise)
+        self.import_thread.start()
+
+    def finalise(self) -> None:
+        if self.import_thread is None or self.import_thread.isInterruptionRequested():
+            self.progress.reset()
+            self.setControlsEnabled(True)
+            return
+
+        # Get masses from data
+        integs = self.import_thread.datas
+
+        segment_delays = {
+            s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
+        }
+
+        accumulations = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+
+        # Get masses from data
+        masses = nu.masses_from_integ(
+            integs[0], self.info["MassCalCoefficients"], segment_delays
+        )[0]
+        signals = nu.signals_from_integs(integs, accumulations)
+
+        times = nu.times_from_integs(integs, self.info) * 1e-9
+
+        # if not raw:
+        signals /= self.info["AverageSingleIonArea"]
+
+        # Blank out overrange regions
+        if self.checkbox_blanking.isChecked():
+            autobs = np.concatenate(
+                nu.read_binaries_in_index(
+                    self.file_path,
+                    self.autob_index,
+                    "autob",
+                    nu.read_autob_binary,
+                    cyc_number=self.import_thread.cyc_number,
+                    seg_number=self.import_thread.seg_number,
+                )
+            )
+            signals = nu.apply_autoblanking(
+                autobs,
+                signals,
+                masses,
+                accumulations,
+                self.info["BlMassCalStartCoef"],
+                self.info["BlMassCalEndCoef"],
+            )
+
+        selected_isotopes = self.table.selectedIsotopes()
+        assert selected_isotopes is not None
+        isotopes = [f"{i['Isotope']}{i['Symbol']}" for i in selected_isotopes]
+        self.dataImported.emit(
+            SPCalNuDataFile(self.file_path, signals, times, masses, self.info),
+            isotopes,
+        )
+        super().accept()
+
+    def reject(self) -> None:
+        if self.import_thread is not None:
+            self.import_thread.requestInterruption()
+        else:
+            super().reject()

@@ -1,0 +1,254 @@
+import logging
+import re
+from pathlib import Path
+
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from spcal.datafile import SPCalDataFile, SPCalTextDataFile
+from spcal.gui.dialogs.io.base import ImportDialogBase
+from spcal.gui.modelviews import CheckableHeaderView
+from spcal.gui.widgets import UnitsWidget
+from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
+from spcal.siunits import time_units
+
+logger = logging.getLogger(__name__)
+
+
+class TextImportDialog(ImportDialogBase):
+    HEADER_COUNT = 20
+    DELIMITERS = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
+
+    def __init__(
+        self,
+        path: str | Path,
+        existing_file: SPCalDataFile | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(path, "SPCal Text Import", parent)
+
+        self.file_lines = self.file_path.open("r").readlines()
+        # Guess the delimiter, skip rows and count from header
+
+        delimiter, first_data_line, column_count = guess_text_parameters(
+            self.file_lines[: self.HEADER_COUNT]
+        )
+        cps = any(
+            "cps" in line.lower() for line in self.file_lines[: self.HEADER_COUNT]
+        )
+        event_time, override = None, None
+
+        if delimiter == "":
+            delimiter = ","
+
+        if isinstance(existing_file, SPCalTextDataFile):
+            delimiter = existing_file.delimter
+            first_data_line = existing_file.skip_row
+            cps = existing_file.cps
+            event_time = existing_file.event_time
+            override = existing_file.override_event_time
+
+        self.table = QtWidgets.QTableWidget()
+        self.table.itemChanged.connect(self.completeChanged)
+        self.table.setMinimumSize(800, 400)
+        self.table.setColumnCount(column_count)
+        self.table.setRowCount(self.HEADER_COUNT)
+        self.table.setFont(QtGui.QFont("Courier"))
+        self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.table.setHorizontalHeader(self.table_header)
+        self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
+
+        self.box_info_layout.addRow(
+            "Line Count:", QtWidgets.QLabel(str(len(self.file_lines)))
+        )
+
+        self.event_time = UnitsWidget(
+            time_units,
+            base_value=event_time,
+            default_unit="ms",
+            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
+        )
+        self.event_time.baseValueChanged.connect(self.completeChanged)
+        self.event_time.setEnabled(False)
+
+        self.override_event_time = QtWidgets.QCheckBox("Override")
+        self.override_event_time.checkStateChanged.connect(
+            self.overrideEventTimeChanged
+        )
+        self.override_event_time.setChecked(override is not None)
+
+        self.combo_intensity_units = QtWidgets.QComboBox()
+        self.combo_intensity_units.addItems(["Counts", "CPS"])
+        if cps:
+            self.combo_intensity_units.setCurrentText("CPS")
+
+        self.combo_delimiter = QtWidgets.QComboBox()
+        self.combo_delimiter.addItems(list(self.DELIMITERS.values()))
+        self.combo_delimiter.setCurrentIndex(
+            list(self.DELIMITERS.keys()).index(delimiter)
+        )
+        self.combo_delimiter.currentIndexChanged.connect(self.fillTable)
+
+        self.spinbox_first_line = QtWidgets.QSpinBox()
+        self.spinbox_first_line.setRange(1, self.HEADER_COUNT - 1)
+        self.spinbox_first_line.setValue(first_data_line)
+        self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
+
+        layout_event_time = QtWidgets.QHBoxLayout()
+        layout_event_time.addWidget(self.event_time, 1)
+        layout_event_time.addWidget(self.override_event_time, 0)
+
+        self.box_options_layout.addRow("Event time:", layout_event_time)
+        self.box_options_layout.addRow("Intensity units:", self.combo_intensity_units)
+        self.box_options_layout.addRow("Delimiter:", self.combo_delimiter)
+        self.box_options_layout.addRow("Import from row:", self.spinbox_first_line)
+
+        self.fillTable()
+
+        self.guessIsotopesFromTable()
+
+        self.layout_body.addWidget(self.table)
+
+    def isComplete(self) -> bool:
+        return not self.event_time.isEnabled() or self.event_time.hasAcceptableInput()
+
+    def overrideEventTimeChanged(self) -> None:
+        self.event_time.setEnabled(self.override_event_time.isChecked())
+
+    def delimiter(self) -> str:
+        delimiter = self.combo_delimiter.currentText()
+        if delimiter == "Space":
+            delimiter = " "
+        elif delimiter == "Tab":
+            delimiter = "\t"
+        return delimiter
+
+    def useColumns(self) -> list[int]:
+        return [
+            k
+            for k, v in self.table_header._checked.items()
+            if v == QtCore.Qt.CheckState.Checked
+        ]
+
+    def names(self) -> list[str]:
+        names = []
+        for c in range(self.table.columnCount()):
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                names.append(item.text().replace(" ", "_"))
+        return names
+
+    def selectedNames(self) -> list[str]:
+        names = []
+        for c in self.useColumns():
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                names.append(item.text().replace(" ", "_"))
+        return names
+
+    def fillTable(self) -> None:
+        lines = [
+            line.split(self.delimiter())
+            for line in self.file_lines[: self.HEADER_COUNT]
+        ]
+        col_count = max(len(line) for line in lines)
+        self.table.setColumnCount(col_count)
+
+        for row, line in enumerate(lines):
+            line.extend([""] * (col_count - len(line)))
+            for col, text in enumerate(line):
+                item = QtWidgets.QTableWidgetItem(text.strip().replace(" ", "_"))
+                self.table.setItem(row, col, item)
+
+        self.table.resizeColumnsToContents()
+        self.updateTableUseColumns()
+
+        if self.event_time.value() is None:
+            try:
+                val, unit = self.guessEventTimeFromTable()
+                self.event_time.setUnit(unit)
+                self.event_time.setValue(val)
+            except StopIteration:
+                pass
+
+    def updateTableUseColumns(self) -> None:
+        header_row = self.spinbox_first_line.value() - 1
+        for row in range(self.table.rowCount()):
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                if item is None:
+                    continue
+                if row != header_row:
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+                if row < header_row or col not in self.useColumns():
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
+                else:
+                    item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+    def guessIsotopesFromTable(self) -> None:
+        columns = []
+        header_row = self.spinbox_first_line.value() - 1
+        for col in range(self.table.columnCount()):
+            item = self.table.item(header_row, col)
+            if item is None:
+                raise ValueError(f"missing item at {header_row}, {col}")
+            text = item.text().lower()
+            if not any(x in text for x in ["time", "index"]):
+                columns.append(col)
+
+        for col in columns:
+            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+
+    def guessEventTimeFromTable(self) -> tuple[float, str]:
+        header_row = self.spinbox_first_line.value() - 1
+        for col in range(self.table.columnCount()):
+            item = self.table.item(header_row, col)
+            if item is None:
+                raise ValueError(f"missing item at {header_row}, {col}")
+            if "time" in item.text().lower():
+                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", item.text().lower())
+                unit = "s"
+                if m is not None:
+                    if m.group(1) == "ms":
+                        unit = "ms"
+                    elif m.group(1) in ["us", "µs"]:
+                        unit = "µs"
+                    elif m.group(1) == "ns":
+                        unit = "ns"
+
+                time_items = [
+                    self.table.item(row, col)
+                    for row in range(header_row + 1, self.table.rowCount())
+                ]
+                time_texts = [
+                    ti.text().replace(",", ".") for ti in time_items if ti is not None
+                ]
+                if len(time_texts) == 0:
+                    raise StopIteration
+                elif "00:" in time_texts[0]:
+                    times = [iso_time_to_float_seconds(tt) for tt in time_texts]
+                else:
+                    times = [float(tt) for tt in time_texts]
+                return float(np.mean(np.diff(times))), unit
+
+        raise StopIteration
+
+    def accept(self) -> None:
+        data_file = SPCalTextDataFile.load(
+            self.file_path,
+            delimiter=self.delimiter(),
+            skip_rows=self.spinbox_first_line.value(),
+            cps=self.combo_intensity_units.currentText() == "CPS",
+            rename_fields=self.names(),
+            override_event_time=self.event_time.value()
+            if self.override_event_time.isChecked()
+            else None,
+        )
+
+        self.dataImported.emit(data_file, self.selectedNames())
+        logger.info(
+            f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
+        )
+        super().accept()

@@ -7,7 +7,7 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
-from spcal.gui.dialogs._import import _ImportDialogBase
+from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.response import ResponseView
@@ -136,7 +136,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def dialogLoadFile(
         self, path: str | Path | None = None
-    ) -> _ImportDialogBase | None:
+    ) -> ImportDialogBase | None:
         if path is None:
             path = get_open_spcal_path(self)
             if path is None:

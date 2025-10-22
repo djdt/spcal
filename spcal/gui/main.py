@@ -8,8 +8,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.dialogs._import import _ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.graphs import color_schemes
@@ -98,7 +98,7 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def dialogSampleFile(self, path: Path | None = None) -> _ImportDialogBase | None:
+    def dialogSampleFile(self, path: Path | None = None) -> ImportDialogBase | None:
         if path is None:
             path = get_open_spcal_path(self)
             if path is None:
@@ -133,8 +133,8 @@ class SPCalWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles(self.reference_file.path)
         self.syncSampleAndReference()
 
-    def updateMethod(self) -> None:
-        data_options = s
+    # def updateMethod(self) -> None:
+    #     data_options = s
 
     def updateNames(self, names: dict[str, str]) -> None:
         self.sample.updateNames(names)

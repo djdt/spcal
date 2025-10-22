@@ -3,11 +3,11 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.gui.dialogs._import import (
+from spcal.gui.dialogs.io import (
+    ImportDialogBase,
     NuImportDialog,
     TextImportDialog,
     TofwerkImportDialog,
-    _ImportDialogBase,
 )
 from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
@@ -74,7 +74,7 @@ def get_import_dialog_for_path(
     path: Path,
     data_file: SPCalDataFile | None = None,
     screening_method: SPCalProcessingMethod | None = None,
-) -> _ImportDialogBase:
+) -> ImportDialogBase:
     if path.is_dir():
         if is_nu_directory(path):
             dlg = NuImportDialog(path, data_file, parent)

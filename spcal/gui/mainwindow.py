@@ -8,7 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
-from spcal.gui.dialogs._import import _ImportDialogBase
+from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
@@ -352,7 +352,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogLoadFile(self, path: Path | None = None) -> _ImportDialogBase | None:
+    def dialogLoadFile(self, path: Path | None = None) -> ImportDialogBase | None:
         if path is None:
             path = get_open_spcal_path(self)
             if path is None:
