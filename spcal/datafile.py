@@ -1,7 +1,6 @@
 import logging
 import re
 from pathlib import Path
-from typing import Callable
 
 import h5py
 import numpy as np
@@ -269,20 +268,18 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.isotope_table[isotope][1]
 
     @classmethod
-    def load(
-        cls, path: Path, max_mass_diff: float = 0.05, callback: Callable | None = None
-    ) -> "SPCalNuDataFile":
+    def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":
         if path.is_file() and path.stem == "run.info":
             path = path.parent
 
-        masses, signals, times, info = nu.read_directory(
-            path, raw=False, integ_read_callback=callback
-        )
+        masses, signals, times, info = nu.read_directory(path, raw=False)
 
         return cls(path, signals, times, masses, info, max_mass_diff=max_mass_diff)
 
 
 class SPCalTOFWERKDataFile(SPCalDataFile):
+    re_isotope = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
+
     def __init__(
         self, path: Path, signals: np.ndarray, times: np.ndarray, peak_table: np.ndarray
     ):
@@ -302,9 +299,8 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     @property
     def preferred_isotopes(self) -> list[str]:
         preferred = []
-        re_iso = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
         for isotope in self.isotopes:
-            m = re_iso.match(isotope)
+            m = SPCalTOFWERKDataFile.re_isotope.match(isotope)
             if m is None:
                 continue
             if db["isotopes"][
