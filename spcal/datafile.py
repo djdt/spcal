@@ -236,7 +236,8 @@ class SPCalNuDataFile(SPCalDataFile):
         self.generateIsotopeTable()
 
     def __getitem__(self, isotope: str) -> np.ndarray:
-        return self.signals[:, self.isotope_table[isotope][0]].reshape(-1)
+        idx = self.isotope_table[isotope][0]
+        return self.signals[:, idx].reshape(-1)
 
     @property
     def num_events(self) -> int:
