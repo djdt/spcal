@@ -1,5 +1,5 @@
 import logging
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
@@ -14,6 +14,50 @@ from spcal.limit import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_result(
+    method: "SPCalProcessingMethod",
+    data_file: SPCalDataFile,
+    isotope: str,
+    max_size: int | None,
+):
+    limit = method.limit_options.limitsForIsotope(data_file, isotope)
+
+    if method.accumulation_method == "signal mean":
+        limit_accumulation = limit.mean_signal
+    elif method.accumulation_method == "half detection threshold":
+        limit_accumulation = (limit.mean_signal + limit.detection_threshold) / 2.0
+    elif method.accumulation_method == "detection threshold":
+        limit_accumulation = limit.detection_threshold
+    else:
+        raise ValueError(f"unknown accumulation method {method.accumulation_method}")
+
+    limit_detection = limit.detection_threshold
+    limit_accumulation = np.minimum(limit_accumulation, limit_detection)
+
+    signals = data_file[isotope][:max_size]
+    times = data_file.times[:max_size]
+
+    detections, labels, regions = accumulate_detections(
+        signals,
+        limit_accumulation=limit_accumulation,
+        limit_detection=limit_detection,
+        points_required=method.points_required,
+        prominence_required=method.prominence_required,
+    )
+
+    return SPCalProcessingResult(
+        isotope,
+        limit=limit,
+        instrument_options=method.instrument_options,
+        isotope_options=method.isotope_options[isotope],
+        signals=signals,
+        times=times,
+        detections=detections,
+        labels=labels,
+        regions=regions,
+    )
 
 
 class SPCalInstrumentOptions(object):
@@ -89,7 +133,7 @@ class SPCalLimitOptions(object):
         self.method = method
 
         # deafult kws
-        _gaussian_kws = {"alpha": 2.867e-7, "windows_size": 0}
+        _gaussian_kws = {"alpha": 2.867e-7}
         _poisson_kws = {"alpha": 1e-3, "function": "formula c"}
         _compound_poisson_kws = {"alpha": 1e-6, "sigma": 0.5}
 
@@ -201,7 +245,7 @@ class SPCalProcessingResult(object):
         self.isotope = isotope
         self.limit = limit
         self.instrument_options = instrument_options
-        self.isotope_ooptions = isotope_options
+        self.isotope_options = isotope_options
 
         self.signals = signals
         self.times = times
@@ -284,58 +328,21 @@ class SPCalProcessingMethod(object):
         self.calibration_mode = calibration_mode
 
     def processDataFile(
-        self, data_file: SPCalDataFile, isotopes: list[str], max_size: int | None = None
-    ) -> dict[np.ndarray, SPCalProcessingResult]:
-        def calculateResult(data_file, isotope, max_size):
-            limit = self.limit_options.limitsForIsotope(data_file, isotope)
-
-            if self.accumulation_method == "mean signal":
-                limit_accumulation = limit.mean_signal
-            elif self.accumulation_method == "half detection threshold":
-                limit_accumulation = (
-                    limit.mean_signal + limit.detection_threshold
-                ) / 2.0
-            elif self.accumulation_method == "detection threshold":
-                limit_accumulation = limit.detection_threshold
-            else:
-                raise ValueError(
-                    f"unknown accumulation method {self.accumulation_method}"
-                )
-
-            limit_detection = limit.detection_threshold
-            limit_accumulation = np.minimum(limit_accumulation, limit_detection)
-
-            signals = data_file[isotope][:max_size]
-            times = data_file.times[:max_size]
-
-            detections, labels, regions = accumulate_detections(
-                signals,
-                limit_accumulation=limit_accumulation,
-                limit_detection=limit_detection,
-                points_required=self.points_required,
-                prominence_required=self.prominence_required,
-            )
-
-            return SPCalProcessingResult(
-                isotope,
-                limit,
-                self.instrument_options,
-                self.isotope_options[isotope],
-                signals,
-                times,
-                detections,
-                labels,
-                regions,
-            )
-
+        self,
+        data_file: SPCalDataFile,
+        isotopes: list[str] | None = None,
+        max_size: int | None = None,
+    ) -> dict[str, SPCalProcessingResult]:
         results = {}
-        with ProcessPoolExecutor() as exec:
-            futures = {
-                exec.submit(calculateResult, data_file, isotope, max_size): isotope
+        if isotopes is None:
+            isotopes = data_file.selected_isotopes
+
+        with ThreadPoolExecutor() as exec:
+            futures = [
+                exec.submit(calculate_result, self, data_file, isotope, max_size)
                 for isotope in isotopes
-            }
-            for future in as_completed(futures):
-                results[futures[future]] = future.result()
+            ]
+            results = {future.result().isotope: future.result() for future in futures}
 
         return results
 
