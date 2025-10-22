@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class NuReadIntegsThread(QtCore.QThread):
-    integRead = QtCore.Signal(int)
+    progress = QtCore.Signal()
+    aborted = QtCore.Signal()
+    result = QtCore.Signal(list)
 
     def __init__(
         self,
@@ -34,9 +36,8 @@ class NuReadIntegsThread(QtCore.QThread):
         self.cyc_number = cycle
         self.seg_number = segment
 
-        self.datas: list[np.ndarray] = []
-
     def run(self):
+        datas = []
         for idx in self.index:
             if self.isInterruptionRequested():
                 break
@@ -52,12 +53,16 @@ class NuReadIntegsThread(QtCore.QThread):
                     data = data[data["cyc_number"] == self.cyc_number]
                 if self.seg_number is not None:
                     data = data[data["seg_number"] == self.seg_number]
-                self.datas.append(data)
+                datas.append(data)
+                self.progress.emit()
             else:
                 logger.warning(  # pragma: no cover, missing files
                     f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
                 )
-            self.integRead.emit(idx)
+        if self.isInterruptionRequested():
+            self.aborted.emit()
+        else:
+            self.result.emit(datas)
 
 
 class NuImportDialog(ImportDialogBase):
@@ -209,6 +214,11 @@ class NuImportDialog(ImportDialogBase):
     def updateProgress(self):
         self.progress.setValue(self.progress.value() + 1)
 
+    def abort(self):
+        self.import_thread = None
+        self.progress.reset()
+        self.setControlsEnabled(True)
+
     def accept(self) -> None:
         self.setControlsEnabled(False)
 
@@ -225,19 +235,13 @@ class NuImportDialog(ImportDialogBase):
         self.import_thread = NuReadIntegsThread(
             self.file_path, self.index, cycle, segment
         )
-        self.import_thread.integRead.connect(self.updateProgress)
-        self.import_thread.finished.connect(self.finalise)
+        self.import_thread.progress.connect(self.updateProgress)
+        self.import_thread.aborted.connect(self.abort)
+        self.import_thread.result.connect(self.finalise)
+        self.import_thread.finished.connect(self.import_thread.deleteLater)
         self.import_thread.start()
 
-    def finalise(self) -> None:
-        if self.import_thread is None or self.import_thread.isInterruptionRequested():
-            self.progress.reset()
-            self.setControlsEnabled(True)
-            return
-
-        # Get masses from data
-        integs = self.import_thread.datas
-
+    def finalise(self, integs: list[np.ndarray]) -> None:
         # Get masses from data
         masses = nu.masses_from_integ(
             integs[0], self.info["MassCalCoefficients"], self.segment_delays
@@ -249,6 +253,13 @@ class NuImportDialog(ImportDialogBase):
         # if not raw:
         signals /= self.info["AverageSingleIonArea"]
 
+        cycle = self.cycle_number.value()
+        if cycle == 0:
+            cycle = None
+        segment = self.segment_number.value()
+        if segment == 0:
+            segment = None
+
         # Blank out overrange regions
         if self.checkbox_blanking.isChecked():
             autobs = np.concatenate(
@@ -257,8 +268,8 @@ class NuImportDialog(ImportDialogBase):
                     self.autob_index,
                     "autob",
                     nu.read_autob_binary,
-                    cyc_number=self.import_thread.cyc_number,
-                    seg_number=self.import_thread.seg_number,
+                    cyc_number=cycle,
+                    seg_number=segment,
                 )
             )
             signals = nu.apply_autoblanking(
