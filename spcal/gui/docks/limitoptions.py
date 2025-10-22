@@ -187,7 +187,7 @@ class PoissonOptions(LimitOptions):
         assert isinstance(layout, QtWidgets.QFormLayout)
         layout.addRow(button_layout)
 
-        self.formula = "Formula C"
+        self.function = "Formula C"
         self.eta = 2.0
         self.epsilon = 0.5
         self.t_sample = 1.0
@@ -200,14 +200,14 @@ class PoissonOptions(LimitOptions):
         # self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
 
     def state(self) -> dict:
-        if self.formula == "Currie":
-            params = {"eta": self.eta, "epsilon": self.epsilon}
-        else:
-            params = {"t_sample": self.t_sample, "t_blank": self.t_blank}
         return {
             "alpha": self.alpha.value(),
-            "formula": self.formula.lower(),
-            "params": params,
+            "beta": 0.05,
+            "t_sample": self.t_sample,
+            "t_blank": self.t_blank,
+            "eta": self.eta,
+            "epsilon": self.epsilon,
+            "function": self.function.lower(),
         }
 
     def setState(self, state: dict) -> None:
@@ -215,7 +215,7 @@ class PoissonOptions(LimitOptions):
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
         if "formula" in state:
-            self.formula = state["formula"]
+            self.function = state["formula"].title()
         if "params" in state:
             if "eta" in state["params"]:
                 self.eta = state["params"]["eta"]
@@ -230,7 +230,7 @@ class PoissonOptions(LimitOptions):
 
     def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
         dlg = AdvancedPoissonDialog(
-            self.formula,
+            self.function,
             self.eta,
             self.epsilon,
             self.t_sample,
@@ -242,7 +242,7 @@ class PoissonOptions(LimitOptions):
         return dlg
 
     def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
-        self.formula = formula
+        self.function = formula
         # settings = QtCore.QSettings()
         # settings.value("Poisson/Formula", formula)
         if formula == "Currie":
@@ -271,7 +271,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
 
         settings = QtCore.QSettings()
         self.limit_accumulation = str(
-            settings.value("Threshold/AccumulationMethod", "Signal Mean")
+            settings.value("Threshold/AccumulationMethod", "signal mean")
         )
         self.points_required = int(settings.value("Threshold/PointsRequired", 1))  # type: ignore
 
@@ -374,13 +374,15 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             gaussian_kws=self.gaussian.state(),
             poisson_kws=self.poisson.state(),
             compound_poisson_kws=self.compound.state(),
-            window_size=int(self.window_size.value() or 0),
+            window_size=int(
+                self.window_size.value() or 0 if self.check_window.isChecked() else 0
+            ),
             max_iterations=100 if self.check_iterative.isChecked() else 1,
         )
 
     def dialogAdvancedOptions(self) -> None:
         dlg = AdvancedThresholdOptions(
-            self.limit_accumulation,
+            self.limit_accumulation.title(),
             self.points_required,
             self.prominence_required,
             parent=self,
