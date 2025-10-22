@@ -179,6 +179,14 @@ class IsotopeOptionTable(BasicTable):
         except ValueError:
             return None
 
+    def setBaseValueForItem(self, row: int, column: int, value: float | None):
+        item = self.item(row, column)
+        if item is None:
+            raise ValueError(f"missing item at ({row}, {column})")
+        if value is not None and column in self.current_units:
+            value /= self.current_units[column]
+        item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
+
     def asIsotopeOptions(self) -> dict[str, SPCalIsotopeOptions]:
         options = {}
         for row in range(self.rowCount()):
@@ -252,6 +260,14 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
     def setIsotopes(self, isotopes: list[str]):
         self.table.setIsotopes(isotopes)
+
+    def setIsotopeOption(self, isotope: str, option: SPCalIsotopeOptions):
+        for i in range(self.table.rowCount()):
+            if self.table.verticalHeaderItem(i).text() == isotope:
+                self.table.setBaseValueForItem(i, 0, option.density)
+                self.table.setBaseValueForItem(i, 1, option.response)
+                self.table.setBaseValueForItem(i, 2, option.mass_fraction)
+                break
 
     def selectedIsotope(self) -> str:
         indicies = self.table.selectedIndexes()
