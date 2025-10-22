@@ -6,8 +6,8 @@ from statistics import NormalDist
 import bottleneck as bn
 import numpy as np
 
-from spcal.dists.util import compound_poisson_lognormal_quantile_lookup
 from spcal import poisson
+from spcal.dists.util import compound_poisson_lognormal_quantile_lookup
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,8 @@ class SPCalLimit(object):
 
     def __str__(self) -> str:
         return (
-            f"SPCalLimit({self.name}, mean={self.mean_signal:.4g}, "
-            f"threshold={self.detection_threshold:.4g})"
+            f"SPCalLimit({self.name}, mean={np.nanmean(self.mean_signal):.4g}, "
+            f"threshold={np.nanmean(self.detection_threshold):.4g})"
         )
 
     @property
@@ -78,7 +78,7 @@ class SPCalLimit(object):
                 mu, threshold = self.thresholdFunction(signals[signals < threshold])
             else:
                 mu, threshold = self.windowedThresholdFunction(
-                    np.where(padded_signal > threshold, padded_signal, np.nan),  # type: ignore , is bound
+                    np.where(padded_signal < threshold, padded_signal, np.nan),  # type: ignore , is bound
                 )
 
             self.iterations_required += 1
@@ -151,6 +151,11 @@ class SPCalPoissonLimit(SPCalLimit):
         signals: np.ndarray,
         function: str = "formula c",
         alpha: float = 1e-3,
+        beta: float = 0.05,
+        t_sample: float = 1.0,
+        t_blank: float = 1.0,
+        eta: float = 2.0,
+        epsilon: float = 0.5,
         window_size: int = 0,
         max_iterations: int = 1,
     ):
@@ -162,11 +167,11 @@ class SPCalPoissonLimit(SPCalLimit):
         self.function = function
         self.alpha = alpha
 
-        self.beta = 0.05
-        self.t_sample = 1.0
-        self.t_blank = 1.0
-        self.eta = 2.0
-        self.epsilon = 0.5
+        self.beta = beta
+        self.t_sample = t_sample
+        self.t_blank = t_blank
+        self.eta = eta
+        self.epsilon = epsilon
 
         super().__init__(
             "Poisson",
@@ -188,7 +193,7 @@ class SPCalPoissonLimit(SPCalLimit):
         mu = bn.nanmean(signals)
         params = self.parameters
         fn = params.pop("function")
-        sc, _ = self.FUNCTIONS[fn](mu, params)
+        sc, _ = self.FUNCTIONS[fn](mu, **params)
         return mu, np.ceil(mu + sc)
 
     def windowedThresholdFunction(
@@ -200,7 +205,7 @@ class SPCalPoissonLimit(SPCalLimit):
         ]
         params = self.parameters
         fn = params.pop("function")
-        sc, _ = self.FUNCTIONS[fn](mu, params)
+        sc, _ = self.FUNCTIONS[fn](mu, **params)
         return mu, np.ceil(mu + sc)
 
 
