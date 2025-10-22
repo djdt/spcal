@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
+from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets import (
@@ -68,7 +69,6 @@ class NuImportDialog(ImportDialogBase):
     ):
         super().__init__(path, "SPCal Nu Instruments Import", parent)
 
-        self.progress = QtWidgets.QProgressBar()
         self.import_thread: NuReadIntegsThread | None = None
 
         with self.file_path.joinpath("run.info").open("r") as fp:
@@ -77,6 +77,10 @@ class NuImportDialog(ImportDialogBase):
             self.index = json.load(fp)
         with self.file_path.joinpath("autob.index").open("r") as fp:
             self.autob_index = json.load(fp)
+
+        max_mass_diff = 0.05
+        if isinstance(existing_file, SPCalNuDataFile):
+            max_mass_diff = existing_file.max_mass_diff
 
         # read first integ
         data: np.ndarray | None = None
@@ -97,13 +101,39 @@ class NuImportDialog(ImportDialogBase):
         self.masses = nu.masses_from_integ(
             data[0],
             self.info["MassCalCoefficients"],
-            self.segmentDelays(),
+            self.segment_delays,
         )[0]
 
-        unit_masses = np.round(self.masses).astype(int)
-        isotopes = db["isotopes"][np.isin(db["isotopes"]["Isotope"], unit_masses)]
+        self.table = PeriodicTableSelector()
+        self.progress = QtWidgets.QProgressBar()
 
-        self.table = PeriodicTableSelector(enabled_isotopes=isotopes)
+        self.max_mass_diff = QtWidgets.QDoubleSpinBox()
+        self.max_mass_diff.setRange(0.0, 1.0)
+        self.max_mass_diff.setValue(max_mass_diff)
+        self.max_mass_diff.valueChanged.connect(self.updateTableIsotopes)
+
+        self.cycle_number = QtWidgets.QSpinBox()
+        self.cycle_number.setRange(0, self.info["CyclesWritten"])
+        self.cycle_number.setValue(0)
+        self.cycle_number.setSpecialValueText("All")
+
+        self.segment_number = QtWidgets.QSpinBox()
+        self.segment_number.setRange(0, len(self.info["SegmentInfo"]))
+        self.segment_number.setValue(0)
+        self.segment_number.setSpecialValueText("All")
+
+        # self.file_number = QtWidgets.QSpinBox()
+        # self.file_number.setRange(1, len(self.index))
+        # self.file_number.setValue(len(self.index))
+
+        # todo: option to remove blanked regions?
+        # self.combo_blanking = QtWidgets.QComboBox()
+        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
+        self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
+        self.checkbox_blanking.setChecked(True)
+
+        self.updateTableIsotopes()
+
         if isinstance(existing_file, SPCalNuDataFile):
             existing = []
             for isotope in existing_file.selected_isotopes:
@@ -142,37 +172,31 @@ class NuImportDialog(ImportDialogBase):
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
 
-        self.cycle_number = QtWidgets.QSpinBox()
-        self.cycle_number.setRange(0, self.info["CyclesWritten"])
-        self.cycle_number.setValue(0)
-        self.cycle_number.setSpecialValueText("All")
-
-        self.segment_number = QtWidgets.QSpinBox()
-        self.segment_number.setRange(0, len(self.info["SegmentInfo"]))
-        self.segment_number.setValue(0)
-        self.segment_number.setSpecialValueText("All")
-
-        # self.file_number = QtWidgets.QSpinBox()
-        # self.file_number.setRange(1, len(self.index))
-        # self.file_number.setValue(len(self.index))
-
-        # todo: option to remove blanked regions?
-        # self.combo_blanking = QtWidgets.QComboBox()
-        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
-        self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
-        self.checkbox_blanking.setChecked(True)
-
         self.box_options_layout.addRow("Cycle:", self.cycle_number)
         self.box_options_layout.addRow("Segment:", self.segment_number)
+        self.box_options_layout.addRow("Max diff m/z:", self.max_mass_diff)
         # self.box_options.layout().addRow("Max file:", self.file_number)
         self.box_options_layout.addRow(self.checkbox_blanking)
 
         self.table.setFocus()
 
-    def segmentDelays(self) -> dict[int, float]:
+    @property
+    def accumulations(self) -> int:
+        return self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
+
+    @property
+    def segment_delays(self) -> dict[int, float]:
         return {
             s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
         }
+
+    def updateTableIsotopes(self) -> None:
+        natural = db["isotopes"][~np.isnan(db["isotopes"]["Composition"])]
+        indicies = search_sorted_closest(self.masses, natural["Mass"])
+        isotopes = natural[
+            np.abs(self.masses[indicies] - natural["Mass"]) < self.max_mass_diff.value()
+        ]
+        self.table.setEnabledIsotopes(isotopes)
 
     def isComplete(self) -> bool:
         return self.table.selectedIsotopes() is not None
@@ -214,17 +238,11 @@ class NuImportDialog(ImportDialogBase):
         # Get masses from data
         integs = self.import_thread.datas
 
-        segment_delays = {
-            s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
-        }
-
-        accumulations = self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-
         # Get masses from data
         masses = nu.masses_from_integ(
-            integs[0], self.info["MassCalCoefficients"], segment_delays
+            integs[0], self.info["MassCalCoefficients"], self.segment_delays
         )[0]
-        signals = nu.signals_from_integs(integs, accumulations)
+        signals = nu.signals_from_integs(integs, self.accumulations)
 
         times = nu.times_from_integs(integs, self.info) * 1e-9
 
@@ -247,7 +265,7 @@ class NuImportDialog(ImportDialogBase):
                 autobs,
                 signals,
                 masses,
-                accumulations,
+                self.accumulations,
                 self.info["BlMassCalStartCoef"],
                 self.info["BlMassCalEndCoef"],
             )
