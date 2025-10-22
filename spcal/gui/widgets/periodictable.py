@@ -147,8 +147,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
             iso["Isotope"]: self.createAction(iso) for iso in self.isotopes
         }
         if enabled is not None:
-            for isotope, action in self.isotope_actions.items():
-                action.setEnabled(isotope in enabled["Isotope"])
+            self.setEnabledIsotopes(enabled)
 
         isotopes_menu = QtWidgets.QMenu("Isotopes", parent=self)
         isotopes_menu.addActions(list(self.isotope_actions.values()))
@@ -164,13 +163,14 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.isotopesChanged.connect(self.updateChecked)
 
     def preferred(self) -> np.ndarray:
-        pref = self.isotopes["Preferred"] > 0
+        enabled = self.enabledIsotopes()
+        pref = enabled["Preferred"] > 0
         if not np.any(pref):
-            if np.all(np.isnan(self.isotopes["Composition"])):
-                return self.isotopes[0]
+            if np.all(np.isnan(enabled["Composition"])):
+                return enabled[0]
             else:
-                return self.isotopes[np.nanargmax(self.isotopes["Composition"])]
-        return self.isotopes[pref]
+                return enabled[np.nanargmax(enabled["Composition"])]
+        return enabled[pref]
 
     def createAction(self, isotope: np.ndarray) -> QtGui.QAction:
         text = f"{isotope['Isotope']:3}: {isotope['Mass']:.4f}"
@@ -187,6 +187,14 @@ class PeriodicTableButton(QtWidgets.QToolButton):
             [n for n, action in self.isotope_actions.items() if action.isEnabled()]
         )
         return self.isotopes[np.isin(self.isotopes["Isotope"], nums)]
+
+    def setEnabledIsotopes(self, enabled: np.ndarray):
+        for isotope, action in self.isotope_actions.items():
+            if isotope in enabled["Isotope"]:
+                action.setEnabled(True)
+            else:
+                action.setEnabled(False)
+                action.setChecked(False)
 
     def selectedIsotopes(self) -> np.ndarray:
         nums = np.array(
@@ -228,7 +236,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         # Draw element number
         self.style().drawItemText(
             painter,
-            option.rect.adjusted(2, 0, 0, 0),
+            option.rect.adjusted(2, 0, 0, 0),  # type: ignore
             QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignTop,
             self.palette(),
             self.isEnabled(),
@@ -240,7 +248,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         if num > 0:
             self.style().drawItemText(
                 painter,
-                option.rect.adjusted(2, 0, 0, 0),
+                option.rect.adjusted(2, 0, 0, 0),  # type: ignore
                 QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignBottom,
                 self.palette(),
                 self.isEnabled(),
@@ -250,7 +258,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         # Draw color icon
         if self.indicator is not None:
             rect = QtCore.QRectF(0.0, 0.0, 10.0, 10.0)
-            rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))
+            rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))  # type: ignore
             painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
             painter.setBrush(QtGui.QBrush(self.indicator))
             painter.drawEllipse(rect)
@@ -275,12 +283,11 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         for symbol in element_positions.keys():
             # Limit to chosen ones
             isotopes = db["isotopes"][db["isotopes"]["Symbol"] == symbol]
-            self.buttons[symbol] = PeriodicTableButton(
-                isotopes, enabled_isotopes[enabled_isotopes["Symbol"] == symbol]
-            )
+            self.buttons[symbol] = PeriodicTableButton(isotopes)
             self.buttons[symbol].isotopesChanged.connect(self.isotopesChanged)
 
         layout = QtWidgets.QGridLayout()
+        row = 0
         for symbol, (row, col) in element_positions.items():
             layout.addWidget(self.buttons[symbol], row, col)
         layout.setRowStretch(row + 1, 1)  # Last row stretch
@@ -293,6 +300,12 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         for button in self.buttons.values():
             enabled.extend(button.enabledIsotopes())
         return np.stack(enabled)
+
+    def setEnabledIsotopes(self, enabled: np.ndarray) -> None:
+        for symbol, button in self.buttons.items():
+            isotopes = enabled[enabled["Symbol"] == symbol]
+            button.setEnabled(isotopes.size > 0)
+            button.setEnabledIsotopes(isotopes)
 
     def selectedIsotopes(self) -> np.ndarray | None:
         selected: list[np.ndarray] = []
@@ -309,9 +322,9 @@ class PeriodicTableSelector(QtWidgets.QWidget):
                 action.setChecked(False)
         if isotopes is not None:
             for isotope in isotopes:
-                self.buttons[isotope["Symbol"]].isotope_actions[isotope["Isotope"]].setChecked(
-                    True
-                )
+                self.buttons[isotope["Symbol"]].isotope_actions[
+                    isotope["Isotope"]
+                ].setChecked(True)
         self.blockSignals(False)
         self.isotopesChanged.emit()
 
