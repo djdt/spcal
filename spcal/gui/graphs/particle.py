@@ -95,7 +95,7 @@ class ParticleView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
     ) -> None:
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
 
         # optimise by removing points with 0 change in gradient
@@ -124,7 +124,7 @@ class ParticleView(SinglePlotGraphicsView):
         size: float = 6.0,
     ) -> None:
         if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.red)
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
 
         scatter = pyqtgraph.ScatterPlotItem(
             x=x, y=y, size=size, symbol=symbol, pen=None, brush=brush
@@ -141,7 +141,7 @@ class ParticleView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
     ) -> None:
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
 
         for val, name, style in zip(
