@@ -102,7 +102,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.instrument_options = SPCalInstrumentOptionsDock()
         self.limit_options = SPCalLimitOptionsDock()
-
         self.isotope_options = SPCalIsotopeOptionsDock()
 
         self.processing_methods = {
@@ -124,6 +123,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.instrument_options.optionsChanged.connect(self.updateInstrumentOptions)
         self.limit_options.optionsChanged.connect(self.updateLimitOptions)
+        self.isotope_options.optionChanged.connect(self.updateIsotopeOption)
 
         self.files = SPCalDataFilesDock()
         self.files.dataFileSelected.connect(self.updateForDataFile)
@@ -200,6 +200,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "default"
         ].prominence_required = self.limit_options.prominence_required
         self.reprocess(self.files.selectedDataFile())
+
+    def updateIsotopeOption(self, isotope: str):
+        option = self.isotope_options.optionForIsotope(isotope)
+        print(option)
+        self.processing_methods["default"].isotope_options[isotope] = option
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if data_file is None:

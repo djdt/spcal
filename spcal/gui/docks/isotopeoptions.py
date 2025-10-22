@@ -171,13 +171,12 @@ class IsotopeOptionTable(BasicTable):
         item = self.item(row, column)
         if item is None:
             return None
-        try:
+        value = item.data(QtCore.Qt.ItemDataRole.EditRole)
+        if value is not None:
             value = float(item.data(QtCore.Qt.ItemDataRole.EditRole))
             if column in self.current_units:
                 value *= self.current_units[column]
-            return value
-        except ValueError:
-            return None
+        return value
 
     def setBaseValueForItem(self, row: int, column: int, value: float | None):
         item = self.item(row, column)
@@ -199,6 +198,7 @@ class IsotopeOptionTable(BasicTable):
         return options
 
     def setIsotopes(self, isotopes: list[str]) -> None:
+        self.blockSignals(True)
         self.setRowCount(len(isotopes))
         self.setVerticalHeaderLabels(isotopes)
         for i in range(self.rowCount()):
@@ -207,6 +207,7 @@ class IsotopeOptionTable(BasicTable):
                 item.setData(QtCore.Qt.ItemDataRole.EditRole, None)
                 self.setItem(i, j, item)
                 self.update(self.indexFromItem(item))
+        self.blockSignals(False)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
         event.accept()
@@ -267,7 +268,19 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
                 self.table.setBaseValueForItem(i, 0, option.density)
                 self.table.setBaseValueForItem(i, 1, option.response)
                 self.table.setBaseValueForItem(i, 2, option.mass_fraction)
-                break
+                return
+        raise StopIteration
+
+    def optionForIsotope(self, isotope: str) -> SPCalIsotopeOptions:
+        print('optionforisotpe')
+        for i in range(self.table.rowCount()):
+            if self.table.verticalHeaderItem(i).text() == isotope:
+                return SPCalIsotopeOptions(
+                    density=self.table.baseValueForItem(i, 0),
+                    response=self.table.baseValueForItem(i, 1),
+                    mass_fraction=self.table.baseValueForItem(i, 2),
+                )
+        raise StopIteration
 
     def selectedIsotope(self) -> str:
         indicies = self.table.selectedIndexes()
