@@ -3,7 +3,7 @@
 """
 
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.widgets.values import ValueWidget
 
@@ -18,9 +18,9 @@ class UnitsWidget(QtWidgets.QWidget):
         units: dict[str, float],
         default_unit: str | None = None,
         base_value: float | None = None,
-        validator: QtGui.QDoubleValidator | QtGui.QValidator | None = None,
-        format: int | tuple[str, int] = 6,
-        color_invalid: QtGui.QColor | None = None,
+        base_value_min: float = 0.0,
+        base_value_max: float = 1e99,
+        sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -28,24 +28,21 @@ class UnitsWidget(QtWidgets.QWidget):
         self._base_error: float | None = None
         self._units: dict[str, float] = {}
 
-        self.lineedit = ValueWidget(
-            validator=validator,
-            format=format,
-            color_invalid=color_invalid,
-        )
-        self.valid_base_range = (
-            self.lineedit.validator().bottom(),
-            self.lineedit.validator().top(),
+        self.base_value_min = base_value_min
+        self.base_value_max = base_value_max
+
+        self._value = ValueWidget(
+            min=base_value_min, max=base_value_max, sigfigs=sigfigs, parent=self
         )
 
         # link base and value
-        self.baseValueChanged.connect(self.updateValueFromBase)
-        self.lineedit.valueChanged.connect(self.updateBaseFromValue)
+        self.baseValueChanged.connect(self.valueFromBase)
+        self._value.valueChanged.connect(self.baseFromValue)
 
-        self.baseErrorChanged.connect(self.updateErrorFromBase)
-        self.lineedit.errorChanged.connect(self.updateBaseFromError)
+        self.baseErrorChanged.connect(self.errorFromBase)
+        self._value.errorChanged.connect(self.baseFromError)
 
-        self.combo = QtWidgets.QComboBox()
+        self.combo = QtWidgets.QComboBox(parent=self)
         self.combo.currentTextChanged.connect(self.onUnitChanged)
 
         self.setUnits(units)
@@ -58,27 +55,21 @@ class UnitsWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.lineedit, 3)
+        layout.addWidget(self._value, 3)
         layout.addWidget(self.combo, 1)
         self.setLayout(layout)
 
-    def setViewFormat(self, precision: int, format: str = "g") -> None:
-        self.lineedit.setViewFormat(precision, format)
-
-    def setEditFormat(self, precision: int, format: str = "g") -> None:
-        self.lineedit.setEditFormat(precision, format)
-
     def value(self) -> float | None:
-        return self.lineedit.value()
+        return self._value.value()
 
     def setValue(self, value: float | None) -> None:
-        self.lineedit.setValue(value)
+        self._value.setValue(value)
 
     def error(self) -> float | None:
-        return self.lineedit.error()
+        return self._value.error()
 
     def setError(self, error: float | None) -> None:
-        self.lineedit.setError(error)
+        self._value.setError(error)
 
     def baseValue(self) -> float | None:
         return self._base_value
@@ -97,37 +88,32 @@ class UnitsWidget(QtWidgets.QWidget):
             self.baseErrorChanged.emit(error)
 
     def onUnitChanged(self, unit: str) -> None:
-        bottom = self.valid_base_range[0] / self._units[unit]
-        top = self.valid_base_range[1] / self._units[unit]
+        min = self.base_value_min / self._units[unit]
+        max = self.base_value_max / self._units[unit]
 
-        self.lineedit.validator().setBottom(bottom)
-        self.lineedit.validator().setTop(top)
-        self.updateValueFromBase()
-        self.updateErrorFromBase()
+        self._value.setRange(min, max)
+        self.valueFromBase(self.baseValue())
+        self.errorFromBase(self.baseError())
         self.unitChanged.emit(unit)
 
-    def updateValueFromBase(self) -> None:
-        self.lineedit.valueChanged.disconnect(self.updateBaseFromValue)
-        base = self.baseValue()
+    def valueFromBase(self, base: float | None) -> None:
+        self._value.valueChanged.disconnect(self.baseFromValue)
         if base is not None:
             base = base / self._units[self.unit()]
         self.setValue(base)
-        self.lineedit.valueChanged.connect(self.updateBaseFromValue)
+        self._value.valueChanged.connect(self.baseFromValue)
 
-    def updateBaseFromValue(self) -> None:
-        value = self.value()
+    def baseFromValue(self, value: float | None) -> None:
         if value is not None:
             value = value * self._units[self.unit()]
         self.setBaseValue(value)
 
-    def updateErrorFromBase(self) -> None:
-        error = self.baseError()
+    def errorFromBase(self, error: float | None) -> None:
         if error is not None:
             error = error / self._units[self.unit()]
         self.setError(error)
 
-    def updateBaseFromError(self) -> None:
-        error = self.error()
+    def baseFromError(self, error: float | None) -> None:
         if error is not None:
             error = error * self._units[self.unit()]
         self.setBaseError(error)
@@ -142,41 +128,40 @@ class UnitsWidget(QtWidgets.QWidget):
         base = self.baseValue()
         if base is not None:
             idx = max(np.searchsorted(list(self._units.values()), base) - 1, 0)
-            self.combo.setCurrentIndex(idx)
+            self.combo.setCurrentIndex(int(idx))
         return self.combo.currentText()
 
     def setUnits(self, units: dict) -> None:
         self._units = units
         self.combo.blockSignals(True)
         self.combo.clear()
-        self.combo.addItems(units.keys())
+        self.combo.addItems(list(units.keys()))
         self.combo.blockSignals(False)
 
-    def sync(self, other: "UnitsWidget") -> None:
-        self.baseValueChanged.connect(other.setBaseValue)
-        other.baseValueChanged.connect(self.setBaseValue)
-        self.baseErrorChanged.connect(other.setBaseError)
-        other.baseErrorChanged.connect(self.setBaseError)
-        # self.lineedit.textChanged.connect(other.lineedit.setText)
-        # other.lineedit.textChanged.connect(self.lineedit.setText)
-        self.combo.currentTextChanged.connect(other.combo.setCurrentText)
-        other.combo.currentTextChanged.connect(self.combo.setCurrentText)
-
-    # Reimplementations
+    # # Reimplementations
     def hasAcceptableInput(self) -> bool:
-        return self.lineedit.hasAcceptableInput()
+        return self._value.hasAcceptableInput()
 
     def setReadOnly(self, readonly: bool) -> None:
-        self.lineedit.setReadOnly(readonly)
-        self.lineedit.setActive(not readonly)
+        self._value.setReadOnly(readonly)
 
     def setToolTip(self, text: str) -> None:
-        self.lineedit.setToolTip(text)
+        self._value.setToolTip(text)
         self.combo.setToolTip(text)
 
-    def setEnabled(self, enabled: bool) -> None:
-        self.lineedit.setEnabled(enabled)
-        self.combo.setEnabled(enabled)
+    # def setEnabled(self, enabled: bool) -> None:
+    #     self._value.setEnabled(enabled)
+    #     self.combo.setEnabled(enabled)
 
-    def isEnabled(self) -> bool:
-        return self.lineedit.isEnabled() and self.combo.isEnabled()
+    # def isEnabled(self) -> bool:
+    #     return self.lineedit.isEnabled() and self.combo.isEnabled()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+    unit = UnitsWidget({"a": 1.0, "b": 10.0}, base_value_max=2.0)
+    unit.setReadOnly(True)
+    unit.setEnabled(False)
+    unit.resize(200, 60)
+    unit.show()
+    app.exec()

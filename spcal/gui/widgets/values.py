@@ -1,128 +1,134 @@
 """Widget that displays a value with formatting."""
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets.validcolorle import ValidColorLineEdit
+from spcal.gui.objects import DoubleOrEmptyValidator
 
 
-class ValueWidget(ValidColorLineEdit):
-    valueChanged = QtCore.Signal(object)  # object for None
-    errorChanged = QtCore.Signal(object)  # object for None
-    valueEdited = QtCore.Signal(object)  # object for None
+class ValueWidget(QtWidgets.QAbstractSpinBox):
+    valueChanged = QtCore.Signal(object)
+    errorChanged = QtCore.Signal(object)
 
     def __init__(
         self,
         value: float | None = None,
-        validator: QtGui.QValidator | None = None,
-        format: int | tuple[str, int] = 6,
-        color_invalid: QtGui.QColor | None = None,
+        error: float | None = None,
+        min: float = 0.0,
+        max: float = 1e99,
+        sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__(color_invalid=color_invalid, parent=parent)
+        super().__init__(parent)
+        self._value = value
+        self._error = error
+        self.min = min
+        self.max = max
+        self.sigfigs = sigfigs
 
-        self._value: float | None = None
-        self._last_edit_value: float | None = None
-        self._error: float | None = None
+        # locale group separators break the double validator
+        local = self.locale()
+        local.setNumberOptions(
+            local.numberOptions() | QtCore.QLocale.NumberOption.OmitGroupSeparator
+        )
+        self.setLocale(local)
 
-        if validator is None:
-            validator = QtGui.QDoubleValidator(0.0, 1e99, 12)
-        self.setValidator(validator)
+        self.lineEdit().setValidator(DoubleOrEmptyValidator(min, max, 16, parent=self))
+        self.lineEdit().textEdited.connect(self.valueFromText)
 
-        self.view_format = ("g", format) if isinstance(format, int) else format
-        self.edit_format = ("g", 16)
+        self.valueChanged.connect(self.textFromValue)
+        self.errorChanged.connect(self.textFromValue)
 
-        self.textEdited.connect(self.updateValueFromText)
-        self.valueChanged.connect(self.updateTextFromValue)
-        self.editingFinished.connect(self.checkValueEdited)
+    def error(self) -> float | None:
+        return self._error
 
-        self.setValue(value)
-
-    def checkValueEdited(self) -> None:
-        if self._value != self._last_edit_value:
-            self._last_edit_value = self._value
-            self.valueEdited.emit(self._value)
-
-    def setViewFormat(self, precision: int, format: str = "g") -> None:
-        self.view_format = (format, precision)
-        self.updateTextFromValue()
-
-    def setEditFormat(self, precision: int, format: str = "g") -> None:
-        self.edit_format = (format, precision)
+    def setError(self, error: float | None):
+        if self._error != error:
+            self._error = error
+            self.errorChanged.emit(error)
 
     def value(self) -> float | None:
         return self._value
 
-    def setValue(self, value: float | None) -> None:
-        if value != value:  # Check for NaN
+    def setValue(self, value: float | None):
+        print("setValue", value)
+        if value is None or np.isnan(value):
             value = None
         if self._value != value:
             self._value = value
             self.valueChanged.emit(value)
 
-    def error(self) -> float | None:
-        return self._error
-
-    def setError(self, error: float | None) -> None:
-        if error != error:  # Check for NaN
-            error = None
-        if self._error != error:
-            self._error = error
-            self.errorChanged.emit(error)
-
-    def focusInEvent(self, event: QtGui.QFocusEvent) -> None:
-        self.updateTextFromValue()
-        super().focusInEvent(event)
-
-    def focusOutEvent(self, event: QtGui.QFocusEvent) -> None:
-        self.updateTextFromValue()
-        super().focusOutEvent(event)
-
-    def isEditMode(self) -> bool:
-        return self.hasFocus() and self.isEnabled() and not self.isReadOnly()
-
-    def updateValueFromText(self) -> None:
-        self.valueChanged.disconnect(self.updateTextFromValue)
-        if self.text() == "":
-            self.setValue(None)
-        elif self.hasAcceptableInput():
-            self.setValue(self.locale().toDouble(self.text())[0])
-        self.valueChanged.connect(self.updateTextFromValue)
-
-    def updateTextFromValue(self) -> None:
-        format = self.edit_format if self.isEditMode() else self.view_format
-        value = self.value()
-        if value is None:
-            self.setText("")
+    def textFromValue(self, value: float | None):
+        if self._value is None:
+            text = ""
+        elif self.hasFocus() and self.isEnabled() and not self.isReadOnly():
+            text = self.locale().toString(self._value, "g", 16)  # type: ignore
         else:
-            self.setText(self.locale().toString(float(value), format[0], format[1]))
+            text = self.locale().toString(self._value, "g", self.sigfigs)  # type: ignore
+            if self._error is not None:
+                text += " ± "
+                text += self.locale().toString(self._error, "g", self.sigfigs)  # type: ignore
 
-    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
-        super().paintEvent(event)
+        self.lineEdit().setText(text)
 
-        if self.isEditMode() or self._error is None:  # don't draw if editing or missing
+    def valueFromText(self, text: str):
+        if text == "":
+            self.setValue(None)
+        else:
+            value, ok = self.locale().toDouble(text)
+            if ok:
+                value = min(value, self.max)
+                value = max(value, self.min)
+                self.valueChanged.disconnect(self.textFromValue)
+                self.setValue(value)
+                self.valueChanged.connect(self.textFromValue)
+
+    def setRange(self, min: float, max: float):
+        self.min, self.max = min, max
+        validator = self.lineEdit().validator()
+        assert isinstance(validator, QtGui.QDoubleValidator)
+        validator.setRange(min, max)
+
+    def stepBy(self, steps: int):
+        if self._value is None:
             return
+        new_value = self._value + steps
+        if new_value > self.max:
+            new_value = self.max
+        elif new_value < self.min:
+            new_value = self.min
+        self.setValue(new_value)
 
-        self.ensurePolished()
+    def stepEnabled(self) -> QtWidgets.QAbstractSpinBox.StepEnabledFlag:
+        enabled = QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepNone
+        if self._value is not None:
+            if self._value < self.max:
+                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
+            if self._value > self.min:
+                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
+        return enabled
 
-        panel = QtWidgets.QStyleOptionFrame()
-        self.initStyleOption(panel)
-        fm = panel.fontMetrics
+    def focusInEvent(self, event: QtGui.QFocusEvent):
+        super().focusInEvent(event)
+        self.textFromValue(self.value())
 
-        rect = self.style().subElementRect(
-            QtWidgets.QStyle.SubElement.SE_LineEditContents, panel, self
-        )
-        rect = rect.marginsRemoved(self.textMargins())
-        # secret QlineEditPrivate::horizontalMargin is 2
-        rect.setX(rect.x() + 2.0 + fm.horizontalAdvance(self.text()))
+    def focusOutEvent(self, event: QtGui.QFocusEvent):
+        super().focusOutEvent(event)
+        self.textFromValue(self.value())
 
-        err_str = self.locale().toString(
-            float(self._error), self.view_format[0], self.view_format[1]
-        )
-        text = fm.elidedText(
-            f" ± {err_str}", QtCore.Qt.TextElideMode.ElideRight, rect.width()
-        )
 
-        painter = QtGui.QPainter(self)
-        painter.setClipRect(rect)
-        painter.setPen(self.palette().text().color())
-        painter.drawText(rect, self.alignment(), text)
+if __name__ == "__main__":
+    app = QtWidgets.QApplication()
+    w = QtWidgets.QWidget()
+    w.resize(200, 60)
+
+    unit = ValueWidget(min=-10, max=2.0)
+    button = QtWidgets.QPushButton()
+    button.pressed.connect(lambda: unit.setError(10.0))
+
+    layout = QtWidgets.QVBoxLayout()
+    layout.addWidget(unit)
+    layout.addWidget(button)
+    w.setLayout(layout)
+    w.show()
+    app.exec()
