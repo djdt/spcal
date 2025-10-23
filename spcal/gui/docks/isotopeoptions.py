@@ -5,6 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.modelviews import BasicTable, ComboHeaderView
+from spcal.gui.widgets.values import ValueWidget
 from spcal.processing import SPCalIsotopeOptions
 from spcal.siunits import (
     density_units,
@@ -14,14 +15,7 @@ from spcal.siunits import (
 logger = logging.getLogger(__name__)
 
 
-class DoubleSpinBoxWithEmpty(QtWidgets.QDoubleSpinBox):
-    def validate(self, input: str, pos: int) -> QtGui.QValidator.State:
-        if input == "":
-            return QtGui.QValidator.State.Acceptable
-        return super().validate(input, pos)
-
-
-class DoubleSpinBoxDelegate(QtWidgets.QStyledItemDelegate):
+class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(
         self,
         sigfigs: int = 6,
@@ -39,11 +33,9 @@ class DoubleSpinBoxDelegate(QtWidgets.QStyledItemDelegate):
         option: QtWidgets.QStyleOptionViewItem,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ) -> QtWidgets.QWidget:
-        editor = DoubleSpinBoxWithEmpty(parent)
-        # editor.setStepType(QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType)
-        editor.setMinimum(self.min)
-        editor.setMaximum(self.max)
-        editor.setDecimals(self.sigfigs)
+        editor = ValueWidget(
+            min=self.min, max=self.max, sigfigs=self.sigfigs, parent=parent
+        )
         return editor
 
     def setEditorData(
@@ -51,12 +43,9 @@ class DoubleSpinBoxDelegate(QtWidgets.QStyledItemDelegate):
         editor: QtWidgets.QWidget,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
-        assert isinstance(editor, QtWidgets.QDoubleSpinBox)
+        assert isinstance(editor, ValueWidget)
         value = index.data(QtCore.Qt.ItemDataRole.EditRole)
-        if value is None:
-            editor.setValue(editor.minimum())
-        else:
-            editor.setValue(value)
+        editor.setValue(value)
 
     def setModelData(
         self,
@@ -64,10 +53,8 @@ class DoubleSpinBoxDelegate(QtWidgets.QStyledItemDelegate):
         model: QtCore.QAbstractItemModel,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
-        assert isinstance(editor, QtWidgets.QDoubleSpinBox)
+        assert isinstance(editor, ValueWidget)
         value = editor.value()
-        if value == editor.minimum():
-            value = None
         model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
 
 
@@ -95,11 +82,9 @@ class IsotopeOptionTable(BasicTable):
 
         self.header = ComboHeaderView(header_items)
 
-        self.setItemDelegateForColumn(0, DoubleSpinBoxDelegate(sf, parent=self))
-        self.setItemDelegateForColumn(1, DoubleSpinBoxDelegate(sf, parent=self))
-        self.setItemDelegateForColumn(
-            2, DoubleSpinBoxDelegate(sf, 0.0, 1.0, parent=self)
-        )
+        self.setItemDelegateForColumn(0, ValueWidgetDelegate(sf, parent=self))
+        self.setItemDelegateForColumn(1, ValueWidgetDelegate(sf, parent=self))
+        self.setItemDelegateForColumn(2, ValueWidgetDelegate(sf, 0.0, 1.0, parent=self))
 
         self.current_units = {0: density_units["g/cm³"], 1: response_units["L/µg"]}
 
@@ -272,7 +257,6 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         raise StopIteration
 
     def optionForIsotope(self, isotope: str) -> SPCalIsotopeOptions:
-        print('optionforisotpe')
         for i in range(self.table.rowCount()):
             if self.table.verticalHeaderItem(i).text() == isotope:
                 return SPCalIsotopeOptions(

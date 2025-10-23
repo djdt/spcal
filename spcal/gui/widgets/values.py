@@ -58,6 +58,18 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
             self._value = value
             self.valueChanged.emit(value)
 
+    def setRange(self, min: float, max: float):
+        self.min, self.max = min, max
+        validator = self.lineEdit().validator()
+        assert isinstance(validator, QtGui.QDoubleValidator)
+        validator.setRange(min, max)
+
+    def setSigFigs(self, sigfigs: int):
+        self.sigfigs = sigfigs
+        validator = self.lineEdit().validator()
+        assert isinstance(validator, QtGui.QDoubleValidator)
+        validator.setDecimals(sigfigs)
+
     def textFromValue(self, value: float | None):
         if self._value is None:
             text = ""
@@ -82,12 +94,6 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
                 self.valueChanged.disconnect(self.textFromValue)
                 self.setValue(value)
                 self.valueChanged.connect(self.textFromValue)
-
-    def setRange(self, min: float, max: float):
-        self.min, self.max = min, max
-        validator = self.lineEdit().validator()
-        assert isinstance(validator, QtGui.QDoubleValidator)
-        validator.setRange(min, max)
 
     def stepBy(self, steps: int):
         if self._value is None:

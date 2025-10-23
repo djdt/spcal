@@ -30,12 +30,6 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-MAX_RECENT_FILES = 10
-
-
-sf = 4
-
-
 class SPCalSignalGraph(QtWidgets.QWidget):
     isotopeChanged = QtCore.Signal(str)
 
@@ -622,7 +616,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         if ok:
             settings.setValue("SigFigs", value)
-            self.options.setSignificantFigures(value)
+            self.instrument_options.setSignificantFigures(value)
+            self.limit_options.setSignificantFigures(value)
+            self.isotope_options.setSignificantFigures(value)
             self.sample.io.setSignificantFigures(value)
             self.reference.io.setSignificantFigures(value)
             self.results.io.setSignificantFigures(value)
@@ -642,6 +638,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 io.syncOutput(ref_io, "response")
 
     def updateRecentFiles(self, new_path: Path | None = None) -> None:
+        MAX_RECENT_FILES = 10
         settings = QtCore.QSettings()
         num = settings.beginReadArray("RecentFiles")
         paths = []

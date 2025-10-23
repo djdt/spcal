@@ -2,7 +2,7 @@ import logging
 from statistics import NormalDist
 
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.dialogs.advancedoptions import (
     AdvancedPoissonDialog,
@@ -23,9 +23,7 @@ class LimitOptions(QtWidgets.QGroupBox):
     ):
         super().__init__(parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.alpha = ValueWidget(
-            alpha, validator=QtGui.QDoubleValidator(1e-16, 0.5, 9), format=sf
-        )
+        self.alpha = ValueWidget(alpha, min=1e-16, max=0.5, sigfigs=sf)
         self.alpha.setToolTip("False positive error rate.")
         self.alpha.valueChanged.connect(self.optionsChanged)
 
@@ -54,10 +52,7 @@ class CompoundPoissonOptions(LimitOptions):
 
         self.single_ion_parameters = np.array([])  # array of (..., [mz, mu,sigma )
 
-        self.lognormal_sigma = ValueWidget(
-            0.47, validator=QtGui.QDoubleValidator(1e-9, 10.0, 9), format=sf
-        )
-        self.lognormal_sigma.setPlaceholderText("0.45")
+        self.lognormal_sigma = ValueWidget(0.5, min=1e-9, max=10.0, sigfigs=sf)
         self.lognormal_sigma.setToolTip(
             "Shape parameter for the log-normal approximation of the SIA. "
         )
@@ -140,9 +135,7 @@ class GaussianOptions(LimitOptions):
         self.alpha.valueChanged.connect(self.updateSigma)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.sigma = ValueWidget(
-            5.0, validator=QtGui.QDoubleValidator(0.0, 8.0, 4), format=sf
-        )
+        self.sigma = ValueWidget(5.0, min=0.0, max=8.0, sigfigs=sf)
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )
@@ -267,10 +260,10 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             settings.value("Threshold/ProminenceRequired", 0.2)  # type: ignore
         )  # type: ignore
 
-        self.window_size = ValueWidget(
-            1000, format=("f", 0), validator=QtGui.QIntValidator(3, 1000000)
-        )
-        self.window_size.setEditFormat(0, format="f")
+        self.window_size = QtWidgets.QSpinBox()
+        self.window_size.setSingleStep(100)
+        self.window_size.setRange(3, 9999999)
+        self.window_size.setValue(1000)
         self.window_size.setToolTip("Size of window for moving thresholds.")
         self.window_size.setEnabled(False)
         self.check_window = QtWidgets.QCheckBox("Use window")

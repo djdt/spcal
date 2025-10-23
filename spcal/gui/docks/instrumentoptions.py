@@ -1,4 +1,3 @@
-
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.widgets import UnitsWidget, ValueWidget
@@ -63,7 +62,7 @@ class SaveLoadDockTitleBar(QtWidgets.QWidget):
         layout_bar.setContentsMargins(0, 0, 0, 0)
 
         layout.addLayout(layout_bar)
-        layout.addWidget(QtWidgets.QFrame(frameShape=QtWidgets.QFrame.HLine))
+        layout.addWidget(QtWidgets.QFrame(frameShape=QtWidgets.QFrame.Shape.HLine))
         self.setLayout(layout)
 
     def changeEvent(self, event: QtCore.QEvent) -> None:
@@ -78,7 +77,6 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Instrument Options")
-        # self.setTitleBarWidget(SaveLoadDockTitleBar())
 
         uptake_units = {
             "ml/min": 1e-3 / 60.0,
@@ -89,25 +87,20 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
         # load stored options
         settings = QtCore.QSettings()
-        sf = int(settings.value("SigFigs", 4))
+        sf = int(settings.value("SigFigs", 4))  # type: ignore
 
         # Instrument wide options
         self.event_time = UnitsWidget(
             time_units,
             default_unit="ms",
-            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
-            format=sf,
+            base_value_min=0.0,
+            base_value_max=10.0,
+            sigfigs=sf,
         )
         self.event_time.setReadOnly(True)
 
-        self.uptake = UnitsWidget(
-            uptake_units,
-            default_unit="ml/min",
-            format=sf,
-        )
-        self.efficiency = ValueWidget(
-            validator=QtGui.QDoubleValidator(0.0, 1.0, 10), format=sf
-        )
+        self.uptake = UnitsWidget(uptake_units, default_unit="ml/min")
+        self.efficiency = ValueWidget(min=0.0, max=1.0, sigfigs=sf)
 
         self.event_time.setToolTip(
             "ICP-MS time per event, updated from imported files if time column exists."
@@ -145,86 +138,19 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self.uptake.baseValueChanged.connect(self.optionsChanged)
         self.efficiency.valueChanged.connect(self.optionsChanged)
 
-        # self.save_button = QtWidgets.QToolButton()
-        # self.save_button.setAutoRaise(True)
-        # self.save_button.setPopupMode(
-        #     QtWidgets.QToolButton.ToolButtonPopupMode.MenuButtonPopup
-        # )
-        # self.save_button.setIcon(QtGui.QIcon.fromTheme("document-save"))
-        #
-        # self.action_save = create_action(
-        #     "document-save",
-        #     "Save Options",
-        #     "Save instrument options to a file.",
-        #     lambda: self.saveToFile(),
-        # )
-        # self.action_load = create_action(
-        #     "document-open",
-        #     "Load Options",
-        #     "Load instrument options from a file.",
-        #     self.loadFromFile,
-        # )
-
-        # buttons_layout = QtWidgets.QHBoxLayout()
-        # buttons_layout.addWidget(self.save_button)
-
-        # pm = self.style().pixelMetric(QtWidgets.QStyle.PixelMetric.PM_DockWidgetTitleMargin, None, self)
-        # tw = self.fontMetrics().boundingRect(self.windowTitle())
-        # self.save_button.move(pm*2+tw, 0)
-        # self.save_button.move(0, pm*2 + self.save_button.height())
-
         form_layout = QtWidgets.QFormLayout()
-
         form_layout.addRow("Uptake:", self.uptake)
         form_layout.addRow("Event time:", self.event_time)
         form_layout.addRow("Trans. Efficiency:", self.efficiency)
         form_layout.addRow("", self.efficiency_method)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(form_layout)
-        # layout.addWidget(
-        #     self.save_button,
-        #     QtCore.Qt.AlignmentFlag.AlignBottom | QtCore.Qt.AlignmentFlag.AlignLeft,
-        # )
+        # layout = QtWidgets.QVBoxLayout()
+        # layout.addLayout(form_layout)
 
         widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
+        widget.setLayout(form_layout)
         self.setWidget(widget)
 
-        # self.save_button.setDefaultAction(self.action_save)
-        # self.save_button.addAction(self.action_load)
-
-    #     #
-    # def saveToFile(self, file: str | Path | None = None) -> None:
-    #     state = self.state()
-    #
-    #     if file is None:
-    #         # maybe add a global?
-    #         settings = QtCore.QSettings()
-    #         num = settings.beginReadArray("RecentFiles")
-    #         settings.setArrayIndex(0)
-    #         if num > 0:
-    #             dir = settings.value("Path")
-    #         else:
-    #             dir = ""
-    #
-    #         file, filter = QtWidgets.QFileDialog.getSaveFileName(
-    #             self,
-    #             "Save Instrument Options",
-    #             str(Path(dir).with_suffix(".spcalio")),
-    #             "SPCal Instrument Options (*.spcalio)",
-    #         )
-    #
-    #     if file != "":
-    #         config = configparser.ConfigParser()
-    #         config["Instrument Options"] = state
-    #         with open(file, "w") as fp:
-    #             config.write(fp)
-    #
-    # def loadFromFile(self, file: str | Path) -> None:
-    #     print("LOAD")
-    #     pass
-    #
     def asInstrumentOptions(self) -> SPCalInstrumentOptions:
         return SPCalInstrumentOptions(
             self.event_time.baseValue(),
@@ -279,9 +205,6 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self.blockSignals(False)
         self.optionsChanged.emit()
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
-        if num is None:
-            num = int(QtCore.QSettings().value("SigFigs", 4))
+    def setSignificantFigures(self, num: int) -> None:
         for widget in self.findChildren(ValueWidget):
-            if widget.view_format[1] == "g":
-                widget.setViewFormat(num)
+            widget.setSigFigs(num)

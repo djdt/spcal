@@ -96,6 +96,9 @@ class UnitsWidget(QtWidgets.QWidget):
         self.errorFromBase(self.baseError())
         self.unitChanged.emit(unit)
 
+    def setSigFigs(self, sigfigs: int):
+        self._value.setSigFigs(sigfigs)
+
     def valueFromBase(self, base: float | None) -> None:
         self._value.valueChanged.disconnect(self.baseFromValue)
         if base is not None:
