@@ -50,7 +50,6 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         )
 
         self.combo_isotope = QtWidgets.QComboBox()
-        # self.combo_isotope.currentTextChanged.connect(self.drawResult)
         self.combo_isotope.currentTextChanged.connect(self.isotopeChanged)
 
         self.graph = ParticleView(font=font)
@@ -59,10 +58,6 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.graph, 1)
         self.setLayout(layout)
-
-    def setResults(self, results: dict[str, SPCalProcessingResult]):
-        # self.results = results
-        self.setIsotopes(list(results.keys()))
 
     def setIsotopes(self, isotopes: list[str]):
         self.combo_isotope.blockSignals(True)
@@ -74,21 +69,6 @@ class SPCalSignalGraph(QtWidgets.QWidget):
     def drawResult(self, result: SPCalProcessingResult):
         self.graph.clear()
         self.graph.drawResult(result)
-        # result = self.results[isotope]
-
-        # self.graph.clear()
-        # self.graph.drawSignal(isotope, times, signals)
-        # self.graph.setDataLimits(xMin=0.0, xMax=1.0)
-        # self.graph.region.setBounds((times[0], times[-1]))
-        # maxima = detection_maxima(result.signals, result.regions)
-        # self.graph.drawMaxima(
-        #     result.isotope, result.times[maxima], result.signals[maxima]
-        # )
-        # self.graph.drawLimits(
-        #     result.times, result.limit.mean_signal, result.limit.detection_threshold
-        # )
-
-    # def drawSignal(self, isotope: str, times: np.ndarray, signals: np.ndarray):
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
@@ -128,9 +108,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             SPCalDataFile, dict[str, SPCalProcessingResult]
         ] = {}
 
-        self.instrument_options.optionsChanged.connect(self.updateInstrumentOptions)
-        self.limit_options.optionsChanged.connect(self.updateLimitOptions)
-        self.isotope_options.optionChanged.connect(self.updateIsotopeOption)
+        self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
+        self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
+        self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
+        self.resultsChanged.connect(self.onResultsChanged)
 
         self.files = SPCalDataFilesDock()
         self.files.dataFileSelected.connect(self.updateForDataFile)
@@ -208,10 +189,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         ].prominence_required = self.limit_options.prominence_required
         self.reprocess(self.files.selectedDataFile())
 
-    def updateIsotopeOption(self, isotope: str):
+    def onIsotopeOptionChanged(self, isotope: str):
         option = self.isotope_options.optionForIsotope(isotope)
-        print(option)
         self.processing_methods["default"].isotope_options[isotope] = option
+
+    def onResultsChanged(self, data_file: SPCalDataFile) -> None:
+        if data_file == self.files.selectedDataFile():
+            self.signal.drawResult(
+                self.processing_results[data_file][
+                    self.signal.combo_isotope.currentText()
+                ]
+            )
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if data_file is None:
@@ -224,8 +212,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 "default"
             ].processDataFile(file)
             self.resultsChanged.emit(file)
-
-    def onResultsChanged(self) -> None:
 
     def createMenuBar(self) -> None:
         # File
