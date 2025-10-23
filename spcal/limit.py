@@ -248,7 +248,7 @@ class SPCalCompoundPoissonLimit(SPCalLimit):
         lam = bn.move_mean(signals, self.window_size, min_count=halfwin + 1)[
             2 * halfwin :
         ]
-        mu = np.full_like(lam, -0.5 * self.sigma**2)
+        mu = np.full_like(lam, np.log(lam) - 0.5 * self.sigma**2)
         return lam, compound_poisson_lognormal_quantile_lookup(  # type: ignore , is array
             1.0 - self.alpha, lam, mu, np.full_like(lam, self.sigma)
         )
