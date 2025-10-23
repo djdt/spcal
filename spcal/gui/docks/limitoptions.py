@@ -192,12 +192,6 @@ class PoissonOptions(LimitOptions):
         self.epsilon = 0.5
         self.t_sample = 1.0
         self.t_blank = 1.0
-        # settings = QtCore.QSettings()
-        # self.formula = settings.value("Poisson/Formula", "Formula C")
-        # self.eta = float(settings.value("Poisson/Eta", 2.0))
-        # self.epsilon = float(settings.value("Poisson/Epsilon", 0.5))
-        # self.t_sample = float(settings.value("Poisson/Tsample", 1.0))
-        # self.t_blank = float(settings.value("Poisson/Tblank", 1.0))
 
     def state(self) -> dict:
         return {
@@ -243,18 +237,12 @@ class PoissonOptions(LimitOptions):
 
     def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
         self.function = formula
-        # settings = QtCore.QSettings()
-        # settings.value("Poisson/Formula", formula)
         if formula == "Currie":
             self.eta = opt1 or 2.0
             self.epsilon = opt2 or 0.5
-            # settings.setValue("Poisson/Eta", self.eta)
-            # settings.setValue("Poisson/Epsilon", self.epsilon)
         else:
             self.t_sample = opt1 or 1.0
             self.t_blank = opt2 or 1.0
-            # settings.setValue("Poisson/Tsample", self.t_sample)
-            # settings.setValue("Poisson/Tblank", self.t_blank)
 
         self.optionsChanged.emit()
 
@@ -290,6 +278,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             "Calculate threhold for each point using data from surrounding points."
         )
         self.check_window.toggled.connect(self.window_size.setEnabled)
+        self.check_window.toggled.connect(self.optionsChanged)
 
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
