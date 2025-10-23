@@ -220,7 +220,7 @@ class SPCalLimitOptions(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-            if poisson.detection_threshold > gaussian.detection_threshold:
+            if np.any(poisson.detection_threshold > gaussian.detection_threshold):
                 return poisson
             else:
                 return gaussian
