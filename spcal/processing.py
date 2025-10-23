@@ -168,6 +168,17 @@ class SPCalLimitOptions(object):
             else:
                 method = "poisson"
 
+        if method == "compound poisson" or (method == "highest" and data_file.isTOF()):
+            # Override the default sigma if single ion paramters are present
+            if self.single_ion_parameters is not None:
+                sigma = np.interp(
+                    data_file.isotopeMass(isotope),
+                    self.single_ion_parameters["mass"],
+                    self.single_ion_parameters["sigma"],
+                )
+            else:
+                sigma = self.compound_poisson_kws["sigma"]
+
         if method == "gaussian":
             return SPCalGaussianLimit(
                 signals,
@@ -190,20 +201,10 @@ class SPCalLimitOptions(object):
             if not data_file.isTOF():
                 logger.warning("Compound-Poisson limit created for non-TOF data file")
 
-            # Override the default sigma if single ion paramters are present
-            if self.single_ion_parameters is not None:
-                sigma = np.interp(
-                    data_file.isotopeMass(isotope),
-                    self.single_ion_parameters["mass"],
-                    self.single_ion_parameters["sigma"],
-                )
-            else:
-                sigma = self.compound_poisson_kws["sigma"]
-
             return SPCalCompoundPoissonLimit(
                 signals,
                 alpha=self.compound_poisson_kws["alpha"],
-                sigma=sigma,
+                sigma=sigma,  # type: ignore , sigma bound when method==compound poisson
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
@@ -214,12 +215,21 @@ class SPCalLimitOptions(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-            poisson = SPCalPoissonLimit(
-                signals,
-                **self.poisson_kws,
-                window_size=self.window_size,
-                max_iterations=self.max_iterations,
-            )
+            if data_file.isTOF():
+                poisson = SPCalCompoundPoissonLimit(
+                    signals,
+                    alpha=self.compound_poisson_kws["alpha"],
+                    sigma=sigma,  # type: ignore , sigma bound when method==highest and istof
+                    window_size=self.window_size,
+                    max_iterations=self.max_iterations,
+                )
+            else:
+                poisson = SPCalPoissonLimit(
+                    signals,
+                    **self.poisson_kws,
+                    window_size=self.window_size,
+                    max_iterations=self.max_iterations,
+                )
             if np.any(poisson.detection_threshold > gaussian.detection_threshold):
                 return poisson
             else:
