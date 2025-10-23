@@ -4,7 +4,11 @@ from PySide6 import QtCore, QtGui
 
 
 def create_action(
-    icon: str, label: str, status: str, func: Callable, checkable: bool = False
+    icon: str,
+    label: str,
+    status: str,
+    func: Callable | QtCore.SignalInstance,
+    checkable: bool = False,
 ) -> QtGui.QAction:
     action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label)
     action.setStatusTip(status)
