@@ -9,7 +9,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import spcal.resources  # import to load
 from spcal.gui.mainwindow import SPCalMainWindow
-from spcal.gui.main import SPCalWindow
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
@@ -66,10 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     app.setApplicationVersion(importlib.metadata.version("spcal"))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
-    if args.old_gui:
-        window = SPCalWindow()
-    else:
-        window = SPCalMainWindow()
+    window = SPCalMainWindow()
 
     if not args.nohook:
         sys.excepthook = window.exceptHook
@@ -82,13 +78,13 @@ def main(argv: list[str] | None = None) -> int:
     window.show()
 
     if args.sample:
-        dlg = window.sample.dialogLoadFile(args.sample)
-        if args.auto_yes:
+        dlg = window.dialogLoadFile(args.sample)
+        if dlg is not None and args.auto_yes:
             dlg.accept()
-    if args.reference:
-        dlg = window.reference.dialogLoadFile(args.reference)
-        if args.auto_yes:
-            dlg.accept()
+    # if args.reference:
+    #     dlg = window.reference.dialogLoadFile(args.reference)
+    #     if args.auto_yes:
+    #         dlg.accept()
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()
