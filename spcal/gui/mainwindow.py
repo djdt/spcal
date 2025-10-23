@@ -3,11 +3,9 @@ import sys
 from pathlib import Path
 from types import TracebackType
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.detection import detection_maxima
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.io import ImportDialogBase
@@ -52,6 +50,7 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         )
 
         self.combo_isotope = QtWidgets.QComboBox()
+        # self.combo_isotope.currentTextChanged.connect(self.drawResult)
         self.combo_isotope.currentTextChanged.connect(self.isotopeChanged)
 
         self.graph = ParticleView(font=font)
@@ -61,6 +60,10 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         layout.addWidget(self.graph, 1)
         self.setLayout(layout)
 
+    def setResults(self, results: dict[str, SPCalProcessingResult]):
+        # self.results = results
+        self.setIsotopes(list(results.keys()))
+
     def setIsotopes(self, isotopes: list[str]):
         self.combo_isotope.blockSignals(True)
         self.combo_isotope.clear()
@@ -69,19 +72,23 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         self.combo_isotope.currentTextChanged.emit(isotopes[0])
 
     def drawResult(self, result: SPCalProcessingResult):
-        maxima = detection_maxima(result.signals, result.regions)
-        self.graph.drawMaxima(
-            result.isotope, result.times[maxima], result.signals[maxima]
-        )
-        self.graph.drawLimits(
-            result.times, result.limit.mean_signal, result.limit.detection_threshold
-        )
-
-    def drawSignal(self, isotope: str, times: np.ndarray, signals: np.ndarray):
         self.graph.clear()
-        self.graph.drawSignal(isotope, times, signals)
-        self.graph.setDataLimits(xMin=0.0, xMax=1.0)
-        self.graph.region.setBounds((times[0], times[-1]))
+        self.graph.drawResult(result)
+        # result = self.results[isotope]
+
+        # self.graph.clear()
+        # self.graph.drawSignal(isotope, times, signals)
+        # self.graph.setDataLimits(xMin=0.0, xMax=1.0)
+        # self.graph.region.setBounds((times[0], times[-1]))
+        # maxima = detection_maxima(result.signals, result.regions)
+        # self.graph.drawMaxima(
+        #     result.isotope, result.times[maxima], result.signals[maxima]
+        # )
+        # self.graph.drawLimits(
+        #     result.times, result.limit.mean_signal, result.limit.detection_threshold
+        # )
+
+    # def drawSignal(self, isotope: str, times: np.ndarray, signals: np.ndarray):
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
@@ -167,15 +174,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 isotope, self.processing_methods["default"].isotope_options[isotope]
             )
         self.signal.setIsotopes(data_file.selected_isotopes)
+        # self.signal.setResults(self.processing_results[data_file])
 
     def drawIsotope(self, isotope: str):
         data_file = self.files.selectedDataFile()
         if data_file is None:
             return
-        self.signal.drawSignal(isotope, data_file.times, data_file[isotope])
         self.signal.drawResult(self.processing_results[data_file][isotope])
 
-    def updateInstrumentOptions(self) -> None:
+    def onInstrumentOptionsChanged(self) -> None:
         self.processing_methods[
             "default"
         ].instrument_options = self.instrument_options.asInstrumentOptions()
@@ -186,7 +193,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         self.reprocess(self.files.selectedDataFile())
 
-    def updateLimitOptions(self) -> None:
+    def onLimitOptionsChanged(self) -> None:
         self.processing_methods[
             "default"
         ].limit_options = self.limit_options.asLimitOptions()
@@ -217,6 +224,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 "default"
             ].processDataFile(file)
             self.resultsChanged.emit(file)
+
+    def onResultsChanged(self) -> None:
 
     def createMenuBar(self) -> None:
         # File
