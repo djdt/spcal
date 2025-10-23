@@ -40,8 +40,8 @@ class ParticleView(SinglePlotGraphicsView):
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
         self.setAutoScaleY(True)
 
-        self.legend_items: dict[str, MultipleItemSampleProxy] = {}
-        self.limit_items: list[pyqtgraph.PlotCurveItem] = []
+        # self.legend_items: dict[str, MultipleItemSampleProxy] = {}
+        # self.limit_items: list[pyqtgraph.PlotCurveItem] = []
 
         region_pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         region_pen.setCosmetic(True)
@@ -79,17 +79,17 @@ class ParticleView(SinglePlotGraphicsView):
         start, end = self.region_start, self.region_end
         return {k: v[start:end] for k, v in self.export_data.items()}
 
-    def clear(self) -> None:
-        self.legend_items.clear()
-        super().clear()
+    # def clear(self) -> None:
+    #     # self.legend_items.clear()
+    #     super().clear()
 
     def drawResult(
         self,
         result: SPCalProcessingResult,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-        scatter_symbol: str = "t",
         scatter_size: float = 6.0,
+        scatter_symbol: str = "t",
     ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
@@ -97,66 +97,33 @@ class ParticleView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
 
-        diffs = np.diff(result.signals, n=2, append=0, prepend=0) != 0
-        curve = pyqtgraph.PlotCurveItem(
-            x=result.times[diffs],
-            y=result.signals[diffs],
-            pen=pen,
-            connect="all",
-            skipFiniteCheck=True,
-        )
-        self.plot.addItem(curve)
+        curve = self.drawCurve(result.times, result.signals, pen)
 
         maxima = detection_maxima(result.signals, result.regions)
-        scatter = pyqtgraph.ScatterPlotItem(
-            x=result.times[maxima],
-            y=result.signals[maxima],
-            size=scatter_size,
-            symbol=scatter_symbol,
+        scatter = self.drawScatter(
+            result.times[maxima],
+            result.signals[maxima],
             pen=None,
             brush=brush,
+            size=scatter_size,
+            symbol=scatter_symbol,
         )
-        self.plot.addItem(scatter)
 
         legend = MultipleItemSampleProxy(
             pen.color(),
             items=[curve, scatter],  # type: ignore , works
         )
-
         self.plot.legend.addItem(legend, result.isotope)
-        # self.result_items[result.isotope] = (curve, scatter)
-
-    def drawLimits(
-        self,
-        x: np.ndarray,
-        mean: float | np.ndarray,
-        limit: float | np.ndarray,
-        pen: QtGui.QPen | None = None,
-    ) -> None:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
 
         for val, name, style in zip(
-            [limit, mean],
-            ["Detection Threshold", "Mean"],
-            [QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.SolidLine],
+            [result.limit.detection_threshold, result.limit.mean_signal],
+            ["Threshold", "Mean"],
+            [QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.DotLine],
         ):
-            if isinstance(val, float) or val.size == 1:
-                nx, y = [x[0], x[-1]], [val, val]
-            else:
-                diffs = np.diff(val, n=2, append=0, prepend=0) != 0
-                nx, y = x[diffs], val[diffs]
-
             pen.setStyle(style)
-
-            curve = pyqtgraph.PlotCurveItem(
-                x=nx,
-                y=y,
-                name=name,
-                pen=pen,
-                connect="all",
-                skipFiniteCheck=True,
-            )
-            self.limit_items.append(curve)
-            self.plot.addItem(curve)
+            if isinstance(val, np.ndarray):
+                line = self.drawCurve(result.times, val, pen=pen, name=name)
+            else:
+                line = self.drawLine(
+                    float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
+                )

@@ -49,6 +49,7 @@ class AxisEditDialog(QtWidgets.QDialog):
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     requestImageExport = QtCore.Signal()
+    requestDataExport = QtCore.Signal()
 
     def __init__(
         self,
@@ -65,9 +66,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         if font is None:
             font = QtGui.QFont()
-        self.font = font
 
-        pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+        self._font = font
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
         pen.setCosmetic(True)
 
         self.export_data: dict[str, np.ndarray] = {}
@@ -75,12 +77,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
-        # self.xaxis.label.setFont(font)
-        # self.xaxis.setStyle(tickFont=font, tickTextHeight=int(font.pixelSize() * 1.2))
 
         self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
         self.yaxis.setLabel(ylabel, units=yunits)
-        # self.yaxis.setStyle(tickFont=font, tickTextHeight=int(font.pixelSize() * 1.2))
         self.yaxis.label.setFont(font)
 
         self.plot = pyqtgraph.PlotItem(
@@ -97,7 +96,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black"
         )
 
-        self.setFont(self.font)
+        self.setFont(self._font)
         self.setCentralWidget(self.plot)
 
         self.action_auto_scale_y = create_action(
@@ -128,7 +127,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "document-export",
             "Export Data",
             "Save currently loaded data to file.",
-            self.exportData,
+            self.requestDataExport,
         )
         self.action_export_image = create_action(
             "viewimage",
@@ -138,6 +137,78 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
 
         self.context_menu_actions: list[QtGui.QAction] = []
+
+    def drawCurve(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+        connect: str = "all",
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        curve = pyqtgraph.PlotCurveItem(
+            x=x[diffs],
+            y=y[diffs],
+            pen=pen,
+            connect=connect,
+            name=name,
+            skipFiniteCheck=True,
+        )
+        self.plot.addItem(curve)
+        return curve
+
+    def drawLine(
+        self,
+        y: float,
+        orientation: QtCore.Qt.Orientation,
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+        connect: str = "all",
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        x0, x1 = self.dataBounds()[:2]
+        return self.drawCurve(
+            x=np.array([x0, x1]), y=np.array([y, y]), pen=pen, name=name, connect="all"
+        )
+        # line = pyqtgraph.PlotCurveItem(
+        #     x=[x0, x1], y=[y, y], pen=pen, connect=connect, skipFiniteCheck=True
+        # )
+        # self.plot.addItem(line)
+        #
+        # # line = pyqtgraph.InfiniteLine(
+        # #     y,
+        # #     pen=pen,
+        # #     angle=0 if orientation == QtCore.Qt.Orientation.Horizontal else 90,
+        # #     name=name,
+        # # )
+        # self.plot.addItem(line)
+        # return line
+
+    def drawScatter(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        size: float = 6.0,
+        symbol: str = "o",
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> pyqtgraph.ScatterPlotItem:
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+
+        scatter = pyqtgraph.ScatterPlotItem(
+            x=x, y=y, size=size, symbol=symbol, pen=pen, brush=brush
+        )
+        self.plot.addItem(scatter)
+        return scatter
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
         if self.xaxis.contains(self.xaxis.mapFromView(event.pos())):
@@ -225,9 +296,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
     def clear(self) -> None:
-        self.plot.legend.clear()
+        if self.plot.legend is not None:
+            self.plot.legend.clear()
         self.plot.clear()
-        self.export_data.clear()
 
     def dataBounds(self) -> tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
@@ -274,7 +345,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
 
     def setFont(self, font: QtGui.QFont) -> None:
-        self.font = font
+        self._font = font
 
         fm = QtGui.QFontMetrics(font)
         pen: QtGui.QPen = self.xaxis.tickPen()
@@ -302,49 +373,51 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
             self.redrawLegend()
 
-    def exportData(self) -> None:
-        dir = QtCore.QSettings().value("RecentFiles/1/path", None)
-        dir = str(Path(dir).parent) if dir is not None else ""
-        path, filter = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            "Export Data",
-            dir,
-            "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
-        )
-        if path == "":
-            return
-
-        path = Path(path)
-
-        filter_suffix = filter[filter.rfind(".") : -1]
-        if filter_suffix != "":  # append suffix if missing
-            path = path.with_suffix(filter_suffix)
-
-        data = self.dataForExport()
-        names = list(data.keys())
-
-        if path.suffix.lower() == ".csv":
-            header = "\t".join(name for name in names)
-            stack = np.full(
-                (max(d.size for d in data.values()), len(data)),
-                np.nan,
-                dtype=np.float32,
-            )
-            for i, x in enumerate(data.values()):
-                stack[: x.size, i] = x
-            np.savetxt(
-                path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
-            )
-        elif path.suffix.lower() == ".npz":
-            np.savez_compressed(
-                path,
-                **{k: v for k, v in data.items()},
-            )
-        else:
-            raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+    # def exportData(self) -> None:
+    #     dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+    #     dir = str(Path(dir).parent) if dir is not None else ""
+    #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
+    #         self,
+    #         "Export Data",
+    #         dir,
+    #         "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
+    #     )
+    #     if path == "":
+    #         return
+    #
+    #     path = Path(path)
+    #
+    #     filter_suffix = filter[filter.rfind(".") : -1]
+    #     if filter_suffix != "":  # append suffix if missing
+    #         path = path.with_suffix(filter_suffix)
+    #
+    #     data = self.dataForExport()
+    #     names = list(data.keys())
+    #
+    #     if path.suffix.lower() == ".csv":
+    #         header = "\t".join(name for name in names)
+    #         stack = np.full(
+    #             (max(d.size for d in data.values()), len(data)),
+    #             np.nan,
+    #             dtype=np.float32,
+    #         )
+    #         for i, x in enumerate(data.values()):
+    #             stack[: x.size, i] = x
+    #         np.savetxt(
+    #             path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
+    #         )
+    #     elif path.suffix.lower() == ".npz":
+    #         np.savez_compressed(
+    #             path,
+    #             **{k: v for k, v in data.items()},
+    #         )
+    #     else:
+    #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def exportImage(
-        self, path: Path | str, background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None
+        self,
+        path: Path | str,
+        background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ) -> None:
         path = Path(path)
 
@@ -374,15 +447,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         painter.end()
         image.save(str(path.resolve()))
 
-    def dataForExport(self) -> dict[str, np.ndarray]:
-        return self.export_data
-
-    def readyForExport(self) -> bool:
-        return len(self.export_data) > 0
-
-    def setLimits(self, **kwargs) -> None:
-        self.plot.setLimits(**kwargs)
-
     def setDataLimits(
         self,
         xMin: float | None = None,
@@ -403,12 +467,17 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             limits["yMin"] = bounds[2] + dy * yMin
         if yMax is not None:
             limits["yMax"] = bounds[2] + dy * yMax
-        self.setLimits(**limits)
+        assert self.plot.vb is not None
+        self.plot.vb.setLimits(**limits)
 
     def zoomReset(self) -> None:
-        x, y = self.plot.vb.state["autoRange"][0], self.plot.vb.state["autoRange"][1]
-        self.plot.autoRange()
-        self.plot.enableAutoRange(x=x, y=y)
+        if self.plot.vb is not None:
+            x, y = (
+                self.plot.vb.state["autoRange"][0],
+                self.plot.vb.state["autoRange"][1],
+            )
+            self.plot.vb.autoRange()
+            self.plot.vb.enableAutoRange(x=x, y=y)
 
         # Reset the legend postion
         if self.plot.legend is not None:
