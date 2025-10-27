@@ -182,4 +182,6 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         super().initStyleOption(option, index)
-        option.displayAlignment = QtCore.Qt.AlignmentFlag.AlignRight  # type: ignore , works
+        option.displayAlignment = (  # type: ignore , works
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
+        )
