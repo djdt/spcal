@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 from spcal import particle
+from spcal.calc import mode
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections
 from spcal.limit import (
@@ -50,8 +51,7 @@ def calculate_result(
     return SPCalProcessingResult(
         isotope,
         limit=limit,
-        instrument_options=method.instrument_options,
-        isotope_options=method.isotope_options[isotope],
+        method=method,
         signals=signals,
         times=times,
         detections=detections,
@@ -243,8 +243,7 @@ class SPCalProcessingResult(object):
         self,
         isotope: str,
         limit: SPCalLimit,
-        instrument_options: SPCalInstrumentOptions,
-        isotope_options: SPCalIsotopeOptions,
+        method: "SPCalProcessingMethod",
         signals: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
@@ -254,8 +253,7 @@ class SPCalProcessingResult(object):
     ):
         self.isotope = isotope
         self.limit = limit
-        self.instrument_options = instrument_options
-        self.isotope_options = isotope_options
+        self.method = method
 
         self.signals = signals
         self.times = times
@@ -267,9 +265,9 @@ class SPCalProcessingResult(object):
         self.peak_indicies = indicies
         self.filter_indicies = None
 
-        self.background = np.nanmean(self.signals[self.labels == 0.0])
-        self.background_error = np.nanstd(
-            self.signals[self.labels == 0.0], mean=self.background
+        self.background = float(np.nanmean(self.signals[self.labels == 0.0]))
+        self.background_error = float(
+            np.nanstd(self.signals[self.labels == 0.0], mean=self.background)
         )
 
     @property
@@ -291,15 +289,16 @@ class SPCalProcessingResult(object):
         """Number of valid (non nan) events."""
         return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
 
-    # @property
-    # def ionic_background(self) -> float | None:
-    #     """Background in kg/L.
-    #
-    #     Requires 'response' input.
-    #     """
-    #     if "response" not in self.inputs:
-    #         return None
-    #     return self.background / self.inputs["response"]
+    @property
+    def ionic_background(self) -> float | None:
+        """Background in kg/L.
+
+        Requires 'response' input.
+        """
+        response = self.method.isotope_options[self.isotope].response
+        if response is None:
+            return None
+        return float(self.background / response)
 
     @property
     def number(self) -> int:
@@ -313,6 +312,59 @@ class SPCalProcessingResult(object):
     def number_error(self) -> int:
         """Sqrt of ``number``."""
         return np.sqrt(self.number)
+
+    @property
+    def number_concentration(self) -> float | None:
+        if (
+            self.method.instrument_options.event_time is None
+            or self.method.instrument_options.uptake is None
+            or self.method.instrument_options.efficiency is None
+        ):
+            return None
+        return np.around(
+            particle.particle_number_concentration(
+                self.number,
+                self.method.instrument_options.efficiency,
+                self.method.instrument_options.uptake,
+                self.method.instrument_options.event_time * self.num_events,
+            )
+        )
+
+    @property
+    def mass_concentration(self) -> float | None:
+        if not self.method.canCalibrate("mass", self.isotope):
+            return None
+        if (
+            self.method.instrument_options.event_time is None
+            or self.method.instrument_options.uptake is None
+            or self.method.instrument_options.efficiency is None
+        ):
+            return None
+
+        return np.around(
+            particle.particle_total_concentration(
+                self.method.calibrateToMass(self.detections, self.isotope),
+                self.method.instrument_options.efficiency,
+                self.method.instrument_options.uptake,
+                self.method.instrument_options.event_time * self.num_events,
+            )
+        )
+
+    @property
+    def mean(self) -> float:
+        return float(np.mean(self.detections[~np.isnan(self.detections)]))
+
+    @property
+    def median(self) -> float:
+        return float(np.median(self.detections[~np.isnan(self.detections)]))
+
+    @property
+    def mode(self) -> float:
+        return float(mode(self.detections[~np.isnan(self.detections)]))
+
+    @property
+    def std(self) -> float:
+        return float(np.std(self.detections[~np.isnan(self.detections)]))
 
 
 class SPCalProcessingMethod(object):
@@ -342,7 +394,7 @@ class SPCalProcessingMethod(object):
         data_file: SPCalDataFile,
         isotopes: list[str] | None = None,
         max_size: int | None = None,
-    ) -> dict[str, SPCalProcessingResult]:
+    ) -> dict[str, "SPCalProcessingResult"]:
         results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
@@ -356,63 +408,49 @@ class SPCalProcessingMethod(object):
 
         return results
 
-    def calibrateToMass(
-        self, signals: float | np.ndarray, isotope: str
-    ) -> float | np.ndarray:
-        if self.calibration_mode == "efficiency":
-            return particle.particle_mass(
-                signals,
-                dwell=self.instrument_options.event_time,
-                efficiency=self.instrument_options.efficiency,
-                flow_rate=self.instrument_options.uptake,
-                response_factor=self.isotope_options[isotope].response,
-                mass_fraction=self.isotope_options[isotope].mass_fraction,
-            )
-        else:
-            return (
-                signals
-                * self.instrument_options.mass_response
-                / self.isotope_options[isotope].mass_fraction
-            )
-
-    def calibrateToSize(
-        self, signals: float | np.ndarray, isotope: str
-    ) -> float | np.ndarray:
-        return particle.particle_size(
-            self.calibrateToMass(signals, isotope),
-            density=self.isotope_options[isotope].density,
-        )
-
-    def calibrateToVolume(
-        self, signals: float | np.ndarray, isotope: str
-    ) -> float | np.ndarray:
-        return (
-            self.calibrateToMass(signals, isotope)
-            * self.isotope_options[isotope].density
-        )
-
     def canCalibrate(self, key: str, isotope: str) -> bool:
         return self.instrument_options.readyToCalibrate(
             key, self.calibration_mode
         ) and self.isotope_options[isotope].readyToCalibrate(key, self.calibration_mode)
 
-    def ionicBackground(self, result: SPCalProcessingResult) -> float:
-        return result.background / self.isotope_options[result.isotope].response
+    def calibrateToMass(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
+        mass_fraction = self.isotope_options[isotope].mass_fraction
+        assert mass_fraction is not None
+        if self.calibration_mode == "efficiency":
+            assert self.instrument_options.event_time is not None
+            assert self.instrument_options.uptake is not None
+            assert self.instrument_options.efficiency is not None
+            assert self.isotope_options[isotope].response is not None
+            response = self.isotope_options[isotope].response
+            assert response is not None
 
-    def massConcentration(self, result: SPCalProcessingResult) -> float:
-        return particle.particle_total_concentration(
-            self.calibrateToMass(result.detections, result.isotope),
-            self.instrument_options.efficiency,
-            self.instrument_options.uptake,
-            self.instrument_options.event_time * result.num_events,
-        )
-
-    def numberConcentration(self, result: SPCalProcessingResult) -> float:
-        return np.around(
-            particle.particle_number_concentration(
-                result.number,
-                self.instrument_options.efficiency,
-                self.instrument_options.uptake,
-                self.instrument_options.event_time * result.num_events,
+            return particle.particle_mass(
+                signals,
+                dwell=self.instrument_options.event_time,
+                efficiency=self.instrument_options.efficiency,
+                flow_rate=self.instrument_options.uptake,
+                response_factor=response,
+                mass_fraction=mass_fraction,
             )
+        else:
+            mass_response = self.isotope_options[isotope].mass_response
+            assert mass_response is not None
+            return signals * mass_response / mass_fraction
+
+    def calibrateToSize(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
+        density = self.isotope_options[isotope].density
+        assert density is not None
+        return particle.particle_size(
+            self.calibrateToMass(signals, isotope), density=density
         )
+
+    def calibrateToVolume(
+        self, signals: float | np.ndarray, isotope: str
+    ) -> float | np.ndarray:
+        density = self.isotope_options[isotope].density
+        assert density is not None
+        return self.calibrateToMass(signals, isotope) * density
