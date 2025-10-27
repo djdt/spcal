@@ -30,6 +30,15 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
+class SPCalOutputsDock(QtWidgets.QDockWidget):
+    def __init__ (self, parent: QtWidgets.QWidget|None=None):
+        super().__init__(parent)
+        self.setWindowTitle("Outputs")
+
+        self.combo_key = QtWidgets.QComboBox()
+
+        self.table = QtWidgets.QTableWidget()
+
 class SPCalSignalGraph(QtWidgets.QWidget):
     isotopeChanged = QtCore.Signal(str)
 
