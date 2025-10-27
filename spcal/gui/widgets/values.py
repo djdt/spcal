@@ -74,12 +74,12 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         if self._value is None:
             text = ""
         elif self.hasFocus() and self.isEnabled() and not self.isReadOnly():
-            text = self.locale().toString(self._value, "g", 16)  # type: ignore
+            text = self.locale().toString(float(self._value), "g", 16)  # type: ignore
         else:
-            text = self.locale().toString(self._value, "g", self.sigfigs)  # type: ignore
+            text = self.locale().toString(float(self._value), "g", self.sigfigs)  # type: ignore
             if self._error is not None:
                 text += " ± "
-                text += self.locale().toString(self._error, "g", self.sigfigs)  # type: ignore
+                text += self.locale().toString(float(self._error), "g", self.sigfigs)  # type: ignore
 
         self.lineEdit().setText(text)
 
@@ -182,6 +182,15 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         super().initStyleOption(option, index)
+        # Align text to the right
         option.displayAlignment = (  # type: ignore , works
             QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
         )
+        # Draw the error if set
+        error = index.data(QtCore.Qt.ItemDataRole.UserRole)
+        if error is not None:
+            option.text = (  # type: ignore
+                option.text  # type: ignore
+                + " ± "
+                + option.locale.toString(float(error), "g", self.sigfigs)  # type: ignore
+            )
