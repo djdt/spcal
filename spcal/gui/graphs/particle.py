@@ -127,3 +127,5 @@ class ParticleView(SinglePlotGraphicsView):
                 line = self.drawLine(
                     float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
                 )
+
+        self.setDataLimits(xMin=0.0, xMax=1.0)
