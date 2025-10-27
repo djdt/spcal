@@ -38,7 +38,16 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         for isotope, result in results.items():
             row = self.row_indicies[isotope]
             self.table.setBaseValueForItem(row, 0, result.number, result.number_error)
-            print(result.number)
+            self.table.setBaseValueForItem(row, 1, result.number_concentration)
+            self.table.setBaseValueForItem(
+                row, 2, result.background, result.background_error
+            )
+            self.table.setBaseValueForItem(
+                row, 3, float(np.nanmean(result.limit.detection_threshold))
+            )
+            self.table.setBaseValueForItem(row, 4, result.mean, result.std)
+            self.table.setBaseValueForItem(row, 5, result.median)
+            self.table.setBaseValueForItem(row, 6, result.mode)
 
 
 if __name__ == "__main__":
