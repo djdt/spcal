@@ -162,7 +162,9 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
     ):
         assert isinstance(editor, ValueWidget)
         value = index.data(QtCore.Qt.ItemDataRole.EditRole)
+        error = index.data(QtCore.Qt.ItemDataRole.UserRole)
         editor.setValue(value)
+        editor.setError(error)
 
     def setModelData(
         self,
@@ -174,6 +176,10 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         value = editor.value()
         model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
 
-    def initStyleOption(self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex|QtCore.QPersistentModelIndex):
+    def initStyleOption(
+        self,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
         super().initStyleOption(option, index)
         option.displayAlignment = QtCore.Qt.AlignmentFlag.AlignRight  # type: ignore , works

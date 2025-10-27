@@ -20,10 +20,6 @@ class UnitsTable(BasicTable):
             QtWidgets.QSizePolicy.Policy.Expanding,
         )
 
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.setItemPrototype(item)
-
         self.header_units: dict[int, dict] = {}
         self.current_units: dict[int, float] = {}
 
@@ -83,13 +79,18 @@ class UnitsTable(BasicTable):
                 value *= self.current_units[column]
         return value
 
-    def setBaseValueForItem(self, row: int, column: int, value: float | None):
+    def setBaseValueForItem(self, row: int, column: int, value: float | None, error: float | None = None):
         item = self.item(row, column)
         if item is None:
-            raise ValueError(f"missing item at ({row}, {column})")
+            item = QtWidgets.QTableWidgetItem()
+            self.setItem(row, column, item)
         if value is not None and column in self.current_units:
             value /= self.current_units[column]
         item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
+        if error is not None:
+            if column in self.current_units:
+                error /= self.current_units[column]
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, error)
 
     def sizeHint(self) -> QtCore.QSize:
         width = sum(
