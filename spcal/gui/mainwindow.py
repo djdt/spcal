@@ -15,6 +15,7 @@ from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
+from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
@@ -29,15 +30,6 @@ from spcal.processing import (
 
 logger = logging.getLogger(__name__)
 
-
-class SPCalOutputsDock(QtWidgets.QDockWidget):
-    def __init__ (self, parent: QtWidgets.QWidget|None=None):
-        super().__init__(parent)
-        self.setWindowTitle("Outputs")
-
-        self.combo_key = QtWidgets.QComboBox()
-
-        self.table = QtWidgets.QTableWidget()
 
 class SPCalSignalGraph(QtWidgets.QWidget):
     isotopeChanged = QtCore.Signal(str)
@@ -67,7 +59,7 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         self.combo_isotope.clear()
         self.combo_isotope.addItems(isotopes)
         self.combo_isotope.blockSignals(False)
-        self.combo_isotope.currentTextChanged.emit(isotopes[0])
+        # self.combo_isotope.currentTextChanged.emit(isotopes[0])
 
     def drawResult(self, result: SPCalProcessingResult):
         self.graph.clear()
@@ -119,6 +111,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files = SPCalDataFilesDock()
         self.files.dataFileSelected.connect(self.updateForDataFile)
 
+        self.outputs = SPCalOutputsDock()
+
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
             self.files,
@@ -135,6 +129,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
             self.isotope_options,
         )
+
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
+            self.outputs,
+        )
+
         widget = QtWidgets.QWidget()
 
         layout = QtWidgets.QVBoxLayout()
@@ -153,12 +153,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def updateForDataFile(self, data_file: SPCalDataFile):
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
+        self.signal.setIsotopes(data_file.selected_isotopes)
+        self.outputs.setIsotopes(data_file.selected_isotopes)
+
         for isotope in data_file.selected_isotopes:
             self.isotope_options.setIsotopeOption(
                 isotope, self.processing_methods["default"].isotope_options[isotope]
             )
-        self.signal.setIsotopes(data_file.selected_isotopes)
-        # self.signal.setResults(self.processing_results[data_file])
+        self.reprocess(data_file)
 
     def drawIsotope(self, isotope: str):
         data_file = self.files.selectedDataFile()
@@ -195,16 +197,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onIsotopeOptionChanged(self, isotope: str):
         option = self.isotope_options.optionForIsotope(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
+        self.reprocess(self.files.selectedDataFile())
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.selectedDataFile():
-            self.signal.drawResult(
-                self.processing_results[data_file][
-                    self.signal.combo_isotope.currentText()
-                ]
-            )
+            self.drawIsotope(self.signal.combo_isotope.currentText())
+            self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
+        print(self.sender())
+        print('reprocess')
         if data_file is None:
             files = self.files.data_files
         else:
@@ -434,7 +436,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.processing_methods["default"].isotope_options[isotope] = (
                 SPCalIsotopeOptions(None, None, None)
             )
-        self.reprocess(data_file)
         self.files.addDataFile(data_file)
         self.updateRecentFiles(data_file.path)
 

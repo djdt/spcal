@@ -109,14 +109,19 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         return options
 
     def setIsotopes(self, isotopes: list[str]) -> None:
+        self.table.blockSignals(True)
+        self.table.setRowCount(len(isotopes))
         self.table.setVerticalHeaderLabels(isotopes)
+        self.table.blockSignals(False)
 
     def setIsotopeOption(self, isotope: str, option: SPCalIsotopeOptions):
         for i in range(self.table.rowCount()):
             if self.table.verticalHeaderItem(i).text() == isotope:
+                self.table.blockSignals(True)
                 self.table.setBaseValueForItem(i, 0, option.density)
                 self.table.setBaseValueForItem(i, 1, option.response)
                 self.table.setBaseValueForItem(i, 2, option.mass_fraction)
+                self.table.blockSignals(False)
                 return
         raise StopIteration
 
