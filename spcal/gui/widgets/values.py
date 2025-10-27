@@ -32,6 +32,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
             local.numberOptions() | QtCore.QLocale.NumberOption.OmitGroupSeparator
         )
         self.setLocale(local)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
 
         self.lineEdit().setValidator(DoubleOrEmptyValidator(min, max, 16, parent=self))
         self.lineEdit().textEdited.connect(self.valueFromText)
@@ -51,7 +52,6 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         return self._value
 
     def setValue(self, value: float | None):
-        print("setValue", value)
         if value is None or np.isnan(value):
             value = None
         if self._value != value:
@@ -123,18 +123,57 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.textFromValue(self.value())
 
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    w = QtWidgets.QWidget()
-    w.resize(200, 60)
+class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
+    def __init__(
+        self,
+        sigfigs: int = 6,
+        min: float = 0.0,
+        max: float = 1e99,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent=parent)
+        self.sigfigs = sigfigs
+        self.min, self.max = min, max
 
-    unit = ValueWidget(min=-10, max=2.0)
-    button = QtWidgets.QPushButton()
-    button.pressed.connect(lambda: unit.setError(10.0))
+    def setMin(self, min: float):
+        self.min = min
 
-    layout = QtWidgets.QVBoxLayout()
-    layout.addWidget(unit)
-    layout.addWidget(button)
-    w.setLayout(layout)
-    w.show()
-    app.exec()
+    def setMax(self, max: float):
+        self.max = max
+
+    def setSigFigs(self, sigfigs: int):
+        self.sigfigs = sigfigs
+
+    def createEditor(
+        self,
+        parent: QtWidgets.QWidget,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ) -> QtWidgets.QWidget:
+        editor = ValueWidget(
+            min=self.min, max=self.max, sigfigs=self.sigfigs, parent=parent
+        )
+        return editor
+
+    def setEditorData(
+        self,
+        editor: QtWidgets.QWidget,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
+        assert isinstance(editor, ValueWidget)
+        value = index.data(QtCore.Qt.ItemDataRole.EditRole)
+        editor.setValue(value)
+
+    def setModelData(
+        self,
+        editor: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
+        assert isinstance(editor, ValueWidget)
+        value = editor.value()
+        model.setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
+
+    def initStyleOption(self, option: QtWidgets.QStyleOptionViewItem, index: QtCore.QModelIndex|QtCore.QPersistentModelIndex):
+        super().initStyleOption(option, index)
+        option.displayAlignment = QtCore.Qt.AlignmentFlag.AlignRight  # type: ignore , works
