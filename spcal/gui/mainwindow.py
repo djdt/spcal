@@ -205,8 +205,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
-        print(self.sender())
-        print('reprocess')
         if data_file is None:
             files = self.files.data_files
         else:
