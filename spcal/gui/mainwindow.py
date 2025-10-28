@@ -152,6 +152,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     # def updateForResults(self, data_file: SPCalDataFile):
 
     def updateForDataFile(self, data_file: SPCalDataFile):
+        self.instrument_options.event_time.setBaseValue(data_file.event_time)
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
         self.signal.setIsotopes(data_file.selected_isotopes)
         self.outputs.setIsotopes(data_file.selected_isotopes)
@@ -175,8 +176,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_methods[
             "default"
         ].calibration_mode = (
-            self.instrument_options.efficiency_method.currentText().lower()
+            self.instrument_options.calibration_mode.currentText().lower()
         )
+        # todo: update not reprocess
         self.reprocess(self.files.selectedDataFile())
 
     def onLimitOptionsChanged(self) -> None:
@@ -197,6 +199,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onIsotopeOptionChanged(self, isotope: str):
         option = self.isotope_options.optionForIsotope(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
+        # todo: update not reprocess
         self.reprocess(self.files.selectedDataFile())
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:

@@ -23,7 +23,24 @@ class UnitsTable(BasicTable):
         self.header_units: dict[int, dict] = {}
         self.current_units: dict[int, float] = {}
 
+        self.header = ComboHeaderView({})
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.setHorizontalHeader(self.header)
+        self.setHeaders(headers)
+        self.header.sectionChanged.connect(self.adjustSectionValues)
+
+    def setHeaders(
+        self,
+        headers: list[
+            tuple[str, dict[str, float] | None, str | None, tuple[float, float] | None]
+        ],
+    ):
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
+        self.header_units.clear()
+        self.current_units.clear()
 
         header_items = {}
         header_labels = []
@@ -44,16 +61,10 @@ class UnitsTable(BasicTable):
                 delegate.setMax(ranges[1])
             self.setItemDelegateForColumn(i, delegate)
 
-        self.header = ComboHeaderView(header_items)
-        self.header.setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.header.sectionChanged.connect(self.adjustSectionValues)
-
-        self.setHorizontalHeader(self.header)
         self.setHorizontalHeaderLabels(header_labels)
+        self.header.section_items = header_items
 
-    def adjustSectionValues(self, section: int) -> None:
+    def adjustSectionValues(self, section: int):
         if section not in self.current_units:
             return
         current = self.current_units[section]
@@ -63,9 +74,9 @@ class UnitsTable(BasicTable):
         for row in range(self.rowCount()):
             item = self.item(row, section)
             if item is not None:
-                value = (
-                    float(item.data(QtCore.Qt.ItemDataRole.EditRole)) * current / new
-                )
+                value = item.data(QtCore.Qt.ItemDataRole.EditRole)
+                if value is not None:
+                    value = value * current / new
                 item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
 
     def baseValueForItem(self, row: int, column: int) -> float | None:
@@ -79,18 +90,20 @@ class UnitsTable(BasicTable):
                 value *= self.current_units[column]
         return value
 
-    def setBaseValueForItem(self, row: int, column: int, value: float | None, error: float | None = None):
+    def setBaseValueForItem(
+        self, row: int, column: int, value: float | None, error: float | None = None
+    ):
         item = self.item(row, column)
         if item is None:
             item = QtWidgets.QTableWidgetItem()
             self.setItem(row, column, item)
+
         if value is not None and column in self.current_units:
-            value /= self.current_units[column]
+            value = float(value) / self.current_units[column]
         item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
-        if error is not None:
-            if column in self.current_units:
-                error /= self.current_units[column]
-            item.setData(QtCore.Qt.ItemDataRole.UserRole, error)
+        if error is not None and column in self.current_units:
+            error = float(error) / self.current_units[column]
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, error)
 
     def sizeHint(self) -> QtCore.QSize:
         width = sum(

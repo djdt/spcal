@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 from spcal import particle
-from spcal.calc import mode
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections
 from spcal.limit import (
@@ -71,15 +70,17 @@ class SPCalInstrumentOptions(object):
         self.uptake = uptake
         self.efficiency = efficiency
 
-    def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
+    def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
 
         if mode == "efficiency":
-            return self.uptake is not None and self.efficiency is not None
+            return all(
+                x is not None and x > 0.0
+                for x in [self.event_time, self.uptake, self.efficiency]
+            )
         elif mode == "mass response":
             return True
-        #     return self.mass_response is not None
         else:
             raise ValueError(f"unknown calibration mode '{mode}'")
 
@@ -92,29 +93,38 @@ class SPCalIsotopeOptions(object):
         mass_fraction: float | None,
         concentration: float | None = None,
         diameter: float | None = None,
+        mass_response: float | None = None,
     ):
+        # used for general calibration
         self.density = density
         self.response = response
         self.mass_fraction = mass_fraction
-
-        self.diameter = diameter
+        # used for reference
         self.concentration = concentration
+        self.diameter = diameter
+        # used for calibration via mass response
+        self.mass_response = mass_response
 
-    def readyToCalibrate(self, key: str, mode: str = "efficiency") -> bool:
+    def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
 
         if mode == "efficiency":
-            mass_ok = self.response is not None and self.mass_fraction is not None
+            mass_ok = all(
+                x is not None and x > 0.0 for x in [self.response, self.mass_fraction]
+            )
         elif mode == "mass response":
-            mass_ok = self.mass_fraction is not None
+            mass_ok = all(
+                x is not None and x > 0.0
+                for x in [self.mass_response, self.mass_fraction]
+            )
         else:
             raise ValueError(f"unknown calibration mode '{mode}'")
 
         if key == "mass":
             return mass_ok
         elif key in ["size", "volume"]:
-            return mass_ok and self.density is not None
+            return mass_ok and self.density is not None and self.density > 0.0
         else:
             raise ValueError(f"unknown calibration key '{key}'")
 
@@ -270,6 +280,8 @@ class SPCalProcessingResult(object):
             np.nanstd(self.signals[self.labels == 0.0], mean=self.background)
         )
 
+        self._event_time: float | None = None  # cache
+
     @property
     def num_events(self) -> int:
         return self.signals.shape[0]
@@ -315,59 +327,47 @@ class SPCalProcessingResult(object):
 
     @property
     def number_concentration(self) -> float | None:
-        if (
-            self.method.instrument_options.event_time is None
-            or self.method.instrument_options.uptake is None
-            or self.method.instrument_options.efficiency is None
-        ):
+        if not self.method.instrument_options.canCalibrate("mass", "efficiency"):
             return None
-        return np.around(
-            particle.particle_number_concentration(
-                self.number,
-                self.method.instrument_options.efficiency,
-                self.method.instrument_options.uptake,
-                self.method.instrument_options.event_time * self.num_events,
+        else:
+            return np.around(
+                particle.particle_number_concentration(
+                    self.number,
+                    self.method.instrument_options.efficiency,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                    self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                    self.event_time,
+                )
             )
-        )
 
     @property
     def mass_concentration(self) -> float | None:
-        if not self.method.canCalibrate("mass", self.isotope):
-            return None
-        if (
-            self.method.instrument_options.event_time is None
-            or self.method.instrument_options.uptake is None
-            or self.method.instrument_options.efficiency is None
-        ):
+        masses = self.calibrated("mass")
+        if masses is None:
             return None
 
-        return np.around(
-            particle.particle_total_concentration(
-                self.method.calibrateToMass(self.detections, self.isotope),
-                self.method.instrument_options.efficiency,
-                self.method.instrument_options.uptake,
-                self.method.instrument_options.event_time * self.num_events,
-            )
+        return particle.particle_total_concentration(
+            masses,
+            self.method.instrument_options.efficiency,  # type: ignore , checked via calibrate('mass')
+            self.method.instrument_options.uptake,  # type: ignore , checked via calibrate('mass')
+            self.total_time,
         )
 
-    @property
-    def mean(self) -> float:
-        return float(np.mean(self.detections[~np.isnan(self.detections)]))
-
-    @property
-    def median(self) -> float:
-        return float(np.median(self.detections[~np.isnan(self.detections)]))
-
-    @property
-    def mode(self) -> float:
-        return float(mode(self.detections[~np.isnan(self.detections)]))
-
-    @property
-    def std(self) -> float:
-        return float(np.std(self.detections[~np.isnan(self.detections)]))
+    def calibrated(self, key: str) -> np.ndarray | None:
+        if not self.method.canCalibrate(key, self.isotope):
+            return None
+        result = self.method.calibrateTo(self.detections, key, self.isotope)
+        assert isinstance(result, np.ndarray)
+        return result
 
 
 class SPCalProcessingMethod(object):
+    CALIBRATION_KEYS = ["signal", "mass", "size", "volume"]
+    ACCUMULATION_METHODS = [
+        "signal mean",
+        "half detection threshold",
+        "detection threshold",
+    ]
+
     def __init__(
         self,
         instrument_options: SPCalInstrumentOptions,
@@ -379,6 +379,15 @@ class SPCalProcessingMethod(object):
         prominence_required: float = 0.2,
         calibration_mode: str = "efficiency",
     ):
+        if accumulation_method not in SPCalProcessingMethod.ACCUMULATION_METHODS:
+            raise ValueError(
+                f"accumulation method must be one of {', '.join(SPCalProcessingMethod.ACCUMULATION_METHODS)}"
+            )
+        if calibration_mode not in ["efficiency", "mass response"]:
+            raise ValueError(
+                "calibration mode must be one of 'efficiency', 'mass response'"
+            )
+
         self.instrument_options = instrument_options
         self.limit_options = limit_options
         self.isotope_options = isotope_options
@@ -409,9 +418,28 @@ class SPCalProcessingMethod(object):
         return results
 
     def canCalibrate(self, key: str, isotope: str) -> bool:
-        return self.instrument_options.readyToCalibrate(
+        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
+            raise ValueError(f"unknown calibration key '{key}'")
+        if isotope not in self.isotope_options:
+            raise ValueError(f"unknown isotope '{isotope}'")
+
+        return self.instrument_options.canCalibrate(
             key, self.calibration_mode
-        ) and self.isotope_options[isotope].readyToCalibrate(key, self.calibration_mode)
+        ) and self.isotope_options[isotope].canCalibrate(key, self.calibration_mode)
+
+    def calibrateTo(
+        self, signals: float | np.ndarray, key: str, isotope: str
+    ) -> float | np.ndarray:
+        if key == "signal":
+            return signals
+        elif key == "mass":
+            return self.calibrateToMass(signals, isotope)
+        elif key == "size":
+            return self.calibrateToSize(signals, isotope)
+        elif key == "volume":
+            return self.calibrateToVolume(signals, isotope)
+        else:
+            raise ValueError(f"unknown calibration key '{key}'")
 
     def calibrateToMass(
         self, signals: float | np.ndarray, isotope: str
@@ -454,3 +482,11 @@ class SPCalProcessingMethod(object):
         density = self.isotope_options[isotope].density
         assert density is not None
         return self.calibrateToMass(signals, isotope) * density
+
+
+x = np.random.random(1000)
+
+mean = x.mean()
+
+size = particle.particle_size(x, 0.1)
+print(np.mean(size), particle.particle_size(mean, 0.1))

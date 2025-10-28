@@ -110,11 +110,9 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
             "Transport efficiency. Can be calculated using a reference particle."
         )
 
-        self.efficiency_method = QtWidgets.QComboBox()
-        self.efficiency_method.addItems(
-            ["Manual Input", "Reference Particle", "Mass Response"]
-        )
-        self.efficiency_method.currentTextChanged.connect(self.efficiencyMethodChanged)
+        self.calibration_mode = QtWidgets.QComboBox()
+        self.calibration_mode.addItems(["Efficiency", "Mass Response"])
+        self.calibration_mode.currentTextChanged.connect(self.calibrationModeChanged)
         for i, tooltip in enumerate(
             [
                 "Manually enter the transport efficiency.",
@@ -122,15 +120,15 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
                 "Use the mass response of a reference particle.",
             ]
         ):
-            self.efficiency_method.setItemData(
+            self.calibration_mode.setItemData(
                 i, tooltip, QtCore.Qt.ItemDataRole.ToolTipRole
             )
-        self.efficiency_method.setToolTip(
-            self.efficiency_method.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
+        self.calibration_mode.setToolTip(
+            self.calibration_mode.currentData(QtCore.Qt.ItemDataRole.ToolTipRole)
         )
-        self.efficiency_method.currentIndexChanged.connect(
-            lambda i: self.efficiency_method.setToolTip(
-                self.efficiency_method.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
+        self.calibration_mode.currentIndexChanged.connect(
+            lambda i: self.calibration_mode.setToolTip(
+                self.calibration_mode.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
             )
         )
 
@@ -142,7 +140,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         form_layout.addRow("Uptake:", self.uptake)
         form_layout.addRow("Event time:", self.event_time)
         form_layout.addRow("Trans. Efficiency:", self.efficiency)
-        form_layout.addRow("", self.efficiency_method)
+        form_layout.addRow("Calibration mode:", self.calibration_mode)
 
         # layout = QtWidgets.QVBoxLayout()
         # layout.addLayout(form_layout)
@@ -158,22 +156,19 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
             self.efficiency.value(),
         )
 
-    def efficiencyMethodChanged(self, method: str) -> None:
-        if method == "Manual Input":
-            self.uptake.setEnabled(True)
-            self.efficiency.setEnabled(True)
-        elif method == "Reference Particle":
+    def calibrationModeChanged(self, mode: str) -> None:
+        if mode == "Efficiency":
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
-        elif method == "Mass Response":
+        elif mode == "Mass Response":
             self.uptake.setEnabled(False)
             self.efficiency.setEnabled(False)
 
         self.optionsChanged.emit()
 
     def isComplete(self) -> bool:
-        method = self.efficiency_method.currentText()
-        if method == "Manual Input":
+        mode = self.calibration_mode.currentText()
+        if mode == "Efficiency":
             return all(
                 [
                     self.event_time.hasAcceptableInput(),
@@ -181,21 +176,10 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
                     self.efficiency.hasAcceptableInput(),
                 ]
             )
-        elif method == "Reference Particle":
-            return all(
-                [
-                    self.event_time.hasAcceptableInput(),
-                    self.uptake.hasAcceptableInput(),
-                ]
-            )
-        elif method == "Mass Response":
-            return all(
-                [
-                    self.event_time.hasAcceptableInput(),
-                ]
-            )
+        elif mode == "Mass Response":
+            return all([self.event_time.hasAcceptableInput()])
         else:
-            raise ValueError(f"Unknown method {method}.")
+            raise ValueError(f"Unknown method {mode}.")
 
     def resetInputs(self) -> None:
         self.blockSignals(True)
