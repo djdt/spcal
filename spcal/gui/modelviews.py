@@ -157,7 +157,10 @@ class ComboHeaderView(QtWidgets.QHeaderView):
         option.currentText = str(  # type: ignore
             self.model().headerData(logicalIndex, self.orientation())
         )
-        if logicalIndex not in self.section_items:
+        if (
+            logicalIndex not in self.section_items
+            or len(self.section_items[logicalIndex]) < 2
+        ):
             option.subControls = (  # type: ignore
                 option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow  # type: ignore
             )
@@ -275,10 +278,13 @@ class BasicTable(QtWidgets.QTableWidget):
         paste_action = QtGui.QAction(QtGui.QIcon.fromTheme("edit-paste"), "Paste", self)
         paste_action.triggered.connect(self._paste)
 
-        any_editable = any(
-            item.flags() & QtCore.Qt.ItemFlag.ItemIsEditable
-            for item in self.selectedItems()
-        )
+        if self.editTriggers() == QtWidgets.QTableView.EditTrigger.NoEditTriggers:
+            any_editable = False
+        else:
+            any_editable = any(
+                item.flags() & QtCore.Qt.ItemFlag.ItemIsEditable
+                for item in self.selectedItems()
+            )
 
         if any_editable:
             menu.addAction(cut_action)
