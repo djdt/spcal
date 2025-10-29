@@ -40,7 +40,7 @@ class SPCalDataFile(object):
 
     @property
     def total_time(self) -> float:
-        return self.times[-1]
+        return self.times[-1] - self.times[0]
         # return self.event_time * self.num_events
 
     @property
