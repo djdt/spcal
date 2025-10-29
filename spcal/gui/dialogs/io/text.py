@@ -63,10 +63,7 @@ class TextImportDialog(ImportDialogBase):
         )
 
         self.event_time = UnitsWidget(
-            time_units,
-            base_value=event_time,
-            default_unit="ms",
-            validator=QtGui.QDoubleValidator(0.0, 10.0, 10),
+            time_units, base_value=event_time, default_unit="ms"
         )
         self.event_time.baseValueChanged.connect(self.completeChanged)
         self.event_time.setEnabled(False)
