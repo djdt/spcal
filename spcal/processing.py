@@ -482,11 +482,3 @@ class SPCalProcessingMethod(object):
         density = self.isotope_options[isotope].density
         assert density is not None
         return self.calibrateToMass(signals, isotope) * density
-
-
-x = np.random.random(1000)
-
-mean = x.mean()
-
-size = particle.particle_size(x, 0.1)
-print(np.mean(size), particle.particle_size(mean, 0.1))
