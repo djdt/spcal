@@ -59,7 +59,7 @@ class SPCalDataFile(object):
         raise NotImplementedError
 
     def isTOF(self) -> bool:
-        return self.instrument_type == "TOF"
+        return self.instrument_type == "tof"
 
 
 class SPCalTextDataFile(SPCalDataFile):
@@ -225,7 +225,7 @@ class SPCalNuDataFile(SPCalDataFile):
         info: dict,
         max_mass_diff: float = 0.05,
     ):
-        super().__init__(path, times, instrument_type="TOF")
+        super().__init__(path, times, instrument_type="tof")
 
         self.info = info
 
@@ -288,7 +288,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         self.signals = signals
         self.peak_table = peak_table
 
-        super().__init__(path, times)
+        super().__init__(path, times, instrument_type="tof")
 
     def __getitem__(self, isotope: str) -> np.ndarray:
         idx = self.isotopes.index(isotope)
