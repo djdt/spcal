@@ -233,7 +233,7 @@ class SPCalNuDataFile(SPCalDataFile):
         self.masses = masses
         self.max_mass_diff = max_mass_diff
 
-        self.isotope_table: dict[str, tuple[int, float, bool]] = {}
+        self.isotope_table: dict[str, tuple[int, np.ndarray]] = {}
         self.generateIsotopeTable()
 
     def __getitem__(self, isotope: str) -> np.ndarray:
@@ -250,24 +250,23 @@ class SPCalNuDataFile(SPCalDataFile):
 
     @property
     def preferred_isotopes(self) -> list[str]:
-        return [key for key, val in self.isotope_table.items() if val[2]]
+        return [key for key, (_, iso) in self.isotope_table.items() if iso["Preferred"]]
 
     def generateIsotopeTable(self) -> None:
-        """Creates a table of isotope names in format '123Ab' to their indicies
-        in signals / masses and their isotopic mass."""
+        """Creates a table of isotope names in format '123Ab' to indicies and isotope array."""
         natural = db["isotopes"][~np.isnan(db["isotopes"]["Composition"])]
-        indicies = search_sorted_closest(self.masses, natural["Mass"])
-        valid = np.abs(self.masses[indicies] - natural["Mass"]) < self.max_mass_diff
+        indices = search_sorted_closest(self.masses, natural["Mass"])
+        valid = np.abs(self.masses[indices] - natural["Mass"]) < self.max_mass_diff
         self.isotope_table = {
-            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso["Mass"], iso["Preferred"])
-            for iso, idx in zip(natural[valid], indicies[valid])
+            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso)
+            for idx, iso in zip(indices, natural[valid])
         }
 
     def isotopeMass(self, isotope: str) -> float:
         m = SPCalNuDataFile.re_isotope.match(isotope)
         if m is None:
             raise ValueError(f"invalid isotope format {isotope}")
-        return self.isotope_table[isotope][1]
+        return float(self.isotope_table[isotope][1]["Mass"])
 
     @classmethod
     def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":

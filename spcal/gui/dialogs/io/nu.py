@@ -84,8 +84,23 @@ class NuImportDialog(ImportDialogBase):
             self.autob_index = json.load(fp)
 
         max_mass_diff = 0.05
+        existing = None
         if isinstance(existing_file, SPCalNuDataFile):
             max_mass_diff = existing_file.max_mass_diff
+            existing = []
+            for isotope in existing_file.selected_isotopes:
+                m = SPCalNuDataFile.re_isotope.match(isotope)
+                if m is None:
+                    raise ValueError(f"unknown isotope string '{isotope}'")
+                existing.append(
+                    db["isotopes"][
+                        np.logical_and(
+                            db["isotopes"]["Isotope"] == int(m.group(1)),
+                            db["isotopes"]["Symbol"] == m.group(2),
+                        )
+                    ]
+                )
+            existing = np.concatenate(existing)
 
         # read first integ
         data: np.ndarray | None = None
@@ -139,21 +154,7 @@ class NuImportDialog(ImportDialogBase):
 
         self.updateTableIsotopes()
 
-        if isinstance(existing_file, SPCalNuDataFile):
-            existing = []
-            for isotope in existing_file.selected_isotopes:
-                m = SPCalNuDataFile.re_isotope.match(isotope)
-                if m is None:
-                    raise ValueError(f"unknown isotope string '{isotope}'")
-                existing.append(
-                    db["isotopes"][
-                        np.logical_and(
-                            db["isotopes"]["Isotope"] == int(m.group(1)),
-                            db["isotopes"]["Symbol"] == m.group(2),
-                        )
-                    ]
-                )
-            self.table.setSelectedIsotopes(np.concatenate(existing))
+        self.table.setSelectedIsotopes(existing)
         self.table.isotopesChanged.connect(self.completeChanged)
 
         self.layout_body.addWidget(self.table, 1)

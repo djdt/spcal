@@ -1,10 +1,25 @@
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.util import create_action
 
+from spcal.gui.widgets import PeriodicTableSelector
+
+
+class IsotopeSelectionDialog(QtWidgets.QDialog):
+    def __init__(self, data_file: SPCalDataFile, parent: QtWidgets.QWidget|None=None):
+        super().__init__(parent)
+        self.setWindowTitle("Isotope Selection")
+
+        self.table = PeriodicTableSelector()
+
+        # if isinstance(SPCalDataFile, SPCalNuDataFile):
+            # enabled_isotopes = 
+
+    # def setSelectedIsotopes(self,)
 
 class DataFileListItemWidget(QtWidgets.QWidget):
+    selectIsotopesRequested = QtCore.Signal(QtWidgets.QWidget)
     closeResquested = QtCore.Signal(QtWidgets.QWidget)
 
     def __init__(
@@ -12,17 +27,28 @@ class DataFileListItemWidget(QtWidgets.QWidget):
     ):
         super().__init__(parent)
 
+        self.action_close = create_action(
+            "window-close",
+            "Close",
+            "Close the data file.",
+            lambda: self.closeResquested.emit(self),
+        )
+        self.action_isotopes = create_action(
+            "edit-select",
+            "Select Isotopes",
+            "Open the isotope selection dialog.",
+            lambda: self.selectIsotopesRequested.emit(self),
+        )
+        self.enable_isotopes = len(data_file.isotopes) > 1
+
         self.label_path = QtWidgets.QLabel(str(data_file.path))
         # self.label_path.setTextFormat
         self.label_stats = QtWidgets.QLabel(
-            f"No. events: {data_file.num_events}, No. isotopes: {len(data_file.isotopes)}"
-        )
-
-        self.action_close = create_action(
-            "window-close", "Close", "Close the data file.", self.closeButtonPressed
+            f"No. events: {data_file.num_events}, Isotopes: {len(data_file.selected_isotopes)}/{len(data_file.isotopes)}"
         )
         self.button_close = QtWidgets.QToolButton()
         self.button_close.setDefaultAction(self.action_close)
+
 
         layout = QtWidgets.QGridLayout()
         layout.setSpacing(0)
@@ -31,8 +57,14 @@ class DataFileListItemWidget(QtWidgets.QWidget):
         layout.addWidget(self.button_close, 0, 1, QtCore.Qt.AlignmentFlag.AlignRight)
         self.setLayout(layout)
 
-    def closeButtonPressed(self) -> None:
-        self.closeResquested.emit(self)
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+        menu = QtWidgets.QMenu(self)
+
+        if self.enable_isotopes:
+            menu.addAction(self.action_isotopes)
+        menu.addAction(self.action_close)
+
+        menu.popup(event.globalPos())
 
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
@@ -67,9 +99,9 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
                 break
 
         if len(self.list.selectedIndexes()) == 0:
-             item = self.list.item(0)
-             if item is not None:
-                 item.setSelected(True)
+            item = self.list.item(0)
+            if item is not None:
+                item.setSelected(True)
 
     def addDataFile(self, data_file: SPCalDataFile):
         self.data_files.append(data_file)
