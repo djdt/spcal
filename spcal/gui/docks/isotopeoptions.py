@@ -4,6 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.widgets.unitstable import UnitsTable
+from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalIsotopeOptions
 from spcal.siunits import (
     density_units,
@@ -77,7 +78,7 @@ class IsotopeOptionTable(UnitsTable):
 
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
-    optionChanged = QtCore.Signal(str)
+    optionChanged = QtCore.Signal(SPCalIsotope)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -90,33 +91,39 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.table.setSelectionBehavior(
             QtWidgets.QTableView.SelectionBehavior.SelectRows
         )
-        self.table.cellChanged.connect(self.findOptionChanged)
+        self.table.cellChanged.connect(
+            lambda r, c: self.optionChanged.emit(self.isotope(r))
+        )
 
         self.setWidget(self.table)
 
-    def findOptionChanged(self, row: int, column: int):
-        self.optionChanged.emit(self.table.verticalHeaderItem(row).text())
+    def isotope(self, row: int) -> SPCalIsotope:
+        return self.table.verticalHeaderItem(row).data(QtCore.Qt.ItemDataRole.UserRole)
 
-    def asIsotopeOptions(self) -> dict[str, SPCalIsotopeOptions]:
+    def asIsotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
         options = {}
         for row in range(self.table.rowCount()):
-            label = self.table.verticalHeaderItem(row).text()
-            options[label] = SPCalIsotopeOptions(
+            options[self.isotope(row)] = SPCalIsotopeOptions(
                 self.table.baseValueForItem(row, 0),
                 self.table.baseValueForItem(row, 1),
                 self.table.baseValueForItem(row, 2),
             )
         return options
 
-    def setIsotopes(self, isotopes: list[str]) -> None:
+    def setIsotopes(self, isotopes: list[SPCalIsotope]) -> None:
         self.table.blockSignals(True)
         self.table.setRowCount(len(isotopes))
-        self.table.setVerticalHeaderLabels(isotopes)
+        for i, iso in enumerate(isotopes):
+            item = QtWidgets.QTableWidgetItem(
+                str(iso), type=QtWidgets.QTableWidgetItem.ItemType.UserType
+            )
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, iso)
+            self.table.setVerticalHeaderItem(i, item)
         self.table.blockSignals(False)
 
-    def setIsotopeOption(self, isotope: str, option: SPCalIsotopeOptions):
+    def setIsotopeOption(self, isotope: SPCalIsotope, option: SPCalIsotopeOptions):
         for i in range(self.table.rowCount()):
-            if self.table.verticalHeaderItem(i).text() == isotope:
+            if self.isotope(i) == isotope:
                 self.table.blockSignals(True)
                 self.table.setBaseValueForItem(i, 0, option.density)
                 self.table.setBaseValueForItem(i, 1, option.response)
@@ -125,28 +132,12 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
                 return
         raise StopIteration
 
-    def optionForIsotope(self, isotope: str) -> SPCalIsotopeOptions:
+    def optionForIsotope(self, isotope: SPCalIsotope) -> SPCalIsotopeOptions:
         for i in range(self.table.rowCount()):
-            if self.table.verticalHeaderItem(i).text() == isotope:
+            if self.isotope(i) == isotope:
                 return SPCalIsotopeOptions(
                     density=self.table.baseValueForItem(i, 0),
                     response=self.table.baseValueForItem(i, 1),
                     mass_fraction=self.table.baseValueForItem(i, 2),
                 )
         raise StopIteration
-
-    def selectedIsotope(self) -> str:
-        indicies = self.table.selectedIndexes()
-        if len(indicies) == 0:
-            return ""
-        return self.table.verticalHeaderItem(indicies[0].row()).text()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    dlg = SPCalIsotopeOptionsDock()
-    dlg.setIsotopes(["A197"])
-
-    dlg.show()
-    app.exec()

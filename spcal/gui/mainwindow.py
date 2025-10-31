@@ -22,6 +22,7 @@ from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.io.session import restoreSession, saveSession
+from spcal.isotope import SPCalIsotope
 from spcal.processing import (
     SPCalIsotopeOptions,
     SPCalProcessingMethod,
@@ -31,8 +32,41 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
+class IsotopeModel(QtCore.QAbstractListModel):
+    def __init__(self, parent: QtCore.QObject | None = None):
+        super().__init__(parent)
+        self.isotopes: list[SPCalIsotope] = []
+
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
+        return len(self.isotopes)
+
+    def data(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ):
+        if not index.isValid():
+            return None
+        isotope = self.isotopes[index.row()]
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
+            return str(isotope)
+        elif role == QtCore.Qt.ItemDataRole.EditRole:
+            return isotope
+
+        return None
+
+    def setIsotopes(self, isotopes: list[SPCalIsotope]):
+        self.beginResetModel()
+        self.isotopes = isotopes
+        self.endResetModel()
+
+
 class SPCalSignalGraph(QtWidgets.QWidget):
-    isotopeChanged = QtCore.Signal(str)
+    isotopeChanged = QtCore.Signal(SPCalIsotope)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -45,7 +79,9 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         )
 
         self.combo_isotope = QtWidgets.QComboBox()
-        self.combo_isotope.currentTextChanged.connect(self.isotopeChanged)
+        self.model_isotope = IsotopeModel()
+        # self.combo_isotope.setModel(self.model_isotope)
+        self.combo_isotope.currentIndexChanged.connect(self.onIndexChanged)
 
         self.graph = ParticleView(font=font)
 
@@ -54,12 +90,15 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         layout.addWidget(self.graph, 1)
         self.setLayout(layout)
 
-    def setIsotopes(self, isotopes: list[str]):
+    def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.combo_isotope.blockSignals(True)
         self.combo_isotope.clear()
-        self.combo_isotope.addItems(isotopes)
+        for isotope in isotopes:
+            self.combo_isotope.insertItem(99, str(isotope), isotope)
         self.combo_isotope.blockSignals(False)
-        # self.combo_isotope.currentTextChanged.emit(isotopes[0])
+
+    def onIndexChanged(self, index: int):
+        self.isotopeChanged.emit(self.combo_isotope.itemData(index))
 
     def drawResult(self, result: SPCalProcessingResult):
         self.graph.clear()
@@ -100,7 +139,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         }
 
         self.processing_results: dict[
-            SPCalDataFile, dict[str, SPCalProcessingResult]
+            SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
         ] = {}
 
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
@@ -163,7 +202,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             )
         self.reprocess(data_file)
 
-    def drawIsotope(self, isotope: str):
+    def drawIsotope(self, isotope: SPCalIsotope):
         data_file = self.files.selectedDataFile()
         if data_file is None:
             return
@@ -196,15 +235,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         ].prominence_required = self.limit_options.prominence_required
         self.reprocess(self.files.selectedDataFile())
 
-    def onIsotopeOptionChanged(self, isotope: str):
+    def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
+        print(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
         # todo: update not reprocess
         self.reprocess(self.files.selectedDataFile())
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.selectedDataFile():
-            self.drawIsotope(self.signal.combo_isotope.currentText())
+            self.drawIsotope(self.signal.combo_isotope.currentData())
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):

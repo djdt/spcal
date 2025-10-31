@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
+import shiboken6
 from PySide6 import QtCore, QtWidgets
 
 from spcal.calc import search_sorted_closest
@@ -12,7 +13,7 @@ from spcal.gui.widgets import (
     PeriodicTableSelector,
 )
 from spcal.io import nu
-from spcal.npdb import db
+from spcal.isotope import ISOTOPE_TABLE
 
 logger = logging.getLogger(__name__)
 
@@ -84,23 +85,10 @@ class NuImportDialog(ImportDialogBase):
             self.autob_index = json.load(fp)
 
         max_mass_diff = 0.05
-        existing = None
+        selected = []
         if isinstance(existing_file, SPCalNuDataFile):
             max_mass_diff = existing_file.max_mass_diff
-            existing = []
-            for isotope in existing_file.selected_isotopes:
-                m = SPCalNuDataFile.re_isotope.match(isotope)
-                if m is None:
-                    raise ValueError(f"unknown isotope string '{isotope}'")
-                existing.append(
-                    db["isotopes"][
-                        np.logical_and(
-                            db["isotopes"]["Isotope"] == int(m.group(1)),
-                            db["isotopes"]["Symbol"] == m.group(2),
-                        )
-                    ]
-                )
-            existing = np.concatenate(existing)
+            selected = existing_file.selected_isotopes
 
         # read first integ
         data: np.ndarray | None = None
@@ -154,7 +142,7 @@ class NuImportDialog(ImportDialogBase):
 
         self.updateTableIsotopes()
 
-        self.table.setSelectedIsotopes(existing)
+        self.table.setSelectedIsotopes(selected)
         self.table.isotopesChanged.connect(self.completeChanged)
 
         self.layout_body.addWidget(self.table, 1)
@@ -197,12 +185,19 @@ class NuImportDialog(ImportDialogBase):
         }
 
     def updateTableIsotopes(self) -> None:
-        natural = db["isotopes"][~np.isnan(db["isotopes"]["Composition"])]
-        indicies = search_sorted_closest(self.masses, natural["Mass"])
-        isotopes = natural[
-            np.abs(self.masses[indicies] - natural["Mass"]) < self.max_mass_diff.value()
+        natural_isotopes = [
+            iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
         ]
-        self.table.setEnabledIsotopes(isotopes)
+        natural_masses = np.fromiter(
+            (iso.mass for iso in natural_isotopes), dtype=float
+        )
+        indices = search_sorted_closest(self.masses, natural_masses)
+        valid = (
+            np.abs(self.masses[indices] - natural_masses) < self.max_mass_diff.value()
+        )
+        self.table.setEnabledIsotopes(
+            [iso for iso, v in zip(natural_isotopes, valid) if v]
+        )
 
     def isComplete(self) -> bool:
         return self.table.selectedIsotopes() is not None
@@ -282,17 +277,14 @@ class NuImportDialog(ImportDialogBase):
                 self.info["BlMassCalEndCoef"],
             )
 
-        selected_isotopes = self.table.selectedIsotopes()
-        assert selected_isotopes is not None
-        isotopes = [f"{i['Isotope']}{i['Symbol']}" for i in selected_isotopes]
         self.dataImported.emit(
             SPCalNuDataFile(self.file_path, signals, times, masses, self.info),
-            isotopes,
+            self.table.selectedIsotopes(),
         )
         super().accept()
 
     def reject(self) -> None:
-        if self.import_thread is not None:
+        if self.import_thread is not None and shiboken6.isValid(self.import_thread):
             self.import_thread.requestInterruption()
         else:
             super().reject()

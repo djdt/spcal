@@ -8,7 +8,7 @@ from numpy.lib import recfunctions as rfn
 
 from spcal.calc import search_sorted_closest
 from spcal.io import nu, text, tofwerk
-from spcal.npdb import db
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +23,13 @@ class SPCalDataFile(object):
         self.path = path
         self.instrument_type = instrument_type
 
-        self.selected_isotopes: list[str] = []
+        self.selected_isotopes: list[SPCalIsotope] = []
 
         self.times = times
 
         self._event_time = None
 
-    def __getitem__(self, isotope: str) -> np.ndarray:
+    def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
         raise NotImplementedError
 
     @property
@@ -44,18 +44,11 @@ class SPCalDataFile(object):
         # return self.event_time * self.num_events
 
     @property
-    def isotopes(self) -> list[str]:
+    def isotopes(self) -> list[SPCalIsotope]:
         raise NotImplementedError
-
-    @property
-    def preferred_isotopes(self) -> list[str]:
-        return self.isotopes
 
     @property
     def num_events(self) -> int:
-        raise NotImplementedError
-
-    def isotopeMass(self, isotope: str) -> float:
         raise NotImplementedError
 
     def isTOF(self) -> bool:
@@ -89,13 +82,13 @@ class SPCalTextDataFile(SPCalDataFile):
         self.rename_fields = rename_fields
         self.drop_fields = drop_fields
 
-    def __getitem__(self, isotope: str) -> np.ndarray:
-        return self.signals[isotope]
+    def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
+        return self.signals[isotope.symbol]
 
     @property
-    def isotopes(self) -> list[str]:
+    def isotopes(self) -> list[SPCalIsotope]:
         assert self.signals.dtype.names is not None
-        return list(self.signals.dtype.names)
+        return [SPCalIsotope(name, 0, 0.0) for name in self.signals.dtype.names]
 
     @property
     def num_events(self) -> int:
@@ -191,7 +184,7 @@ class SPCalTextDataFile(SPCalDataFile):
                 signals[name] /= np.diff(times, append=times[-1] - times[-2])
 
         if instrument_type is None:
-            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
+            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"  # type: ignore
 
         return cls(
             path,
@@ -214,7 +207,7 @@ class SPCalNuDataFile(SPCalDataFile):
         isotope_table: dict of {isotope name: (index in signals, isotope mass)}
     """
 
-    re_isotope = re.compile("(\\d+)([A-Z][a-z]?)")
+    # re_isotope = re.compile("(\\d+)([A-Z][a-z]?)")
 
     def __init__(
         self,
@@ -233,11 +226,11 @@ class SPCalNuDataFile(SPCalDataFile):
         self.masses = masses
         self.max_mass_diff = max_mass_diff
 
-        self.isotope_table: dict[str, tuple[int, np.ndarray]] = {}
+        self.isotope_table: dict[SPCalIsotope, int] = {}
         self.generateIsotopeTable()
 
-    def __getitem__(self, isotope: str) -> np.ndarray:
-        idx = self.isotope_table[isotope][0]
+    def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
+        idx = self.isotope_table[isotope]
         return self.signals[:, idx].reshape(-1)
 
     @property
@@ -245,28 +238,22 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals.shape[0]
 
     @property
-    def isotopes(self) -> list[str]:
+    def isotopes(self) -> list[SPCalIsotope]:
         return list(self.isotope_table.keys())
-
-    @property
-    def preferred_isotopes(self) -> list[str]:
-        return [key for key, (_, iso) in self.isotope_table.items() if iso["Preferred"]]
 
     def generateIsotopeTable(self) -> None:
         """Creates a table of isotope names in format '123Ab' to indicies and isotope array."""
-        natural = db["isotopes"][~np.isnan(db["isotopes"]["Composition"])]
-        indices = search_sorted_closest(self.masses, natural["Mass"])
-        valid = np.abs(self.masses[indices] - natural["Mass"]) < self.max_mass_diff
+        natural_isotopes = [
+            iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
+        ]
+        natural_masses = np.fromiter(
+            (iso.mass for iso in natural_isotopes), dtype=float
+        )
+        indices = search_sorted_closest(self.masses, natural_masses)
+        valid = np.abs(self.masses[indices] - natural_masses) < self.max_mass_diff
         self.isotope_table = {
-            f"{iso['Isotope']}{iso['Symbol']}": (idx, iso)
-            for idx, iso in zip(indices, natural[valid])
+            iso: idx for idx, iso, v in zip(indices, natural_isotopes, valid) if v
         }
-
-    def isotopeMass(self, isotope: str) -> float:
-        m = SPCalNuDataFile.re_isotope.match(isotope)
-        if m is None:
-            raise ValueError(f"invalid isotope format {isotope}")
-        return float(self.isotope_table[isotope][1]["Mass"])
 
     @classmethod
     def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":
@@ -287,9 +274,11 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         self.signals = signals
         self.peak_table = peak_table
 
+        self.isotope_table = {}
+
         super().__init__(path, times, instrument_type="tof")
 
-    def __getitem__(self, isotope: str) -> np.ndarray:
+    def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotopes.index(isotope)
         return self.signals[..., idx].ravel()
 
@@ -298,27 +287,8 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         return [x["label"].decode() for x in self.peak_table]
 
     @property
-    def preferred_isotopes(self) -> list[str]:
-        preferred = []
-        for isotope in self.isotopes:
-            m = SPCalTOFWERKDataFile.re_isotope.match(isotope)
-            if m is None:
-                continue
-            if db["isotopes"][
-                np.logical_and(
-                    db["isotopes"]["Isotope"] == int(m.group(1)),
-                    db["isotopes"]["Symbol"] == m.group(2),
-                )
-            ]["Preferred"]:
-                preferred.append(isotope)
-        return preferred
-
-    @property
     def masses(self) -> np.ndarray:
         return self.peak_table["mass"]
-
-    def isotopeMass(self, isotope: str) -> float:
-        return float(self.peak_table[self.peak_table["label"] == isotope]["mass"])
 
     @classmethod
     def load(cls, path: Path) -> "SPCalTOFWERKDataFile":

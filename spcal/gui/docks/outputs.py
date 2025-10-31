@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.calc import mode as modefn
 from spcal.gui.widgets.unitstable import UnitsTable
+from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingMethod, SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
@@ -37,11 +38,6 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             ]
         )
         self.table.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
-        # self.proto = QtWidgets.QTableWidgetItem()
-        # self.proto.setFlags(self.proto.flags() & ~ QtCore.Qt.ItemFlag.ItemIsEditable)
-        # self.table.setItemPrototype(self.proto)
-
-        self.row_indicies = {}
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.combo_key, 0, QtCore.Qt.AlignmentFlag.AlignRight)
@@ -51,16 +47,32 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         widget.setLayout(layout)
         self.setWidget(widget)
 
-    def setIsotopes(self, isotopes: list[str]):
-        self.row_indicies = {isotope: i for i, isotope in enumerate(isotopes)}
-        self.table.setRowCount(len(isotopes))
-        self.table.setVerticalHeaderLabels(isotopes)
+    def isotope(self, row: int) -> SPCalIsotope:
+        return self.table.verticalHeaderItem(row).data(QtCore.Qt.ItemDataRole.UserRole)
 
-    def setResults(self, results: dict[str, SPCalProcessingResult]):
+    def row(self, isotope: SPCalIsotope) -> int:
+        for row in range(self.table.rowCount()):
+            if self.isotope(row) == isotope:
+                return row
+        raise StopIteration
+
+    def setIsotopes(self, isotopes: list[SPCalIsotope]) -> None:
+        self.table.blockSignals(True)
+        self.table.setRowCount(len(isotopes))
+        for i, iso in enumerate(isotopes):
+            item = QtWidgets.QTableWidgetItem(
+                str(iso), type=QtWidgets.QTableWidgetItem.ItemType.UserType
+            )
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, iso)
+            self.table.setVerticalHeaderItem(i, item)
+        self.table.blockSignals(False)
+
+    def setResults(self, results: dict[SPCalIsotope, SPCalProcessingResult]):
         self.results = results
         for isotope, result in results.items():
-            row = self.row_indicies[isotope]
-            self.table.setBaseValueForItem(row, 0, result.number, result.number_error)
+            self.table.setBaseValueForItem(
+                self.row(isotope), 0, result.number, result.number_error
+            )
 
         self.updateOutputsForKey(self.combo_key.currentText())
 
@@ -98,8 +110,6 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.table.setHeaders(headers)
 
         for isotope, result in self.results.items():
-            row = self.row_indicies[isotope]
-
             if result.method.canCalibrate(key, result.isotope):
                 bg = float(
                     result.method.calibrateTo(result.background, key, result.isotope)
@@ -128,6 +138,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
                 mode = float(modefn(detections))
                 std = float(np.std(detections))
 
+            row = self.row(isotope)
             self.table.setBaseValueForItem(
                 row,
                 1,
@@ -140,20 +151,3 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             self.table.setBaseValueForItem(row, 4, mean, std)
             self.table.setBaseValueForItem(row, 5, median)
             self.table.setBaseValueForItem(row, 6, mode)
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    dock = SPCalOutputsDock()
-    dock.table.setRowCount(5)
-
-    for i in range(dock.table.rowCount()):
-        for j in range(dock.table.columnCount()):
-            item = QtWidgets.QTableWidgetItem()
-            item.setData(QtCore.Qt.ItemDataRole.EditRole, np.random.random())
-            item.setData(QtCore.Qt.ItemDataRole.UserRole, np.random.random())
-            dock.table.setItem(i, j, item)
-
-    dock.show()
-    # dock.table.itemDelegate(dock.table.indexFromItem(dock.table.item(0, 0))).commitData
-    app.exec()

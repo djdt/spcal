@@ -109,11 +109,12 @@ class ParticleView(SinglePlotGraphicsView):
             symbol=scatter_symbol,
         )
 
-        legend = MultipleItemSampleProxy(
-            pen.color(),
-            items=[curve, scatter],  # type: ignore , works
-        )
-        self.plot.legend.addItem(legend, result.isotope)
+        if self.plot.legend is not None:
+            legend = MultipleItemSampleProxy(
+                pen.color(),
+                items=[curve, scatter],  # type: ignore , works
+            )
+            self.plot.legend.addItem(legend, str(result.isotope))
 
         for val, name, style in zip(
             [result.limit.detection_threshold, result.limit.mean_signal],
@@ -122,9 +123,9 @@ class ParticleView(SinglePlotGraphicsView):
         ):
             pen.setStyle(style)
             if isinstance(val, np.ndarray):
-                line = self.drawCurve(result.times, val, pen=pen, name=name)
+                self.drawCurve(result.times, val, pen=pen, name=name)
             else:
-                line = self.drawLine(
+                self.drawLine(
                     float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
                 )
 

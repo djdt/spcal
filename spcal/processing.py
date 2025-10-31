@@ -6,6 +6,7 @@ import numpy as np
 from spcal import particle
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections
+from spcal.isotope import SPCalIsotope
 from spcal.limit import (
     SPCalCompoundPoissonLimit,
     SPCalGaussianLimit,
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 def calculate_result(
     method: "SPCalProcessingMethod",
     data_file: SPCalDataFile,
-    isotope: str,
+    isotope: SPCalIsotope,
     max_size: int | None,
 ):
     limit = method.limit_options.limitsForIsotope(data_file, isotope)
@@ -105,14 +106,23 @@ class SPCalIsotopeOptions(object):
         # used for calibration via mass response
         self.mass_response = mass_response
 
+    def __repr__(self) -> str:
+        return (
+            f"SPCalIsotopeOptions(density={self.density}, response={self.response}, "
+            f"mass_fraction={self.mass_fraction})"
+        )
+
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
+
+        print(key, mode)
 
         if mode == "efficiency":
             mass_ok = all(
                 x is not None and x > 0.0 for x in [self.response, self.mass_fraction]
             )
+            print(self.response, self.mass_fraction)
         elif mode == "mass response":
             mass_ok = all(
                 x is not None and x > 0.0
@@ -164,7 +174,7 @@ class SPCalLimitOptions(object):
         self.single_ion_parameters = single_ion_parameters
 
     def limitsForIsotope(
-        self, data_file: SPCalDataFile, isotope: str, method: str | None = None
+        self, data_file: SPCalDataFile, isotope: SPCalIsotope, method: str | None = None
     ) -> SPCalLimit:
         signals = data_file[isotope]
         if method is None:
@@ -181,11 +191,15 @@ class SPCalLimitOptions(object):
         if method == "compound poisson" or (method == "highest" and data_file.isTOF()):
             # Override the default sigma if single ion paramters are present
             if self.single_ion_parameters is not None:
-                sigma = np.interp(
-                    data_file.isotopeMass(isotope),
-                    self.single_ion_parameters["mass"],
-                    self.single_ion_parameters["sigma"],
-                )
+                if isotope.mass <= 0.0:
+                    logger.warning(f"invalid mass for {isotope}, {isotope.mass}")
+                    sigma = self.compound_poisson_kws["sigma"]
+                else:
+                    sigma = np.interp(
+                        isotope.mass,
+                        self.single_ion_parameters["mass"],
+                        self.single_ion_parameters["sigma"],
+                    )
             else:
                 sigma = self.compound_poisson_kws["sigma"]
 
@@ -251,7 +265,7 @@ class SPCalLimitOptions(object):
 class SPCalProcessingResult(object):
     def __init__(
         self,
-        isotope: str,
+        isotope: SPCalIsotope,
         limit: SPCalLimit,
         method: "SPCalProcessingMethod",
         signals: np.ndarray,
@@ -372,8 +386,8 @@ class SPCalProcessingMethod(object):
         self,
         instrument_options: SPCalInstrumentOptions,
         limit_options: SPCalLimitOptions,
-        isotope_options: dict[str, SPCalIsotopeOptions],
-        selected_isotopes: list[str],
+        isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions],
+        selected_isotopes: list[SPCalIsotope],
         accumulation_method: str = "signal mean",
         points_required: int = 1,
         prominence_required: float = 0.2,
@@ -401,9 +415,9 @@ class SPCalProcessingMethod(object):
     def processDataFile(
         self,
         data_file: SPCalDataFile,
-        isotopes: list[str] | None = None,
+        isotopes: list[SPCalIsotope] | None = None,
         max_size: int | None = None,
-    ) -> dict[str, "SPCalProcessingResult"]:
+    ) -> dict[SPCalIsotope, "SPCalProcessingResult"]:
         results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
@@ -417,7 +431,7 @@ class SPCalProcessingMethod(object):
 
         return results
 
-    def canCalibrate(self, key: str, isotope: str) -> bool:
+    def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"unknown calibration key '{key}'")
         if isotope not in self.isotope_options:
@@ -428,7 +442,7 @@ class SPCalProcessingMethod(object):
         ) and self.isotope_options[isotope].canCalibrate(key, self.calibration_mode)
 
     def calibrateTo(
-        self, signals: float | np.ndarray, key: str, isotope: str
+        self, signals: float | np.ndarray, key: str, isotope: SPCalIsotope
     ) -> float | np.ndarray:
         if key == "signal":
             return signals
@@ -442,7 +456,7 @@ class SPCalProcessingMethod(object):
             raise ValueError(f"unknown calibration key '{key}'")
 
     def calibrateToMass(
-        self, signals: float | np.ndarray, isotope: str
+        self, signals: float | np.ndarray, isotope: SPCalIsotope
     ) -> float | np.ndarray:
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
@@ -468,7 +482,7 @@ class SPCalProcessingMethod(object):
             return signals * mass_response / mass_fraction
 
     def calibrateToSize(
-        self, signals: float | np.ndarray, isotope: str
+        self, signals: float | np.ndarray, isotope: SPCalIsotope
     ) -> float | np.ndarray:
         density = self.isotope_options[isotope].density
         assert density is not None
@@ -477,7 +491,7 @@ class SPCalProcessingMethod(object):
         )
 
     def calibrateToVolume(
-        self, signals: float | np.ndarray, isotope: str
+        self, signals: float | np.ndarray, isotope: SPCalIsotope
     ) -> float | np.ndarray:
         density = self.isotope_options[isotope].density
         assert density is not None

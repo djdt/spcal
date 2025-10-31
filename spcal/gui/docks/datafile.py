@@ -1,22 +1,31 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTOFWERKDataFile
 from spcal.gui.util import create_action
-
 from spcal.gui.widgets import PeriodicTableSelector
+from spcal.npdb import db
 
 
-class IsotopeSelectionDialog(QtWidgets.QDialog):
-    def __init__(self, data_file: SPCalDataFile, parent: QtWidgets.QWidget|None=None):
-        super().__init__(parent)
-        self.setWindowTitle("Isotope Selection")
-
-        self.table = PeriodicTableSelector()
-
-        # if isinstance(SPCalDataFile, SPCalNuDataFile):
-            # enabled_isotopes = 
-
-    # def setSelectedIsotopes(self,)
+# class IsotopeSelectionDialog(QtWidgets.QDialog):
+#     def __init__(
+#         self, data_file: SPCalDataFile, parent: QtWidgets.QWidget | None = None
+#     ):
+#         super().__init__(parent)
+#         self.setWindowTitle("Isotope Selection")
+#
+#         self.table = PeriodicTableSelector()
+#
+#         # if isinstance(data_file, SPCalNuDataFile):
+#         #     enabled_isotopes = list(iso for _, iso in data_file.isotope_table.keys())
+#         # elif isinstance(data_file, SPCalTOFWERKDataFile):
+#         selected_isotopes = []
+#         enabled_isotopes = []
+#         for isotope in data_file.isotopes:
+#             db["isotope"][np.logical_and]
+#
+#
+#     def setSelectedIsotopes(self, selected: np.ndarray) -> None:
+#
 
 class DataFileListItemWidget(QtWidgets.QWidget):
     selectIsotopesRequested = QtCore.Signal(QtWidgets.QWidget)
@@ -48,7 +57,6 @@ class DataFileListItemWidget(QtWidgets.QWidget):
         )
         self.button_close = QtWidgets.QToolButton()
         self.button_close.setDefaultAction(self.action_close)
-
 
         layout = QtWidgets.QGridLayout()
         layout.setSpacing(0)

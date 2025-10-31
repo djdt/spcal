@@ -8,7 +8,6 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.io.base import ImportDialogBase
-from spcal.gui.graphs import viridis_32
 from spcal.gui.widgets import (
     CheckableComboBox,
     PeriodicTableSelector,
@@ -26,7 +25,7 @@ class TofwerkIntegrationThread(QtCore.QThread):
 
     def __init__(
         self,
-        h5: h5py._hl.files.File,
+        h5: h5py._hl.files.File,  # type: ignore
         idx: np.ndarray,
         parent: QtCore.QObject | None = None,
     ):
@@ -78,12 +77,12 @@ class TofwerkImportDialog(ImportDialogBase):
         super().__init__(path, "SPCal TOFWERK Import", parent)
 
         # Worker doesn't work as h5py locks
-        self.thread: TofwerkIntegrationThread | None = None
+        self.import_thread: TofwerkIntegrationThread | None = None
         self.progress = QtWidgets.QProgressBar()
 
         # Get the masses from the file
         self.h5 = h5py.File(self.file_path, "r")
-        self.peak_labels = self.h5["PeakData"]["PeakTable"]["label"].astype("U256")
+        self.peak_labels = self.h5["PeakData"]["PeakTable"]["label"].astype("U256")  # type: ignore , works
         self.selected_idx = np.array([])
 
         re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
@@ -124,11 +123,11 @@ class TofwerkImportDialog(ImportDialogBase):
             "Reintegrate tofdata even if peakdata exists. Slow!"
         )
 
-        self.box_options.layout().addRow(
+        self.box_options_layout.addRow(
             "Additional Peaks:",
             self.combo_other_peaks,
         )
-        self.box_options.layout().addRow(
+        self.box_options_layout.addRow(
             self.check_force_integrate,
         )
 
@@ -136,81 +135,80 @@ class TofwerkImportDialog(ImportDialogBase):
         self.layout_body.addWidget(self.progress, 0)
 
         events = int(
-            self.h5.attrs["NbrWrites"][0]
-            * self.h5.attrs["NbrBufs"][0]
-            * self.h5.attrs["NbrSegments"][0]
+            self.h5.attrs["NbrWrites"][0]  # type: ignore , works
+            * self.h5.attrs["NbrBufs"][0]  # type: ignore , works
+            * self.h5.attrs["NbrSegments"][0]  # type: ignore , works
         )
-        extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"][0]) * 1e-9
+        extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"][0]) * 1e-9  # type: ignore , works
+        extraction_time *= factor_extraction_to_acquisition(self.h5)
 
         # Set info and defaults
-        config = self.h5.attrs["Configuration File"].decode()
-        self.box_info.layout().addRow(
+        config = self.h5.attrs["Configuration File"].decode()  # type: ignore , works
+        self.box_info_layout.addRow(
             "Configuration:", QtWidgets.QLabel(config[config.rfind("\\") + 1 :])
         )
-        self.box_info.layout().addRow("Number Events:", QtWidgets.QLabel(str(events)))
-        self.box_info.layout().addRow(
+        self.box_info_layout.addRow("Number Events:", QtWidgets.QLabel(str(events)))
+        self.box_info_layout.addRow(
             "Number Integrations:", QtWidgets.QLabel(str(len(self.peak_labels)))
         )
-        self.dwelltime.setBaseValue(
-            np.around(
-                extraction_time * factor_extraction_to_acquisition(self.h5), 9
-            )  # nearest us
+        self.box_info_layout.addRow(
+            "Event time:", QtWidgets.QLabel(f"{extraction_time * 1e-3:.4f} ms")
         )
-        self.dwelltime.setBestUnit()
         self.table.setFocus()
 
     def isComplete(self) -> bool:
         isotopes = self.table.selectedIsotopes()
-        return isotopes is not None and self.dwelltime.hasAcceptableInput()
+        return isotopes is not None
 
-    def importOptions(self) -> dict:
-        single_ion_area = float(self.h5["FullSpectra"].attrs["Single Ion Signal"][0])
-        return {
-            "importer": "tofwerk",
-            "path": self.file_path,
-            "dwelltime": self.dwelltime.baseValue(),
-            "isotopes": self.table.selectedIsotopes(),
-            "other peaks": self.combo_other_peaks.checkedItems(),
-            "single ion area": single_ion_area,
-            "accumulations": factor_extraction_to_acquisition(self.h5),
-        }
+    #
+    # def importOptions(self) -> dict:
+    #     single_ion_area = float(self.h5["FullSpectra"].attrs["Single Ion Signal"][0])
+    #     return {
+    #         "importer": "tofwerk",
+    #         "path": self.file_path,
+    #         "dwelltime": self.dwelltime.baseValue(),
+    #         "isotopes": self.table.selectedIsotopes(),
+    #         "other peaks": self.combo_other_peaks.checkedItems(),
+    #         "single ion area": single_ion_area,
+    #         "accumulations": factor_extraction_to_acquisition(self.h5),
+    #     }
 
-    def dataForScreening(self, size: int) -> np.ndarray:
-        dim_size = np.sum(self.h5["PeakData"]["PeakData"].shape[1:3])
-        data = self.h5["PeakData"]["PeakData"][: int(size / dim_size) + 1]
-        data = np.reshape(data, (-1, data.shape[-1]))
-        data *= factor_extraction_to_acquisition(self.h5)
-        return data
+    # def dataForScreening(self, size: int) -> np.ndarray:
+    #     dim_size = np.sum(self.h5["PeakData"]["PeakData"].shape[1:3])
+    #     data = self.h5["PeakData"]["PeakData"][: int(size / dim_size) + 1]
+    #     data = np.reshape(data, (-1, data.shape[-1]))
+    #     data *= factor_extraction_to_acquisition(self.h5)
+    #     return data
+    #
+    # def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
+    #     _isotopes, _ppm = [], []
+    #     re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
+    #     for label, val in zip(self.peak_labels[idx], ppm):
+    #         m = re_valid.match(label)
+    #         if m is not None:
+    #             _isotopes.append(
+    #                 db["isotopes"][
+    #                     (db["isotopes"]["Isotope"] == int(m.group(1)))
+    #                     & (db["isotopes"]["Symbol"] == m.group(2))
+    #                 ]
+    #             )
+    #             _ppm.append(val)
+    #
+    #     isotopes = np.asarray(_isotopes, dtype=db["isotopes"].dtype).ravel()
+    #     cidx = np.asarray(_ppm)[isotopes["Preferred"] > 0]  # before isotopes
+    #     isotopes = isotopes[isotopes["Preferred"] > 0]
+    #     cidx = (cidx / cidx.max() * (len(viridis_32) - 1)).astype(int)
+    #
+    #     self.table.setSelectedIsotopes(isotopes)
+    #     self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
 
-    def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
-        _isotopes, _ppm = [], []
-        re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
-        for label, val in zip(self.peak_labels[idx], ppm):
-            m = re_valid.match(label)
-            if m is not None:
-                _isotopes.append(
-                    db["isotopes"][
-                        (db["isotopes"]["Isotope"] == int(m.group(1)))
-                        & (db["isotopes"]["Symbol"] == m.group(2))
-                    ]
-                )
-                _ppm.append(val)
-
-        isotopes = np.asarray(_isotopes, dtype=db["isotopes"].dtype).ravel()
-        cidx = np.asarray(_ppm)[isotopes["Preferred"] > 0]  # before isotopes
-        isotopes = isotopes[isotopes["Preferred"] > 0]
-        cidx = (cidx / cidx.max() * (len(viridis_32) - 1)).astype(int)
-
-        self.table.setSelectedIsotopes(isotopes)
-        self.table.setIsotopeColors(isotopes, np.asarray(viridis_32)[cidx])
-
-    def setImportOptions(
-        self, options: dict, path: bool = False, dwelltime: bool = True
-    ) -> None:
-        super().setImportOptions(options, path, dwelltime)
-        self.table.setSelectedIsotopes(options["isotopes"])
-        self.combo_other_peaks.setCheckedItems(options["other peaks"])
-
+    # def setImportOptions(
+    #     self, options: dict, path: bool = False, dwelltime: bool = True
+    # ) -> None:
+    #     super().setImportOptions(options, path, dwelltime)
+    #     self.table.setSelectedIsotopes(options["isotopes"])
+    #     self.combo_other_peaks.setCheckedItems(options["other peaks"])
+    #
     def setControlsEnabled(self, enabled: bool) -> None:
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
@@ -226,7 +224,7 @@ class TofwerkImportDialog(ImportDialogBase):
         self.selected_idx = np.flatnonzero(np.isin(self.peak_labels, selected_labels))
 
         if (
-            "PeakData" not in self.h5["PeakData"]
+            "PeakData" not in self.h5["PeakData"]  # type: ignore , works
             or self.check_force_integrate.isChecked()
         ):
             logger.warning("PeakData does not exist, integrating...")
@@ -234,18 +232,18 @@ class TofwerkImportDialog(ImportDialogBase):
             self.progress.setFormat("Integrating... %p%")
             self.setControlsEnabled(False)
 
-            self.thread = TofwerkIntegrationThread(
+            self.import_thread = TofwerkIntegrationThread(
                 self.h5, self.selected_idx, parent=self
             )
-            self.thread.integrationStarted.connect(self.progress.setMaximum)
-            self.thread.sampleIntegrated.connect(
+            self.import_thread.integrationStarted.connect(self.progress.setMaximum)
+            self.import_thread.sampleIntegrated.connect(
                 lambda: self.progress.setValue(self.progress.value() + 1)
             )
-            self.thread.integrationComplete.connect(self.finalise)
-            self.thread.start()
+            self.import_thread.integrationComplete.connect(self.finalise)
+            self.import_thread.start()
             # Peaks do not exist, we must integrate ourselves.
         else:
-            data = self.h5["PeakData"]["PeakData"][..., self.selected_idx]
+            data = self.h5["PeakData"]["PeakData"][..., self.selected_idx]  # type: ignore , works
             self.finalise(data)
 
     def finalise(self, data: np.ndarray) -> None:
@@ -263,8 +261,8 @@ class TofwerkImportDialog(ImportDialogBase):
         super().accept()
 
     def reject(self) -> None:
-        if self.thread is not None and self.thread.isRunning():
-            self.thread.requestInterruption()
+        if self.import_thread is not None and self.import_thread.isRunning():
+            self.import_thread.requestInterruption()
             self.progress.reset()
             self.setControlsEnabled(True)
         else:
