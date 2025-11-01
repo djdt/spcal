@@ -85,12 +85,12 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.setWindowTitle("Isotope Options")
 
         self.table = IsotopeOptionTable()
-        self.table.setSelectionMode(
-            QtWidgets.QTableView.SelectionMode.ExtendedSelection
-        )
-        self.table.setSelectionBehavior(
-            QtWidgets.QTableView.SelectionBehavior.SelectRows
-        )
+        # self.table.setSelectionMode(
+        #     QtWidgets.QTableView.SelectionMode.ExtendedSelection
+        # )
+        # self.table.setSelectionBehavior(
+        #     QtWidgets.QTableView.SelectionBehavior.SelectRows
+        # )
         self.table.cellChanged.connect(
             lambda r, c: self.optionChanged.emit(self.isotope(r))
         )

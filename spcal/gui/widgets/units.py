@@ -19,7 +19,7 @@ class UnitsWidget(QtWidgets.QWidget):
         default_unit: str | None = None,
         base_value: float | None = None,
         base_value_min: float = 0.0,
-        base_value_max: float = 1e99,
+        base_value_max: float = np.inf,
         sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):

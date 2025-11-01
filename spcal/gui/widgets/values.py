@@ -15,7 +15,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         value: float | None = None,
         error: float | None = None,
         min: float = 0.0,
-        max: float = 1e99,
+        max: float = np.inf,
         sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -26,6 +26,8 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.max = max
         self.sigfigs = sigfigs
 
+        self.step_size = 1.0 if max == np.inf else max / 10.0
+
         # locale group separators break the double validator
         local = self.locale()
         local.setNumberOptions(
@@ -34,7 +36,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.setLocale(local)
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
 
-        self.lineEdit().setValidator(DoubleOrEmptyValidator(min, max, 16, parent=self))
+        self.lineEdit().setValidator(DoubleOrEmptyValidator(min, max, 12, parent=self))
         self.lineEdit().textEdited.connect(self.valueFromText)
 
         self.valueChanged.connect(self.textFromValue)
@@ -70,11 +72,42 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         assert isinstance(validator, QtGui.QDoubleValidator)
         validator.setDecimals(sigfigs)
 
+    def setStepSize(self, size: float):
+        self.step_size = size
+
+    def focusInEvent(self, event: QtGui.QFocusEvent):
+        super().focusInEvent(event)
+        self.textFromValue(self.value())
+        self.selectAll()  # select all text
+
+    def focusOutEvent(self, event: QtGui.QFocusEvent):
+        super().focusOutEvent(event)
+        self.textFromValue(self.value())
+
+    def stepBy(self, steps: int):
+        if self._value is None:
+            return
+        new_value = self._value + steps * self.step_size
+        if new_value > self.max:
+            new_value = self.max
+        elif new_value < self.min:
+            new_value = self.min
+        self.setValue(new_value)
+
+    def stepEnabled(self) -> QtWidgets.QAbstractSpinBox.StepEnabledFlag:
+        enabled = QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepNone
+        if self._value is not None:
+            if self._value < self.max:
+                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
+            if self._value > self.min:
+                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
+        return enabled
+
     def textFromValue(self, value: float | None):
         if self._value is None:
             text = ""
         elif self.hasFocus() and self.isEnabled() and not self.isReadOnly():
-            text = self.locale().toString(float(self._value), "g", 16)  # type: ignore
+            text = self.locale().toString(float(self._value), "g", 12)  # type: ignore
         else:
             text = self.locale().toString(float(self._value), "g", self.sigfigs)  # type: ignore
             if self._error is not None:
@@ -94,33 +127,6 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
                 self.valueChanged.disconnect(self.textFromValue)
                 self.setValue(value)
                 self.valueChanged.connect(self.textFromValue)
-
-    def stepBy(self, steps: int):
-        if self._value is None:
-            return
-        new_value = self._value + steps
-        if new_value > self.max:
-            new_value = self.max
-        elif new_value < self.min:
-            new_value = self.min
-        self.setValue(new_value)
-
-    def stepEnabled(self) -> QtWidgets.QAbstractSpinBox.StepEnabledFlag:
-        enabled = QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepNone
-        if self._value is not None:
-            if self._value < self.max:
-                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
-            if self._value > self.min:
-                enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
-        return enabled
-
-    def focusInEvent(self, event: QtGui.QFocusEvent):
-        super().focusInEvent(event)
-        self.textFromValue(self.value())
-
-    def focusOutEvent(self, event: QtGui.QFocusEvent):
-        super().focusOutEvent(event)
-        self.textFromValue(self.value())
 
 
 class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
