@@ -237,7 +237,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
-        print(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
         # todo: update not reprocess
         self.reprocess(self.files.selectedDataFile())

@@ -73,8 +73,6 @@ class SPCalIsotopeOptions(object):
         if key == "signal":
             return True
 
-        print(key, mode)
-
         if mode == "efficiency":
             mass_ok = all(
                 x is not None and x > 0.0 for x in [self.response, self.mass_fraction]
