@@ -1,5 +1,7 @@
 """Reading and writing single particle data from and to csv files."""
 
+import re
+import numpy.lib.recfunctions as rfn
 import datetime
 import importlib.metadata
 import logging
@@ -65,6 +67,7 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
 
     return delimiter, skip_rows, column_count
 
+
 def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
     for line in fp:
         if delimiter != ",":
@@ -72,13 +75,11 @@ def replace_comma_decimal(fp, delimiter: str = ",", count: int = 0):
         else:
             yield line
 
+
 def iso_time_to_float_seconds(text: str) -> float:
     time = datetime.time.fromisoformat(text)
     return (
-        time.hour * 3600.0
-        + time.minute * 60.0
-        + time.second
-        + time.microsecond * 1e-6
+        time.hour * 3600.0 + time.minute * 60.0 + time.second + time.microsecond * 1e-6
     )
 
 
