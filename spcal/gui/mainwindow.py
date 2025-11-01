@@ -32,42 +32,7 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-class IsotopeModel(QtCore.QAbstractListModel):
-    def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent)
-        self.isotopes: list[SPCalIsotope] = []
-
-    def rowCount(
-        self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
-    ) -> int:
-        return len(self.isotopes)
-
-    def data(
-        self,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ):
-        if not index.isValid():
-            return None
-        isotope = self.isotopes[index.row()]
-        if role == QtCore.Qt.ItemDataRole.DisplayRole:
-            return str(isotope)
-        elif role == QtCore.Qt.ItemDataRole.EditRole:
-            return isotope
-
-        return None
-
-    def setIsotopes(self, isotopes: list[SPCalIsotope]):
-        self.beginResetModel()
-        self.isotopes = isotopes
-        self.endResetModel()
-
-
 class SPCalSignalGraph(QtWidgets.QWidget):
-    isotopeChanged = QtCore.Signal(SPCalIsotope)
-
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -78,17 +43,36 @@ class SPCalSignalGraph(QtWidgets.QWidget):
             pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
-        self.combo_isotope = QtWidgets.QComboBox()
-        self.model_isotope = IsotopeModel()
-        # self.combo_isotope.setModel(self.model_isotope)
-        self.combo_isotope.currentIndexChanged.connect(self.onIndexChanged)
-
         self.graph = ParticleView(font=font)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.graph, 1)
         self.setLayout(layout)
+
+    def drawResult(self, result: SPCalProcessingResult):
+        self.graph.clear()
+        self.graph.drawResult(result)
+
+
+class SPCalToolBar(QtWidgets.QToolBar):
+    isotopeChanged = QtCore.Signal(SPCalIsotope)
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__("SPCal", parent=parent)
+
+        self.combo_isotope = QtWidgets.QComboBox()
+        self.combo_isotope.currentIndexChanged.connect(
+            lambda i: self.isotopeChanged.emit(self.combo_isotope.itemData(i))
+        )
+
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+        self.addWidget(spacer)
+
+        self.addWidget(self.combo_isotope)
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.combo_isotope.blockSignals(True)
@@ -97,18 +81,11 @@ class SPCalSignalGraph(QtWidgets.QWidget):
             self.combo_isotope.insertItem(99, str(isotope), isotope)
         self.combo_isotope.blockSignals(False)
 
-    def onIndexChanged(self, index: int):
-        self.isotopeChanged.emit(self.combo_isotope.itemData(index))
-
-    def drawResult(self, result: SPCalProcessingResult):
-        self.graph.clear()
-        self.graph.drawResult(result)
-
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
     resultsChanged = QtCore.Signal(SPCalDataFile)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("SPCal")
         self.resize(1600, 900)
@@ -119,11 +96,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log.setWindowTitle("SPCal Log")
 
         self.signal = SPCalSignalGraph()
-        self.signal.isotopeChanged.connect(self.drawIsotope)
+
+        self.toolbar = SPCalToolBar()
 
         self.instrument_options = SPCalInstrumentOptionsDock()
         self.limit_options = SPCalLimitOptionsDock()
         self.isotope_options = SPCalIsotopeOptionsDock()
+
+        self.files = SPCalDataFilesDock()
+        self.outputs = SPCalOutputsDock()
 
         self.processing_methods = {
             "default": SPCalProcessingMethod(
@@ -142,15 +123,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
         ] = {}
 
+        self.toolbar.isotopeChanged.connect(self.drawIsotope)
+
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         self.resultsChanged.connect(self.onResultsChanged)
 
-        self.files = SPCalDataFilesDock()
         self.files.dataFileSelected.connect(self.updateForDataFile)
 
-        self.outputs = SPCalOutputsDock()
+        self.addToolBar(self.toolbar)
 
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
@@ -193,7 +175,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def updateForDataFile(self, data_file: SPCalDataFile):
         self.instrument_options.event_time.setBaseValue(data_file.event_time)
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
-        self.signal.setIsotopes(data_file.selected_isotopes)
+
+        self.toolbar.setIsotopes(data_file.selected_isotopes)
         self.outputs.setIsotopes(data_file.selected_isotopes)
 
         for isotope in data_file.selected_isotopes:
@@ -243,7 +226,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.selectedDataFile():
-            self.drawIsotope(self.signal.combo_isotope.currentData())
+            self.drawIsotope(self.toolbar.combo_isotope.currentData())
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
