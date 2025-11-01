@@ -61,10 +61,10 @@ class SPCalTextDataFile(SPCalDataFile):
         path: Path,
         signals: np.ndarray,
         times: np.ndarray,
+        isotopes: list[SPCalIsotope],
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
-        rename_fields: dict[str, str] | None = None,
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
         instrument_type: str | None = None,
@@ -73,22 +73,27 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if signals.dtype.names is None:
             raise ValueError("expected signals to have a structured dtype")
+        if len(isotopes) != len(signals.dtype.names):
+            raise ValueError("number of isotopes does not match names in signals")
+
         self.signals = signals
+        self.isotope_table = {
+            iso: name for iso, name in zip(isotopes, signals.dtype.names)
+        }
 
         self.delimter = delimiter
         self.skip_row = skip_rows
         self.cps = cps
         self.override_event_time = override_event_time
-        self.rename_fields = rename_fields
+        # self.rename_fields = rename_fields
         self.drop_fields = drop_fields
 
     def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
-        return self.signals[isotope.symbol]
+        return self.signals[self.isotope_table[isotope]]
 
     @property
     def isotopes(self) -> list[SPCalIsotope]:
-        assert self.signals.dtype.names is not None
-        return [SPCalIsotope(name, 0, 0.0) for name in self.signals.dtype.names]
+        return list(self.isotope_table.keys())
 
     @property
     def num_events(self) -> int:
@@ -98,10 +103,10 @@ class SPCalTextDataFile(SPCalDataFile):
     def load(
         cls,
         path: Path,
+        isotopes: list[SPCalIsotope] | None = None,
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
-        rename_fields: list[str] | dict[str, str] | None = None,
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
         instrument_type: str | None = None,
@@ -134,14 +139,6 @@ class SPCalTextDataFile(SPCalDataFile):
             )
 
         assert signals.dtype.names is not None
-
-        if isinstance(rename_fields, list):
-            rename_fields = {old: new for old, new in zip(header, rename_fields)}
-
-        if isinstance(rename_fields, dict):
-            if any(h != old for h, old in zip(header, rename_fields.keys())):
-                logger.warning("mismatch in text header and rename_fields")
-            signals = rfn.rename_fields(signals, rename_fields)
 
         if override_event_time is not None:
             times = np.arange(signals.shape[0]) * override_event_time
@@ -178,23 +175,27 @@ class SPCalTextDataFile(SPCalDataFile):
                 if any(x in name.lower() for x in ["index", "time"])
             ]
         signals = rfn.drop_fields(signals, drop_fields)
+        assert signals.dtype.names is not None
+
+        if isotopes is None:
+            isotopes = [SPCalIsotope.fromString(name) for name in signals.dtype.names]
 
         if cps:
-            for name in signals.dtype.names:  # type: ignore , asserted above
+            for name in signals.dtype.names:
                 signals[name] /= np.diff(times, append=times[-1] - times[-2])
 
         if instrument_type is None:
-            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"  # type: ignore
+            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
 
         return cls(
             path,
             signals,
             times,
+            isotopes,
             delimiter=delimiter,
             skip_rows=skip_rows,
             cps=cps,
             override_event_time=override_event_time,
-            rename_fields=rename_fields,
             drop_fields=drop_fields,
             instrument_type=instrument_type,
         )

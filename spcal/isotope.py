@@ -1,4 +1,10 @@
+import re
 from dataclasses import dataclass
+import logging
+
+logger = logging.getLogger(__name__)
+
+RE_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
 
 
 @dataclass(frozen=True)
@@ -6,9 +12,11 @@ class SPCalIsotope:
     symbol: str
     isotope: int
     mass: float
-    composition: float|None=None
+    composition: float | None = None
 
     def __str__(self) -> str:
+        if self.isotope == 0:
+            return f'"{self.symbol}"'
         return f"{self.isotope}{self.symbol}"
 
     def __repr__(self) -> str:
@@ -19,9 +27,25 @@ class SPCalIsotope:
             return False
         return self.symbol == other.symbol and self.isotope == other.isotope
 
+    @classmethod
+    def fromString(cls, text: str) -> "SPCalIsotope":
+        m = RE_ISOTOPE.match(text.strip())
+        print(m)
+        if m is not None:
+            symbol = m.group(2)
+            if m.group(1) is not None:
+                isotope = int(m.group(1))
+            elif m.group(3) is not None:
+                isotope = int(m.group(3))
+            else:
+                isotope = 0
+            print(symbol, isotope)
+            if (symbol, isotope) in ISOTOPE_TABLE:
+                return ISOTOPE_TABLE[(symbol, isotope)]
 
-# class SPCalTextIsotope(SPCalIsotope):
-#     def __init__(self, text: str):
+        logger.info(f"no isotope found for '{text}'")
+        return SPCalIsotope(text, 0, 0.0)
+
 
 # class SPCalIon(object):
 #     def __init__(self, isotopes: list[SPCalIsotope], charge: int = 1):

@@ -10,6 +10,7 @@ from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.modelviews import CheckableHeaderView
 from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
+from spcal.isotope import SPCalIsotope
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ class TextImportDialog(ImportDialogBase):
             override = existing_file.override_event_time
 
         self.table = QtWidgets.QTableWidget()
+        self.table.verticalHeader().setMaximumSectionSize(self.logicalDpiX() * 2)
         self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
@@ -238,13 +240,13 @@ class TextImportDialog(ImportDialogBase):
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
             cps=self.combo_intensity_units.currentText() == "CPS",
-            rename_fields=self.names(),
             override_event_time=self.event_time.value()
             if self.override_event_time.isChecked()
             else None,
         )
 
-        self.dataImported.emit(data_file, self.selectedNames())
+        selected = [SPCalIsotope.fromString(name) for name in self.selectedNames()]
+        self.dataImported.emit(data_file, selected)
         logger.info(
             f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
         )
