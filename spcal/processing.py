@@ -17,49 +17,6 @@ from spcal.limit import (
 logger = logging.getLogger(__name__)
 
 
-def calculate_result(
-    method: "SPCalProcessingMethod",
-    data_file: SPCalDataFile,
-    isotope: SPCalIsotope,
-    max_size: int | None,
-):
-    limit = method.limit_options.limitsForIsotope(data_file, isotope)
-
-    if method.accumulation_method == "signal mean":
-        limit_accumulation = limit.mean_signal
-    elif method.accumulation_method == "half detection threshold":
-        limit_accumulation = (limit.mean_signal + limit.detection_threshold) / 2.0
-    elif method.accumulation_method == "detection threshold":
-        limit_accumulation = limit.detection_threshold
-    else:
-        raise ValueError(f"unknown accumulation method {method.accumulation_method}")
-
-    limit_detection = limit.detection_threshold
-    limit_accumulation = np.minimum(limit_accumulation, limit_detection)
-
-    signals = data_file[isotope][:max_size]
-    times = data_file.times[:max_size]
-
-    detections, labels, regions = accumulate_detections(
-        signals,
-        limit_accumulation=limit_accumulation,
-        limit_detection=limit_detection,
-        points_required=method.points_required,
-        prominence_required=method.prominence_required,
-    )
-
-    return SPCalProcessingResult(
-        isotope,
-        limit=limit,
-        method=method,
-        signals=signals,
-        times=times,
-        detections=detections,
-        labels=labels,
-        regions=regions,
-    )
-
-
 class SPCalInstrumentOptions(object):
     def __init__(
         self,
@@ -418,13 +375,61 @@ class SPCalProcessingMethod(object):
         isotopes: list[SPCalIsotope] | None = None,
         max_size: int | None = None,
     ) -> dict[SPCalIsotope, "SPCalProcessingResult"]:
+        def calculate_result_for_isotope(
+            method: "SPCalProcessingMethod",
+            data_file: SPCalDataFile,
+            isotope: SPCalIsotope,
+            max_size: int | None,
+        ):
+            limit = method.limit_options.limitsForIsotope(data_file, isotope)
+
+            if method.accumulation_method == "signal mean":
+                limit_accumulation = limit.mean_signal
+            elif method.accumulation_method == "half detection threshold":
+                limit_accumulation = (
+                    limit.mean_signal + limit.detection_threshold
+                ) / 2.0
+            elif method.accumulation_method == "detection threshold":
+                limit_accumulation = limit.detection_threshold
+            else:
+                raise ValueError(
+                    f"unknown accumulation method {method.accumulation_method}"
+                )
+
+            limit_detection = limit.detection_threshold
+            limit_accumulation = np.minimum(limit_accumulation, limit_detection)
+
+            signals = data_file[isotope][:max_size]
+            times = data_file.times[:max_size]
+
+            detections, labels, regions = accumulate_detections(
+                signals,
+                limit_accumulation=limit_accumulation,
+                limit_detection=limit_detection,
+                points_required=method.points_required,
+                prominence_required=method.prominence_required,
+            )
+
+            return SPCalProcessingResult(
+                isotope,
+                limit=limit,
+                method=method,
+                signals=signals,
+                times=times,
+                detections=detections,
+                labels=labels,
+                regions=regions,
+            )
+
         results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
         with ThreadPoolExecutor() as exec:
             futures = [
-                exec.submit(calculate_result, self, data_file, isotope, max_size)
+                exec.submit(
+                    calculate_result_for_isotope, self, data_file, isotope, max_size
+                )
                 for isotope in isotopes
             ]
             results = {future.result().isotope: future.result() for future in futures}
