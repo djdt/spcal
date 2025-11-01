@@ -127,6 +127,7 @@ class SPCalTextDataFile(SPCalDataFile):
 
             gen = text.replace_comma_decimal(fp, delimiter)
 
+            # todo: protential speed-up by trying loadtxt
             signals = np.genfromtxt(  # type: ignore
                 gen,
                 delimiter=delimiter,

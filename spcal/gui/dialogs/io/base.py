@@ -4,7 +4,6 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.widgets import ElidedLabel
-from spcal.isotope import SPCalIsotope
 
 
 class ImportDialogBase(QtWidgets.QDialog):

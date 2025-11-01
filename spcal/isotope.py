@@ -30,7 +30,6 @@ class SPCalIsotope:
     @classmethod
     def fromString(cls, text: str) -> "SPCalIsotope":
         m = RE_ISOTOPE.match(text.strip())
-        print(m)
         if m is not None:
             symbol = m.group(2)
             if m.group(1) is not None:
@@ -39,7 +38,6 @@ class SPCalIsotope:
                 isotope = int(m.group(3))
             else:
                 isotope = 0
-            print(symbol, isotope)
             if (symbol, isotope) in ISOTOPE_TABLE:
                 return ISOTOPE_TABLE[(symbol, isotope)]
 
