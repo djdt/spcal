@@ -162,6 +162,50 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.addItem(curve)
         return curve
 
+    def drawHistogram(
+        self,
+        counts: np.ndarray,
+        edges: np.ndarray,
+        width: float = 0.5,
+        offset: float = 0.0,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+
+        assert width > 0.0 and width <= 1.0
+        assert offset >= 0.0 and offset < 1.0
+
+        widths = np.diff(edges)
+
+        x = np.repeat(edges, 2)
+
+        # Calculate bar start and end points for width / offset
+        x[1:-1:2] += widths * ((1.0 - width) / 2.0 + offset)
+        x[2::2] -= widths * ((1.0 - width) / 2.0 - offset)
+
+        y = np.zeros(counts.size * 2 + 1, dtype=counts.dtype)
+        y[1:-1:2] = counts
+
+        curve = pyqtgraph.PlotCurveItem(
+            x=x,
+            y=y,
+            stepMode="center",
+            fillLevel=0,
+            fillOutline=True,
+            pen=pen,
+            brush=brush,
+            skipFiniteCheck=True,
+        )
+
+        self.plot.addItem(curve)
+        return curve
+
     def drawLine(
         self,
         y: float,
@@ -178,19 +222,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         return self.drawCurve(
             x=np.array([x0, x1]), y=np.array([y, y]), pen=pen, name=name, connect="all"
         )
-        # line = pyqtgraph.PlotCurveItem(
-        #     x=[x0, x1], y=[y, y], pen=pen, connect=connect, skipFiniteCheck=True
-        # )
-        # self.plot.addItem(line)
-        #
-        # # line = pyqtgraph.InfiniteLine(
-        # #     y,
-        # #     pen=pen,
-        # #     angle=0 if orientation == QtCore.Qt.Orientation.Horizontal else 90,
-        # #     name=name,
-        # # )
-        # self.plot.addItem(line)
-        # return line
 
     def drawScatter(
         self,
