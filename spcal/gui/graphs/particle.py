@@ -40,6 +40,7 @@ class ParticleView(SinglePlotGraphicsView):
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
         self.setAutoScaleY(True)
 
+        self.plot.legend.setColumnCount(3)
         # self.legend_items: dict[str, MultipleItemSampleProxy] = {}
         # self.limit_items: list[pyqtgraph.PlotCurveItem] = []
 
@@ -109,13 +110,6 @@ class ParticleView(SinglePlotGraphicsView):
             symbol=scatter_symbol,
         )
 
-        if self.plot.legend is not None:
-            legend = MultipleItemSampleProxy(
-                pen.color(),
-                items=[curve, scatter],  # type: ignore , works
-            )
-            self.plot.legend.addItem(legend, str(result.isotope))
-
         for val, name, style in zip(
             [result.limit.detection_threshold, result.limit.mean_signal],
             ["Threshold", "Mean"],
@@ -128,5 +122,12 @@ class ParticleView(SinglePlotGraphicsView):
                 self.drawLine(
                     float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
                 )
+
+        if self.plot.legend is not None:
+            legend = MultipleItemSampleProxy(
+                pen.color(),
+                items=[curve, scatter],  # type: ignore , works
+            )
+            self.plot.legend.addItem(legend, str(result.isotope))
 
         self.setDataLimits(xMin=0.0, xMax=1.0)

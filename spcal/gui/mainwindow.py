@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 import sys
 from pathlib import Path
 from types import TracebackType
@@ -16,7 +17,7 @@ from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
-from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
@@ -32,7 +33,7 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-class SPCalSignalGraph(QtWidgets.QWidget):
+class SPCalGraph(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -49,10 +50,6 @@ class SPCalSignalGraph(QtWidgets.QWidget):
         layout.addWidget(self.graph, 1)
         self.setLayout(layout)
 
-    def drawResult(self, result: SPCalProcessingResult):
-        self.graph.clear()
-        self.graph.drawResult(result)
-
 
 class SPCalToolBar(QtWidgets.QToolBar):
     isotopeChanged = QtCore.Signal(SPCalIsotope)
@@ -65,6 +62,14 @@ class SPCalToolBar(QtWidgets.QToolBar):
             lambda i: self.isotopeChanged.emit(self.combo_isotope.itemData(i))
         )
 
+        self.action_all_isotopes = create_action(
+            "office-chart-line-stacked",
+            "Overlay Isotopes",
+            "Plot all isotope signals.",
+            self.overlayOptionChanged,
+            checkable=True,
+        )
+
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
@@ -72,14 +77,29 @@ class SPCalToolBar(QtWidgets.QToolBar):
         )
         self.addWidget(spacer)
 
+        self.addAction(self.action_all_isotopes)
         self.addWidget(self.combo_isotope)
 
+    def selectedIsotopes(self) -> list[SPCalIsotope]:
+        if self.action_all_isotopes.isChecked():
+            return [
+                self.combo_isotope.itemData(i)
+                for i in range(self.combo_isotope.count())
+            ]
+        else:
+            return [self.combo_isotope.itemData(self.combo_isotope.currentIndex())]
+
+    def overlayOptionChanged(self, checked: bool):
+        self.combo_isotope.setEnabled(not checked)
+
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
+        self.action_all_isotopes.setChecked(False)
         self.combo_isotope.blockSignals(True)
         self.combo_isotope.clear()
         for isotope in isotopes:
             self.combo_isotope.insertItem(99, str(isotope), isotope)
         self.combo_isotope.blockSignals(False)
+        self.action_all_isotopes.setEnabled(len(isotopes) > 1)
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
@@ -95,7 +115,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        self.signal = SPCalSignalGraph()
+        self.signal = SPCalGraph()
 
         self.toolbar = SPCalToolBar()
 
@@ -123,7 +143,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
         ] = {}
 
-        self.toolbar.isotopeChanged.connect(self.drawIsotope)
+        self.toolbar.isotopeChanged.connect(self.redraw)
+        self.toolbar.action_all_isotopes.triggered.connect(self.redraw)
 
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
@@ -185,11 +206,32 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             )
         self.reprocess(data_file)
 
-    def drawIsotope(self, isotope: SPCalIsotope):
+    def redraw(self):
         data_file = self.files.selectedDataFile()
         if data_file is None:
             return
-        self.signal.drawResult(self.processing_results[data_file][isotope])
+
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        keys = list(self.processing_results[data_file].keys())
+
+        self.signal.graph.clear()
+        for isotope in self.toolbar.selectedIsotopes():
+            color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
+            symbol = symbols[keys.index(isotope) % len(symbols)]
+
+            pen = QtGui.QPen(color, 1.0 * self.devicePixelRatioF())
+            pen.setCosmetic(True)
+            brush = QtGui.QBrush(color)
+
+            self.signal.graph.drawResult(
+                self.processing_results[data_file][isotope],
+                pen=pen,
+                brush=brush,
+                scatter_size=6.0 * np.sqrt(self.devicePixelRatioF()),
+                scatter_symbol=symbol,
+            )
 
     def onInstrumentOptionsChanged(self) -> None:
         self.processing_methods[
@@ -226,7 +268,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.selectedDataFile():
-            self.drawIsotope(self.toolbar.combo_isotope.currentData())
+            self.redraw()
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
@@ -621,9 +663,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         scheme = action.text().replace("&", "")
         QtCore.QSettings().setValue("colorscheme", scheme)
 
-        self.sample.redraw()
-        self.reference.redraw()
-        self.results.redraw()
+        self.redraw()
 
     def setGraphFont(self) -> None:
         settings = QtCore.QSettings()
