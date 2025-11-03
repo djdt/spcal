@@ -7,6 +7,7 @@ from spcal.fit import fit_lognormal, fit_normal
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import HistogramItemSample
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
+from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingResult
 
 
@@ -31,6 +32,7 @@ class HistogramView(SinglePlotGraphicsView):
         result: SPCalProcessingResult,
         key: str = "signal",
         bins: str | np.ndarray = "auto",
+        range: tuple[float, float] | None = None,
         width: float = 1.0,
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
@@ -48,7 +50,7 @@ class HistogramView(SinglePlotGraphicsView):
             return
 
         signals = result.calibrated(key)
-        counts, edges = np.histogram(signals, bins)
+        counts, edges = np.histogram(signals, bins, range=range)
 
         curve = self.drawHistogram(
             counts, edges, width=width, offset=offset, pen=pen, brush=brush
@@ -58,6 +60,48 @@ class HistogramView(SinglePlotGraphicsView):
             fm = self.fontMetrics()
             legend = HistogramItemSample([curve], size=fm.height())
             self.plot.legend.addItem(legend, str(result.isotope))
+
+    def drawResults(
+        self,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        key: str = "signal",
+        pen: QtGui.QPen | None = None,
+        width: float | None = None,
+        brushes: dict[SPCalIsotope, QtGui.QBrush] | None = None,
+        scatter_size: float = 6.0,
+        scatter_symbols: dict[SPCalIsotope, str] | None = None,
+    ):
+        if width is None:
+            width = np.median(
+                [
+                    2.0
+                    * np.subtract(np.percentile(result.calibrated(key), [75, 25]))  # type: ignore , checked by canCalibrate
+                    / np.cbrt(result.number)
+                    for result in results.values()
+                    if result.canCalibrate(key)
+                ]
+            )
+
+        # Limit maximum / minimum number of bins
+        data_range = 0.0
+        for name, data in graph_data.items():
+            ptp = np.percentile(data[graph_idx[name]], options["percentile"]) - np.amin(
+                data[graph_idx[name]]
+            )
+            if ptp > data_range:
+                data_range = ptp
+
+        if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+            return None
+
+        min_bins, max_bins = 10, 1000
+        if bin_width < data_range / max_bins:
+            logger.warning(f"drawGraphHist: exceeded maximum bins, setting to {max_bins}")
+            bin_width = data_range / max_bins
+        elif bin_width > data_range / min_bins:
+            logger.warning(f"drawGraphHist: less than minimum bins, setting to {min_bins}")
+            bin_width = data_range / min_bins
+        bin_width *= modifier  # convert to base unit (kg -> g)
 
     def draw(
         self,
