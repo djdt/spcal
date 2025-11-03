@@ -310,9 +310,9 @@ class SPCalProcessingResult(object):
 
     @property
     def mass_concentration(self) -> float | None:
-        masses = self.calibrated("mass")
-        if masses is None:
+        if not self.canCalibrate("mass"):
             return None
+        masses = self.calibrated("mass")
 
         return particle.particle_total_concentration(
             masses,
@@ -321,9 +321,10 @@ class SPCalProcessingResult(object):
             self.total_time,
         )
 
-    def calibrated(self, key: str) -> np.ndarray | None:
-        if not self.method.canCalibrate(key, self.isotope):
-            return None
+    def canCalibrate(self, key: str) -> bool:
+        return self.method.canCalibrate(key, self.isotope)
+
+    def calibrated(self, key: str) -> np.ndarray:
         result = self.method.calibrateTo(self.detections, key, self.isotope)
         assert isinstance(result, np.ndarray)
         return result

@@ -130,9 +130,9 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
                 bg, lod, bg_error = None, None, None
 
             mean, median, mode, std = None, None, None, None
-            detections = result.calibrated(key)
 
-            if detections is not None:
+            if result.canCalibrate(key):
+                detections = result.calibrated(key)
                 mean = float(np.mean(detections))
                 median = float(np.median(detections))
                 mode = float(modefn(detections))
