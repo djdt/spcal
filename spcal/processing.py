@@ -1,11 +1,12 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from typing import Callable
 
 import numpy as np
 
 from spcal import particle
 from spcal.datafile import SPCalDataFile
-from spcal.detection import accumulate_detections
+from spcal.detection import accumulate_detections, combine_regions
 from spcal.isotope import SPCalIsotope
 from spcal.limit import (
     SPCalCompoundPoissonLimit,
@@ -242,7 +243,7 @@ class SPCalProcessingResult(object):
         self.regions = regions
 
         self.peak_indicies = indicies
-        self.filter_indicies = None
+        self.filter_indicies = np.arange(self.detections.size)
 
         self.background = float(np.nanmean(self.signals[self.labels == 0.0]))
         self.background_error = float(
@@ -324,10 +325,38 @@ class SPCalProcessingResult(object):
     def canCalibrate(self, key: str) -> bool:
         return self.method.canCalibrate(key, self.isotope)
 
-    def calibrated(self, key: str) -> np.ndarray:
-        result = self.method.calibrateTo(self.detections, key, self.isotope)
+    def calibrated(self, key: str, filtered: bool = True) -> np.ndarray:
+        values = self.detections
+        if filtered:
+            values = values[self.filter_indicies]
+        result = self.method.calibrateTo(values, key, self.isotope)
         assert isinstance(result, np.ndarray)
         return result
+
+
+class SPCalProcessingFilter(object):
+    def __init__(
+        self,
+        isotope: SPCalIsotope,
+        key: str,
+        operation: Callable[[np.ndarray, float], np.ndarray],
+        value: float,
+    ):
+        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
+            raise ValueError(f"invalid key {key}")
+        self.isotope = isotope
+        self.key = key
+        self.operation = operation
+        self.value = value
+
+    def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+        if not result.canCalibrate(self.key):
+            return np.array([])
+        if result.peak_indicies is None:
+            raise ValueError("peak indicies have not been calculated")
+        return result.peak_indicies[
+            self.operation(result.calibrated(self.key, filtered=False), self.value)
+        ]
 
 
 class SPCalProcessingMethod(object):
@@ -367,6 +396,11 @@ class SPCalProcessingMethod(object):
         self.prominence_required = prominence_required
 
         self.calibration_mode = calibration_mode
+
+        self.filters: list[list[SPCalProcessingFilter]] = [[]]
+
+    def setFilters(self, filters: list[list[SPCalProcessingFilter]]):
+        self.filters = filters
 
     def processDataFile(
         self,
@@ -433,6 +467,30 @@ class SPCalProcessingMethod(object):
             ]
             results = {future.result().isotope: future.result() for future in futures}
 
+        # combined regions for multi-element peaks
+        all_regions = combine_regions(
+            [result.regions for result in results.values()], 2
+        )
+        for result in results.values():
+            result.peak_indicies = np.searchsorted(
+                all_regions[:, 0], result.regions[:, 0], side="right"
+            )
+        # filter results
+        valid_peaks = []
+        for filter_group in self.filters:
+            group_valid = np.arange(all_regions.size)
+            for filter in filter_group:
+                if filter.isotope in results:
+                    filter_valid = filter.validPeaks(results[filter.isotope])
+                    group_valid = np.intersect1d(
+                        group_valid, filter_valid, assume_unique=True
+                    )
+            valid_peaks = np.union1d(group_valid, valid_peaks)
+
+        for result in results.values():
+            result.filter_indicies = np.flatnonzero(
+                np.in1d(result.peak_indicies, valid_peaks)  # type: ignore , set above
+            )
         return results
 
     def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:

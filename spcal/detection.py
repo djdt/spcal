@@ -140,6 +140,10 @@ def combine_detections(
     return combined, any_label, all_regions
 
 
+def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
+    return ext.combine_regions(regions, overlap)
+
+
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     """Calculates the maxima of each region.
 

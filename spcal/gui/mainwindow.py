@@ -1,15 +1,16 @@
 import logging
-from typing import Any
-import numpy as np
 import sys
 from pathlib import Path
 from types import TracebackType
+from typing import Any
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
@@ -20,8 +21,8 @@ from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.histogram import HistogramView
+from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -217,6 +218,13 @@ class SPCalToolBar(QtWidgets.QToolBar):
             checkable=True,
         )
 
+        self.action_filter = create_action(
+            "view-filter",
+            "Filter Detections",
+            "Filter detections based on element compositions.",
+            None,
+        )
+
         self.action_group_views = QtGui.QActionGroup(self)
         for action in view_actions:
             self.action_group_views.addAction(action)
@@ -229,6 +237,9 @@ class SPCalToolBar(QtWidgets.QToolBar):
         )
 
         self.addWidget(spacer)
+
+        self.addAction(self.action_filter)
+        self.addSeparator()
 
         self.addAction(self.action_all_isotopes)
         self.addWidget(self.combo_isotope)
@@ -249,11 +260,13 @@ class SPCalToolBar(QtWidgets.QToolBar):
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.action_all_isotopes.setChecked(False)
+
         self.combo_isotope.blockSignals(True)
         self.combo_isotope.clear()
         for isotope in isotopes:
-            self.combo_isotope.insertItem(99, str(isotope), isotope)
+            self.combo_isotope.insertItem(9999, str(isotope), isotope)
         self.combo_isotope.blockSignals(False)
+
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)
 
 
@@ -303,6 +316,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.viewChanged.connect(self.redraw)
         self.toolbar.action_all_isotopes.triggered.connect(self.redraw)
+        self.toolbar.action_filter.triggered.connect(self.dialogFilterDetections)
 
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
@@ -414,7 +428,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
-        if data_file is None:
+        if not isinstance(data_file, SPCalDataFile):
             files = self.files.data_files
         else:
             files = [data_file]
@@ -633,7 +647,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def sampleFileLoaded(
-        self, data_file: SPCalDataFile, selected_isotopes: list[str] | None = None
+        self,
+        data_file: SPCalDataFile,
+        selected_isotopes: list[SPCalIsotope] | None = None,
     ) -> None:
         if selected_isotopes is None:
             selected_isotopes = data_file.preferred_isotopes
@@ -710,6 +726,21 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     else:
     #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
+    def dialogFilterDetections(self) -> None:
+        data_file = self.files.selectedDataFile()
+        if data_file is None:
+            return
+        dlg = FilterDialog(
+            list(self.processing_results[data_file].keys()),
+            self.processing_methods["default"].filters,
+            [],
+            number_clusters=99,
+            parent=self,
+        )
+        dlg.filtersChanged.connect(self.processing_methods["default"].setFilters)
+        dlg.filtersChanged.connect(self.reprocess)
+        dlg.open()
+
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.open()
@@ -768,38 +799,41 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def linkToDocumenation(self) -> None:
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
-    def onInputsChanged(self) -> None:
-        # Reference tab is neb method requires
-        self.tabs.setTabEnabled(
-            self.tabs.indexOf(self.reference),
-            self.options.efficiency_method.currentText()
-            in ["Reference Particle", "Mass Response"],
-        )
-        self.tabs.setTabEnabled(
-            self.tabs.indexOf(self.results),
-            self.readyForResults(),
-        )
-        self.action_open_batch.setEnabled(self.readyForResults())
-        self.action_export.setEnabled(self.readyForResults())
+    # def onInputsChanged(self) -> None:
+    #     # Reference tab is neb method requires
+    #     self.tabs.setTabEnabled(
+    #         self.tabs.indexOf(self.reference),
+    #         self.options.efficiency_method.currentText()
+    #         in ["Reference Particle", "Mass Response"],
+    #     )
+    #     self.tabs.setTabEnabled(
+    #         self.tabs.indexOf(self.results),
+    #         self.readyForResults(),
+    #     )
+    #     self.action_open_batch.setEnabled(self.readyForResults())
+    #     self.action_export.setEnabled(self.readyForResults())
 
-    def onTabChanged(self, index: int) -> None:
-        if index == self.tabs.indexOf(self.results):
-            if self.results.isUpdateRequired():
-                self.results.updateResults()
+    # def onTabChanged(self, index: int) -> None:
+    #     if index == self.tabs.indexOf(self.results):
+    #         if self.results.isUpdateRequired():
+    #             self.results.updateResults()
 
-    def readyForResults(self) -> bool:
-        return self.sample.isComplete() and (
-            self.options.efficiency_method.currentText() in ["Manual Input"]
-            or self.reference.isComplete()
-        )
-
+    # def readyForResults(self) -> bool:
+    #     return self.sample.isComplete() and (
+    #         self.options.efficiency_method.currentText() in ["Manual Input"]
+    #         or self.reference.isComplete()
+    #     )
+    #
     def resetInputs(self) -> None:
-        self.tabs.setCurrentIndex(0)
-
-        self.results.resetInputs()
-        self.sample.resetInputs()
-        self.reference.resetInputs()
-        self.options.resetInputs()
+        self.instrument_options.resetInputs()
+        self.limit_options.resetInputs()
+        self.isotope_options.resetInputs()
+        # self.tabs.setCurrentIndex(0)
+        #
+        # self.results.resetInputs()
+        # self.sample.resetInputs()
+        # self.reference.resetInputs()
+        # self.options.resetInputs()
 
     def setColorScheme(self, action: QtGui.QAction) -> None:
         scheme = action.text().replace("&", "")
