@@ -329,6 +329,10 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         layout_window_size.addWidget(self.window_size, 1)
         layout_window_size.addWidget(self.check_window, 1)
 
+        layout_method = QtWidgets.QHBoxLayout()
+        layout_method.addWidget(self.limit_method, 1)
+        layout_method.addWidget(self.check_iterative, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+
         gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
         gaussian_collapse.setWidget(self.gaussian)
         poisson_collapse = CollapsableWidget("Poisson Limit Options")
@@ -339,7 +343,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         layout = QtWidgets.QFormLayout()
 
         layout.addRow("Window size:", layout_window_size)
-        layout.addRow("Method:", self.limit_method)
+        layout.addRow("Method:", layout_method)
 
         layout.addRow(gaussian_collapse)
         layout.addRow(poisson_collapse)
@@ -384,3 +388,14 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         settings.setValue("Threshold/ProminenceRequired", prominence_required)
 
         self.optionsChanged.emit()
+
+    def resetInputs(self):
+        self.blockSignals(True)
+        self.window_size.setValue(1000)
+        self.check_window.setChecked(False)
+        self.check_iterative.setChecked(False)
+        # self.gaussian.alpha.setValue(2.867e-7)
+        # self.poisson = PoissonOptions()
+        # self.compound = CompoundPoissonOptions()
+
+        self.blockSignals(False)

@@ -141,3 +141,10 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
                     mass_fraction=self.table.baseValueForItem(i, 2),
                 )
         raise StopIteration
+
+    def resetInputs(self):
+        self.blockSignals(True)
+        for i in range(self.table.rowCount()):
+            for j in range(self.table.colorCount()):
+                self.table.setBaseValueForItem(i, j, None)
+        self.blockSignals(False)
