@@ -33,6 +33,10 @@ class SPCalDataFile(object):
         raise NotImplementedError
 
     @property
+    def preferred_isotopes(self) -> list[SPCalIsotope]:
+        return self.isotopes
+
+    @property
     def event_time(self) -> float:
         if self._event_time is None:
             self._event_time = float(np.mean(np.diff(self.times)))
@@ -233,7 +237,7 @@ class SPCalNuDataFile(SPCalDataFile):
 
     def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
-        return self.signals[:, idx].reshape(-1)
+        return self.signals[:, idx]
 
     @property
     def num_events(self) -> int:
