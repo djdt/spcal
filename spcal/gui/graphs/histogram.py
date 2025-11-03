@@ -7,6 +7,7 @@ from spcal.fit import fit_lognormal, fit_normal
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import HistogramItemSample
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
+from spcal.processing import SPCalProcessingResult
 
 
 class HistogramView(SinglePlotGraphicsView):
@@ -22,7 +23,41 @@ class HistogramView(SinglePlotGraphicsView):
             parent=parent,
         )
         self.has_image_export = True
-        self.plot.setLimits(xMin=0.0, yMin=0.0)
+        assert self.plot.vb is not None
+        self.plot.vb.setLimits(xMin=0.0, yMin=0.0)
+
+    def drawResult(
+        self,
+        result: SPCalProcessingResult,
+        key: str = "signal",
+        bins: str | np.ndarray = "auto",
+        width: float = 1.0,
+        offset: float = 0.0,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+        scatter_size: float = 6.0,
+        scatter_symbol: str = "t",
+    ):
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+
+        if not result.canCalibrate(key):
+            return
+
+        signals = result.calibrated(key)
+        counts, edges = np.histogram(signals, bins)
+
+        curve = self.drawHistogram(
+            counts, edges, width=width, offset=offset, pen=pen, brush=brush
+        )
+
+        if self.plot.legend is not None:
+            fm = self.fontMetrics()
+            legend = HistogramItemSample([curve], size=fm.height())
+            self.plot.legend.addItem(legend, str(result.isotope))
 
     def draw(
         self,
@@ -100,50 +135,6 @@ class HistogramView(SinglePlotGraphicsView):
                 self.export_data[name + "_filtered"] = hist_filt
                 self.export_data[name + "_filtered_bins"] = edges_filt[1:]
 
-    def drawData(
-        self,
-        hist: np.ndarray,
-        edges: np.ndarray,
-        bar_width: float = 0.5,
-        bar_offset: float = 0.0,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.black)
-
-        assert bar_width > 0.0 and bar_width <= 1.0
-        assert bar_offset >= 0.0 and bar_offset < 1.0
-
-        widths = np.diff(edges)
-
-        x = np.repeat(edges, 2)
-
-        # Calculate bar start and end points for width / offset
-        x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
-        x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
-
-        y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
-        y[1:-1:2] = hist
-
-        curve = pyqtgraph.PlotCurveItem(
-            x=x,
-            y=y,
-            stepMode="center",
-            fillLevel=0,
-            fillOutline=True,
-            pen=pen,
-            brush=brush,
-            skipFiniteCheck=True,
-        )
-
-        self.plot.addItem(curve)
-        return curve
-
     def drawFit(
         self,
         hist: np.ndarray,
@@ -186,27 +177,3 @@ class HistogramView(SinglePlotGraphicsView):
         curve.setVisible(visible)
         self.plot.addItem(curve)
         return curve
-
-    def drawLimit(
-        self,
-        limit: float,
-        label: str,
-        name: str | None = None,
-        pos: float = 0.95,
-        pen: QtGui.QPen | None = None,
-        visible: bool = True,
-    ) -> pyqtgraph.InfiniteLine:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 2.0, QtCore.Qt.PenStyle.DashLine)
-            pen.setCosmetic(True)
-
-        line = pyqtgraph.InfiniteLine(
-            (limit, 1.0),  # This bypasses the fuzzy comparision in QGraphicsItem
-            label=label,
-            labelOpts={"position": pos, "color": "black"},
-            pen=pen,
-        )
-        line.label.setFont(self.font)
-        line.setVisible(visible)
-        self.plot.addItem(line)
-        return line

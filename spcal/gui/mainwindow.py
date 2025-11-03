@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 import numpy as np
 import sys
 from pathlib import Path
@@ -18,7 +19,9 @@ from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.graphs import color_schemes, symbols
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -33,7 +36,7 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-class SPCalGraph(QtWidgets.QWidget):
+class SPCalGraph(QtWidgets.QStackedWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -44,17 +47,146 @@ class SPCalGraph(QtWidgets.QWidget):
             pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
-        self.graph = ParticleView(font=font)
+        # self.stack = QtWidgets.QStackedWidget()
+        self.particle = ParticleView(font=font)
+        self.histogram = HistogramView(font=font)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.graph, 1)
-        self.setLayout(layout)
+        self.options: dict[str, Any] = {
+            "histogram": {
+                "draw filtered": False,
+                "fit": "log normal",
+                "width": {
+                    "signal": None,
+                    "mass": None,
+                    "size": None,
+                    "volume": None,
+                },
+                "percentile": 95.0,
+            },
+            "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
+            "scatter": {"draw filtered": False, "weighting": "none"},
+            # "pca": {"draw filtered": False},  # while it is possible to do this, it doesn't make sense
+        }
+
+        self.addWidget(self.particle)  # type: ignore , works
+        self.addWidget(self.histogram)  # type: ignore , works
+
+        self.action_view_particle = create_action(
+            "office-chart-line",
+            "Particle View",
+            "View raw signal and detected particle peaks.",
+            None,
+            checkable=True,
+        )
+        self.action_view_histogram = create_action(
+            "office-chart-histogram",
+            "Results View",
+            "View signal and calibrated results as histograms.",
+            None,
+            checkable=True,
+        )
+        self.action_view_particle.triggered.connect(
+            lambda: self.setCurrentWidget(self.particle)
+        )
+        self.action_view_histogram.triggered.connect(
+            lambda: self.setCurrentWidget(self.histogram)
+        )
+
+    def clear(self):
+        for i in range(self.count()):
+            widget = self.widget(i)
+            if isinstance(widget, SinglePlotGraphicsView):
+                widget.clear()
+
+    def drawResults(
+        self,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        isotopes: list[SPCalIsotope],
+        key: str,
+    ):
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        keys = list(results.keys())
+
+        view = self.currentWidget()
+        for i, isotope in enumerate(isotopes):
+            color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
+            symbol = symbols[keys.index(isotope) % len(symbols)]
+
+            pen = QtGui.QPen(color, 1.0 * self.devicePixelRatioF())
+            pen.setCosmetic(True)
+            brush = QtGui.QBrush(color)
+            if view == self.particle:
+                self.particle.drawResult(
+                    results[isotope],
+                    pen=pen,
+                    brush=brush,
+                    scatter_size=5.0 * self.devicePixelRatioF(),
+                    scatter_symbol=symbol,
+                )
+            elif view == self.histogram:
+                if len(isotopes) == 1:
+                    width, offset = 1.0, 0.0
+                else:
+                    width = 1.0 / len(isotopes)
+                    offset = i * width
+
+                self.histogram.drawResult(
+                    results[isotope],
+                    key,
+                    "auto",
+                    width=width,
+                    offset=offset,
+                    brush=brush,
+                )
+
+    def drawResultsHistogram(
+        self,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        isotopes: list[SPCalIsotope],
+        key: str,
+    ):
+        width = self.options["histogram"]["width"][key]
+        if width is None:
+            width = np.median(
+                [
+                    2.0
+                    * np.subtract(np.percentile(result.calibrated(key), [75, 25]))  # type: ignore , checked by canCalibrate
+                    / np.cbrt(result.number)
+                    for result in results.values()
+                    if result.canCalibrate(key)
+                ]
+            )
+        # Limit maximum / minimum number of bins
+        # data_range = 0.0
+        # for name, data in graph_data.items():
+        #     ptp = np.percentile(data[graph_idx[name]], options["percentile"]) - np.amin(
+        #         data[graph_idx[name]]
+        #     )
+        #     if ptp > data_range:
+        #         data_range = ptp
+        #
+        # if data_range == 0.0:  # prevent drawing if no range, i.e. one point
+        #     return None
+        #
+        # min_bins, max_bins = 10, 1000
+        # if bin_width < data_range / max_bins:
+        #     logger.warning(f"drawGraphHist: exceeded maximum bins, setting to {max_bins}")
+        #     bin_width = data_range / max_bins
+        # elif bin_width > data_range / min_bins:
+        #     logger.warning(f"drawGraphHist: less than minimum bins, setting to {min_bins}")
+        #     bin_width = data_range / min_bins
+        # bin_width *= modifier  # convert to base unit (kg -> g)
 
 
 class SPCalToolBar(QtWidgets.QToolBar):
     isotopeChanged = QtCore.Signal(SPCalIsotope)
+    viewChanged = QtCore.Signal(QtGui.QAction)
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self, view_actions: list[QtGui.QAction], parent: QtWidgets.QWidget | None = None
+    ):
         super().__init__("SPCal", parent=parent)
 
         self.combo_isotope = QtWidgets.QComboBox()
@@ -70,15 +202,38 @@ class SPCalToolBar(QtWidgets.QToolBar):
             checkable=True,
         )
 
+        self.action_view_signal = create_action(
+            "office-chart-line",
+            "Signal View",
+            "View raw signal and detected particle peaks.",
+            None,
+            checkable=True,
+        )
+        self.action_view_histogram = create_action(
+            "office-chart-histogram",
+            "Results View",
+            "View signal and calibrated results as histograms.",
+            None,
+            checkable=True,
+        )
+
+        self.action_group_views = QtGui.QActionGroup(self)
+        for action in view_actions:
+            self.action_group_views.addAction(action)
+            self.addAction(action)
+
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Expanding,
         )
+
         self.addWidget(spacer)
 
         self.addAction(self.action_all_isotopes)
         self.addWidget(self.combo_isotope)
+
+        self.action_group_views.triggered.connect(self.viewChanged)
 
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         if self.action_all_isotopes.isChecked():
@@ -115,9 +270,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        self.signal = SPCalGraph()
+        self.graph = SPCalGraph()
 
-        self.toolbar = SPCalToolBar()
+        self.toolbar = SPCalToolBar(
+            [self.graph.action_view_particle, self.graph.action_view_histogram]
+        )
 
         self.instrument_options = SPCalInstrumentOptionsDock()
         self.limit_options = SPCalLimitOptionsDock()
@@ -144,6 +301,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         ] = {}
 
         self.toolbar.isotopeChanged.connect(self.redraw)
+        self.toolbar.viewChanged.connect(self.redraw)
         self.toolbar.action_all_isotopes.triggered.connect(self.redraw)
 
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
@@ -177,12 +335,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.outputs,
         )
 
-        widget = QtWidgets.QWidget()
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.signal, 1)
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        # widget = QtWidgets.QWidget()
+        #
+        # layout = QtWidgets.QVBoxLayout()
+        # layout.addWidget(self.signal, 1)
+        # widget.setLayout(layout)
+        self.setCentralWidget(self.graph)
 
         self.createMenuBar()
         self.updateRecentFiles()
@@ -211,27 +369,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file is None:
             return
 
-        scheme = color_schemes[
-            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-        ]
-        keys = list(self.processing_results[data_file].keys())
+        key = self.outputs.combo_key.currentText()
+        isotopes = self.toolbar.selectedIsotopes()
 
-        self.signal.graph.clear()
-        for isotope in self.toolbar.selectedIsotopes():
-            color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
-            symbol = symbols[keys.index(isotope) % len(symbols)]
-
-            pen = QtGui.QPen(color, 1.0 * self.devicePixelRatioF())
-            pen.setCosmetic(True)
-            brush = QtGui.QBrush(color)
-
-            self.signal.graph.drawResult(
-                self.processing_results[data_file][isotope],
-                pen=pen,
-                brush=brush,
-                scatter_size=6.0 * np.sqrt(self.devicePixelRatioF()),
-                scatter_symbol=symbol,
-            )
+        self.graph.clear()
+        self.graph.drawResults(self.processing_results[data_file], isotopes, key)
 
     def onInstrumentOptionsChanged(self) -> None:
         self.processing_methods[
