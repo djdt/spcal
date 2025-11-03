@@ -100,7 +100,8 @@ class ParticleView(SinglePlotGraphicsView):
 
         curve = self.drawCurve(result.times, result.signals, pen)
 
-        maxima = detection_maxima(result.signals, result.regions)
+        maxima = detection_maxima(result.signals, result.regions[result.filter_indicies])
+
         scatter = self.drawScatter(
             result.times[maxima],
             result.signals[maxima],
