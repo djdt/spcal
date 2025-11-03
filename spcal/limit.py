@@ -115,9 +115,9 @@ class SPCalGaussianLimit(SPCalLimit):
 
     @staticmethod
     def isGaussianDistributed(signals: np.ndarray) -> bool:
-        nonzero_response = signals > 0.0
-        nonzero_count = np.count_nonzero(nonzero_response)
-        low_signals = signals[np.logical_and(nonzero_response, signals <= 5.0)]
+        nonzero_signals = signals > 0.0
+        nonzero_count = np.count_nonzero(nonzero_signals)
+        low_signals = signals[np.logical_and(nonzero_signals, signals <= 5.0)]
         # Less than 5% of nonzero values are below 5, equivilent to background of ~ 10
         return bool(nonzero_count > 0 and low_signals.size / nonzero_count < 0.05)
 
