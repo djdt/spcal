@@ -323,7 +323,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         self.resultsChanged.connect(self.onResultsChanged)
 
-        self.files.dataFileSelected.connect(self.updateForDataFile)
+        self.files.dataFileChanged.connect(self.updateForDataFile)
 
         self.addToolBar(self.toolbar)
 
@@ -366,6 +366,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     # def updateForResults(self, data_file: SPCalDataFile):
 
     def updateForDataFile(self, data_file: SPCalDataFile):
+        print(data_file)
         self.instrument_options.event_time.setBaseValue(data_file.event_time)
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
 
@@ -379,7 +380,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess(data_file)
 
     def redraw(self):
-        data_file = self.files.selectedDataFile()
+        data_file = self.files.currentDataFile()
         if data_file is None:
             return
 
@@ -399,7 +400,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.instrument_options.calibration_mode.currentText().lower()
         )
         # todo: update not reprocess
-        self.reprocess(self.files.selectedDataFile())
+        self.reprocess(self.files.currentDataFile())
 
     def onLimitOptionsChanged(self) -> None:
         self.processing_methods[
@@ -414,22 +415,22 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_methods[
             "default"
         ].prominence_required = self.limit_options.prominence_required
-        self.reprocess(self.files.selectedDataFile())
+        self.reprocess(self.files.currentDataFile())
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
         # todo: update not reprocess
-        self.reprocess(self.files.selectedDataFile())
+        self.reprocess(self.files.currentDataFile())
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
-        if data_file == self.files.selectedDataFile():
+        if data_file == self.files.currentDataFile():
             self.redraw()
             self.outputs.setResults(self.processing_results[data_file])
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if not isinstance(data_file, SPCalDataFile):
-            files = self.files.data_files
+            files = self.files.dataFiles()
         else:
             files = [data_file]
 
@@ -639,7 +640,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg = get_import_dialog_for_path(
             self,
             path,
-            self.files.selectedDataFile(),
+            self.files.currentDataFile(),
             screening_method=self.processing_methods["default"],
         )
         dlg.dataImported.connect(self.sampleFileLoaded)
@@ -727,7 +728,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def dialogFilterDetections(self) -> None:
-        data_file = self.files.selectedDataFile()
+        data_file = self.files.currentDataFile()
         if data_file is None:
             return
         dlg = FilterDialog(
