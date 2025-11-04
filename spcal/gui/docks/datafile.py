@@ -229,6 +229,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.setWindowTitle("Open Data Files")
 
         self.list = QtWidgets.QListView()
+        self.list.setMouseTracking(True)
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
         self.model = DataFileModel()
         self.list.setModel(self.model)
