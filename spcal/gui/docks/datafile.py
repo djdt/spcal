@@ -20,10 +20,11 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
-        self.list.clicked.connect(
-            lambda idx: self.dataFileChanged.emit(idx.data(DataFileModel.DataFileRole))
-        )
+        self.list.selectionModel().currentChanged.connect(self.onCurrentIndexChanged)
         self.setWidget(self.list)
+
+    def onCurrentIndexChanged(self, index :QtCore.QModelIndex):
+        self.dataFileChanged.emit(index.data(DataFileModel.DataFileRole))
 
     def currentDataFile(self) -> SPCalDataFile:
         return self.list.currentIndex().data(DataFileModel.DataFileRole)
