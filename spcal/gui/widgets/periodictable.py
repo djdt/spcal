@@ -172,7 +172,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
 
         preferred = max(enabled, key=lambda iso: iso.composition or -1)
         if preferred.composition is None:
-            return None
+            preferred = enabled[0]
         return preferred
 
     def createAction(self, isotope: SPCalIsotope) -> QtGui.QAction:
@@ -271,15 +271,15 @@ class PeriodicTableSelector(QtWidgets.QWidget):
 
     def __init__(
         self,
-        enabled_isotopes: np.ndarray | None = None,
-        selected_isotopes: np.ndarray | None = None,
+        enabled_isotopes: list[SPCalIsotope] | None = None,
+        selected_isotopes: list[SPCalIsotope] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.pkeys: list[int] = []
 
         if enabled_isotopes is None:
-            enabled_isotopes = db["isotopes"]
+            enabled_isotopes = list(ISOTOPE_TABLE.values())
 
         self.buttons: dict[str, PeriodicTableButton] = {}
         for symbol in ELEMENT_PERIOD_INFO.keys():
