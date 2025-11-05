@@ -2,7 +2,7 @@ from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalDataFile
 
 
 class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
@@ -70,6 +70,35 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             style.ContentsType.CT_ItemViewItem, option, QtCore.QSize()
         )
 
+    def drawElidedText(
+        self,
+        style: QtWidgets.QStyle,
+        painter: QtGui.QPainter,
+        rect: QtCore.QRect,
+        alignment: QtCore.Qt.AlignmentFlag,
+        option: QtWidgets.QStyleOption,
+        text: str,
+        bold: bool = False,
+    ) -> QtCore.QRect:
+        elide = QtCore.Qt.TextElideMode.ElideRight
+        enabled = bool(option.state & style.StateFlag.State_Enabled)  # type: ignore
+        if alignment & QtCore.Qt.AlignmentFlag.AlignRight:
+            elide = QtCore.Qt.TextElideMode.ElideLeft
+
+        painter.save()
+        if bold:
+            font = painter.font()
+            font.setBold(True)
+            painter.setFont(font)
+
+        text = painter.fontMetrics().elidedText(text, elide, rect.width())
+        text_rect = style.itemTextRect(
+            painter.fontMetrics(), rect, alignment, enabled, text
+        )
+        style.drawItemText(painter, text_rect, alignment, option.palette, enabled, text)  # type: ignore
+        painter.restore()
+        return text_rect
+
     def paint(
         self,
         painter: QtGui.QPainter,
@@ -116,34 +145,36 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
                 )
             style.drawItemPixmap(painter, menu_rect, self.menu_align, menu_pixmap)
 
+        # values for text drawing
         frame.setRight(close_rect.left() - self.margin)
 
-        # draw the texts
-        enabled = bool(option.state & style.StateFlag.State_Enabled)  # type: ignore
-        for text, alignment, bold in zip(
-            [path.stem, f"Events: {nevents}", f"Isotopes: {nselected} / {nisotopes}"],
-            [
-                QtCore.Qt.AlignmentFlag.AlignLeft,
-                QtCore.Qt.AlignmentFlag.AlignBottom,
-                QtCore.Qt.AlignmentFlag.AlignRight
-                | QtCore.Qt.AlignmentFlag.AlignBottom,
-            ],
-            [True, False, False],
-        ):
-            painter.save()
-            if bold:
-                font = painter.font()
-                font.setBold(True)
-                painter.setFont(font)
-
-            text = painter.fontMetrics().elidedText(
-                text, QtCore.Qt.TextElideMode.ElideRight, frame.width()
-            )
-            rect = style.itemTextRect(
-                painter.fontMetrics(), frame, alignment, enabled, text
-            )
-            style.drawItemText(painter, rect, alignment, option.palette, enabled, text)  # type: ignore
-            painter.restore()
+        # draw the labels
+        self.drawElidedText(
+            style,
+            painter,
+            frame,
+            QtCore.Qt.AlignmentFlag.AlignLeft,
+            option,
+            path.stem,
+            bold=True,
+        )
+        isotope_rect = self.drawElidedText(
+            style,
+            painter,
+            frame,
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignBottom,
+            option,
+            f"Isotopes: {nselected} / {nisotopes}",
+        )
+        frame.setRight(isotope_rect.left())
+        self.drawElidedText(
+            style,
+            painter,
+            frame,
+            QtCore.Qt.AlignmentFlag.AlignBottom,
+            option,
+            f"Events: {nevents}",
+        )
 
 
 class DataFileModel(QtCore.QAbstractListModel):
@@ -245,39 +276,3 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    import numpy as np
-
-    from spcal.isotope import ISOTOPE_TABLE
-
-    datafiles = [
-        SPCalTextDataFile(
-            Path("/home/tom/Downloads/UTSCPO_430809_0.pdf"),
-            np.ones(10, dtype=[("a", float), ("b", float)]),
-            np.arange(100),
-            [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE["Cu", 63]],
-        ),
-        SPCalTextDataFile(
-            Path("/home/tom/Downloads/ASDUIH2323a.pdf"),
-            np.ones(10, dtype=[("a", float)]),
-            np.arange(100),
-            [ISOTOPE_TABLE[("Fe", 56)]],
-        ),
-    ]
-    app = QtWidgets.QApplication()
-    view = SPCalDataFilesDock()
-    for df in datafiles:
-        df.selected_isotopes = df.isotopes
-        view.addDataFile(df)
-    # view = QtWidgets.QListView()
-    # view.setMouseTracking(True)
-    # model = DataFileModel(datafiles)
-    # model.editIsotopesRequested.connect(lambda i: print(i))
-    # view.setModel(model)
-    # view.setItemDelegate(DataFileDelegate())
-    view.show()
-    app.exec()
