@@ -105,12 +105,22 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         isotopes: list[SPCalIsotope],
         key: str,
     ):
+        view = self.currentWidget()
+        if view == self.particle:
+            self.drawResultsParticle(results, isotopes, key)
+        elif view == self.histogram:
+            self.drawResultsHistogram(results, isotopes, key)
+
+    def drawResultsParticle(
+        self,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        isotopes: list[SPCalIsotope],
+        key: str,
+    ):
         scheme = color_schemes[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
         keys = list(results.keys())
-
-        view = self.currentWidget()
         for i, isotope in enumerate(isotopes):
             color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
             symbol = symbols[keys.index(isotope) % len(symbols)]
@@ -118,29 +128,13 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             pen = QtGui.QPen(color, 1.0 * self.devicePixelRatioF())
             pen.setCosmetic(True)
             brush = QtGui.QBrush(color)
-            if view == self.particle:
-                self.particle.drawResult(
-                    results[isotope],
-                    pen=pen,
-                    brush=brush,
-                    scatter_size=5.0 * self.devicePixelRatioF(),
-                    scatter_symbol=symbol,
-                )
-            elif view == self.histogram:
-                if len(isotopes) == 1:
-                    width, offset = 1.0, 0.0
-                else:
-                    width = 1.0 / len(isotopes)
-                    offset = i * width
-
-                self.histogram.drawResult(
-                    results[isotope],
-                    key,
-                    "auto",
-                    width=width,
-                    offset=offset,
-                    brush=brush,
-                )
+            self.particle.drawResult(
+                results[isotope],
+                pen=pen,
+                brush=brush,
+                scatter_size=5.0 * self.devicePixelRatioF(),
+                scatter_symbol=symbol,
+            )
 
     def drawResultsHistogram(
         self,
@@ -148,17 +142,23 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         isotopes: list[SPCalIsotope],
         key: str,
     ):
-        width = self.options["histogram"]["width"][key]
-        if width is None:
-            width = np.median(
-                [
-                    2.0
-                    * np.subtract(np.percentile(result.calibrated(key), [75, 25]))  # type: ignore , checked by canCalibrate
-                    / np.cbrt(result.number)
-                    for result in results.values()
-                    if result.canCalibrate(key)
-                ]
-            )
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        keys = list(results.keys())
+
+        drawable = []
+        brushes = []
+        for isotope in isotopes:
+            if results[isotope].canCalibrate(key):
+                drawable.append(results[isotope])
+                brushes.append(
+                    QtGui.QBrush(
+                        QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
+                    )
+                )
+        self.histogram.drawResults(drawable, key, brushes=brushes)
+
         # Limit maximum / minimum number of bins
         # data_range = 0.0
         # for name, data in graph_data.items():
@@ -325,6 +325,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.files.dataFileChanged.connect(self.updateForDataFile)
         self.files.dataFileAdded.connect(self.updateForDataFile)
+        self.files.dataFileRemoved.connect(self.dataFileRemoved)
 
         self.addToolBar(self.toolbar)
 
@@ -363,6 +364,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             else:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.reprocess(data_file)
+
+    def dataFileRemoved(self):
+        if len(self.files.dataFiles()) == 0:
+            self.isotope_options.setIsotopes([])
+            self.toolbar.setIsotopes([])
+            self.outputs.setIsotopes([])
+            self.graph.clear()
 
     def redraw(self):
         data_file = self.files.currentDataFile()
