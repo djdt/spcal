@@ -10,10 +10,33 @@ from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingResult
 
-def bins_for_values(values: list[np.ndarray], width: float| None = None, percentile_max: float = 0.98, min_bins: int = 10, max_bins: int = 1000):
-        percentiles = [np.percentile(x, [0, 25, 75, percentile_max]) for x in values]
-        if width is None:
-            width = float(np.median([2.0 * (p[2] - p[1]) / np.cbrt(x.size) for p, x in zip(percentiles, values)]))
+
+def bins_for_values(
+    values: list[np.ndarray],
+    width: float | None = None,
+    percentile_max: float = 98.0,
+    min_bins: int = 10,
+    max_bins: int = 1000,
+):
+    percentiles = np.stack(
+        [np.percentile(x, [0, 25, 75, percentile_max]) for x in values], axis=0
+    )
+    sizes = np.array([x.size for x in values])
+    if width is None:
+        width = float(
+            np.median([2.0 * (percentiles[:, 2] - percentiles[:, 1]) / np.cbrt(sizes)])
+        )
+    data_range = np.amin(percentiles[:, 0]), np.amax(percentiles[:, 3])
+
+    while (data_range[1] - data_range[0]) / width > max_bins:
+        width *= 2
+    while (data_range[1] - data_range[0]) / width < min_bins:
+        width /= 2
+
+    bins = np.arange(data_range[0], data_range[1], width)
+    bins -= bins[0] % width
+    return bins
+
 
 class HistogramView(SinglePlotGraphicsView):
     def __init__(
@@ -31,6 +54,9 @@ class HistogramView(SinglePlotGraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, yMin=0.0)
 
+        self.bin_widths: dict[str, float] = {}
+        self.max_percentile = 95.0
+
     def drawResult(
         self,
         result: SPCalProcessingResult,
@@ -41,8 +67,6 @@ class HistogramView(SinglePlotGraphicsView):
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-        scatter_size: float = 6.0,
-        scatter_symbol: str = "t",
     ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
@@ -65,37 +89,31 @@ class HistogramView(SinglePlotGraphicsView):
             legend = HistogramItemSample([curve], size=fm.height())
             self.plot.legend.addItem(legend, str(result.isotope))
 
+        self.setDataLimits(xMax=1.0)
+
     def drawResults(
         self,
-        results: dict[SPCalIsotope, SPCalProcessingResult],
+        results: list[SPCalProcessingResult],
         key: str = "signal",
         pen: QtGui.QPen | None = None,
-        width: float | None = None,
-        brushes: dict[SPCalIsotope, QtGui.QBrush] | None = None,
-        scatter_size: float = 6.0,
-        scatter_symbols: dict[SPCalIsotope, str] | None = None,
+        brushes: list[QtGui.QBrush] | None = None,
     ):
+        # if brushes is None:
+        #     brushes = [QtGui.QBrush(QtCore.Qt.GlobalColor.red) for _ in results]
 
         # Limit maximum / minimum number of bins
-        data_range = 0.0
-        for name, data in graph_data.items():
-            ptp = np.percentile(data[graph_idx[name]], options["percentile"]) - np.amin(
-                data[graph_idx[name]]
+        values = [result.calibrated(key) for result in results]
+        bins = bins_for_values(
+            values, self.bin_widths.get(key, None), self.max_percentile
+        )
+
+        for i, result in enumerate(results):
+            brush = brushes[i] if brushes is not None else None
+            width = 1.0 / len(results)
+            self.drawResult(
+                result, key, bins, width=width, offset=(i * width) % 1.0, brush=brush
             )
-            if ptp > data_range:
-                data_range = ptp
-
-        if data_range == 0.0:  # prevent drawing if no range, i.e. one point
-            return None
-
-        min_bins, max_bins = 10, 1000
-        if bin_width < data_range / max_bins:
-            logger.warning(f"drawGraphHist: exceeded maximum bins, setting to {max_bins}")
-            bin_width = data_range / max_bins
-        elif bin_width > data_range / min_bins:
-            logger.warning(f"drawGraphHist: less than minimum bins, setting to {min_bins}")
-            bin_width = data_range / min_bins
-        bin_width *= modifier  # convert to base unit (kg -> g)
+        self.zoomReset()
 
     def draw(
         self,
