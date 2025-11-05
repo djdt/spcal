@@ -3,7 +3,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.objects import KeepMenuOpenFilter
 from spcal.isotope import ISOTOPE_TABLE, RECOMMENDED_ISOTOPES, SPCalIsotope
-from spcal.npdb import db
 
 ELEMENT_PERIOD_INFO: dict[str, tuple[str, int, tuple[int, int]]] = {
     # symbol: (name, number, position in periodic table)
@@ -278,9 +277,6 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         super().__init__(parent)
         self.pkeys: list[int] = []
 
-        if enabled_isotopes is None:
-            enabled_isotopes = list(ISOTOPE_TABLE.values())
-
         self.buttons: dict[str, PeriodicTableButton] = {}
         for symbol in ELEMENT_PERIOD_INFO.keys():
             # Limit to chosen ones
@@ -293,6 +289,13 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         for symbol, (_, _, (row, col)) in ELEMENT_PERIOD_INFO.items():
             layout.addWidget(self.buttons[symbol], row, col)
         layout.setRowStretch(row + 1, 1)  # Last row stretch
+        
+        if enabled_isotopes is not None:
+            self.setEnabledIsotopes(enabled_isotopes)
+        if selected_isotopes is not None:
+            self.blockSignals(True)
+            self.setSelectedIsotopes(selected_isotopes)
+            self.blockSignals(False)
 
         self.isotopesChanged.connect(self.findCollisions)
         self.setLayout(layout)
@@ -369,6 +372,6 @@ class PeriodicTableSelector(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
-    table = PeriodicTableSelector()
+    table = PeriodicTableSelector(enabled_isotopes=[ISOTOPE_TABLE[("Cu", 63)]], selected_isotopes=[ISOTOPE_TABLE[("Cu", 63)]])
     table.show()
     app.exec()
