@@ -324,59 +324,44 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resultsChanged.connect(self.onResultsChanged)
 
         self.files.dataFileChanged.connect(self.updateForDataFile)
+        self.files.dataFileAdded.connect(self.updateForDataFile)
 
         self.addToolBar(self.toolbar)
 
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
-            self.files,
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
         )
         self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
-            self.instrument_options,
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
         )
         self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
-            self.limit_options,
-        )
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea,
-            self.isotope_options,
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.isotope_options
         )
 
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
-            self.outputs,
-        )
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.outputs)
 
-        # widget = QtWidgets.QWidget()
-        #
-        # layout = QtWidgets.QVBoxLayout()
-        # layout.addWidget(self.signal, 1)
-        # widget.setLayout(layout)
         self.setCentralWidget(self.graph)
 
         self.createMenuBar()
         self.updateRecentFiles()
 
-    # def updateNames(self, names: dict[str, str]) -> None:
-    #     self.sample.updateNames(names)
-    #     self.reference.updateNames(names)
-    #     self.results.updateNames(names)
-    # def updateForResults(self, data_file: SPCalDataFile):
-
     def updateForDataFile(self, data_file: SPCalDataFile):
-        print(data_file)
         self.instrument_options.event_time.setBaseValue(data_file.event_time)
+
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
 
         self.toolbar.setIsotopes(data_file.selected_isotopes)
         self.outputs.setIsotopes(data_file.selected_isotopes)
 
+        method = self.processing_methods["default"]
         for isotope in data_file.selected_isotopes:
-            self.isotope_options.setIsotopeOption(
-                isotope, self.processing_methods["default"].isotope_options[isotope]
-            )
+            if isotope in method.isotope_options:
+                self.isotope_options.setIsotopeOption(
+                    isotope, self.processing_methods["default"].isotope_options[isotope]
+                )
+            else:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.reprocess(data_file)
 
     def redraw(self):
@@ -391,30 +376,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.graph.drawResults(self.processing_results[data_file], isotopes, key)
 
     def onInstrumentOptionsChanged(self) -> None:
-        self.processing_methods[
-            "default"
-        ].instrument_options = self.instrument_options.asInstrumentOptions()
-        self.processing_methods[
-            "default"
-        ].calibration_mode = (
+        method = self.processing_methods["default"]
+        method.instrument_options = self.instrument_options.asInstrumentOptions()
+        method.calibration_mode = (
             self.instrument_options.calibration_mode.currentText().lower()
         )
         # todo: update not reprocess
         self.reprocess(self.files.currentDataFile())
 
     def onLimitOptionsChanged(self) -> None:
-        self.processing_methods[
-            "default"
-        ].limit_options = self.limit_options.asLimitOptions()
-        self.processing_methods[
-            "default"
-        ].accumulation_method = self.limit_options.limit_accumulation
-        self.processing_methods[
-            "default"
-        ].points_required = self.limit_options.points_required
-        self.processing_methods[
-            "default"
-        ].prominence_required = self.limit_options.prominence_required
+        method = self.processing_methods["default"]
+        method.limit_options = self.limit_options.asLimitOptions()
+        method.accumulation_method = self.limit_options.limit_accumulation
+        method.points_required = self.limit_options.points_required
+        method.prominence_required = self.limit_options.prominence_required
         self.reprocess(self.files.currentDataFile())
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
@@ -656,10 +631,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             selected_isotopes = data_file.preferred_isotopes
         data_file.selected_isotopes = selected_isotopes
 
-        for isotope in data_file.selected_isotopes:
-            self.processing_methods["default"].isotope_options[isotope] = (
-                SPCalIsotopeOptions(None, None, None)
-            )
         self.files.addDataFile(data_file)
         self.updateRecentFiles(data_file.path)
 

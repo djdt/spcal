@@ -3,6 +3,7 @@ from typing import Any
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
+from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
 
 
 class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
@@ -252,9 +253,10 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.setWindowTitle("Open Data Files")
 
         self.list = QtWidgets.QListView()
+        self.model = DataFileModel()
+        self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
         self.list.setMouseTracking(True)
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
-        self.model = DataFileModel()
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
         self.list.clicked.connect(
@@ -271,8 +273,14 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         )
         self.model.data_files.append(data_file)
         self.model.endInsertRows()
-        self.list.setCurrentIndex(self.model.index(self.model.rowCount(), 0))
-        self.dataFileChanged.emit(data_file)
+        self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
+        self.dataFileAdded.emit(data_file)
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files
+
+    def dialogEditIsotopes(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
+        dlg = SelectIsotopesDialog(index.data(DataFileModel.DataFileRole), parent=self)
+        dlg.isotopesSelected.connect(self.dataFileChanged)
+        dlg.open()
+        return dlg
