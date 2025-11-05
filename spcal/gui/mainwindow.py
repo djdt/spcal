@@ -125,14 +125,14 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
             symbol = symbols[keys.index(isotope) % len(symbols)]
 
-            pen = QtGui.QPen(color, 1.0 * self.devicePixelRatioF())
+            pen = QtGui.QPen(color, 1.0 * self.devicePixelRatio())
             pen.setCosmetic(True)
             brush = QtGui.QBrush(color)
             self.particle.drawResult(
                 results[isotope],
                 pen=pen,
                 brush=brush,
-                scatter_size=5.0 * self.devicePixelRatioF(),
+                scatter_size=5.0 * self.devicePixelRatio(),
                 scatter_symbol=symbol,
             )
 
@@ -147,38 +147,18 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         ]
         keys = list(results.keys())
 
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
+        pen.setCosmetic(True)
+
         drawable = []
         brushes = []
         for isotope in isotopes:
             if results[isotope].canCalibrate(key):
                 drawable.append(results[isotope])
-                brushes.append(
-                    QtGui.QBrush(
-                        QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
-                    )
-                )
-        self.histogram.drawResults(drawable, key, brushes=brushes)
-
-        # Limit maximum / minimum number of bins
-        # data_range = 0.0
-        # for name, data in graph_data.items():
-        #     ptp = np.percentile(data[graph_idx[name]], options["percentile"]) - np.amin(
-        #         data[graph_idx[name]]
-        #     )
-        #     if ptp > data_range:
-        #         data_range = ptp
-        #
-        # if data_range == 0.0:  # prevent drawing if no range, i.e. one point
-        #     return None
-        #
-        # min_bins, max_bins = 10, 1000
-        # if bin_width < data_range / max_bins:
-        #     logger.warning(f"drawGraphHist: exceeded maximum bins, setting to {max_bins}")
-        #     bin_width = data_range / max_bins
-        # elif bin_width > data_range / min_bins:
-        #     logger.warning(f"drawGraphHist: less than minimum bins, setting to {min_bins}")
-        #     bin_width = data_range / min_bins
-        # bin_width *= modifier  # convert to base unit (kg -> g)
+                color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
+                color.setAlphaF(0.66)
+                brushes.append(QtGui.QBrush(color))
+        self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
 
 
 class SPCalToolBar(QtWidgets.QToolBar):

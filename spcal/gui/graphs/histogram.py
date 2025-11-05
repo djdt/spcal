@@ -98,9 +98,6 @@ class HistogramView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         brushes: list[QtGui.QBrush] | None = None,
     ):
-        # if brushes is None:
-        #     brushes = [QtGui.QBrush(QtCore.Qt.GlobalColor.red) for _ in results]
-
         # Limit maximum / minimum number of bins
         values = [result.calibrated(key) for result in results]
         bins = bins_for_values(
@@ -109,87 +106,17 @@ class HistogramView(SinglePlotGraphicsView):
 
         for i, result in enumerate(results):
             brush = brushes[i] if brushes is not None else None
-            width = 1.0 / len(results)
+            # width = 1.0 / len(results)
             self.drawResult(
-                result, key, bins, width=width, offset=(i * width) % 1.0, brush=brush
+                result,
+                key,
+                bins,
+                width=1.0,
+                offset=0.0,
+                pen=pen,
+                brush=brush,
             )
         self.zoomReset()
-
-    def draw(
-        self,
-        data: np.ndarray,
-        filtered_data: np.ndarray,
-        bins: str | np.ndarray = "auto",
-        bar_width: float = 0.5,
-        bar_offset: float = 0.0,
-        name: str | None = None,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-        draw_fit: str | None = None,
-        draw_limits: dict[str, float] | None = None,
-        fit_visible: bool = True,
-        limits_visible: bool = True,
-        draw_filtered: bool = False,
-    ) -> None:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black)
-            pen.setCosmetic(True)
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
-
-        fm = QtGui.QFontMetrics(self.font)
-
-        hist, edges = np.histogram(data, bins)
-        curve = self.drawData(
-            hist,
-            edges,
-            bar_width=bar_width,
-            bar_offset=bar_offset,
-            pen=pen,
-            brush=brush,
-        )
-        if draw_filtered:
-            hist_filt, edges_filt = np.histogram(filtered_data, bins)
-            curve_filt = self.drawData(
-                hist_filt,
-                edges_filt,
-                bar_width=bar_width,
-                bar_offset=bar_offset,
-                pen=pen,
-                brush=QtGui.QBrush(QtGui.QColor(128, 128, 128, 128)),
-            )
-            legend = HistogramItemSample([curve, curve_filt], size=fm.height())
-        else:
-            legend = HistogramItemSample([curve], size=fm.height())
-
-        if draw_fit is not None:
-            fit_pen = QtGui.QPen(brush.color().darker(), 2.0 * pen.widthF())
-            fit_pen.setCosmetic(True)
-            curve = self.drawFit(
-                hist,
-                edges,
-                data.size,
-                fit_type=draw_fit,
-                pen=fit_pen,
-                visible=fit_visible,
-            )
-            legend.setFit(curve)
-
-        if draw_limits is not None:
-            lim_pen = QtGui.QPen(brush.color().darker(), 2.0 * pen.widthF())
-            lim_pen.setCosmetic(True)
-            lim_pen.setStyle(QtCore.Qt.PenStyle.DashLine)
-            for label, lim in draw_limits.items():
-                limit = self.drawLimit(lim, label, pen=lim_pen, visible=limits_visible)
-                legend.addLimit(limit)
-
-        self.plot.legend.addItem(legend, name)
-        if name is not None:
-            self.export_data[name] = hist
-            self.export_data[name + "_bins"] = edges[1:]
-            if draw_filtered:
-                self.export_data[name + "_filtered"] = hist_filt
-                self.export_data[name + "_filtered_bins"] = edges_filt[1:]
 
     def drawFit(
         self,
