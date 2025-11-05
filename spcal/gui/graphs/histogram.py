@@ -10,6 +10,10 @@ from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingResult
 
+def bins_for_values(values: list[np.ndarray], width: float| None = None, percentile_max: float = 0.98, min_bins: int = 10, max_bins: int = 1000):
+        percentiles = [np.percentile(x, [0, 25, 75, percentile_max]) for x in values]
+        if width is None:
+            width = float(np.median([2.0 * (p[2] - p[1]) / np.cbrt(x.size) for p, x in zip(percentiles, values)]))
 
 class HistogramView(SinglePlotGraphicsView):
     def __init__(
@@ -71,16 +75,6 @@ class HistogramView(SinglePlotGraphicsView):
         scatter_size: float = 6.0,
         scatter_symbols: dict[SPCalIsotope, str] | None = None,
     ):
-        if width is None:
-            width = np.median(
-                [
-                    2.0
-                    * np.subtract(np.percentile(result.calibrated(key), [75, 25]))  # type: ignore , checked by canCalibrate
-                    / np.cbrt(result.number)
-                    for result in results.values()
-                    if result.canCalibrate(key)
-                ]
-            )
 
         # Limit maximum / minimum number of bins
         data_range = 0.0
