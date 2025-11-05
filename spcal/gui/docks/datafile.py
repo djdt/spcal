@@ -136,21 +136,13 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
                 font.setBold(True)
                 painter.setFont(font)
 
+            text = painter.fontMetrics().elidedText(
+                text, QtCore.Qt.TextElideMode.ElideRight, frame.width()
+            )
             rect = style.itemTextRect(
-                painter.fontMetrics(),
-                frame,
-                alignment,
-                enabled,
-                text,  # type: ignore
+                painter.fontMetrics(), frame, alignment, enabled, text
             )
-            style.drawItemText(
-                painter,
-                rect,
-                alignment,
-                option.palette,  # type: ignore
-                enabled,
-                text,
-            )
+            style.drawItemText(painter, rect, alignment, option.palette, enabled, text)  # type: ignore
             painter.restore()
 
 
