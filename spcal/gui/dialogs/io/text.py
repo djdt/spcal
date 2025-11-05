@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
-from spcal.gui.modelviews import CheckableHeaderView
+from spcal.gui.modelviews.headers import CheckableHeaderView
 from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
 from spcal.isotope import SPCalIsotope

@@ -2,7 +2,7 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.calc import mode as modefn
-from spcal.gui.widgets.unitstable import UnitsTable
+from spcal.gui.modelviews.units import UnitsTable
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingMethod, SPCalProcessingResult
 from spcal.siunits import (

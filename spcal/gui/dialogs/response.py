@@ -12,7 +12,7 @@ from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.response import ResponseView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
-from spcal.gui.models import NumpyRecArrayTableModel
+from spcal.gui.modelviews.models import NumpyRecArrayTableModel
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)

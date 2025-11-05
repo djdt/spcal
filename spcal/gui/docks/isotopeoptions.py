@@ -3,7 +3,7 @@ import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
-from spcal.gui.widgets.unitstable import UnitsTable
+from spcal.gui.modelviews.units import UnitsTable
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalIsotopeOptions
 from spcal.siunits import (

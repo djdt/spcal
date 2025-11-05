@@ -2,8 +2,9 @@ import re
 
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.modelviews import BasicTable, ComboHeaderView
-from spcal.gui.widgets.values import ValueWidgetDelegate
+from spcal.gui.modelviews.basic import BasicTable
+from spcal.gui.modelviews.headers import ComboHeaderView
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 
 
 class UnitsTable(BasicTable):

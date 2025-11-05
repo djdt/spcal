@@ -7,7 +7,7 @@ from spcal.cluster import cluster_information, prepare_data_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
-from spcal.gui.modelviews import BasicTable
+from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.util import create_action
 
 
@@ -133,7 +133,7 @@ class CompositionView(SinglePlotGraphicsView):
                 pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
                 pie.setPos(i * spacing, 0)
                 label = pyqtgraph.TextItem(
-                    f"idx {i+1}: {count}", color="black", anchor=(0.5, 0.0)
+                    f"idx {i + 1}: {count}", color="black", anchor=(0.5, 0.0)
                 )
                 label.setPos(i * spacing, -size)
                 self.plot.addItem(pie)

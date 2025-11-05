@@ -3,7 +3,7 @@ from typing import Generator
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
+from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.widgets import ValidColorLineEdit
 from spcal.npdb import db
 
