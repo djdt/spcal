@@ -23,14 +23,28 @@ class SPCalDataFile(object):
         self.path = path
         self.instrument_type = instrument_type
 
-        self.selected_isotopes: list[SPCalIsotope] = []
+        self._selected_isotopes: list[SPCalIsotope] = []
 
         self.times = times
 
         self._event_time = None
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.path.stem})"
+
     def __getitem__(self, isotope: SPCalIsotope) -> np.ndarray:
         raise NotImplementedError
+
+    @property
+    def selected_isotopes(self) -> list[SPCalIsotope]:
+        return self._selected_isotopes
+
+    @selected_isotopes.setter
+    def selected_isotopes(self, selected: list[SPCalIsotope]):
+        for isotope in selected:
+            if isotope not in self.isotopes:
+                raise ValueError(f"{isotope} not in {self}")
+        self._selected_isotopes = selected
 
     @property
     def preferred_isotopes(self) -> list[SPCalIsotope]:
@@ -289,7 +303,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         return self.signals[..., idx].ravel()
 
     @property
-    def isotopes(self) -> list[str]:
+    def isotopes(self) -> list[SPCalIsotope]:
         return [x["label"].decode() for x in self.peak_table]
 
     @property

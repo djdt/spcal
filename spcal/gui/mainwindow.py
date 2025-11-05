@@ -618,11 +618,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.currentDataFile(),
             screening_method=self.processing_methods["default"],
         )
-        dlg.dataImported.connect(self.sampleFileLoaded)
+        dlg.dataImported.connect(self.addDataFile)
         dlg.open()
         return dlg
 
-    def sampleFileLoaded(
+    def addDataFile(
         self,
         data_file: SPCalDataFile,
         selected_isotopes: list[SPCalIsotope] | None = None,
