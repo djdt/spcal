@@ -208,7 +208,8 @@ class DataFileModel(QtCore.QAbstractListModel):
         if row < 0 or row + count > self.rowCount():
             return False
         for i in range(row, row + count):
-            self.data_files.pop(row)
+            df = self.data_files.pop(row)
+            del df
         self.endRemoveRows()
         return True
 
