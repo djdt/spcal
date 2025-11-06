@@ -326,11 +326,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles()
 
     def updateForDataFile(self, data_file: SPCalDataFile | None):
-        import tracemalloc
-        snapsnot = tracemalloc.take_snapshot()
-        top_stats = snapsnot.statistics("lineno")
-        for stat in top_stats[:10]:
-            print(stat)
         if data_file is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
@@ -618,6 +613,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             screening_method=self.processing_methods["default"],
         )
         dlg.dataImported.connect(self.addDataFile)
+        # the importer can take up a lot of memory so delete it
+        dlg.finished.connect(dlg.deleteLater)
         dlg.open()
         return dlg
 
