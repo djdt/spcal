@@ -97,7 +97,6 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             raise ValueError(f"unknown key '{key}'")
 
         # calc best unit from mean?
-
         headers = [
             ("Number", None, None, None),
             ("Concentration", conc_units, default_conc_unit, None),
