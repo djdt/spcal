@@ -24,6 +24,8 @@ logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
 logger.setLevel(logging.INFO)
 
+import tracemalloc
+tracemalloc.start()
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     class DataFileAction(argparse.Action):
@@ -117,9 +119,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.open:
         for data_file in args.open:
-            window.addDataFile(
-                data_file, data_file.selected_isotopes or [data_file.isotopes[0]]
-            )
+            window.addDataFile(data_file)
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()

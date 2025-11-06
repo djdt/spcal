@@ -7,8 +7,7 @@ from spcal.gui.widgets import ElidedLabel
 
 
 class ImportDialogBase(QtWidgets.QDialog):
-    dataImported = QtCore.Signal(SPCalDataFile, list)
-    forbidden_names = ["Overlay"]
+    dataImported = QtCore.Signal(SPCalDataFile)
 
     def __init__(
         self,

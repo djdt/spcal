@@ -309,7 +309,6 @@ def masses_from_integ(
 
 
 def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
-    times = 0.0
     seg_times = np.array(
         [
             seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]

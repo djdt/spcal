@@ -326,6 +326,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles()
 
     def updateForDataFile(self, data_file: SPCalDataFile | None):
+        import tracemalloc
+        snapsnot = tracemalloc.take_snapshot()
+        top_stats = snapsnot.statistics("lineno")
+        for stat in top_stats[:10]:
+            print(stat)
         if data_file is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
@@ -353,6 +358,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dataFileRemoved(self, data_file: SPCalDataFile):
         self.processing_results.pop(data_file)
+
+    def addDataFile(self, data_file: SPCalDataFile) -> None:
+        self.files.addDataFile(data_file)
+        self.updateRecentFiles(data_file.path)
 
     def redraw(self):
         data_file = self.files.currentDataFile()
@@ -611,18 +620,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.dataImported.connect(self.addDataFile)
         dlg.open()
         return dlg
-
-    def addDataFile(
-        self,
-        data_file: SPCalDataFile,
-        selected_isotopes: list[SPCalIsotope] | None = None,
-    ) -> None:
-        if selected_isotopes is None:
-            selected_isotopes = data_file.preferred_isotopes
-        data_file.selected_isotopes = selected_isotopes
-
-        self.files.addDataFile(data_file)
-        self.updateRecentFiles(data_file.path)
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
         raise NotImplementedError

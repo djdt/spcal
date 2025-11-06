@@ -21,7 +21,6 @@ class NuIntegReaderWorker(QtCore.QObject):
     progress = QtCore.Signal()
     resultReady = QtCore.Signal(list)
 
-    @QtCore.Slot(Path, list, int, int)
     def read(
         self,
         path: Path,
@@ -55,61 +54,6 @@ class NuIntegReaderWorker(QtCore.QObject):
             self.resultReady.emit(datas)
         else:
             self.resultReady.emit([])
-
-    @QtCore.Slot()
-    def stop(self):
-        self.deleteLater()
-
-
-# class NuIntegReaderController(QtCore.QObject):
-#     progress = QtCore.Signal()
-#     aborted = QtCore.Signal()
-#     result = QtCore.Signal(list)
-#
-#     def __init__(
-#         self,
-#         path: Path,
-#         index: list[dict],
-#         cycle: int | None = None,
-#         segment: int | None = None,
-#         parent: QtCore.QObject | None = None,
-#     ):
-#         super().__init__(parent)
-#         self.path = path
-#         self.index = index
-#         self.cyc_number = cycle
-#         self.seg_number = segment
-#
-#         self.finished.connect(self.deleteLater)
-#
-#     def run(self):
-#         datas: list[np.ndarray] = []
-#         for idx in self.index:
-#             if self.isInterruptionRequested():
-#                 break
-#             binary_path = self.path.joinpath(f"{idx['FileNum']}.integ")
-#             if binary_path.exists():
-#                 data = nu.read_integ_binary(
-#                     binary_path,
-#                     idx["FirstCycNum"],
-#                     idx["FirstSegNum"],
-#                     idx["FirstAcqNum"],
-#                 )
-#                 if self.cyc_number is not None:
-#                     data = data[data["cyc_number"] == self.cyc_number]
-#                 if self.seg_number is not None:
-#                     data = data[data["seg_number"] == self.seg_number]
-#                 datas.append(data)
-#                 self.progress.emit()
-#             else:
-#                 logger.warning(  # pragma: no cover, missing files
-#                     f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
-#                 )
-#         if self.isInterruptionRequested():
-#             self.aborted.emit()
-#         else:
-#             self.result.emit(datas)
-#             datas.clear()
 
 
 class NuImportDialog(ImportDialogBase):
@@ -276,16 +220,15 @@ class NuImportDialog(ImportDialogBase):
 
         worker = NuIntegReaderWorker()
         worker.moveToThread(self.import_thread)
-        worker.resultReady.connect(self.finalise)
         worker.progress.connect(self.updateProgress)
+        worker.resultReady.connect(self.finalise)
         self.import_thread.finished.connect(worker.deleteLater)
         self.import_thread.start()
         worker.read(self.file_path, self.index, cycle, segment)
 
-    # def startThread(self):
-
     def finalise(self, integs: list[np.ndarray]) -> None:
-
+        self.import_thread.quit()
+        self.import_thread.wait()
         # Get masses from data
         masses = nu.masses_from_integ(
             integs[0], self.info["MassCalCoefficients"], self.segment_delays
@@ -326,7 +269,8 @@ class NuImportDialog(ImportDialogBase):
             )
 
         data_file = SPCalNuDataFile(self.file_path, signals, times, masses, self.info)
-        self.dataImported.emit(data_file, self.table.selectedIsotopes())
+        data_file.selected_isotopes = self.table.selectedIsotopes()
+        self.dataImported.emit(data_file)
         super().accept()
 
     def reject(self) -> None:
