@@ -7,8 +7,7 @@ from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
     dataFileChanged = QtCore.Signal(SPCalDataFile)
-    dataFileAdded = QtCore.Signal(SPCalDataFile)
-    dataFileRemoved = QtCore.Signal()
+    dataFileRemoved = QtCore.Signal(SPCalDataFile)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -17,7 +16,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list = QtWidgets.QListView()
         self.model = DataFileModel()
         self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
-        self.model.rowsRemoved.connect(self.dataFileRemoved)
+        self.model.rowsAboutToBeRemoved.connect(self.onRowsRemoved)
         self.list.setMouseTracking(True)
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
         self.list.setModel(self.model)
@@ -28,6 +27,12 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
     def onCurrentIndexChanged(self, index: QtCore.QModelIndex):
         if index.isValid():
             self.dataFileChanged.emit(index.data(DataFileModel.DataFileRole))
+        else:
+            self.dataFileChanged.emit(None)
+
+    def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
+        for row in range(first, last):
+            self.dataFileRemoved.emit(self.model.data_files[row])
 
     def currentDataFile(self) -> SPCalDataFile:
         return self.list.currentIndex().data(DataFileModel.DataFileRole)
@@ -39,7 +44,6 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.model.data_files.append(data_file)
         self.model.endInsertRows()
         self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
-        self.dataFileAdded.emit(data_file)
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files
