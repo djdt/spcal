@@ -4,7 +4,6 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
@@ -304,7 +303,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resultsChanged.connect(self.onResultsChanged)
 
         self.files.dataFileChanged.connect(self.updateForDataFile)
-        self.files.dataFileAdded.connect(self.updateForDataFile)
         self.files.dataFileRemoved.connect(self.dataFileRemoved)
 
         self.addToolBar(self.toolbar)
@@ -327,7 +325,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def updateForDataFile(self, data_file: SPCalDataFile):
+    def updateForDataFile(self, data_file: SPCalDataFile | None):
+        if data_file is None:
+            self.isotope_options.setIsotopes([])
+            self.toolbar.setIsotopes([])
+            self.outputs.setIsotopes([])
+            self.outputs.setResults({})
+            self.graph.clear()
+            return
+
         self.instrument_options.event_time.setBaseValue(data_file.event_time)
 
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
@@ -345,12 +351,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.reprocess(data_file)
 
-    def dataFileRemoved(self):
-        if len(self.files.dataFiles()) == 0:
-            self.isotope_options.setIsotopes([])
-            self.toolbar.setIsotopes([])
-            self.outputs.setIsotopes([])
-            self.graph.clear()
+    def dataFileRemoved(self, data_file: SPCalDataFile):
+        self.processing_results.pop(data_file)
 
     def redraw(self):
         data_file = self.files.currentDataFile()
