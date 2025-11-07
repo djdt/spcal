@@ -17,6 +17,55 @@ from spcal.isotope import ISOTOPE_TABLE
 logger = logging.getLogger(__name__)
 
 
+class NuIntegReadWorker(QtCore.QObject):
+    started = QtCore.Signal(int)
+    progress = QtCore.Signal(int)
+    finished = QtCore.Signal(list)
+
+    def __init__(
+        self,
+        path: Path,
+        index: list[dict],
+        cyc_number: int | None,
+        seg_number: int | None,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent)
+        self.path = path
+        self.index = index
+        self.cyc_number = cyc_number
+        self.seg_number = seg_number
+
+    @QtCore.Slot()
+    def read(self):
+        self.started.emit(len(self.index))
+        datas = []
+        for i, idx in enumerate(self.index):
+            if self.thread().isInterruptionRequested():
+                return
+
+            binary_path = self.path.joinpath(f"{idx['FileNum']}.integ")
+            if binary_path.exists():
+                data = nu.read_integ_binary(
+                    binary_path,
+                    idx["FirstCycNum"],
+                    idx["FirstSegNum"],
+                    idx["FirstAcqNum"],
+                )
+                if self.cyc_number is not None:
+                    data = data[data["cyc_number"] == self.cyc_number]
+                if self.seg_number is not None:
+                    data = data[data["seg_number"] == self.seg_number]
+                datas.append(data)
+            else:
+                logger.warning(  # pragma: no cover, missing files
+                    f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
+                )
+            self.progress.emit(i)
+
+        self.finished.emit(datas)
+
+
 class NuImportDialog(ImportDialogBase):
     def __init__(
         self,
@@ -26,9 +75,7 @@ class NuImportDialog(ImportDialogBase):
     ):
         super().__init__(path, "SPCal Nu Instruments Import", parent)
 
-        self.import_running = False
-        self.pool = QtCore.QThreadPool()
-        self.dataImported.connect(self.cleanup)
+        self.import_thread = QtCore.QThread(self)
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -160,8 +207,10 @@ class NuImportDialog(ImportDialogBase):
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
 
-    @QtCore.Slot()
-    def beginImport(self):
+    def accept(self) -> None:
+        self.setControlsEnabled(False)
+        self.progress.setValue(0)
+
         cyc_number = self.cycle_number.value()
         if cyc_number == 0:
             cyc_number = None
@@ -169,28 +218,38 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
-        datas: list[np.ndarray] = []
-        for i, idx in enumerate(self.index):
-            if not self.import_running:
-                return
-            binary_path = self.file_path.joinpath(f"{idx['FileNum']}.integ")
-            if binary_path.exists():
-                data = nu.read_integ_binary(
-                    binary_path,
-                    idx["FirstCycNum"],
-                    idx["FirstSegNum"],
-                    idx["FirstAcqNum"],
-                )
-                if cyc_number is not None:
-                    data = data[data["cyc_number"] == cyc_number]
-                if seg_number is not None:
-                    data = data[data["seg_number"] == seg_number]
-                datas.append(data)
-            else:
-                logger.warning(  # pragma: no cover, missing files
-                    f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
-                )
-            self.progress.setValue(i)
+        self.worker = NuIntegReadWorker(self.file_path, self.index, cyc_number, seg_number)
+        self.worker.moveToThread(self.import_thread)
+        self.worker.started.connect(self.progress.setMaximum)
+        self.worker.progress.connect(self.progress.setValue)
+        self.worker.finished.connect(self.finalise)
+
+        self.import_thread.started.connect(self.worker.read)
+        self.import_thread.finished.connect(self.worker.deleteLater)
+        self.import_thread.start()
+
+    def reject(self) -> None:
+        if self.import_thread.isRunning():
+            self.import_thread.requestInterruption()
+            self.import_thread.quit()
+            self.import_thread.wait()
+
+            self.setControlsEnabled(True)
+            self.progress.reset()
+        else:
+            super().reject()
+
+    @QtCore.Slot()
+    def finalise(self, datas: list[np.ndarray]):
+        self.import_thread.quit()
+        self.import_thread.wait()
+
+        cyc_number = self.cycle_number.value()
+        if cyc_number == 0:
+            cyc_number = None
+        seg_number = self.segment_number.value()
+        if seg_number == 0:
+            seg_number = None
 
         masses = nu.masses_from_integ(
             datas[0], self.info["MassCalCoefficients"], self.segment_delays
@@ -226,22 +285,4 @@ class NuImportDialog(ImportDialogBase):
         data_file.selected_isotopes = self.table.selectedIsotopes()
         self.dataImported.emit(data_file)
 
-    def accept(self) -> None:
-        self.setControlsEnabled(False)
-        self.import_running = True
-        self.progress.setValue(0)
-        self.progress.setMaximum(len(self.index))
-        self.pool.start(self.beginImport)
-
-    def reject(self) -> None:
-        super().reject()
-        if self.import_running:
-            self.import_running = False
-            self.setControlsEnabled(True)
-            self.progress.reset()
-        else:
-            super().reject()
-
-    def cleanup(self):
-        self.pool.waitForDone()
         super().accept()
