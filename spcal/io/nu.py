@@ -121,7 +121,7 @@ def read_integ_binary(
         num_results = int.from_bytes(fp.read(4), "little")
         fp.seek(0)
 
-        return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
+    return np.memmap(path, dtype=integ_dtype(num_results))
 
 
 def read_binaries_in_index(
