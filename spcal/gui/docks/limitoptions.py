@@ -50,7 +50,9 @@ class CompoundPoissonOptions(LimitOptions):
         super().__init__("Compound Poisson", 1e-6, parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        self.single_ion_parameters = np.array([])  # array of (..., [mz, mu,sigma )
+        self.single_ion_parameters: np.ndarray | None = (
+            None  # array of (..., [mz, mu,sigma] )
+        )
 
         self.lognormal_sigma = ValueWidget(0.5, min=1e-9, max=10.0, sigfigs=sf)
         self.lognormal_sigma.setToolTip(
@@ -83,16 +85,16 @@ class CompoundPoissonOptions(LimitOptions):
         dlg.resetRequested.connect(self.clearSingleIon)
 
         dlg.open()
-        if self.single_ion_parameters.size == 0:
+        if self.single_ion_parameters is None:
             dlg.loadSingleIonData()
         return dlg
 
     def clearSingleIon(self) -> None:
-        self.setSingleIonParameters(np.array([]))
+        self.setSingleIonParameters(None)
 
-    def setSingleIonParameters(self, params: np.ndarray) -> None:
+    def setSingleIonParameters(self, params: np.ndarray | None) -> None:
         self.single_ion_parameters = params
-        self.lognormal_sigma.setEnabled(self.single_ion_parameters.size == 0)
+        self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
         self.optionsChanged.emit()
 
     def state(self) -> dict:
@@ -114,7 +116,7 @@ class CompoundPoissonOptions(LimitOptions):
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion parameters" in state:
             self.single_ion_parameters = state["single ion parameters"]
-            self.lognormal_sigma.setEnabled(self.single_ion_parameters.size == 0)
+            self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
 
         self.blockSignals(False)
         self.optionsChanged.emit()
@@ -331,7 +333,9 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
 
         layout_method = QtWidgets.QHBoxLayout()
         layout_method.addWidget(self.limit_method, 1)
-        layout_method.addWidget(self.check_iterative, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout_method.addWidget(
+            self.check_iterative, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
         gaussian_collapse.setWidget(self.gaussian)
@@ -364,6 +368,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
                 self.window_size.value() or 0 if self.check_window.isChecked() else 0
             ),
             max_iterations=100 if self.check_iterative.isChecked() else 1,
+            single_ion_parameters=self.compound.single_ion_parameters,
         )
 
     def dialogAdvancedOptions(self) -> None:

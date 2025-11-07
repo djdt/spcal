@@ -42,7 +42,8 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.setWindowTitle("Single Ion Distribution")
 
         self.hist = SingleIonHistogramView()
-        self.hist.plot.setMouseEnabled(x=False, y=False)
+        assert self.hist.plot.vb is not None
+        self.hist.plot.vb.setMouseEnabled(x=False, y=False)
         self.scatter = SingleIonScatterView()
 
         self.masses = np.array([])
@@ -91,7 +92,6 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.max_sigma_difference.setSingleStep(0.01)
         self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
-
         self.smoothing = OddValueSpinBox()
         self.smoothing.setSpecialValueText("None")
         self.smoothing.setRange(1, 9)
@@ -130,7 +130,7 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         # A 'read-only' mode for existing parameters
         if params is not None and params.size > 0:
-            self.scatter.drawData(params[:, 0], params[:, 2])
+            self.scatter.drawData(params["mass"], params["sigma"])
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
         sb = self.button_box.standardButton(button)
@@ -183,10 +183,9 @@ class SingleIonDialog(QtWidgets.QDialog):
                 return
         else:
             path = Path(path)
-
-        if nu.is_nu_directory(path):
-            self.masses, self.counts, info = nu.read_directory(path, raw=True)
-            self.reported_mu = np.log(info["AverageSingleIonArea"])
+        if nu.is_nu_directory(path) or nu.is_nu_run_info_file(path):
+            self.masses, self.counts, _, info = nu.read_directory(path, raw=True)
+            self.reported_mu = info["AverageSingleIonArea"]
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:
                 if "PeakData" in h5["PeakData"]:  # type: ignore
@@ -209,6 +208,9 @@ class SingleIonDialog(QtWidgets.QDialog):
                 f"'{path.stem}' is not a valid TOF data file.\nOnly Nu Instruments and TOFWERK data is supported.",
             )
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
+
+            self.masses, self.counts, info = nu.read_directory(path, raw=True)
+            self.reported_mu = np.log(info["AverageSingleIonArea"])
 
         # Remove clearly gaussian signals
         zeros = np.count_nonzero(self.counts == 0, axis=0)
@@ -320,13 +322,19 @@ class SingleIonDialog(QtWidgets.QDialog):
 
     def accept(self) -> None:
         if self.masses.size > 0:
-            _, mu = self.interpolatedParameters(
+            mz, mu = self.smoothedParameters(
                 self.masses[self.valid], self.mus[self.valid]
             )
-            mz, sigma = self.interpolatedParameters(
+            _, sigma = self.smoothedParameters(
                 self.masses[self.valid], self.sigmas[self.valid]
             )
-            self.parametersExtracted.emit(np.stack((mz, mu, sigma), axis=1))
+            params = np.empty(
+                mz.size, dtype=[("mass", float), ("mu", float), ("sigma", float)]
+            )
+            params["mass"] = mz
+            params["mu"] = mu
+            params["sigma"] = sigma
+            self.parametersExtracted.emit(params)
         super().accept()
 
 

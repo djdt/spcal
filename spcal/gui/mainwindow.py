@@ -2,7 +2,6 @@ import logging
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -47,26 +46,8 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
-        # self.stack = QtWidgets.QStackedWidget()
         self.particle = ParticleView(font=font)
         self.histogram = HistogramView(font=font)
-
-        self.options: dict[str, Any] = {
-            "histogram": {
-                "draw filtered": False,
-                "fit": "log normal",
-                "width": {
-                    "signal": None,
-                    "mass": None,
-                    "size": None,
-                    "volume": None,
-                },
-                "percentile": 95.0,
-            },
-            "composition": {"distance": 0.03, "minimum size": "5%", "mode": "pie"},
-            "scatter": {"draw filtered": False, "weighting": "none"},
-            # "pca": {"draw filtered": False},  # while it is possible to do this, it doesn't make sense
-        }
 
         self.addWidget(self.particle)  # type: ignore , works
         self.addWidget(self.histogram)  # type: ignore , works
