@@ -170,9 +170,7 @@ class SPCalToolBar(QtWidgets.QToolBar):
         super().__init__("SPCal", parent=parent)
 
         self.combo_isotope = QtWidgets.QComboBox()
-        self.combo_isotope.currentIndexChanged.connect(
-            lambda i: self.isotopeChanged.emit(self.combo_isotope.itemData(i))
-        )
+        self.combo_isotope.currentIndexChanged.connect(self.onCurrentIndexChanged)
 
         self.action_all_isotopes = create_action(
             "office-chart-line-stacked",
@@ -224,6 +222,9 @@ class SPCalToolBar(QtWidgets.QToolBar):
         self.addWidget(self.combo_isotope)
 
         self.action_group_views.triggered.connect(self.viewChanged)
+
+    def onCurrentIndexChanged(self, index: int):
+        self.isotopeChanged.emit(self.combo_isotope.itemData(index))
 
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         if self.action_all_isotopes.isChecked():
@@ -302,8 +303,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         self.resultsChanged.connect(self.onResultsChanged)
 
+        self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileChanged.connect(self.updateForDataFile)
-        self.files.dataFileRemoved.connect(self.dataFileRemoved)
+        self.files.dataFileRemoved.connect(self.removeFileFromResults)
 
         self.addToolBar(self.toolbar)
 
@@ -351,12 +353,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.reprocess(data_file)
 
-    def dataFileRemoved(self, data_file: SPCalDataFile):
+    def removeFileFromResults(self, data_file: SPCalDataFile):
         self.processing_results.pop(data_file)
-
-    def addDataFile(self, data_file: SPCalDataFile) -> None:
-        self.files.addDataFile(data_file)
-        self.updateRecentFiles(data_file.path)
 
     def redraw(self):
         data_file = self.files.currentDataFile()
@@ -612,10 +610,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.currentDataFile(),
             screening_method=self.processing_methods["default"],
         )
-        dlg.dataImported.connect(self.addDataFile)
+        dlg.dataImported.connect(self.files.addDataFile)
         # the importer can take up a lot of memory so delete it
         dlg.finished.connect(dlg.deleteLater)
-        dlg.open()
+        dlg.exec()
         return dlg
 
     def dialogBatchProcess(self) -> BatchProcessDialog:
@@ -842,11 +840,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
                 io.syncOutput(ref_io, "response")
 
-    def updateRecentFiles(self, new_path: Path | None = None) -> None:
+    def updateRecentFiles(self, new_path: SPCalDataFile | Path | None = None) -> None:
         MAX_RECENT_FILES = 10
         settings = QtCore.QSettings()
-        num = settings.beginReadArray("RecentFiles")
+
+        if isinstance(new_path, SPCalDataFile):
+            new_path = new_path.path
+
         paths = []
+        num = settings.beginReadArray("RecentFiles")
         for i in range(num):
             settings.setArrayIndex(i)
             path = Path(settings.value("Path"))

@@ -6,6 +6,7 @@ from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
+    dataFileAdded = QtCore.Signal(SPCalDataFile)
     dataFileChanged = QtCore.Signal(SPCalDataFile)
     dataFileRemoved = QtCore.Signal(SPCalDataFile)
 
@@ -37,6 +38,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
     def currentDataFile(self) -> SPCalDataFile:
         return self.list.currentIndex().data(DataFileModel.DataFileRole)
 
+    @QtCore.Slot()
     def addDataFile(self, data_file: SPCalDataFile):
         self.model.beginInsertRows(
             QtCore.QModelIndex(), self.model.rowCount(), self.model.rowCount() + 1
@@ -44,6 +46,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.model.data_files.append(data_file)
         self.model.endInsertRows()
         self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
+        self.dataFileAdded.emit(data_file)
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files

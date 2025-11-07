@@ -116,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.open:
         for data_file in args.open:
-            window.addDataFile(data_file)
+            window.files.addDataFile(data_file)
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()
