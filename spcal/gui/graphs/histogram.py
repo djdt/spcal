@@ -54,8 +54,10 @@ class HistogramView(SinglePlotGraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, yMin=0.0)
 
+        # options
         self.bin_widths: dict[str, float] = {}
         self.max_percentile = 95.0
+        self.draw_filtered = True
 
     # def drawFit(
     #     self,
@@ -110,7 +112,6 @@ class HistogramView(SinglePlotGraphicsView):
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-        draw_fit: bool = False,
     ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
@@ -121,8 +122,10 @@ class HistogramView(SinglePlotGraphicsView):
         if not result.canCalibrate(key):
             return
 
-        signals = result.calibrated(key)
-        counts, edges = np.histogram(signals, bins, range=range)
+        signals = result.calibrated(key, filtered=False)
+        mask = np.zeros(signals.size, dtype=bool)
+        mask[result.filter_indicies] = True
+        counts, edges = np.histogram(signals[mask], bins, range=range)
 
         curve = self.drawHistogram(
             counts, edges, width=width, offset=offset, pen=pen, brush=brush
@@ -132,6 +135,16 @@ class HistogramView(SinglePlotGraphicsView):
             fm = self.fontMetrics()
             legend = HistogramItemSample([curve], size=fm.height())
             self.plot.legend.addItem(legend, str(result.isotope))
+
+        if self.draw_filtered:
+            counts, edges = np.histogram(signals[~mask], bins, range=range)
+
+            filtered_brush = QtGui.QBrush(brush)
+            filtered_brush.setColor(QtCore.Qt.GlobalColor.gray)
+
+            curve = self.drawHistogram(
+                counts, edges, width=width, offset=offset, pen=pen, brush=filtered_brush
+            )
 
         self.setDataLimits(xMax=1.0)
 

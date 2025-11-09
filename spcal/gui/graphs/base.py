@@ -279,13 +279,16 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is not None:
             menu.addAction(self.action_show_legend)
 
-        if self.has_image_export or self.readyForExport():
-            menu.addSeparator()
-
-        if self.readyForExport():
-            menu.addAction(self.action_export_data)
-        if self.has_image_export:
-            menu.addAction(self.action_export_image)
+        # if self.has_image_export or self.readyForExport():
+        #     menu.addSeparator()
+        #
+        # if self.readyForExport():
+        #     menu.addAction(self.action_export_data)
+        # if self.has_image_export:
+        #     menu.addAction(self.action_export_image)
+        menu.addSeparator()
+        menu.addAction(self.action_export_data)
+        menu.addAction(self.action_export_image)
 
         if len(self.context_menu_actions) > 0:
             menu.addSeparator()
@@ -310,9 +313,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def setAutoScaleY(self, auto_scale: bool) -> None:
         self.action_auto_scale_y.setChecked(auto_scale)
-        self.plot.setMouseEnabled(y=not auto_scale)
-        self.plot.setAutoVisible(y=auto_scale)
-        self.plot.enableAutoRange(y=auto_scale)
+        if self.plot.vb is not None:
+            self.plot.vb.setMouseEnabled(y=not auto_scale)
+            self.plot.vb.setAutoVisible(y=auto_scale)
+            self.plot.vb.enableAutoRange(y=auto_scale)
 
     def setLegendVisible(self, visible: bool) -> None:
         self.action_show_legend.setChecked(visible)
