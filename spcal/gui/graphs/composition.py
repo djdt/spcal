@@ -53,13 +53,17 @@ class CompositionView(SinglePlotGraphicsView):
         self, font: QtGui.QFont | None = None, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__("Detection Compositions", font=font, parent=parent)
-        self.plot.setMouseEnabled(x=False, y=False)
-        self.plot.setAspectLocked(1.0)
+        assert self.plot.vb is not None
+        self.plot.vb.setMouseEnabled(x=False, y=False)
+        self.plot.vb.setAspectLocked(True)
+        assert self.plot.legend is not None
         self.plot.legend.setSampleType(StaticRectItemSample)
         self.xaxis.hide()
         self.yaxis.hide()
 
         self.pies: list[PieChart] = []
+
+        self.min_size: float|str = "5%"
 
         self.action_show_comp_dialog = create_action(
             "office-chart-pie",
@@ -78,6 +82,7 @@ class CompositionView(SinglePlotGraphicsView):
     def drawResults(
         self,
         results: list[SPCalProcessingResult],
+        clusters: np.ndarray,
         key: str = "signal",
         pen: QtGui.QPen | None = None,
         brushes: list[QtGui.QBrush] | None = None,
@@ -100,7 +105,78 @@ class CompositionView(SinglePlotGraphicsView):
             )
 
         X = prepare_data_for_clustering(peak_data)
-        means, stds, counts = cluster_information(X, T)
+        means, stds, counts = cluster_information(X, clusters)
+
+        if isinstance(self.min_size, str) and self.min_size.endswith("%"):
+            min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0
+        elif isinstance(self.min_size, str | float):
+            min_size = float(self.min_size)
+
+        compositions = np.empty(
+            counts.size, dtype=[(name, np.float64) for name in data]
+        )
+        for i, name in enumerate(data):
+            compositions[name] = means[:, i]
+
+        mask = counts > min_size
+        compositions = compositions[mask]
+        counts = counts[mask]
+
+        if counts.size == 0:
+            return
+
+        size = 100.0
+        spacing = size * 2.0
+
+        if mode == "pie":
+            radii = np.sqrt(counts * np.pi)
+            radii = radii / np.amax(radii) * size
+
+            for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
+                pie = PieChart(radius, rfn.structured_to_unstructured(comp), brushes)
+                pie.setPos(i * spacing, 0)
+                label = pyqtgraph.TextItem(
+                    f"idx {i + 1}: {count}", color="black", anchor=(0.5, 0.0)
+                )
+                label.setPos(i * spacing, -size)
+                self.plot.addItem(pie)
+                self.plot.addItem(label)
+                self.pies.append(pie)
+        elif mode == "bar":
+            heights = counts / np.amax(counts) * size
+            width = spacing / 2.0
+
+            for i, (count, height, comp) in enumerate(
+                zip(counts, heights, compositions)
+            ):
+                pie = BarChart(
+                    height, width, rfn.structured_to_unstructured(comp), brushes
+                )
+                pie.setPos(i * spacing - width / 2.0, -size)
+                label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+                label.setPos(i * spacing, -size)
+                self.plot.addItem(pie)
+                self.plot.addItem(label)
+                self.pies.append(pie)
+        else:
+            raise ValueError("Composition mode must be 'pie' or 'bar'.")
+
+        # link all hovers
+        # todo link hover to legend
+        for i in range(len(self.pies)):
+            for j in range(len(self.pies)):
+                if i == j:
+                    continue
+                self.pies[i].hovered.connect(self.pies[j].setHoveredIdx)
+
+        # Add legend for each pie
+        assert compositions.dtype.names is not None
+        for name, brush in zip(compositions.dtype.names, brushes):
+            if np.sum(compositions[name]) > 0.0:
+                self.plot.legend.addItem(StaticRectItemSample(brush), name)
+
+    def zoomReset(self) -> None:  # No plotdata
+        self.plot.autoRange()
 
 
     def draw(
@@ -113,7 +189,7 @@ class CompositionView(SinglePlotGraphicsView):
         brushes: list[QtGui.QBrush] | None = None,
     ) -> None:
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
         if brushes is None:
             brushes = [QtGui.QBrush() for _ in data.keys()]

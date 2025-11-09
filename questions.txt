@@ -1,0 +1,2 @@
+Remove drawing of lines in histogram
+Remove drawing of fit in histogram
