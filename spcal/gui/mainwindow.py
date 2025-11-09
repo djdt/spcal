@@ -35,7 +35,7 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-class SPCalGraph(QtWidgets.QStackedWidget):
+class SPCalGraphView(QtWidgets.QStackedWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -139,98 +139,6 @@ class SPCalGraph(QtWidgets.QStackedWidget):
                 color.setAlphaF(0.66)
                 brushes.append(QtGui.QBrush(color))
         self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
-
-
-class SPCalToolBar(QtWidgets.QToolBar):
-    isotopeChanged = QtCore.Signal(SPCalIsotope)
-    viewChanged = QtCore.Signal(QtGui.QAction)
-
-    def __init__(
-        self, view_actions: list[QtGui.QAction], parent: QtWidgets.QWidget | None = None
-    ):
-        super().__init__("SPCal", parent=parent)
-
-        self.combo_isotope = QtWidgets.QComboBox()
-        self.combo_isotope.currentIndexChanged.connect(self.onCurrentIndexChanged)
-
-        self.action_all_isotopes = create_action(
-            "office-chart-line-stacked",
-            "Overlay Isotopes",
-            "Plot all isotope signals.",
-            self.overlayOptionChanged,
-            checkable=True,
-        )
-
-        self.action_view_signal = create_action(
-            "office-chart-line",
-            "Signal View",
-            "View raw signal and detected particle peaks.",
-            None,
-            checkable=True,
-        )
-        self.action_view_histogram = create_action(
-            "office-chart-histogram",
-            "Results View",
-            "View signal and calibrated results as histograms.",
-            None,
-            checkable=True,
-        )
-
-        self.action_filter = create_action(
-            "view-filter",
-            "Filter Detections",
-            "Filter detections based on element compositions.",
-            None,
-        )
-
-        self.action_group_views = QtGui.QActionGroup(self)
-        for action in view_actions:
-            self.action_group_views.addAction(action)
-            self.addAction(action)
-
-        spacer = QtWidgets.QWidget()
-        spacer.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
-
-        self.addWidget(spacer)
-
-        self.addAction(self.action_filter)
-        self.addSeparator()
-
-        self.addAction(self.action_all_isotopes)
-        self.addWidget(self.combo_isotope)
-
-        self.action_group_views.triggered.connect(self.viewChanged)
-
-    def onCurrentIndexChanged(self, index: int):
-        self.isotopeChanged.emit(self.combo_isotope.itemData(index))
-
-    def selectedIsotopes(self) -> list[SPCalIsotope]:
-        if self.action_all_isotopes.isChecked():
-            return [
-                self.combo_isotope.itemData(i)
-                for i in range(self.combo_isotope.count())
-            ]
-        else:
-            return [self.combo_isotope.itemData(self.combo_isotope.currentIndex())]
-
-    def overlayOptionChanged(self, checked: bool):
-        self.combo_isotope.setEnabled(not checked)
-
-    def setIsotopes(self, isotopes: list[SPCalIsotope]):
-        self.action_all_isotopes.setChecked(False)
-
-        self.combo_isotope.blockSignals(True)
-        self.combo_isotope.clear()
-        for isotope in isotopes:
-            self.combo_isotope.insertItem(9999, str(isotope), isotope)
-        self.combo_isotope.blockSignals(False)
-
-        self.action_all_isotopes.setEnabled(len(isotopes) > 1)
-
-
 class SPCalMainWindow(QtWidgets.QMainWindow):
     resultsChanged = QtCore.Signal(SPCalDataFile)
 
