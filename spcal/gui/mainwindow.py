@@ -1,3 +1,4 @@
+import numpy as np
 import logging
 import sys
 from pathlib import Path
@@ -16,11 +17,13 @@ from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
+from spcal.gui.docks.toolbar import SPCalToolBar
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -35,7 +38,7 @@ from spcal.processing import (
 logger = logging.getLogger(__name__)
 
 
-class SPCalGraphView(QtWidgets.QStackedWidget):
+class SPCalGraph(QtWidgets.QStackedWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -48,9 +51,11 @@ class SPCalGraphView(QtWidgets.QStackedWidget):
 
         self.particle = ParticleView(font=font)
         self.histogram = HistogramView(font=font)
+        self.composition = CompositionView(font=font)
 
         self.addWidget(self.particle)  # type: ignore , works
         self.addWidget(self.histogram)  # type: ignore , works
+        self.addWidget(self.composition)  # type: ignore , works
 
         self.action_view_particle = create_action(
             "office-chart-line",
@@ -90,6 +95,8 @@ class SPCalGraphView(QtWidgets.QStackedWidget):
             self.drawResultsParticle(results, isotopes, key)
         elif view == self.histogram:
             self.drawResultsHistogram(results, isotopes, key)
+        elif view == self.composition:
+            pass
 
     def drawResultsParticle(
         self,
@@ -112,9 +119,20 @@ class SPCalGraphView(QtWidgets.QStackedWidget):
                 results[isotope],
                 pen=pen,
                 brush=brush,
-                scatter_size=5.0 * self.devicePixelRatio(),
+                scatter_size=5.0 * np.sqrt(self.devicePixelRatio()),
                 scatter_symbol=symbol,
             )
+
+    def drawResultsComposition(
+        self,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        isotopes: list[SPCalIsotope],
+        key: str,
+    ):
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        keys = list(results.keys())
 
     def drawResultsHistogram(
         self,
@@ -139,6 +157,8 @@ class SPCalGraphView(QtWidgets.QStackedWidget):
                 color.setAlphaF(0.66)
                 brushes.append(QtGui.QBrush(color))
         self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
+
+
 class SPCalMainWindow(QtWidgets.QMainWindow):
     resultsChanged = QtCore.Signal(SPCalDataFile)
 

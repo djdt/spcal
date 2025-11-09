@@ -57,6 +57,49 @@ class HistogramView(SinglePlotGraphicsView):
         self.bin_widths: dict[str, float] = {}
         self.max_percentile = 95.0
 
+    # def drawFit(
+    #     self,
+    #     hist: np.ndarray,
+    #     edges: np.ndarray,
+    #     size: int,
+    #     fit_type: str = "log normal",
+    #     visible: bool = True,
+    #     pen: QtGui.QPen | None = None,
+    # ) -> pyqtgraph.PlotCurveItem:
+    #     if pen is None:
+    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+    #         pen.setCosmetic(True)
+    #
+    #     centers = (edges[:-1] + edges[1:]) / 2.0
+    #     bin_width = edges[1] - edges[0]
+    #     # scale for density
+    #     hist = hist / bin_width / size
+    #     xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
+    #     if fit_type == "normal":
+    #         fit = fit_normal(centers, hist)
+    #         ys = normal.pdf(xs * fit[2], fit[0], fit[1])
+    #     elif fit_type == "log normal":
+    #         fit = fit_lognormal(centers, hist)
+    #         xs_fit = xs - fit[2]
+    #         xs_fit[xs_fit <= 0.0] = np.nan
+    #         ys = lognormal.pdf(xs_fit, fit[0], fit[1])
+    #     else:
+    #         raise ValueError(f"unknown fit {fit_type}")
+    #
+    #     # rescale
+    #     ys = ys * bin_width * size
+    #     curve = pyqtgraph.PlotCurveItem(
+    #         x=xs,
+    #         y=np.nan_to_num(ys),
+    #         pen=pen,
+    #         connect="all",
+    #         skipFiniteCheck=True,
+    #         antialias=True,
+    #     )
+    #     curve.setVisible(visible)
+    #     self.plot.addItem(curve)
+    #     return curve
+
     def drawResult(
         self,
         result: SPCalProcessingResult,
@@ -67,6 +110,7 @@ class HistogramView(SinglePlotGraphicsView):
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
+        draw_fit: bool = False,
     ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
@@ -117,46 +161,3 @@ class HistogramView(SinglePlotGraphicsView):
                 brush=brush,
             )
         self.zoomReset()
-
-    def drawFit(
-        self,
-        hist: np.ndarray,
-        edges: np.ndarray,
-        size: int,
-        fit_type: str = "log normal",
-        visible: bool = True,
-        pen: QtGui.QPen | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        centers = (edges[:-1] + edges[1:]) / 2.0
-        bin_width = edges[1] - edges[0]
-        # scale for density
-        hist = hist / bin_width / size
-        xs = np.linspace(centers[0] - bin_width, centers[-1] + bin_width, 1024)
-        if fit_type == "normal":
-            fit = fit_normal(centers, hist)
-            ys = normal.pdf(xs * fit[2], fit[0], fit[1])
-        elif fit_type == "log normal":
-            fit = fit_lognormal(centers, hist)
-            xs_fit = xs - fit[2]
-            xs_fit[xs_fit <= 0.0] = np.nan
-            ys = lognormal.pdf(xs_fit, fit[0], fit[1])
-        else:
-            raise ValueError(f"drawFit: unknown fit {fit_type}")
-
-        # rescale
-        ys = ys * bin_width * size
-        curve = pyqtgraph.PlotCurveItem(
-            x=xs,
-            y=np.nan_to_num(ys),
-            pen=pen,
-            connect="all",
-            skipFiniteCheck=True,
-            antialias=True,
-        )
-        curve.setVisible(visible)
-        self.plot.addItem(curve)
-        return curve

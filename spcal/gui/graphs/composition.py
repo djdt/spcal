@@ -9,6 +9,7 @@ from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
 from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.util import create_action
+from spcal.processing import SPCalProcessingResult
 
 
 class CompositionDetailDialog(QtWidgets.QDialog):
@@ -73,6 +74,34 @@ class CompositionView(SinglePlotGraphicsView):
         dlg = CompositionDetailDialog(self.export_data, parent=self)
         dlg.open()
         return dlg
+
+    def drawResults(
+        self,
+        results: list[SPCalProcessingResult],
+        key: str = "signal",
+        pen: QtGui.QPen | None = None,
+        brushes: list[QtGui.QBrush] | None = None,
+    ):
+        npeaks = np.amax(
+            [
+                result.peak_indicies[-1]
+                for result in results
+                if result.peak_indicies is not None
+            ]
+        )
+        peak_data = np.zeros((npeaks, len(results)), np.float32)
+        for i, result in enumerate(results):
+            if result.peak_indicies is None:
+                continue
+            np.add.at(
+                peak_data[:, i],
+                result.peak_indicies[result.filter_indicies],
+                result.calibrated(key),
+            )
+
+        X = prepare_data_for_clustering(peak_data)
+        means, stds, counts = cluster_information(X, T)
+
 
     def draw(
         self,
