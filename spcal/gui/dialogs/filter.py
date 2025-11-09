@@ -394,8 +394,7 @@ class FilterDialog(QtWidgets.QDialog):
                 if len(group) > 0:
                     filters.append(group)
                     group = []
-        if len(group) > 0:
-            filters.append(group)
+        filters.append(group)
 
         cluster_filters = []
         for i in range(self.cluster_list.count()):
