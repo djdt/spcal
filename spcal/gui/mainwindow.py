@@ -1,9 +1,9 @@
-import numpy as np
 import logging
 import sys
 from pathlib import Path
 from types import TracebackType
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
@@ -17,13 +17,13 @@ from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
-from spcal.gui.docks.toolbar import SPCalToolBar
 from spcal.gui.docks.outputs import SPCalOutputsDock
+from spcal.gui.docks.toolbar import SPCalToolBar
 from spcal.gui.graphs import color_schemes, symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.particle import ParticleView
-from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -57,6 +57,13 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         self.addWidget(self.histogram)  # type: ignore , works
         self.addWidget(self.composition)  # type: ignore , works
 
+        self.action_view_composition = create_action(
+            "office-chart-pie",
+            "Composition View",
+            "Cluster and view results as pie or bar charts.",
+            None,
+            checkable=True,
+        )
         self.action_view_particle = create_action(
             "office-chart-line",
             "Particle View",
@@ -65,11 +72,14 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             checkable=True,
         )
         self.action_view_histogram = create_action(
-            "office-chart-histogram",
+            "view-object-histogram-linear",
             "Results View",
             "View signal and calibrated results as histograms.",
             None,
             checkable=True,
+        )
+        self.action_view_composition.triggered.connect(
+            lambda: self.setCurrentWidget(self.composition)
         )
         self.action_view_particle.triggered.connect(
             lambda: self.setCurrentWidget(self.particle)
@@ -84,19 +94,16 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             if isinstance(widget, SinglePlotGraphicsView):
                 widget.clear()
 
-    def drawResults(
-        self,
-        results: dict[SPCalIsotope, SPCalProcessingResult],
-        isotopes: list[SPCalIsotope],
-        key: str,
-    ):
+    def currentView(self) -> str:
         view = self.currentWidget()
         if view == self.particle:
-            self.drawResultsParticle(results, isotopes, key)
+            return "particle"
         elif view == self.histogram:
-            self.drawResultsHistogram(results, isotopes, key)
+            return "histogram"
         elif view == self.composition:
-            pass
+            return "composition"
+        else:
+            raise ValueError("current view is invalid")
 
     def drawResultsParticle(
         self,
@@ -126,13 +133,23 @@ class SPCalGraph(QtWidgets.QStackedWidget):
     def drawResultsComposition(
         self,
         results: dict[SPCalIsotope, SPCalProcessingResult],
-        isotopes: list[SPCalIsotope],
         key: str,
+        clusters: np.ndarray,
     ):
         scheme = color_schemes[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
         keys = list(results.keys())
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
+        pen.setCosmetic(True)
+
+        brushes = []
+        for isotope, result in results.items():
+            color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
+            color.setAlphaF(0.66)
+            brushes.append(QtGui.QBrush(color))
+        self.composition.drawResults(results, clusters, key, pen, brushes)
 
     def drawResultsHistogram(
         self,
@@ -175,7 +192,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.graph = SPCalGraph()
 
         self.toolbar = SPCalToolBar(
-            [self.graph.action_view_particle, self.graph.action_view_histogram]
+            [
+                self.graph.action_view_particle,
+                self.graph.action_view_histogram,
+                self.graph.action_view_composition,
+            ]
         )
 
         self.instrument_options = SPCalInstrumentOptionsDock()
@@ -201,6 +222,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_results: dict[
             SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
         ] = {}
+        self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
         self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.viewChanged.connect(self.redraw)
@@ -235,6 +257,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+    def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
+        if data_file not in self.processing_clusters:
+            self.processing_clusters[data_file] = {}
+        if key not in self.processing_clusters[data_file]:
+            self.processing_clusters[data_file][key] = self.processing_methods[
+                "default"
+            ].processClusters(self.processing_results[data_file], key)
+        return self.processing_clusters[data_file][key]
 
     def updateForDataFile(self, data_file: SPCalDataFile | None):
         if data_file is None:
@@ -273,8 +304,22 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         key = self.outputs.combo_key.currentText()
         isotopes = self.toolbar.selectedIsotopes()
 
+        view = self.graph.currentView()
+
         self.graph.clear()
-        self.graph.drawResults(self.processing_results[data_file], isotopes, key)
+        if view == "particle":
+            self.graph.drawResultsParticle(
+                self.processing_results[data_file], isotopes, key
+            )
+        elif view == "histogram":
+            self.graph.drawResultsHistogram(
+                self.processing_results[data_file], isotopes, key
+            )
+        elif view == "composition":
+            clusters = self.clusters(data_file, key)
+            self.graph.drawResultsComposition(
+                self.processing_results[data_file], key, clusters
+            )
 
     def onInstrumentOptionsChanged(self) -> None:
         method = self.processing_methods["default"]
@@ -314,6 +359,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.processing_results[file] = self.processing_methods[
                 "default"
             ].processDataFile(file)
+            # refresh clusters
+            if file in self.processing_clusters:
+                self.processing_clusters[file].clear()
             self.resultsChanged.emit(file)
 
     def createMenuBar(self) -> None:

@@ -5,6 +5,7 @@ from typing import Callable
 import numpy as np
 
 from spcal import particle
+from spcal.cluster import agglomerative_cluster
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
 from spcal.isotope import SPCalIsotope
@@ -377,6 +378,7 @@ class SPCalProcessingMethod(object):
         points_required: int = 1,
         prominence_required: float = 0.2,
         calibration_mode: str = "efficiency",
+        cluster_distance: float = 0.03,
     ):
         if accumulation_method not in SPCalProcessingMethod.ACCUMULATION_METHODS:
             raise ValueError(
@@ -396,6 +398,8 @@ class SPCalProcessingMethod(object):
         self.prominence_required = prominence_required
 
         self.calibration_mode = calibration_mode
+
+        self.cluster_distance = cluster_distance
 
         self.filters: list[list[SPCalProcessingFilter]] = [[]]
 
@@ -492,6 +496,27 @@ class SPCalProcessingMethod(object):
                 np.in1d(result.peak_indicies, valid_peaks)  # type: ignore , set above
             )
         return results
+
+    def processClusters(
+        self, results: dict[SPCalIsotope, "SPCalProcessingResult"], key: str = "signal"
+    ):
+        npeaks = np.amax(
+            [
+                result.peak_indicies[-1]
+                for result in results.values()
+                if result.peak_indicies is not None
+            ]
+        ) + 1
+        peak_data = np.zeros((npeaks, len(results)), np.float32)
+        for i, result in enumerate(results.values()):
+            if result.peak_indicies is None:
+                raise ValueError("cannot cluster, peak_indicies have not been gerneated")
+            np.add.at(
+                peak_data[:, i],
+                result.peak_indicies[result.filter_indicies],
+                result.calibrated(key),
+            )
+        return agglomerative_cluster(peak_data, self.cluster_distance)
 
     def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:

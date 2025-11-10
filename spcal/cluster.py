@@ -1,6 +1,7 @@
 """Agglomerative clustering."""
 
 import numpy as np
+import numpy.lib.recfunctions as rfn
 
 from spcal.lib.spcalext.clustering import (
     cluster_by_distance,
@@ -9,7 +10,7 @@ from spcal.lib.spcalext.clustering import (
 )
 
 
-def prepare_data_for_clustering(data: np.ndarray | dict[str, np.ndarray]) -> np.ndarray:
+def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
     """Prepare data by stacking into 2D array.
 
     Takes a dictionary or structured array and creates an NxM array, where M is the
@@ -21,11 +22,10 @@ def prepare_data_for_clustering(data: np.ndarray | dict[str, np.ndarray]) -> np.
     Returns:
         2D array, ready for ``agglomerative_cluster``
     """
-    names = list(data.dtype.names if isinstance(data, np.ndarray) else data.keys())
-
-    X = np.empty((len(data[names[0]]), len(names)), dtype=np.float64)
-    for i, name in enumerate(names):
-        X[:, i] = data[name]
+    if data.dtype.names is not None:
+        X = rfn.structured_to_unstructured(data, dtype=np.float32)
+    else:
+        X = data.astype(np.float32, copy=True)
     totals = np.sum(X, axis=1)
     np.divide(X.T, totals, where=totals > 0.0, out=X.T)
     return X
@@ -71,6 +71,8 @@ def cluster_information(
     counts = np.bincount(T)
     means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
     stds = np.empty((counts.size, X.shape[1]), dtype=np.float64)
+
+    print(X.shape, T.shape)
 
     for i in range(means.shape[1]):
         sx = np.bincount(T, weights=X[:, i])

@@ -1,9 +1,8 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.util import create_action
-
-from spcal.isotope import SPCalIsotope
 from spcal.gui.modelviews.isotope import IsotopeComboBox
+from spcal.gui.util import create_action
+from spcal.isotope import SPCalIsotope
 
 
 class SPCalToolBar(QtWidgets.QToolBar):
@@ -23,21 +22,6 @@ class SPCalToolBar(QtWidgets.QToolBar):
             "Overlay Isotopes",
             "Plot all isotope signals.",
             self.overlayOptionChanged,
-            checkable=True,
-        )
-
-        self.action_view_signal = create_action(
-            "office-chart-line",
-            "Signal View",
-            "View raw signal and detected particle peaks.",
-            None,
-            checkable=True,
-        )
-        self.action_view_histogram = create_action(
-            "office-chart-histogram",
-            "Results View",
-            "View signal and calibrated results as histograms.",
-            None,
             checkable=True,
         )
 

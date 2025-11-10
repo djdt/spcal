@@ -1,7 +1,6 @@
 from typing import Any
-from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.util import create_action
+from PySide6 import QtCore, QtWidgets
 
 from spcal.isotope import SPCalIsotope
 
@@ -39,6 +38,10 @@ class IsotopeModel(QtCore.QAbstractListModel):
 class IsotopeComboBox(QtWidgets.QComboBox):
     isotopeChanged = QtCore.Signal(SPCalIsotope)
 
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent=parent)
+        self.currentIndexChanged.connect(self.onIndexChanged)
+
     def addIsotope(self, isotope: SPCalIsotope):
         self.addItem(str(isotope), userData=isotope)
 
@@ -51,3 +54,6 @@ class IsotopeComboBox(QtWidgets.QComboBox):
 
     def isotope(self, index: int) -> SPCalIsotope:
         return self.itemData(index)
+
+    def onIndexChanged(self, index: int):
+        self.isotopeChanged.emit(self.isotope(index))
