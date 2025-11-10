@@ -259,6 +259,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles()
 
     def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
+        # todo: filter first based on key and save cluster peak data
         if data_file not in self.processing_clusters:
             self.processing_clusters[data_file] = {}
         if key not in self.processing_clusters[data_file]:
