@@ -379,7 +379,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             geometry.x(), geometry.y(), geometry.width(), height
         )
 
-    def setFont(self, font: QtGui.QFont) -> None:
+    def font(self) -> QtGui.QFont:  # type: ignore , pyqtgraph qt versions
+        return self._font
+
+    def setFont(self, font: QtGui.QFont) -> None:  # type: ignore , pyqtgraph qt versions
         self._font = font
 
         fm = QtGui.QFontMetrics(font)
