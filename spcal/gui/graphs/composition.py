@@ -114,8 +114,12 @@ class CompositionView(SinglePlotGraphicsView):
                 result.calibrated(key),
             )
 
+        idx = np.any(peak_data != 0, axis=1)
+
+        peak_data = peak_data[idx]
+
         X = prepare_data_for_clustering(peak_data)
-        means, stds, counts = cluster_information(X, clusters)
+        means, stds, counts = cluster_information(X, clusters[idx])
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
             min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0

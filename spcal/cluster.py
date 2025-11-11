@@ -72,8 +72,6 @@ def cluster_information(
     means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
     stds = np.empty((counts.size, X.shape[1]), dtype=np.float64)
 
-    print(X.shape, T.shape)
-
     for i in range(means.shape[1]):
         sx = np.bincount(T, weights=X[:, i])
         sx2 = np.bincount(T, weights=X[:, i] ** 2)

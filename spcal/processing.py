@@ -79,7 +79,6 @@ class SPCalIsotopeOptions(object):
             mass_ok = all(
                 x is not None and x > 0.0 for x in [self.response, self.mass_fraction]
             )
-            print(self.response, self.mass_fraction)
         elif mode == "mass response":
             mass_ok = all(
                 x is not None and x > 0.0
@@ -500,17 +499,22 @@ class SPCalProcessingMethod(object):
     def processClusters(
         self, results: dict[SPCalIsotope, "SPCalProcessingResult"], key: str = "signal"
     ):
-        npeaks = np.amax(
-            [
-                result.peak_indicies[-1]
-                for result in results.values()
-                if result.peak_indicies is not None
-            ]
-        ) + 1
+        npeaks = (
+            np.amax(
+                [
+                    result.peak_indicies[-1]
+                    for result in results.values()
+                    if result.peak_indicies is not None
+                ]
+            )
+            + 1
+        )
         peak_data = np.zeros((npeaks, len(results)), np.float32)
         for i, result in enumerate(results.values()):
             if result.peak_indicies is None:
-                raise ValueError("cannot cluster, peak_indicies have not been gerneated")
+                raise ValueError(
+                    "cannot cluster, peak_indicies have not been gerneated"
+                )
             np.add.at(
                 peak_data[:, i],
                 result.peak_indicies[result.filter_indicies],
