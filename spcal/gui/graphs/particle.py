@@ -80,10 +80,6 @@ class ParticleView(SinglePlotGraphicsView):
         start, end = self.region_start, self.region_end
         return {k: v[start:end] for k, v in self.export_data.items()}
 
-    # def clear(self) -> None:
-    #     # self.legend_items.clear()
-    #     super().clear()
-
     def drawResult(
         self,
         result: SPCalProcessingResult,
@@ -100,7 +96,9 @@ class ParticleView(SinglePlotGraphicsView):
 
         curve = self.drawCurve(result.times, result.signals, pen)
 
-        maxima = detection_maxima(result.signals, result.regions[result.filter_indicies])
+        maxima = detection_maxima(
+            result.signals, result.regions[result.filter_indicies]
+        )
 
         scatter = self.drawScatter(
             result.times[maxima],

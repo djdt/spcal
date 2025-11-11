@@ -347,8 +347,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.currentDataFile():
-            self.redraw()
             self.outputs.setResults(self.processing_results[data_file])
+            self.redraw()
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if not isinstance(data_file, SPCalDataFile):
