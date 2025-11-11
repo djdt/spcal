@@ -2,29 +2,29 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.detection import detection_maxima
-from spcal.gui.inputs import InputWidget
-from spcal.gui.modelviews import BasicTable
+from spcal.gui.modelviews.basic import BasicTable
+from spcal.gui.modelviews.isotope import IsotopeComboBox
+from spcal.isotope import SPCalIsotope
+from spcal.processing import SPCalProcessingResult
 from spcal.siunits import time_units
 
 
 class PeakPropertiesDialog(QtWidgets.QDialog):
     def __init__(
         self,
-        input: InputWidget,
-        current_name: str | None = None,
+        results: dict[SPCalIsotope, SPCalProcessingResult],
+        current: SPCalIsotope,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Peak Properties")
         self.resize(600, 400)
 
-        self.input = input
+        self.results = results
 
-        self.combo_names = QtWidgets.QComboBox()
-        self.combo_names.addItems(self.input.detection_names)
-        if current_name is not None:
-            self.combo_names.setCurrentText(current_name)
-        self.combo_names.currentTextChanged.connect(self.updateValues)
+        self.combo_isotope = IsotopeComboBox()
+        self.combo_isotope.addIsotopes(list(results.keys()))
+        self.combo_isotope.isotopeChanged.connect(self.updateValues)
 
         self.table = BasicTable()
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -40,24 +40,17 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.table.setHorizontalHeaderLabels(["min", "max", "mean", "std", "median"])
         self.table.setVerticalHeaderLabels(["width", "height", "skew"])
 
-        self.use_combined = QtWidgets.QCheckBox("Use combined peak regions.")
-        self.use_combined.setToolTip(
-            "Combine overlapping regions of different elements."
-        )
-        self.use_combined.checkStateChanged.connect(self.updateValues)
-
         self.width_units = QtWidgets.QComboBox()
         self.width_units.addItems(list(time_units.keys()))
         self.width_units.setCurrentText("μs")
         self.width_units.currentTextChanged.connect(self.updateValues)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_names, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.table, 1)
 
         width_layout = QtWidgets.QHBoxLayout()
         width_layout.addStretch(1)
-        width_layout.addWidget(self.use_combined)
         width_layout.addWidget(
             QtWidgets.QLabel("Width units:"), 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
@@ -71,33 +64,29 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
     def clear(self) -> None:
         for i in range(3):
             for j in range(5):
-                self.table.item(i, j).setText("")
+                item = self.table.item(i, j)
+                if item is None:
+                    raise ValueError("item is None")
+                item.setText("")
 
     def updateValues(self) -> None:
-        name = self.combo_names.currentText()
+        result = self.results[self.combo_isotope.currentIsotope()]
 
-        detected = np.flatnonzero(self.input.detections[name])
-        if detected.size == 0:
+        if result.detections.size == 0:
             self.clear()
             return
 
-        response = self.input.responses[name]
-        if self.use_combined.isChecked():
-            regions = self.input.regions[detected]
-        else:
-            regions = self.input.original_regions[name]
-
-        trim = self.input.trimRegion(name)
-        maxima = detection_maxima(response[trim[0] : trim[1]], regions) + trim[0]
+        maxima = detection_maxima(result.signals, result.regions)
 
         # heights from peak maxima to baseline
-        heights = response[maxima] - self.input.limits[name].mean_signal
+        heights = result.signals[maxima] - result.limit.mean_signal
 
-        widths = regions[:, 1] - regions[:, 0]
+        widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
         # symmetry as how offcenter peak maxima is
-        skews = ((maxima - regions[:, 0]) / widths - 0.5) * 2.0
+        skews = (
+            (result.times[maxima] - result.times[result.regions[:, 0]]) / widths - 0.5
+        ) * 2.0
         # widths converted to seconds
-        widths = widths.astype(np.float64) * self.input.options.dwelltime.baseValue()
         widths /= time_units[self.width_units.currentText()]
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))
