@@ -31,7 +31,6 @@ class ParticleView(SinglePlotGraphicsView):
         self.xaxis.setScale(xscale)
         self.xaxis.enableAutoSIPrefix(False)
 
-        # self.raw_signals: dict[str, np.ndarray] = {}  # for export
         self.result_items: dict[
             str, tuple[pyqtgraph.PlotCurveItem, pyqtgraph.ScatterPlotItem]
         ] = {}
@@ -40,25 +39,8 @@ class ParticleView(SinglePlotGraphicsView):
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
         self.setAutoScaleY(True)
 
-        self.plot.legend.setColumnCount(3)
-        # self.legend_items: dict[str, MultipleItemSampleProxy] = {}
-        # self.limit_items: list[pyqtgraph.PlotCurveItem] = []
-
-        region_pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
-        region_pen.setCosmetic(True)
-
-        self.region = pyqtgraph.LinearRegionItem(
-            pen="grey",
-            hoverPen="red",
-            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
-            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
-            swapMode="block",
-        )
-        self.region.sigRegionChangeFinished.connect(self.regionChanged)
-        self.region.movable = False  # prevent moving of region, but not lines
-        self.region.lines[0].addMarker("|>", 0.9)
-        self.region.lines[1].addMarker("<|", 0.9)
-        self.plot.addItem(self.region)
+        if self.plot.legend is not None:
+            self.plot.legend.setColumnCount(3)
 
         self.action_peak_properties = create_action(
             "office-chart-area-focus-peak-node",
@@ -130,3 +112,19 @@ class ParticleView(SinglePlotGraphicsView):
             self.plot.legend.addItem(legend, str(result.isotope))
 
         self.setDataLimits(xMin=0.0, xMax=1.0)
+
+    def drawRegion(self, start: float, end: float, pen: QtGui.QPen | None = None):
+        self.region = pyqtgraph.LinearRegionItem(
+            values=(start, end),
+            pen="grey",
+            hoverPen="red",
+            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
+            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
+            swapMode="block",
+        )
+
+        self.region.sigRegionChangeFinished.connect(self.regionChanged)
+        self.region.movable = False  # prevent moving of region, but not lines
+        self.region.lines[0].addMarker("|>", 0.9)
+        self.region.lines[1].addMarker("<|", 0.9)
+        self.plot.addItem(self.region)

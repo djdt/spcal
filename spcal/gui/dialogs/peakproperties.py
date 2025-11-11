@@ -89,7 +89,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         # widths converted to seconds
         widths /= time_units[self.width_units.currentText()]
 
-        sf = int(QtCore.QSettings().value("SigFigs", 4))
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         for i, x in enumerate([widths, heights, skews]):
             self.table.item(i, 0).setText(f"{np.min(x):.{sf}g}")

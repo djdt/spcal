@@ -5,7 +5,7 @@ from typing import Callable
 import numpy as np
 
 from spcal import particle
-from spcal.cluster import agglomerative_cluster
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
 from spcal.isotope import SPCalIsotope
@@ -477,7 +477,7 @@ class SPCalProcessingMethod(object):
         for result in results.values():
             result.peak_indicies = np.searchsorted(
                 all_regions[:, 0], result.regions[:, 0], side="right"
-            )
+            ) - 1
         # filter results
         valid_peaks = []
         for filter_group in self.filters:
@@ -520,7 +520,8 @@ class SPCalProcessingMethod(object):
                 result.peak_indicies[result.filter_indicies],
                 result.calibrated(key),
             )
-        return agglomerative_cluster(peak_data, self.cluster_distance)
+        X = prepare_data_for_clustering(peak_data)
+        return agglomerative_cluster(X, self.cluster_distance * 100)
 
     def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
