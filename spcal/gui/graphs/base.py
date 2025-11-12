@@ -48,8 +48,12 @@ class AxisEditDialog(QtWidgets.QDialog):
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
-    requestImageExport = QtCore.Signal()
-    requestDataExport = QtCore.Signal()
+    UNIT_LABELS = {
+        "signal": ("Signal (cts)", None, 1.0),
+        "mass": ("Mass", "g", 1e3),  # kg -> g
+        "size": ("Size", "m", 1.0),
+        "volume": ("Volume", "L", 1.0),
+    }
 
     def __init__(
         self,
@@ -72,8 +76,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
         pen.setCosmetic(True)
 
-        self.export_data: dict[str, np.ndarray] = {}
-        self.has_image_export = False
+        # self.has_image_export = False
+        self.data_for_export: dict[str, np.ndarray] = {}
 
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
@@ -127,13 +131,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "document-export",
             "Export Data",
             "Save currently loaded data to file.",
-            self.requestDataExport,
+            lambda: self.exportData(None),
         )
         self.action_export_image = create_action(
             "viewimage",
             "Export Image",
             "Save the image to file, at a specified size and DPI.",
-            self.requestImageExport,
+            lambda: self.exportImage(None),
         )
 
         self.context_menu_actions: list[QtGui.QAction] = []
@@ -279,13 +283,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is not None:
             menu.addAction(self.action_show_legend)
 
-        # if self.has_image_export or self.readyForExport():
-        #     menu.addSeparator()
-        #
-        # if self.readyForExport():
-        #     menu.addAction(self.action_export_data)
-        # if self.has_image_export:
-        #     menu.addAction(self.action_export_image)
         menu.addSeparator()
         menu.addAction(self.action_export_data)
         menu.addAction(self.action_export_image)
@@ -320,7 +317,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def setLegendVisible(self, visible: bool) -> None:
         self.action_show_legend.setChecked(visible)
-        self.plot.legend.setVisible(visible)
+        if self.plot.legend is not None:
+            self.plot.legend.setVisible(visible)
 
     def copyToClipboard(self) -> None:
         """Copy current view to system clipboard."""
@@ -331,6 +329,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
     def clear(self) -> None:
+        self.data_for_export.clear()
         if self.plot.legend is not None:
             self.plot.legend.clear()
         self.plot.clear()
@@ -393,13 +392,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         # height calculation in pyqtgraph breaks for larger fonts
         self.xaxis.setHeight(fm.height() * 2)
         self.xaxis.setTickPen(pen)
-        self.xaxis.label.setFont(font)
+        self.xaxis.label.setFont(font)  # type: ignore , not None
 
         self.yaxis.setStyle(tickFont=font)
         # estimate max width
         self.yaxis.setWidth(fm.tightBoundingRect("8888").width() * 2)
         self.yaxis.setTickPen(pen)
-        self.yaxis.label.setFont(font)
+        self.yaxis.label.setFont(font)  # type: ignore , not None
 
         self.plot.titleLabel.setText(
             self.plot.titleLabel.text,
@@ -411,52 +410,59 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
             self.redrawLegend()
 
-    # def exportData(self) -> None:
-    #     dir = QtCore.QSettings().value("RecentFiles/1/path", None)
-    #     dir = str(Path(dir).parent) if dir is not None else ""
-    #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
-    #         self,
-    #         "Export Data",
-    #         dir,
-    #         "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
-    #     )
-    #     if path == "":
-    #         return
-    #
-    #     path = Path(path)
-    #
-    #     filter_suffix = filter[filter.rfind(".") : -1]
-    #     if filter_suffix != "":  # append suffix if missing
-    #         path = path.with_suffix(filter_suffix)
-    #
-    #     data = self.dataForExport()
-    #     names = list(data.keys())
-    #
-    #     if path.suffix.lower() == ".csv":
-    #         header = "\t".join(name for name in names)
-    #         stack = np.full(
-    #             (max(d.size for d in data.values()), len(data)),
-    #             np.nan,
-    #             dtype=np.float32,
-    #         )
-    #         for i, x in enumerate(data.values()):
-    #             stack[: x.size, i] = x
-    #         np.savetxt(
-    #             path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
-    #         )
-    #     elif path.suffix.lower() == ".npz":
-    #         np.savez_compressed(
-    #             path,
-    #             **{k: v for k, v in data.items()},
-    #         )
-    #     else:
-    #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
+    def exportData(self, path: str | Path | None) -> None:
+        if path is None:
+            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+            dir = str(Path(str(dir)).parent) if dir is not None else ""
+            path, filter = QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "Export Data",
+                dir,
+                "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
+            )
+            if path == "":
+                return
+
+        path = Path(path)
+
+        data = self.data_for_export
+        names = list(data.keys())
+
+        if path.suffix.lower() == ".csv":
+            header = "\t".join(name for name in names)
+            stack = np.full(
+                (max(d.size for d in data.values()), len(data)),
+                np.nan,
+                dtype=np.float32,
+            )
+            for i, x in enumerate(data.values()):
+                stack[: x.size, i] = x
+            np.savetxt(
+                path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
+            )
+        elif path.suffix.lower() == ".npz":
+            np.savez_compressed(
+                path, **{k: v for k, v in data.items()}, allow_pickle=False
+            )
+        else:
+            raise ValueError("file suffix must be '.npz' or '.csv'.")
 
     def exportImage(
         self,
-        path: Path | str,
+        path: Path | str | None,
         background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ) -> None:
+        if path is None:
+            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+            dir = str(Path(str(dir)).parent) if dir is not None else ""
+            path, filter = QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "Export Image",
+                dir,
+                "PNG Images(*.png);;All Files(*)",
+            )
+            if path == "":
+                return
         path = Path(path)
 
         if background is None:

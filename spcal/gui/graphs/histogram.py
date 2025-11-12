@@ -40,7 +40,7 @@ class HistogramView(SinglePlotGraphicsView):
     ):
         super().__init__(
             "Histogram",
-            xlabel="Signal (counts)",
+            xlabel="Signal (cts)",
             ylabel="No. Events",
             viewbox=ViewBoxForceScaleAtZero(),
             font=font,
@@ -66,6 +66,8 @@ class HistogramView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
+        label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
+
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
@@ -75,7 +77,7 @@ class HistogramView(SinglePlotGraphicsView):
         if not result.canCalibrate(key):
             return
 
-        signals = result.calibrated(key, filtered=False)
+        signals = result.calibrated(key, filtered=False) * mult
         mask = np.zeros(signals.size, dtype=bool)
         mask[result.filter_indicies] = True
         counts, edges = np.histogram(signals[mask], bins, range=range)
@@ -86,7 +88,7 @@ class HistogramView(SinglePlotGraphicsView):
 
         if self.plot.legend is not None:
             fm = self.fontMetrics()
-            legend = HistogramItemSample([curve], size=fm.height())
+            legend = HistogramItemSample([curve], size=fm.height())  # type: ignore , curce is subtype of dataitem
             self.plot.legend.addItem(legend, str(result.isotope))
 
         if self.draw_filtered:
@@ -99,6 +101,7 @@ class HistogramView(SinglePlotGraphicsView):
                 counts, edges, width=width, offset=offset, pen=pen, brush=filtered_brush
             )
 
+        self.xaxis.setLabel(label, unit)
         self.setDataLimits(xMax=1.0)
 
     def drawResults(
@@ -108,8 +111,9 @@ class HistogramView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         brushes: list[QtGui.QBrush] | None = None,
     ):
+        label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
         # Limit maximum / minimum number of bins
-        values = [result.calibrated(key) for result in results]
+        values = [result.calibrated(key) * mult for result in results]
         bins = bins_for_values(
             values, self.bin_widths.get(key, None), self.max_percentile
         )
@@ -126,4 +130,5 @@ class HistogramView(SinglePlotGraphicsView):
                 pen=pen,
                 brush=brush,
             )
+
         self.zoomReset()
