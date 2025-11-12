@@ -93,6 +93,8 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
 
     def stepEnabled(self) -> QtWidgets.QAbstractSpinBox.StepEnabledFlag:
         enabled = QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepNone
+        if self.isReadOnly():
+            return enabled
         if self._value is not None:
             if self._value < self.max:
                 enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
