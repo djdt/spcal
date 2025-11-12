@@ -51,7 +51,7 @@ class HistogramView(SinglePlotGraphicsView):
         self.plot.vb.setLimits(xMin=0.0, yMin=0.0)
 
         # options
-        self.bin_widths: dict[str, float] = {}
+        self.bin_widths: dict[str, float | None] = {}
         self.max_percentile = 95.0
         self.draw_filtered = True
 

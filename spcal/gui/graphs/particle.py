@@ -58,10 +58,6 @@ class ParticleView(SinglePlotGraphicsView):
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
 
-    def dataForExport(self) -> dict[str, np.ndarray]:
-        start, end = self.region_start, self.region_end
-        return {k: v[start:end] for k, v in self.export_data.items()}
-
     def drawResult(
         self,
         result: SPCalProcessingResult,

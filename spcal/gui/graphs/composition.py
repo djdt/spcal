@@ -75,8 +75,12 @@ class CompositionView(SinglePlotGraphicsView):
 
         self.context_menu_actions.append(self.action_show_comp_dialog)
 
+    def clear(self):
+        super().clear()
+        self.cluster_info = None
+
     def dialogDetail(self) -> QtWidgets.QDialog:
-        dlg = CompositionDetailDialog(self.export_data, parent=self)
+        dlg = CompositionDetailDialog(self.data_for_export, parent=self)
         dlg.open()
         return dlg
 
@@ -117,6 +121,10 @@ class CompositionView(SinglePlotGraphicsView):
 
         X = prepare_data_for_clustering(peak_data)
         means, stds, counts = cluster_information(X, clusters[valid])
+        self.data_for_export["count"] = counts
+        for i, isotope in enumerate(results.keys()):
+            self.data_for_export[str(isotope) + "_mean"] = means[:, i]
+            self.data_for_export[str(isotope) + "_std"] = stds[:, i]
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
             min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0
@@ -174,9 +182,12 @@ class CompositionView(SinglePlotGraphicsView):
                 )
                 pie.setPos(i * spacing - width / 2.0, size)
                 label = pyqtgraph.TextItem(
-                    f"{count}", color="black", anchor=(0.5, 0.0), ensureInBounds=True
+                    f"idx {i + 1}: {count}",
+                    color="black",
+                    anchor=(0.5, 0.0),
+                    ensureInBounds=True,
                 )
-                label.setPos(i * spacing, -size)
+                label.setPos(i * spacing, size)
                 self.plot.addItem(pie)
                 self.plot.addItem(label)
                 pies.append(pie)
@@ -184,7 +195,6 @@ class CompositionView(SinglePlotGraphicsView):
             raise ValueError("Composition mode must be 'pie' or 'bar'.")
 
         # link all hovers
-        # todo link hover to legend
         for i in range(len(pies)):
             for j in range(len(pies)):
                 if i == j:
@@ -193,11 +203,10 @@ class CompositionView(SinglePlotGraphicsView):
 
         # Add legend for each pie
         if self.plot.legend is not None:
-            for isotope, composition, brush in zip(
-                results.keys(), compositions, brushes
+            for isotope, brush in zip(
+                results.keys(), brushes
             ):
-                if np.sum(composition) > 0.0:
-                    self.plot.legend.addItem(StaticRectItemSample(brush), str(isotope))
+                self.plot.legend.addItem(StaticRectItemSample(brush), str(isotope))
 
     def zoomReset(self) -> None:  # No plotdata
         if self.plot.vb is not None:

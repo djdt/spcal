@@ -10,10 +10,13 @@ from spcal.datafile import SPCalDataFile
 from spcal.gui.batch import BatchProcessDialog
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.filter import FilterDialog
+from spcal.gui.dialogs.graphoptions import (
+    CompositionsOptionsDialog,
+    HistogramOptionsDialog,
+)
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
-from spcal.gui.dialogs.graphoptions import HistogramOptionsDialog, CompositionsOptionsDialog
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
@@ -40,6 +43,8 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalGraph(QtWidgets.QStackedWidget):
+    requestRedraw = QtCore.Signal()
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Signal Graph")
@@ -113,12 +118,41 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         else:
             raise ValueError("current view is invalid")
 
+    def setCompositionOptions(self, min_size: str | float, mode: str):
+        self.composition.min_size = min_size
+        self.composition.mode = mode
+        self.requestRedraw.emit()
+
+    def setHistogramOptions(
+        self, widths: dict[str, float | None], percentile: float, draw_filtered: bool
+    ):
+        self.histogram.bin_widths = widths
+        self.histogram.max_percentile = percentile
+        self.histogram.draw_filtered = draw_filtered
+        self.requestRedraw.emit()
+
     def dialogGraphOptions(self):
         view = self.currentView()
         if view == "histogram":
-            dlg = HistogramOptionsDialog()
+            dlg = HistogramOptionsDialog(
+                bin_widths=self.histogram.bin_widths,
+                percentile=self.histogram.max_percentile,
+                draw_filtered=self.histogram.draw_filtered,
+                parent=self,
+            )
+            dlg.optionsChanged.connect(self.setHistogramOptions)
         elif view == "composition":
-            dlf = CompositionsOptionsDialog()
+            dlg = CompositionsOptionsDialog(
+                minimum_size=self.composition.min_size,
+                mode=self.composition.mode,
+                parent=self,
+            )
+            dlg.optionsChanged.connect(self.setCompositionOptions)
+        else:
+            return
+
+        dlg.open()
+        return dlg
 
     def drawResultsParticle(
         self,
@@ -246,6 +280,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
+        self.graph.requestRedraw.connect(self.redraw)
 
         self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.viewChanged.connect(self.redraw)
@@ -345,7 +380,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.processing_results[data_file], key, clusters
             )
 
-    def onInstrumentOptionsChanged(self) -> None:
+    def onClusterDistanceChanged(self, distance: float):
+        method = self.processing_methods["default"]
+        if not np.isclose(method.cluster_distance, distance):
+            method.cluster_distance = distance
+            self.reprocess(self.files.currentDataFile())
+
+    def onInstrumentOptionsChanged(self):
         method = self.processing_methods["default"]
         method.instrument_options = self.instrument_options.asInstrumentOptions()
         method.calibration_mode = (
@@ -354,7 +395,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # todo: update not reprocess
         self.reprocess(self.files.currentDataFile())
 
-    def onLimitOptionsChanged(self) -> None:
+    def onLimitOptionsChanged(self):
         method = self.processing_methods["default"]
         method.limit_options = self.limit_options.asLimitOptions()
         method.accumulation_method = self.limit_options.limit_accumulation
@@ -368,7 +409,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # todo: update not reprocess
         self.reprocess(self.files.currentDataFile())
 
-    def onResultsChanged(self, data_file: SPCalDataFile) -> None:
+    def onResultsChanged(self, data_file: SPCalDataFile):
         if data_file == self.files.currentDataFile():
             self.outputs.setResults(self.processing_results[data_file])
             self.redraw()
@@ -399,7 +440,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         dlg.exec()
 
-    def createMenuBar(self) -> None:
+    def createMenuBar(self):
         # File
         self.action_open_sample = create_action(
             "document-open",
