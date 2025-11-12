@@ -110,6 +110,8 @@ class CompositionView(SinglePlotGraphicsView):
                 raise ValueError(
                     "cannot cluster, peak_indicies have not been generated"
                 )
+            if not result.canCalibrate(key):
+                continue
             np.add.at(
                 peak_data[:, i],
                 result.peak_indicies[result.filter_indicies],

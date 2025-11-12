@@ -410,13 +410,13 @@ class SPCalProcessingMethod(object):
         data_file: SPCalDataFile,
         isotopes: list[SPCalIsotope] | None = None,
         max_size: int | None = None,
-    ) -> dict[SPCalIsotope, "SPCalProcessingResult"]:
+    ) -> dict[SPCalIsotope, SPCalProcessingResult]:
         def calculate_result_for_isotope(
             method: "SPCalProcessingMethod",
             data_file: SPCalDataFile,
             isotope: SPCalIsotope,
             max_size: int | None,
-        ):
+        ) -> SPCalProcessingResult:
             limit = method.limit_options.limitsForIsotope(data_file, isotope)
 
             if method.accumulation_method == "signal mean":
@@ -472,7 +472,9 @@ class SPCalProcessingMethod(object):
 
         return results
 
-    def filterResults(self, results: dict[SPCalIsotope, "SPCalProcessingResult"]):
+    def filterResults(
+        self, results: dict[SPCalIsotope, SPCalProcessingResult]
+    ) -> dict[SPCalIsotope, SPCalProcessingResult]:
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
@@ -501,8 +503,8 @@ class SPCalProcessingMethod(object):
         return results
 
     def processClusters(
-        self, results: dict[SPCalIsotope, "SPCalProcessingResult"], key: str = "signal"
-    ):
+        self, results: dict[SPCalIsotope, SPCalProcessingResult], key: str = "signal"
+    ) -> np.ndarray:
         npeaks = (
             np.amax(
                 [
@@ -519,6 +521,8 @@ class SPCalProcessingMethod(object):
                 raise ValueError(
                     "cannot cluster, peak_indicies have not been gerneated"
                 )
+            if not result.canCalibrate(key):
+                continue
             np.add.at(
                 peak_data[:, i],
                 result.peak_indicies[result.filter_indicies],

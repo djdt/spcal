@@ -70,13 +70,6 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             None,
             checkable=True,
         )
-        self.action_view_particle = create_action(
-            "office-chart-line",
-            "Particle View",
-            "View raw signal and detected particle peaks.",
-            None,
-            checkable=True,
-        )
         self.action_view_histogram = create_action(
             "view-object-histogram-linear",
             "Results View",
@@ -84,15 +77,19 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             None,
             checkable=True,
         )
+        self.action_view_particle = create_action(
+            "office-chart-line",
+            "Particle View",
+            "View raw signal and detected particle peaks.",
+            None,
+            checkable=True,
+        )
+        self.action_view_particle.setChecked(True)
         self.action_view_composition.triggered.connect(
-            lambda: self.setCurrentWidget(self.composition)
+            lambda: self.setView("composition")
         )
-        self.action_view_particle.triggered.connect(
-            lambda: self.setCurrentWidget(self.particle)
-        )
-        self.action_view_histogram.triggered.connect(
-            lambda: self.setCurrentWidget(self.histogram)
-        )
+        self.action_view_histogram.triggered.connect(lambda: self.setView("histogram"))
+        self.action_view_particle.triggered.connect(lambda: self.setView("particle"))
 
         self.action_view_options = create_action(
             "configure",
@@ -106,6 +103,16 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             widget = self.widget(i)
             if isinstance(widget, SinglePlotGraphicsView):
                 widget.clear()
+
+    def setView(self, view: str):
+        if view == "composition":
+            self.setCurrentWidget(self.composition)
+        elif view == "histogram":
+            self.setCurrentWidget(self.histogram)
+        elif view == "particle":
+            self.setCurrentWidget(self.particle)
+
+        self.action_view_options.setEnabled(view != "particle")
 
     def currentView(self) -> str:
         view = self.currentWidget()
@@ -227,7 +234,9 @@ class SPCalGraph(QtWidgets.QStackedWidget):
                 color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
                 color.setAlphaF(0.66)
                 brushes.append(QtGui.QBrush(color))
-        self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
+
+        if len(drawable) > 0:
+            self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
 
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
@@ -295,6 +304,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileChanged.connect(self.updateForDataFile)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
+
+        self.outputs.keyChanged.connect(self.onKeyChanged)
 
         self.addToolBar(self.toolbar)
 
@@ -407,7 +418,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         option = self.isotope_options.optionForIsotope(isotope)
         self.processing_methods["default"].isotope_options[isotope] = option
         # todo: update not reprocess
-        self.reprocess(self.files.currentDataFile())
+        # self.reprocess(self.files.currentDataFile())
+        data_file = self.files.currentDataFile()
+        method = self.processing_methods["default"]
+
+        self.processing_results[data_file] = method.filterResults(self.processing_results[data_file])
+        if data_file in self.processing_clusters:
+            self.processing_clusters[data_file].clear()
+        self.resultsChanged.emit(data_file)
+
+    def onKeyChanged(self, key: str):
+        if self.graph.currentView() != "particle":
+            self.redraw()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
         if data_file == self.files.currentDataFile():
@@ -420,10 +442,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         else:
             files = [data_file]
 
+        method = self.processing_methods["default"]
+
         for file in files:
-            self.processing_results[file] = self.processing_methods[
-                "default"
-            ].processDataFile(file)
+            results = method.processDataFile(file)
+            self.processing_results[file] = method.filterResults(results)
             # refresh clusters
             if file in self.processing_clusters:
                 self.processing_clusters[file].clear()
