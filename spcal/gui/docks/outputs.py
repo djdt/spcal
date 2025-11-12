@@ -16,6 +16,8 @@ from spcal.siunits import (
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
+    keyChanged = QtCore.Signal(str)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Outputs")
@@ -25,6 +27,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.combo_key = QtWidgets.QComboBox()
         self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
         self.combo_key.currentTextChanged.connect(self.updateOutputsForKey)
+        self.combo_key.currentTextChanged.connect(self.keyChanged)
 
         self.table = UnitsTable(
             [
