@@ -470,6 +470,9 @@ class SPCalProcessingMethod(object):
             ]
             results = {future.result().isotope: future.result() for future in futures}
 
+        return results
+
+    def filterResults(self, results: dict[SPCalIsotope, "SPCalProcessingResult"]):
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
