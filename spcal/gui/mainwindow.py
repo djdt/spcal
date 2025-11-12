@@ -13,6 +13,7 @@ from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.dialogs.graphoptions import HistogramOptionsDialog, CompositionsOptionsDialog
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
@@ -88,6 +89,13 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             lambda: self.setCurrentWidget(self.histogram)
         )
 
+        self.action_view_options = create_action(
+            "configure",
+            "Graph Options",
+            "Set options specific to the current graph.",
+            self.dialogGraphOptions,
+        )
+
     def clear(self):
         for i in range(self.count()):
             widget = self.widget(i)
@@ -104,6 +112,13 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             return "composition"
         else:
             raise ValueError("current view is invalid")
+
+    def dialogGraphOptions(self):
+        view = self.currentView()
+        if view == "histogram":
+            dlg = HistogramOptionsDialog()
+        elif view == "composition":
+            dlf = CompositionsOptionsDialog()
 
     def drawResultsParticle(
         self,
@@ -201,6 +216,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.graph.action_view_particle,
                 self.graph.action_view_histogram,
                 self.graph.action_view_composition,
+                self.graph.action_view_options,
             ]
         )
 
