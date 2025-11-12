@@ -98,9 +98,9 @@ py::tuple mst_linkage(const py::array_t<double> &dists_array, const int n) {
     double min = std::numeric_limits<double>::infinity();
     merged[x] = true;
 
-    tbb::parallel_for(0, n, [&](int j) {
+    for (int j = 0; j < n; ++j) {
       if (merged[j])
-        return;
+        continue;
       double dist = dists(condensed_index(x, j, n));
       if (min_dists[j] > dist) {
         min_dists[j] = dist;
@@ -109,7 +109,7 @@ py::tuple mst_linkage(const py::array_t<double> &dists_array, const int n) {
         min = min_dists[j];
         y = j;
       }
-    });
+    }
 
     z1[i] = x;
     z2[i] = y;

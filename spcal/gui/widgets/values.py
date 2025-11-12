@@ -1,5 +1,7 @@
 """Widget that displays a value with formatting."""
 
+from typing import Callable
+
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -16,6 +18,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         error: float | None = None,
         min: float = 0.0,
         max: float = np.inf,
+        step: float | Callable[[float, int], float] = 1.0,
         sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -24,9 +27,9 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self._error = error
         self.min = min
         self.max = max
-        self.sigfigs = sigfigs
+        self.step = step
 
-        self.step_size = 1.0 if max == np.inf else max / 10.0
+        self.sigfigs = sigfigs
 
         # locale group separators break the double validator
         local = self.locale()
@@ -72,22 +75,16 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         assert isinstance(validator, QtGui.QDoubleValidator)
         validator.setDecimals(sigfigs)
 
-    def setStepSize(self, size: float):
-        self.step_size = size
-
-    def focusInEvent(self, event: QtGui.QFocusEvent):
-        super().focusInEvent(event)
-        self.textFromValue(self.value())
-        self.selectAll()  # select all text
-
-    def focusOutEvent(self, event: QtGui.QFocusEvent):
-        super().focusOutEvent(event)
-        self.textFromValue(self.value())
+    def setStep(self, step: float | Callable[[float, int], float]):
+        self.step = step
 
     def stepBy(self, steps: int):
         if self._value is None:
             return
-        new_value = self._value + steps * self.step_size
+        if isinstance(self.step, float):
+            new_value = self._value + steps * self.step
+        else:
+            new_value = self.step(self._value, steps)
         if new_value > self.max:
             new_value = self.max
         elif new_value < self.min:
@@ -127,3 +124,16 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
                 self.valueChanged.disconnect(self.textFromValue)
                 self.setValue(value)
                 self.valueChanged.connect(self.textFromValue)
+
+    def focusInEvent(self, event: QtGui.QFocusEvent):
+        super().focusInEvent(event)
+        self.textFromValue(self.value())
+        self.selectAll()  # select all text
+
+    def focusOutEvent(self, event: QtGui.QFocusEvent):
+        super().focusOutEvent(event)
+        self.textFromValue(self.value())
+
+    def showEvent(self, event: QtGui.QShowEvent):
+        self.textFromValue(self.value())
+        super().showEvent(event)

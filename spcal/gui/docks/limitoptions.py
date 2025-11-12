@@ -23,7 +23,9 @@ class LimitOptions(QtWidgets.QGroupBox):
     ):
         super().__init__(parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.alpha = ValueWidget(alpha, min=1e-16, max=0.5, sigfigs=sf)
+        self.alpha = ValueWidget(
+            alpha, min=1e-16, max=0.5, step=lambda x, s: x * 10**s, sigfigs=sf
+        )
         self.alpha.setToolTip("False positive error rate.")
         self.alpha.valueChanged.connect(self.optionsChanged)
 
@@ -54,7 +56,9 @@ class CompoundPoissonOptions(LimitOptions):
             None  # array of (..., [mz, mu,sigma] )
         )
 
-        self.lognormal_sigma = ValueWidget(0.5, min=1e-9, max=10.0, sigfigs=sf)
+        self.lognormal_sigma = ValueWidget(
+            0.5, min=1e-9, max=10.0, step=0.05, sigfigs=sf
+        )
         self.lognormal_sigma.setToolTip(
             "Shape parameter for the log-normal approximation of the SIA. "
         )
@@ -137,7 +141,7 @@ class GaussianOptions(LimitOptions):
         self.alpha.valueChanged.connect(self.updateSigma)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.sigma = ValueWidget(5.0, min=0.0, max=8.0, sigfigs=sf)
+        self.sigma = ValueWidget(5.0, min=0.0, max=8.0, step=1.0, sigfigs=sf)
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )

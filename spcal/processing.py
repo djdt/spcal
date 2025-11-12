@@ -5,7 +5,7 @@ from typing import Callable
 import numpy as np
 
 from spcal import particle
-from spcal.cluster import agglomerative_cluster
+from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
 from spcal.isotope import SPCalIsotope
@@ -79,7 +79,6 @@ class SPCalIsotopeOptions(object):
             mass_ok = all(
                 x is not None and x > 0.0 for x in [self.response, self.mass_fraction]
             )
-            print(self.response, self.mass_fraction)
         elif mode == "mass response":
             mass_ok = all(
                 x is not None and x > 0.0
@@ -478,7 +477,7 @@ class SPCalProcessingMethod(object):
         for result in results.values():
             result.peak_indicies = np.searchsorted(
                 all_regions[:, 0], result.regions[:, 0], side="right"
-            )
+            ) - 1
         # filter results
         valid_peaks = []
         for filter_group in self.filters:
@@ -500,23 +499,29 @@ class SPCalProcessingMethod(object):
     def processClusters(
         self, results: dict[SPCalIsotope, "SPCalProcessingResult"], key: str = "signal"
     ):
-        npeaks = np.amax(
-            [
-                result.peak_indicies[-1]
-                for result in results.values()
-                if result.peak_indicies is not None
-            ]
-        ) + 1
+        npeaks = (
+            np.amax(
+                [
+                    result.peak_indicies[-1]
+                    for result in results.values()
+                    if result.peak_indicies is not None
+                ]
+            )
+            + 1
+        )
         peak_data = np.zeros((npeaks, len(results)), np.float32)
         for i, result in enumerate(results.values()):
             if result.peak_indicies is None:
-                raise ValueError("cannot cluster, peak_indicies have not been gerneated")
+                raise ValueError(
+                    "cannot cluster, peak_indicies have not been gerneated"
+                )
             np.add.at(
                 peak_data[:, i],
                 result.peak_indicies[result.filter_indicies],
                 result.calibrated(key),
             )
-        return agglomerative_cluster(peak_data, self.cluster_distance)
+        X = prepare_data_for_clustering(peak_data)
+        return agglomerative_cluster(X, self.cluster_distance * 100)
 
     def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:

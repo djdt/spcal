@@ -85,6 +85,8 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
 
 
 class AdvancedPoissonOptions(QtWidgets.QWidget):
+    optionsChanged = QtCore.Signal()
+
     def __init__(self, image: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Advanced Poisson Options")
@@ -102,7 +104,7 @@ class AdvancedPoissonOptions(QtWidgets.QWidget):
         layout.addWidget(label, 0, QtCore.Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
-    def options(self) -> tuple[float, float]:
+    def options(self) -> tuple[float | None, float | None]:
         raise NotImplementedError
 
 
@@ -112,18 +114,20 @@ class CurrieOptions(AdvancedPoissonOptions):
     ):
         super().__init__(":img/currie2008.png", parent)
 
-        self.eta = ValueWidget(eta, validator=QtGui.QDoubleValidator(1.0, 2.0, 2))
-        self.epsilon = ValueWidget(
-            epsilon, validator=QtGui.QDoubleValidator(0.0, 1.0, 2)
-        )
+        self.eta = ValueWidget(eta, min=1.0, max=2.0, step=0.1, sigfigs=2)
+        self.epsilon = ValueWidget(epsilon, min=0.0, max=1.0, step=0.1, sigfigs=2)
+        self.eta.valueChanged.connect(self.optionsChanged)
+        self.epsilon.valueChanged.connect(self.optionsChanged)
 
         layout = QtWidgets.QFormLayout()
         layout.addRow("η", self.eta)
         layout.addRow("ε", self.epsilon)
 
-        self.layout().insertLayout(0, layout)
+        base_layout = self.layout()
+        assert isinstance(base_layout, QtWidgets.QVBoxLayout)
+        base_layout.insertLayout(0, layout)
 
-    def options(self) -> tuple[float, float]:
+    def options(self) -> tuple[float | None, float | None]:
         return self.eta.value(), self.epsilon.value()
 
 
@@ -137,20 +141,20 @@ class MARLAPFormulaOptions(AdvancedPoissonOptions):
     ):
         super().__init__(image, parent)
 
-        self.t_sample = ValueWidget(
-            t_sample, validator=QtGui.QDoubleValidator(0.0, 1.0, 2)
-        )
-        self.t_blank = ValueWidget(
-            t_blank, validator=QtGui.QDoubleValidator(0.0, 1.0, 2)
-        )
+        self.t_sample = ValueWidget(t_sample, min=0.0, max=1.0, step=0.1, sigfigs=2)
+        self.t_blank = ValueWidget(t_blank, min=0.0, max=1.0, step=0.1, sigfigs=2)
+        self.t_sample.valueChanged.connect(self.optionsChanged)
+        self.t_blank.valueChanged.connect(self.optionsChanged)
 
         layout = QtWidgets.QFormLayout()
         layout.addRow("t sample", self.t_sample)
         layout.addRow("t blank", self.t_blank)
 
-        self.layout().insertLayout(0, layout)
+        base_layout = self.layout()
+        assert isinstance(base_layout, QtWidgets.QVBoxLayout)
+        base_layout.insertLayout(0, layout)
 
-    def options(self) -> tuple[float, float]:
+    def options(self) -> tuple[float | None, float | None]:
         return self.t_sample.value(), self.t_blank.value()
 
 
@@ -195,14 +199,33 @@ class AdvancedPoissonDialog(QtWidgets.QDialog):
 
         self.poisson_formula.setCurrentText(formula)
 
+        self.currie.optionsChanged.connect(self.completeChanged)
+        self.formula_a.optionsChanged.connect(self.completeChanged)
+        self.formula_c.optionsChanged.connect(self.completeChanged)
+        self.stapleton.optionsChanged.connect(self.completeChanged)
+        self.poisson_formula.currentIndexChanged.connect(self.completeChanged)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.poisson_formula)
         layout.addWidget(self.poisson_stack, 1)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
+    def isComplete(self) -> bool:
+        widget = self.poisson_stack.currentWidget()
+        assert isinstance(widget, AdvancedPoissonOptions)
+        options = widget.options()
+        return options[0] is not None and options[1] is not None
+
+    def completeChanged(self):
+        button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
+        button.setEnabled(self.isComplete())
+
     def accept(self) -> None:
-        options = self.poisson_stack.currentWidget().options()
+        widget = self.poisson_stack.currentWidget()
+        assert isinstance(widget, AdvancedPoissonOptions)
+        options = widget.options()
+
         self.optionsSelected.emit(
             self.poisson_formula.currentText(), options[0], options[1]
         )

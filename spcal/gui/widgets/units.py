@@ -2,6 +2,8 @@
 [ line edit ] [combo box]
 """
 
+from typing import Callable
+
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
@@ -20,6 +22,7 @@ class UnitsWidget(QtWidgets.QWidget):
         base_value: float | None = None,
         base_value_min: float = 0.0,
         base_value_max: float = np.inf,
+        step: float | Callable[[float, int], float] = 1.0,
         sigfigs: int = 6,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -32,7 +35,11 @@ class UnitsWidget(QtWidgets.QWidget):
         self.base_value_max = base_value_max
 
         self._value = ValueWidget(
-            min=base_value_min, max=base_value_max, sigfigs=sigfigs, parent=self
+            min=base_value_min,
+            max=base_value_max,
+            step=step,
+            sigfigs=sigfigs,
+            parent=self,
         )
 
         # link base and value

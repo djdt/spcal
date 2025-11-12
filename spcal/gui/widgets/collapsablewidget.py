@@ -15,12 +15,14 @@ class CollapsableWidget(QtWidgets.QWidget):
         super().__init__(parent)
 
         self.button = QtWidgets.QToolButton()
-        self.button.setArrowType(QtCore.Qt.RightArrow)
+        self.button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
         self.button.setAutoRaise(True)
         self.button.setCheckable(True)
         self.button.setChecked(False)
         self.button.setText(title)
-        self.button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
         self.button.toggled.connect(self.setCollapsed)
 
         self.widget: QtWidgets.QWidget | None = None
@@ -31,19 +33,24 @@ class CollapsableWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def setWidget(self, widget: QtWidgets.QWidget) -> None:
+        layout = self.layout()
+        assert layout is not None
+
         if self.widget is not None:
-            self.layout().removeWidget(widget)
+            layout.removeWidget(widget)
 
         self.widget = widget
-        self.layout().addWidget(widget, 1)
+        layout.addWidget(widget)
         self.widget.setVisible(not self.isCollapsed())
 
     def isCollapsed(self) -> bool:
-        return self.button.arrowType() != QtCore.Qt.DownArrow
+        return self.button.arrowType() != QtCore.Qt.ArrowType.DownArrow
 
     def setCollapsed(self, collapsed: bool) -> None:  # pragma: no cover, trivial
         self.button.setArrowType(
-            QtCore.Qt.DownArrow if collapsed else QtCore.Qt.RightArrow
+            QtCore.Qt.ArrowType.DownArrow
+            if collapsed
+            else QtCore.Qt.ArrowType.RightArrow
         )
         if self.widget is not None:
             self.widget.setVisible(collapsed)

@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.processing import SPCalInstrumentOptions
@@ -33,8 +33,8 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         )
         self.event_time.setReadOnly(True)
 
-        self.uptake = UnitsWidget(uptake_units, default_unit="ml/min")
-        self.efficiency = ValueWidget(min=0.0, max=1.0, sigfigs=sf)
+        self.uptake = UnitsWidget(uptake_units, step=0.1, default_unit="ml/min")
+        self.efficiency = ValueWidget(min=0.0, max=1.0, step=0.01, sigfigs=sf)
 
         self.event_time.setToolTip(
             "ICP-MS time per event, updated from imported files if time column exists."

@@ -62,8 +62,6 @@ class CompositionView(SinglePlotGraphicsView):
         self.xaxis.hide()
         self.yaxis.hide()
 
-        # self.pies: list[PieChart] = []
-
         # options
         self.mode = "pie"
         self.min_size: float | str = "5%"
@@ -114,20 +112,17 @@ class CompositionView(SinglePlotGraphicsView):
                 result.calibrated(key),
             )
 
+        valid = np.any(peak_data != 0, axis=1)
+        peak_data = peak_data[valid]
+
         X = prepare_data_for_clustering(peak_data)
-        means, stds, counts = cluster_information(X, clusters)
+        means, stds, counts = cluster_information(X, clusters[valid])
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
             min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0
         else:
             min_size = float(self.min_size)
 
-        # compositions = np.empty(
-        #     counts.size, dtype=[(name, np.float64) for name in data]
-        # )
-        # for i, name in enumerate(data):
-        #     compositions[name] = means[:, i]
-        #
         mask = counts > min_size
         compositions = means[mask]
         counts = counts[mask]

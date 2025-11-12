@@ -115,6 +115,8 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
         keys = list(results.keys())
+
+        start, end = np.inf, 0.0
         for i, isotope in enumerate(isotopes):
             color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
             symbol = symbols[keys.index(isotope) % len(symbols)]
@@ -129,6 +131,9 @@ class SPCalGraph(QtWidgets.QStackedWidget):
                 scatter_size=5.0 * np.sqrt(self.devicePixelRatio()),
                 scatter_symbol=symbol,
             )
+            start = min(start, results[isotope].times[0])
+            end = max(end, results[isotope].times[-1])
+        self.particle.drawRegion(start, end)
 
     def drawResultsComposition(
         self,
@@ -223,6 +228,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
         ] = {}
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
+
+        self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
 
         self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.viewChanged.connect(self.redraw)
@@ -347,8 +354,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onResultsChanged(self, data_file: SPCalDataFile) -> None:
         if data_file == self.files.currentDataFile():
-            self.redraw()
             self.outputs.setResults(self.processing_results[data_file])
+            self.redraw()
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if not isinstance(data_file, SPCalDataFile):
@@ -364,6 +371,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if file in self.processing_clusters:
                 self.processing_clusters[file].clear()
             self.resultsChanged.emit(file)
+
+    def dialogPeakProperties(self) -> QtWidgets.QDialog | None:
+        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+
+        data_file = self.files.currentDataFile()
+
+        dlg = PeakPropertiesDialog(
+            self.processing_results[data_file],
+            self.toolbar.combo_isotope.currentIsotope(),
+        )
+        dlg.exec()
 
     def createMenuBar(self) -> None:
         # File
