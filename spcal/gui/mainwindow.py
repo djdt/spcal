@@ -97,6 +97,7 @@ class SPCalGraph(QtWidgets.QStackedWidget):
             "Set options specific to the current graph.",
             self.dialogGraphOptions,
         )
+        self.action_view_options.setEnabled(False)
 
     def clear(self):
         for i in range(self.count()):
