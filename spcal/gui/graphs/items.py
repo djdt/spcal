@@ -9,7 +9,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
     def __init__(
         self,
         paths: list[QtGui.QPainterPath],
-        values: np.ndarray,
+        values: list[float] | np.ndarray,
         label_positions: list[QtCore.QPointF],
         labels: list[str] | None = None,
         font: QtGui.QFont | None = None,
@@ -76,7 +76,10 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
             painter.setFont(self.font)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen)
-        for i, (path, value, brush) in enumerate(zip(self.paths, self.values, self.brushes)):
+        pwidth = self.pen.widthF()
+        for i, (path, value, brush) in enumerate(
+            zip(self.paths, self.values, self.brushes)
+        ):
             if value == 0.0 or np.isnan(value):
                 continue
             if i == self.hovered_idx:
@@ -86,12 +89,16 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
             painter.drawPath(path)
             if i == self.hovered_idx and self.labels is not None:
                 painter.save()
-                fm = painter.fontMetrics()
-                rect = fm.boundingRect(self.labels[i]).toRectF()
-                rect.moveCenter(self.label_positions[i])
-                _rect = painter.transform().map(rect).boundingRect()
-                painter.setTransform(QtGui.QTransform())
-                painter.drawText(_rect, self.labels[i])
+                # save position then reset the painter transform to remove scaling
+                pos = painter.transform().map(self.label_positions[i])
+                painter.setTransform(self.transform())  # type: ignore , pyqtgraph weirdness
+
+                # now draw unscaled text
+                rect = painter.fontMetrics().boundingRect(self.labels[i]).toRectF()
+                rect.moveCenter(pos)
+                rect.adjust(-pwidth, -pwidth, pwidth, pwidth)
+                painter.drawText(rect, self.labels[i])
+
                 painter.restore()
         painter.restore()
 
@@ -120,8 +127,9 @@ class BarChart(HoverableChartItem):
         self,
         height: float,
         width: float,
-        values: list[float],
+        values: list[float] | np.ndarray,
         brushes: list[QtGui.QBrush],
+        labels: list[str] | None = None,
         font: QtGui.QFont | None = None,
         pen: QtGui.QPen | None = None,
         parent: QtWidgets.QGraphicsItem | None = None,
@@ -129,22 +137,21 @@ class BarChart(HoverableChartItem):
         """Pie is centered on item.pos()."""
         self.height = height
         self.width = width
-        self.values = values
 
-        self.font = font
-
-        paths = []
         rect = self.boundingRect()
-        total = np.sum(self.values)
+        total = np.sum(values)
         top = rect.height()
-        for value in self.values:
+        paths = []
+        label_pos = []
+        for value in values:
             path = QtGui.QPainterPath()
             height = value / total * rect.height()
             path.addRect(0, top - height, rect.width(), height)
             paths.append(path)
+            label_pos.append(path.boundingRect().center())
             top -= height
 
-        super().__init__(paths, None, pen, brushes, parent)
+        super().__init__(paths, values, label_pos, labels, font, pen, brushes, parent)
 
     def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(0, 0, self.width, self.height)
@@ -159,7 +166,7 @@ class PieChart(HoverableChartItem):
     def __init__(
         self,
         radius: float,
-        values: list[float],
+        values: list[float] | np.ndarray,
         brushes: list[QtGui.QBrush],
         labels: list[str] | None = None,
         font: QtGui.QFont | None = None,
@@ -182,8 +189,8 @@ class PieChart(HoverableChartItem):
             paths.append(path)
             label_pos.append(
                 QtCore.QPointF(
-                    self.radius * 0.5 * np.cos(np.deg2rad(angle)),
-                    self.radius * 0.5 * np.sin(np.deg2rad(angle)),
+                    self.radius * 0.5 * np.cos(np.deg2rad(-angle - 0.5 * span)),
+                    self.radius * 0.5 * np.sin(np.deg2rad(-angle - 0.5 * span)),
                 )
             )
             angle += span
@@ -191,7 +198,7 @@ class PieChart(HoverableChartItem):
 
     def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(
-            -self.radius, -self.radius, self.radius * 2, self.radius * 2
+            -self.radius, -self.radius, self.radius * 2.0, self.radius * 2.0
         )
 
     def shape(self) -> QtGui.QPainterPath:

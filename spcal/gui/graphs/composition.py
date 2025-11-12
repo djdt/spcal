@@ -148,9 +148,12 @@ class CompositionView(SinglePlotGraphicsView):
                 )
                 pie.setPos(i * spacing, 0)
                 label = pyqtgraph.TextItem(
-                    f"idx {i + 1}: {count}", color="black", anchor=(0.5, 0.0)
+                    f"idx {i + 1}: {count}",
+                    color="black",
+                    anchor=(0.5, 0.0),
+                    ensureInBounds=True,
                 )
-                label.setPos(i * spacing, -size)
+                label.setPos(i * spacing, size)
                 self.plot.addItem(pie)
                 self.plot.addItem(label)
                 pies.append(pie)
@@ -161,9 +164,18 @@ class CompositionView(SinglePlotGraphicsView):
             for i, (count, height, comp) in enumerate(
                 zip(counts, heights, compositions)
             ):
-                pie = BarChart(height, width, comp, brushes, font=self.font())
-                pie.setPos(i * spacing - width / 2.0, -size)
-                label = pyqtgraph.TextItem(f"{count}", color="black", anchor=(0.5, 0.0))
+                pie = BarChart(
+                    height,
+                    width,
+                    comp,
+                    brushes,
+                    labels=[str(result.isotope) for result in results.values()],
+                    font=self.font(),
+                )
+                pie.setPos(i * spacing - width / 2.0, size)
+                label = pyqtgraph.TextItem(
+                    f"{count}", color="black", anchor=(0.5, 0.0), ensureInBounds=True
+                )
                 label.setPos(i * spacing, -size)
                 self.plot.addItem(pie)
                 self.plot.addItem(label)
