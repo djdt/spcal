@@ -475,9 +475,10 @@ class SPCalProcessingMethod(object):
             [result.regions for result in results.values()], 2
         )
         for result in results.values():
-            result.peak_indicies = np.searchsorted(
-                all_regions[:, 0], result.regions[:, 0], side="right"
-            ) - 1
+            result.peak_indicies = (
+                np.searchsorted(all_regions[:, 0], result.regions[:, 0], side="right")
+                - 1
+            )
         # filter results
         valid_peaks = []
         for filter_group in self.filters:
@@ -521,7 +522,7 @@ class SPCalProcessingMethod(object):
                 result.calibrated(key),
             )
         X = prepare_data_for_clustering(peak_data)
-        return agglomerative_cluster(X, self.cluster_distance * 100)
+        return agglomerative_cluster(X, self.cluster_distance)
 
     def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
