@@ -5,7 +5,7 @@ import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.detection import accumulate_detections, combine_detections, detection_maxima
+from spcal.detection import accumulate_detections, detection_maxima
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.graphs import color_schemes, symbols
@@ -475,9 +475,9 @@ class InputWidget(QtWidgets.QWidget):
                     integrate=True,
                 )
 
-        self.detections, self.labels, self.regions = combine_detections(
-            d, l, self.original_regions
-        )
+        # self.detections, self.labels, self.regions = combine_detections(
+            # d, l, self.original_regions
+        # )
 
         self.detectionsChanged.emit()
 
