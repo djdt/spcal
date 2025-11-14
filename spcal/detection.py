@@ -12,7 +12,7 @@ def accumulate_detections(
     points_required: int = 1,
     prominence_required: float = 0.2,
     integrate: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Peak prominence is calculated for all points above the ``limit_detection``,
@@ -31,7 +31,6 @@ def accumulate_detections(
 
     Returns:
         summed detection regions
-        labels of regions
         regions [starts, ends]
     """
 
@@ -88,59 +87,35 @@ def accumulate_detections(
     else:
         sums = np.add.reduceat(y, indicies)[::2]
 
-    # Create a label array of detections
-    labels = ext.label_regions(regions, y.size)
-
-    return sums, labels, regions
+    return sums, regions
 
 
-def combine_detections(
-    sums: dict[str, np.ndarray],
-    labels: dict[str, np.ndarray],
-    regions: dict[str, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Computes the relative fraction of each element in each detection.
-    Recalculates the start and end point of each peak from *all* element data.
-    Regions that overlap will be combined into a single region. Fractions are calculated
-    as the sum of all regions contained within each of the reclaculated regions.
-    Each argument must have the same dictionaty keys.
+def background_mask(regions: np.ndarray, size: int) -> np.ndarray:
+    """Create a mask to select background data using ``regions``.
 
     Args:
-        sums: dict of detection counts, sizes, mass, ...
-        labels: dict of labels from `accumulate_detections`
-        regions: dict of regions from `accumulate_detections`
+        regions: regions from ``accumulate_detections``
+        size: size of underlying array, e.g. signals
 
     Returns:
-        dict of total sum per peak
-        combined labels
-        combined regions
-
+        mask of signal background
     """
-    if not all(k in regions.keys() for k in sums.keys()):  # pragma: no cover
-        raise ValueError(
-            "detection_element_combined: labels and regions must have all of sums keys."
-        )
-    names = list(sums.keys())
-
-    # Get regions from all elements
-    all_regions = ext.combine_regions(list(regions.values()), 2)
-
-    any_label = ext.label_regions(all_regions, next(iter(labels.values())).size)
-
-    # Init to zero, summed later
-    combined = np.zeros(
-        all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
-    )
-    # region_used = np.zeros(all_regions.shape[0])
-    for name in names:
-        idx = np.searchsorted(all_regions[:, 0], regions[name][:, 1], side="left") - 1
-        # np.add.at(region_used, idx, 1)
-        np.add.at(combined[name], idx, sums[name])
-
-    return combined, any_label, all_regions
+    labels = ext.label_regions(regions, size)
+    return labels == 0
 
 
 def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
+    """Combine regions with an optional allowed overlap.
+
+    Regions in ``regions`` that overlap by more than ``overlap`` are merged.
+
+    Args:
+        regions: list of regions from ``accumulate_detections``
+        overlap: maximum allowed overlap
+
+    Returns:
+        merged regions
+    """
     return ext.combine_regions(regions, overlap)
 
 
@@ -151,7 +126,7 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
 
     Args:
         y: array
-        regions: regions from `accumulate_detections`
+        regions: regions from ``accumulate_detections``
 
     Returns:
         idx of maxima

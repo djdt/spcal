@@ -7,7 +7,12 @@ import numpy as np
 from spcal import particle
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.datafile import SPCalDataFile
-from spcal.detection import accumulate_detections, combine_regions
+from spcal.detection import (
+    accumulate_detections,
+    background_mask,
+    combine_regions,
+    detection_maxima,
+)
 from spcal.isotope import SPCalIsotope
 from spcal.limit import (
     SPCalCompoundPoissonLimit,
@@ -227,7 +232,6 @@ class SPCalProcessingResult(object):
         signals: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
-        labels: np.ndarray,
         regions: np.ndarray,
         indicies: np.ndarray | None = None,
     ):
@@ -239,16 +243,16 @@ class SPCalProcessingResult(object):
         self.times = times
 
         self.detections = detections
-        self.labels = labels
+        self.maxima = detection_maxima(signals, detections)
         self.regions = regions
 
         self.peak_indicies = indicies
-        self.filter_indicies = np.arange(self.detections.size)
+        self.filter_indicies = np.arange(detections.size)
 
-        self.background = float(np.nanmean(self.signals[self.labels == 0.0]))
-        self.background_error = float(
-            np.nanstd(self.signals[self.labels == 0.0], mean=self.background)
-        )
+        mask = background_mask(regions, signals.size)
+
+        self.background = float(np.nanmean(signals[mask]))
+        self.background_error = float(np.nanstd(signals[mask], mean=self.background))
 
         self._event_time: float | None = None  # cache
 
@@ -359,6 +363,14 @@ class SPCalProcessingFilter(object):
         ]
 
 
+class SPCalTimeFilter(SPCalProcessingFilter):
+    def __init__(self, start: float, end: float):
+        self.start, self.end = start, end
+
+    def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+        peak_times = result.peak_indicies
+
+
 class SPCalProcessingMethod(object):
     CALIBRATION_KEYS = ["signal", "mass", "size", "volume"]
     ACCUMULATION_METHODS = [
@@ -438,7 +450,7 @@ class SPCalProcessingMethod(object):
             signals = data_file[isotope][:max_size]
             times = data_file.times[:max_size]
 
-            detections, labels, regions = accumulate_detections(
+            detections, regions = accumulate_detections(
                 signals,
                 limit_accumulation=limit_accumulation,
                 limit_detection=limit_detection,
@@ -453,7 +465,6 @@ class SPCalProcessingMethod(object):
                 signals=signals,
                 times=times,
                 detections=detections,
-                labels=labels,
                 regions=regions,
             )
 
