@@ -75,18 +75,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     ):
         super().__init__(background="white", parent=parent)
 
-        class SceneFilter(QtWidgets.QGraphicsItem):
-            def sceneFil(
-                self, obj: QtWidgets.QGraphicsItem, event: QtCore.QEvent
-            ) -> bool:
-                print(obj, event)
-                return False
-
-        class Filter(QtCore.QObject):
-            def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
-                print(obj, event)
-                return False
-
         if font is None:
             font = QtGui.QFont()
 
@@ -289,15 +277,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             super().mouseDoubleClickEvent(event)
 
-    # def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
     def customContextMenu(self, pos: QtCore.QPoint) -> None:
-        print(pos)
-        # if self.xaxis.contains(
-        #     self.xaxis.mapFromView(event.pos())
-        # ) or self.yaxis.contains(self.yaxis.mapFromView(event.pos())):
-        #     event.ignore()
-        #     return
-
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
         menu.addAction(self.action_auto_scale_y)
@@ -314,7 +294,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             for action in self.context_menu_actions:
                 menu.addAction(action)
 
-        # event.accept()
         menu.popup(self.mapToGlobal(pos))
 
     def setXAxisRange(self, min: float, max: float) -> None:

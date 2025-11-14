@@ -23,8 +23,6 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
         self.lines[0].addMarker("|>", 0.9)
         self.lines[1].addMarker("<|", 0.9)
 
-        self.installSceneEventFilter(self)
-
     @property
     def start(self) -> float:
         return float(self.lines[0].value())
