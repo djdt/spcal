@@ -243,7 +243,7 @@ class SPCalProcessingResult(object):
         self.times = times
 
         self.detections = detections
-        self.maxima = detection_maxima(signals, detections)
+        self.maxima = detection_maxima(signals, regions)
         self.regions = regions
 
         self.peak_indicies = indicies
@@ -339,6 +339,14 @@ class SPCalProcessingResult(object):
 
 
 class SPCalProcessingFilter(object):
+    def __init__(self, isotope: SPCalIsotope | None):
+        self.isotope = isotope
+
+    def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+        raise NotImplementedError
+
+
+class SPCalValueFilter(SPCalProcessingFilter):
     def __init__(
         self,
         isotope: SPCalIsotope,
@@ -348,7 +356,7 @@ class SPCalProcessingFilter(object):
     ):
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"invalid key {key}")
-        self.isotope = isotope
+        super().__init__(isotope)
         self.key = key
         self.operation = operation
         self.value = value
@@ -365,10 +373,16 @@ class SPCalProcessingFilter(object):
 
 class SPCalTimeFilter(SPCalProcessingFilter):
     def __init__(self, start: float, end: float):
+        super().__init__(None)
         self.start, self.end = start, end
 
     def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        peak_times = result.peak_indicies
+        if result.peak_indicies is None:
+            raise ValueError("peak indicies have not been calculated")
+        peak_times = result.times[result.maxima]
+        return result.peak_indicies[
+            np.logical_or(peak_times < self.start, peak_times > self.end)
+        ]
 
 
 class SPCalProcessingMethod(object):
@@ -500,7 +514,13 @@ class SPCalProcessingMethod(object):
         for filter_group in self.filters:
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
-                if filter.isotope in results:
+                if filter.isotope is None:  # isotope not important, e.g. time based
+                    for result in results.values():
+                        filter_valid = filter.validPeaks(result)
+                        group_valid = np.intersect1d(
+                            group_valid, filter_valid, assume_unique=True
+                        )
+                elif filter.isotope in results:
                     filter_valid = filter.validPeaks(results[filter.isotope])
                     group_valid = np.intersect1d(
                         group_valid, filter_valid, assume_unique=True

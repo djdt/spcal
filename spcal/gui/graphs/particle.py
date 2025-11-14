@@ -2,15 +2,51 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.detection import detection_maxima
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import MultipleItemSampleProxy
 from spcal.gui.util import create_action
 from spcal.processing import SPCalProcessingResult
 
 
+class ExclusionRegion(pyqtgraph.LinearRegionItem):
+    requestRemoval = QtCore.Signal()
+
+    def __init__(self, start: float, end: float):
+        super().__init__(
+            values=(start, end),
+            pen="grey",
+            hoverPen="red",
+            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
+            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
+            swapMode="block",
+        )
+        self.lines[0].addMarker("|>", 0.9)
+        self.lines[1].addMarker("<|", 0.9)
+
+        self.installSceneEventFilter(self)
+
+    @property
+    def start(self) -> float:
+        return float(self.lines[0].value())
+
+    @property
+    def end(self) -> float:
+        return float(self.lines[1].value())
+
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        close_action = create_action(
+            "window-close",
+            "Remove Exclusion",
+            "Stop blocking processin in this area.",
+            self.requestRemoval,
+        )
+        menu = QtWidgets.QMenu()
+        menu.addAction(close_action)
+        menu.exec(event.screenPos())
+
+
 class ParticleView(SinglePlotGraphicsView):
-    regionChanged = QtCore.Signal()
+    exclusionRegionChanged = QtCore.Signal()
     requestPeakProperties = QtCore.Signal()
 
     def __init__(
@@ -27,13 +63,8 @@ class ParticleView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
-        self.has_image_export = True
         self.xaxis.setScale(xscale)
         self.xaxis.enableAutoSIPrefix(False)
-
-        self.result_items: dict[
-            str, tuple[pyqtgraph.PlotCurveItem, pyqtgraph.ScatterPlotItem]
-        ] = {}
 
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
@@ -50,13 +81,42 @@ class ParticleView(SinglePlotGraphicsView):
         )
         self.context_menu_actions.append(self.action_peak_properties)
 
-    @property
-    def region_start(self) -> int:
-        return int(self.region.lines[0].value())  # type: ignore
+        self.action_exclusion_region = create_action(
+            "",
+            "Add Exclusion Region",
+            "Prevent analysis in a region of the data.",
+            self.addExclusionRegion,
+        )
+        self.action_exclusion_region.triggered.connect(self.exclusionRegionChanged)
+        self.context_menu_actions.append(self.action_exclusion_region)
 
-    @property
-    def region_end(self) -> int:
-        return int(self.region.lines[1].value())  # type: ignore
+    def exclusionRegions(self) -> list[tuple[float, float]]:
+        regions = []
+        for item in self.plot.items:
+            if isinstance(item, ExclusionRegion):
+                regions.append((item.start, item.end))
+        return regions
+
+    def addExclusionRegion(self, start: float | None = None, end: float | None = None):
+        if self.plot.vb is None:
+            return
+        x0, x1 = self.plot.vb.state["limits"]["xLimits"]
+        if start is None or end is None:
+            pos = self.plot.vb.mapSceneToView(self.mapFromGlobal(self.cursor().pos()))
+            start = pos.x() - (x1 - x0) * 0.05
+            end = pos.x() + (x1 - x0) * 0.05
+        region = ExclusionRegion(start, end)  # type: ignore not None, see above
+        region.sigRegionChangeFinished.connect(self.exclusionRegionChanged)
+        region.requestRemoval.connect(self.removeExclusionRegion)
+        region.setBounds((x0, x1))
+        self.plot.addItem(region)
+
+    def  removeExclusionRegion(self):
+        region = self.sender()
+        if not isinstance(region, ExclusionRegion):
+            return
+        self.plot.removeItem(region)
+        self.exclusionRegionChanged.emit()
 
     def drawResult(
         self,
@@ -74,13 +134,9 @@ class ParticleView(SinglePlotGraphicsView):
 
         curve = self.drawCurve(result.times, result.signals, pen)
 
-        maxima = detection_maxima(
-            result.signals, result.regions[result.filter_indicies]
-        )
-
         scatter = self.drawScatter(
-            result.times[maxima],
-            result.signals[maxima],
+            result.times[result.maxima[result.filter_indicies]],
+            result.signals[result.maxima[result.filter_indicies]],
             pen=None,
             brush=brush,
             size=scatter_size,
@@ -108,19 +164,3 @@ class ParticleView(SinglePlotGraphicsView):
             self.plot.legend.addItem(legend, str(result.isotope))
 
         self.setDataLimits(xMin=0.0, xMax=1.0)
-
-    def drawRegion(self, start: float, end: float, pen: QtGui.QPen | None = None):
-        self.region = pyqtgraph.LinearRegionItem(
-            values=(start, end),
-            pen="grey",
-            hoverPen="red",
-            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
-            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush),
-            swapMode="block",
-        )
-
-        self.region.sigRegionChangeFinished.connect(self.regionChanged)
-        self.region.movable = False  # prevent moving of region, but not lines
-        self.region.lines[0].addMarker("|>", 0.9)
-        self.region.lines[1].addMarker("<|", 0.9)
-        self.plot.addItem(self.region)

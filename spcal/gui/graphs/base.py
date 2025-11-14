@@ -47,6 +47,13 @@ class AxisEditDialog(QtWidgets.QDialog):
         super().accept()
 
 
+class SinglePlotItem(pyqtgraph.PlotItem):
+    requestContextMenu = QtCore.Signal(QtCore.QPoint)
+
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        self.requestContextMenu.emit(event.pos().toPoint())
+
+
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     UNIT_LABELS = {
         "signal": ("Signal (cts)", None, 1.0),
@@ -68,6 +75,18 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     ):
         super().__init__(background="white", parent=parent)
 
+        class SceneFilter(QtWidgets.QGraphicsItem):
+            def sceneFil(
+                self, obj: QtWidgets.QGraphicsItem, event: QtCore.QEvent
+            ) -> bool:
+                print(obj, event)
+                return False
+
+        class Filter(QtCore.QObject):
+            def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
+                print(obj, event)
+                return False
+
         if font is None:
             font = QtGui.QFont()
 
@@ -86,13 +105,14 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.yaxis.setLabel(ylabel, units=yunits)
         self.yaxis.label.setFont(font)
 
-        self.plot = pyqtgraph.PlotItem(
+        self.plot = SinglePlotItem(
             title=title,
             name="central_plot",
             axisItems={"bottom": self.xaxis, "left": self.yaxis},
             viewBox=viewbox,
             parent=parent,
         )
+        self.plot.requestContextMenu.connect(self.customContextMenu)
         # Common options
         self.plot.setMenuEnabled(False)
         self.plot.hideButtons()
@@ -249,7 +269,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.xaxis.contains(self.xaxis.mapFromView(event.pos())):
             scale = self.xaxis.scale
             (v1, v2), (_, _) = self.plot.getViewBox().viewRange()
-            min, max = self.plot.getViewBox().state["limits"]["xLimits"]
+            min, max = self.plot.getViewBox().state["limits"]["xLimits"][1]
             dlg = AxisEditDialog(
                 (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
             )
@@ -269,12 +289,14 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             super().mouseDoubleClickEvent(event)
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
-        if self.xaxis.contains(
-            self.xaxis.mapFromView(event.pos())
-        ) or self.yaxis.contains(self.yaxis.mapFromView(event.pos())):
-            event.ignore()
-            return
+    # def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+    def customContextMenu(self, pos: QtCore.QPoint) -> None:
+        print(pos)
+        # if self.xaxis.contains(
+        #     self.xaxis.mapFromView(event.pos())
+        # ) or self.yaxis.contains(self.yaxis.mapFromView(event.pos())):
+        #     event.ignore()
+        #     return
 
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
@@ -292,8 +314,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             for action in self.context_menu_actions:
                 menu.addAction(action)
 
-        event.accept()
-        menu.popup(event.globalPos())
+        # event.accept()
+        menu.popup(self.mapToGlobal(pos))
 
     def setXAxisRange(self, min: float, max: float) -> None:
         scale = self.xaxis.scale
