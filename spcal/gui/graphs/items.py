@@ -140,16 +140,16 @@ class BarChart(HoverableChartItem):
 
         rect = self.boundingRect()
         total = np.sum(values)
-        top = rect.height()
+        bottom = 0
         paths = []
         label_pos = []
         for value in values:
             path = QtGui.QPainterPath()
             height = value / total * rect.height()
-            path.addRect(0, top - height, rect.width(), height)
+            path.addRect(0, bottom, rect.width(), height)
             paths.append(path)
             label_pos.append(path.boundingRect().center())
-            top -= height
+            bottom += height
 
         super().__init__(paths, values, label_pos, labels, font, pen, brushes, parent)
 
