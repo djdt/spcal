@@ -289,7 +289,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         for symbol, (_, _, (row, col)) in ELEMENT_PERIOD_INFO.items():
             layout.addWidget(self.buttons[symbol], row, col)
         layout.setRowStretch(row + 1, 1)  # Last row stretch
-        
+
         if enabled_isotopes is not None:
             self.setEnabledIsotopes(enabled_isotopes)
         if selected_isotopes is not None:
@@ -331,9 +331,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         self.blockSignals(False)
         self.isotopesChanged.emit()
 
-    def setIsotopeColors(
-        self, isotopes: np.ndarray, colors: list[QtGui.QColor]
-    ):
+    def setIsotopeColors(self, isotopes: np.ndarray, colors: list[QtGui.QColor]):
         """Set the indicator colors for ``isotopes`` to ``colors.
 
         Will change text to BrightText ColorRole if a dark color is used.
@@ -372,6 +370,9 @@ class PeriodicTableSelector(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
-    table = PeriodicTableSelector(enabled_isotopes=[ISOTOPE_TABLE[("Cu", 63)]], selected_isotopes=[ISOTOPE_TABLE[("Cu", 63)]])
+    table = PeriodicTableSelector(
+        enabled_isotopes=[ISOTOPE_TABLE[("Cu", 63)]],
+        selected_isotopes=[ISOTOPE_TABLE[("Cu", 63)]],
+    )
     table.show()
     app.exec()

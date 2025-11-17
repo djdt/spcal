@@ -658,9 +658,7 @@ class ReferenceIOStack(SampleIOStack):
                 b.setCheckState(QtCore.Qt.CheckState.Unchecked)
         self.button_group_check_efficiency.blockSignals(False)
 
-    def repopulate(
-        self, names: list[str], widget_type: type = ReferenceIOWidget
-    ):
+    def repopulate(self, names: list[str], widget_type: type = ReferenceIOWidget):
         super().repopulate(names, ReferenceIOWidget)
         for name in names:
             io = self.stack.widget(self.combo_name.findText(name))

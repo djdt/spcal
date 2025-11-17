@@ -109,7 +109,7 @@ class ParticleView(SinglePlotGraphicsView):
         region.setBounds((x0, x1))
         self.plot.addItem(region)
 
-    def  removeExclusionRegion(self):
+    def removeExclusionRegion(self):
         region = self.sender()
         if not isinstance(region, ExclusionRegion):
             return

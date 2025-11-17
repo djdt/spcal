@@ -134,9 +134,7 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(
-        self, path: str | Path | None = None
-    ) -> ImportDialogBase | None:
+    def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
         if path is None:
             path = get_open_spcal_path(self)
             if path is None:

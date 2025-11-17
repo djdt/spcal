@@ -218,7 +218,9 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
-        self.worker = NuIntegReadWorker(self.file_path, self.index, cyc_number, seg_number)
+        self.worker = NuIntegReadWorker(
+            self.file_path, self.index, cyc_number, seg_number
+        )
         self.worker.moveToThread(self.import_thread)
         self.worker.started.connect(self.progress.setMaximum)
         self.worker.progress.connect(self.progress.setValue)

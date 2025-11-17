@@ -964,9 +964,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def updateEnabledItems(self):
         # Only enable modes that have data
-        for key, index in zip(
-            ["mass", "size", "volume"], [1, 2, 3, 4]
-        ):
+        for key, index in zip(["mass", "size", "volume"], [1, 2, 3, 4]):
             enabled = any(result.canCalibrate(key) for result in self.results.values())
             if not enabled and self.io.mode.currentIndex() == index:
                 self.io.mode.setCurrentIndex(0)

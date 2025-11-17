@@ -2,6 +2,7 @@
 
 Based on `<https://www.engr.mun.ca/~theo/Misc/pratt_parsing.html>`_.
 """
+
 import re
 
 import numpy as np

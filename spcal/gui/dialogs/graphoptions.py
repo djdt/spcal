@@ -218,8 +218,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
         # Check for changes
         if (
             # abs(self.distance - distance) > 0.001
-            self.minimum_size != size
-            or self.mode != mode
+            self.minimum_size != size or self.mode != mode
         ):
             # self.distance = distance
             self.minimum_size = size

@@ -91,7 +91,10 @@ if __name__ == "__main__":
 
     icon_names = collect_icons(args.project)
     print(f"found {len(icon_names)} icons", flush=True)
-    with tempfile.NamedTemporaryFile() as index_tmp, tempfile.NamedTemporaryFile() as qrc_tmp:
+    with (
+        tempfile.NamedTemporaryFile() as index_tmp,
+        tempfile.NamedTemporaryFile() as qrc_tmp,
+    ):
         index, qrc = Path(index_tmp.name), Path(qrc_tmp.name)
         write_index_theme(index, args.sizes)
         write_qrc(qrc, index, args.icons, list(icon_names), args.sizes)

@@ -20,7 +20,7 @@ from spcal.limit import SPCalLimit
 from spcal.pratt import Reducer, ReducerException
 from spcal.result import SPCalResult
 from spcal.datafile import SPCalDataFile
-from spcal.processing import SPCalProcessingResult,SPCalProcessingMethod
+from spcal.processing import SPCalProcessingResult, SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -256,9 +256,7 @@ class InputWidget(QtWidgets.QWidget):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(
-        self, path: str | Path | None = None
-    ) -> ImportDialogBase | None:
+    def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
         if path is None:
             path = get_open_spcal_path(self)
             if path is None:
@@ -476,7 +474,7 @@ class InputWidget(QtWidgets.QWidget):
                 )
 
         # self.detections, self.labels, self.regions = combine_detections(
-            # d, l, self.original_regions
+        # d, l, self.original_regions
         # )
 
         self.detectionsChanged.emit()

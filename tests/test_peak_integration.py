@@ -13,9 +13,7 @@ def test_noise_level():
     x = data["au50nm"]
     ub = np.mean(x)
     yc, _ = poisson.formula_c(ub, alpha=0.001)
-    detections, _, _ = detection.accumulate_detections(
-        x, ub, yc + ub, integrate=True
-    )
+    detections, _, _ = detection.accumulate_detections(x, ub, yc + ub, integrate=True)
 
     truth = detections.size
     truth_mean = detections.mean()

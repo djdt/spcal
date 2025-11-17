@@ -24,6 +24,7 @@ logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
 logger.setLevel(logging.INFO)
 
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     class DataFileAction(argparse.Action):
         def __call__(

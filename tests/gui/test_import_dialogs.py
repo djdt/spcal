@@ -110,6 +110,7 @@ def test_import_dialog_text_tofwerk(qtbot: QtBot):
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
 
+
 def test_import_dialog_text_thermo_new_icap(qtbot: QtBot):
     path = Path(__file__).parent.parent.joinpath("data/text/thermo_icap_export.csv")
     dlg = TextImportDialog(path)
@@ -118,6 +119,7 @@ def test_import_dialog_text_thermo_new_icap(qtbot: QtBot):
 
     # Just check that the time is read correctly
     assert np.isclose(dlg.dwelltime.baseValue(), 50e-6)  # type: ignore
+
 
 def test_import_dialog_nu(qtbot: QtBot):
     def check_data(data: np.ndarray, options: dict):

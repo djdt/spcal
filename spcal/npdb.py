@@ -40,6 +40,7 @@ refs:
     ID: DOI / ISBN or other ID
 
 """
+
 from importlib.resources import files
 
 import numpy as np

@@ -1,4 +1,5 @@
 """Class for calculating results."""
+
 import logging
 from pathlib import Path
 

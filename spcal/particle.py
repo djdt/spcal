@@ -1,4 +1,5 @@
 """Functions for particle calculations."""
+
 import numpy as np
 
 

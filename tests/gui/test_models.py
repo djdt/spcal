@@ -71,7 +71,9 @@ def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
     assert model.headerData(2, QtCore.Qt.Vertical, QtCore.Qt.DisplayRole) == "float"
 
     for i in range(10):
-        assert model.headerData(i, QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole) == str(i)
+        assert model.headerData(i, QtCore.Qt.Horizontal, QtCore.Qt.DisplayRole) == str(
+            i
+        )
 
     # Col flags
     assert model.flags(model.index(1, 1)) & QtCore.Qt.ItemFlag.ItemIsEditable

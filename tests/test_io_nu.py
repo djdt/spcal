@@ -63,9 +63,7 @@ def test_io_nu_import():
 
 def test_io_nu_import_max_files():
     path = Path(__file__).parent.joinpath("data/nu")
-    masses, signals, info = read_directory(
-        path, max_integ_files=1, cycle=1, segment=1
-    )
+    masses, signals, info = read_directory(path, max_integ_files=1, cycle=1, segment=1)
     assert masses.size == 194
     assert signals.shape == (10, 194)
 
@@ -105,9 +103,7 @@ def test_single_ion_distribution(tmp_path: Path):
     path = Path(__file__).parent.joinpath("data/nu/cal.zip")
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
-    masses, signals, info = read_directory(
-        tmp_path.joinpath("cal"), cycle=1, segment=1
-    )
+    masses, signals, info = read_directory(tmp_path.joinpath("cal"), cycle=1, segment=1)
     y = single_ion_distribution(signals)
     # not sure how to test this?
     assert y[np.argmax(y[:, 0]), 1] == 1.0

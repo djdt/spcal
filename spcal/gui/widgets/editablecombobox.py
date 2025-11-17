@@ -88,9 +88,7 @@ class EditableComboBox(QtWidgets.QComboBox):
             self.textsEdited.emit({self.previous_name: new_name})
             self.previous_name = new_name
 
-    def contextMenuEvent(
-        self, event: QtGui.QContextMenuEvent
-    ):  # pragma: no cover
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):  # pragma: no cover
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_enable_names)
         menu.popup(event.globalPos())

@@ -7,6 +7,7 @@ The limit of crticality should be used for all particle detection descisions,
 not the limit of detection. For an explaination of why, see the manual linked above.
 
 """
+
 from statistics import NormalDist
 
 import numpy as np

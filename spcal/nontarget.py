@@ -1,6 +1,5 @@
 """Functions for screening data for interesting signals."""
 
-
 import numpy as np
 
 from spcal.detection import accumulate_detections

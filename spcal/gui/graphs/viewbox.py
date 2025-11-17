@@ -1,4 +1,3 @@
-
 from pyqtgraph import ViewBox
 from PySide6 import QtCore
 
