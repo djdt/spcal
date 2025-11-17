@@ -1,3 +1,4 @@
+#include <iostream>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
@@ -31,7 +32,7 @@ py::array_t<bool> local_maxima(const py::array_t<double> &values_array) {
 }
 
 py::array_t<long> maxima_between(const py::array_t<double> &values,
-                              const py::array_t<long> &regions) {
+                                 const py::array_t<long> &regions) {
   /*
    * The maxima of values between pairs of start and end indicies.
    *
@@ -180,9 +181,9 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
     double max_prom = prom(i);
     // find overlaps and max prominence
     py::ssize_t j = i + 1;
-    while ((j < lbuf.shape[0]) && (lefts(j) < rights(i))) {
-      max_prom = std::max(max_prom, prom(j));
-      ++j;
+    py::ssize_t k = i;
+    while ((j < lbuf.shape[0]) && ((lefts(j) < rights(k++)))) {
+      max_prom = std::max(max_prom, prom(j++));
     }
     // early exit for single peak
     if (j == i + 1) {
