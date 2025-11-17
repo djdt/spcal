@@ -101,7 +101,7 @@ class HistogramView(SinglePlotGraphicsView):
                 counts, edges, width=width, offset=offset, pen=pen, brush=filtered_brush
             )
 
-        self.xaxis.setLabel(label, unit)
+        self.plot.xaxis.setLabel(label, unit)
         self.setDataLimits(xMax=1.0)
 
     def drawResults(
