@@ -50,8 +50,99 @@ class AxisEditDialog(QtWidgets.QDialog):
 class SinglePlotItem(pyqtgraph.PlotItem):
     requestContextMenu = QtCore.Signal(QtCore.QPoint)
 
+    def __init__(
+        self,
+        title: str,
+        xlabel: str = "",
+        ylabel: str = "",
+        xunits: str | None = None,
+        yunits: str | None = None,
+        viewbox: pyqtgraph.ViewBox | None = None,
+        font: QtGui.QFont | None = None,
+        pen: QtGui.QPen | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        if font is None:
+            font = QtGui.QFont()
+        self._font = font
+
+        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
+        self.xaxis.setLabel(xlabel, units=xunits)
+
+        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
+        self.yaxis.setLabel(ylabel, units=yunits)
+
+        super().__init__(
+            title=title,
+            name="SPCal_SinglePlotItem",
+            axisItems={"bottom": self.xaxis, "left": self.yaxis},
+            viewBox=viewbox,
+            parent=parent,
+        )
+
+        self.setMenuEnabled(False)
+        self.hideButtons()
+        self.addLegend(offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black")
+
+        self.setFont(font)
+
     def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
         self.requestContextMenu.emit(event.pos().toPoint())
+
+    def font(self) -> QtGui.QFont:  # type: ignore , pyqtgraph qt versions
+        return self._font
+
+    def setFont(self, font: QtGui.QFont) -> None:  # type: ignore , pyqtgraph qt versions
+        self._font = font
+
+        fm = QtGui.QFontMetrics(font)
+        pen: QtGui.QPen = self.xaxis.tickPen()
+        pen.setWidthF(fm.lineWidth())
+
+        self.xaxis.setStyle(tickFont=font)
+        # height calculation in pyqtgraph breaks for larger fonts
+        self.xaxis.setHeight(fm.height() * 2)
+        self.xaxis.setTickPen(pen)
+        self.xaxis.label.setFont(font)  # type: ignore , not None
+
+        self.yaxis.setStyle(tickFont=font)
+        # estimate max width
+        self.yaxis.setWidth(fm.tightBoundingRect("8888").width() * 2)
+        self.yaxis.setTickPen(pen)
+        self.yaxis.label.setFont(font)  # type: ignore , not None
+
+        self.titleLabel.setText(
+            self.titleLabel.text,
+            family=font.family(),
+            size=f"{font.pointSize()}pt",
+        )
+
+        if self.legend is not None:
+            self.legend.setLabelTextSize(f"{font.pointSize()}pt")
+            self.redrawLegend()
+
+    def redrawLegend(self) -> None:
+        if self.legend is None:
+            return
+        # store items
+        items = []
+        for item, label in self.legend.items:
+            items.append((item, label.text))
+        # clear
+        self.legend.clear()
+        # re-add
+        for item, text in items:
+            self.scene().addItem(item)
+            item.show()
+            self.legend.addItem(item, text)
+        # fix label heights
+        height = 0.0
+        for item, label in self.legend.items:
+            height = height + label.itemRect().height()
+
+        # fix broken geometry calculations
+        geometry = self.legend.geometry()
+        self.legend.setGeometry(geometry.x(), geometry.y(), geometry.width(), height)
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
@@ -75,41 +166,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     ):
         super().__init__(background="white", parent=parent)
 
-        if font is None:
-            font = QtGui.QFont()
-
-        self._font = font
-
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-        pen.setCosmetic(True)
-
         # self.has_image_export = False
         self.data_for_export: dict[str, np.ndarray] = {}
-
-        self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
-        self.xaxis.setLabel(xlabel, units=xunits)
-
-        self.yaxis = pyqtgraph.AxisItem("left", pen=pen, textPen=pen, tick_pen=pen)
-        self.yaxis.setLabel(ylabel, units=yunits)
-        self.yaxis.label.setFont(font)
-
-        self.plot = SinglePlotItem(
-            title=title,
-            name="central_plot",
-            axisItems={"bottom": self.xaxis, "left": self.yaxis},
-            viewBox=viewbox,
-            parent=parent,
-        )
-        self.plot.requestContextMenu.connect(self.customContextMenu)
-        # Common options
-        self.plot.setMenuEnabled(False)
-        self.plot.hideButtons()
-        self.plot.addLegend(
-            offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black"
-        )
-
-        self.setFont(self._font)
-        self.setCentralWidget(self.plot)
 
         self.action_auto_scale_y = create_action(
             "auto-scale-y",
@@ -149,6 +207,24 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
 
         self.context_menu_actions: list[QtGui.QAction] = []
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
+        pen.setCosmetic(True)
+
+        self.plot = SinglePlotItem(
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            xunits=xunits,
+            yunits=yunits,
+            viewbox=viewbox,
+            font=font,
+            pen=pen,
+            parent=parent,
+        )
+        self.setCentralWidget(self.plot)
+
+        self.plot.requestContextMenu.connect(self.customContextMenu)
 
     def drawCurve(
         self,
@@ -254,28 +330,33 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         return scatter
 
     def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
-        if self.xaxis.contains(self.xaxis.mapFromView(event.pos())):
-            scale = self.xaxis.scale
-            (v1, v2), (_, _) = self.plot.getViewBox().viewRange()
-            min, max = self.plot.getViewBox().state["limits"]["xLimits"][1]
+        pos = self.plot.xaxis.mapFromView(event.pos())
+        if self.plot.vb is None:
+            return
+        if pos is not None and self.plot.xaxis.contains(pos):
+            scale = self.plot.xaxis.scale
+            (v1, v2), (_, _) = self.plot.vb.viewRange()
+            min, max = self.plot.vb.state["limits"]["xLimits"][1]
             dlg = AxisEditDialog(
                 (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
             )
             dlg.rangeSelected.connect(self.setXAxisRange)
             dlg.open()
             event.accept()
-        elif self.yaxis.contains(self.yaxis.mapFromView(event.pos())):
-            scale = self.yaxis.scale
-            (_, _), (v1, v2) = self.plot.getViewBox().viewRange()
-            min, max = self.plot.getViewBox().state["limits"]["yLimits"]
+            return
+        pos = self.plot.yaxis.mapFromView(event.pos())
+        if pos is not None and self.plot.yaxis.contains(pos):
+            scale = self.plot.yaxis.scale
+            (_, _), (v1, v2) = self.plot.vb.viewRange()
+            min, max = self.plot.vb.state["limits"]["yLimits"]
             dlg = AxisEditDialog(
                 (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
             )
             dlg.rangeSelected.connect(self.setYAxisRange)
             dlg.open()
             event.accept()
-        else:
-            super().mouseDoubleClickEvent(event)
+            return
+        super().mouseDoubleClickEvent(event)
 
     def customContextMenu(self, pos: QtCore.QPoint) -> None:
         menu = QtWidgets.QMenu(self)
@@ -297,17 +378,21 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         menu.popup(self.mapToGlobal(pos))
 
     def setXAxisRange(self, min: float, max: float) -> None:
-        scale = self.xaxis.scale
+        scale = self.plot.xaxis.scale
         if min > max:
             min, max = max, min
-        self.plot.getViewBox().setRange(xRange=(min / scale, max / scale))
+        if self.plot.vb is None:
+            return
+        self.plot.vb.setRange(xRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
 
     def setYAxisRange(self, min: float, max: float) -> None:
-        scale = self.yaxis.scale
+        scale = self.plot.yaxis.scale
         self.setAutoScaleY(False)
         if min > max:
             min, max = max, min
-        self.plot.getViewBox().setRange(yRange=(min / scale, max / scale))
+        if self.plot.vb is None:
+            return
+        self.plot.vb.setRange(yRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
 
     def setAutoScaleY(self, auto_scale: bool) -> None:
         self.action_auto_scale_y.setChecked(auto_scale)
@@ -353,63 +438,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def dataRect(self) -> QtCore.QRectF:
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
-
-    def redrawLegend(self) -> None:
-        if self.plot.legend is None:
-            return
-        # store items
-        items = []
-        for item, label in self.plot.legend.items:
-            items.append((item, label.text))
-        # clear
-        self.plot.legend.clear()
-        # re-add
-        for item, text in items:
-            self.scene().addItem(item)
-            item.show()
-            self.plot.legend.addItem(item, text)
-        # fix label heights
-        height = 0.0
-        for item, label in self.plot.legend.items:
-            height = height + label.itemRect().height()
-
-        # fix broken geometry calculations
-        geometry = self.plot.legend.geometry()
-        self.plot.legend.setGeometry(
-            geometry.x(), geometry.y(), geometry.width(), height
-        )
-
-    def font(self) -> QtGui.QFont:  # type: ignore , pyqtgraph qt versions
-        return self._font
-
-    def setFont(self, font: QtGui.QFont) -> None:  # type: ignore , pyqtgraph qt versions
-        self._font = font
-
-        fm = QtGui.QFontMetrics(font)
-        pen: QtGui.QPen = self.xaxis.tickPen()
-        pen.setWidthF(fm.lineWidth())
-
-        self.xaxis.setStyle(tickFont=font)
-        # height calculation in pyqtgraph breaks for larger fonts
-        self.xaxis.setHeight(fm.height() * 2)
-        self.xaxis.setTickPen(pen)
-        self.xaxis.label.setFont(font)  # type: ignore , not None
-
-        self.yaxis.setStyle(tickFont=font)
-        # estimate max width
-        self.yaxis.setWidth(fm.tightBoundingRect("8888").width() * 2)
-        self.yaxis.setTickPen(pen)
-        self.yaxis.label.setFont(font)  # type: ignore , not None
-
-        self.plot.titleLabel.setText(
-            self.plot.titleLabel.text,
-            family=font.family(),
-            size=f"{font.pointSize()}pt",
-        )
-
-        if self.plot.legend is not None:
-            self.plot.legend.setLabelTextSize(f"{font.pointSize()}pt")
-            self.redrawLegend()
 
     def exportData(self, path: str | Path | None) -> None:
         if path is None:

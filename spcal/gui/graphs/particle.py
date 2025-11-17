@@ -61,8 +61,8 @@ class ParticleView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
-        self.xaxis.setScale(xscale)
-        self.xaxis.enableAutoSIPrefix(False)
+        self.plot.xaxis.setScale(xscale)
+        self.plot.xaxis.enableAutoSIPrefix(False)
 
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)

@@ -59,8 +59,8 @@ class CompositionView(SinglePlotGraphicsView):
         self.plot.vb.invertY(True)
         assert self.plot.legend is not None
         self.plot.legend.setSampleType(StaticRectItemSample)
-        self.xaxis.hide()
-        self.yaxis.hide()
+        self.plot.xaxis.hide()
+        self.plot.yaxis.hide()
 
         # options
         self.mode = "pie"
