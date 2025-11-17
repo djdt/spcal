@@ -113,10 +113,8 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
     def calibrationModeChanged(self, mode: str):
         if mode == "Efficiency":
-            self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
         elif mode == "Mass Response":
-            self.uptake.setEnabled(False)
             self.efficiency.setEnabled(False)
 
         self.optionsChanged.emit()

@@ -2,9 +2,124 @@ import re
 
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.modelviews.basic import BasicTable
+from spcal.gui.modelviews.basic import BasicTable, BasicTableView
 from spcal.gui.modelviews.headers import ComboHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
+
+
+class UnitsTableView(BasicTableView):
+    def __init__(
+        self,
+        headers: list[
+            tuple[str, dict[str, float] | None, str | None, tuple[float, float] | None]
+        ],
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent=parent)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+
+        self.header_units: dict[int, dict] = {}
+        self.current_units: dict[int, float] = {}
+
+        self.header = ComboHeaderView({})
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.setHorizontalHeader(self.header)
+        self.setHeaders(headers)
+        self.header.sectionChanged.connect(self.adjustSectionValues)
+
+    def setHeaders(
+        self,
+        headers: list[
+            tuple[str, dict[str, float] | None, str | None, tuple[float, float] | None]
+        ],
+    ):
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
+        self.header_units.clear()
+        self.current_units.clear()
+
+        header_items = {}
+        header_labels = []
+        for i, (label, units, default, ranges) in enumerate(headers):
+            if units is not None:
+                header_items[i] = [f"{label} ({unit})" for unit in units.keys()]
+                if default is None:
+                    default = next(iter(units.keys()))
+                self.header_units[i] = units
+                self.current_units[i] = units[default]
+                header_labels.append(f"{label} ({default})")
+            else:
+                header_labels.append(label)
+
+            delegate = ValueWidgetDelegate(sf, parent=self)
+            if ranges is not None:
+                delegate.setMin(ranges[0])
+                delegate.setMax(ranges[1])
+            self.setItemDelegateForColumn(i, delegate)
+
+        # self.setHorizontalHeaderLabels(header_labels)
+        self.header.section_items = header_items
+
+    def adjustSectionValues(self, section: int):
+        if section not in self.current_units:
+            return
+        current = self.current_units[section]
+        new = self.unitForSection(section)
+        self.current_units[section] = new
+
+        for row in range(self.model().rowCount()):
+            index = self.model().index(row, section)
+            if index.isValid():
+                value = index.data(QtCore.Qt.ItemDataRole.EditRole)
+                if value is not None:
+                    value = value * current / new
+                self.model().setData(index, value, role=QtCore.Qt.ItemDataRole.EditRole)
+
+    def baseValueForIndex(self, index: QtCore.QModelIndex) -> float | None:
+        if not index.isValid():
+            return None
+        value = index.data(QtCore.Qt.ItemDataRole.EditRole)
+        if value is not None:
+            value = float(index.data(QtCore.Qt.ItemDataRole.EditRole))
+            if index.column() in self.current_units:
+                value *= self.current_units[index.column()]
+        return value
+
+    def setBaseValueForItem(
+        self, index: QtCore.QModelIndex, value: float | None, error: float | None = None
+    ):
+        if not index.isValid():
+            return
+            # item = QtWidgets.QTableWidgetItem()
+            # self.setItem(row, column, item)
+
+        if value is not None and index.column() in self.current_units:
+            value = float(value) / self.current_units[index.column()]
+        self.model().setData(index, value, QtCore.Qt.ItemDataRole.EditRole)
+        if error is not None and index.column() in self.current_units:
+            error = float(error) / self.current_units[index.column()]
+        self.model().setData(index, error, ValueWidgetDelegate.ErrorRole)
+
+    def sizeHint(self) -> QtCore.QSize:
+        width = sum(
+            self.horizontalHeader().sectionSize(i)
+            for i in range(self.model().columnCount())
+        )
+        width += self.verticalHeader().width()
+        height = super().sizeHint().height()
+        return QtCore.QSize(width, height)
+
+    def unitForSection(self, section: int) -> float:
+        text = self.model().headerData(section, QtCore.Qt.Orientation.Horizontal)
+        m = re.match("([\\w ]+) \\((.+)\\)", text)
+        if m is None:
+            return 1.0
+        return self.header_units[section][m.group(2)]
 
 
 class UnitsTable(BasicTable):
@@ -104,7 +219,7 @@ class UnitsTable(BasicTable):
         item.setData(QtCore.Qt.ItemDataRole.EditRole, value)
         if error is not None and column in self.current_units:
             error = float(error) / self.current_units[column]
-        item.setData(QtCore.Qt.ItemDataRole.UserRole, error)
+        item.setData(ValueWidgetDelegate.ErrorRole, error)
 
     def sizeHint(self) -> QtCore.QSize:
         width = sum(

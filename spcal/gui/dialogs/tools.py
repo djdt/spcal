@@ -1,5 +1,4 @@
 from typing import Generator
-import copy
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -13,18 +12,14 @@ from spcal.particle import (
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.widgets import ValidColorLineEdit
 from spcal.gui.widgets import ValueWidget, UnitsWidget
-from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.npdb import db
-from spcal.processing import SPCalProcessingResult
+from spcal.processing import SPCalIsotopeOptions, SPCalProcessingResult
 from spcal.siunits import (
+    density_units,
     mass_units,
     mass_concentration_units,
     size_units,
-    signal_units,
     response_units,
-    number_concentration_units,
-    molar_concentration_units,
-    density_units,
 )
 
 
@@ -237,6 +232,8 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
     efficencySelected = QtCore.Signal(float)
     massResponseSelected = QtCore.Signal(float)
 
+    isotopeOptionsChanged = QtCore.Signal(SPCalIsotope, SPCalIsotopeOptions)
+
     def __init__(
         self,
         result: SPCalProcessingResult,
@@ -246,40 +243,26 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.setWindowTitle("Transport Efficiency Calculator")
         self.setMinimumWidth(600)
 
+        if result.number == 0:
+            raise ValueError("unable to calculate efficiency, no particles detected")
+
         self.proc_result = result
+        options = result.method.isotope_options[result.isotope]
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        self.diameter = UnitsWidget(
-            size_units,
-            "nm",
-            result.method.isotope_options[result.isotope].diameter,
-            sigfigs=sf,
-        )
-        self.density = UnitsWidget(
-            density_units,
-            "g/cm³",
-            result.method.isotope_options[result.isotope].density,
-            sigfigs=sf,
-        )
+        self.diameter = UnitsWidget(size_units, "nm", options.diameter, sigfigs=sf)
+        self.density = UnitsWidget(density_units, "g/cm³", options.density, sigfigs=sf)
         self.concentration = UnitsWidget(
-            mass_concentration_units,
-            "µg/L",
-            result.method.isotope_options[result.isotope].concentration,
-            sigfigs=sf,
+            mass_concentration_units, "µg/L", options.concentration, sigfigs=sf
         )
         self.response = UnitsWidget(
-            response_units,
-            "L/µg",
-            result.method.isotope_options[result.isotope].response,
-            sigfigs=sf,
+            response_units, "L/µg", options.response, sigfigs=sf
         )
         self.mass_fraction = ValueWidget(
-            result.method.isotope_options[result.isotope].concentration,
-            step=0.1,
-            max=1.0,
-            sigfigs=sf,
+            options.mass_fraction, step=0.1, max=1.0, sigfigs=sf
         )
+
         self.diameter.baseValueChanged.connect(self.onOptionChanged)
         self.density.baseValueChanged.connect(self.onOptionChanged)
         self.concentration.baseValueChanged.connect(self.onOptionChanged)
@@ -334,8 +317,6 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.completeChanged()
 
     def updateEfficiency(self):
-        result = self.proc_result
-
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
 
@@ -347,26 +328,28 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         mass_fraction = self.mass_fraction.value()
         if mass_fraction is not None:
             mass_response = float(
-                reference_mass * mass_fraction / np.mean(result.calibrated("signal"))
+                reference_mass
+                * mass_fraction
+                / np.mean(self.proc_result.calibrated("signal"))
             )
             self.massResponseChanged.emit(mass_response)
 
         concentration = self.concentration.baseValue()
-        uptake = result.method.instrument_options.uptake
+        uptake = self.proc_result.method.instrument_options.uptake
         response = self.response.baseValue()
 
         if concentration is not None and uptake is not None:
             eff = nebulisation_efficiency_from_concentration(
-                result.number,
+                self.proc_result.number,
                 concentration=concentration,
                 mass=reference_mass,
                 flow_rate=uptake,
-                time=result.total_time,
+                time=self.proc_result.total_time,
             )
         elif mass_fraction is not None and response is not None and uptake is not None:
             eff = nebulisation_efficiency_from_mass(
-                result.calibrated("signal"),
-                dwell=result.event_time,
+                self.proc_result.calibrated("signal"),
+                dwell=self.proc_result.event_time,
                 mass=reference_mass,
                 flow_rate=uptake,
                 response_factor=response,
@@ -377,7 +360,10 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.efficencyChanged.emit(eff)
 
     def isComplete(self) -> bool:
-        return self.efficiency.value() is not None
+        return (
+            self.efficiency.value() is not None
+            or self.mass_response.baseValue() is not None
+        )
 
     def completeChanged(self):
         complete = self.isComplete()
@@ -388,4 +374,19 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
     def accept(self):
         self.efficencySelected.emit(self.efficiency.value())
         self.massResponseSelected.emit(self.mass_response.baseValue())
+
+        # Set any changed
+        options = self.proc_result.method.isotope_options[self.proc_result.isotope]
+        new_options = SPCalIsotopeOptions(
+            self.density.baseValue(),
+            self.response.baseValue(),
+            self.mass_fraction.value(),
+            self.concentration.baseValue(),
+            self.diameter.baseValue(),
+            self.mass_response.baseValue(),
+        )
+        if options != new_options:
+            self.proc_result.method.isotope_options[self.proc_result.isotope] = new_options
+            self.isotopeOptionsChanged.emit(self.proc_result.isotope, new_options)
+
         super().accept()

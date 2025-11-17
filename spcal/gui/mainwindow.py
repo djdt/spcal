@@ -803,6 +803,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.processing_results[self.files.currentDataFile()][isotope], parent=self
         )
         dlg.efficencySelected.connect(self.instrument_options.efficiency.setValue)
+        dlg.isotopeOptionsChanged.connect(self.isotope_options.setIsotopeOption)
+        dlg.isotopeOptionsChanged.connect(self.onIsotopeOptionChanged)
         dlg.open()
         return dlg
 
