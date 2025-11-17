@@ -246,7 +246,8 @@ class TextImportDialog(ImportDialogBase):
         )
 
         selected = [SPCalIsotope.fromString(name) for name in self.selectedNames()]
-        self.dataImported.emit(data_file, selected)
+        data_file.selected_isotopes = selected
+        self.dataImported.emit(data_file)
         logger.info(
             f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
         )
