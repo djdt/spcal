@@ -76,6 +76,25 @@ class SPCalIsotopeOptions(object):
             f"mass_fraction={self.mass_fraction})"
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalIsotopeOptions):
+            return False
+
+        if not self.density != other.density:
+            return False
+        if not self.response != other.response:
+            return False
+        if not self.mass_fraction != other.mass_fraction:
+            return False
+        if not self.concentration != other.concentration:
+            return False
+        if not self.diameter != other.diameter:
+            return False
+        if not self.mass_response != other.mass_response:
+            return False
+
+        return True
+
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
