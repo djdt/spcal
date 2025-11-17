@@ -1,11 +1,31 @@
 from typing import Generator
+import copy
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.isotope import SPCalIsotope
+from spcal.particle import (
+    nebulisation_efficiency_from_concentration,
+    nebulisation_efficiency_from_mass,
+    reference_particle_mass,
+)
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.widgets import ValidColorLineEdit
+from spcal.gui.widgets import ValueWidget, UnitsWidget
+from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.npdb import db
+from spcal.processing import SPCalProcessingResult
+from spcal.siunits import (
+    mass_units,
+    mass_concentration_units,
+    size_units,
+    signal_units,
+    response_units,
+    number_concentration_units,
+    molar_concentration_units,
+    density_units,
+)
 
 
 class FormulaValidator(QtGui.QValidator):
@@ -56,7 +76,8 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.textedit_ratios.setFont(QtGui.QFont("Courier"))
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
 
         self.ratiosChanged.connect(self.updateLabels)
@@ -82,7 +103,9 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
     def completeChanged(self):
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
 
     def isComplete(self) -> bool:
         return len(self.ratios) > 0
@@ -205,4 +228,164 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         idx = self.table.selectedIndexes()
         self.densitySelected.emit(float(self.proxy.data(idx[3])))
         self.formulaSelected.emit(self.proxy.data(idx[0]))
+        super().accept()
+
+
+class TransportEfficiencyDialog(QtWidgets.QDialog):
+    efficencyChanged = QtCore.Signal(object)
+    massResponseChanged = QtCore.Signal(object)
+    efficencySelected = QtCore.Signal(float)
+    massResponseSelected = QtCore.Signal(float)
+
+    def __init__(
+        self,
+        result: SPCalProcessingResult,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Transport Efficiency Calculator")
+        self.setMinimumWidth(600)
+
+        self.proc_result = result
+
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
+        self.diameter = UnitsWidget(
+            size_units,
+            "nm",
+            result.method.isotope_options[result.isotope].diameter,
+            sigfigs=sf,
+        )
+        self.density = UnitsWidget(
+            density_units,
+            "g/cm³",
+            result.method.isotope_options[result.isotope].density,
+            sigfigs=sf,
+        )
+        self.concentration = UnitsWidget(
+            mass_concentration_units,
+            "µg/L",
+            result.method.isotope_options[result.isotope].concentration,
+            sigfigs=sf,
+        )
+        self.response = UnitsWidget(
+            response_units,
+            "L/µg",
+            result.method.isotope_options[result.isotope].response,
+            sigfigs=sf,
+        )
+        self.mass_fraction = ValueWidget(
+            result.method.isotope_options[result.isotope].concentration,
+            step=0.1,
+            max=1.0,
+            sigfigs=sf,
+        )
+        self.diameter.baseValueChanged.connect(self.onOptionChanged)
+        self.density.baseValueChanged.connect(self.onOptionChanged)
+        self.concentration.baseValueChanged.connect(self.onOptionChanged)
+        self.response.baseValueChanged.connect(self.onOptionChanged)
+        self.mass_fraction.valueChanged.connect(self.onOptionChanged)
+
+        self.efficiency = ValueWidget(sigfigs=sf)
+        self.efficiency.setReadOnly(True)
+        self.mass_response = UnitsWidget(mass_units, "ag", sigfigs=sf)
+        self.mass_response.setReadOnly(True)
+
+        self.efficencyChanged.connect(self.efficiency.setValue)
+        self.massResponseChanged.connect(self.mass_response.setValue)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        gbox_mass = QtWidgets.QGroupBox("Reference properties")
+        gbox_mass_layout = QtWidgets.QFormLayout()
+        gbox_mass_layout.addRow("Density", self.density)
+        gbox_mass_layout.addRow("Response", self.response)
+        gbox_mass_layout.addRow("Mass Fraction", self.mass_fraction)
+        gbox_mass_layout.addRow("Diameter", self.diameter)
+        gbox_mass.setLayout(gbox_mass_layout)
+
+        gbox_conc = QtWidgets.QGroupBox("")
+        gbox_conc_layout = QtWidgets.QFormLayout()
+        gbox_conc_layout.addRow("Concentration", self.concentration)
+        gbox_conc.setLayout(gbox_conc_layout)
+
+        gbox_output = QtWidgets.QGroupBox("Calculated")
+        gbox_ouput_layout = QtWidgets.QFormLayout()
+        gbox_ouput_layout.addRow("Efficiency", self.efficiency)
+        gbox_ouput_layout.addRow("Mass Response", self.mass_response)
+        gbox_output.setLayout(gbox_ouput_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(gbox_mass, 0, 0, 1, 1)
+        layout.addWidget(gbox_conc, 1, 0, 1, 1)
+        layout.addWidget(gbox_output, 0, 1, 2, 1)
+        layout.addWidget(self.button_box, 2, 0, 1, 2)
+
+        self.setLayout(layout)
+        self.onOptionChanged()
+
+    def onOptionChanged(self):
+        self.updateEfficiency()
+        self.completeChanged()
+
+    def updateEfficiency(self):
+        result = self.proc_result
+
+        density = self.density.baseValue()
+        diameter = self.diameter.baseValue()
+
+        if density is None or diameter is None:
+            return None
+
+        reference_mass = reference_particle_mass(density, diameter)
+
+        mass_fraction = self.mass_fraction.value()
+        if mass_fraction is not None:
+            mass_response = float(
+                reference_mass * mass_fraction / np.mean(result.calibrated("signal"))
+            )
+            self.massResponseChanged.emit(mass_response)
+
+        concentration = self.concentration.baseValue()
+        uptake = result.method.instrument_options.uptake
+        response = self.response.baseValue()
+
+        if concentration is not None and uptake is not None:
+            eff = nebulisation_efficiency_from_concentration(
+                result.number,
+                concentration=concentration,
+                mass=reference_mass,
+                flow_rate=uptake,
+                time=result.total_time,
+            )
+        elif mass_fraction is not None and response is not None and uptake is not None:
+            eff = nebulisation_efficiency_from_mass(
+                result.calibrated("signal"),
+                dwell=result.event_time,
+                mass=reference_mass,
+                flow_rate=uptake,
+                response_factor=response,
+                mass_fraction=mass_fraction,
+            )
+        else:
+            eff = None
+        self.efficencyChanged.emit(eff)
+
+    def isComplete(self) -> bool:
+        return self.efficiency.value() is not None
+
+    def completeChanged(self):
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
+
+    def accept(self):
+        self.efficencySelected.emit(self.efficiency.value())
+        self.massResponseSelected.emit(self.mass_response.baseValue())
         super().accept()

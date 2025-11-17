@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtWidgets
 
+from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.processing import SPCalInstrumentOptions
 from spcal.siunits import time_units
@@ -7,6 +8,7 @@ from spcal.siunits import time_units
 
 class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     optionsChanged = QtCore.Signal()
+    efficiencyDialogRequested = QtCore.Signal()
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -22,6 +24,17 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         # load stored options
         settings = QtCore.QSettings()
         sf = int(settings.value("SigFigs", 4))  # type: ignore
+
+        # Actions
+        self.action_efficiency = create_action(
+            "folder-calculate",
+            "Calculate Efficiency",
+            "Open a dialog for calculating transport efficiency using the current file and isotope.",
+            self.efficiencyDialogRequested,
+        )
+        self.button_efficiency = QtWidgets.QToolButton()
+        self.button_efficiency.setDefaultAction(self.action_efficiency)
+        self.button_efficiency.setEnabled(False)
 
         # Instrument wide options
         self.event_time = UnitsWidget(
@@ -69,11 +82,16 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         # Complete Changed
         self.uptake.baseValueChanged.connect(self.optionsChanged)
         self.efficiency.valueChanged.connect(self.optionsChanged)
+        self.uptake.baseValueChanged.connect(self.onUptakeChanged)
+
+        layout_eff = QtWidgets.QHBoxLayout()
+        layout_eff.addWidget(self.efficiency, 1)
+        layout_eff.addWidget(self.button_efficiency, 0, QtCore.Qt.AlignmentFlag.AlignRight)
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow("Uptake:", self.uptake)
         form_layout.addRow("Event time:", self.event_time)
-        form_layout.addRow("Trans. Efficiency:", self.efficiency)
+        form_layout.addRow("Trans. Efficiency:", layout_eff)
         form_layout.addRow("Calibration mode:", self.calibration_mode)
 
         # layout = QtWidgets.QVBoxLayout()
@@ -82,6 +100,9 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         widget = QtWidgets.QWidget()
         widget.setLayout(form_layout)
         self.setWidget(widget)
+
+    def onUptakeChanged(self):
+        self.button_efficiency.setEnabled(self.uptake.baseValue() is not None)
 
     def asInstrumentOptions(self) -> SPCalInstrumentOptions:
         return SPCalInstrumentOptions(

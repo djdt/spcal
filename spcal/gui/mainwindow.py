@@ -17,7 +17,11 @@ from spcal.gui.dialogs.graphoptions import (
 )
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
-from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.dialogs.tools import (
+    MassFractionCalculatorDialog,
+    ParticleDatabaseDialog,
+    TransportEfficiencyDialog,
+)
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
@@ -43,6 +47,9 @@ from spcal.processing import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# todo : Timefilter can muck up the number concentration, time should be calculated excluding these regions
 
 
 class SPCalGraph(QtWidgets.QStackedWidget):
@@ -305,9 +312,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar.action_all_isotopes.triggered.connect(self.redraw)
         self.toolbar.action_filter.triggered.connect(self.dialogFilterDetections)
 
+        self.instrument_options.efficiencyDialogRequested.connect(
+            self.dialogTransportEfficiencyCalculator
+        )
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
+
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
+
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
+
         self.resultsChanged.connect(self.onResultsChanged)
 
         self.files.dataFileAdded.connect(self.updateRecentFiles)
@@ -432,8 +445,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
         self.currentMethod().isotope_options[isotope] = option
-        # todo: update not reprocess
-        # self.reprocess(self.files.currentDataFile())
+
         data_file = self.files.currentDataFile()
         method = self.currentMethod()
 
@@ -784,6 +796,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.filtersChanged.connect(self.currentMethod().setFilters)
         dlg.filtersChanged.connect(self.reprocess)
         dlg.open()
+
+    def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog:
+        isotope = self.toolbar.combo_isotope.currentIsotope()
+        dlg = TransportEfficiencyDialog(
+            self.processing_results[self.files.currentDataFile()][isotope], parent=self
+        )
+        dlg.efficencySelected.connect(self.instrument_options.efficiency.setValue)
+        dlg.open()
+        return dlg
 
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)

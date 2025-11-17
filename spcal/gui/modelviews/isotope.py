@@ -38,6 +38,8 @@ class IsotopeModel(QtCore.QAbstractListModel):
 class IsotopeComboBox(QtWidgets.QComboBox):
     isotopeChanged = QtCore.Signal(SPCalIsotope)
 
+    IsotopeRole = QtCore.Qt.ItemDataRole.UserRole
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
         self.currentIndexChanged.connect(self.onIndexChanged)
@@ -52,8 +54,11 @@ class IsotopeComboBox(QtWidgets.QComboBox):
     def currentIsotope(self) -> SPCalIsotope:
         return self.isotope(self.currentIndex())
 
+    def setCurrentIsotope(self, isotope: SPCalIsotope):
+        self.setCurrentIndex(self.findData(isotope, role=IsotopeComboBox.IsotopeRole))
+
     def isotope(self, index: int) -> SPCalIsotope:
-        return self.itemData(index)
+        return self.itemData(index, role=IsotopeComboBox.IsotopeRole)
 
     def onIndexChanged(self, index: int):
         self.isotopeChanged.emit(self.isotope(index))
