@@ -14,7 +14,7 @@ from spcal.io import nu, tofwerk
 
 
 class OddValueSpinBox(QtWidgets.QSpinBox):
-    def stepBy(self, steps: int) -> None:
+    def stepBy(self, steps: int):
         steps = steps * self.singleStep() * 2
         self.setValue(self.value() + steps)
 
@@ -132,7 +132,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         if params is not None and params.size > 0:
             self.scatter.drawData(params["mass"], params["sigma"])
 
-    def buttonPressed(self, button: QtWidgets.QAbstractButton) -> None:
+    def buttonPressed(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.clear()
@@ -151,11 +151,11 @@ class SingleIonDialog(QtWidgets.QDialog):
     def isComplete(self) -> bool:
         return bool(self.valid.size > 0 and np.any(self.valid))
 
-    def enableControls(self, enabled: bool) -> None:
+    def enableControls(self, enabled: bool):
         self.controls_box.setEnabled(enabled)
         self.hist_controls_box.setEnabled(enabled)
 
-    def clear(self) -> None:
+    def clear(self):
         self.masses = np.array([])
         self.counts = np.array([])
         self.lams = np.array([])
@@ -168,7 +168,7 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.enableControls(False)
 
-    def updateMinMaxValueRanges(self) -> None:
+    def updateMinMaxValueRanges(self):
         if self.minimum_value.hasAcceptableInput():
             min = self.minimum_value.value()
             self.maximum_value.setRange(min, 1e9)
@@ -176,7 +176,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             max = self.maximum_value.value()
             self.minimum_value.setRange(0.0, max)
 
-    def loadSingleIonData(self, path: str | Path | None = None) -> None:
+    def loadSingleIonData(self, path: str | Path | None = None):
         if path is None:
             path = get_open_spcal_path(self, "Single Ion Data")
             if path is None:
@@ -225,7 +225,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.updateExtractedParameters()
         self.enableControls(True)
 
-    def updateExtractedParameters(self) -> None:
+    def updateExtractedParameters(self):
         self.scatter.clear()
         if not self.max_sigma_difference.hasAcceptableInput():
             return
@@ -242,7 +242,7 @@ class SingleIonDialog(QtWidgets.QDialog):
 
         self.updateValidParameters()
 
-    def updateValidParameters(self) -> None:
+    def updateValidParameters(self):
         # most likely invalid
         valid = np.logical_and(
             np.logical_and(self.sigmas > 0.2, self.sigmas < 0.95),
@@ -279,7 +279,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.updateScatterInterp()
         self.updateHistogram()
 
-    def updateScatterInterp(self) -> None:
+    def updateScatterInterp(self):
         xs, ys = self.smoothedParameters(
             self.masses[self.valid], self.sigmas[self.valid]
         )
@@ -302,7 +302,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             raise ValueError(f"invalid smoothing window {smoothing}")
         return xs, ys
 
-    def updateHistogram(self) -> None:
+    def updateHistogram(self):
         if np.count_nonzero(self.valid) > 0:
             counts = self.counts[:, self.valid]
 
@@ -320,7 +320,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         elif self.hist.hist_curve is not None:
             self.hist.hist_curve.clear()
 
-    def accept(self) -> None:
+    def accept(self):
         if self.masses.size > 0:
             mz, mu = self.smoothedParameters(
                 self.masses[self.valid], self.mus[self.valid]

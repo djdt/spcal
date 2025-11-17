@@ -76,7 +76,7 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
-    def accept(self) -> None:
+    def accept(self):
         size = QtCore.QSize(self.spinbox_size_x.value(), self.spinbox_size_y.value())
         options = {option: cbox.isChecked() for option, cbox in self.options.items()}
         self.exportSettingsSelected.emit(size, self.spinbox_dpi.value(), options)

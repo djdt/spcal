@@ -125,14 +125,14 @@ class SampleIOWidget(QtWidgets.QWidget):
             state_dict["lod"] = self.lod_count.value()
         return {k: v for k, v in state_dict.items() if v is not None}
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
+    def setSignificantFigures(self, num: int | None = None):
         if num is None:
             num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         for widget in self.findChildren(ValueWidget):
             if widget.view_format[1] == "g":
                 widget.setViewFormat(num)
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "density" in state:
             self.density.setBaseValue(state["density"])
@@ -143,14 +143,14 @@ class SampleIOWidget(QtWidgets.QWidget):
         self.blockSignals(False)
         self.optionsChanged.emit()
 
-    def clearInputs(self) -> None:
+    def clearInputs(self):
         self.blockSignals(True)
         self.density.setValue(None)
         self.response.setValue(None)
         self.massfraction.setValue(1.0)
         self.blockSignals(False)
 
-    def clearOutputs(self) -> None:
+    def clearOutputs(self):
         self.count.setValue(None)
         self.count.setError(None)
         self.background_count.setValue(None)
@@ -189,7 +189,7 @@ class SampleIOWidget(QtWidgets.QWidget):
         labels: np.ndarray,
         lod: float,
         limit_str: str,
-    ) -> None:
+    ):
         bg_values = responses[labels == 0]
         if np.count_nonzero(np.isfinite(bg_values)) > 0:
             background, background_std = (
@@ -208,7 +208,7 @@ class SampleIOWidget(QtWidgets.QWidget):
         self.lod_count.setValue(lod)
         self.lod_label.setText(limit_str)
 
-    def syncOutput(self, other: "SampleIOWidget", output: str) -> None:
+    def syncOutput(self, other: "SampleIOWidget", output: str):
         widget = getattr(self, output)
         if not isinstance(widget, UnitsWidget):
             raise ValueError("linkOutputs: output must be a UnitsWidget")
@@ -289,7 +289,7 @@ class ReferenceIOWidget(SampleIOWidget):
         )
         return {k: v for k, v in state_dict.items() if v is not None}
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "diameter" in state:
             self.diameter.setBaseValue(state["diameter"])
@@ -303,7 +303,7 @@ class ReferenceIOWidget(SampleIOWidget):
             )
         super().setState(state)
 
-    def clearInputs(self) -> None:
+    def clearInputs(self):
         super().clearInputs()
         self.blockSignals(True)
         self.diameter.setValue(None)
@@ -311,7 +311,7 @@ class ReferenceIOWidget(SampleIOWidget):
         self.check_use_efficiency_for_all.setChecked(False)
         self.blockSignals(False)
 
-    def clearOutputs(self) -> None:
+    def clearOutputs(self):
         super().clearOutputs()
         self.efficiency.clear()
         self.massresponse.setValue(None)
@@ -322,7 +322,7 @@ class ReferenceIOWidget(SampleIOWidget):
         dwell: float,
         time: float,
         uptake: float,
-    ) -> None:
+    ):
         # Make these delegates
         self.efficiency.setValue(None)
         self.efficiency_label.setText("")
@@ -423,14 +423,14 @@ class ResultIOWidget(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
+    def setSignificantFigures(self, num: int | None = None):
         if num is None:
             num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         for widget in self.findChildren(ValueWidget):
             if widget.view_format[1] == "g":
                 widget.setViewFormat(num)
 
-    def clearOutputs(self) -> None:
+    def clearOutputs(self):
         self.mean.setBaseValue(None)
         self.mean.setBaseError(None)
         self.median.setBaseValue(None)
@@ -458,7 +458,7 @@ class ResultIOWidget(QtWidgets.QWidget):
         number_conc: float | None = None,
         background_conc: float | None = None,
         background_error: float | None = None,
-    ) -> None:
+    ):
         if values.size == 0:  # will never be visible / enabled
             self.clearOutputs()
             return
@@ -577,16 +577,16 @@ class SampleIOStack(QtWidgets.QWidget):
     def widgets(self) -> list[SampleIOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
-    def handleRequest(self, request: str, value: None = None) -> None:
+    def handleRequest(self, request: str, value: None = None):
         if request == "ionic response":
             self.requestIonicResponseTool.emit()
 
-    def clear(self) -> None:
+    def clear(self):
         for widget in self.widgets():
             widget.clearInputs()
             widget.clearOutputs()
 
-    def repopulate(self, names: list[str], widget_type: type = SampleIOWidget) -> None:
+    def repopulate(self, names: list[str], widget_type: type = SampleIOWidget):
         self.blockSignals(True)
         old_widgets = {
             name: widget for name, widget in zip(self.names(), self.widgets())
@@ -607,23 +607,23 @@ class SampleIOStack(QtWidgets.QWidget):
             self.stack.addWidget(widget)
         self.blockSignals(False)
 
-    def onWidgetOptionChanged(self) -> None:
+    def onWidgetOptionChanged(self):
         widget = self.sender()
         if not isinstance(widget, SampleIOWidget):
             raise ValueError("invalid widget triggered onWidgetOptionsChanged")
         name = self.combo_name.itemText(self.stack.indexOf(widget))
         self.optionsChanged.emit(name)
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
+    def setSignificantFigures(self, num: int | None = None):
         for widget in self.widgets():
             widget.setSignificantFigures(num)
 
-    def setResponses(self, responses: dict[str, float]) -> None:
+    def setResponses(self, responses: dict[str, float]):
         for name, response in responses.items():
             if name in self:
                 self[name].response.setBaseValue(response)
 
-    def setLimitsEditable(self, editable: bool) -> None:
+    def setLimitsEditable(self, editable: bool):
         for widget in self.widgets():
             if editable:
                 widget.lod_count.valueEdited.connect(self.limitsChanged)
@@ -642,7 +642,7 @@ class ReferenceIOStack(SampleIOStack):
         self.button_group_check_efficiency.buttonClicked.connect(self.buttonClicked)
         super().__init__(parent=parent)
 
-    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
+    def buttonClicked(self, button: QtWidgets.QAbstractButton):
         assert isinstance(button, QtWidgets.QCheckBox)
         self.button_group_check_efficiency.blockSignals(True)
         if button.checkState() == QtCore.Qt.CheckState.PartiallyChecked:
@@ -660,7 +660,7 @@ class ReferenceIOStack(SampleIOStack):
 
     def repopulate(
         self, names: list[str], widget_type: type = ReferenceIOWidget
-    ) -> None:
+    ):
         super().repopulate(names, ReferenceIOWidget)
         for name in names:
             io = self.stack.widget(self.combo_name.findText(name))
@@ -763,7 +763,7 @@ class ResultIOStack(QtWidgets.QWidget):
     def widgets(self) -> list[ResultIOWidget]:
         return [self.stack.widget(i) for i in range(self.stack.count())]  # type: ignore
 
-    def repopulate(self, names: list[str]) -> None:
+    def repopulate(self, names: list[str]):
         self.blockSignals(True)
         old_widgets = {
             name: widget for name, widget in zip(self.names(), self.widgets())
@@ -782,10 +782,10 @@ class ResultIOStack(QtWidgets.QWidget):
             self.stack.addWidget(widget)
         self.blockSignals(False)
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
+    def setSignificantFigures(self, num: int | None = None):
         for widget in self.widgets():
             widget.setSignificantFigures(num)
 
-    def clear(self) -> None:
+    def clear(self):
         for widget in self.widgets():
             widget.clearOutputs()

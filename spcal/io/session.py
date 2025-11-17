@@ -171,7 +171,7 @@ def saveSession(
     sample: SampleWidget,
     reference: ReferenceWidget,
     results: ResultsWidget,
-) -> None:
+):
     with h5py.File(path, "w") as h5:
         h5.attrs["version"] = QtWidgets.QApplication.applicationVersion()
         options_group = h5.create_group("options")
@@ -213,7 +213,7 @@ def restoreSession(
     sample: SampleWidget,
     reference: ReferenceWidget,
     results: ResultsWidget,
-) -> None:
+):
     # Clear old session
     options.resetInputs()
     sample.resetInputs()

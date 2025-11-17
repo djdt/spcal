@@ -706,7 +706,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.exec()
         return dlg
 
-    def dialogBatchProcess(self) -> None:  # BatchProcessDialog:
+    def dialogBatchProcess(self):  # BatchProcessDialog:
         raise NotImplementedError
 
     #     self.results.updateResults()  # Force an update
@@ -732,7 +732,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     dlg.open()
     #     return dlg
 
-    def dialogExportData(self) -> None:
+    def dialogExportData(self):
         raise NotImplementedError
 
     #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
@@ -770,7 +770,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     else:
     #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
-    def dialogFilterDetections(self) -> None:
+    def dialogFilterDetections(self):
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
@@ -803,10 +803,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogSaveSession(self) -> None:
+    def dialogSaveSession(self):
         raise NotImplementedError
 
-        def onFileSelected(file: str) -> None:
+        def onFileSelected(file: str):
             path = Path(file).with_suffix(".spcal")
             saveSession(path, self.options, self.sample, self.reference, self.results)
             QtCore.QSettings().setValue("LastSession", str(path))
@@ -825,7 +825,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.fileSelected.connect(onFileSelected)
         dlg.exec()
 
-    def dialogLoadSession(self) -> None:
+    def dialogLoadSession(self):
         raise NotImplementedError
         settings = QtCore.QSettings()
         dir = Path(settings.value("LastSession", ""))
@@ -840,10 +840,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             Path(file), self.options, self.sample, self.reference, self.results
         )
 
-    def linkToDocumenation(self) -> None:
+    def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
-    # def onInputsChanged(self) -> None:
+    # def onInputsChanged(self):
     #     # Reference tab is neb method requires
     #     self.tabs.setTabEnabled(
     #         self.tabs.indexOf(self.reference),
@@ -857,7 +857,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     self.action_open_batch.setEnabled(self.readyForResults())
     #     self.action_export.setEnabled(self.readyForResults())
 
-    # def onTabChanged(self, index: int) -> None:
+    # def onTabChanged(self, index: int):
     #     if index == self.tabs.indexOf(self.results):
     #         if self.results.isUpdateRequired():
     #             self.results.updateResults()
@@ -868,7 +868,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #         or self.reference.isComplete()
     #     )
     #
-    def resetInputs(self) -> None:
+    def resetInputs(self):
         self.instrument_options.resetInputs()
         self.limit_options.resetInputs()
         self.isotope_options.resetInputs()
@@ -879,13 +879,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # self.reference.resetInputs()
         # self.options.resetInputs()
 
-    def setColorScheme(self, action: QtGui.QAction) -> None:
+    def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
         QtCore.QSettings().setValue("colorscheme", scheme)
 
         self.redraw()
 
-    def setGraphFont(self) -> None:
+    def setGraphFont(self):
         settings = QtCore.QSettings()
         current = QtGui.QFont(
             settings.value("GraphFont/Family", "SansSerif"),
@@ -900,7 +900,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.reference.setGraphFont(font)
             self.results.setGraphFont(font)
 
-    def setSignificantFigures(self) -> None:
+    def setSignificantFigures(self):
         settings = QtCore.QSettings()
         current = int(settings.value("SigFigs", 4))
 
@@ -916,7 +916,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.reference.io.setSignificantFigures(value)
             self.results.io.setSignificantFigures(value)
 
-    def syncSampleAndReference(self) -> None:
+    def syncSampleAndReference(self):
         # Sync response
         for name, io in zip(self.sample.io.names(), self.sample.io.widgets()):
             if name in self.reference.io:
@@ -930,7 +930,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
                 io.syncOutput(ref_io, "response")
 
-    def updateRecentFiles(self, new_path: SPCalDataFile | Path | None = None) -> None:
+    def updateRecentFiles(self, new_path: SPCalDataFile | Path | None = None):
         MAX_RECENT_FILES = 10
         settings = QtCore.QSettings()
 

@@ -19,7 +19,7 @@ class ScatterView(SinglePlotGraphicsView):
         logy: bool = False,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
@@ -48,7 +48,7 @@ class ScatterView(SinglePlotGraphicsView):
         weighting: str = "none",
         set_title: bool = True,
         pen: QtGui.QPen | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.red, 1.0)
             pen.setCosmetic(True)

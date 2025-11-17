@@ -185,7 +185,7 @@ class InputWidget(QtWidgets.QWidget):
         ]
         return QtGui.QColor(scheme[self.names.index(name) % len(scheme)])
 
-    def updateNames(self, names: dict[str, str]) -> None:
+    def updateNames(self, names: dict[str, str]):
         raise NotImplementedError
         # if self.responses.dtype.names is not None:
         #     self.responses = rfn.rename_fields(self.responses, names)
@@ -211,15 +211,15 @@ class InputWidget(QtWidgets.QWidget):
 
         self.redraw()
 
-    def setDrawMode(self, mode: str) -> None:
+    def setDrawMode(self, mode: str):
         self.draw_mode = mode
         self.redraw()
 
-    def setGraphFont(self, font: QtGui.QFont) -> None:
+    def setGraphFont(self, font: QtGui.QFont):
         self.graph.setFont(font)
         self.redraw()  # fixes legend
 
-    def redraw(self, save_range: bool = True) -> None:
+    def redraw(self, save_range: bool = True):
         (xmin, xmax), (ymin, ymax) = self.graph.plot.viewRange()
         self.drawGraph()
         self.drawDetections()
@@ -232,7 +232,7 @@ class InputWidget(QtWidgets.QWidget):
                     xRange=(xmin, xmax), yRange=(ymin, ymax), padding=0.0
                 )
 
-    def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         if (
             event.mimeData().hasHtml()
             or event.mimeData().hasText()
@@ -242,7 +242,7 @@ class InputWidget(QtWidgets.QWidget):
         else:  # pragma: no cover
             super().dragEnterEvent(event)
 
-    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+    def dropEvent(self, event: QtGui.QDropEvent):
         if event.mimeData().hasUrls():
             # Todo, nu import check
             for url in event.mimeData().urls():
@@ -290,10 +290,10 @@ class InputWidget(QtWidgets.QWidget):
         dlg = PeakPropertiesDialog(self, self.io.combo_name.currentText())
         dlg.exec()
 
-    def dialogExportGraphImage(self) -> None:
+    def dialogExportGraphImage(self):
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
-        def get_path_and_export(size: QtCore.QSize, dpi: int, options: dict) -> None:
+        def get_path_and_export(size: QtCore.QSize, dpi: int, options: dict):
             path = Path(self.import_options["path"])
             path = path.with_name(path.stem + "_signal.png")
             path, ok = QtWidgets.QFileDialog.getSaveFileName(
@@ -336,7 +336,7 @@ class InputWidget(QtWidgets.QWidget):
         size: QtCore.QSize,
         dpi: float,
         options: dict[str, bool],
-    ) -> None:
+    ):
         dpi_scale = dpi / 96.0
         xrange, yrange = self.graph.plot.viewRange()
         resized_font = QtGui.QFont(self.graph.font)
@@ -365,7 +365,7 @@ class InputWidget(QtWidgets.QWidget):
 
         graph.exportImage(path, background=background)
 
-    def addExpression(self, name: str, expr: str) -> None:
+    def addExpression(self, name: str, expr: str):
         self.current_expr[name] = expr
         self.reloadData()
         try:  # attempt to set response of new variable
@@ -375,13 +375,13 @@ class InputWidget(QtWidgets.QWidget):
         except ReducerException:
             pass
 
-    def removeExpression(self, name: str) -> None:
+    def removeExpression(self, name: str):
         self.current_expr.pop(name)
         if name in self.names:
             self.responses = rfn.drop_fields(self.responses, name, usemask=False)
         self.reloadData()
 
-    def loadData(self, data_file: SPCalDataFile) -> None:
+    def loadData(self, data_file: SPCalDataFile):
         # data = CalculatorDialog.reduceForData(data, self.current_expr)
 
         self.data_file = data_file
@@ -421,11 +421,11 @@ class InputWidget(QtWidgets.QWidget):
 
         self.dataLoaded.emit(options["path"])
 
-    def reloadData(self) -> None:
+    def reloadData(self):
         if self.responses.size > 0:
             self.loadData(self.responses, self.import_options)
 
-    def saveTrimRegion(self) -> None:
+    def saveTrimRegion(self):
         # plot = next(iter(self.graph.plots.values()))
         self.last_region = self.graph.region_start, self.graph.region_end
 
@@ -454,7 +454,7 @@ class InputWidget(QtWidgets.QWidget):
             calibration_mode=calibration_mode,
         )
 
-    def updateDetections(self) -> None:
+    def updateDetections(self):
         d, l, self.original_regions = {}, {}, {}
         acc_method = self.options.limit_accumulation
         points_req = self.options.points_required
@@ -481,7 +481,7 @@ class InputWidget(QtWidgets.QWidget):
 
         self.detectionsChanged.emit()
 
-    def updateLimits(self) -> None:
+    def updateLimits(self):
         if self.responses.size == 0:
             return
 
@@ -558,7 +558,7 @@ class InputWidget(QtWidgets.QWidget):
                 )
         self.limitsChanged.emit()
 
-    def updateOutputs(self) -> None:
+    def updateOutputs(self):
         for name in self.names:
             io = self.io[name]
             if name not in self.detection_names:
@@ -572,15 +572,15 @@ class InputWidget(QtWidgets.QWidget):
                     str(self.limits[name]),
                 )
 
-    def updateFormat(self) -> None:
+    def updateFormat(self):
         for io in self.io:
             io.updateFormat()
 
-    def updateGraphsForName(self, name: str) -> None:
+    def updateGraphsForName(self, name: str):
         if self.draw_mode == "single":
             self.redraw()
 
-    def drawGraph(self) -> None:
+    def drawGraph(self):
         self.graph.clear()
         if len(self.responses) == 0:
             return
@@ -611,7 +611,7 @@ class InputWidget(QtWidgets.QWidget):
         self.graph.region.blockSignals(False)
         self.last_region = region
 
-    def drawDetections(self) -> None:
+    def drawDetections(self):
         self.graph.clearScatters()
         if self.detections.size == 0:
             return
@@ -640,7 +640,7 @@ class InputWidget(QtWidgets.QWidget):
                 )
         self.graph.zoomReset()
 
-    def drawLimits(self) -> None:
+    def drawLimits(self):
         if self.draw_mode != "single":
             return
 
@@ -659,7 +659,7 @@ class InputWidget(QtWidgets.QWidget):
                 pen=pen,
             )
 
-    def resetInputs(self) -> None:
+    def resetInputs(self):
         self.blockSignals(True)
         self.io.blockSignals(True)
         self.import_options = {}
@@ -678,7 +678,7 @@ class InputWidget(QtWidgets.QWidget):
         self.io.blockSignals(False)
         self.blockSignals(False)
 
-    def onEfficiencyMethodChanged(self, method: str) -> None:
+    def onEfficiencyMethodChanged(self, method: str):
         for io in self.io.widgets():
             io.response.setEnabled(method != "Mass Response")
 
@@ -704,11 +704,11 @@ class ReferenceWidget(InputWidget):
         self.detectionsChanged.connect(self.updateEfficiency)
         self.dataLoaded.connect(self.onDataLoaded)
 
-    def onDataLoaded(self) -> None:
+    def onDataLoaded(self):
         if len(self.names) == 1:  # Default to use if only element
             self.io[self.names[0]].check_use_efficiency_for_all.setChecked(True)
 
-    def updateEfficiency(self, name: str | None = None) -> None:
+    def updateEfficiency(self, name: str | None = None):
         dwell = self.options.event_time.baseValue()
         if self.responses.size == 0 or dwell is None:
             return

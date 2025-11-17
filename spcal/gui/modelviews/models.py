@@ -178,7 +178,7 @@ class SearchColumnsProxyModel(QtCore.QSortFilterProxyModel):
         self._search_string = ""
         self.columns = columns
 
-    def setSearchString(self, string: str) -> None:
+    def setSearchString(self, string: str):
         self._search_string = string
         self.invalidateFilter()
 

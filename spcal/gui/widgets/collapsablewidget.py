@@ -32,7 +32,7 @@ class CollapsableWidget(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def setWidget(self, widget: QtWidgets.QWidget) -> None:
+    def setWidget(self, widget: QtWidgets.QWidget):
         layout = self.layout()
         assert layout is not None
 
@@ -46,7 +46,7 @@ class CollapsableWidget(QtWidgets.QWidget):
     def isCollapsed(self) -> bool:
         return self.button.arrowType() != QtCore.Qt.ArrowType.DownArrow
 
-    def setCollapsed(self, collapsed: bool) -> None:  # pragma: no cover, trivial
+    def setCollapsed(self, collapsed: bool):  # pragma: no cover, trivial
         self.button.setArrowType(
             QtCore.Qt.ArrowType.DownArrow
             if collapsed

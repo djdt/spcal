@@ -28,7 +28,7 @@ class CheckableComboBox(QtWidgets.QComboBox):
         self.setModel(QtGui.QStandardItemModel())
         self.setItemDelegate(CheckableItemDelegate(self))
 
-    def addItem(self, text: str) -> None:
+    def addItem(self, text: str):
         item = QtGui.QStandardItem(text)
         item.setFlags(
             QtCore.Qt.ItemFlag.ItemIsUserCheckable | QtCore.Qt.ItemFlag.ItemIsEnabled
@@ -38,7 +38,7 @@ class CheckableComboBox(QtWidgets.QComboBox):
         )
         self.model().appendRow(item)
 
-    def addItems(self, texts: list[str]) -> None:
+    def addItems(self, texts: list[str]):
         for text in texts:
             self.addItem(text)
 
@@ -50,7 +50,7 @@ class CheckableComboBox(QtWidgets.QComboBox):
                 checked.append(item.text())
         return checked
 
-    def setCheckedItems(self, items: list[str]) -> None:
+    def setCheckedItems(self, items: list[str]):
         for row in range(self.model().rowCount()):
             item = self.model().item(row)
             if item.text() in items:

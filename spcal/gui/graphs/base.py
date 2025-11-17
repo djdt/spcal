@@ -42,7 +42,7 @@ class AxisEditDialog(QtWidgets.QDialog):
         layout.addRow(self.button_box)
         self.setLayout(layout)
 
-    def accept(self) -> None:
+    def accept(self):
         self.rangeSelected.emit(self.spinbox_lo.value(), self.spinbox_hi.value())
         super().accept()
 
@@ -92,7 +92,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
     def font(self) -> QtGui.QFont:  # type: ignore , pyqtgraph qt versions
         return self._font
 
-    def setFont(self, font: QtGui.QFont) -> None:  # type: ignore , pyqtgraph qt versions
+    def setFont(self, font: QtGui.QFont):  # type: ignore , pyqtgraph qt versions
         self._font = font
 
         fm = QtGui.QFontMetrics(font)
@@ -121,7 +121,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             self.legend.setLabelTextSize(f"{font.pointSize()}pt")
             self.redrawLegend()
 
-    def redrawLegend(self) -> None:
+    def redrawLegend(self):
         if self.legend is None:
             return
         # store items
@@ -329,7 +329,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.addItem(scatter)
         return scatter
 
-    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent) -> None:
+    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent):
         pos = self.plot.xaxis.mapFromView(event.pos())
         if self.plot.vb is None:
             return
@@ -358,7 +358,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             return
         super().mouseDoubleClickEvent(event)
 
-    def customContextMenu(self, pos: QtCore.QPoint) -> None:
+    def customContextMenu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
         menu.addAction(self.action_auto_scale_y)
@@ -377,7 +377,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         menu.popup(self.mapToGlobal(pos))
 
-    def setXAxisRange(self, min: float, max: float) -> None:
+    def setXAxisRange(self, min: float, max: float):
         scale = self.plot.xaxis.scale
         if min > max:
             min, max = max, min
@@ -385,7 +385,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             return
         self.plot.vb.setRange(xRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
 
-    def setYAxisRange(self, min: float, max: float) -> None:
+    def setYAxisRange(self, min: float, max: float):
         scale = self.plot.yaxis.scale
         self.setAutoScaleY(False)
         if min > max:
@@ -394,19 +394,19 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             return
         self.plot.vb.setRange(yRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
 
-    def setAutoScaleY(self, auto_scale: bool) -> None:
+    def setAutoScaleY(self, auto_scale: bool):
         self.action_auto_scale_y.setChecked(auto_scale)
         if self.plot.vb is not None:
             self.plot.vb.setMouseEnabled(y=not auto_scale)
             self.plot.vb.setAutoVisible(y=auto_scale)
             self.plot.vb.enableAutoRange(y=auto_scale)
 
-    def setLegendVisible(self, visible: bool) -> None:
+    def setLegendVisible(self, visible: bool):
         self.action_show_legend.setChecked(visible)
         if self.plot.legend is not None:
             self.plot.legend.setVisible(visible)
 
-    def copyToClipboard(self) -> None:
+    def copyToClipboard(self):
         """Copy current view to system clipboard."""
         pixmap = QtGui.QPixmap(self.viewport().size())
         painter = QtGui.QPainter(pixmap)
@@ -414,7 +414,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         painter.end()
         QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
 
-    def clear(self) -> None:
+    def clear(self):
         self.data_for_export.clear()
         if self.plot.legend is not None:
             self.plot.legend.clear()
@@ -439,7 +439,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
-    def exportData(self, path: str | Path | None) -> None:
+    def exportData(self, path: str | Path | None):
         if path is None:
             dir = QtCore.QSettings().value("RecentFiles/1/path", None)
             dir = str(Path(str(dir)).parent) if dir is not None else ""
@@ -480,7 +480,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self,
         path: Path | str | None,
         background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
-    ) -> None:
+    ):
         if path is None:
             dir = QtCore.QSettings().value("RecentFiles/1/path", None)
             dir = str(Path(str(dir)).parent) if dir is not None else ""
@@ -526,7 +526,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         xMax: float | None = None,
         yMin: float | None = None,
         yMax: float | None = None,
-    ) -> None:
+    ):
         """Set all plots limits in range 0.0 - 1.0."""
         bounds = self.dataBounds()
         dx = bounds[1] - bounds[0]
@@ -543,7 +543,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setLimits(**limits)
 
-    def zoomReset(self) -> None:
+    def zoomReset(self):
         if self.plot.vb is not None:
             x, y = (
                 self.plot.vb.state["autoRange"][0],

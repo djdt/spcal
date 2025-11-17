@@ -10,7 +10,7 @@ class AdjustingTextEdit(QtWidgets.QTextEdit):
         super().resizeEvent(event)
         self.onTextChanged()
 
-    def onTextChanged(self) -> None:
+    def onTextChanged(self):
         self.setMaximumHeight(
             self.document().size().height()
             + self.contentsMargins().top()

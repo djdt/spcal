@@ -36,7 +36,7 @@ class LimitOptions(QtWidgets.QGroupBox):
     def state(self) -> dict:
         return {"alpha": self.alpha.value()}
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
@@ -93,10 +93,10 @@ class CompoundPoissonOptions(LimitOptions):
             dlg.loadSingleIonData()
         return dlg
 
-    def clearSingleIon(self) -> None:
+    def clearSingleIon(self):
         self.setSingleIonParameters(None)
 
-    def setSingleIonParameters(self, params: np.ndarray | None) -> None:
+    def setSingleIonParameters(self, params: np.ndarray | None):
         self.single_ion_parameters = params
         self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
         self.optionsChanged.emit()
@@ -109,7 +109,7 @@ class CompoundPoissonOptions(LimitOptions):
             "single ion parameters": self.single_ion_parameters,
         }
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
@@ -151,7 +151,7 @@ class GaussianOptions(LimitOptions):
         assert isinstance(layout, QtWidgets.QFormLayout)
         layout.addRow("σ:", self.sigma)
 
-    def updateAlpha(self) -> None:
+    def updateAlpha(self):
         sigma = self.sigma.value()
         if sigma is None:
             return
@@ -160,7 +160,7 @@ class GaussianOptions(LimitOptions):
         self.alpha.setValue(float(f"{alpha:.4g}"))
         self.alpha.valueChanged.connect(self.updateSigma)
 
-    def updateSigma(self) -> None:
+    def updateSigma(self):
         alpha = self.alpha.value()
         if alpha is None:
             alpha = 1e-6
@@ -203,7 +203,7 @@ class PoissonOptions(LimitOptions):
             "function": self.function.lower(),
         }
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
@@ -234,7 +234,7 @@ class PoissonOptions(LimitOptions):
         dlg.open()
         return dlg
 
-    def setOptions(self, formula: str, opt1: float, opt2: float) -> None:
+    def setOptions(self, formula: str, opt1: float, opt2: float):
         self.function = formula
         if formula == "Currie":
             self.eta = opt1 or 2.0
@@ -375,7 +375,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             single_ion_parameters=self.compound.single_ion_parameters,
         )
 
-    def dialogAdvancedOptions(self) -> None:
+    def dialogAdvancedOptions(self):
         dlg = AdvancedThresholdOptions(
             self.limit_accumulation.title(),
             self.points_required,
@@ -387,7 +387,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
 
     def setAdvancedOptions(
         self, accumlation_method: str, points_required: int, prominence_required: float
-    ) -> None:
+    ):
         self.limit_accumulation = accumlation_method
         self.points_required = points_required
         self.prominence_required = prominence_required

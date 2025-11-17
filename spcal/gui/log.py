@@ -8,13 +8,13 @@ class LogRecordSignaller(QtCore.QObject):
 
 
 class QtListHandler(logging.Handler):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
 
         self.signal = LogRecordSignaller()
         self.records: list[logging.LogRecord] = []
 
-    def emit(self, record: logging.LogRecord) -> None:
+    def emit(self, record: logging.LogRecord):
         self.records.append(record)
         self.signal.new_record.emit(self.format(record), record)
 
@@ -39,7 +39,7 @@ class LoggingTextEdit(QtWidgets.QPlainTextEdit):
         self.setReadOnly(True)
 
     @QtCore.Slot(str, logging.LogRecord)
-    def add_record(self, string: str, record: logging.LogRecord) -> None:
+    def add_record(self, string: str, record: logging.LogRecord):
         color = self.COLORS.get(record.levelno, "black")
         string = f"<pre><font color={color}>{string}</font></pre>"
         self.appendHtml(string)

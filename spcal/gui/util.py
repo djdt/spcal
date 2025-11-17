@@ -39,7 +39,7 @@ class Worker(QtCore.QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-    def run(self) -> None:
+    def run(self):
         try:
             result = self.func(*self.args, **self.kwargs)
         except Exception as e:

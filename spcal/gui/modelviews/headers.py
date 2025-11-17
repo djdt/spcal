@@ -17,7 +17,7 @@ class CheckableHeaderView(QtWidgets.QHeaderView):
         assert logicalIndex >= 0 and logicalIndex < self.count()
         return self._checked.get(logicalIndex, QtCore.Qt.CheckState.Unchecked)
 
-    def setCheckState(self, logicalIndex: int, state: QtCore.Qt.CheckState) -> None:
+    def setCheckState(self, logicalIndex: int, state: QtCore.Qt.CheckState):
         assert logicalIndex >= 0 and logicalIndex < self.count()
         if self.checkState(logicalIndex) != state:
             self._checked[logicalIndex] = state
@@ -32,7 +32,7 @@ class CheckableHeaderView(QtWidgets.QHeaderView):
         size.setWidth(size.width() + cb_size.width())
         return size
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
         if self.cursor().shape() in [  # resizing, ignore custom code
             QtCore.Qt.CursorShape.SplitHCursor,
             QtCore.Qt.CursorShape.SplitVCursor,
@@ -60,7 +60,7 @@ class CheckableHeaderView(QtWidgets.QHeaderView):
 
     def paintSection(
         self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
-    ) -> None:
+    ):
         painter.save()
         super().paintSection(painter, rect, logicalIndex)
         painter.restore()
@@ -114,7 +114,7 @@ class ComboHeaderView(QtWidgets.QHeaderView):
 
         self.section_items = section_items
 
-    def showComboBox(self, section: int) -> None:
+    def showComboBox(self, section: int):
         items = self.section_items.get(section, [])
         widget = QtWidgets.QComboBox(self)
         widget.addItems(items)
@@ -141,7 +141,7 @@ class ComboHeaderView(QtWidgets.QHeaderView):
             QtWidgets.QStyle.ContentsType.CT_ComboBox, option, size
         )
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
         logicalIndex = self.logicalIndexAt(event.position().toPoint())
         if logicalIndex in self.section_items:
             self.showComboBox(logicalIndex)
@@ -150,7 +150,7 @@ class ComboHeaderView(QtWidgets.QHeaderView):
 
     def paintSection(
         self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
-    ) -> None:
+    ):
         option = QtWidgets.QStyleOptionComboBox()
         option.initFrom(self)
         option.rect = rect  # type: ignore

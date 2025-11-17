@@ -42,7 +42,7 @@ class ResponseView(SinglePlotGraphicsView):
     def region_end(self) -> int:
         return int(self.region.lines[1].value())  # type: ignore
 
-    def clear(self) -> None:
+    def clear(self):
         super().clear()
         self.signal_mean = None
 
@@ -51,7 +51,7 @@ class ResponseView(SinglePlotGraphicsView):
         x: np.ndarray,
         y: np.ndarray,
         pen: QtGui.QPen | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
             pen.setCosmetic(True)
@@ -66,7 +66,7 @@ class ResponseView(SinglePlotGraphicsView):
         self.region.setBounds((x[0], x[-1]))
         self.plot.addItem(self.region)
 
-    def drawMean(self, mean: float, pen: QtGui.QPen | None = None) -> None:
+    def drawMean(self, mean: float, pen: QtGui.QPen | None = None):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.red, 2.0, QtCore.Qt.PenStyle.DashLine)
             pen.setCosmetic(True)
@@ -83,7 +83,7 @@ class ResponseView(SinglePlotGraphicsView):
             x=[self.region_start, self.region_end], y=[mean, mean]
         )
 
-    def updateMean(self) -> None:
+    def updateMean(self):
         if self.signal is None:
             return
         ds, _, _ = self.plot.downsampleMode()

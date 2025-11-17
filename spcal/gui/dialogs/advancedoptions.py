@@ -75,7 +75,7 @@ class AdvancedThresholdOptions(QtWidgets.QDialog):
         layout.addRow(self.button_box)
         self.setLayout(layout)
 
-    def accept(self) -> None:
+    def accept(self):
         self.optionsSelected.emit(
             self.limit_accumulation.currentText().lower(),
             self.points_req.value(),
@@ -221,7 +221,7 @@ class AdvancedPoissonDialog(QtWidgets.QDialog):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(self.isComplete())
 
-    def accept(self) -> None:
+    def accept(self):
         widget = self.poisson_stack.currentWidget()
         assert isinstance(widget, AdvancedPoissonOptions)
         options = widget.options()

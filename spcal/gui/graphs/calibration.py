@@ -23,7 +23,7 @@ class CalibrationView(SinglePlotGraphicsView):
         draw_trendline: bool = False,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QPen | None = None,
-    ) -> None:
+    ):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.red)
         if pen is None:
@@ -49,7 +49,7 @@ class CalibrationView(SinglePlotGraphicsView):
         y: np.ndarray,
         weighting: str = "none",
         pen: QtGui.QPen | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.red, 1.0)
             pen.setCosmetic(True)

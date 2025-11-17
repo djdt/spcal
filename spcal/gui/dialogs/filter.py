@@ -83,7 +83,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: SPCalProcessingFilter) -> None:
+    def setFilter(self, filter: SPCalProcessingFilter):
         index = self.isotopes.findData(
             filter.isotope, role=QtCore.Qt.ItemDataRole.UserRole
         )
@@ -110,7 +110,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         self.closeRequested.emit(self)
         return super().close()
 
-    def changeUnits(self, key: str) -> None:
+    def changeUnits(self, key: str):
         if key == "Intensity":
             units = signal_units
         elif key == "Mass":
@@ -190,7 +190,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: ClusterFilter) -> None:
+    def setFilter(self, filter: ClusterFilter):
         label = next(
             lbl
             for lbl, unit in FilterItemWidget.KEY_LABELS.items()
@@ -344,7 +344,7 @@ class FilterDialog(QtWidgets.QDialog):
         widget = BooleanItemWidget()
         self.addWidget(widget)
 
-    def addWidget(self, widget: QtWidgets.QWidget) -> None:
+    def addWidget(self, widget: QtWidgets.QWidget):
         assert isinstance(
             widget, (FilterItemWidget, ClusterFilterItemWidget, BooleanItemWidget)
         )
@@ -354,7 +354,7 @@ class FilterDialog(QtWidgets.QDialog):
         self.list.setItemWidget(item, widget)
         item.setSizeHint(widget.sizeHint())
 
-    def removeItem(self, widget: FilterItemWidget) -> None:
+    def removeItem(self, widget: FilterItemWidget):
         for i in range(self.list.count()):
             item = self.list.item(i)
             if self.list.itemWidget(item) == widget:
@@ -367,7 +367,7 @@ class FilterDialog(QtWidgets.QDialog):
         )
         self.addClusterWidget(widget)
 
-    def addClusterWidget(self, widget: QtWidgets.QWidget) -> None:
+    def addClusterWidget(self, widget: QtWidgets.QWidget):
         assert isinstance(widget, ClusterFilterItemWidget)
         widget.closeRequested.connect(self.removeClusterItem)
         item = QtWidgets.QListWidgetItem()
@@ -375,14 +375,14 @@ class FilterDialog(QtWidgets.QDialog):
         self.cluster_list.setItemWidget(item, widget)
         item.setSizeHint(widget.sizeHint())
 
-    def removeClusterItem(self, widget: FilterItemWidget) -> None:
+    def removeClusterItem(self, widget: FilterItemWidget):
         for i in range(self.cluster_list.count()):
             item = self.cluster_list.item(i)
             if self.cluster_list.itemWidget(item) == widget:
                 self.cluster_list.takeItem(i)
                 break
 
-    def accept(self) -> None:
+    def accept(self):
         filters = []
         group = []
         for i in range(self.list.count()):

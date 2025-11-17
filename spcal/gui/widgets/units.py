@@ -69,19 +69,19 @@ class UnitsWidget(QtWidgets.QWidget):
     def value(self) -> float | None:
         return self._value.value()
 
-    def setValue(self, value: float | None) -> None:
+    def setValue(self, value: float | None):
         self._value.setValue(value)
 
     def error(self) -> float | None:
         return self._value.error()
 
-    def setError(self, error: float | None) -> None:
+    def setError(self, error: float | None):
         self._value.setError(error)
 
     def baseValue(self) -> float | None:
         return self._base_value
 
-    def setBaseValue(self, value: float | None) -> None:
+    def setBaseValue(self, value: float | None):
         if self._base_value != value:
             self._base_value = value
             self.baseValueChanged.emit(value)
@@ -89,12 +89,12 @@ class UnitsWidget(QtWidgets.QWidget):
     def baseError(self) -> float | None:
         return self._base_error
 
-    def setBaseError(self, error: float | None) -> None:
+    def setBaseError(self, error: float | None):
         if self._base_error != error:
             self._base_error = error
             self.baseErrorChanged.emit(error)
 
-    def onUnitChanged(self, unit: str) -> None:
+    def onUnitChanged(self, unit: str):
         min = self.base_value_min / self._units[unit]
         max = self.base_value_max / self._units[unit]
 
@@ -106,24 +106,24 @@ class UnitsWidget(QtWidgets.QWidget):
     def setSigFigs(self, sigfigs: int):
         self._value.setSigFigs(sigfigs)
 
-    def valueFromBase(self, base: float | None) -> None:
+    def valueFromBase(self, base: float | None):
         self._value.valueChanged.disconnect(self.baseFromValue)
         if base is not None:
             base = base / self._units[self.unit()]
         self.setValue(base)
         self._value.valueChanged.connect(self.baseFromValue)
 
-    def baseFromValue(self, value: float | None) -> None:
+    def baseFromValue(self, value: float | None):
         if value is not None:
             value = value * self._units[self.unit()]
         self.setBaseValue(value)
 
-    def errorFromBase(self, error: float | None) -> None:
+    def errorFromBase(self, error: float | None):
         if error is not None:
             error = error / self._units[self.unit()]
         self.setError(error)
 
-    def baseFromError(self, error: float | None) -> None:
+    def baseFromError(self, error: float | None):
         if error is not None:
             error = error * self._units[self.unit()]
         self.setBaseError(error)
@@ -131,7 +131,7 @@ class UnitsWidget(QtWidgets.QWidget):
     def unit(self) -> str:
         return self.combo.currentText()
 
-    def setUnit(self, unit: str) -> None:
+    def setUnit(self, unit: str):
         self.combo.setCurrentText(unit)
 
     def setBestUnit(self) -> str:
@@ -141,7 +141,7 @@ class UnitsWidget(QtWidgets.QWidget):
             self.combo.setCurrentIndex(int(idx))
         return self.combo.currentText()
 
-    def setUnits(self, units: dict) -> None:
+    def setUnits(self, units: dict):
         self._units = units
         self.combo.blockSignals(True)
         self.combo.clear()
@@ -152,14 +152,14 @@ class UnitsWidget(QtWidgets.QWidget):
     def hasAcceptableInput(self) -> bool:
         return self._value.hasAcceptableInput()
 
-    def setReadOnly(self, readonly: bool) -> None:
+    def setReadOnly(self, readonly: bool):
         self._value.setReadOnly(readonly)
 
-    def setToolTip(self, text: str) -> None:
+    def setToolTip(self, text: str):
         self._value.setToolTip(text)
         self.combo.setToolTip(text)
 
-    # def setEnabled(self, enabled: bool) -> None:
+    # def setEnabled(self, enabled: bool):
     #     self._value.setEnabled(enabled)
     #     self.combo.setEnabled(enabled)
 

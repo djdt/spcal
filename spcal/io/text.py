@@ -91,7 +91,7 @@ def _write_if_exists(
     postfix: str = "",
     delimiter: str = ",",
     format: str = "{:.8g}",
-) -> None:
+):
     values = [fn(result) for result in results.values()]
     if all(x is None for x in values):
         return
@@ -179,7 +179,7 @@ def append_results_summary(
     path: TextIO | Path,
     results: dict[str, SPCalResult],
     units_for_results: dict[str, tuple[str, float]] | None = None,
-) -> None:
+):
     """Export and append flattened results for elements to a file.
 
     Args:
@@ -197,10 +197,10 @@ def append_results_summary(
     if isinstance(path, Path):
         path = path.open("a")
 
-    def write_header(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_header(fp: TextIO, results: dict[str, SPCalResult]):
         fp.write(",,," + ",".join(results.keys()) + "\n")
 
-    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]):
         if len(results) == 0:
             return
         file = next(iter(results.values())).file.stem
@@ -266,7 +266,7 @@ def append_results_summary(
                     f"{file},{label},{unit},",
                 )
 
-    def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_limits(fp: TextIO, results: dict[str, SPCalResult]):
         def limit_or_range(
             r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
         ) -> str | None:
@@ -316,7 +316,7 @@ def export_single_particle_results(
     output_results: bool = True,
     output_compositions: bool = False,
     output_arrays: bool = True,
-) -> None:
+):
     """Export results for elements to a file.
 
     Args:
@@ -348,7 +348,7 @@ def export_single_particle_results(
     if units_for_results is not None:
         result_units.update(units_for_results)
 
-    def write_header(fp: TextIO, first_result: SPCalResult) -> None:
+    def write_header(fp: TextIO, first_result: SPCalResult):
         date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
         fp.write(f"# SPCal Export {importlib.metadata.version('spcal')}\n")
         fp.write(f"# Date,{date}\n")
@@ -356,7 +356,7 @@ def export_single_particle_results(
         fp.write(f"# Acquisition events,{first_result.events}\n")
         fp.write("#\n")
 
-    def write_inputs(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_inputs(fp: TextIO, results: dict[str, SPCalResult]):
         # Todo: split into insutrment, sample, reference inputs?
         fp.write(f"# Options and inputs,{','.join(results.keys())}\n")
         # fp.write(f"# Dwelltime,{first_result.inputs['dwelltime']},s")
@@ -383,7 +383,7 @@ def export_single_particle_results(
 
         fp.write("#\n")
 
-    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]):
         if len(results) == 0:
             return
 
@@ -456,7 +456,7 @@ def export_single_particle_results(
 
     def write_compositions(
         fp: TextIO, results: dict[str, SPCalResult], clusters: dict[str, np.ndarray]
-    ) -> None:
+    ):
         from spcal.cluster import cluster_information, prepare_data_for_clustering
 
         if len(results) == 0:
@@ -505,7 +505,7 @@ def export_single_particle_results(
                     + "\n"
                 )
 
-    def write_limits(fp: TextIO, results: dict[str, SPCalResult]) -> None:
+    def write_limits(fp: TextIO, results: dict[str, SPCalResult]):
         fp.write(f"# Limits of detection,{','.join(results.keys())}\n")
 
         def limit_or_range(
@@ -545,7 +545,7 @@ def export_single_particle_results(
         clusters: dict[str, np.ndarray],
         detection_times: np.ndarray | None = None,
         export_clusters: bool = False,
-    ) -> None:
+    ):
         fp.write("# Raw detection data\n")
 
         # Non-filtered indicies

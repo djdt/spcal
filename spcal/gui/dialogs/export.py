@@ -102,7 +102,7 @@ class ExportDialog(QtWidgets.QDialog):
         dlg.fileSelected.connect(self.lineedit_path.setText)
         dlg.open()
 
-    def accept(self) -> None:
+    def accept(self):
         units = {
             "mass": (
                 self.mass_units.currentText(),

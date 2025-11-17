@@ -46,7 +46,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
 
         self.plot.setLimits(xMin=0.0, yMin=0.0)
 
-    def clear(self) -> None:
+    def clear(self):
         super().clear()
         self.points = None
         self.lines.clear()
@@ -57,7 +57,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         y: np.ndarray,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> None:
+    ):
         if self.points is not None:
             self.plot.removeItem(self.points)
 
@@ -72,7 +72,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
-    def setValid(self, valid: np.ndarray) -> None:
+    def setValid(self, valid: np.ndarray):
         if self.points is None:
             return
         brush_valid = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
@@ -85,7 +85,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         poly: np.polynomial.Polynomial,
         max_difference: float,
         pen: QtGui.QPen | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
@@ -108,7 +108,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
 
     def drawInterpolationLine(
         self, xs: np.ndarray, ys: np.ndarray, pen: QtGui.QPen | None = None
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.blue, 1.0)
             pen.setCosmetic(True)
@@ -138,7 +138,7 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         self.fit_curve: pyqtgraph.PlotCurveItem | None = None
         self.fit_curves = []
 
-    def clear(self) -> None:
+    def clear(self):
         super().clear()
         self.hist_curve = None
         self.fit_curve = None
@@ -152,7 +152,7 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
         bar_offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)

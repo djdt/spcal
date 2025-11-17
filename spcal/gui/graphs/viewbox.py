@@ -27,7 +27,7 @@ class ViewBoxForceScaleAtZero(LimitBoundViewBox):
         center: QtCore.QPointF | None = None,
         x: float | None = None,
         y: float | None = None,
-    ) -> None:
+    ):
         if center is not None:
             center.setY(0.0)
         super().scaleBy(s, center, x, y)
@@ -37,7 +37,7 @@ class ViewBoxForceScaleAtZero(LimitBoundViewBox):
         t: QtCore.QPointF | None = None,
         x: float | None = None,
         y: float | None = None,
-    ) -> None:
+    ):
         if t is not None:
             t.setY(0.0)
         if y is not None:

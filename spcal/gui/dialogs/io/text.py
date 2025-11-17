@@ -111,7 +111,7 @@ class TextImportDialog(ImportDialogBase):
     def isComplete(self) -> bool:
         return not self.event_time.isEnabled() or self.event_time.hasAcceptableInput()
 
-    def overrideEventTimeChanged(self) -> None:
+    def overrideEventTimeChanged(self):
         self.event_time.setEnabled(self.override_event_time.isChecked())
 
     def delimiter(self) -> str:
@@ -145,7 +145,7 @@ class TextImportDialog(ImportDialogBase):
                 names.append(item.text().replace(" ", "_"))
         return names
 
-    def fillTable(self) -> None:
+    def fillTable(self):
         lines = [
             line.split(self.delimiter())
             for line in self.file_lines[: self.HEADER_COUNT]
@@ -170,7 +170,7 @@ class TextImportDialog(ImportDialogBase):
             except StopIteration:
                 pass
 
-    def updateTableUseColumns(self) -> None:
+    def updateTableUseColumns(self):
         header_row = self.spinbox_first_line.value() - 1
         for row in range(self.table.rowCount()):
             for col in range(self.table.columnCount()):
@@ -186,7 +186,7 @@ class TextImportDialog(ImportDialogBase):
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
-    def guessIsotopesFromTable(self) -> None:
+    def guessIsotopesFromTable(self):
         columns = []
         header_row = self.spinbox_first_line.value() - 1
         for col in range(self.table.columnCount()):
@@ -234,7 +234,7 @@ class TextImportDialog(ImportDialogBase):
 
         raise StopIteration
 
-    def accept(self) -> None:
+    def accept(self):
         data_file = SPCalTextDataFile.load(
             self.file_path,
             delimiter=self.delimiter(),

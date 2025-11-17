@@ -70,7 +70,7 @@ class PCAArrow(QtWidgets.QGraphicsPathItem):
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         super().paint(painter, option, widget)
 
@@ -91,7 +91,7 @@ class PCAView(SinglePlotGraphicsView):
         brush: QtGui.QBrush | None = None,
         arrow_pen: QtGui.QPen | None = None,
         text_brush: QtGui.QBrush | None = None,
-    ) -> None:
+    ):
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
@@ -131,7 +131,7 @@ class PCAView(SinglePlotGraphicsView):
 
     def colorScatter(
         self, indicies: np.ndarray, colors: list[QtGui.QColor] | None = None
-    ) -> None:
+    ):
         if self.scatter is None:
             return
         if colors is None:
@@ -140,6 +140,6 @@ class PCAView(SinglePlotGraphicsView):
         brushes = [QtGui.QBrush(colors[i]) for i in indicies]
         self.scatter.setBrush(brushes)
 
-    def clear(self) -> None:
+    def clear(self):
         super().clear()
         self.scatter = None

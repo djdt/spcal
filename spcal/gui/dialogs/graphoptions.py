@@ -96,7 +96,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
         sbutton = self.button_box.standardButton(button)
         if sbutton == QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults:
             self.reset()
@@ -109,7 +109,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         else:
             self.reject()
 
-    def apply(self) -> None:
+    def apply(self):
         bin_widths = {
             "signal": self.width_signal.baseValue(),
             "mass": self.width_mass.baseValue(),
@@ -133,7 +133,7 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
                 self.bin_widths, self.percentile, self.draw_filtered
             )
 
-    def reset(self) -> None:
+    def reset(self):
         for widget in [
             self.width_signal,
             self.width_mass,
@@ -197,7 +197,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
         sbutton = self.button_box.standardButton(button)
         if sbutton == QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults:
             self.reset()
@@ -210,7 +210,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
         else:
             self.reject()
 
-    def apply(self) -> None:
+    def apply(self):
         # distance = self.spinbox_distance.value() / 100.0
         size = self.lineedit_size.text().strip().replace(" ", "")
         mode = self.combo_mode.currentText().lower()
@@ -226,7 +226,7 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
             self.mode = mode
             self.optionsChanged.emit(self.minimum_size, self.mode)
 
-    def reset(self) -> None:
+    def reset(self):
         # self.spinbox_distance.setValue(3.0)
         self.lineedit_size.setText("5%")
         self.combo_mode.setCurrentIndex(0)
@@ -282,7 +282,7 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 #
 #         self.setLayout(layout)
 #
-#     def buttonBoxClicked(self, button: QtWidgets.QAbstractButton) -> None:
+#     def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
 #         sbutton = self.button_box.standardButton(button)
 #         if sbutton == QtWidgets.QDialogButtonBox.RestoreDefaults:
 #             self.reset()
@@ -295,7 +295,7 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 #         else:
 #             self.reject()
 #
-#     def apply(self) -> None:
+#     def apply(self):
 #         weighting = self.combo_weighting.currentText()
 #         draw_filtered = self.check_draw_filtered.isChecked()
 #
@@ -307,6 +307,6 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 #             self.draw_filtered = draw_filtered
 #             self.drawFilteredChanged.emit(draw_filtered)
 #
-#     def reset(self) -> None:
+#     def reset(self):
 #         self.combo_weighting.setCurrentText("none")
 #         self.check_draw_filtered.setChecked(False)

@@ -59,7 +59,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
                 return row
         raise StopIteration
 
-    def setIsotopes(self, isotopes: list[SPCalIsotope]) -> None:
+    def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.table.blockSignals(True)
         self.table.setRowCount(len(isotopes))
         for i, iso in enumerate(isotopes):

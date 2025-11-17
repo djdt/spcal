@@ -41,7 +41,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
 
         self.hovered_idx = -1
 
-    def setHoveredIdx(self, idx: int) -> None:
+    def setHoveredIdx(self, idx: int):
         if self.hovered_idx != idx:
             self.hovered_idx = idx
             self.update()
@@ -70,7 +70,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.save()
         if self.font is not None:
             painter.setFont(self.font)
@@ -220,7 +220,7 @@ class StaticRectItemSample(pyqtgraph.GraphicsWidget):
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.save()
         painter.setBrush(self.brush)
         painter.drawRect(QtCore.QRectF(2, 2, 18, 18))

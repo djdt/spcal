@@ -22,22 +22,22 @@ class ValidColorLineEdit(QtWidgets.QLineEdit):
 
         self.textChanged.connect(self.revalidate)
 
-    def setActive(self, active: bool) -> None:
+    def setActive(self, active: bool):
         self.active = active
         self.revalidate()
 
-    def setEnabled(self, enabled: bool) -> None:
+    def setEnabled(self, enabled: bool):
         super().setEnabled(enabled)
         self.revalidate()
 
-    def setValidator(self, validator: QtGui.QValidator) -> None:
+    def setValidator(self, validator: QtGui.QValidator):
         super().setValidator(validator)
         self.revalidate()
 
-    def revalidate(self) -> None:
+    def revalidate(self):
         self.setValid(self.hasAcceptableInput() or not self.isEnabled())
 
-    def setValid(self, valid: bool) -> None:
+    def setValid(self, valid: bool):
         palette = self.palette()
         if valid or not self.active:
             palette.setColor(QtGui.QPalette.Base, self.color_valid)

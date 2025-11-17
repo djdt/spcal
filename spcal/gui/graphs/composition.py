@@ -44,7 +44,7 @@ class CompositionDetailDialog(QtWidgets.QDialog):
         layout.addWidget(self.table)
         self.setLayout(layout)
 
-    def showEvent(self, event: QtGui.QShowEvent) -> None:
+    def showEvent(self, event: QtGui.QShowEvent):
         super().showEvent(event)
 
 
@@ -208,6 +208,6 @@ class CompositionView(SinglePlotGraphicsView):
             for isotope, brush in zip(results.keys(), brushes):
                 self.plot.legend.addItem(StaticRectItemSample(brush), str(isotope))
 
-    def zoomReset(self) -> None:  # No plotdata
+    def zoomReset(self):  # No plotdata
         if self.plot.vb is not None:
             self.plot.vb.autoRange()

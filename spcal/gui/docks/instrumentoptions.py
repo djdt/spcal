@@ -90,7 +90,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
             self.efficiency.value(),
         )
 
-    def calibrationModeChanged(self, mode: str) -> None:
+    def calibrationModeChanged(self, mode: str):
         if mode == "Efficiency":
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(False)
@@ -115,7 +115,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         else:
             raise ValueError(f"Unknown method {mode}.")
 
-    def resetInputs(self) -> None:
+    def resetInputs(self):
         self.blockSignals(True)
         self.uptake.setValue(None)
         self.event_time.setValue(None)
@@ -123,6 +123,6 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self.blockSignals(False)
         self.optionsChanged.emit()
 
-    def setSignificantFigures(self, num: int) -> None:
+    def setSignificantFigures(self, num: int):
         for widget in self.findChildren(ValueWidget):
             widget.setSigFigs(num)

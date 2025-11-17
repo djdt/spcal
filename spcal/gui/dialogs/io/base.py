@@ -53,7 +53,7 @@ class ImportDialogBase(QtWidgets.QDialog):
         layout.addWidget(self.button_box)
         self.setLayout(layout)
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
             complete

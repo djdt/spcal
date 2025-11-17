@@ -50,7 +50,7 @@ class IsotopeOptionTable(UnitsTable):
         dlg.open()
         return dlg
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
 
@@ -110,7 +110,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
             )
         return options
 
-    def setIsotopes(self, isotopes: list[SPCalIsotope]) -> None:
+    def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.table.blockSignals(True)
         self.table.setRowCount(len(isotopes))
         for i, iso in enumerate(isotopes):

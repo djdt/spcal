@@ -256,7 +256,7 @@ class OptionsWidget(QtWidgets.QWidget):
         }
         return {k: v for k, v in state_dict.items() if v is not None}
 
-    def setState(self, state: dict) -> None:
+    def setState(self, state: dict):
         self.blockSignals(True)
         if "uptake" in state:
             self.uptake.setBaseValue(state["uptake"])
@@ -293,7 +293,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
         self.limitOptionsChanged.emit()
 
-    def efficiencyMethodChanged(self, method: str) -> None:
+    def efficiencyMethodChanged(self, method: str):
         if method == "Manual Input":
             self.uptake.setEnabled(True)
             self.efficiency.setEnabled(True)
@@ -306,7 +306,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.optionsChanged.emit()
 
-    def limitMethodChanged(self, method: str) -> None:
+    def limitMethodChanged(self, method: str):
         manual = method == "Manual Input"
 
         nowindow = manual
@@ -359,7 +359,7 @@ class OptionsWidget(QtWidgets.QWidget):
         else:
             raise ValueError(f"Unknown method {method}.")
 
-    def resetInputs(self) -> None:
+    def resetInputs(self):
         self.blockSignals(True)
         self.uptake.setValue(None)
         self.event_time.setValue(None)
@@ -367,7 +367,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.blockSignals(False)
         self.optionsChanged.emit()
 
-    def setSignificantFigures(self, num: int | None = None) -> None:
+    def setSignificantFigures(self, num: int | None = None):
         if num is None:
             num = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         for widget in self.findChildren(ValueWidget):
@@ -376,7 +376,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def setAdvancedOptions(
         self, accumlation_method: str, points_required: int, prominence_required: float
-    ) -> None:
+    ):
         self.limit_accumulation = accumlation_method
         self.points_required = points_required
         self.prominence_required = prominence_required
@@ -387,7 +387,7 @@ class OptionsWidget(QtWidgets.QWidget):
 
         self.limitOptionsChanged.emit()
 
-    def dialogAdvancedOptions(self) -> None:
+    def dialogAdvancedOptions(self):
         dlg = AdvancedThresholdOptions(
             self.limit_accumulation,
             self.points_required,

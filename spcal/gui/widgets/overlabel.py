@@ -26,5 +26,5 @@ class OverLabel(QtWidgets.QWidget):
     def text(self) -> str:
         return self.label.text()
 
-    def setText(self, label: str) -> None:
+    def setText(self, label: str):
         self.label.setText(label)

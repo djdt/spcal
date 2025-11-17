@@ -26,12 +26,12 @@ class BasicTable(QtWidgets.QTableWidget):
             menu.addAction(paste_action)
         return menu
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent) -> None:
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
         menu.popup(event.globalPos())
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # pragma: no cover
+    def keyPressEvent(self, event: QtGui.QKeyEvent):  # pragma: no cover
         if event.key() in [QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return]:
             self._advance()
         elif event.key() in [QtCore.Qt.Key.Key_Backspace, QtCore.Qt.Key.Key_Delete]:
@@ -45,12 +45,12 @@ class BasicTable(QtWidgets.QTableWidget):
         else:
             super().keyPressEvent(event)
 
-    def _advance(self) -> None:
+    def _advance(self):
         row = self.currentRow()
         if row + 1 < self.rowCount():
             self.setCurrentCell(row + 1, self.currentColumn())
 
-    def _copy(self) -> None:
+    def _copy(self):
         selection = sorted(self.selectedIndexes(), key=lambda i: (i.row(), i.column()))
         data = (
             '<meta http-equiv="content-type" content="text/html; charset=utf-8"/>'
@@ -76,16 +76,16 @@ class BasicTable(QtWidgets.QTableWidget):
         mime.setText(text)
         QtWidgets.QApplication.clipboard().setMimeData(mime)
 
-    def _cut(self) -> None:
+    def _cut(self):
         self._copy()
         self._delete()
 
-    def _delete(self) -> None:
+    def _delete(self):
         for i in self.selectedItems():
             if i.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
                 i.setText("")
 
-    def _paste(self) -> None:
+    def _paste(self):
         text = QtWidgets.QApplication.clipboard().text("plain")
         selection = self.selectedIndexes()
         start_row = min(selection, key=lambda i: i.row()).row()

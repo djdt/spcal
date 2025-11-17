@@ -73,21 +73,21 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.completeChanged()
 
-    def accept(self) -> None:
+    def accept(self):
         # dict order messed up during signal, send as list of tuples
         ratios = [(k, v) for k, v in self.ratios.items()]
         self.ratiosSelected.emit(ratios)
         self.molarMassSelected.emit(self.mw)
         super().accept()
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
 
     def isComplete(self) -> bool:
         return len(self.ratios) > 0
 
-    def recalculate(self) -> None:
+    def recalculate(self):
         """Calculates the mass fraction of each valid element in the formula."""
         self.ratios = {}
         elements = db["elements"]
@@ -107,7 +107,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
             match = iter.next()
             yield match.captured(1), float(match.captured(2) or 1.0)
 
-    def updateLabels(self) -> None:
+    def updateLabels(self):
         self.textedit_ratios.setPlainText("")
         if len(self.ratios) == 0:
             return
@@ -182,17 +182,17 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.completeChanged()
 
-    def searchDatabase(self, string: str) -> None:
+    def searchDatabase(self, string: str):
         self.proxy.setSearchString(string)
 
     def isComplete(self) -> bool:
         return len(self.table.selectedIndexes()) > 0
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
 
-    def accept(self) -> None:
+    def accept(self):
         idx = self.table.selectedIndexes()
         self.densitySelected.emit(float(self.proxy.data(idx[3])))
         self.formulaSelected.emit(self.proxy.data(idx[0]))

@@ -74,7 +74,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(self.isComplete())
 
@@ -84,7 +84,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
             and self.data_size.hasAcceptableInput()
         )
 
-    def threadComplete(self) -> None:
+    def threadComplete(self):
         if self.aborted:
             return
 
@@ -95,7 +95,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
 
     def threadFailed(
         self, etype: type, value: BaseException, tb: TracebackType | None = None
-    ) -> None:
+    ):
         if self.aborted:
             return
 
@@ -104,13 +104,13 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         logger.exception("Screening exception", exc_info=(etype, value, tb))
         QtWidgets.QMessageBox.critical(self, "Screening Failed", str(value))
 
-    def setControlsEnabled(self, enabled: bool) -> None:
+    def setControlsEnabled(self, enabled: bool):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
         self.screening_ppm.setEnabled(enabled)
         self.data_size.setEnabled(enabled)
 
-    def abort(self) -> None:
+    def abort(self):
         self.aborted = True
         self.threadpool.clear()
         self.threadpool.waitForDone()
@@ -119,7 +119,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
 
         self.setControlsEnabled(True)
 
-    def accept(self) -> None:
+    def accept(self):
         def idx_screen_element(
             idx: int, x: np.ndarray, limit_kws: dict
         ) -> tuple[int, float]:
@@ -157,10 +157,10 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
             worker.signals.result.connect(self.appendResult)
             self.threadpool.start(worker)
 
-    def appendResult(self, result: tuple[int, float]) -> None:
+    def appendResult(self, result: tuple[int, float]):
         self.results.append(result)
 
-    def finalise(self) -> None:
+    def finalise(self):
         if not self.threadpool.waitForDone(1000):
             logger.warning("could not remove all threads at finalise")
         self.running = False
@@ -175,7 +175,7 @@ class NonTargetScreeningDialog(QtWidgets.QDialog):
         self.results.clear()
         super().accept()
 
-    def reject(self) -> None:
+    def reject(self):
         if self.running:
             self.abort()
             self.results.clear()

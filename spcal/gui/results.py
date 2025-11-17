@@ -354,7 +354,7 @@ class ResultsWidget(QtWidgets.QWidget):
     def colorForName(self, name: str) -> QtGui.QColor:
         return self.sample.colorForName(name)
 
-    def updateNames(self, names: dict[str, str]) -> None:
+    def updateNames(self, names: dict[str, str]):
         for old, new in names.items():
             if old == new:  # pragma: no cover
                 continue
@@ -377,56 +377,56 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def setFilters(
         self, filters: list[list[Filter]], cluster_filters: list[ClusterFilter]
-    ) -> None:
+    ):
         self.filters = filters
         self.cluster_filters = cluster_filters
         self.updateResults()
 
-    def setCompDistance(self, distance: float) -> None:
+    def setCompDistance(self, distance: float):
         self.graph_options["composition"]["distance"] = distance
         self._clusters = None
         self.drawGraphCompositions()
 
-    def setCompMode(self, mode: str) -> None:
+    def setCompMode(self, mode: str):
         self.graph_options["composition"]["mode"] = mode
         self.drawGraphCompositions()
 
-    def setCompSize(self, size: float | str) -> None:
+    def setCompSize(self, size: float | str):
         self.graph_options["composition"]["minimum size"] = size
         self.drawGraphCompositions()
 
-    def setGraphFont(self, font: QtGui.QFont) -> None:
+    def setGraphFont(self, font: QtGui.QFont):
         self.graph_composition.setFont(font)
         self.graph_hist.setFont(font)
         self.graph_pca.setFont(font)
         self.graph_stack.setFont(font)
         self.redraw()  # fixes legend
 
-    def setHistDrawMode(self, mode: str) -> None:
+    def setHistDrawMode(self, mode: str):
         self.graph_options["histogram"]["mode"] = mode
         self.drawGraphHist()
 
-    def setHistBinWidths(self, widths: dict[str, float | None]) -> None:
+    def setHistBinWidths(self, widths: dict[str, float | None]):
         self.graph_options["histogram"]["bin widths"].update(widths)
         self.drawGraphHist()
 
-    def setHistFit(self, fit: str | None) -> None:
+    def setHistFit(self, fit: str | None):
         self.graph_options["histogram"]["fit"] = fit or None  # for fit == ''
         self.drawGraphHist()
 
-    def setHistPercentile(self, p: float) -> None:
+    def setHistPercentile(self, p: float):
         self.graph_options["histogram"]["percentile"] = p
         self.drawGraphHist()
 
-    def setHistDrawFiltered(self, show: bool) -> None:
+    def setHistDrawFiltered(self, show: bool):
         self.graph_options["histogram"]["draw filtered"] = show
         self.drawGraphHist()
 
-    def setScatterWeighting(self, weighting: str) -> None:
+    def setScatterWeighting(self, weighting: str):
         self.graph_options["scatter"]["weighting"] = weighting
         self.drawGraphScatter()
 
-    def setScatterDrawFiltered(self, show: bool) -> None:
+    def setScatterDrawFiltered(self, show: bool):
         self.graph_options["scatter"]["draw filtered"] = show
         self.drawGraphScatter()
 
@@ -490,14 +490,14 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.open()
         return dlg
 
-    # def dialogexport_single_particle_results(self) -> None:
+    # def dialogexport_single_particle_results(self):
     #     file, _ = QtWidgets.QFileDialog.getSaveFileName(
     #         self, "Export Image", "", "PNG Images (*.png)"
     #     )
     #     # if file != "":
     #     #     self.chartview.saveToFile(file)
 
-    def dialogFilterDetections(self) -> None:
+    def dialogFilterDetections(self):
         # if len(self.clusters) > 0:
         #     max_idx = np.amax([idx.max() for idx in self.clusters.values()])
         # else:
@@ -513,7 +513,7 @@ class ResultsWidget(QtWidgets.QWidget):
         dlg.open()
 
     # Plotting
-    def drawIfRequired(self, graph: str | None = None) -> None:
+    def drawIfRequired(self, graph: str | None = None):
         if graph is None:
             w = self.graph_stack.widget(self.graph_stack.currentIndex())
             if w == self.graph_hist:
@@ -540,12 +540,12 @@ class ResultsWidget(QtWidgets.QWidget):
                 ValueError(f"unkown graph type '{graph}'")
             self.redraw_required[graph] = False
 
-    def redraw(self) -> None:
+    def redraw(self):
         for k in self.redraw_required.keys():
             self.redraw_required[k] = True
         self.drawIfRequired()
 
-    def drawGraphHist(self) -> None:
+    def drawGraphHist(self):
         self.graph_hist.clear()
         is_single = self.graph_options["histogram"]["mode"] == "single"
         mode = self.io.mode.currentText()
@@ -568,10 +568,10 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_hist.setDataLimits(xMax=1.0)
         self.graph_hist.zoomReset()
 
-    def dialogExportGraphHistImage(self) -> None:
+    def dialogExportGraphHistImage(self):
         from spcal.gui.dialogs.imageexport import ImageExportDialog
 
-        def get_path_and_export(size: QtCore.QSize, dpi: int, options: dict) -> None:
+        def get_path_and_export(size: QtCore.QSize, dpi: int, options: dict):
             path = Path(self.sample.import_options["path"])
             path = path.with_name(path.stem + "_hist.png")
             path, ok = QtWidgets.QFileDialog.getSaveFileName(
@@ -613,7 +613,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
     def exportGraphHistImage(
         self, path: Path, size: QtCore.QSize, dpi: float, options: dict[str, bool]
-    ) -> None:
+    ):
         assert self.graph_hist.plot.vb is not None
         dpi_scale = dpi / 96.0
         xrange, yrange = self.graph_hist.plot.vb.viewRange()
@@ -659,7 +659,7 @@ class ResultsWidget(QtWidgets.QWidget):
             background = QtCore.Qt.GlobalColor.white
         graph.exportImage(path, background=background)
 
-    def drawGraphCompositions(self) -> None:
+    def drawGraphCompositions(self):
         # composition view
         self.graph_composition.clear()
         mode = self.io.mode.currentText()
@@ -686,7 +686,7 @@ class ResultsWidget(QtWidgets.QWidget):
             brushes=brushes,
         )
 
-    def drawGraphPCA(self) -> None:
+    def drawGraphPCA(self):
         self.graph_pca.clear()
 
         mode = self.io.mode.currentText()
@@ -717,7 +717,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.graph_pca.setDataLimits(xMin=-0.1, xMax=1.1, yMin=-0.1, yMax=1.1)
         self.graph_pca.zoomReset()
 
-    def drawGraphScatter(self) -> None:
+    def drawGraphScatter(self):
         self.graph_scatter.clear()
 
         # Set the elements
@@ -770,7 +770,7 @@ class ResultsWidget(QtWidgets.QWidget):
 
         self.graph_scatter.zoomReset()
 
-    def graphZoomReset(self) -> None:
+    def graphZoomReset(self):
         widget = self.graph_stack.currentWidget()
         if hasattr(widget, "zoomReset"):
             widget.zoomReset()  # type: ignore , tested with hasattr
@@ -790,11 +790,11 @@ class ResultsWidget(QtWidgets.QWidget):
             return False
         return True
 
-    def updateGraphsForName(self, name: str) -> None:
+    def updateGraphsForName(self, name: str):
         if self.graph_options["histogram"]["mode"] == "single":
             self.drawGraphHist()
 
-    def updateScatterElements(self) -> None:
+    def updateScatterElements(self):
         mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
@@ -813,7 +813,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 combo.setCurrentIndex(i)
             combo.blockSignals(False)
 
-    def updatePCAElements(self) -> None:
+    def updatePCAElements(self):
         mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
 
@@ -830,7 +830,7 @@ class ResultsWidget(QtWidgets.QWidget):
             self.combo_pca_colour.setCurrentIndex(0)
         self.combo_pca_colour.blockSignals(False)
 
-    def updateOutputs(self) -> None:
+    def updateOutputs(self):
         mode = self.io.mode.currentText()
         key = self.mode_keys[mode]
         units = self.mode_units[mode]
@@ -863,7 +863,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 background_error=result.background / result.background_error,
             )
 
-    def filterResults(self) -> None:
+    def filterResults(self):
         """Filters the current results.
 
         Filters are slected in the ``spcal.gui.dialogs.FilterDialog``. Filters are
@@ -883,7 +883,7 @@ class ResultsWidget(QtWidgets.QWidget):
                 indicies, filter_indicies, assume_unique=True
             )
 
-    def filterClusters(self) -> None:
+    def filterClusters(self):
         if len(self.cluster_filters) == 0:
             return
 
@@ -901,7 +901,7 @@ class ResultsWidget(QtWidgets.QWidget):
         # for key in self.clusters.keys():
         #     self._clusters[key] = self._clusters[key][filter_indicies]
 
-    def updateResults(self) -> None:
+    def updateResults(self):
         method = self.options.efficiency_method.currentText()
 
         self.results.clear()
@@ -962,7 +962,7 @@ class ResultsWidget(QtWidgets.QWidget):
         self.redraw()
         self.update_required = False
 
-    def updateEnabledItems(self) -> None:
+    def updateEnabledItems(self):
         # Only enable modes that have data
         for key, index in zip(
             ["mass", "size", "volume"], [1, 2, 3, 4]
@@ -1007,13 +1007,13 @@ class ResultsWidget(QtWidgets.QWidget):
 
         return best_units
 
-    def requestUpdate(self) -> None:
+    def requestUpdate(self):
         self.update_required = True
 
     def isUpdateRequired(self) -> bool:
         return self.update_required
 
-    def resetInputs(self) -> None:
+    def resetInputs(self):
         self.filters.clear()
         self.cluster_filters.clear()
         self.results.clear()

@@ -113,7 +113,7 @@ class ResponseDialog(QtWidgets.QDialog):
                 return True
         return False
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
             self.isComplete()
         )
@@ -121,7 +121,7 @@ class ResponseDialog(QtWidgets.QDialog):
             self.isComplete()
         )
 
-    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+    def dropEvent(self, event: QtGui.QDropEvent):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
                 path = Path(url.toLocalFile())
@@ -159,7 +159,7 @@ class ResponseDialog(QtWidgets.QDialog):
                 dlg.open()
         return dlg
 
-    def loadData(self, data: np.ndarray, options: dict) -> None:
+    def loadData(self, data: np.ndarray, options: dict):
         # Check the new data is compatible with current loaded
         if self.model.array.size == 0:
             self.model.beginResetModel()
@@ -205,7 +205,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.updateResponses()
 
-    def updateResponses(self) -> None:
+    def updateResponses(self):
         if self.responses.dtype.names is None:  # pragma: no cover
             return
 
@@ -216,7 +216,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.updateCalibration()
 
-    def updateCalibration(self) -> None:
+    def updateCalibration(self):
         self.graph_cal.clear()
         if self.responses.dtype.names is None:  # pragma: no cover
             return
@@ -232,7 +232,7 @@ class ResponseDialog(QtWidgets.QDialog):
             brush = QtGui.QBrush(scheme[i % len(scheme)])
             self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
 
-    def dialogSaveToFile(self) -> None:
+    def dialogSaveToFile(self):
         assert self.import_options is not None
         dir = self.import_options["path"].parent
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -242,7 +242,7 @@ class ResponseDialog(QtWidgets.QDialog):
             return
         self.saveToFile(Path(file))
 
-    def saveToFile(self, path: Path) -> None:
+    def saveToFile(self, path: Path):
         assert self.responses.dtype.names is not None
         names = [  # remove any unpopulated names
             name
@@ -252,7 +252,7 @@ class ResponseDialog(QtWidgets.QDialog):
         nlevels = len(self.model.array)
         factor = mass_concentration_units[self.combo_unit.currentText()]
 
-        def write_cal_levels(fp, name: str) -> None:
+        def write_cal_levels(fp, name: str):
             fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
 
         with path.open("w") as fp:
@@ -285,7 +285,7 @@ class ResponseDialog(QtWidgets.QDialog):
                     + "\n"
                 )
 
-    def dialogLoadFromFile(self) -> None:
+    def dialogLoadFromFile(self):
         if self.import_options is not None:
             dir = self.import_options["path"].parent
         else:
@@ -297,7 +297,7 @@ class ResponseDialog(QtWidgets.QDialog):
             return
         self.loadFromFile(Path(file))
 
-    def loadFromFile(self, path: Path) -> None:
+    def loadFromFile(self, path: Path):
         factor = mass_concentration_units[self.combo_unit.currentText()]
 
         concs = {}
@@ -347,7 +347,7 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             return weighted_linreg(x, y)
 
-    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
+    def buttonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
         if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
@@ -358,7 +358,7 @@ class ResponseDialog(QtWidgets.QDialog):
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
-    def accept(self) -> None:
+    def accept(self):
         assert self.responses.dtype.names is not None
 
         responses = {}
@@ -371,7 +371,7 @@ class ResponseDialog(QtWidgets.QDialog):
             self.responsesSelected.emit(responses)
         super().accept()
 
-    def reset(self) -> None:
+    def reset(self):
         data = np.array([], dtype=[("<element>", np.float64)])
         self.model.beginResetModel()
         self.model.array = np.full(1, np.nan, dtype=data.dtype)

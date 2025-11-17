@@ -16,7 +16,7 @@ class StaticRectItemSample(pyqtgraph.GraphicsWidget):
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.save()
         painter.setBrush(self.brush)
         painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
@@ -109,7 +109,7 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.setRenderHint(painter.RenderHint.Antialiasing)
 
         offset = 0.0
@@ -188,11 +188,11 @@ class HistogramItemSample(pyqtgraph.ItemSample):
         path.addRect(QtCore.QRectF(x0 + 2.0 * dx, y0, dx, h))
         return path
 
-    def addLimit(self, limit: pyqtgraph.InfiniteLine) -> None:
+    def addLimit(self, limit: pyqtgraph.InfiniteLine):
         self.item_limits.append(limit)
         self.prepareGeometryChange()
 
-    def setFit(self, fit: pyqtgraph.PlotCurveItem | None) -> None:
+    def setFit(self, fit: pyqtgraph.PlotCurveItem | None):
         self.item_fit = fit
         self.prepareGeometryChange()
 
@@ -222,13 +222,13 @@ class MultipleItemSampleProxy(pyqtgraph.ItemSample):
         if items is not None:
             self.items.extend(items)
 
-    def setItemsVisible(self, visible: bool) -> None:
+    def setItemsVisible(self, visible: bool):
         self.item.setVisible(visible)
         for item in self.items:
             item.setVisible(visible)
         self.update()
 
-    def addItem(self, item: pyqtgraph.PlotDataItem) -> None:
+    def addItem(self, item: pyqtgraph.PlotDataItem):
         self.items.append(item)
         item.setVisible(self.item.isVisible())
         self.update()

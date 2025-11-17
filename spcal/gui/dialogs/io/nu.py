@@ -184,7 +184,7 @@ class NuImportDialog(ImportDialogBase):
             s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
         }
 
-    def updateTableIsotopes(self) -> None:
+    def updateTableIsotopes(self):
         natural_isotopes = [
             iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
         ]
@@ -202,12 +202,12 @@ class NuImportDialog(ImportDialogBase):
     def isComplete(self) -> bool:
         return self.table.selectedIsotopes() is not None
 
-    def setControlsEnabled(self, enabled: bool) -> None:
+    def setControlsEnabled(self, enabled: bool):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
 
-    def accept(self) -> None:
+    def accept(self):
         self.setControlsEnabled(False)
         self.progress.setValue(0)
 
@@ -228,7 +228,7 @@ class NuImportDialog(ImportDialogBase):
         self.import_thread.finished.connect(self.worker.deleteLater)
         self.import_thread.start()
 
-    def reject(self) -> None:
+    def reject(self):
         if self.import_thread.isRunning():
             self.import_thread.requestInterruption()
             self.import_thread.quit()

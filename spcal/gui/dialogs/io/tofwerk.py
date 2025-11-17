@@ -57,7 +57,7 @@ class TofwerkIntegrationThread(QtCore.QThread):
 
         self.tof_data = h5["FullSpectra"]["TofData"]
 
-    def run(self) -> None:
+    def run(self):
         data = np.empty(
             (*self.tof_data.shape[:-1], self.indicies.shape[0]),
             dtype=np.float32,
@@ -180,7 +180,7 @@ class TofwerkImportDialog(ImportDialogBase):
     #     data *= factor_extraction_to_acquisition(self.h5)
     #     return data
     #
-    # def screenData(self, idx: np.ndarray, ppm: np.ndarray) -> None:
+    # def screenData(self, idx: np.ndarray, ppm: np.ndarray):
     #     _isotopes, _ppm = [], []
     #     re_valid = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]\\+")
     #     for label, val in zip(self.peak_labels[idx], ppm):
@@ -204,19 +204,19 @@ class TofwerkImportDialog(ImportDialogBase):
 
     # def setImportOptions(
     #     self, options: dict, path: bool = False, dwelltime: bool = True
-    # ) -> None:
+    # ):
     #     super().setImportOptions(options, path, dwelltime)
     #     self.table.setSelectedIsotopes(options["isotopes"])
     #     self.combo_other_peaks.setCheckedItems(options["other peaks"])
     #
-    def setControlsEnabled(self, enabled: bool) -> None:
+    def setControlsEnabled(self, enabled: bool):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
         self.dwelltime.setEnabled(enabled)
         self.combo_other_peaks.setEnabled(enabled)
 
-    def accept(self) -> None:
+    def accept(self):
         isotopes = self.table.selectedIsotopes()
         assert isotopes is not None
         selected_labels = [f"[{i['Isotope']}{i['Symbol']}]+" for i in isotopes]
@@ -246,7 +246,7 @@ class TofwerkImportDialog(ImportDialogBase):
             data = self.h5["PeakData"]["PeakData"][..., self.selected_idx]  # type: ignore , works
             self.finalise(data)
 
-    def finalise(self, data: np.ndarray) -> None:
+    def finalise(self, data: np.ndarray):
         data *= factor_extraction_to_acquisition(self.h5)
         data = rfn.unstructured_to_structured(
             data.reshape(-1, data.shape[-1]), names=self.peak_labels[self.selected_idx]
@@ -260,7 +260,7 @@ class TofwerkImportDialog(ImportDialogBase):
         )
         super().accept()
 
-    def reject(self) -> None:
+    def reject(self):
         if self.import_thread is not None and self.import_thread.isRunning():
             self.import_thread.requestInterruption()
             self.progress.reset()

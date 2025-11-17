@@ -36,7 +36,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
         self.parser = Parser(variables)
         self.expr = ""
 
-    def calculate(self) -> None:
+    def calculate(self):
         try:
             self.expr = self.parser.parse(self.toPlainText())
         except ParserException:
@@ -46,10 +46,10 @@ class CalculatorFormula(QtWidgets.QTextEdit):
     def hasAcceptableInput(self) -> bool:
         return self.expr != ""
 
-    def revalidate(self) -> None:
+    def revalidate(self):
         self.setValid(self.hasAcceptableInput())
 
-    def setValid(self, valid: bool) -> None:
+    def setValid(self, valid: bool):
         palette = self.palette()
         if valid:
             color = self.base_color
@@ -58,7 +58,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
         palette.setColor(QtGui.QPalette.Base, color)
         self.setPalette(palette)
 
-    def setCompleter(self, completer: QtWidgets.QCompleter) -> None:
+    def setCompleter(self, completer: QtWidgets.QCompleter):
         """Set the completer used."""
         if self.completer is not None:
             self.completer.disconnect(self)
@@ -68,14 +68,14 @@ class CalculatorFormula(QtWidgets.QTextEdit):
         self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.completer.activated.connect(self.insertCompletion)
 
-    def insertCompletion(self, completion: str) -> None:
+    def insertCompletion(self, completion: str):
         tc = self.textCursor()
         for _ in range(len(self.completer.completionPrefix())):
             tc.deletePreviousChar()
         tc.insertText(completion)
         self.setTextCursor(tc)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
         if self.completer is not None and self.completer.popup().isVisible():
             if event.key() in [  # Ignore keys when popup is present
                 QtCore.Qt.Key_Enter,
@@ -119,7 +119,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
 class CalculatorExprList(QtWidgets.QListWidget):
     exprRemoved = QtCore.Signal(str)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
         if event.matches(QtGui.QKeySequence.StandardKey.Backspace) or event.matches(
             QtGui.QKeySequence.StandardKey.Delete
         ):
@@ -248,18 +248,18 @@ class CalculatorDialog(QtWidgets.QDialog):
             return False
         return True
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
             complete
         )
 
-    def removeExpr(self, expr: str) -> None:
+    def removeExpr(self, expr: str):
         name = next(k for k, v in self.current_expr.items() if v == expr)
         self.current_expr.pop(name)
         self.expressionRemoved.emit(name)
 
-    def accept(self) -> None:
+    def accept(self):
         new_name = (
             "{"
             + self.formula.toPlainText().translate(str.maketrans("", "", " \n\t"))
@@ -273,7 +273,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.completeChanged()
         # super().accept()
 
-    def initialise(self) -> None:
+    def initialise(self):
         self.combo_element.clear()
         self.combo_element.addItem("Elements")
         self.combo_element.addItems(self.names)
@@ -292,7 +292,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         for name, expr in self.current_expr.items():
             self.expressions.addItem(expr)
 
-    def insertFunction(self, index: int) -> None:
+    def insertFunction(self, index: int):
         if index == 0:
             return
         function = self.combo_function.itemText(index)
@@ -301,14 +301,14 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.combo_function.setCurrentIndex(0)
         self.formula.setFocus()
 
-    def insertVariable(self, index: int) -> None:
+    def insertVariable(self, index: int):
         if index == 0:
             return
         self.formula.insertPlainText(self.combo_element.itemText(index))
         self.combo_element.setCurrentIndex(0)
         self.formula.setFocus()
 
-    # def refresh(self) -> None:
+    # def refresh(self):
     #     self.reducer.variables = {
     #         name: self.sample.responses[name] for name in self.sample.names
     #     }

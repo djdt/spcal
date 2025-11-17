@@ -261,7 +261,7 @@ class SPCalNuDataFile(SPCalDataFile):
     def isotopes(self) -> list[SPCalIsotope]:
         return list(self.isotope_table.keys())
 
-    def generateIsotopeTable(self) -> None:
+    def generateIsotopeTable(self):
         """Creates a table of isotope names in format '123Ab' to indicies and isotope array."""
         natural_isotopes = [
             iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None

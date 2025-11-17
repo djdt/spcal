@@ -167,7 +167,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #     process_kws: dict,
 #     output_kws: dict,
 #     image_kws: dict,
-# ) -> None:
+# ):
 #     data = read_single_particle_file(
 #         path,
 #         delimiter=import_options["delimiter"],
@@ -249,7 +249,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #     process_kws: dict,
 #     output_kws: dict,
 #     image_kws: dict,
-# ) -> None:
+# ):
 #     masses, signals, info = read_directory(
 #         path,
 #         autoblank=import_options["blanking"],
@@ -286,7 +286,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #     process_kws: dict,
 #     output_kws: dict,
 #     image_kws: dict,
-# ) -> None:
+# ):
 #     with h5py.File(path, "r") as h5:
 #         peak_labels = h5["PeakData"]["PeakTable"]["label"].astype("U256")
 #     selected_labels = [
@@ -504,13 +504,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #
 #         self.setLayout(layout)
 #
-#     def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+#     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
 #         if event.mimeData().hasUrls():
 #             event.acceptProposedAction()
 #         else:  # pragma: no cover
 #             super().dragEnterEvent(event)
 #
-#     def dropEvent(self, event: QtGui.QDropEvent) -> None:
+#     def dropEvent(self, event: QtGui.QDropEvent):
 #         if event.mimeData().hasUrls():
 #             for url in event.mimeData().urls():
 #                 if is_spcal_path(url.toLocalFile()):
@@ -519,7 +519,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         else:
 #             super().dropEvent(event)
 #
-#     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+#     def keyPressEvent(self, event: QtGui.QKeyEvent):
 #         if event.key() in [QtCore.Qt.Key_Backspace, QtCore.Qt.Key_Delete]:
 #             items = self.files.selectedIndexes()
 #             for item in reversed(sorted(items)):
@@ -527,7 +527,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         else:
 #             super().keyPressEvent(event)
 #
-#     def completeChanged(self) -> None:
+#     def completeChanged(self):
 #         complete = self.isComplete()
 #         self.button_process.setEnabled(complete)
 #
@@ -543,8 +543,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #
 #         return True
 #
-#     def dialogImageExportOptions(self) -> None:
-#         def set_image_options(size: QtCore.QSize, dpi: int, options: dict) -> None:
+#     def dialogImageExportOptions(self):
+#         def set_image_options(size: QtCore.QSize, dpi: int, options: dict):
 #             self.image_options["size"] = size
 #             self.image_options["dpi"] = dpi
 #             self.image_options["options"] = options
@@ -558,12 +558,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         dlg.exportSettingsSelected.connect(set_image_options)
 #         dlg.exec()
 #
-#     def dialogLoadFiles(self) -> None:
+#     def dialogLoadFiles(self):
 #         paths = get_open_spcal_paths(self, "Batch Process Files")
 #         if len(paths) > 0:
 #             self.files.addItems([str(p) for p in paths])
 #
-#     def dialogOpenOutputDir(self) -> None:
+#     def dialogOpenOutputDir(self):
 #         dir = QtWidgets.QFileDialog.getExistingDirectory(
 #             self, "Output Directory", "", QtWidgets.QFileDialog.ShowDirsOnly
 #         )
@@ -583,13 +583,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #
 #         return outputs
 #
-#     def buttonProcess(self) -> None:
+#     def buttonProcess(self):
 #         if self.running:
 #             self.abort()
 #         else:
 #             self.start()
 #
-#     def abort(self) -> None:
+#     def abort(self):
 #         self.threadpool.clear()
 #         self.threadpool.waitForDone()
 #
@@ -603,7 +603,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #             self.summary_path.unlink()
 #             self.summary_path = None
 #
-#     def start(self) -> None:
+#     def start(self):
 #         infiles = [Path(self.files.item(i).text()) for i in range(self.files.count())]
 #         outfiles = self.outputsForFiles(infiles)
 #
@@ -762,7 +762,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         logger.info(f"Batch processing started for {len(infiles)} files.")
 #         self.processingStarted.emit()
 #
-#     def finalise(self) -> None:
+#     def finalise(self):
 #         self.threadpool.waitForDone()
 #         self.running = False
 #
@@ -772,7 +772,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #         logger.info("Batch processing complete.")
 #         self.processingFinshed.emit()
 #
-#     def workerComplete(self) -> None:
+#     def workerComplete(self):
 #         if self.aborted:
 #             return
 #
@@ -783,7 +783,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 #
 #     def workerFailed(
 #         self, etype: type, value: BaseException, tb: TracebackType | None = None
-#     ) -> None:
+#     ):
 #         if self.aborted:
 #             return
 #

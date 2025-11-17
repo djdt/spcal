@@ -42,11 +42,11 @@ class EnableTextDialog(QtWidgets.QDialog):
                 return True
         return False  # pragma: no cover
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
         button.setEnabled(self.isComplete())
 
-    def accept(self) -> None:
+    def accept(self):
         enabled = {}
         for i in range(self.texts.count()):
             enabled[self.texts.item(i).text()] = (
@@ -79,7 +79,7 @@ class EditableComboBox(QtWidgets.QComboBox):
 
         self.previous_name = ""
 
-    def saveCurrentName(self, index: int) -> None:
+    def saveCurrentName(self, index: int):
         self.previous_name = self.itemText(index)
 
     def editingFinished(self):
@@ -90,7 +90,7 @@ class EditableComboBox(QtWidgets.QComboBox):
 
     def contextMenuEvent(
         self, event: QtGui.QContextMenuEvent
-    ) -> None:  # pragma: no cover
+    ):  # pragma: no cover
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_enable_names)
         menu.popup(event.globalPos())
@@ -103,7 +103,7 @@ class EditableComboBox(QtWidgets.QComboBox):
         dlg.open()
         return dlg
 
-    def setEnabled(self, enabled: dict[str, bool]) -> None:
+    def setEnabled(self, enabled: dict[str, bool]):
         for text, state in enabled.items():
             i = self.findText(text)
             if i != -1:

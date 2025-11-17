@@ -61,7 +61,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-    def clear(self) -> None:
+    def clear(self):
         for i in range(3):
             for j in range(5):
                 item = self.table.item(i, j)
@@ -69,7 +69,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
                     raise ValueError("item is None")
                 item.setText("")
 
-    def updateValues(self) -> None:
+    def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
 
         if result.detections.size == 0:
