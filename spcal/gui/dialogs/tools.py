@@ -18,16 +18,16 @@ class FormulaValidator(QtGui.QValidator):
     def validate(self, input: str, _: int) -> QtGui.QValidator.State:
         iter = self.regex.globalMatch(input)
         if len(input) == 0:
-            return QtGui.QValidator.Acceptable
+            return QtGui.QValidator.State.Acceptable
         if not str.isalnum(input.replace(".", "")):
-            return QtGui.QValidator.Invalid
+            return QtGui.QValidator.State.Invalid
         if not iter.hasNext():  # no match
-            return QtGui.QValidator.Intermediate
+            return QtGui.QValidator.State.Intermediate
         while iter.hasNext():
             match = iter.next()
             if match.captured(1) not in db["elements"]["Symbol"]:
-                return QtGui.QValidator.Intermediate
-        return QtGui.QValidator.Acceptable
+                return QtGui.QValidator.State.Intermediate
+        return QtGui.QValidator.State.Acceptable
 
 
 class MassFractionCalculatorDialog(QtWidgets.QDialog):
@@ -56,7 +56,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.textedit_ratios.setFont(QtGui.QFont("Courier"))
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
 
         self.ratiosChanged.connect(self.updateLabels)
@@ -82,7 +82,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
 
     def completeChanged(self):
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(complete)
 
     def isComplete(self) -> bool:
         return len(self.ratios) > 0
@@ -138,7 +138,8 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.lineedit_search = QtWidgets.QLineEdit(formula)
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -155,14 +156,20 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
             QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
         )
         self.table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustToContentsOnFirstShow
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
         )
-        self.table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.table.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch
+            QtWidgets.QHeaderView.ResizeMode.Stretch
         )
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.table.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.table.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
+        )
         self.table.setModel(self.proxy)
         self.table.setColumnHidden(4, True)
 
@@ -190,7 +197,9 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
     def completeChanged(self):
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
 
     def accept(self):
         idx = self.table.selectedIndexes()
