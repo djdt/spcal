@@ -4,19 +4,29 @@ from typing import Any
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.headers import ComboHeaderView
-from spcal.gui.modelviews.units import UnitsTable, UnitsTableView
+from spcal.gui.modelviews.units import (
+    UnitsHeaderView,
+    UnitsModel,
+    UnitsTable,
+    UnitsTableView,
+)
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalIsotopeOptions
 from spcal.siunits import (
     density_units,
     response_units,
+    mass_concentration_units,
+    mass_units,
+    size_units,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class IsotopeOptionModel(QtCore.QAbstractTableModel):
+class IsotopeOptionModel(UnitsModel):
     COLUMNS = {
         0: "density",
         1: "response",
@@ -38,7 +48,19 @@ class IsotopeOptionModel(QtCore.QAbstractTableModel):
     IsotopeOptionRole = QtCore.Qt.ItemDataRole.UserRole + 1
 
     def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent)
+        super().__init__(parent=parent)
+
+        self.unit_labels = list(IsotopeOptionModel.LABELS)
+        self.current_unit = ["g/cm³", "L/µg", "", "nm", "µg/L", "ag"]
+        self.units = [
+            density_units,
+            response_units,
+            {},
+            size_units,
+            mass_concentration_units,
+            mass_units,
+        ]
+
         self.isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions] = {}
 
     def rowCount(
@@ -63,20 +85,6 @@ class IsotopeOptionModel(QtCore.QAbstractTableModel):
             flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
-    def headerData(
-        self,
-        section: int,
-        orientation: QtCore.Qt.Orientation,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ) -> Any:
-        print(role)
-        if role != QtCore.Qt.ItemDataRole.DisplayRole:
-            return super().headerData(section, orientation, role)
-        elif orientation == QtCore.Qt.Orientation.Horizontal:
-            return IsotopeOptionModel.LABELS[section]
-        else:
-            return str(list(self.isotope_options.keys())[section])
-
     def data(
         self,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
@@ -92,14 +100,15 @@ class IsotopeOptionModel(QtCore.QAbstractTableModel):
         elif role == IsotopeOptionModel.IsotopeOptionRole:
             return self.isotope_options[isotope]
         elif role in [
-            QtCore.Qt.ItemDataRole.DisplayRole,
-            QtCore.Qt.ItemDataRole.EditRole,
+            UnitsModel.BaseValueRole,
         ]:
             return getattr(
                 self.isotope_options[isotope], IsotopeOptionModel.COLUMNS[col]
             )
-        else:
+        elif role == UnitsModel.BaseErrorRole:
             return None
+        else:
+            return super().data(index, role)
 
     def setData(
         self,
@@ -122,17 +131,15 @@ class IsotopeOptionModel(QtCore.QAbstractTableModel):
             )
             self.dataChanged.emit(tl, br, [role])
             return True
-        elif role in [
-            QtCore.Qt.ItemDataRole.DisplayRole,
-            QtCore.Qt.ItemDataRole.EditRole,
-        ]:
+        elif role in [UnitsModel.BaseValueRole]:
             setattr(
                 self.isotope_options[isotope], IsotopeOptionModel.COLUMNS[col], value
             )
             self.dataChanged.emit(index, index, [role])
             return True
         else:
-            return False
+            self.dataChanged.emit(index, index, [role])
+            return super().setData(index, value, role)
 
 
 class IsotopeOptionTable(UnitsTableView):
@@ -205,12 +212,16 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         super().__init__(parent)
         self.setWindowTitle("Isotope Options")
 
-        self.table = IsotopeOptionTable()
         self.model = IsotopeOptionModel()
-        self.table.setModel(self.model)
-        self.table.setHorizontalHeader(
-            ComboHeaderView([("Density", density_units, "g/cm³", None)])
+        self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
+
+        self.table = BasicTableView()
+        self.table.setModel(self.model)
+        self.table.setHorizontalHeader(self.header)
+        self.table.setItemDelegate(ValueWidgetDelegate())
         # self.table.setSelectionMode(
         #     QtWidgets.QTableView.SelectionMode.ExtendedSelection
         # )
