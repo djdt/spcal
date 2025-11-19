@@ -22,21 +22,13 @@ logger = logging.getLogger(__name__)
 
 class IsotopeOptionModel(UnitsModel):
     COLUMNS = {
-        0: "density",
-        1: "response",
-        2: "mass_fraction",
-        3: "diameter",
-        4: "concentration",
-        5: "mass_response",
+        0: "Density",
+        1: "Response",
+        2: "Mass Fraction",
+        3: "Diameter",
+        4: "Concentration",
+        5: "Mass Response",
     }
-    LABELS = [
-        "Density",
-        "Response",
-        "Mass Fraction",
-        "Diameter",
-        "Concentration",
-        "Mass Response",
-    ]
 
     IsotopeRole = QtCore.Qt.ItemDataRole.UserRole
     IsotopeOptionRole = QtCore.Qt.ItemDataRole.UserRole + 1
@@ -44,7 +36,7 @@ class IsotopeOptionModel(UnitsModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
 
-        self.unit_labels = list(IsotopeOptionModel.LABELS)
+        self.unit_labels = list(IsotopeOptionModel.COLUMNS.values())
         self.current_unit = ["g/cm³", "L/µg", "", "nm", "µg/L", "ag"]
         self.units = [
             density_units,
@@ -75,7 +67,7 @@ class IsotopeOptionModel(UnitsModel):
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
         flags = super().flags(index)
-        if IsotopeOptionModel.COLUMNS[index.column()] != "mass_response":
+        if IsotopeOptionModel.COLUMNS[index.column()] != "Mass Response":
             flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
@@ -102,7 +94,7 @@ class IsotopeOptionModel(UnitsModel):
             return None
 
         isotope = list(self.isotope_options.keys())[index.row()]
-        col = index.column()
+        name = IsotopeOptionModel.COLUMNS[index.column()]
         if role == IsotopeOptionModel.IsotopeRole:
             return isotope
         elif role == IsotopeOptionModel.IsotopeOptionRole:
@@ -110,9 +102,20 @@ class IsotopeOptionModel(UnitsModel):
         elif role in [
             UnitsModel.BaseValueRole,
         ]:
-            return getattr(
-                self.isotope_options[isotope], IsotopeOptionModel.COLUMNS[col]
-            )
+            if name == "Density":
+                return self.isotope_options[isotope].density
+            elif name == "Response":
+                return self.isotope_options[isotope].response
+            elif name == "Mass Fraction":
+                return self.isotope_options[isotope].mass_fraction
+            elif name == "Diameter":
+                return self.isotope_options[isotope].diameter
+            elif name == "Concentration":
+                return self.isotope_options[isotope].concentration
+            elif name == "Mass Response":
+                return self.isotope_options[isotope].mass_response
+            else:
+                raise ValueError(f"unknown column name '{name}'")
         elif role == UnitsModel.BaseErrorRole:
             return None
         else:
@@ -164,11 +167,11 @@ class IsotopeOptionTable(BasicTableView):
 
         for col, name in self.isotope_model.COLUMNS.items():
             delegate = ValueWidgetDelegate()
-            if name == "mass_fraction":
+            if name == "Mass Fraction":
                 delegate.max = 1.0
                 delegate.step = 0.1
             self.setItemDelegateForColumn(col, delegate)
-            if name in ["diameter", "concentration", "mass_response"]:
+            if name in ["Diameter", "Concentration", "Mass Response"]:
                 self.hideColumn(col)
 
     def isotope(self, row: int) -> SPCalIsotope:

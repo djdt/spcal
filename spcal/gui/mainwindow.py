@@ -366,7 +366,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
-            self.outputs.setIsotopes([])
             self.outputs.setResults({})
             self.graph.clear()
             return
@@ -376,7 +375,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.setIsotopes(data_file.selected_isotopes)
 
         self.toolbar.setIsotopes(data_file.selected_isotopes)
-        self.outputs.setIsotopes(data_file.selected_isotopes)
 
         method = self.currentMethod()
         for isotope in data_file.selected_isotopes:
@@ -444,6 +442,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
+        print(option)
         self.currentMethod().isotope_options[isotope] = option
 
         data_file = self.files.currentDataFile()

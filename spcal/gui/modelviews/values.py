@@ -4,7 +4,7 @@ from spcal.gui.widgets.values import ValueWidget
 
 
 class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
-    ErrorRole = QtCore.Qt.ItemDataRole.UserRole + 37
+    ErrorRole = QtCore.Qt.ItemDataRole.UserRole + 300
 
     def __init__(
         self,
