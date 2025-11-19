@@ -5,13 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.modelviews.basic import BasicTableView
-from spcal.gui.modelviews.headers import ComboHeaderView
-from spcal.gui.modelviews.units import (
-    UnitsHeaderView,
-    UnitsModel,
-    UnitsTable,
-    UnitsTableView,
-)
+from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalIsotopeOptions
@@ -85,6 +79,20 @@ class IsotopeOptionModel(UnitsModel):
             flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
+    def headerData(
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if orientation == QtCore.Qt.Orientation.Vertical:
+            if role in [
+                QtCore.Qt.ItemDataRole.DisplayRole,
+                QtCore.Qt.ItemDataRole.EditRole,
+            ]:
+                return str(list(self.isotope_options.keys())[section])
+        return super().headerData(section, orientation, role)
+
     def data(
         self,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
@@ -121,13 +129,14 @@ class IsotopeOptionModel(UnitsModel):
 
         isotope = list(self.isotope_options.keys())[index.row()]
         col = index.column()
+
         if role == IsotopeOptionModel.IsotopeRole:
             return False  # cannot set isotope
         elif role == IsotopeOptionModel.IsotopeOptionRole:
             self.isotope_options[isotope] = value
             tl, br = (
                 self.index(index.row(), 0),
-                self.index(index.row(), self.columnCount()),
+                self.index(index.row(), self.columnCount() - 1),
             )
             self.dataChanged.emit(tl, br, [role])
             return True
@@ -142,26 +151,42 @@ class IsotopeOptionModel(UnitsModel):
             return super().setData(index, value, role)
 
 
-class IsotopeOptionTable(UnitsTableView):
+class IsotopeOptionTable(BasicTableView):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(
-            [
-                ("Density", density_units, "g/cm³", None),
-                ("Response", response_units, "L/µg", None),
-                ("Mass Fraction", None, None, (0.0, 1.0)),
-            ],
-            parent=parent,
+        super().__init__(parent=parent)
+        self.isotope_model = IsotopeOptionModel()
+        self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.setModel(self.isotope_model)
+        self.setHorizontalHeader(self.header)
+
+        for col, name in self.isotope_model.COLUMNS.items():
+            delegate = ValueWidgetDelegate()
+            if name == "mass_fraction":
+                delegate.max = 1.0
+                delegate.step = 0.1
+            self.setItemDelegateForColumn(col, delegate)
+            if name in ["diameter", "concentration", "mass_response"]:
+                self.hideColumn(col)
+
+    def isotope(self, row: int) -> SPCalIsotope:
+        return self.isotope_model.data(
+            self.isotope_model.index(row, 0), role=IsotopeOptionModel.IsotopeRole
         )
 
+    def rowForIsotope(self, isotope: SPCalIsotope) -> int:
+        return list(self.isotope_model.isotope_options.keys()).index(isotope)
+
     def dialogParticleDatabase(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
+        def set_density(density: float | None):
+            if density is not None:
+                density /= 1000.0  # g/cm3 -> kg/m3
+            self.isotope_model.setData(index, density, UnitsModel.BaseValueRole)
+
         dlg = ParticleDatabaseDialog(parent=self)
-        dlg.densitySelected.connect(
-            lambda x: self.model().setData(
-                index,
-                x * 1000.0 / self.current_units[index.column()],
-                QtCore.Qt.ItemDataRole.EditRole,
-            )
-        )  # to current unit
+        dlg.densitySelected.connect(set_density)
         dlg.open()
         return dlg
 
@@ -169,8 +194,8 @@ class IsotopeOptionTable(UnitsTableView):
         self, index: QtCore.QModelIndex
     ) -> QtWidgets.QDialog:
         def set_major_ratio(ratios: list):
-            self.model().setData(
-                index, float(ratios[0][1]), QtCore.Qt.ItemDataRole.EditRole
+            self.isotope_model.setData(
+                index, float(ratios[0][1]), UnitsModel.BaseValueRole
             )
 
         dlg = MassFractionCalculatorDialog(parent=self)
@@ -212,91 +237,33 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         super().__init__(parent)
         self.setWindowTitle("Isotope Options")
 
-        self.model = IsotopeOptionModel()
-        self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
-        self.header.setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
-        )
-
-        self.table = BasicTableView()
-        self.table.setModel(self.model)
-        self.table.setHorizontalHeader(self.header)
-        self.table.setItemDelegate(ValueWidgetDelegate())
-        # self.table.setSelectionMode(
-        #     QtWidgets.QTableView.SelectionMode.ExtendedSelection
-        # )
-        # self.table.setSelectionBehavior(
-        #     QtWidgets.QTableView.SelectionBehavior.SelectRows
-        # )
-        # self.table.cellChanged.connect(
-        #     lambda r, c: self.optionChanged.emit(self.isotope(r))
-        # )
+        self.table = IsotopeOptionTable()
 
         self.setWidget(self.table)
 
-    def isotope(self, row: int) -> SPCalIsotope:
-        return self.model.data(
-            self.model.index(row, 0), role=IsotopeOptionModel.IsotopeRole
-        )
-
-    def rowForIsotope(self, isotope: SPCalIsotope) -> int:
-        return list(self.model.isotope_options.keys()).index(isotope)
-
     def asIsotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
-        # options = {}
-        return self.model.isotope_options
-        # for row in range(self.table.model().rowCount()):
-        #     options[self.isotope(row)] = SPCalIsotopeOptions(
-        #         self.table.baseValueForItem(row, 0),
-        #         self.table.baseValueForItem(row, 1),
-        #         self.table.baseValueForItem(row, 2),
-        #     )
-        # return options
+        return self.table.isotope_model.isotope_options
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
         self.table.blockSignals(True)
-        self.model.beginResetModel()
-        self.model.isotope_options = {
+        self.table.isotope_model.beginResetModel()
+        self.table.isotope_model.isotope_options = {
             isotope: SPCalIsotopeOptions(None, None, None) for isotope in isotopes
         }
-        self.model.endResetModel()
-        # self.table.setRowCount(len(isotopes))
-        # for i, iso in enumerate(isotopes):
-        #     item = QtWidgets.QTableWidgetItem(
-        #         str(iso), type=QtWidgets.QTableWidgetItem.ItemType.UserType
-        #     )
-        #     item.setData(QtCore.Qt.ItemDataRole.UserRole, iso)
-        #     self.table.setVerticalHeaderItem(i, item)
+        self.table.isotope_model.endResetModel()
         self.table.blockSignals(False)
 
     def setIsotopeOption(self, isotope: SPCalIsotope, option: SPCalIsotopeOptions):
-        self.model.setData(
-            self.model.index(self.rowForIsotope(isotope), 0),
+        self.table.isotope_model.setData(
+            self.table.isotope_model.index(self.table.rowForIsotope(isotope), 0),
             option,
             role=IsotopeOptionModel.IsotopeOptionRole,
         )
-        # for i in range(self.table.rowCount()):
-        #     if self.isotope(i) == isotope:
-        #         self.table.blockSignals(True)
-        #         self.table.setBaseValueForItem(i, 0, option.density)
-        #         self.table.setBaseValueForItem(i, 1, option.response)
-        #         self.table.setBaseValueForItem(i, 2, option.mass_fraction)
-        #         self.table.blockSignals(False)
-        #         return
-        # raise StopIteration
 
     def optionForIsotope(self, isotope: SPCalIsotope) -> SPCalIsotopeOptions:
-        return self.model.isotope_options[isotope]
-        # for i in range(self.table.rowCount()):
-        #     if self.isotope(i) == isotope:
-        #         return SPCalIsotopeOptions(
-        #             density=self.table.baseValueForItem(i, 0),
-        #             response=self.table.baseValueForItem(i, 1),
-        #             mass_fraction=self.table.baseValueForItem(i, 2),
-        #         )
-        # raise StopIteration
+        return self.table.isotope_model.isotope_options[isotope]
 
     def resetInputs(self):
         self.blockSignals(True)
-        self.setIsotopes(list(self.model.isotope_options.keys()))
+        self.setIsotopes(list(self.table.isotope_model.isotope_options.keys()))
         self.blockSignals(False)

@@ -5,16 +5,19 @@ from spcal.gui.widgets.values import ValueWidget
 
 class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
     ErrorRole = QtCore.Qt.ItemDataRole.UserRole + 37
+
     def __init__(
         self,
         sigfigs: int = 6,
         min: float = 0.0,
         max: float = 1e99,
+        step: float = 1.0,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent=parent)
         self.sigfigs = sigfigs
         self.min, self.max = min, max
+        self.step = step
 
     def setMin(self, min: float):
         self.min = min
@@ -32,7 +35,11 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ) -> QtWidgets.QWidget:
         editor = ValueWidget(
-            min=self.min, max=self.max, sigfigs=self.sigfigs, parent=parent
+            min=self.min,
+            max=self.max,
+            sigfigs=self.sigfigs,
+            step=self.step,
+            parent=parent,
         )
         return editor
 
