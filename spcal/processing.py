@@ -35,6 +35,12 @@ class SPCalInstrumentOptions(object):
         self.uptake = uptake
         self.efficiency = efficiency
 
+    def __repr__(self) -> str:
+        return (
+            f"SPCalInstrumentOptions(event_time={self.event_time}, uptake={self.uptake}, "
+            f"efficiency={self.efficiency})"
+        )
+
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
@@ -274,6 +280,9 @@ class SPCalProcessingResult(object):
         self.background_error = float(np.nanstd(signals[mask], mean=self.background))
 
         self._event_time: float | None = None  # cache
+
+    def __repr__(self) -> str:
+        return f"SPCalProcessingResult(number={self.number})"
 
     @property
     def num_events(self) -> int:
