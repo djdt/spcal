@@ -442,7 +442,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
         option = self.isotope_options.optionForIsotope(isotope)
-        print(option)
         self.currentMethod().isotope_options[isotope] = option
 
         data_file = self.files.currentDataFile()

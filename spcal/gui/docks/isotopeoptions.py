@@ -99,9 +99,7 @@ class IsotopeOptionModel(UnitsModel):
             return isotope
         elif role == IsotopeOptionModel.IsotopeOptionRole:
             return self.isotope_options[isotope]
-        elif role in [
-            UnitsModel.BaseValueRole,
-        ]:
+        elif role == UnitsModel.BaseValueRole:
             if name == "Density":
                 return self.isotope_options[isotope].density
             elif name == "Response":
@@ -131,7 +129,7 @@ class IsotopeOptionModel(UnitsModel):
             return False
 
         isotope = list(self.isotope_options.keys())[index.row()]
-        col = index.column()
+        name = IsotopeOptionModel.COLUMNS[index.column()]
 
         if role == IsotopeOptionModel.IsotopeRole:
             return False  # cannot set isotope
@@ -144,9 +142,20 @@ class IsotopeOptionModel(UnitsModel):
             self.dataChanged.emit(tl, br, [role])
             return True
         elif role in [UnitsModel.BaseValueRole]:
-            setattr(
-                self.isotope_options[isotope], IsotopeOptionModel.COLUMNS[col], value
-            )
+            if name == "Density":
+                self.isotope_options[isotope].density = value
+            elif name == "Response":
+                self.isotope_options[isotope].response = value
+            elif name == "Mass Fraction":
+                self.isotope_options[isotope].mass_fraction = value
+            elif name == "Diameter":
+                self.isotope_options[isotope].diameter = value
+            elif name == "Concentration":
+                self.isotope_options[isotope].concentration = value
+            elif name == "Mass Response":
+                self.isotope_options[isotope].mass_response = value
+            else:
+                raise ValueError(f"unknown column name '{name}'")
             self.dataChanged.emit(index, index, [role])
             return True
         else:
@@ -241,8 +250,12 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.setWindowTitle("Isotope Options")
 
         self.table = IsotopeOptionTable()
+        self.table.isotope_model.dataChanged.connect(self.onDataChanged)
 
         self.setWidget(self.table)
+
+    def onDataChanged(self, index: QtCore.QModelIndex):
+        self.optionChanged.emit(self.table.isotope_model.data(index, IsotopeOptionModel.IsotopeRole))
 
     def asIsotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
