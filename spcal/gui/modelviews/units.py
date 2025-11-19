@@ -110,12 +110,12 @@ class UnitsModel(QtCore.QAbstractTableModel):
         ]:
             base = self.data(index, UnitsModel.BaseValueRole)
             if base is not None:
-                base = float(base) * self.modifer(index)
+                base = float(base) / self.modifer(index)
             return base
         elif role == UnitsModel.ErrorRole:
             base = self.data(index, UnitsModel.BaseErrorRole)
             if base is not None:
-                base = float(base) * self.modifer(index)
+                base = float(base) / self.modifer(index)
             return base
 
     def setData(
@@ -139,11 +139,11 @@ class UnitsModel(QtCore.QAbstractTableModel):
             QtCore.Qt.ItemDataRole.EditRole,
         ]:
             if value is not None:
-                value = float(value) / self.modifer(index)
+                value = float(value) * self.modifer(index)
             return self.setData(index, value, UnitsModel.BaseValueRole)
         elif role == UnitsModel.ErrorRole:
             if value is not None:
-                value = float(value) / self.modifer(index)
+                value = float(value) * self.modifer(index)
             return self.setData(index, value, UnitsModel.BaseErrorRole)
         else:
             return False
