@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
 from spcal.isotope import SPCalIsotope
-from spcal.processing import SPCalProcessingFilter
+from spcal.processing.filter import SPCalProcessingFilter
 from spcal.result import ClusterFilter
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
 

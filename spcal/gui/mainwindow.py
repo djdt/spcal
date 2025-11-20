@@ -40,16 +40,12 @@ from spcal.io.session import restoreSession, saveSession
 from spcal.isotope import SPCalIsotope
 from spcal.processing import (
     SPCalIsotopeOptions,
-    SPCalProcessingFilter,
     SPCalProcessingMethod,
     SPCalProcessingResult,
-    SPCalTimeFilter,
 )
+from spcal.processing.filter import SPCalProcessingFilter
 
 logger = logging.getLogger(__name__)
-
-
-# todo : Timefilter can muck up the number concentration, time should be calculated excluding these regions
 
 
 class SPCalGraph(QtWidgets.QStackedWidget):
@@ -410,9 +406,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.graph.drawResultsParticle(
                 self.processing_results[data_file], isotopes, key
             )
-            for filter in self.currentMethod().filters[0]:
-                if isinstance(filter, SPCalTimeFilter):
-                    self.graph.particle.addExclusionRegion(filter.start, filter.end)
+            for start, end in self.currentMethod().exclusion_regions:
+                self.graph.particle.addExclusionRegion(start, end)
         elif view == "histogram":
             self.graph.drawResultsHistogram(
                 self.processing_results[data_file], isotopes, key
@@ -483,19 +478,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onExclusionRegionChanged(self):
         regions = self.graph.particle.exclusionRegions()
-        current_filters = self.currentMethod().filters
-        filters: list[SPCalProcessingFilter] = [
-            SPCalTimeFilter(r[0], r[1]) for r in regions
-        ]
-        filters.extend(
-            [
-                filter
-                for filter in self.currentMethod().filters[0]
-                if not isinstance(filter, SPCalTimeFilter)
-            ]
-        )
-        current_filters[0] = filters
-        self.currentMethod().setFilters(current_filters)
+        self.currentMethod().exclusion_regions = regions
         self.reprocess(self.files.currentDataFile())
 
     def reprocess(self, data_file: SPCalDataFile | None):
