@@ -145,7 +145,6 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         key: str,
     ):
         for i, (result, color) in enumerate(zip(results, colors)):
-            print(i, result)
             symbol = symbols[i % len(symbols)]
             pen = QtGui.QPen(color, 1.0 * self.devicePixelRatio())
             pen.setCosmetic(True)

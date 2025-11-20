@@ -199,12 +199,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_results.pop(data_file)
 
     def redraw(self):
-        print("redraw", flush=True)
         key = self.outputs.combo_key.currentText()
         view = self.graph.currentView()
         isotopes = self.toolbar.selectedIsotopes()
 
         self.graph.clear()
+
         if view == "composition":
             data_file = self.files.currentDataFile()
             clusters = self.clusters(data_file, key)
