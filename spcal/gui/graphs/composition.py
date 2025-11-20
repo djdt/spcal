@@ -8,7 +8,6 @@ from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import StaticRectItemSample
 from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.util import create_action
-from spcal.isotope import SPCalIsotope
 from spcal.processing import SPCalProcessingResult
 
 
@@ -86,7 +85,7 @@ class CompositionView(SinglePlotGraphicsView):
 
     def drawResults(
         self,
-        results: dict[SPCalIsotope, SPCalProcessingResult],
+        results: list[SPCalProcessingResult],
         clusters: np.ndarray,
         key: str = "signal",
         pen: QtGui.QPen | None = None,
@@ -98,14 +97,14 @@ class CompositionView(SinglePlotGraphicsView):
             np.amax(
                 [
                     result.peak_indicies[-1]
-                    for result in results.values()
+                    for result in results
                     if result.peak_indicies is not None
                 ]
             )
             + 1
         )
         peak_data = np.zeros((npeaks, len(results)), np.float32)
-        for i, result in enumerate(results.values()):
+        for i, result in enumerate(results):
             if result.peak_indicies is None:
                 raise ValueError(
                     "cannot cluster, peak_indicies have not been generated"
@@ -124,9 +123,9 @@ class CompositionView(SinglePlotGraphicsView):
         X = prepare_data_for_clustering(peak_data)
         means, stds, counts = cluster_information(X, clusters[valid])
         self.data_for_export["count"] = counts
-        for i, isotope in enumerate(results.keys()):
-            self.data_for_export[str(isotope) + "_mean"] = means[:, i]
-            self.data_for_export[str(isotope) + "_std"] = stds[:, i]
+        for i, result in enumerate(results):
+            self.data_for_export[str(result.isotope) + "_mean"] = means[:, i]
+            self.data_for_export[str(result.isotope) + "_std"] = stds[:, i]
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
             min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0
@@ -153,7 +152,7 @@ class CompositionView(SinglePlotGraphicsView):
                     radius,
                     comp,
                     brushes,
-                    labels=[str(result.isotope) for result in results.values()],
+                    labels=[str(result.isotope) for result in results],
                     font=self.font(),
                 )
                 item.setPos(i * spacing, -size)
@@ -179,7 +178,7 @@ class CompositionView(SinglePlotGraphicsView):
                     width,
                     comp,
                     brushes,
-                    labels=[str(result.isotope) for result in results.values()],
+                    labels=[str(result.isotope) for result in results],
                     font=self.font(),
                 )
                 item.setPos(i * spacing - width / 2.0, -height)
@@ -205,8 +204,8 @@ class CompositionView(SinglePlotGraphicsView):
 
         # Add legend for each pie
         if self.plot.legend is not None:
-            for isotope, brush in zip(results.keys(), brushes):
-                self.plot.legend.addItem(StaticRectItemSample(brush), str(isotope))
+            for result, brush in zip(results, brushes):
+                self.plot.legend.addItem(StaticRectItemSample(brush), str(result.isotope))
 
     def zoomReset(self):  # No plotdata
         if self.plot.vb is not None:
