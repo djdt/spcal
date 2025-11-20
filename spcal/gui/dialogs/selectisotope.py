@@ -3,31 +3,32 @@ from PySide6 import QtCore, QtWidgets
 from spcal.datafile import SPCalDataFile
 from spcal.gui.widgets import PeriodicTableSelector
 from spcal.processing import SPCalProcessingMethod
+from spcal.gui.graphs import viridis_32
 
 
 class ScreeningOptionsDialog(QtWidgets.QDialog):
     screeningOptionsSelected = QtCore.Signal(float, int)
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(self, ppm: int, size: int, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Screening Options")
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
         )
 
         self.screening_ppm = QtWidgets.QSpinBox()
-        self.screening_ppm.setRange(0, 999999)
-        self.screening_ppm.setValue(100)
-        self.screening_ppm.setSingleStep(10)
+        self.screening_ppm.setRange(1, 999999)
+        self.screening_ppm.setValue(ppm)
+        self.screening_ppm.setSingleStep(100)
         self.screening_ppm.setSuffix(" ppm")
         self.screening_ppm.setToolTip(
             "The number of detection (as particles per million events) required to pass the screen."
         )
 
         self.screening_size = QtWidgets.QSpinBox()
-        self.screening_size.setRange(0, 100000000)
-        self.screening_size.setValue(1000000)
+        self.screening_size.setRange(1, 100000000)
+        self.screening_size.setValue(size)
         self.screening_size.setSingleStep(100000)
         self.screening_size.setToolTip(
             "Number of events to screen, a larger number takes longer."
@@ -47,10 +48,11 @@ class ScreeningOptionsDialog(QtWidgets.QDialog):
         layout.addLayout(form_layout, 1)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
+        self.resize(300, 160)
 
     def accept(self):
         self.screeningOptionsSelected.emit(
-            float(self.screening_ppm.value()), self.screening_size.value()
+            self.screening_ppm.value(), self.screening_size.value()
         )
         super().accept()
 
@@ -69,6 +71,8 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
 
         self.data_file = data_file
         self.screening_method = screening_method
+        self.screening_ppm = 1000
+        self.screening_size = 1000000
 
         self.table = PeriodicTableSelector(
             data_file.isotopes, data_file.selected_isotopes
@@ -93,15 +97,25 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
-    def screenDataFile(self, screening_target_ppm: float, screening_size: int):
+    def setScreeningParameters(self, ppm: int, size: int):
+        self.screening_ppm = ppm
+        self.screening_size = size
+
+    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
         results = self.screening_method.processDataFile(
             self.data_file, self.data_file.preferred_isotopes, max_size=screening_size
         )
         selected_isotopes = []
+        selected_numbers = []
         for isotope, result in results.items():
             if result.number > result.num_events * screening_target_ppm * 1e-6:
                 selected_isotopes.append(isotope)
+                selected_numbers.append(result.number)
+
+        nmax = max(selected_numbers)
+        colors = [viridis_32[int(n / nmax * 31)] for n in selected_numbers]
         self.table.setSelectedIsotopes(selected_isotopes)
+        self.table.setIsotopeColors(selected_isotopes, colors)
 
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
@@ -114,7 +128,8 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             self.reject()
 
     def dialogScreen(self):
-        dlg = ScreeningOptionsDialog()
+        dlg = ScreeningOptionsDialog(self.screening_ppm, self.screening_size)
+        dlg.screeningOptionsSelected.connect(self.setScreeningParameters)
         dlg.screeningOptionsSelected.connect(self.screenDataFile)
         dlg.exec()
 

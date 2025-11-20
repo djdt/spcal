@@ -331,7 +331,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         self.blockSignals(False)
         self.isotopesChanged.emit()
 
-    def setIsotopeColors(self, isotopes: np.ndarray, colors: list[QtGui.QColor]):
+    def setIsotopeColors(self, isotopes: list[SPCalIsotope], colors: list[QtGui.QColor]):
         """Set the indicator colors for ``isotopes`` to ``colors.
 
         Will change text to BrightText ColorRole if a dark color is used.
@@ -341,7 +341,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             button.indicator = None
 
         for isotope, color in zip(isotopes, colors):
-            self.buttons[isotope["Symbol"]].indicator = color
+            self.buttons[isotope.symbol].indicator = color
 
     def findCollisions(self):
         selected = self.selectedIsotopes()
