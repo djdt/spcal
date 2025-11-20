@@ -234,7 +234,7 @@ class SPCalCompoundPoissonLimit(SPCalLimit):
 
     def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
         lam = bn.nanmean(signals)
-        mu = np.log(lam) - 0.5 * self.sigma**2
+        mu = -0.5 * self.sigma**2
         return lam, float(
             compound_poisson_lognormal_quantile_lookup(
                 1.0 - self.alpha, lam, mu, self.sigma
