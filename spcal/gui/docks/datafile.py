@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtWidgets
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
+from spcal.processing import SPCalProcessingMethod
 
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
@@ -14,10 +15,13 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         super().__init__(parent)
         self.setWindowTitle("Open Data Files")
 
-        self.list = QtWidgets.QListView()
         self.model = DataFileModel()
         self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
         self.model.rowsAboutToBeRemoved.connect(self.onRowsRemoved)
+
+        self.screening_method: SPCalProcessingMethod | None = None
+
+        self.list = QtWidgets.QListView()
         self.list.setMouseTracking(True)
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
         self.list.setModel(self.model)
@@ -39,6 +43,10 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         return self.list.currentIndex().data(DataFileModel.DataFileRole)
 
     @QtCore.Slot()
+    def setScreeningMethod(self, method: SPCalProcessingMethod):
+        self.screening_method = method
+
+    @QtCore.Slot()
     def addDataFile(self, data_file: SPCalDataFile):
         self.model.beginInsertRows(
             QtCore.QModelIndex(), self.model.rowCount(), self.model.rowCount() + 1
@@ -52,7 +60,11 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         return self.model.data_files
 
     def dialogEditIsotopes(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
-        dlg = SelectIsotopesDialog(index.data(DataFileModel.DataFileRole), parent=self)
+        if self.screening_method is None:
+            raise ValueError("screening method has not been set")
+        dlg = SelectIsotopesDialog(
+            index.data(DataFileModel.DataFileRole), self.screening_method, parent=self
+        )
         dlg.isotopesSelected.connect(self.dataFileChanged)
         dlg.open()
         return dlg
