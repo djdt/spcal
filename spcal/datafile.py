@@ -8,7 +8,7 @@ from numpy.lib import recfunctions as rfn
 
 from spcal.calc import search_sorted_closest
 from spcal.io import nu, text, tofwerk
-from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
+from spcal.isotope import ISOTOPE_TABLE, RECOMMENDED_ISOTOPES, SPCalIsotope
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,12 @@ class SPCalDataFile(object):
 
     @property
     def preferred_isotopes(self) -> list[SPCalIsotope]:
-        return self.isotopes
+        return [
+            isotope
+            for isotope in self.isotopes
+            if isotope.symbol in RECOMMENDED_ISOTOPES
+            and RECOMMENDED_ISOTOPES[isotope.symbol] == isotope.isotope
+        ]
 
     @property
     def event_time(self) -> float:
