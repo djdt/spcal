@@ -143,6 +143,7 @@ class ResultOutputModel(UnitsModel):
         else:
             return super().data(index, role)
 
+
 class SPCalOutputsDock(QtWidgets.QDockWidget):
     keyChanged = QtCore.Signal(str)
 
@@ -174,31 +175,10 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         widget.setLayout(layout)
         self.setWidget(widget)
 
-    # def isotope(self, row: int) -> SPCalIsotope:
-    #     return self.table.verticalHeaderItem(row).data(QtCore.Qt.ItemDataRole.UserRole)
-    #
-    # def row(self, isotope: SPCalIsotope) -> int:
-    #     for row in range(self.table.rowCount()):
-    #         if self.isotope(row) == isotope:
-    #             return row
-    #     raise StopIteration
-
-    # def setIsotopes(self, isotopes: list[SPCalIsotope]):
-    #     self.table.blockSignals(True)
-    #     self.table.setRowCount(len(isotopes))
-    #     for i, iso in enumerate(isotopes):
-    #         item = QtWidgets.QTableWidgetItem(
-    #             str(iso), type=QtWidgets.QTableWidgetItem.ItemType.UserType
-    #         )
-    #         item.setData(QtCore.Qt.ItemDataRole.UserRole, iso)
-    #         self.table.setVerticalHeaderItem(i, item)
-    #     self.table.blockSignals(False)
-
     def setResults(self, results: dict[SPCalIsotope, SPCalProcessingResult]):
         self.model.beginResetModel()
         self.model.results = results
         self.model.endResetModel()
-        # self.updateOutputsForKey(self.combo_key.currentText())
 
     def updateOutputsForKey(self, key: str):
         self.model.key = key
@@ -221,28 +201,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         elif key != "signal":
             raise ValueError(f"unknown key '{key}'")
 
+        orientation = self.header.orientation()
+        self.model.setHeaderData(1, orientation, conc_units, role=UnitsModel.UnitsRole)
         self.model.setHeaderData(
-            1,
-            QtCore.Qt.Orientation.Horizontal,
-            conc_units,
-            role=UnitsModel.UnitsRole,
+            1, orientation, default_conc_unit, role=UnitsModel.CurrentUnitRole
         )
-        self.model.setHeaderData(
-            1,
-            QtCore.Qt.Orientation.Horizontal,
-            default_conc_unit,
-            role=UnitsModel.CurrentUnitRole,
-        )
+
         for i in range(2, 6):
+            self.model.setHeaderData(i, orientation, units, role=UnitsModel.UnitsRole)
             self.model.setHeaderData(
-                i,
-                QtCore.Qt.Orientation.Horizontal,
-                units,
-                role=UnitsModel.UnitsRole,
-            )
-            self.model.setHeaderData(
-                i,
-                QtCore.Qt.Orientation.Horizontal,
-                default_unit,
-                role=UnitsModel.CurrentUnitRole,
+                i, orientation, default_unit, role=UnitsModel.CurrentUnitRole
             )
