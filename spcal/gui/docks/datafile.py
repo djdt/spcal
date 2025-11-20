@@ -15,18 +15,19 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         super().__init__(parent)
         self.setWindowTitle("Open Data Files")
 
+        self.screening_method: SPCalProcessingMethod | None = None
+
         self.model = DataFileModel()
         self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
         self.model.rowsAboutToBeRemoved.connect(self.onRowsRemoved)
 
-        self.screening_method: SPCalProcessingMethod | None = None
-
         self.list = QtWidgets.QListView()
         self.list.setMouseTracking(True)
-        self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.NoSelection)
+        self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.ExtendedSelection)
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
         self.list.selectionModel().currentChanged.connect(self.onCurrentIndexChanged)
+
         self.setWidget(self.list)
 
     def onCurrentIndexChanged(self, index: QtCore.QModelIndex):
@@ -36,6 +37,11 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             self.dataFileChanged.emit(None)
 
     def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
+        if first <= self.list.currentIndex().row() < last:
+            self.list.selectionModel().setCurrentIndex(
+                self.model.index(first - 1, 0),
+                QtCore.QItemSelectionModel.SelectionFlag.Current,
+            )
         for row in range(first, last):
             self.dataFileRemoved.emit(self.model.data_files[row])
 
@@ -55,6 +61,12 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.model.endInsertRows()
         self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
         self.dataFileAdded.emit(data_file)
+
+    def selectedDataFiles(self) -> list[SPCalDataFile]:
+        return [
+            index.data(DataFileModel.DataFileRole)
+            for index in self.list.selectedIndexes()
+        ]
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files

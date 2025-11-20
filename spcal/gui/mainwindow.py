@@ -43,7 +43,6 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
-from spcal.processing.filter import SPCalProcessingFilter
 
 logger = logging.getLogger(__name__)
 
@@ -179,7 +178,6 @@ class SPCalGraph(QtWidgets.QStackedWidget):
         ]
         keys = list(results.keys())
 
-        start, end = np.inf, 0.0
         for i, isotope in enumerate(isotopes):
             color = QtGui.QColor(scheme[keys.index(isotope) % len(scheme)])
             symbol = symbols[keys.index(isotope) % len(symbols)]
@@ -194,11 +192,6 @@ class SPCalGraph(QtWidgets.QStackedWidget):
                 scatter_size=5.0 * np.sqrt(self.devicePixelRatio()),
                 scatter_symbol=symbol,
             )
-            start = min(start, results[isotope].times[0])
-            end = max(end, results[isotope].times[-1])
-
-        # for filter in filters:
-        # self.particle.drawRegion(start, end)
 
     def drawResultsComposition(
         self,
@@ -361,7 +354,21 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
 
+    def colorForIsotope(
+        self, isotope: SPCalIsotope, data_file: SPCalDataFile
+    ) -> QtGui.QColor:
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        idx = data_file.selected_isotopes.index(isotope)
+
+        data_files = self.files.dataFiles()
+        for i in range(0, data_files.index(data_file)):
+            idx += len(data_files[i].selected_isotopes)
+        return scheme[idx % len(scheme)]
+
     def updateForDataFile(self, data_file: SPCalDataFile | None):
+        print(data_file)
         if data_file is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
@@ -392,31 +399,29 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_results.pop(data_file)
 
     def redraw(self):
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
-
         key = self.outputs.combo_key.currentText()
         isotopes = self.toolbar.selectedIsotopes()
 
         view = self.graph.currentView()
 
         self.graph.clear()
-        if view == "particle":
-            self.graph.drawResultsParticle(
-                self.processing_results[data_file], isotopes, key
-            )
-            for start, end in self.currentMethod().exclusion_regions:
-                self.graph.particle.addExclusionRegion(start, end)
-        elif view == "histogram":
-            self.graph.drawResultsHistogram(
-                self.processing_results[data_file], isotopes, key
-            )
-        elif view == "composition":
-            clusters = self.clusters(data_file, key)
-            self.graph.drawResultsComposition(
-                self.processing_results[data_file], key, clusters
-            )
+        for data_file in self.files.dataFiles():
+            isotopes = data_file.selected_isotopes
+            if view == "particle":
+                self.graph.drawResultsParticle(
+                    self.processing_results[data_file], isotopes, key
+                )
+                for start, end in self.currentMethod().exclusion_regions:
+                    self.graph.particle.addExclusionRegion(start, end)
+            elif view == "histogram":
+                self.graph.drawResultsHistogram(
+                    self.processing_results[data_file], isotopes, key
+                )
+            elif view == "composition":
+                clusters = self.clusters(data_file, key)
+                self.graph.drawResultsComposition(
+                    self.processing_results[data_file], key, clusters
+                )
 
     def onClusterDistanceChanged(self, distance: float):
         method = self.currentMethod()
