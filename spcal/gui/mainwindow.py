@@ -254,6 +254,7 @@ class SPCalGraph(QtWidgets.QStackedWidget):
 
 class SPCalMainWindow(QtWidgets.QMainWindow):
     resultsChanged = QtCore.Signal(SPCalDataFile)
+    currentMethodChanged = QtCore.Signal(SPCalProcessingMethod)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -323,6 +324,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.resultsChanged.connect(self.onResultsChanged)
 
+        self.currentMethodChanged.connect(self.files.setScreeningMethod)
         self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileChanged.connect(self.updateForDataFile)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
@@ -359,6 +361,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ].processClusters(self.processing_results[data_file], key)
         return self.processing_clusters[data_file][key]
 
+    @QtCore.Slot()
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
 
@@ -379,11 +382,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
         for isotope in data_file.selected_isotopes:
             if isotope in method.isotope_options:
+                self.isotope_options.blockSignals(True)
                 self.isotope_options.setIsotopeOption(
                     isotope, self.currentMethod().isotope_options[isotope]
                 )
+                self.isotope_options.blockSignals(False)
             else:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
+        self.currentMethodChanged.emit(method)
         self.reprocess(data_file)
 
     def removeFileFromResults(self, data_file: SPCalDataFile):
@@ -421,6 +427,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
         if not np.isclose(method.cluster_distance, distance):
             method.cluster_distance = distance
+
+            self.currentMethodChanged.emit(method)
             self.reprocess(self.files.currentDataFile())
 
     def onInstrumentOptionsChanged(self):
@@ -429,8 +437,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.calibration_mode = (
             self.instrument_options.calibration_mode.currentText().lower()
         )
-        # todo: update not reprocess
-        self.reprocess(self.files.currentDataFile())
+
+        data_file = self.files.currentDataFile()
+        self.processing_results[data_file] = method.filterResults(
+            self.processing_results[data_file]
+        )
+        if data_file in self.processing_clusters:
+            self.processing_clusters[data_file].clear()
+
+        self.currentMethodChanged.emit(method)
+        self.resultsChanged.emit(data_file)
 
     def onLimitOptionsChanged(self):
         method = self.currentMethod()
@@ -438,6 +454,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.accumulation_method = self.limit_options.limit_accumulation
         method.points_required = self.limit_options.points_required
         method.prominence_required = self.limit_options.prominence_required
+
+        self.currentMethodChanged.emit(method)
         self.reprocess(self.files.currentDataFile())
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):

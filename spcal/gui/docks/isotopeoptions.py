@@ -255,19 +255,21 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.setWidget(self.table)
 
     def onDataChanged(self, index: QtCore.QModelIndex):
-        self.optionChanged.emit(self.table.isotope_model.data(index, IsotopeOptionModel.IsotopeRole))
+        self.optionChanged.emit(
+            self.table.isotope_model.data(index, IsotopeOptionModel.IsotopeRole)
+        )
 
     def asIsotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
-        self.table.blockSignals(True)
+        self.table.isotope_model.dataChanged.disconnect(self.onDataChanged)
         self.table.isotope_model.beginResetModel()
         self.table.isotope_model.isotope_options = {
             isotope: SPCalIsotopeOptions(None, None, None) for isotope in isotopes
         }
         self.table.isotope_model.endResetModel()
-        self.table.blockSignals(False)
+        self.table.isotope_model.dataChanged.connect(self.onDataChanged)
 
     def setIsotopeOption(self, isotope: SPCalIsotope, option: SPCalIsotopeOptions):
         self.table.isotope_model.setData(
@@ -280,6 +282,4 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         return self.table.isotope_model.isotope_options[isotope]
 
     def resetInputs(self):
-        self.blockSignals(True)
         self.setIsotopes(list(self.table.isotope_model.isotope_options.keys()))
-        self.blockSignals(False)
