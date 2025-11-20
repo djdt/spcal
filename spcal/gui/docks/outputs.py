@@ -140,6 +140,11 @@ class ResultOutputModel(UnitsModel):
                     val = np.std(result.calibrated("signal"))
                 return result.method.calibrateTo(float(val), self.key, isotope)
             return None
+        elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
+            if name == "LOD":
+                return f"{result.limit.name}: " + ", ".join(
+                    f"{k}={v:.4g}" for k, v in result.limit.parameters.items()
+                )
         else:
             return super().data(index, role)
 
