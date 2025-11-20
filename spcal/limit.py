@@ -41,7 +41,7 @@ class SPCalLimit(object):
                 "either mean_signal and detection_threshold or signals must be provided"
             )
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return (
             f"SPCalLimit({self.name}, mean={np.nanmean(self.mean_signal):.4g}, "
             f"threshold={np.nanmean(self.detection_threshold):.4g})"
