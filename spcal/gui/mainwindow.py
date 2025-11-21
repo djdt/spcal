@@ -112,8 +112,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resultsChanged.connect(self.onResultsChanged)
 
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
-        self.files.dataFileAdded.connect(self.updateRecentFiles)
-        self.files.dataFileChanged.connect(self.updateForDataFile)
+        self.files.dataFileAdded.connect(self.onDataFileAdded)
+        self.files.dataFileChanged.connect(self.onDataFileChanged)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
 
         self.outputs.keyChanged.connect(self.onKeyChanged)
@@ -158,17 +158,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         scheme = color_schemes[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
-        return scheme[0]
         idx = data_file.selected_isotopes.index(isotope)
 
         data_files = self.files.dataFiles()
         for i in range(0, data_files.index(data_file)):
             idx += len(data_files[i].selected_isotopes)
-        print(idx)
         return scheme[idx % len(scheme)]
 
-    def updateForDataFile(self, data_file: SPCalDataFile | None):
-        print(data_file)
+    def onDataFileAdded(self,data_file: SPCalDataFile):
+        self.reprocess(data_file)
+
+    def onDataFileChanged(self, data_file: SPCalDataFile | None):
         if data_file is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
@@ -193,7 +193,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             else:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.currentMethodChanged.emit(method)
-        self.reprocess(data_file)
+        self.redraw()
+        self.updateRecentFiles(data_file)
+        # self.reprocess(data_file)
 
     def removeFileFromResults(self, data_file: SPCalDataFile):
         self.processing_results.pop(data_file)
