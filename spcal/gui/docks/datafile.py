@@ -8,7 +8,8 @@ from spcal.processing import SPCalProcessingMethod
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
     dataFileAdded = QtCore.Signal(SPCalDataFile)
-    dataFileChanged = QtCore.Signal(SPCalDataFile)
+    currentDataFileChanged = QtCore.Signal(SPCalDataFile)
+    selectedDataFilesChanged = QtCore.Signal()
     dataFileRemoved = QtCore.Signal(SPCalDataFile)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -27,14 +28,17 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
         self.list.selectionModel().currentChanged.connect(self.onCurrentIndexChanged)
+        self.list.selectionModel().selectionChanged.connect(
+            self.selectedDataFilesChanged
+        )
 
         self.setWidget(self.list)
 
     def onCurrentIndexChanged(self, index: QtCore.QModelIndex):
         if index.isValid():
-            self.dataFileChanged.emit(index.data(DataFileModel.DataFileRole))
+            self.currentDataFileChanged.emit(index.data(DataFileModel.DataFileRole))
         else:
-            self.dataFileChanged.emit(None)
+            self.currentDataFileChanged.emit(None)
 
     def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
         if first <= self.list.currentIndex().row() < last:
@@ -59,8 +63,15 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         )
         self.model.data_files.append(data_file)
         self.model.endInsertRows()
-        self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
         self.dataFileAdded.emit(data_file)
+        self.list.selectionModel().select(
+            self.model.index(self.model.rowCount() - 1, 0),
+            QtCore.QItemSelectionModel.SelectionFlag.Current,
+        )
+        self.list.selectionModel().select(
+            self.model.index(self.model.rowCount() - 1, 0),
+            QtCore.QItemSelectionModel.SelectionFlag.Select,
+        )
 
     def selectedDataFiles(self) -> list[SPCalDataFile]:
         return [

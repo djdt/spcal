@@ -113,8 +113,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
         self.files.dataFileAdded.connect(self.onDataFileAdded)
-        self.files.dataFileChanged.connect(self.onDataFileChanged)
+        self.files.currentDataFileChanged.connect(self.onDataFileChanged)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
+        self.files.selectedDataFilesChanged.connect(self.redraw)
 
         self.outputs.keyChanged.connect(self.onKeyChanged)
 
@@ -165,8 +166,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             idx += len(data_files[i].selected_isotopes)
         return scheme[idx % len(scheme)]
 
-    def onDataFileAdded(self,data_file: SPCalDataFile):
+    def onDataFileAdded(self, data_file: SPCalDataFile):
         self.reprocess(data_file)
+        self.updateRecentFiles(data_file)
+        self.onDataFileChanged(data_file)
 
     def onDataFileChanged(self, data_file: SPCalDataFile | None):
         if data_file is None:
@@ -193,14 +196,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             else:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
         self.currentMethodChanged.emit(method)
-        self.redraw()
-        self.updateRecentFiles(data_file)
+        # self.redraw()
         # self.reprocess(data_file)
 
     def removeFileFromResults(self, data_file: SPCalDataFile):
         self.processing_results.pop(data_file)
 
     def redraw(self):
+        print('redraw')
         key = self.outputs.combo_key.currentText()
         view = self.graph.currentView()
         isotopes = self.toolbar.selectedIsotopes()
