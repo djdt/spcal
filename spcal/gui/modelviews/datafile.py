@@ -29,7 +29,10 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         option: QtWidgets.QStyleOptionViewItem,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ) -> bool:
-        if event.type() == QtCore.QEvent.Type.MouseButtonRelease:
+        if event.type() in [
+            QtCore.QEvent.Type.MouseButtonPress,
+            QtCore.QEvent.Type.MouseButtonRelease,
+        ]:
             assert isinstance(event, QtGui.QMouseEvent)
             style = (
                 option.widget.style()  # type: ignore
@@ -42,15 +45,19 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             pixmap = self.close_icon.pixmap(
                 style.pixelMetric(style.PixelMetric.PM_SmallIconSize)
             )
+
             close_rect = style.itemPixmapRect(frame, self.close_align, pixmap)
             if close_rect.contains(event.position().toPoint()):
-                index.model().removeRow(index.row())
+                if event.type() == QtCore.QEvent.Type.MouseButtonRelease:
+                    index.model().removeRow(index.row())
                 return True
+
             menu_rect = style.itemPixmapRect(frame, self.menu_align, pixmap)
             if menu_rect.contains(event.position().toPoint()):
-                model = index.model()
-                assert isinstance(model, DataFileModel)
-                model.editIsotopesRequested.emit(index)
+                if event.type() == QtCore.QEvent.Type.MouseButtonRelease:
+                    model = index.model()
+                    assert isinstance(model, DataFileModel)
+                    model.editIsotopesRequested.emit(index)
                 return True
         elif event.type() == QtCore.QEvent.Type.MouseMove:
             return True  # paint
