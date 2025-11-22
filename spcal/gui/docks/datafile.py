@@ -49,8 +49,12 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         for row in range(first, last):
             self.dataFileRemoved.emit(self.model.data_files[row])
 
-    def currentDataFile(self) -> SPCalDataFile:
-        return self.list.currentIndex().data(DataFileModel.DataFileRole)
+    def currentDataFile(self) -> SPCalDataFile | None:
+        index = self.list.currentIndex()
+        if index.isValid():
+            return self.list.currentIndex().data(DataFileModel.DataFileRole)
+        else:
+            return None
 
     @QtCore.Slot()
     def setScreeningMethod(self, method: SPCalProcessingMethod):
@@ -64,10 +68,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.model.data_files.append(data_file)
         self.model.endInsertRows()
         self.dataFileAdded.emit(data_file)
-        self.list.selectionModel().select(
-            self.model.index(self.model.rowCount() - 1, 0),
-            QtCore.QItemSelectionModel.SelectionFlag.Current,
-        )
+
+        self.list.setCurrentIndex(self.model.index(self.model.rowCount() - 1, 0))
         self.list.selectionModel().select(
             self.model.index(self.model.rowCount() - 1, 0),
             QtCore.QItemSelectionModel.SelectionFlag.Select,
@@ -88,6 +90,6 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg = SelectIsotopesDialog(
             index.data(DataFileModel.DataFileRole), self.screening_method, parent=self
         )
-        dlg.isotopesSelected.connect(self.dataFileChanged)
+        dlg.isotopesSelected.connect(self.currentDataFileChanged)
         dlg.open()
         return dlg

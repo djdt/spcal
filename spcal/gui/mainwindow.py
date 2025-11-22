@@ -203,7 +203,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_results.pop(data_file)
 
     def redraw(self):
-        print('redraw')
         key = self.outputs.combo_key.currentText()
         view = self.graph.currentView()
         isotopes = self.toolbar.selectedIsotopes()
@@ -212,6 +211,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         if view == "composition":
             data_file = self.files.currentDataFile()
+            if data_file is None:
+                return
             clusters = self.clusters(data_file, key)
             colors = [
                 self.colorForIsotope(isotope, data_file)
@@ -221,9 +222,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 list(self.processing_results[data_file].values()), colors, key, clusters
             )
         else:
+            files = self.files.selectedDataFiles()
+            if len(files) == 0:
+                current = self.files.currentDataFile()
+                files = [current] if current is not None else []
+
             drawable = []
             colors = []
-            for data_file in self.files.selectedDataFiles():
+            for data_file in files:
                 for isotope, result in self.processing_results[data_file].items():
                     if isotope in isotopes:
                         drawable.append(result)
