@@ -8,8 +8,7 @@ from spcal.processing import SPCalProcessingMethod
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
     dataFileAdded = QtCore.Signal(SPCalDataFile)
-    currentDataFileChanged = QtCore.Signal(SPCalDataFile)
-    selectedDataFilesChanged = QtCore.Signal()
+    dataFilesChanged = QtCore.Signal(SPCalDataFile, list)
     dataFileRemoved = QtCore.Signal(SPCalDataFile)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -27,18 +26,18 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.ExtendedSelection)
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
-        self.list.selectionModel().currentChanged.connect(self.onCurrentIndexChanged)
-        self.list.selectionModel().selectionChanged.connect(
-            self.selectedDataFilesChanged
+        self.list.selectionModel().currentChanged.connect(
+            self.onCurrentOrSelectionChanged
         )
-
+        self.list.selectionModel().selectionChanged.connect(
+            self.onCurrentOrSelectionChanged
+        )
         self.setWidget(self.list)
 
-    def onCurrentIndexChanged(self, index: QtCore.QModelIndex):
-        if index.isValid():
-            self.currentDataFileChanged.emit(index.data(DataFileModel.DataFileRole))
-        else:
-            self.currentDataFileChanged.emit(None)
+    def onCurrentOrSelectionChanged(self):
+        current = self.currentDataFile()
+        selected = self.selectedDataFiles()
+        self.dataFilesChanged.emit(current, selected)
 
     def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
         if first <= self.list.currentIndex().row() < last:
@@ -76,10 +75,14 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         )
 
     def selectedDataFiles(self) -> list[SPCalDataFile]:
-        return [
+        selected = [
             index.data(DataFileModel.DataFileRole)
             for index in self.list.selectedIndexes()
         ]
+        if len(selected) == 0:
+            current = self.currentDataFile()
+            return [current] if current is not None else []
+        return selected
 
     def dataFiles(self) -> list[SPCalDataFile]:
         return self.model.data_files
@@ -90,6 +93,6 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg = SelectIsotopesDialog(
             index.data(DataFileModel.DataFileRole), self.screening_method, parent=self
         )
-        dlg.isotopesSelected.connect(self.currentDataFileChanged)
+        dlg.isotopesSelected.connect(self.onCurrentOrSelectionChanged)
         dlg.open()
         return dlg
