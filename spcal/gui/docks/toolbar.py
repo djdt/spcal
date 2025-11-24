@@ -65,11 +65,14 @@ class SPCalToolBar(QtWidgets.QToolBar):
         self.combo_isotope.setEnabled(not checked)
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):
-        self.action_all_isotopes.setChecked(False)
-
         self.combo_isotope.blockSignals(True)
+        current = self.combo_isotope.currentIsotope()
+
         self.combo_isotope.clear()
         self.combo_isotope.addIsotopes(isotopes)
+        if current is not None:
+            self.combo_isotope.setCurrentIsotope(current)
+
         self.combo_isotope.blockSignals(False)
 
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)

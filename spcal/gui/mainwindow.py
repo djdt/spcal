@@ -180,29 +180,33 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.graph.clear()
             return
 
+        # Set the options to current
         self.instrument_options.event_time.setBaseValue(current.event_time)
         self.isotope_options.setIsotopes(current.selected_isotopes)
+
+        # Add any missing isotopes to method and isotope options
+        require_reprocess = False
+        method = self.currentMethod()
+        self.isotope_options.blockSignals(True)
+        for isotope in current.selected_isotopes:
+            if isotope not in method.isotope_options:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
+                require_reprocess = True
+            self.isotope_options.setIsotopeOption(
+                isotope, method.isotope_options[isotope]
+            )
+        self.isotope_options.blockSignals(False)
+
+        if require_reprocess or current not in self.processing_results:
+            self.reprocess(current)
+        self.currentMethodChanged.emit(method)
+
+        self.outputs.setResults(self.processing_results[current])
 
         all_isotopes = set()
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
         self.toolbar.setIsotopes(list(all_isotopes))
-
-        method = self.currentMethod()
-        for isotope in current.selected_isotopes:
-            if isotope in method.isotope_options:
-                self.isotope_options.blockSignals(True)
-                self.isotope_options.setIsotopeOption(
-                    isotope, self.currentMethod().isotope_options[isotope]
-                )
-                self.isotope_options.blockSignals(False)
-            else:
-                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
-        self.currentMethodChanged.emit(method)
-
-        if current not in self.processing_results:
-            self.reprocess(current)
-        self.outputs.setResults(self.processing_results[current])
 
         self.redraw()
 
