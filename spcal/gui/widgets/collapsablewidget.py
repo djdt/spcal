@@ -2,6 +2,7 @@ from PySide6 import QtCore, QtWidgets
 
 
 class CollapsableWidget(QtWidgets.QWidget):
+    collapsed = QtCore.Signal(bool)
     """A widget that can be hidden.
 
     Clicking on the widget will show and resize it.
@@ -25,23 +26,21 @@ class CollapsableWidget(QtWidgets.QWidget):
         )
         self.button.toggled.connect(self.setCollapsed)
 
-        self.widget: QtWidgets.QWidget | None = None
+        # self.widget: QtWidgets.QWidget | None = None
+        self.area = QtWidgets.QScrollArea()
+        self.area.hide()
+        self.area.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding,QtWidgets.QSizePolicy.Policy.MinimumExpanding)
+        self.area.setFrameStyle(QtWidgets.QFrame.Shape.NoFrame)
+        self.area.setWidgetResizable(True)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.button, 0, QtCore.Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(self.area)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
     def setWidget(self, widget: QtWidgets.QWidget):
-        layout = self.layout()
-        assert layout is not None
-
-        if self.widget is not None:
-            layout.removeWidget(widget)
-
-        self.widget = widget
-        layout.addWidget(widget)
-        self.widget.setVisible(not self.isCollapsed())
+        self.area.setWidget(widget)
 
     def isCollapsed(self) -> bool:
         return self.button.arrowType() != QtCore.Qt.ArrowType.DownArrow
@@ -52,5 +51,5 @@ class CollapsableWidget(QtWidgets.QWidget):
             if collapsed
             else QtCore.Qt.ArrowType.RightArrow
         )
-        if self.widget is not None:
-            self.widget.setVisible(collapsed)
+        self.area.setVisible(collapsed)
+        self.collapsed.emit(collapsed)

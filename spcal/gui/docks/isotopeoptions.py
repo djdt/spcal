@@ -173,6 +173,9 @@ class IsotopeOptionTable(BasicTableView):
         )
         self.setModel(self.isotope_model)
         self.setHorizontalHeader(self.header)
+        self.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+        )
 
         for col, name in self.isotope_model.COLUMNS.items():
             delegate = ValueWidgetDelegate()

@@ -255,6 +255,9 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Limit Options")
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Ignored
+        )
 
         settings = QtCore.QSettings()
         self.limit_accumulation = str(
@@ -348,19 +351,29 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         compound_collapse = CollapsableWidget("Compound Poisson Limit Options")
         compound_collapse.setWidget(self.compound)
 
-        layout = QtWidgets.QFormLayout()
+        layout = QtWidgets.QVBoxLayout()
 
-        layout.addRow("Window size:", layout_window_size)
-        layout.addRow("Method:", layout_method)
+        form_layout = QtWidgets.QFormLayout()
 
-        layout.addRow(gaussian_collapse)
-        layout.addRow(poisson_collapse)
-        layout.addRow(compound_collapse)
-        # layout.addStretch(1)
-        layout.addRow(self.button_advanced_options)
+        form_layout.addRow("Window size:", layout_window_size)
+        form_layout.addRow("Method:", layout_method)
+
+        layout.addLayout(form_layout, 0)
+
+        layout.addWidget(gaussian_collapse, 0)
+        layout.addWidget(poisson_collapse, 0)
+        layout.addWidget(compound_collapse, 0)
+
+        layout.addWidget(
+            self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        layout.addStretch(1)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setWidget(widget)
+
+    def shrink(self):
+        self.resize(self.widget().sizeHint())
 
     def asLimitOptions(self) -> SPCalLimitOptions:
         return SPCalLimitOptions(
