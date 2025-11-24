@@ -1,21 +1,77 @@
 import logging
 from importlib.metadata import version
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
+from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs import color_schemes
 from spcal.gui.graphs.calibration import CalibrationView
-from spcal.gui.graphs.response import ResponseView
+from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
-from spcal.gui.modelviews.models import NumpyRecArrayTableModel
+from spcal.isotope import SPCalIsotope
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
+
+
+class ResponseModel(QtCore.QAbstractTableModel):
+    def __init__(self, parent: QtCore.QObject | None = None):
+        super().__init__(parent)
+        self.data_files: list[SPCalDataFile] = []
+        self.isotopes: list[SPCalIsotope] = []
+        self.concetrations: list[float] = []
+
+    def columnCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
+        return len(self.isotopes) + 1
+
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
+        return len(self.data_files)
+
+    def flags(
+        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+    ) -> QtCore.Qt.ItemFlag:
+        flags = super().flags(index)
+        if index.isValid():
+            df = self.data_files[index.row()]
+            if self.isotopes[index.column() - 1] not in df.isotopes:
+                flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
+        if index.column() == 0:
+            flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+        return flags
+
+    def data(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
+    ) -> Any:
+        if not index.isValid():
+            return None
+        if role in [
+            QtCore.Qt.ItemDataRole.DisplayRole,
+            QtCore.Qt.ItemDataRole.EditRole,
+        ]:
+            if index.column() == 0:
+                return self.concetrations[index.row()]
+            else:
+                return float(
+                    np.nanmean(
+                        self.data_files[index.row()][self.isotopes[index.column() - 1]]
+                    )
+                )
 
 
 class ResponseDialog(QtWidgets.QDialog):
@@ -26,23 +82,16 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
 
-        self.data = np.array([])
-        self.import_options: dict | None = None
-
         self.button_open_file = QtWidgets.QPushButton("Open File")
         self.button_open_file.pressed.connect(self.dialogLoadFile)
 
-        self.graph = ResponseView()
-        self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
+        self.graph = ParticleView()
+        # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
         self.graph_cal = CalibrationView()
-        self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
+        # self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
 
-        data = np.array([], dtype=[("<element>", np.float64)])
-        self.model = NumpyRecArrayTableModel(
-            data, orientation=QtCore.Qt.Orientation.Horizontal
-        )
-        self.responses = np.array([], dtype=[("<element>", np.float64)])
+        self.model = ResponseModel()
 
         self.table = QtWidgets.QTableView()
         self.table.setModel(self.model)
@@ -75,15 +124,15 @@ class ResponseDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
-        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            False
+        )
+        self.button_box.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+        ).setEnabled(False)
 
         self.button_box.clicked.connect(self.buttonClicked)
         self.button_box.rejected.connect(self.reject)
-
-        box_concs = QtWidgets.QGroupBox("Concentrations")
-        box_concs.setLayout(QtWidgets.QVBoxLayout())
-        box_concs.layout().addWidget(self.table, 1)
 
         layout_conc_bar = QtWidgets.QHBoxLayout()
         layout_conc_bar.addStretch(1)
@@ -93,7 +142,12 @@ class ResponseDialog(QtWidgets.QDialog):
         layout_conc_bar.addWidget(
             self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        box_concs.layout().addLayout(layout_conc_bar, 0)
+
+        box_concs = QtWidgets.QGroupBox("Concentrations")
+        box_concs_layout = QtWidgets.QVBoxLayout()
+        box_concs_layout.addWidget(self.table, 1)
+        box_concs_layout.addLayout(layout_conc_bar, 0)
+        box_concs.setLayout(box_concs_layout)
 
         layout_graphs = QtWidgets.QHBoxLayout()
         layout_graphs.addWidget(self.graph, 3)
@@ -142,66 +196,82 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             path = Path(path)
 
-        dlg = get_import_dialog_for_path(self, path)  # import_options managed below
-        dlg.dataImported.connect(self.loadData)
+        existing = None if len(self.model.data_files) == 0 else self.model.data_files[0]
+        dlg = get_import_dialog_for_path(
+            self, path, existing
+        )  # import_options managed below
+        dlg.dataImported.connect(self.loadDataFile)
 
-        if self.import_options is None:
+        if existing is None:
             dlg.open()
         else:
             try:
-                dlg.setImportOptions(self.import_options)
                 dlg.accept()
             except Exception:
-                self.import_options = None
                 logger.warning("dialogLoadFile: unable to set import options.")
                 dlg.open()
+
         return dlg
 
-    def loadData(self, data: np.ndarray, options: dict):
+    def loadDataFile(self, data_file: SPCalDataFile):
+        # self.model.beginInsertRows(
+        #     QtCore.QModelIndex(), self.model.rowCount(), self.model.rowCount() + 1
+        # )
+        self.model.beginResetModel()
+        self.model.data_files.append(data_file)
+        self.model.concetrations.append(0.0)
+        all_isotopes = set(
+            iso for df in self.model.data_files for iso in df.selected_isotopes
+        )
+        print(all_isotopes)
+        self.model.isotopes = list(all_isotopes)
+        self.model.endResetModel()
+        # self.model.endInsertRows()
+
         # Check the new data is compatible with current loaded
-        if self.model.array.size == 0:
-            self.model.beginResetModel()
-            self.model.array = np.full(1, np.nan, dtype=data.dtype)
-            self.model.endResetModel()
-            self.responses = self.model.array.copy()
-
-        elif (
-            data.dtype.names != self.model.array.dtype.names
-        ):  # pragma: no cover, can't test msgbox
-            button = QtWidgets.QMessageBox.question(
-                self, "Warning", "New data does not match current, overwrite?"
-            )
-            if button == QtWidgets.QMessageBox.StandardButton.Yes:
-                self.model.beginResetModel()
-                self.model.array = np.full(1, np.nan, dtype=data.dtype)
-                self.model.endResetModel()
-                self.responses = self.model.array.copy()
-            else:
-                return
-        else:
-            self.model.insertColumn(self.model.columnCount())
-            self.responses = np.append(
-                self.responses, np.full(1, np.nan, self.responses.dtype)
-            )
-
-        if self.import_options is None:
-            self.import_options = options
-
-        old_size = self.data.size
-        self.data = data
-        tic = np.sum([data[name] for name in data.dtype.names], axis=0)
-        xs = np.arange(tic.size)
-
-        self.graph.clear()
-        self.graph.plot.setTitle(f"TIC: {options['path'].name}")
-        self.graph.drawData(xs, tic)
-        if old_size != data.size:
-            self.graph.region.blockSignals(True)
-            self.graph.region.setRegion((xs[0], xs[-1]))
-            self.graph.region.blockSignals(False)
-        self.graph.updateMean()
-
-        self.updateResponses()
+        # if self.model.array.size == 0:
+        #     self.model.beginResetModel()
+        #     self.model.array = np.full(1, np.nan, dtype=data.dtype)
+        #     self.model.endResetModel()
+        #     self.responses = self.model.array.copy()
+        #
+        # elif (
+        #     data.dtype.names != self.model.array.dtype.names
+        # ):  # pragma: no cover, can't test msgbox
+        #     button = QtWidgets.QMessageBox.question(
+        #         self, "Warning", "New data does not match current, overwrite?"
+        #     )
+        #     if button == QtWidgets.QMessageBox.StandardButton.Yes:
+        #         self.model.beginResetModel()
+        #         self.model.array = np.full(1, np.nan, dtype=data.dtype)
+        #         self.model.endResetModel()
+        #         self.responses = self.model.array.copy()
+        #     else:
+        #         return
+        # else:
+        #     self.model.insertColumn(self.model.columnCount())
+        #     self.responses = np.append(
+        #         self.responses, np.full(1, np.nan, self.responses.dtype)
+        #     )
+        #
+        # if self.import_options is None:
+        #     self.import_options = options
+        #
+        # old_size = self.data.size
+        # self.data = data
+        # tic = np.sum([data[name] for name in data.dtype.names], axis=0)
+        # xs = np.arange(tic.size)
+        #
+        # self.graph.clear()
+        # self.graph.plot.setTitle(f"TIC: {options['path'].name}")
+        # self.graph.drawData(xs, tic)
+        # if old_size != data.size:
+        #     self.graph.region.blockSignals(True)
+        #     self.graph.region.setRegion((xs[0], xs[-1]))
+        #     self.graph.region.blockSignals(False)
+        # self.graph.updateMean()
+        #
+        # self.updateResponses()
 
     def updateResponses(self):
         if self.responses.dtype.names is None:  # pragma: no cover
@@ -379,3 +449,20 @@ class ResponseDialog(QtWidgets.QDialog):
         self.import_options = None
         self.graph.clear()
         self.graph_cal.clear()
+
+
+if __name__ == "__main__":
+    from spcal.datafile import SPCalNuDataFile
+
+    app = QtWidgets.QApplication()
+
+    dlg = ResponseDialog()
+    dlg.show()
+
+    df = SPCalNuDataFile.load(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles")
+    )
+    df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
+    dlg.loadDataFile(df)
+
+    app.exec()
