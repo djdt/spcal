@@ -5,11 +5,19 @@ class BasicTableView(QtWidgets.QTableView):
     def basicTableMenu(self) -> QtWidgets.QMenu:
         menu = QtWidgets.QMenu(self)
         cut_action = QtGui.QAction(QtGui.QIcon.fromTheme("edit-cut"), "Cut", self)
+        cut_action.setShortcut(QtGui.QKeySequence.StandardKey.Cut)
         cut_action.triggered.connect(self._cut)
         copy_action = QtGui.QAction(QtGui.QIcon.fromTheme("edit-copy"), "Copy", self)
         copy_action.triggered.connect(self._copy)
+        copy_action.setShortcut(QtGui.QKeySequence.StandardKey.Copy)
         paste_action = QtGui.QAction(QtGui.QIcon.fromTheme("edit-paste"), "Paste", self)
         paste_action.triggered.connect(self._paste)
+        paste_action.setShortcut(QtGui.QKeySequence.StandardKey.Paste)
+        filldown_action = QtGui.QAction(
+            QtGui.QIcon.fromTheme("arrow-down-double"), "Fill Down", self
+        )
+        filldown_action.setShortcut(QtCore.Qt.Key.Key_F9)
+        filldown_action.triggered.connect(self._filldown)
 
         if self.editTriggers() == QtWidgets.QTableView.EditTrigger.NoEditTriggers:
             any_editable = False
@@ -20,6 +28,8 @@ class BasicTableView(QtWidgets.QTableView):
             )
 
         if any_editable:
+            menu.addAction(filldown_action)
+            menu.addSeparator()
             menu.addAction(cut_action)
         menu.addAction(copy_action)
         if any_editable:
@@ -36,6 +46,8 @@ class BasicTableView(QtWidgets.QTableView):
             self._advance()
         elif event.key() in [QtCore.Qt.Key.Key_Backspace, QtCore.Qt.Key.Key_Delete]:
             self._delete()
+        elif event.key() == QtCore.Qt.Key.Key_F9:
+            self._filldown()
         elif event.matches(QtGui.QKeySequence.StandardKey.Copy):
             self._copy()
         elif event.matches(QtGui.QKeySequence.StandardKey.Cut):
@@ -87,6 +99,17 @@ class BasicTableView(QtWidgets.QTableView):
         for index in self.selectedIndexes():
             if index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
                 self.model().setData(index, None, QtCore.Qt.ItemDataRole.EditRole)
+
+    def _filldown(self):
+        current = self.currentIndex()
+        value = current.data(QtCore.Qt.ItemDataRole.EditRole)
+        for row in range(current.row() + 1, self.model().rowCount()):
+            index = self.model().index(row, current.column())
+            if index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
+                self.model().setData(index,
+                    value,
+                    QtCore.Qt.ItemDataRole.EditRole,
+                )
 
     def _paste(self):
         text = QtWidgets.QApplication.clipboard().text("plain")
