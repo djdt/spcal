@@ -71,7 +71,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
 
         self.data_file = data_file
         self.screening_method = screening_method
-        self.screening_ppm = 1000
+        self.screening_ppm = 100
         self.screening_size = 1000000
 
         self.table = PeriodicTableSelector(
