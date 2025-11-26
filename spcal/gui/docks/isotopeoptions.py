@@ -262,7 +262,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
             self.table.isotope_model.data(index, IsotopeOptionModel.IsotopeRole)
         )
 
-    def asIsotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
+    def isotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
 
     def setIsotopes(self, isotopes: list[SPCalIsotope]):

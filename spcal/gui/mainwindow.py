@@ -631,10 +631,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.filtersChanged.connect(self.reprocess)
         dlg.open()
 
-    def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog:
+    def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog | None:
         isotope = self.toolbar.combo_isotope.currentIsotope()
+        data_file = self.files.currentDataFile()
+        if data_file is None:
+            return None
+
         dlg = TransportEfficiencyDialog(
-            self.processing_results[self.files.currentDataFile()][isotope], parent=self
+            self.processing_results[data_file][isotope], parent=self
         )
         dlg.efficencySelected.connect(self.instrument_options.efficiency.setValue)
         dlg.isotopeOptionsChanged.connect(self.isotope_options.setIsotopeOption)
@@ -653,12 +657,24 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogIonicResponse(self) -> ResponseDialog:
-        raise NotImplementedError
         dlg = ResponseDialog(parent=self)
-        dlg.responsesSelected.connect(self.sample.io.setResponses)
-        dlg.responsesSelected.connect(self.reference.io.setResponses)
+        dlg.responsesSelected.connect(self.setResponses)
         dlg.open()
         return dlg
+
+    def setResponses(self, responses: dict[SPCalIsotope, float]):
+        method = self.currentMethod()
+        for isotope, response in responses.items():
+            if isotope in method.isotope_options:
+                method.isotope_options[isotope].response = response
+            else:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(
+                    None, response, None
+                )
+            if isotope in self.isotope_options.isotopeOptions():
+                option = self.isotope_options.optionForIsotope(isotope)
+                option.response = response
+                self.isotope_options.setIsotopeOption(isotope, option)
 
     def dialogSaveSession(self):
         raise NotImplementedError

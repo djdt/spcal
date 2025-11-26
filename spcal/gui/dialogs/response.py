@@ -167,7 +167,7 @@ class IntensityModel(QtCore.QAbstractTableModel):
 
 
 class ResponseDialog(QtWidgets.QDialog):
-    responsesSelected = QtCore.Signal(dict)
+    responsesSelected = QtCore.Signal(object)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
@@ -517,21 +517,3 @@ class ResponseDialog(QtWidgets.QDialog):
                     + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
-
-
-if __name__ == "__main__":
-    from spcal.datafile import SPCalNuDataFile
-
-    app = QtWidgets.QApplication()
-
-    dlg = ResponseDialog()
-    dlg.show()
-
-    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
-    df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
-    dlg.addDataFile(df)
-    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
-    df.selected_isotopes = [df.isotopes[10], df.isotopes[20], df.isotopes[30]]
-    dlg.addDataFile(df)
-
-    app.exec()
