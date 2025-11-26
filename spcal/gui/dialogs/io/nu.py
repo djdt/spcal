@@ -246,6 +246,9 @@ class NuImportDialog(ImportDialogBase):
         self.import_thread.quit()
         self.import_thread.wait()
 
+        if len(self.table.selectedIsotopes()) == 0:
+            raise ValueError("no selected isotopes")
+
         cyc_number = self.cycle_number.value()
         if cyc_number == 0:
             cyc_number = None
