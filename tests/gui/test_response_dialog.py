@@ -29,17 +29,17 @@ def test_response_dialog(qtbot: QtBot):
         dlg.show()
 
     dlg.loadData(generate_data(10.0), {"path": Path("0.csv")})
-    assert dlg.model.columnCount() == 1
-    assert dlg.model.rowCount() == 3
-    dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(1, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(2, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
+    assert dlg.model_concs.columnCount() == 1
+    assert dlg.model_concs.rowCount() == 3
+    dlg.model_concs.setData(dlg.model_concs.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(1, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(2, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole)
 
     dlg.loadData(generate_data(20.0), {"path": Path("1.csv")})
-    dlg.model.setData(dlg.model.index(0, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(1, 1), 20.0, QtCore.Qt.ItemDataRole.EditRole)
-    assert dlg.model.columnCount() == 2
-    assert dlg.model.rowCount() == 3
+    dlg.model_concs.setData(dlg.model_concs.index(0, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(1, 1), 20.0, QtCore.Qt.ItemDataRole.EditRole)
+    assert dlg.model_concs.columnCount() == 2
+    assert dlg.model_concs.rowCount() == 3
 
     dlg.combo_unit.setCurrentText("mg/L")
 
@@ -66,17 +66,17 @@ def test_response_dialog_save_load(tmp_path: Path, qtbot: QtBot):
     dlg.loadData(generate_data(20.0), {"path": Path("1.csv")})
     dlg.loadData(generate_data(30.0), {"path": Path("2.csv")})
 
-    dlg.model.setData(dlg.model.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(1, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(2, 0), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(1, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(2, 0), 2.0, QtCore.Qt.ItemDataRole.EditRole)
 
-    dlg.model.setData(dlg.model.index(1, 1), 1.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(2, 1), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(1, 1), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(2, 1), 2.0, QtCore.Qt.ItemDataRole.EditRole)
 
-    dlg.model.setData(dlg.model.index(0, 2), 1.0, QtCore.Qt.ItemDataRole.EditRole)
-    dlg.model.setData(dlg.model.index(1, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(0, 2), 1.0, QtCore.Qt.ItemDataRole.EditRole)
+    dlg.model_concs.setData(dlg.model_concs.index(1, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole)
 
-    array = dlg.model.array.copy()
+    array = dlg.model_concs.array.copy()
     resp = dlg.responses.copy()
 
     path = tmp_path.joinpath("response_dialog.csv")
@@ -84,6 +84,6 @@ def test_response_dialog_save_load(tmp_path: Path, qtbot: QtBot):
     dlg.reset()
     dlg.loadFromFile(path)
 
-    for name in dlg.model.array.dtype.names:
-        assert np.allclose(array[name], dlg.model.array[name], equal_nan=True)
+    for name in dlg.model_concs.array.dtype.names:
+        assert np.allclose(array[name], dlg.model_concs.array[name], equal_nan=True)
         assert np.allclose(resp[name], dlg.responses[name], equal_nan=True)

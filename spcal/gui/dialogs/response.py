@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
+from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
@@ -21,28 +21,28 @@ from spcal.siunits import mass_concentration_units
 logger = logging.getLogger(__name__)
 
 
-class ResponseModel(QtCore.QAbstractTableModel):
+class ConcentrationModel(QtCore.QAbstractTableModel):
     DataFileRole = QtCore.Qt.ItemDataRole.UserRole + 1
+    IsotopeRole = QtCore.Qt.ItemDataRole.UserRole + 2
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.data_files: list[SPCalDataFile] = []
-        self.concentrations: list[float | None] = []
-        self.responses: dict[SPCalIsotope, dict[int, float | None]] = {}
+        self.isotopes: list[SPCalIsotope] = []
+        self.concentrations: dict[SPCalDataFile, dict[SPCalIsotope, float | None]] = {}
 
     def columnCount(
         self,
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
-        return len(self.responses) + 1
+        return len(self.isotopes)
 
     def rowCount(
         self,
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
-        return len(self.data_files)
+        return len(self.concentrations)
 
     def headerData(
         self,
@@ -52,23 +52,19 @@ class ResponseModel(QtCore.QAbstractTableModel):
     ):
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
             if orientation == QtCore.Qt.Orientation.Horizontal:
-                if section == 0:
-                    return "Concentration"
-                else:
-                    return str(self.isotopes[section - 1])
+                return str(self.isotopes[section])
             else:
-                return self.data_files[section].path.stem
+                return list(self.concentrations.keys())[section].path.stem
 
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
         flags = super().flags(index)
         if index.isValid():
-            df = self.data_files[index.row()]
-            if list(self.responses.keys())[index.column() - 1] not in df.isotopes:
-                flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
-        if index.column() == 0:
-            flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+            data_file = list(self.concentrations.keys())[index.row()]
+            isotope = self.isotopes[index.column()]
+            if isotope in data_file.selected_isotopes:
+                flags |= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
     def data(
@@ -78,24 +74,18 @@ class ResponseModel(QtCore.QAbstractTableModel):
     ) -> Any:
         if not index.isValid():
             return None
+
         if role in [
             QtCore.Qt.ItemDataRole.DisplayRole,
             QtCore.Qt.ItemDataRole.EditRole,
         ]:
-            if index.column() == 0:
-                return self.concentrations[index.row()]
-            else:
-                data_file = self.data_files[index.row()]
-                isotope = list(self.responses.keys())[index.column() - 1]
-                if index.row() not in self.responses[isotope]:
-                    if isotope in data_file.selected_isotopes:
-                        val = float(np.nanmean(data_file[isotope]))
-                    else:
-                        val = None
-                    self.responses[isotope][index.row()] = val
-                return self.responses[isotope][index.row()]
-        elif role == ResponseModel.DataFileRole:
-            return self.data_files[index.row()]
+            data_file = list(self.concentrations.keys())[index.row()]
+            isotope = self.isotopes[index.column()]
+            return self.concentrations[data_file].get(isotope, None)
+        elif role == ConcentrationModel.DataFileRole:
+            return list(self.concentrations.keys())[index.row()]
+        elif role == ConcentrationModel.IsotopeRole:
+            return self.isotopes[index.column()]
 
     def setData(
         self,
@@ -105,12 +95,73 @@ class ResponseModel(QtCore.QAbstractTableModel):
     ) -> bool:
         if not index.isValid():
             return False
-        if index.column() == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
-            self.concentrations[index.row()] = value
+        if QtCore.Qt.ItemDataRole.EditRole:
+            data_file = list(self.concentrations.keys())[index.row()]
+            isotope = self.isotopes[index.column()]
+            self.concentrations[data_file][isotope] = value
             self.dataChanged.emit(index, index)
             return True
 
         return False
+
+
+class IntensityModel(QtCore.QAbstractTableModel):
+    def __init__(self, parent: QtCore.QObject | None = None):
+        super().__init__(parent)
+        self.isotopes: list[SPCalIsotope] = []
+        self.intensities: dict[SPCalDataFile, dict[SPCalIsotope, float | None]] = {}
+
+    def columnCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
+        return len(self.isotopes)
+
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
+        return len(self.intensities)
+
+    def headerData(
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ):
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
+            if orientation == QtCore.Qt.Orientation.Horizontal:
+                return str(self.isotopes[section])
+            else:
+                return list(self.intensities.keys())[section].path.stem
+
+    def data(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
+    ) -> Any:
+        if not index.isValid():
+            return None
+
+        if role in [
+            QtCore.Qt.ItemDataRole.DisplayRole,
+            QtCore.Qt.ItemDataRole.EditRole,
+        ]:
+            data_file = list(self.intensities.keys())[index.row()]
+            isotope = self.isotopes[index.column()]
+            if isotope not in self.intensities[data_file]:
+                if isotope in data_file.selected_isotopes:
+                    val = float(np.nanmean(data_file[isotope]))
+                else:
+                    val = None
+                self.intensities[data_file][isotope] = val
+            return self.intensities[data_file][isotope]
+        elif role == ConcentrationModel.DataFileRole:
+            return list(self.intensities.keys())[index.row()]
+        elif role == ConcentrationModel.IsotopeRole:
+            return self.isotopes[index.column()]
 
 
 class ResponseDialog(QtWidgets.QDialog):
@@ -121,43 +172,32 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
 
-        self.button_open_file = QtWidgets.QPushButton("Open File")
-        self.button_open_file.pressed.connect(self.dialogLoadFile)
-
         self.particle = ParticleView()
         # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
         self.calibration = CalibrationView()
-        # self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
 
-        self.model = ResponseModel()
+        self.model_concs = ConcentrationModel()
+        self.model_intensity = IntensityModel()
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        self.table = QtWidgets.QTableView()
-        self.table.setModel(self.model)
-        self.table.setItemDelegateForColumn(0, ValueWidgetDelegate(sigfigs=sf))
-        self.table.setSelectionMode(
-            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self.table.setSelectionBehavior(
-            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        # self.table.clicked.connect(self.onTableClicked)
-        self.table.selectionModel().currentRowChanged.connect(self.drawDataFile)
+        self.table_concs = BasicTableView()
+        self.table_concs.setModel(self.model_concs)
 
-        self.table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
-        )
-        self.table.setHorizontalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
-        self.table.setVerticalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        self.table_intensity = BasicTableView()
+        self.table_intensity.setModel(self.model_intensity)
 
-        self.model.dataChanged.connect(self.completeChanged)
-        self.model.dataChanged.connect(self.updateCalibration)
+        for table in [self.table_concs, self.table_intensity]:
+            table.setItemDelegate(ValueWidgetDelegate(sigfigs=sf))
+            table.selectionModel().currentChanged.connect(self.tableIndexChanged)
+
+            table.setSizeAdjustPolicy(
+                QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+            )
+
+        self.model_concs.dataChanged.connect(self.completeChanged)
+        self.model_concs.dataChanged.connect(self.updateCalibration)
 
         self.button_add_level = QtWidgets.QPushButton("Add Level")
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
@@ -165,11 +205,10 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
-        self.combo_unit.setCurrentText("μg/L")
+        self.combo_unit.setCurrentText("µg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Open
-            | QtWidgets.QDialogButtonBox.StandardButton.Save
+            QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
@@ -195,9 +234,18 @@ class ResponseDialog(QtWidgets.QDialog):
 
         box_concs = QtWidgets.QGroupBox("Concentrations")
         box_concs_layout = QtWidgets.QVBoxLayout()
-        box_concs_layout.addWidget(self.table, 1)
+        box_concs_layout.addWidget(self.table_concs, 1)
         box_concs_layout.addLayout(layout_conc_bar, 0)
         box_concs.setLayout(box_concs_layout)
+
+        box_intensity = QtWidgets.QGroupBox("Intensities")
+        box_intensity_layout = QtWidgets.QVBoxLayout()
+        box_intensity_layout.addWidget(self.table_intensity, 1)
+        box_intensity.setLayout(box_intensity_layout)
+
+        table_layout = QtWidgets.QVBoxLayout()
+        table_layout.addWidget(box_concs)
+        table_layout.addWidget(box_intensity)
 
         layout_graphs = QtWidgets.QHBoxLayout()
         layout_graphs.addWidget(self.particle, 3)
@@ -205,19 +253,18 @@ class ResponseDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_graphs, 3)
-        layout.addWidget(box_concs, 2)
+        layout.addLayout(table_layout, 2)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        if self.model.rowCount() == 0:
+        if self.model_concs.rowCount() == 0:
             return False
 
-        number_concs = 0
-        for row in range(self.model.rowCount()):
-            if self.model.data(self.model.index(row, 0)) is not None:
-                number_concs += 1
-        return number_concs > 2
+        return any(
+            np.count_nonzero(~np.isnan(concs)) > 0
+            for concs in self.concentrations().values()
+        )
 
     def completeChanged(self):
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
@@ -227,26 +274,160 @@ class ResponseDialog(QtWidgets.QDialog):
             QtWidgets.QDialogButtonBox.StandardButton.Save
         ).setEnabled(self.isComplete())
 
+    def concentrations(self) -> dict[SPCalIsotope, np.ndarray]:
+        concs = {}
+        for col, isotope in enumerate(self.model_concs.isotopes):
+            concs[isotope] = np.array(
+                [
+                    self.model_concs.data(self.model_concs.index(row, col))
+                    for row in range(self.model_concs.rowCount())
+                ],
+                dtype=float,
+            )
+        return concs
+
+    def intensities(self) -> dict[SPCalIsotope, np.ndarray]:
+        intensity = {}
+        for col, isotope in enumerate(self.model_intensity.isotopes):
+            intensity[isotope] = np.array(
+                [
+                    self.model_concs.data(self.model_intensity.index(row, col))
+                    for row in range(self.model_intensity.rowCount())
+                ],
+                dtype=float,
+            )
+        return intensity
+
+    def tableIndexChanged(self, index: QtCore.QModelIndex):
+        self.table_concs.selectionModel().currentChanged.disconnect(
+            self.tableIndexChanged
+        )
+        self.table_intensity.selectionModel().currentChanged.disconnect(
+            self.tableIndexChanged
+        )
+
+        self.table_concs.selectionModel().setCurrentIndex(
+            index, QtCore.QItemSelectionModel.SelectionFlag.SelectCurrent
+        )
+        self.table_intensity.selectionModel().setCurrentIndex(
+            index, QtCore.QItemSelectionModel.SelectionFlag.SelectCurrent
+        )
+
+        self.table_concs.selectionModel().currentChanged.connect(self.tableIndexChanged)
+        self.table_intensity.selectionModel().currentChanged.connect(
+            self.tableIndexChanged
+        )
+        self.drawDataFile(index)
+
     def drawDataFile(self, index: QtCore.QModelIndex):
         self.particle.clear()
         if not index.isValid():
             return
 
-        data_file = index.data(ResponseModel.DataFileRole)
-        tic = np.sum([data_file[iso] for iso in data_file.selected_isotopes], axis=0)
+        data_file = index.data(ConcentrationModel.DataFileRole)
+        isotope = index.data(ConcentrationModel.IsotopeRole)
 
-        # Draw the TIC trace
-        self.particle.drawCurve(data_file.times, tic)
+        # Draw the trace
+        self.particle.drawCurve(data_file.times, data_file[isotope])
 
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         pen.setCosmetic(True)
 
         # Draw mean line
         self.particle.drawLine(
-            np.nanmean(tic), QtCore.Qt.Orientation.Horizontal, pen=pen
+            np.nanmean(data_file[isotope]), QtCore.Qt.Orientation.Horizontal, pen=pen
         )
         # Rescale
         self.particle.setDataLimits(0.0, 1.0)
+
+    def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
+        if path is None:
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
+        else:
+            path = Path(path)
+
+        existing = (
+            None
+            if len(self.model_concs.concentrations) == 0
+            else list(self.model_concs.concentrations.keys())[-1]
+        )
+        dlg = get_import_dialog_for_path(self, path, existing)
+        dlg.dataImported.connect(self.addDataFile)
+
+        dlg.open()
+
+        return dlg
+
+    def addDataFile(self, data_file: SPCalDataFile):
+        new_isotopes = sorted(
+            set(data_file.selected_isotopes).union(self.model_concs.isotopes),
+            key=lambda i: str(i),
+        )
+        self.model_concs.beginResetModel()
+        self.model_concs.concentrations[data_file] = {}
+        self.model_concs.isotopes = new_isotopes
+        self.model_concs.endResetModel()
+        self.model_intensity.beginResetModel()
+        self.model_intensity.intensities[data_file] = {}
+        self.model_intensity.isotopes = new_isotopes
+        self.model_intensity.endResetModel()
+
+    def updateCalibration(self):
+        self.calibration.clear()
+
+        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
+
+        concs = self.concentrations()
+        intensities = self.intensities()
+
+        for i, isotope in enumerate(concs.keys()):
+            nans = np.logical_or(
+                np.isnan(concs[isotope]), np.isnan(intensities[isotope])
+            )
+            x, y = concs[isotope][~nans], intensities[isotope][~nans]
+            if x.size == 0:
+                continue
+            elif x.size == 1:
+                x = np.concatenate(([0.0], x))
+                y = np.concatenate(([0.0], y))
+
+            brush = QtGui.QBrush(scheme[i % len(scheme)])
+
+            scatter = self.calibration.drawScatter(
+                x, y, size=6.0 * self.devicePixelRatio(), brush=brush
+            )
+
+            pen = QtGui.QPen(scheme[i % len(scheme)], 1.0 * self.devicePixelRatio())
+            pen.setCosmetic(True)
+            self.calibration.drawTrendline(x, y, pen=pen)
+
+            if self.calibration.plot.legend is not None:
+                self.calibration.plot.legend.addItem(str(isotope), scatter)
+
+    def calibrationResult(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> tuple[float | None, float | None, float | None, float | None]:
+        factor = mass_concentration_units[self.combo_unit.currentText()]
+
+        nans = np.logical_or(np.isnan(x), np.isnan(y))
+        x, y = x[~nans] * factor, y[~nans]
+        if x.size == 0:
+            return None, None, None, None
+        elif x.size == 1:  # single point, force 0
+            return y[0] / x[0], 0.0, None, None
+        else:
+            return weighted_linreg(x, y)
+
+    def buttonClicked(self, button: QtWidgets.QAbstractButton):
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
+            self.dialogSaveToFile()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.reset()
 
     def dropEvent(self, event: QtGui.QDropEvent):
         if event.mimeData().hasUrls():
@@ -261,92 +442,35 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
-        if path is None:
-            path = get_open_spcal_path(self)
-            if path is None:
-                return None
-        else:
-            path = Path(path)
-
-        existing = None if len(self.model.data_files) == 0 else self.model.data_files[0]
-        dlg = get_import_dialog_for_path(self, path, existing)
-        dlg.dataImported.connect(self.loadDataFile)
-
-        if existing is None:
-            dlg.open()
-        else:
-            try:
-                dlg.accept()
-            except Exception:
-                logger.warning("existing file in response dialog incompatible.")
-                dlg.open()
-
-        return dlg
-
-    def loadDataFile(self, data_file: SPCalDataFile):
-        self.model.beginResetModel()
-        self.model.data_files.append(data_file)
-        self.model.concentrations.append(None)
-        new_isotopes = set(data_file.selected_isotopes).difference(
-            self.model.responses.keys()
-        )
-        for isotope in new_isotopes:
-            self.model.responses[isotope] = {}
-        self.model.endResetModel()
-
-    # def updateResponses(self):
-    #     if self.responses.dtype.names is None:  # pragma: no cover
-    #         return
-    #
-    #     for name in self.responses.dtype.names:
-    #         self.responses[name][-1] = np.mean(
-    #             self.data[name][self.particle.region_start : self.particle.region_end]
-    #         )
-    #
-    #     self.updateCalibration()
-
-    def updateCalibration(self):
-        self.calibration.clear()
-
-        concs = np.array(self.model.concentrations, dtype=float)
-
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
-
-        for col in range(1, self.model.columnCount()):
-            responses = np.array(
-                [
-                    self.model.data(self.model.index(row, col))
-                    for row in range(self.model.rowCount())
-                ],
-                dtype=float,
+    def accept(self):
+        responses = {}
+        concs = self.concentrations()
+        intensities = self.intensities()
+        for isotope in concs.keys():
+            response, _, _, _ = self.calibrationResult(
+                concs[isotope], intensities[isotope]
             )
-            nans = np.logical_or(np.isnan(concs), np.isnan(responses))
-            x = concs[~nans]
-            y = responses[~nans]
-            if x.size == 0:
-                continue
+            if response is not None:
+                responses[isotope] = response
 
-            brush = QtGui.QBrush(scheme[(col - 1) % len(scheme)])
-            name = str(list(self.model.responses.keys())[col - 1])
+        if len(responses) > 0:
+            self.responsesSelected.emit(responses)
+        super().accept()
 
-            scatter = self.calibration.drawScatter(
-                x, y, size=6.0 * self.devicePixelRatio(), brush=brush
-            )
-
-            pen = QtGui.QPen(
-                scheme[(col - 1) % len(scheme)], 1.0 * self.devicePixelRatio()
-            )
-            pen.setCosmetic(True)
-            self.calibration.drawTrendline(x, y, pen=pen)
-
-            if self.calibration.plot.legend is not None:
-                self.calibration.plot.legend.addItem(name, scatter)
+    def reset(self):
+        self.model_concs.beginResetModel()
+        self.model_concs.isotopes.clear()
+        self.model_concs.concentrations.clear()
+        self.model_concs.endResetModel()
+        self.model_intensity.beginResetModel()
+        self.model_intensity.isotopes.clear()
+        self.model_intensity.intensities.clear()
+        self.model_intensity.endResetModel()
 
     def dialogSaveToFile(self):
-        if len(self.model.data_files) == 0:
+        if len(self.model_concs.concentrations) == 0:
             return
-        dir = self.model.data_files[0].path
+        dir = next(iter(self.model_concs.concentrations.keys())).path.parent
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
         )
@@ -355,140 +479,42 @@ class ResponseDialog(QtWidgets.QDialog):
         self.saveToFile(Path(file))
 
     def saveToFile(self, path: Path):
-        assert self.responses.dtype.names is not None
-        names = [  # remove any unpopulated names
-            name
-            for name in self.responses.dtype.names
-            if np.any(~np.isnan(self.model.array[name]))
-        ]
-        nlevels = len(self.model.array)
+        concs = self.concentrations()
+        intensities = self.intensities()
         factor = mass_concentration_units[self.combo_unit.currentText()]
-
-        def write_cal_levels(fp, name: str):
-            fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
 
         with path.open("w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
-            fp.write(",Slope,Intercept,r2,Error\n")
-            for name in names:
-                m, b, r2, err = self.calibrationResult(name)
-                fp.write(f"{name},{m},{b},{r2 or ''},{err or ''},\n")
+            fp.write("Isotope,Slope,Intercept,r2,Error\n")
+            for isotope in concs.keys():
+                m, b, r2, err = self.calibrationResult(
+                    concs[isotope] * factor, intensities[isotope]
+                )
+                fp.write(f"{isotope},{m or ''},{b or ''},{r2 or ''},{err or ''},\n")
 
             fp.write(
                 "#Concentrations (kg/L),"
-                + ",".join(str(i) for i in range(nlevels))
+                + ",".join(str(i) for i in range(len(concs)))
                 + "\n"
             )
-            for name in names:
-                xs = self.model.array[name] * factor
+            for isotope, vals in concs.items():
+                scaled = vals * factor
                 fp.write(
-                    f"{name},"
-                    + ",".join("" if np.isnan(x) else str(x) for x in xs)
+                    f"{isotope},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in scaled)
                     + "\n"
                 )
             fp.write(
-                "#Responses (counts)," + ",".join(str(i) for i in range(nlevels)) + "\n"
+                "#Intensities (cts),"
+                + ",".join(str(i) for i in range(len(intensities)))
+                + "\n"
             )
-            for name in names:
-                ys = self.responses[name]
+            for isotope, vals in intensities.items():
                 fp.write(
-                    f"{name},"
-                    + ",".join("" if np.isnan(y) else str(y) for y in ys)
+                    f"{isotope},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
-
-    def dialogLoadFromFile(self):
-        if self.import_options is not None:
-            dir = self.import_options["path"].parent
-        else:
-            dir = ""
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Load Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-        )
-        if file == "":
-            return
-        self.loadFromFile(Path(file))
-
-    def loadFromFile(self, path: Path):
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-
-        concs = {}
-        responses = {}
-
-        with path.open("r") as fp:
-            line = fp.readline()
-            if not line.startswith("#SPCal Calibration"):
-                raise ValueError("file is not valid SPCal calibration")
-            while not line.startswith("#Concentrations"):
-                line = fp.readline()
-            line = fp.readline()
-            while not line.startswith("#Responses"):
-                name, *xs = line.split(",")
-                concs[name] = (
-                    np.array([float(x) if x != "" else np.nan for x in xs]) / factor
-                )
-                line = fp.readline().strip()
-            line = fp.readline()
-            while line:
-                name, *ys = line.split(",")
-                responses[name] = np.array(
-                    [float(y) if y != "" else np.nan for y in ys]
-                )
-                line = fp.readline().strip()
-
-        array = np.stack(list(responses.values()), axis=1)
-        self.responses = rfn.unstructured_to_structured(array, names=responses.keys())
-        self.model.beginResetModel()
-
-        array = np.stack(list(concs.values()), axis=1)
-        self.model.array = rfn.unstructured_to_structured(array, names=concs.keys())
-        self.model.endResetModel()
-        self.updateCalibration()
-
-    def calibrationResult(
-        self, name: str
-    ) -> tuple[float | None, float | None, float | None, float | None]:
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-        x = self.model.array[name]
-        y = self.responses[name][~np.isnan(x)]
-        x = x[~np.isnan(x)] * factor
-        if x.size == 0:
-            return None, None, None, None
-        elif x.size == 1:  # single point, force 0
-            return y[0] / x[0], 0.0, None, None
-        else:
-            return weighted_linreg(x, y)
-
-    def buttonClicked(self, button: QtWidgets.QAbstractButton):
-        sb = self.button_box.standardButton(button)
-        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
-            self.accept()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
-            self.dialogSaveToFile()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
-            self.dialogLoadFromFile()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
-            self.reset()
-
-    def accept(self):
-        assert self.responses.dtype.names is not None
-
-        responses = {}
-        for name in self.responses.dtype.names:
-            m, _, _, _ = self.calibrationResult(name)
-            if m is not None:
-                responses[name] = m
-
-        if len(responses) > 0:
-            self.responsesSelected.emit(responses)
-        super().accept()
-
-    def reset(self):
-        self.model.beginResetModel()
-        self.model.data_files.clear()
-        self.model.concentrations.clear()
-        self.model.responses.clear()
-        self.model.endResetModel()
 
 
 if __name__ == "__main__":
@@ -499,11 +525,11 @@ if __name__ == "__main__":
     dlg = ResponseDialog()
     dlg.show()
 
-    df = SPCalNuDataFile.load(
-        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP")
-    )
+    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
     df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
-    dlg.loadDataFile(df)
-    dlg.loadDataFile(df)
+    dlg.addDataFile(df)
+    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
+    df.selected_isotopes = [df.isotopes[10], df.isotopes[20], df.isotopes[30]]
+    dlg.addDataFile(df)
 
     app.exec()
