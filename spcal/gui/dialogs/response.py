@@ -98,6 +98,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
         if QtCore.Qt.ItemDataRole.EditRole:
             data_file = list(self.concentrations.keys())[index.row()]
             isotope = self.isotopes[index.column()]
+            if value is not None:
+                value = float(value)
             self.concentrations[data_file][isotope] = value
             self.dataChanged.emit(index, index)
             return True
@@ -243,7 +245,7 @@ class ResponseDialog(QtWidgets.QDialog):
         box_intensity_layout.addWidget(self.table_intensity, 1)
         box_intensity.setLayout(box_intensity_layout)
 
-        table_layout = QtWidgets.QVBoxLayout()
+        table_layout = QtWidgets.QHBoxLayout()
         table_layout.addWidget(box_concs)
         table_layout.addWidget(box_intensity)
 
@@ -291,7 +293,7 @@ class ResponseDialog(QtWidgets.QDialog):
         for col, isotope in enumerate(self.model_intensity.isotopes):
             intensity[isotope] = np.array(
                 [
-                    self.model_concs.data(self.model_intensity.index(row, col))
+                    self.model_intensity.data(self.model_intensity.index(row, col))
                     for row in range(self.model_intensity.rowCount())
                 ],
                 dtype=float,
@@ -363,7 +365,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def addDataFile(self, data_file: SPCalDataFile):
         new_isotopes = sorted(
             set(data_file.selected_isotopes).union(self.model_concs.isotopes),
-            key=lambda i: str(i),
+            key=lambda i: i.isotope,
         )
         self.model_concs.beginResetModel()
         self.model_concs.concentrations[data_file] = {}
