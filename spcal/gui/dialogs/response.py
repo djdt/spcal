@@ -44,6 +44,21 @@ class ResponseModel(QtCore.QAbstractTableModel):
     ) -> int:
         return len(self.data_files)
 
+    def headerData(
+        self,
+        section: int,
+        orientation: QtCore.Qt.Orientation,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+    ):
+        if role == QtCore.Qt.ItemDataRole.DisplayRole:
+            if orientation == QtCore.Qt.Orientation.Horizontal:
+                if section == 0:
+                    return "Concentration"
+                else:
+                    return str(self.isotopes[section - 1])
+            else:
+                return self.data_files[section].path.stem
+
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
@@ -485,7 +500,7 @@ if __name__ == "__main__":
     dlg.show()
 
     df = SPCalNuDataFile.load(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles")
+        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP")
     )
     df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
     dlg.loadDataFile(df)
