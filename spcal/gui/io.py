@@ -32,12 +32,26 @@ def is_spcal_path(path: str | Path) -> bool:
     return any((is_text_file(path), is_nu_directory(path), is_tofwerk_file(path)))
 
 
+def most_recent_spcal_path() -> Path | None:
+    settings = QtCore.QSettings()
+    settings.beginReadArray("RecentFiles")
+    settings.setArrayIndex(0)
+    path = str(settings.value("Path", ""))
+    settings.endArray()
+    if path == "":
+        return None
+    else:
+        return Path(path)
+
+
 def get_open_spcal_path(
     parent: QtWidgets.QWidget, title: str = "Open File"
 ) -> Path | None:
-    dir = str(QtCore.QSettings().value("RecentFiles/1/Path", ""))
-    if dir != "":
-        dir = str(Path(dir).parent)
+    recent = most_recent_spcal_path()
+    if recent is not None:
+        dir = str(recent.parent)
+    else:
+        dir = ""
 
     path, _ = QtWidgets.QFileDialog.getOpenFileName(parent, title, dir, np_file_filters)
     if path == "":
@@ -52,9 +66,11 @@ def get_open_spcal_path(
 def get_open_spcal_paths(
     parent: QtWidgets.QWidget, title: str = "Open Files"
 ) -> list[Path]:
-    dir = str(QtCore.QSettings().value("RecentFiles/1/Path", ""))
-    if dir != "":
-        dir = str(Path(dir).parent)
+    recent = most_recent_spcal_path()
+    if recent is not None:
+        dir = str(recent.parent)
+    else:
+        dir = ""
 
     files, _ = QtWidgets.QFileDialog.getOpenFileNames(
         parent, title, dir, np_file_filters
