@@ -31,10 +31,9 @@ class SPCalProcessingMethod(object):
 
     def __init__(
         self,
-        instrument_options: SPCalInstrumentOptions,
-        limit_options: SPCalLimitOptions,
-        isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions],
-        selected_isotopes: list[SPCalIsotope],
+        instrument_options: SPCalInstrumentOptions | None = None,
+        limit_options: SPCalLimitOptions | None = None,
+        isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions] | None = None,
         accumulation_method: str = "signal mean",
         points_required: int = 1,
         prominence_required: float = 0.2,
@@ -49,6 +48,12 @@ class SPCalProcessingMethod(object):
             raise ValueError(
                 "calibration mode must be one of 'efficiency', 'mass response'"
             )
+        if instrument_options is None:
+            instrument_options = SPCalInstrumentOptions(None, None, None)
+        if limit_options is None:
+            limit_options = SPCalLimitOptions()
+        if isotope_options is None:
+            isotope_options = {}
 
         self.instrument_options = instrument_options
         self.limit_options = limit_options

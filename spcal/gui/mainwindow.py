@@ -75,8 +75,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "default": SPCalProcessingMethod(
                 self.instrument_options.asInstrumentOptions(),
                 self.limit_options.asLimitOptions(),
-                {},
-                [],
                 accumulation_method=self.limit_options.limit_accumulation,
                 points_required=self.limit_options.points_required,
                 prominence_required=self.limit_options.prominence_required,
