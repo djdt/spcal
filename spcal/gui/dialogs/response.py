@@ -69,6 +69,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
             isotope = self.isotopes[index.column()]
             if isotope in data_file.selected_isotopes:
                 flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+            else:
+                flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
         return flags
 
     def data(
@@ -116,6 +118,7 @@ class IntensityModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self.isotopes: list[SPCalIsotope] = []
         self.intensities: dict[SPCalDataFile, dict[SPCalIsotope, float | None]] = {}
+        self.exclusion_regions: dict[SPCalDataFile, list[tuple[float, float]]] = {}
 
     def columnCount(
         self,
@@ -159,7 +162,11 @@ class IntensityModel(QtCore.QAbstractTableModel):
             isotope = self.isotopes[index.column()]
             if isotope not in self.intensities[data_file]:
                 if isotope in data_file.selected_isotopes:
-                    val = float(np.nanmean(data_file[isotope]))
+                    mask = np.ones(data_file[isotope].shape, dtype=bool)
+                    for start, end in self.exclusion_regions.get(data_file, []):
+                        istart, iend = np.searchsorted(data_file.times, [start, end])
+                        mask[istart:iend] = False
+                    val = float(np.nanmean(data_file[isotope], where=mask))
                 else:
                     val = None
                 self.intensities[data_file][isotope] = val
@@ -180,6 +187,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.intensity = IntensityView()
         # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
+        self.intensity.exclusionRegionChanged.connect(self.updateExclusionRegions)
 
         self.calibration = CalibrationView()
 
@@ -325,6 +333,20 @@ class ResponseDialog(QtWidgets.QDialog):
         )
         self.drawDataFile(index)
 
+    def updateExclusionRegions(self):
+        index = self.table_concs.currentIndex()
+        data_file = index.data(ConcentrationModel.DataFileRole)
+        regions = self.intensity.exclusionRegions()
+
+        self.model_intensity.exclusion_regions[data_file] = regions
+        self.model_intensity.intensities[data_file] = {}
+        self.model_intensity.dataChanged.emit(
+            self.model_intensity.index(index.row(), 0),
+            self.model_intensity.index(
+                index.row(), self.model_intensity.columnCount() - 1
+            ),
+        )
+
     def drawDataFile(self, index: QtCore.QModelIndex):
         self.intensity.clear()
         if not index.isValid():
@@ -345,6 +367,9 @@ class ResponseDialog(QtWidgets.QDialog):
         )
         # Rescale
         self.intensity.setDataLimits(0.0, 1.0)
+
+        for start, end in self.model_intensity.exclusion_regions.get(data_file, []):
+            self.intensity.addExclusionRegion(start, end)
 
     def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
         if path is None:
@@ -529,11 +554,14 @@ if __name__ == "__main__":
     dlg = ResponseDialog()
     dlg.show()
 
-    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
-    df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
+    # df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
+    df = SPCalNuDataFile.load(
+        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP/")
+    )
+    df.selected_isotopes = [df.isotopes[60], df.isotopes[70]]
     dlg.addDataFile(df)
-    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
-    df.selected_isotopes = [df.isotopes[10], df.isotopes[20], df.isotopes[30]]
-    dlg.addDataFile(df)
+    # df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
+    # df.selected_isotopes = [df.isotopes[60], df.isotopes[70], df.isotopes[30]]
+    # dlg.addDataFile(df)
 
     app.exec()

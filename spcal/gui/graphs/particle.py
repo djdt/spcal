@@ -80,7 +80,7 @@ class ParticleView(SinglePlotGraphicsView):
         self.context_menu_actions.append(self.action_peak_properties)
 
         self.action_exclusion_region = create_action(
-            "",
+            "removecell",
             "Add Exclusion Region",
             "Prevent analysis in a region of the data.",
             self.addExclusionRegion,

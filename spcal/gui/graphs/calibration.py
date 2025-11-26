@@ -5,6 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import weighted_linreg
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ExclusionRegion
+from spcal.gui.util import create_action
 
 
 class CalibrationView(SinglePlotGraphicsView):
@@ -45,6 +46,8 @@ class CalibrationView(SinglePlotGraphicsView):
 
 
 class IntensityView(SinglePlotGraphicsView):
+    exclusionRegionChanged = QtCore.Signal()
+
     def __init__(
         self,
         downsample: int = 64,
@@ -55,6 +58,15 @@ class IntensityView(SinglePlotGraphicsView):
         self.plot.vb.setMouseEnabled(x=False, y=False)
         self.plot.vb.enableAutoRange(x=True, y=True)
         self.plot.setDownsampling(ds=downsample, mode="subsample", auto=True)
+
+        self.action_exclusion_region = create_action(
+            "removecell",
+            "Add Exclusion Region",
+            "Prevent analysis in a region of the data.",
+            self.addExclusionRegion,
+        )
+        self.action_exclusion_region.triggered.connect(self.exclusionRegionChanged)
+        self.context_menu_actions.append(self.action_exclusion_region)
 
     def addExclusionRegion(self, start: float | None = None, end: float | None = None):
         if self.plot.vb is None:
@@ -69,3 +81,17 @@ class IntensityView(SinglePlotGraphicsView):
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
+
+    def exclusionRegions(self) -> list[tuple[float, float]]:
+        regions = []
+        for item in self.plot.items:
+            if isinstance(item, ExclusionRegion):
+                regions.append((item.start, item.end))
+        return regions
+
+    def removeExclusionRegion(self):
+        region = self.sender()
+        if not isinstance(region, ExclusionRegion):
+            return
+        self.plot.removeItem(region)
+        self.exclusionRegionChanged.emit()
