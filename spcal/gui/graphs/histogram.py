@@ -46,7 +46,6 @@ class HistogramView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
-        self.has_image_export = True
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, yMin=0.0)
 
@@ -82,6 +81,9 @@ class HistogramView(SinglePlotGraphicsView):
         mask[result.filter_indicies] = True
         counts, edges = np.histogram(signals[mask], bins, range=range)
 
+        self.data_for_export[str(result.isotope) + "_counts"] = counts
+        self.data_for_export[str(result.isotope) + "_edges"] = edges
+
         curve = self.drawHistogram(
             counts, edges, width=width, offset=offset, pen=pen, brush=brush
         )
@@ -93,6 +95,9 @@ class HistogramView(SinglePlotGraphicsView):
 
         if self.draw_filtered:
             counts, edges = np.histogram(signals[~mask], bins, range=range)
+
+            self.data_for_export[str(result.isotope) + "_filtered_counts"] = counts
+            self.data_for_export[str(result.isotope) + "_filtered_edges"] = edges
 
             filtered_brush = QtGui.QBrush(brush)
             filtered_brush.setColor(QtCore.Qt.GlobalColor.gray)

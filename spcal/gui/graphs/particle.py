@@ -154,8 +154,8 @@ class ParticleView(SinglePlotGraphicsView):
                     float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
                 )
 
-        self.data_for_export[str(result.isotope) + "_x"] = curve.xData
-        self.data_for_export[str(result.isotope) + "_y"] = curve.yData
+        self.data_for_export[str(result.isotope) + "_x"] = curve.xData  # type: ignore , just set
+        self.data_for_export[str(result.isotope) + "_y"] = curve.yData  # type: ignore , just set
         self.data_for_export[str(result.isotope) + "_particle_x"] = scatter.getData()[0]
         self.data_for_export[str(result.isotope) + "_particle_y"] = scatter.getData()[1]
 
