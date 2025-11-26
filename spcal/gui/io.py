@@ -44,6 +44,33 @@ def most_recent_spcal_path() -> Path | None:
         return Path(path)
 
 
+def get_save_spcal_path(
+    parent: QtWidgets.QWidget,
+    filters: list[tuple[str, str]],
+    dir: str | Path | None = None,
+) -> Path | None:
+    if dir is None:
+        recent = most_recent_spcal_path()
+        if recent is not None:
+            dir = str(recent.parent)
+        else:
+            dir = ""
+    else:
+        dir = str(dir)
+
+    path, filter = QtWidgets.QFileDialog.getSaveFileName(
+        parent, "Save File", dir, ";;".join(f"{name} (*{ext})" for name, ext in filters)
+    )
+    if path == "":
+        return None
+    filter_ext = filter[filter.rfind(".") : -1]
+
+    path = Path(path)
+    if not any(path.stem.lower() == ext for _, ext in filters):
+        path = path.with_suffix(path.suffix + filter_ext)
+    return path
+
+
 def get_open_spcal_path(
     parent: QtWidgets.QWidget, title: str = "Open File"
 ) -> Path | None:

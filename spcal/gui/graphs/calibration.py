@@ -4,6 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.graphs.particle import ExclusionRegion
 
 
 class CalibrationView(SinglePlotGraphicsView):
@@ -41,3 +42,30 @@ class CalibrationView(SinglePlotGraphicsView):
 
         self.plot.addItem(line)
         self.plot.addItem(text)
+
+
+class IntensityView(SinglePlotGraphicsView):
+    def __init__(
+        self,
+        downsample: int = 64,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__("Response TIC", "Time", "Intensity", parent=parent)
+        assert self.plot.vb is not None
+        self.plot.vb.setMouseEnabled(x=False, y=False)
+        self.plot.vb.enableAutoRange(x=True, y=True)
+        self.plot.setDownsampling(ds=downsample, mode="subsample", auto=True)
+
+    def addExclusionRegion(self, start: float | None = None, end: float | None = None):
+        if self.plot.vb is None:
+            return
+        x0, x1 = self.plot.vb.state["limits"]["xLimits"]
+        if start is None or end is None:
+            pos = self.plot.vb.mapSceneToView(self.mapFromGlobal(self.cursor().pos()))
+            start = pos.x() - (x1 - x0) * 0.05
+            end = pos.x() + (x1 - x0) * 0.05
+        region = ExclusionRegion(start, end)  # type: ignore not None, see above
+        region.sigRegionChangeFinished.connect(self.exclusionRegionChanged)
+        region.requestRemoval.connect(self.removeExclusionRegion)
+        region.setBounds((x0, x1))
+        self.plot.addItem(region)

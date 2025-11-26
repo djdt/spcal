@@ -4,6 +4,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.io import get_save_spcal_path, most_recent_spcal_path
 from spcal.gui.util import create_action
 
 
@@ -367,7 +368,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             menu.addAction(self.action_show_legend)
 
         menu.addSeparator()
-        menu.addAction(self.action_export_data)
+        if len(self.data_for_export) > 0:
+            menu.addAction(self.action_export_data)
         menu.addAction(self.action_export_image)
 
         if len(self.context_menu_actions) > 0:
@@ -439,39 +441,36 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         x0, x1, y0, y1 = self.dataBounds()
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
-    def exportData(self, path: str | Path | None):
+    def exportData(self, path: Path | None):
         if path is None:
-            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
-            dir = str(Path(str(dir)).parent) if dir is not None else ""
-            path, filter = QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                "Export Data",
-                dir,
-                "CSV Documents(*.csv);;Numpy archives(*.npz);;All Files(*)",
+            path = get_save_spcal_path(
+                self, [("CSV Documents", ".csv"), ("Numpy archives", ".npz")]
             )
-            if path == "":
+            if path is None:
                 return
 
-        path = Path(path)
-
-        data = self.data_for_export
-        names = list(data.keys())
+        names = list(self.data_for_export.keys())
 
         if path.suffix.lower() == ".csv":
             header = "\t".join(name for name in names)
             stack = np.full(
-                (max(d.size for d in data.values()), len(data)),
+                (
+                    max(d.size for d in self.data_for_export.values()),
+                    len(self.data_for_export),
+                ),
                 np.nan,
                 dtype=np.float32,
             )
-            for i, x in enumerate(data.values()):
+            for i, x in enumerate(self.data_for_export.values()):
                 stack[: x.size, i] = x
             np.savetxt(
                 path, stack, delimiter="\t", comments="", header=header, fmt="%.16g"
             )
         elif path.suffix.lower() == ".npz":
             np.savez_compressed(
-                path, **{k: v for k, v in data.items()}, allow_pickle=False
+                path,
+                **{k: v for k, v in self.data_for_export.items()},
+                allow_pickle=False,
             )
         else:
             raise ValueError("file suffix must be '.npz' or '.csv'.")

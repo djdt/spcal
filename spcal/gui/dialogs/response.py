@@ -12,9 +12,13 @@ from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs import color_schemes
-from spcal.gui.graphs.calibration import CalibrationView
-from spcal.gui.graphs.particle import ParticleView
-from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
+from spcal.gui.graphs.calibration import CalibrationView, IntensityView
+from spcal.gui.io import (
+    get_import_dialog_for_path,
+    get_open_spcal_path,
+    get_save_spcal_path,
+    is_spcal_path,
+)
 from spcal.isotope import SPCalIsotope
 from spcal.siunits import mass_concentration_units
 
@@ -174,7 +178,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
 
-        self.particle = ParticleView()
+        self.intensity = IntensityView()
         # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
         self.calibration = CalibrationView()
@@ -250,7 +254,7 @@ class ResponseDialog(QtWidgets.QDialog):
         table_layout.addWidget(box_intensity)
 
         layout_graphs = QtWidgets.QHBoxLayout()
-        layout_graphs.addWidget(self.particle, 3)
+        layout_graphs.addWidget(self.intensity, 3)
         layout_graphs.addWidget(self.calibration, 2)
 
         layout = QtWidgets.QVBoxLayout()
@@ -322,7 +326,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.drawDataFile(index)
 
     def drawDataFile(self, index: QtCore.QModelIndex):
-        self.particle.clear()
+        self.intensity.clear()
         if not index.isValid():
             return
 
@@ -330,17 +334,17 @@ class ResponseDialog(QtWidgets.QDialog):
         isotope = index.data(ConcentrationModel.IsotopeRole)
 
         # Draw the trace
-        self.particle.drawCurve(data_file.times, data_file[isotope])
+        self.intensity.drawCurve(data_file.times, data_file[isotope])
 
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         pen.setCosmetic(True)
 
         # Draw mean line
-        self.particle.drawLine(
+        self.intensity.drawLine(
             np.nanmean(data_file[isotope]), QtCore.Qt.Orientation.Horizontal, pen=pen
         )
         # Rescale
-        self.particle.setDataLimits(0.0, 1.0)
+        self.intensity.setDataLimits(0.0, 1.0)
 
     def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
         if path is None:
@@ -473,12 +477,10 @@ class ResponseDialog(QtWidgets.QDialog):
         if len(self.model_concs.concentrations) == 0:
             return
         dir = next(iter(self.model_concs.concentrations.keys())).path.parent
-        file, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-        )
-        if file == "":
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")], dir=dir)
+        if path is None:
             return
-        self.saveToFile(Path(file))
+        self.saveToFile(path)
 
     def saveToFile(self, path: Path):
         concs = self.concentrations()
@@ -517,3 +519,21 @@ class ResponseDialog(QtWidgets.QDialog):
                     + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
+
+
+if __name__ == "__main__":
+    from spcal.datafile import SPCalNuDataFile
+
+    app = QtWidgets.QApplication()
+
+    dlg = ResponseDialog()
+    dlg.show()
+
+    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
+    df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
+    dlg.addDataFile(df)
+    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
+    df.selected_isotopes = [df.isotopes[10], df.isotopes[20], df.isotopes[30]]
+    dlg.addDataFile(df)
+
+    app.exec()
