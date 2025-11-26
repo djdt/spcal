@@ -49,7 +49,7 @@ class SPCalProcessingResult(object):
 
     @property
     def num_events(self) -> int:
-        return int(np.count_nonzero(np.any(np.isscalar(self.signals), axis=1)))
+        return int(np.count_nonzero(np.isfinite(self.signals)))
 
     @property
     def event_time(self) -> float:
