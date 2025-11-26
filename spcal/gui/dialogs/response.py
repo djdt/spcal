@@ -8,6 +8,7 @@ import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs import color_schemes
@@ -21,18 +22,20 @@ logger = logging.getLogger(__name__)
 
 
 class ResponseModel(QtCore.QAbstractTableModel):
+    DataFileRole = QtCore.Qt.ItemDataRole.UserRole + 1
+
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
         self.data_files: list[SPCalDataFile] = []
-        self.isotopes: list[SPCalIsotope] = []
-        self.concetrations: list[float] = []
+        self.concentrations: list[float | None] = []
+        self.responses: dict[SPCalIsotope, dict[int, float | None]] = {}
 
     def columnCount(
         self,
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
-        return len(self.isotopes) + 1
+        return len(self.responses) + 1
 
     def rowCount(
         self,
@@ -47,7 +50,7 @@ class ResponseModel(QtCore.QAbstractTableModel):
         flags = super().flags(index)
         if index.isValid():
             df = self.data_files[index.row()]
-            if self.isotopes[index.column() - 1] not in df.isotopes:
+            if list(self.responses.keys())[index.column() - 1] not in df.isotopes:
                 flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
             flags |= QtCore.Qt.ItemFlag.ItemIsEditable
@@ -65,13 +68,34 @@ class ResponseModel(QtCore.QAbstractTableModel):
             QtCore.Qt.ItemDataRole.EditRole,
         ]:
             if index.column() == 0:
-                return self.concetrations[index.row()]
+                return self.concentrations[index.row()]
             else:
-                return float(
-                    np.nanmean(
-                        self.data_files[index.row()][self.isotopes[index.column() - 1]]
-                    )
-                )
+                data_file = self.data_files[index.row()]
+                isotope = list(self.responses.keys())[index.column() - 1]
+                if index.row() not in self.responses[isotope]:
+                    if isotope in data_file.selected_isotopes:
+                        val = float(np.nanmean(data_file[isotope]))
+                    else:
+                        val = None
+                    self.responses[isotope][index.row()] = val
+                return self.responses[isotope][index.row()]
+        elif role == ResponseModel.DataFileRole:
+            return self.data_files[index.row()]
+
+    def setData(
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        value: Any,
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
+    ) -> bool:
+        if not index.isValid():
+            return False
+        if index.column() == 0 and role == QtCore.Qt.ItemDataRole.EditRole:
+            self.concentrations[index.row()] = value
+            self.dataChanged.emit(index, index)
+            return True
+
+        return False
 
 
 class ResponseDialog(QtWidgets.QDialog):
@@ -85,16 +109,27 @@ class ResponseDialog(QtWidgets.QDialog):
         self.button_open_file = QtWidgets.QPushButton("Open File")
         self.button_open_file.pressed.connect(self.dialogLoadFile)
 
-        self.graph = ParticleView()
+        self.particle = ParticleView()
         # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
 
-        self.graph_cal = CalibrationView()
+        self.calibration = CalibrationView()
         # self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
 
         self.model = ResponseModel()
 
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
         self.table = QtWidgets.QTableView()
         self.table.setModel(self.model)
+        self.table.setItemDelegateForColumn(0, ValueWidgetDelegate(sigfigs=sf))
+        self.table.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.table.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        # self.table.clicked.connect(self.onTableClicked)
+        self.table.selectionModel().currentRowChanged.connect(self.drawDataFile)
 
         self.table.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
@@ -150,8 +185,8 @@ class ResponseDialog(QtWidgets.QDialog):
         box_concs.setLayout(box_concs_layout)
 
         layout_graphs = QtWidgets.QHBoxLayout()
-        layout_graphs.addWidget(self.graph, 3)
-        layout_graphs.addWidget(self.graph_cal, 2)
+        layout_graphs.addWidget(self.particle, 3)
+        layout_graphs.addWidget(self.calibration, 2)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_graphs, 3)
@@ -160,20 +195,43 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        if self.model.array.dtype.names is None:
+        if self.model.rowCount() == 0:
             return False
-        for name in self.model.array.dtype.names:
-            if np.count_nonzero(~np.isnan(self.model.array[name])) > 0:
-                return True
-        return False
+
+        number_concs = 0
+        for row in range(self.model.rowCount()):
+            if self.model.data(self.model.index(row, 0)) is not None:
+                number_concs += 1
+        return number_concs > 2
 
     def completeChanged(self):
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
             self.isComplete()
         )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(
-            self.isComplete()
+        self.button_box.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+        ).setEnabled(self.isComplete())
+
+    def drawDataFile(self, index: QtCore.QModelIndex):
+        self.particle.clear()
+        if not index.isValid():
+            return
+
+        data_file = index.data(ResponseModel.DataFileRole)
+        tic = np.sum([data_file[iso] for iso in data_file.selected_isotopes], axis=0)
+
+        # Draw the TIC trace
+        self.particle.drawCurve(data_file.times, tic)
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+        pen.setCosmetic(True)
+
+        # Draw mean line
+        self.particle.drawLine(
+            np.nanmean(tic), QtCore.Qt.Orientation.Horizontal, pen=pen
         )
+        # Rescale
+        self.particle.setDataLimits(0.0, 1.0)
 
     def dropEvent(self, event: QtGui.QDropEvent):
         if event.mimeData().hasUrls():
@@ -197,9 +255,7 @@ class ResponseDialog(QtWidgets.QDialog):
             path = Path(path)
 
         existing = None if len(self.model.data_files) == 0 else self.model.data_files[0]
-        dlg = get_import_dialog_for_path(
-            self, path, existing
-        )  # import_options managed below
+        dlg = get_import_dialog_for_path(self, path, existing)
         dlg.dataImported.connect(self.loadDataFile)
 
         if existing is None:
@@ -208,101 +264,74 @@ class ResponseDialog(QtWidgets.QDialog):
             try:
                 dlg.accept()
             except Exception:
-                logger.warning("dialogLoadFile: unable to set import options.")
+                logger.warning("existing file in response dialog incompatible.")
                 dlg.open()
 
         return dlg
 
     def loadDataFile(self, data_file: SPCalDataFile):
-        # self.model.beginInsertRows(
-        #     QtCore.QModelIndex(), self.model.rowCount(), self.model.rowCount() + 1
-        # )
         self.model.beginResetModel()
         self.model.data_files.append(data_file)
-        self.model.concetrations.append(0.0)
-        all_isotopes = set(
-            iso for df in self.model.data_files for iso in df.selected_isotopes
+        self.model.concentrations.append(None)
+        new_isotopes = set(data_file.selected_isotopes).difference(
+            self.model.responses.keys()
         )
-        print(all_isotopes)
-        self.model.isotopes = list(all_isotopes)
+        for isotope in new_isotopes:
+            self.model.responses[isotope] = {}
         self.model.endResetModel()
-        # self.model.endInsertRows()
 
-        # Check the new data is compatible with current loaded
-        # if self.model.array.size == 0:
-        #     self.model.beginResetModel()
-        #     self.model.array = np.full(1, np.nan, dtype=data.dtype)
-        #     self.model.endResetModel()
-        #     self.responses = self.model.array.copy()
-        #
-        # elif (
-        #     data.dtype.names != self.model.array.dtype.names
-        # ):  # pragma: no cover, can't test msgbox
-        #     button = QtWidgets.QMessageBox.question(
-        #         self, "Warning", "New data does not match current, overwrite?"
-        #     )
-        #     if button == QtWidgets.QMessageBox.StandardButton.Yes:
-        #         self.model.beginResetModel()
-        #         self.model.array = np.full(1, np.nan, dtype=data.dtype)
-        #         self.model.endResetModel()
-        #         self.responses = self.model.array.copy()
-        #     else:
-        #         return
-        # else:
-        #     self.model.insertColumn(self.model.columnCount())
-        #     self.responses = np.append(
-        #         self.responses, np.full(1, np.nan, self.responses.dtype)
-        #     )
-        #
-        # if self.import_options is None:
-        #     self.import_options = options
-        #
-        # old_size = self.data.size
-        # self.data = data
-        # tic = np.sum([data[name] for name in data.dtype.names], axis=0)
-        # xs = np.arange(tic.size)
-        #
-        # self.graph.clear()
-        # self.graph.plot.setTitle(f"TIC: {options['path'].name}")
-        # self.graph.drawData(xs, tic)
-        # if old_size != data.size:
-        #     self.graph.region.blockSignals(True)
-        #     self.graph.region.setRegion((xs[0], xs[-1]))
-        #     self.graph.region.blockSignals(False)
-        # self.graph.updateMean()
-        #
-        # self.updateResponses()
-
-    def updateResponses(self):
-        if self.responses.dtype.names is None:  # pragma: no cover
-            return
-
-        for name in self.responses.dtype.names:
-            self.responses[name][-1] = np.mean(
-                self.data[name][self.graph.region_start : self.graph.region_end]
-            )
-
-        self.updateCalibration()
+    # def updateResponses(self):
+    #     if self.responses.dtype.names is None:  # pragma: no cover
+    #         return
+    #
+    #     for name in self.responses.dtype.names:
+    #         self.responses[name][-1] = np.mean(
+    #             self.data[name][self.particle.region_start : self.particle.region_end]
+    #         )
+    #
+    #     self.updateCalibration()
 
     def updateCalibration(self):
-        self.graph_cal.clear()
-        if self.responses.dtype.names is None:  # pragma: no cover
-            return
+        self.calibration.clear()
 
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
+        concs = np.array(self.model.concentrations, dtype=float)
 
-        for i, name in enumerate(self.responses.dtype.names):
-            x = self.model.array[name]
-            y = self.responses[name][~np.isnan(x)]
-            x = x[~np.isnan(x)]
+        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
+
+        for col in range(1, self.model.columnCount()):
+            responses = np.array(
+                [
+                    self.model.data(self.model.index(row, col))
+                    for row in range(self.model.rowCount())
+                ],
+                dtype=float,
+            )
+            nans = np.logical_or(np.isnan(concs), np.isnan(responses))
+            x = concs[~nans]
+            y = responses[~nans]
             if x.size == 0:
                 continue
-            brush = QtGui.QBrush(scheme[i % len(scheme)])
-            self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
+
+            brush = QtGui.QBrush(scheme[(col - 1) % len(scheme)])
+            name = str(list(self.model.responses.keys())[col - 1])
+
+            scatter = self.calibration.drawScatter(
+                x, y, size=6.0 * self.devicePixelRatio(), brush=brush
+            )
+
+            pen = QtGui.QPen(
+                scheme[(col - 1) % len(scheme)], 1.0 * self.devicePixelRatio()
+            )
+            pen.setCosmetic(True)
+            self.calibration.drawTrendline(x, y, pen=pen)
+
+            if self.calibration.plot.legend is not None:
+                self.calibration.plot.legend.addItem(name, scatter)
 
     def dialogSaveToFile(self):
-        assert self.import_options is not None
-        dir = self.import_options["path"].parent
+        if len(self.model.data_files) == 0:
+            return
+        dir = self.model.data_files[0].path
         file, _ = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
         )
@@ -440,15 +469,11 @@ class ResponseDialog(QtWidgets.QDialog):
         super().accept()
 
     def reset(self):
-        data = np.array([], dtype=[("<element>", np.float64)])
         self.model.beginResetModel()
-        self.model.array = np.full(1, np.nan, dtype=data.dtype)
+        self.model.data_files.clear()
+        self.model.concentrations.clear()
+        self.model.responses.clear()
         self.model.endResetModel()
-        self.responses = self.model.array.copy()
-
-        self.import_options = None
-        self.graph.clear()
-        self.graph_cal.clear()
 
 
 if __name__ == "__main__":
@@ -463,6 +488,7 @@ if __name__ == "__main__":
         Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles")
     )
     df.selected_isotopes = [df.isotopes[10], df.isotopes[20]]
+    dlg.loadDataFile(df)
     dlg.loadDataFile(df)
 
     app.exec()
