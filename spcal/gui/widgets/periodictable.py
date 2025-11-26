@@ -325,13 +325,16 @@ class PeriodicTableSelector(QtWidgets.QWidget):
                 action.setChecked(False)
 
         for isotope in selected:
-            self.buttons[isotope.symbol].isotope_actions[isotope.isotope].setChecked(
-                True
-            )
+            if self.buttons[isotope.symbol].isEnabled():
+                self.buttons[isotope.symbol].isotope_actions[
+                    isotope.isotope
+                ].setChecked(True)
         self.blockSignals(False)
         self.isotopesChanged.emit()
 
-    def setIsotopeColors(self, isotopes: list[SPCalIsotope], colors: list[QtGui.QColor]):
+    def setIsotopeColors(
+        self, isotopes: list[SPCalIsotope], colors: list[QtGui.QColor]
+    ):
         """Set the indicator colors for ``isotopes`` to ``colors.
 
         Will change text to BrightText ColorRole if a dark color is used.
