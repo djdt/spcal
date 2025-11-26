@@ -1,6 +1,6 @@
 import numpy as np
 import pyqtgraph
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
 from spcal.gui.graphs.base import SinglePlotGraphicsView
@@ -9,39 +9,12 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 class CalibrationView(SinglePlotGraphicsView):
     def __init__(
         self,
-        parent: pyqtgraph.GraphicsWidget | None = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__("Calibration", "Concentration", "Response", parent=parent)
-        self.plot.setMouseEnabled(x=False, y=False)
-        self.plot.enableAutoRange(x=True, y=True)
-
-    def drawPoints(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        name: str | None = None,
-        draw_trendline: bool = False,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QPen | None = None,
-    ):
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.red)
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        scatter = pyqtgraph.ScatterPlotItem(
-            x, y, symbol="o", size=10, pen=pen, brush=brush
-        )
-        self.plot.addItem(scatter)
-
-        if name is not None:
-            self.plot.legend.addItem(scatter, name)
-
-        if draw_trendline:
-            tpen = QtGui.QPen(brush.color(), 1.0)
-            tpen.setCosmetic(True)
-            self.drawTrendline(x, y, pen=tpen)
+        assert self.plot.vb is not None
+        self.plot.vb.setMouseEnabled(x=False, y=False)
+        self.plot.vb.enableAutoRange(x=True, y=True)
 
     def drawTrendline(
         self,
@@ -51,7 +24,7 @@ class CalibrationView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
     ):
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.red, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
 
         if weighting != "none":
@@ -63,7 +36,7 @@ class CalibrationView(SinglePlotGraphicsView):
         x0, x1 = x.min(), x.max()
 
         line = pyqtgraph.PlotCurveItem([x0, x1], [m * x0 + b, m * x1 + b], pen=pen)
-        text = pyqtgraph.TextItem(f"r² = {r2:.4f}", anchor=(0, 1))
+        text = pyqtgraph.TextItem(f"r² = {r2:.4f}", anchor=(1, 1))
         text.setPos(x1, m * x1 + b)
 
         self.plot.addItem(line)
