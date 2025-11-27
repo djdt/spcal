@@ -19,6 +19,10 @@ class SPCalProcessingFilter(object):
         raise NotImplementedError
 
 
+class SPCalClusterFilter(SPCalProcessingFilter):
+    pass
+
+
 class SPCalValueFilter(SPCalProcessingFilter):
     def __init__(
         self,
