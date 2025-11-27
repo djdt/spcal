@@ -63,10 +63,6 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         pen: QtGui.QPen | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
-        if font is None:
-            font = QtGui.QFont()
-        self._font = font
-
         self.xaxis = pyqtgraph.AxisItem("bottom", pen=pen, textPen=pen, tick_pen=pen)
         self.xaxis.setLabel(xlabel, units=xunits)
 
@@ -85,16 +81,15 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         self.hideButtons()
         self.addLegend(offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black")
 
+        if font is None:
+            font = QtGui.QFont()
         self.setFont(font)
 
     def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
         self.requestContextMenu.emit(event.pos().toPoint())
 
-    def font(self) -> QtGui.QFont:  # type: ignore , pyqtgraph qt versions
-        return self._font
-
     def setFont(self, font: QtGui.QFont):  # type: ignore , pyqtgraph qt versions
-        self._font = font
+        super().setFont(font)
 
         fm = QtGui.QFontMetrics(font)
         pen: QtGui.QPen = self.xaxis.tickPen()
@@ -226,6 +221,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.setCentralWidget(self.plot)
 
         self.plot.requestContextMenu.connect(self.customContextMenu)
+
+    def font(self) -> QtGui.QFont:
+        return self.plot.font()
+
+    def setFont(self, font: QtGui.QFont):
+        self.plot.setFont(font)
 
     def drawCurve(
         self,

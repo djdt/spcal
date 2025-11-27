@@ -3,7 +3,7 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.legends import MultipleItemSampleProxy
+from spcal.gui.graphs.legends import ParticleItemSample
 from spcal.gui.util import create_action
 from spcal.processing import SPCalProcessingResult
 
@@ -67,9 +67,6 @@ class ParticleView(SinglePlotGraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
         self.setAutoScaleY(True)
-
-        if self.plot.legend is not None:
-            self.plot.legend.setColumnCount(3)
 
         self.action_peak_properties = create_action(
             "office-chart-area-focus-peak-node",
@@ -141,29 +138,39 @@ class ParticleView(SinglePlotGraphicsView):
             symbol=scatter_symbol,
         )
 
-        for val, name, style in zip(
-            [result.limit.detection_threshold, result.limit.mean_signal],
-            ["Threshold", "Mean"],
-            [QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.DotLine],
-        ):
-            pen.setStyle(style)
-            if isinstance(val, np.ndarray):
-                self.drawCurve(result.times, val, pen=pen, name=name)
-            else:
-                self.drawLine(
-                    float(val), QtCore.Qt.Orientation.Horizontal, pen=pen, name=name
-                )
-
         self.data_for_export[str(result.isotope) + "_x"] = curve.xData  # type: ignore , just set
         self.data_for_export[str(result.isotope) + "_y"] = curve.yData  # type: ignore , just set
         self.data_for_export[str(result.isotope) + "_particle_x"] = scatter.getData()[0]
         self.data_for_export[str(result.isotope) + "_particle_y"] = scatter.getData()[1]
 
-        if self.plot.legend is not None:
-            legend = MultipleItemSampleProxy(
-                pen.color(),
-                items=[curve, scatter],  # type: ignore , works
+        pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+        if isinstance(result.limit.detection_threshold, np.ndarray):
+            lod = self.drawCurve(
+                result.times, result.limit.detection_threshold, pen=pen
             )
+        else:
+            lod = self.drawLine(
+                float(result.limit.detection_threshold),
+                QtCore.Qt.Orientation.Horizontal,
+                pen=pen,
+            )
+        pen.setStyle(QtCore.Qt.PenStyle.DotLine)
+        if isinstance(result.limit.mean_signal, np.ndarray):
+            mu = self.drawCurve(result.times, result.limit.mean_signal, pen=pen)
+        else:
+            mu = self.drawLine(
+                float(result.limit.mean_signal),
+                QtCore.Qt.Orientation.Horizontal,
+                pen=pen,
+            )
+
+        if self.plot.legend is not None:
+            fm = QtGui.QFontMetrics(self.font())
+            legend = ParticleItemSample(fm, curve, scatter, [lod, mu])
+            # legend = MultipleItemSampleProxy(
+            #     pen.color(),
+            #     items=[curve, scatter],  # type: ignore , works
+            # )
             self.plot.legend.addItem(legend, str(result.isotope))
 
         self.setDataLimits(xMin=0.0, xMax=1.0)

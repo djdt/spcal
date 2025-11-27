@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.cluster import cluster_information, prepare_data_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
-from spcal.gui.graphs.legends import StaticRectItemSample
+from spcal.gui.graphs.legends import FontScaledItemSample
 from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.util import create_action
 from spcal.processing import SPCalProcessingResult
@@ -57,7 +57,7 @@ class CompositionView(SinglePlotGraphicsView):
         self.plot.vb.setAspectLocked(True)
         self.plot.vb.invertY(True)
         assert self.plot.legend is not None
-        self.plot.legend.setSampleType(StaticRectItemSample)
+        self.plot.legend.setSampleType(FontScaledItemSample)
         self.plot.xaxis.hide()
         self.plot.yaxis.hide()
 
@@ -153,7 +153,7 @@ class CompositionView(SinglePlotGraphicsView):
                     comp,
                     brushes,
                     labels=[str(result.isotope) for result in results],
-                    font=self.font(),
+                    font=self.plot.font(),
                 )
                 item.setPos(i * spacing, -size)
                 label = pyqtgraph.TextItem(
@@ -162,6 +162,7 @@ class CompositionView(SinglePlotGraphicsView):
                     anchor=(0.5, 0.0),
                     ensureInBounds=True,
                 )
+                label.setFont(self.plot.font())
                 label.setPos(i * spacing, 0)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
@@ -179,7 +180,7 @@ class CompositionView(SinglePlotGraphicsView):
                     comp,
                     brushes,
                     labels=[str(result.isotope) for result in results],
-                    font=self.font(),
+                    font=self.plot.font(),
                 )
                 item.setPos(i * spacing - width / 2.0, -height)
                 label = pyqtgraph.TextItem(
@@ -188,6 +189,7 @@ class CompositionView(SinglePlotGraphicsView):
                     anchor=(0.5, 0.0),
                     ensureInBounds=True,
                 )
+                label.setFont(self.plot.font())
                 label.setPos(i * spacing, 0)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
@@ -204,8 +206,12 @@ class CompositionView(SinglePlotGraphicsView):
 
         # Add legend for each pie
         if self.plot.legend is not None:
+            fm = QtGui.QFontMetrics(self.font())
             for result, brush in zip(results, brushes):
-                self.plot.legend.addItem(StaticRectItemSample(brush), str(result.isotope))
+                self.plot.legend.addItem(
+                    FontScaledItemSample(None, fm, brush=brush),
+                    str(result.isotope),
+                )
 
     def zoomReset(self):  # No plotdata
         if self.plot.vb is not None:

@@ -89,8 +89,8 @@ class HistogramView(SinglePlotGraphicsView):
         )
 
         if self.plot.legend is not None:
-            fm = self.fontMetrics()
-            legend = HistogramItemSample([curve], size=fm.height())  # type: ignore , curce is subtype of dataitem
+            fm = QtGui.QFontMetrics(self.font())
+            legend = HistogramItemSample(fm, [curve])
             self.plot.legend.addItem(legend, str(result.isotope))
 
         if self.draw_filtered:
