@@ -444,8 +444,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def exportData(self, path: Path | None):
         if path is None:
+            path = most_recent_spcal_path()
+            if path is not None:
+                path = path.parent.joinpath("export.csv")
             path = get_save_spcal_path(
-                self, [("CSV Documents", ".csv"), ("Numpy archives", ".npz")]
+                self, [("CSV Documents", ".csv"), ("Numpy archives", ".npz")], path=path
             )
             if path is None:
                 return

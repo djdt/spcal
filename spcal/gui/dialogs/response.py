@@ -501,8 +501,10 @@ class ResponseDialog(QtWidgets.QDialog):
     def dialogSaveToFile(self):
         if len(self.model_concs.concentrations) == 0:
             return
-        dir = next(iter(self.model_concs.concentrations.keys())).path.parent
-        path = get_save_spcal_path(self, [("CSV Documents", ".csv")], dir=dir)
+        path = next(iter(self.model_concs.concentrations.keys())).path.parent.joinpath(
+            "responses.csv"
+        )
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")], path=path)
         if path is None:
             return
         self.saveToFile(path)
