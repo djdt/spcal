@@ -47,19 +47,22 @@ def most_recent_spcal_path() -> Path | None:
 def get_save_spcal_path(
     parent: QtWidgets.QWidget,
     filters: list[tuple[str, str]],
-    dir: str | Path | None = None,
+    path: str | Path | None = None,
 ) -> Path | None:
-    if dir is None:
+    if path is None:
         recent = most_recent_spcal_path()
         if recent is not None:
-            dir = str(recent.parent)
+            path = str(recent.parent)
         else:
-            dir = ""
+            path = ""
     else:
-        dir = str(dir)
+        path = str(path)
 
     path, filter = QtWidgets.QFileDialog.getSaveFileName(
-        parent, "Save File", dir, ";;".join(f"{name} (*{ext})" for name, ext in filters)
+        parent,
+        "Save File",
+        path,
+        ";;".join(f"{name} (*{ext})" for name, ext in filters),
     )
     if path == "":
         return None
@@ -142,3 +145,11 @@ def get_import_dialog_for_path(
     # if screening_options is not None:
     #     dlg.setScreeningOptions(screening_options)
     return dlg
+
+
+def saveSession():
+    pass
+
+
+def loadSession():
+    pass
