@@ -9,6 +9,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.datafile import SPCalDataFile
 
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
@@ -25,10 +26,14 @@ from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalToolBar
 from spcal.gui.graphs import color_schemes
-from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path
+from spcal.gui.io import (
+    get_import_dialog_for_path,
+    get_open_spcal_path,
+    most_recent_spcal_path,
+)
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import restoreSession, saveSession
+from spcal.gui.io import loadSession, saveSession
 from spcal.isotope import SPCalIsotope
 from spcal.processing import (
     SPCalIsotopeOptions,
@@ -381,9 +386,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # Todo move to right click menu
         self.action_export = create_action(
             "document-save-as",
-            "E&xport Data",
-            "Save single particle signal data to various formats.",
-            self.dialogExportData,
+            "E&xport Results",
+            "Save single particle results as a CSV.",
+            self.dialogExportResults,
         )
         self.action_export.setEnabled(False)
 
@@ -570,7 +575,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     dlg.open()
     #     return dlg
 
-    def dialogExportData(self):
+    def dialogExportResults(self):
+        self.reprocess(None)  # force reprocess of all data files
+
+        dlg = ExportDialog(
+            self.files.dataFiles(),
+            self.processing_results[method],
+            self.processing_clusters,
+            parent=self,
+        )
         raise NotImplementedError
 
     #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
@@ -701,9 +714,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         if file == "":
             return
-        restoreSession(
-            Path(file), self.options, self.sample, self.reference, self.results
-        )
+        loadSession(Path(file), self.options, self.sample, self.reference, self.results)
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")

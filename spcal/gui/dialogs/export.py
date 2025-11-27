@@ -4,8 +4,11 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.io.text import export_single_particle_results
-from spcal.result import SPCalResult
+from spcal.datafile import SPCalDataFile
+from spcal.gui.io import get_save_spcal_path
+from spcal.io.export import export_single_particle_results
+from spcal.isotope import SPCalIsotope
+from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import mass_units, size_units
 
 logger = logging.getLogger(__name__)
@@ -16,49 +19,56 @@ class ExportDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        path: str | Path,
-        results: dict[str, SPCalResult],
-        clusters: dict[str, np.ndarray],
-        times: np.ndarray,
+        data_files: list[SPCalDataFile],
+        results: dict[SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]],
+        clusters: dict[SPCalDataFile, np.ndarray],
+        path: Path | None = None,
         units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Results Export Options")
 
+        self.data_files = data_files
         self.results = results
         self.clusters = clusters
-        self.times = times
 
-        _units = {"mass": "kg", "size": "m"}
+        _units = {"mass": "kg", "size": "m", "volume": "L"}
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
         filename_regexp = QtCore.QRegularExpression(f"[^{self.invalid_chars}]+")
-        self.lineedit_path = QtWidgets.QLineEdit(str(Path(path).absolute()))
-        self.lineedit_path.setMinimumWidth(300)
-        self.lineedit_path.setValidator(
+
+        self.lineedit_name = QtWidgets.QLineEdit("<DataFile>_results.csv")
+        self.lineedit_name.setMinimumWidth(300)
+        self.lineedit_name.setValidator(
             QtGui.QRegularExpressionValidator(filename_regexp)
         )
-        self.button_path = QtWidgets.QPushButton("Select File")
-        self.button_path.clicked.connect(self.dialogFilePath)
+
+        self.lineedit_dir = QtWidgets.QLineEdit(str(self.data_files[0].path.parent))
+        self.lineedit_dir.setMinimumWidth(300)
+
+        self.button_path = QtWidgets.QPushButton("Directory")
+        self.button_path.clicked.connect(self.dialogDirectory)
 
         file_box = QtWidgets.QGroupBox("Save File")
-        file_box.setLayout(QtWidgets.QHBoxLayout())
-        file_box.layout().addWidget(self.lineedit_path, 1)
-        file_box.layout().addWidget(self.button_path, 0)
+        file_box_layout = QtWidgets.QHBoxLayout()
+        file_box_layout.addWidget(self.lineedit_name, 1)
+        file_box_layout.addWidget(self.button_path, 0)
+        file_box.setLayout(file_box_layout)
 
         self.mass_units = QtWidgets.QComboBox()
-        self.mass_units.addItems(mass_units.keys())
+        self.mass_units.addItems(list(mass_units.keys()))
         self.mass_units.setCurrentText(_units["mass"])
         self.size_units = QtWidgets.QComboBox()
-        self.size_units.addItems(size_units.keys())
+        self.size_units.addItems(list(size_units.keys()))
         self.size_units.setCurrentText(_units["size"])
 
         units_box = QtWidgets.QGroupBox("Output Units")
-        units_box.setLayout(QtWidgets.QFormLayout())
-        units_box.layout().addRow("Mass units", self.mass_units)
-        units_box.layout().addRow("Size units", self.size_units)
+        units_box_layout = QtWidgets.QFormLayout()
+        units_box_layout.addRow("Mass units", self.mass_units)
+        units_box_layout.addRow("Size units", self.size_units)
+        units_box.setLayout(units_box_layout)
 
         self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
         self.check_export_inputs.setChecked(True)
@@ -71,13 +81,15 @@ class ExportDialog(QtWidgets.QDialog):
         )
 
         switches_box = QtWidgets.QGroupBox("Export options")
-        switches_box.setLayout(QtWidgets.QVBoxLayout())
-        switches_box.layout().addWidget(self.check_export_inputs)
-        switches_box.layout().addWidget(self.check_export_arrays)
-        switches_box.layout().addWidget(self.check_export_compositions)
+        switches_box_layout = QtWidgets.QVBoxLayout()
+        switches_box_layout.addWidget(self.check_export_inputs)
+        switches_box_layout.addWidget(self.check_export_arrays)
+        switches_box_layout.addWidget(self.check_export_compositions)
+        switches_box.setLayout(switches_box_layout)
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -90,17 +102,13 @@ class ExportDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-    def dialogFilePath(self) -> QtWidgets.QFileDialog:
-        dlg = QtWidgets.QFileDialog(
-            self,
-            "Save Results",
-            self.lineedit_path.text(),
-            "CSV Documents (*.csv);;All files (*)",
+    def dialogDirectory(self):
+        dir = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Select Directory", self.lineedit_dir.text()
         )
-        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
-        dlg.setFileMode(QtWidgets.QFileDialog.FileMode.AnyFile)
-        dlg.fileSelected.connect(self.lineedit_path.setText)
-        dlg.open()
+        if dir == "":
+            return
+        self.lineedit_dir.setText(dir)
 
     def accept(self):
         units = {
@@ -114,8 +122,9 @@ class ExportDialog(QtWidgets.QDialog):
             ),
         }
 
-        path = Path(self.lineedit_path.text())
-        first_result = next(iter(self.results.values()))
+        # path = Path(self.lineedit_path.text())
+        # first_result = next(iter(self.results.values()))
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")])
 
         # Check if overwriting
         if path.exists():
@@ -130,15 +139,15 @@ class ExportDialog(QtWidgets.QDialog):
             if button == QtWidgets.QMessageBox.StandardButton.No:
                 return
 
-        export_single_particle_results(
-            path,
-            self.results,
-            self.clusters,
-            self.times,
-            units_for_results=units,
-            output_inputs=self.check_export_inputs.isChecked(),
-            output_compositions=self.check_export_compositions.isChecked(),
-            output_arrays=self.check_export_arrays.isChecked(),
-        )
+        # export_single_particle_results(
+        #     path,
+        #     self.results,
+        #     self.clusters,
+        #     self.times,
+        #     units_for_results=units,
+        #     output_inputs=self.check_export_inputs.isChecked(),
+        #     output_compositions=self.check_export_compositions.isChecked(),
+        #     output_arrays=self.check_export_arrays.isChecked(),
+        # )
         logger.info(f"Data for {first_result.file} exported to {path}.")
         super().accept()
