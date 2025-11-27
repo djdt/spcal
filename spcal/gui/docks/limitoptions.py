@@ -46,6 +46,9 @@ class LimitOptions(QtWidgets.QGroupBox):
     def isComplete(self) -> bool:
         return False
 
+    def setSignificantFigures(self, sf: int):
+        self.alpha.setSigFigs(sf)
+
 
 class CompoundPoissonOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -134,6 +137,10 @@ class CompoundPoissonOptions(LimitOptions):
 
         return self.alpha.hasAcceptableInput()
 
+    def setSignificantFigures(self, sf: int):
+        super().setSignificantFigures(sf)
+        self.lognormal_sigma.setSigFigs(sf)
+
 
 class GaussianOptions(LimitOptions):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -171,6 +178,10 @@ class GaussianOptions(LimitOptions):
 
     def isComplete(self) -> bool:
         return self.alpha.hasAcceptableInput()
+
+    def setSignificantFigures(self, sf: int):
+        super().setSignificantFigures(sf)
+        self.sigma.setSigFigs(sf)
 
 
 class PoissonOptions(LimitOptions):
@@ -372,10 +383,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         widget.setLayout(layout)
         self.setWidget(widget)
 
-    def shrink(self):
-        self.resize(self.widget().sizeHint())
-
-    def asLimitOptions(self) -> SPCalLimitOptions:
+    def limitOptions(self) -> SPCalLimitOptions:
         return SPCalLimitOptions(
             method=self.limit_method.currentText().lower(),
             gaussian_kws=self.gaussian.state(),
@@ -411,13 +419,18 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
 
         self.optionsChanged.emit()
 
-    def resetInputs(self):
+    def reset(self):
         self.blockSignals(True)
         self.window_size.setValue(1000)
         self.check_window.setChecked(False)
         self.check_iterative.setChecked(False)
-        # self.gaussian.alpha.setValue(2.867e-7)
-        # self.poisson = PoissonOptions()
-        # self.compound = CompoundPoissonOptions()
+        self.gaussian.alpha.setValue(2.867e-7)
+        self.poisson = PoissonOptions()
+        self.compound = CompoundPoissonOptions()
 
         self.blockSignals(False)
+
+    def setSignificantFigures(self, sf: int):
+        self.poisson.setSignificantFigures(sf)
+        self.gaussian.setSignificantFigures(sf)
+        self.compound.setSignificantFigures(sf)

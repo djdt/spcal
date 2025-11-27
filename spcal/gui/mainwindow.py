@@ -74,7 +74,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_methods = {
             "default": SPCalProcessingMethod(
                 self.instrument_options.asInstrumentOptions(),
-                self.limit_options.asLimitOptions(),
+                self.limit_options.limitOptions(),
                 accumulation_method=self.limit_options.limit_accumulation,
                 points_required=self.limit_options.points_required,
                 prominence_required=self.limit_options.prominence_required,
@@ -267,6 +267,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
         self.processing_results[data_file] = method.filterResults(
             self.processing_results[data_file]
         )
@@ -278,7 +280,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onLimitOptionsChanged(self):
         method = self.currentMethod()
-        method.limit_options = self.limit_options.asLimitOptions()
+        method.limit_options = self.limit_options.limitOptions()
         method.accumulation_method = self.limit_options.limit_accumulation
         method.points_required = self.limit_options.points_required
         method.prominence_required = self.limit_options.prominence_required
@@ -353,12 +355,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.action_open_recent.triggered.connect(
             lambda a: self.dialogLoadFile(a.text().replace("&", ""))
         )
-        # self.action_open_reference = create_action(
-        #     "document-open",
-        #     "Open &Reference File",
-        #     "Import reference SP data from a CSV file.",
-        #     lambda: self.reference.dialogLoadFile(),
-        # )
 
         self.action_open_batch = create_action(
             "document-multiple",
@@ -400,7 +396,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "edit-reset",
             "Clear Data and Inputs",
             "Clears loaded datas and resets the option, sample and reference inputs.",
-            self.resetInputs,
+            self.reset,
         )
         self.action_calculator = create_action(
             "insert-math-expression",
@@ -478,8 +474,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.menu_recent.setIcon(QtGui.QIcon.fromTheme("document-open-recent"))
         self.menu_recent.setEnabled(False)
 
-        # menufile.addSeparator()
-        # menufile.addAction(self.action_open_reference)
         menufile.addSeparator()
         menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
@@ -714,41 +708,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
-    # def onInputsChanged(self):
-    #     # Reference tab is neb method requires
-    #     self.tabs.setTabEnabled(
-    #         self.tabs.indexOf(self.reference),
-    #         self.options.efficiency_method.currentText()
-    #         in ["Reference Particle", "Mass Response"],
-    #     )
-    #     self.tabs.setTabEnabled(
-    #         self.tabs.indexOf(self.results),
-    #         self.readyForResults(),
-    #     )
-    #     self.action_open_batch.setEnabled(self.readyForResults())
-    #     self.action_export.setEnabled(self.readyForResults())
-
-    # def onTabChanged(self, index: int):
-    #     if index == self.tabs.indexOf(self.results):
-    #         if self.results.isUpdateRequired():
-    #             self.results.updateResults()
-
-    # def readyForResults(self) -> bool:
-    #     return self.sample.isComplete() and (
-    #         self.options.efficiency_method.currentText() in ["Manual Input"]
-    #         or self.reference.isComplete()
-    #     )
-    #
-    def resetInputs(self):
-        self.instrument_options.resetInputs()
-        self.limit_options.resetInputs()
-        self.isotope_options.resetInputs()
-        # self.tabs.setCurrentIndex(0)
-        #
-        # self.results.resetInputs()
-        # self.sample.resetInputs()
-        # self.reference.resetInputs()
-        # self.options.resetInputs()
+    def reset(self):
+        self.files.reset()
+        self.graph.clear()
+        self.outputs.reset()
+        self.instrument_options.reset()
+        self.limit_options.reset()
+        self.isotope_options.reset()
+        self.toolbar.reset()
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
@@ -759,21 +726,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def setGraphFont(self):
         settings = QtCore.QSettings()
         current = QtGui.QFont(
-            settings.value("GraphFont/Family", "SansSerif"),
-            pointSize=int(settings.value("GraphFont/PointSize", 10)),
+            settings.value("GraphFont/Family", "SansSerif"),  # type: ignore
+            pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
         ok, font = QtWidgets.QFontDialog.getFont(current, parent=self)
         if ok:
             settings.setValue("GraphFont/Family", font.family())
             settings.setValue("GraphFont/PointSize", font.pointSize())
-            self.sample.setGraphFont(font)
-            self.reference.setGraphFont(font)
-            self.results.setGraphFont(font)
+            self.graph.setGraphFont(font)
 
     def setSignificantFigures(self):
         settings = QtCore.QSettings()
-        current = int(settings.value("SigFigs", 4))
+        current = int(settings.value("SigFigs", 4))  # type: ignore
 
         value, ok = QtWidgets.QInputDialog.getInt(
             self, "Set Output Sig. Fig.", "Significant Figures", current, 1, 11, 1
@@ -783,23 +748,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.instrument_options.setSignificantFigures(value)
             self.limit_options.setSignificantFigures(value)
             self.isotope_options.setSignificantFigures(value)
-            self.sample.io.setSignificantFigures(value)
-            self.reference.io.setSignificantFigures(value)
-            self.results.io.setSignificantFigures(value)
-
-    def syncSampleAndReference(self):
-        # Sync response
-        for name, io in zip(self.sample.io.names(), self.sample.io.widgets()):
-            if name in self.reference.io:
-                ref_io = self.reference.io[name]
-                sample_value = io.response.baseValue()
-                ref_value = ref_io.response.baseValue()
-                if sample_value is not None and ref_value is None:
-                    ref_io.response.setBaseValue(sample_value)
-                elif sample_value is None and ref_value is not None:
-                    io.response.setBaseValue(ref_value)
-
-                io.syncOutput(ref_io, "response")
+            self.outputs.setSignificantFigures(value)
 
     def updateRecentFiles(self, new_path: SPCalDataFile | Path | None = None):
         MAX_RECENT_FILES = 10

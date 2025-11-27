@@ -134,7 +134,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         else:
             raise ValueError(f"Unknown method {mode}.")
 
-    def resetInputs(self):
+    def reset(self):
         self.blockSignals(True)
         self.uptake.setValue(None)
         self.event_time.setValue(None)

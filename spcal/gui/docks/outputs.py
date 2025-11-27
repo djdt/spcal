@@ -217,3 +217,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             self.model.setHeaderData(
                 i, orientation, default_unit, role=UnitsModel.CurrentUnitRole
             )
+
+    def setSignificantFigures(self, sf: int):
+        delegate = self.table.itemDelegate()
+        assert isinstance(delegate, ValueWidgetDelegate)
+        delegate.setSigFigs(sf)
+        self.table.setItemDelegate(delegate)
+
+    def reset(self):
+        self.model.beginResetModel()
+        self.model.results.clear()
+        self.model.endResetModel()

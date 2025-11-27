@@ -102,6 +102,12 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         else:
             raise ValueError("current view is invalid")
 
+    def setGraphFont(self, font: QtGui.QFont):
+        for i in range(self.count()):
+            widget = self.widget(i)
+            if isinstance(widget, SinglePlotGraphicsView):
+                widget.setFont(font)
+
     def setCompositionOptions(self, min_size: str | float, mode: str):
         self.composition.min_size = min_size
         self.composition.mode = mode

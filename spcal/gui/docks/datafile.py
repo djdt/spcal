@@ -96,3 +96,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg.isotopesSelected.connect(self.onCurrentOrSelectionChanged)
         dlg.open()
         return dlg
+
+    def reset(self):
+        self.model.beginResetModel()
+        self.model.data_files.clear()
+        self.model.endResetModel()

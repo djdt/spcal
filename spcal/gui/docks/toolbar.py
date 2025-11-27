@@ -76,3 +76,8 @@ class SPCalToolBar(QtWidgets.QToolBar):
         self.combo_isotope.blockSignals(False)
 
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)
+    
+    def reset(self):
+        self.combo_isotope.blockSignals(True)
+        self.combo_isotope.clear()
+        self.combo_isotope.blockSignals(False)

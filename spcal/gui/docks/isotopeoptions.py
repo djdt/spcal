@@ -244,6 +244,13 @@ class IsotopeOptionTable(BasicTableView):
 
         menu.popup(event.globalPos())
 
+    def setSignificantFigures(self, sf: int):
+        for i in range(self.model().columnCount()):
+            delegate = self.itemDelegateForColumn(i)
+            assert isinstance(delegate, ValueWidgetDelegate)
+            delegate.setSigFigs(sf)
+            self.setItemDelegateForColumn(i, delegate)
+
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     optionChanged = QtCore.Signal(SPCalIsotope)
@@ -284,5 +291,8 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def optionForIsotope(self, isotope: SPCalIsotope) -> SPCalIsotopeOptions:
         return self.table.isotope_model.isotope_options[isotope]
 
-    def resetInputs(self):
+    def reset(self):
         self.setIsotopes(list(self.table.isotope_model.isotope_options.keys()))
+
+    def setSignificantFigures(self, sf: int):
+        self.table.setSignificantFigures(sf)
