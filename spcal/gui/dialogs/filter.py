@@ -4,8 +4,7 @@ from PySide6 import QtCore, QtWidgets
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
 from spcal.isotope import SPCalIsotope
-from spcal.processing.filter import SPCalProcessingFilter
-from spcal.result import ClusterFilter
+from spcal.processing.filter import SPCalProcessingFilter, SPCalClusterFilter, SPCalValueFilter
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
 
 
@@ -83,7 +82,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: SPCalProcessingFilter):
+    def setFilter(self, filter: SPCalValueFilter):
         index = self.isotopes.findData(
             filter.isotope, role=QtCore.Qt.ItemDataRole.UserRole
         )
@@ -130,7 +129,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        filter: ClusterFilter | None = None,
+        filter: SPCalClusterFilter | None = None,
         maximum_index: int = 99,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -190,7 +189,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: ClusterFilter):
+    def setFilter(self, filter: SPCalClusterFilter):
         label = next(
             lbl
             for lbl, unit in FilterItemWidget.KEY_LABELS.items()
@@ -199,8 +198,8 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         self.unit.setCurrentText(label)
         self.index.setValue(filter.idx + 1)
 
-    def asFilter(self) -> ClusterFilter:
-        return ClusterFilter(
+    def asFilter(self) -> SPCalClusterFilter:
+        return SPCalClusterFilter(
             self.index.value() - 1,
             FilterItemWidget.KEY_LABELS[self.unit.currentText()],
         )
@@ -255,7 +254,7 @@ class FilterDialog(QtWidgets.QDialog):
         self,
         isotopes: list[SPCalIsotope],
         filters: list[list[SPCalProcessingFilter]],
-        cluster_filters: list[ClusterFilter],
+        cluster_filters: list[SPCalClusterFilter],
         number_clusters: int = 0,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -361,7 +360,7 @@ class FilterDialog(QtWidgets.QDialog):
                 self.list.takeItem(i)
                 break
 
-    def addClusterFilter(self, filter: ClusterFilter | None = None):
+    def addClusterFilter(self, filter: SPCalClusterFilter | None = None):
         widget = ClusterFilterItemWidget(
             filter=filter, maximum_index=self.number_clusters
         )
