@@ -2,7 +2,11 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import cluster_information, prepare_data_for_clustering
+from spcal.cluster import (
+    cluster_information,
+    prepare_data_for_clustering,
+    prepare_results_for_clustering,
+)
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import FontScaledItemSample
@@ -93,35 +97,12 @@ class CompositionView(SinglePlotGraphicsView):
     ):
         if brushes is None:
             brushes = [QtGui.QBrush(QtCore.Qt.GlobalColor.red) for _ in results]
-        npeaks = (
-            np.amax(
-                [
-                    result.peak_indicies[-1]
-                    for result in results
-                    if result.peak_indicies is not None
-                ]
-            )
-            + 1
-        )
-        peak_data = np.zeros((npeaks, len(results)), np.float32)
-        for i, result in enumerate(results):
-            if result.peak_indicies is None:
-                raise ValueError(
-                    "cannot cluster, peak_indicies have not been generated"
-                )
-            if not result.canCalibrate(key):
-                continue
-            np.add.at(
-                peak_data[:, i],
-                result.peak_indicies[result.filter_indicies],
-                result.calibrated(key),
-            )
 
-        valid = np.any(peak_data != 0, axis=1)
-        peak_data = peak_data[valid]
-
-        X = prepare_data_for_clustering(peak_data)
+        X = prepare_results_for_clustering(results, key)
+        valid = np.any(X != 0, axis=1)
+        X = X[valid]
         means, stds, counts = cluster_information(X, clusters[valid])
+
         self.data_for_export["count"] = counts
         for i, result in enumerate(results):
             self.data_for_export[str(result.isotope) + "_mean"] = means[:, i]

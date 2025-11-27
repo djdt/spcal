@@ -8,6 +8,7 @@ from spcal.lib.spcalext.clustering import (
     mst_linkage,
     pairwise_euclidean,
 )
+from spcal.processing.result import SPCalProcessingResult
 
 
 def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
@@ -29,6 +30,46 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
     totals = np.sum(X, axis=1)
     np.divide(X.T, totals, where=totals > 0.0, out=X.T)
     return X
+
+
+def prepare_results_for_clustering(
+    results: list[SPCalProcessingResult], key: str
+) -> np.ndarray:
+    """Prepare data by stacking into 2D array.
+
+    Conveience method for list of results.
+
+    Args:
+        results: dictionary of names: array or structured array
+
+    Returns:
+        2D array, ready for ``agglomerative_cluster``
+
+    See Also:
+        ``prepare_data_from_clustering``
+    """
+    npeaks = (
+        np.amax(
+            [
+                result.peak_indicies[-1]
+                for result in results
+                if result.peak_indicies is not None
+            ]
+        )
+        + 1
+    )
+    peak_data = np.zeros((npeaks, len(results)), np.float32)
+    for i, result in enumerate(results):
+        if result.peak_indicies is None:
+            raise ValueError("cannot cluster, peak_indicies have not been generated")
+        if not result.canCalibrate(key):
+            continue
+        np.add.at(
+            peak_data[:, i],
+            result.peak_indicies[result.filter_indicies],
+            result.calibrated(key),
+        )
+    return prepare_data_for_clustering(peak_data)
 
 
 def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
