@@ -780,19 +780,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             [left_width, isotope_width, size.width() - left_width - isotope_width],
             QtCore.Qt.Orientation.Horizontal,
         )
-        # self.resizeDocks(
-        #     [self.outputs],
-        #     [size.width() - self.isotope_options.sizeHint().width()],
-        #     QtCore.Qt.Orientation.Horizontal,
-        # )
-        # self.resizeDocks(
-        #     [self.files], [self.files.height()], QtCore.Qt.Orientation.Vertical
-        # )
-        # self.resizeDocks(
-        #     [self.controls, self.graph_spectra, self.results_text],
-        #     [size.height() // 3, size.height() // 3, size.height() // 3],
-        #     QtCore.Qt.Orientation.Vertical,
-        # )
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
