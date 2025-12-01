@@ -65,6 +65,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.graph.action_view_histogram,
                 self.graph.action_view_composition,
                 self.graph.action_view_options,
+                self.graph.action_zoom_reset
             ]
         )
 

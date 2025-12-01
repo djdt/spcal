@@ -75,6 +75,13 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         )
         self.action_view_options.setEnabled(False)
 
+        self.action_zoom_reset = create_action(
+            "zoom-original",
+            "Reset Zoom",
+            "Reset the zoom to the full graph extent.",
+            self.zoomReset,
+        )
+
     def clear(self):
         for i in range(self.count()):
             widget = self.widget(i)
@@ -198,3 +205,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         if len(drawable) > 0:
             self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
+
+    def zoomReset(self):
+        view = self.currentWidget()
+        assert isinstance(view, SinglePlotGraphicsView)
+        view.zoomReset()
