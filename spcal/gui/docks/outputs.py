@@ -154,7 +154,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Outputs")
+        self.setWindowTitle("Results")
 
         self.combo_key = QtWidgets.QComboBox()
         self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
