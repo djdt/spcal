@@ -2,11 +2,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.cluster import (
-    cluster_information,
-    prepare_data_for_clustering,
-    prepare_results_for_clustering,
-)
+from spcal.cluster import cluster_information, prepare_results_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import FontScaledItemSample

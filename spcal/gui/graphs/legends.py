@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 class FontScaledItemSample(pyqtgraph.ItemSample):
     def __init__(
         self,
-        item: QtWidgets.QGraphicsItem,
+        item: QtWidgets.QGraphicsItem|None,
         font_metrics: QtGui.QFontMetrics,
         brush: QtGui.QBrush | None = None,
     ):
