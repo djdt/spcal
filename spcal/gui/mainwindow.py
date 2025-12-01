@@ -209,7 +209,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         all_isotopes = set()
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
-        self.toolbar.setIsotopes(list(all_isotopes))
+        self.toolbar.setIsotopes(sorted(all_isotopes, key=lambda iso: iso.isotope))
 
         self.redraw()
 
