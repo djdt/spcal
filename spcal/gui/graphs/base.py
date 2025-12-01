@@ -338,7 +338,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if pos is not None and self.plot.xaxis.contains(pos):
             scale = self.plot.xaxis.scale
             (v1, v2), (_, _) = self.plot.vb.viewRange()
-            min, max = self.plot.vb.state["limits"]["xLimits"][1]
+            min, max = self.plot.vb.state["limits"]["xLimits"]
             dlg = AxisEditDialog(
                 (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
             )
