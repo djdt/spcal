@@ -3,9 +3,11 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotope
+from spcal.processing.method import SPCalProcessingMethod
 
 
 class SPCalToolBar(QtWidgets.QToolBar):
+    keyChanged = QtCore.Signal(str)
     isotopeChanged = QtCore.Signal(SPCalIsotope)
     viewChanged = QtCore.Signal(QtGui.QAction)
 
@@ -16,6 +18,9 @@ class SPCalToolBar(QtWidgets.QToolBar):
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
+
+        self.combo_key = QtWidgets.QComboBox()
+        self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
 
         self.action_all_isotopes = create_action(
             "office-chart-line-stacked",
@@ -50,6 +55,7 @@ class SPCalToolBar(QtWidgets.QToolBar):
 
         self.addAction(self.action_all_isotopes)
         self.addWidget(self.combo_isotope)
+        self.addWidget(self.combo_key)
 
         self.action_group_views.triggered.connect(self.viewChanged)
 

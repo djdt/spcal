@@ -118,27 +118,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.onDataFilesChanged)
 
-        self.outputs.keyChanged.connect(self.onKeyChanged)
-
-        self.addToolBar(self.toolbar)
-
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
-        )
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
-        )
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.isotope_options
-        )
-
-        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.outputs)
-
-        self.setCentralWidget(self.graph)
+        self.toolbar.keyChanged.connect(self.onKeyChanged)
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+        self.setCentralWidget(self.graph)
+        self.defaultLayout()
 
     def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
         # todo: filter first based on key and save cluster peak data
@@ -217,7 +203,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_results.pop(data_file)
 
     def redraw(self):
-        key = self.outputs.combo_key.currentText()
+        key = self.toolbar.combo_key.currentText()
         view = self.graph.currentView()
         isotopes = self.toolbar.selectedIsotopes()
 
@@ -308,6 +294,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resultsChanged.emit(data_file)
 
     def onKeyChanged(self, key: str):
+        self.outputs.updateOutputsForKey(key)
         if self.graph.currentView() != "particle":
             self.redraw()
 
@@ -353,12 +340,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def createMenuBar(self):
         # File
-        self.action_open_sample = create_action(
+        self.action_open = create_action(
             "document-open",
             "&Open Sample File",
             "Import SP data from a CSV file.",
             lambda: self.dialogLoadFile(),
         )
+        self.action_open.setShortcut(QtGui.QKeySequence.StandardKey.Open)
+
         self.action_open_recent = QtGui.QActionGroup(self)
         self.action_open_recent.triggered.connect(
             lambda a: self.dialogLoadFile(a.text().replace("&", ""))
@@ -394,10 +383,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogExportResults,
         )
         self.action_export.setEnabled(False)
+        self.action_export.setShortcut(QtGui.QKeySequence.StandardKey.Save)
 
         self.action_close = create_action(
             "window-close", "Quit", "Exit SPCal.", self.close
         )
+        self.action_close.setShortcut(QtGui.QKeySequence.StandardKey.Quit)
 
         # Edit
         self.action_clear = create_action(
@@ -458,6 +449,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.setGraphFont,
         )
 
+        self.action_default_layout = create_action(
+            "view-group",
+            "Restore Default Layout",
+            "Return dock widgets to default positions and sizes",
+            self.defaultLayout,
+        )
+
         # Help
         self.action_log = create_action(
             "dialog-information",
@@ -476,7 +474,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         menufile = self.menuBar().addMenu("&File")
-        menufile.addAction(self.action_open_sample)
+        menufile.addAction(self.action_open)
 
         self.menu_recent = menufile.addMenu("Open Recent")
         self.menu_recent.setIcon(QtGui.QIcon.fromTheme("document-open-recent"))
@@ -510,6 +508,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
+        menuview.addSeparator()
+        menuview.addAction(self.action_default_layout)
+
+        menu_docks = menuview.addMenu("Show/hide dock widgets")
+        for dock in self.findChildren(QtWidgets.QDockWidget):
+            menu_docks.addAction(dock.toggleViewAction())
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
@@ -735,6 +739,60 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.limit_options.reset()
         self.isotope_options.reset()
         self.toolbar.reset()
+
+    def defaultLayout(self):
+        self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
+
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
+        )
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
+        )
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.isotope_options
+        )
+
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.outputs)
+
+        for dock in self.findChildren(QtWidgets.QDockWidget):
+            dock.show()
+
+        size = self.size()
+        left_width = max(
+            self.instrument_options.sizeHint().width(),
+            self.limit_options.sizeHint().width(),
+        )
+        self.resizeDocks(
+            [self.instrument_options, self.limit_options],
+            [left_width, left_width],
+            QtCore.Qt.Orientation.Horizontal,
+        )
+        self.resizeDocks(
+            [self.instrument_options, self.limit_options, self.files],
+            [size.height() // 3, size.height() // 3, size.height() // 3],
+            QtCore.Qt.Orientation.Vertical,
+        )
+        isotope_width = self.isotope_options.sizeHint().width() + 48
+        self.resizeDocks(
+            [self.files, self.isotope_options, self.outputs],
+            [left_width, isotope_width, size.width() - left_width - isotope_width],
+            QtCore.Qt.Orientation.Horizontal,
+        )
+        # self.resizeDocks(
+        #     [self.outputs],
+        #     [size.width() - self.isotope_options.sizeHint().width()],
+        #     QtCore.Qt.Orientation.Horizontal,
+        # )
+        # self.resizeDocks(
+        #     [self.files], [self.files.height()], QtCore.Qt.Orientation.Vertical
+        # )
+        # self.resizeDocks(
+        #     [self.controls, self.graph_spectra, self.results_text],
+        #     [size.height() // 3, size.height() // 3, size.height() // 3],
+        #     QtCore.Qt.Orientation.Vertical,
+        # )
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")

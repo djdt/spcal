@@ -150,16 +150,9 @@ class ResultOutputModel(UnitsModel):
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
-    keyChanged = QtCore.Signal(str)
-
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Results")
-
-        self.combo_key = QtWidgets.QComboBox()
-        self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
-        self.combo_key.currentTextChanged.connect(self.updateOutputsForKey)
-        self.combo_key.currentTextChanged.connect(self.keyChanged)
 
         self.model = ResultOutputModel()
         self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
@@ -172,13 +165,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.table.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
         self.table.setItemDelegate(ValueWidgetDelegate())
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_key, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.table, 1)
-
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        self.setWidget(widget)
+        self.setWidget(self.table)
 
     def setResults(self, results: dict[SPCalIsotope, SPCalProcessingResult]):
         self.model.beginResetModel()
