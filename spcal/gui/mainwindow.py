@@ -29,7 +29,6 @@ from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
     get_import_dialog_for_path,
     get_open_spcal_path,
-    most_recent_spcal_path,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -316,6 +315,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file == self.files.currentDataFile():
             self.outputs.setResults(self.processing_results[data_file])
             self.redraw()
+        self.action_export.setEnabled(len(self.processing_results) > 0)
 
     def onExclusionRegionChanged(self):
         regions = self.graph.particle.exclusionRegions()
@@ -342,6 +342,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 
         data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
 
         dlg = PeakPropertiesDialog(
             self.processing_results[data_file],
@@ -481,9 +483,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.menu_recent.setEnabled(False)
 
         menufile.addSeparator()
+        menufile.addAction(self.action_export)
         menufile.addAction(self.action_open_batch)
         menufile.addSeparator()
-        # menufile.addAction(self.action_export)
         menufile.addAction(self.action_save_session)
         menufile.addAction(self.action_load_session)
         menufile.addSeparator()
@@ -579,13 +581,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def dialogExportResults(self):
         self.reprocess(None)  # force reprocess of all data files
 
+        # ensure clusters are generated
+        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+            for file in self.files.dataFiles():
+                self.clusters(file, key)
+
         dlg = ExportDialog(
             self.files.dataFiles(),
-            self.processing_results[method],
+            self.processing_results,
             self.processing_clusters,
             parent=self,
         )
-        raise NotImplementedError
+        dlg.open()
 
     #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
     #         self,
