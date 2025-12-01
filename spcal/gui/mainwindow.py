@@ -177,6 +177,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
     ):
         if current is None:
+            self.instrument_options.event_time.setBaseValue(None)
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
             self.outputs.setResults({})
