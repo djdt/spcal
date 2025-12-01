@@ -1,5 +1,6 @@
 """Agglomerative clustering."""
 
+from typing import TYPE_CHECKING
 import numpy as np
 import numpy.lib.recfunctions as rfn
 
@@ -8,7 +9,9 @@ from spcal.lib.spcalext.clustering import (
     mst_linkage,
     pairwise_euclidean,
 )
-from spcal.processing.result import SPCalProcessingResult
+
+if TYPE_CHECKING:
+    from spcal.processing.result import SPCalProcessingResult
 
 
 def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
@@ -33,7 +36,7 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
 
 
 def prepare_results_for_clustering(
-    results: list[SPCalProcessingResult], key: str
+    results: list["SPCalProcessingResult"], key: str
 ) -> np.ndarray:
     """Prepare data by stacking into 2D array.
 
@@ -48,16 +51,10 @@ def prepare_results_for_clustering(
     See Also:
         ``prepare_data_from_clustering``
     """
-    npeaks = (
-        np.amax(
-            [
-                result.peak_indicies[-1]
-                for result in results
-                if result.peak_indicies is not None
-            ]
-        )
-        + 1
-    )
+    if any(result.peak_indicies is None for result in results):
+        raise ValueError("cannot cluster, peak indidices have not been generated")
+    npeaks = np.amax([result.peak_indicies[-1] for result in results]) + 1  # type: ignore , checked above
+
     peak_data = np.zeros((npeaks, len(results)), np.float32)
     for i, result in enumerate(results):
         if result.peak_indicies is None:
