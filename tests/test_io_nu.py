@@ -10,7 +10,6 @@ from spcal.io.nu import (
     is_nu_run_info_file,
     read_directory,
     select_nu_signals,
-    single_ion_distribution,
 )
 
 
@@ -29,43 +28,50 @@ def test_is_nu_dir():
 
 def test_io_nu_import():
     path = Path(__file__).parent.joinpath("data/nu")
-    masses, signals, info = read_directory(path, cycle=1, segment=1)
-    assert masses.size == 194
-    assert signals.shape == (15474, 194)
-    signals = signals[np.all(~np.isnan(signals), axis=1), :]
-    assert signals.shape == (30, 194)
-    assert np.isclose(masses[0], 22.98582197)
-    assert np.isclose(masses[-1], 240.02343301)
+    masses, signals, times, info = read_directory(path, cycle=1, segment=1)
+    assert masses.size == 127
+    assert signals.shape == (50, 127)
+    assert np.isclose(masses[0], 80.90475)
+    assert np.isclose(masses[-1], 208.9560)
 
     assert np.all(
-        np.isclose(info["MassCalCoefficients"], [-0.21539236835, 6.13507083932e-4])
+        np.isclose(info["MassCalCoefficients"], [-0.221135, 0.000613])
     )
     assert len(info["SegmentInfo"]) == 1
-    assert info["SegmentInfo"][0]["AcquisitionTriggerDelayNs"] == 8000.0
+    assert info["SegmentInfo"][0]["AcquisitionTriggerDelayNs"] == 14950.0
 
-    # fmt: off
-    assert np.all(  # sodium
-        np.isclose(
-            signals[:, 0],
-            [
-                3.2, 3.3, 1.1, 5.6, 2.0, 1.5, 0.0, 2.7, 3.9, 0.9,
-                1.5, 0.0, 1.4, 1.4, 5.1, 2.2, 0.6, 0.9, 5.5, 4.3,
-                1.2, 5.2, 1.6, 3.6, 2.8, 7.4, 1.1, 6.7, 2.3, 2.7
-            ],
-            atol=0.05,
-        )
-    )
-    # fmt: on
-    assert np.all(signals[:, 193] == 0.0)  # uranium?
-
-    assert np.isclose(eventtime_from_info(info), 8.289e-5)
+    assert np.isclose(eventtime_from_info(info), 0.09824e-3)
 
 
-def test_io_nu_import_max_files():
+def test_io_nu_import_integ_limits():
     path = Path(__file__).parent.joinpath("data/nu")
-    masses, signals, info = read_directory(path, max_integ_files=1, cycle=1, segment=1)
-    assert masses.size == 194
-    assert signals.shape == (10, 194)
+    masses, signals, times, info = read_directory(
+        path, last_integ_file=1, cycle=1, segment=1
+    )
+    assert masses.size == 127
+    assert times.shape == (10,)
+    assert signals.shape == (10, 127)
+
+    masses, signals, times, info = read_directory(
+        path, first_integ_file=1, last_integ_file=3, cycle=1, segment=1
+    )
+    assert masses.size == 127
+    assert times.shape == (20,)
+    assert signals.shape == (20, 127)
+
+    with pytest.raises(ValueError):
+        masses, signals, times, info = read_directory(
+            path, first_integ_file=1, last_integ_file=1, cycle=1, segment=1
+        )
+
+
+def test_io_nu_import_integ_missing():
+    path = Path(__file__).parent.joinpath("data/nu")
+    masses, signals, times, info = read_directory(path, cycle=1, segment=1)
+    assert signals.shape == (50, 127)
+    assert np.all(~np.isnan(signals[:30]))
+    assert np.all(np.isnan(signals[30:40]))
+    assert np.all(~np.isnan(signals[40:]))
 
 
 def test_io_nu_import_autoblank(tmp_path: Path):
@@ -73,14 +79,14 @@ def test_io_nu_import_autoblank(tmp_path: Path):
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
 
-    masses, signals, info = read_directory(
+    masses, signals, times, info = read_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1
     )
     # blanking region of mass idx 10-14 at 32204 - 49999
     assert np.all(np.isnan(signals[32204:49999, 0:14]))
     assert np.all(~np.isnan(signals[32204:49999, 14:]))
 
-    masses, signals, info = read_directory(
+    masses, signals, times, info = read_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank=False
     )
     assert np.all(~np.isnan(signals[32204:49999, 0:14]))
@@ -97,13 +103,3 @@ def test_select_nu_signals():
 
     with pytest.raises(ValueError):
         select_nu_signals(masses, signals, {"a": 2.0, "b": 9.95}, max_mass_diff=0.01)
-
-
-def test_single_ion_distribution(tmp_path: Path):
-    path = Path(__file__).parent.joinpath("data/nu/cal.zip")
-    zp = zipfile.ZipFile(path)
-    zp.extractall(tmp_path)
-    masses, signals, info = read_directory(tmp_path.joinpath("cal"), cycle=1, segment=1)
-    y = single_ion_distribution(signals)
-    # not sure how to test this?
-    assert y[np.argmax(y[:, 0]), 1] == 1.0

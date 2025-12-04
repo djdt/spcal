@@ -272,14 +272,17 @@ def signals_from_integs(integs: list[np.ndarray], num_acc: int) -> np.ndarray:
         signals in counts
     """
 
+    min_acq = min(integ["acq_number"][0] for integ in integs if integ.size > 0)
     max_acq = max(integ["acq_number"][-1] for integ in integs if integ.size > 0)
     signals = np.full(
-        (max_acq // num_acc, integs[0]["result"]["signal"].shape[1]),
+        ((max_acq - min_acq) // num_acc + 1, integs[0]["result"]["signal"].shape[1]),
         np.nan,
         dtype=np.float32,
     )
     for integ in integs:
-        signals[(integ["acq_number"] // num_acc) - 1] = integ["result"]["signal"]
+        signals[((integ["acq_number"] - min_acq) // num_acc)] = integ["result"][
+            "signal"
+        ]
 
     return signals
 
@@ -331,7 +334,8 @@ def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
 
 def read_directory(
     path: str | Path,
-    max_integ_files: int | None = None,
+    first_integ_file: int = 0,
+    last_integ_file: int | None = None,
     autoblank: bool = True,
     cycle: int | None = None,
     segment: int | None = None,
@@ -345,7 +349,8 @@ def read_directory(
 
     Args:
         path: path to data directory
-        max_integ_files: maximum number of files to read
+        first_integ_file: first integ to read
+        last_integ_file: last integ to read, can be used as a max
         autoblank: apply autoblanking to overrange regions
         cycle: limit import to cycle
         segment: limit import to segment
@@ -369,8 +374,9 @@ def read_directory(
     with path.joinpath("integrated.index").open("r") as fp:
         integ_index = json.load(fp)
 
-    if max_integ_files is not None:
-        integ_index = integ_index[:max_integ_files]
+    integ_index = integ_index[first_integ_file:last_integ_file]
+    if len(integ_index) == 0:
+        raise ValueError("no integ files selected")
 
     segment_delays = {
         s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
