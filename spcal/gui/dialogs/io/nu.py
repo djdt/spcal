@@ -106,11 +106,7 @@ class NuImportDialog(ImportDialogBase):
             raise ValueError("NuImportDialog: no valid integ files found.")
 
         self.signals = data["result"]["signal"] / self.info["AverageSingleIonArea"]
-        self.masses = nu.masses_from_integ(
-            data[0],
-            self.info["MassCalCoefficients"],
-            self.segment_delays,
-        )[0]
+        self.masses = nu.masses_from_integ(data[0], self.info)[0]
 
         self.table = PeriodicTableSelector()
         self.progress = QtWidgets.QProgressBar()
@@ -144,10 +140,6 @@ class NuImportDialog(ImportDialogBase):
         layout_integ.addWidget(self.first_integ)
         layout_integ.addWidget(QtWidgets.QLabel("-"))
         layout_integ.addWidget(self.last_integ)
-
-        # self.file_number = QtWidgets.QSpinBox()
-        # self.file_number.setRange(1, len(self.index))
-        # self.file_number.setValue(len(self.index))
 
         # todo: option to remove blanked regions?
         # self.combo_blanking = QtWidgets.QComboBox()
@@ -191,16 +183,6 @@ class NuImportDialog(ImportDialogBase):
         self.table.setFocus()
         self.completeChanged()
 
-    @property
-    def accumulations(self) -> int:
-        return self.info["NumAccumulations1"] * self.info["NumAccumulations2"]
-
-    @property
-    def segment_delays(self) -> dict[int, float]:
-        return {
-            s["Num"]: s["AcquisitionTriggerDelayNs"] for s in self.info["SegmentInfo"]
-        }
-
     def updateTableIsotopes(self):
         natural_isotopes = [
             iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
@@ -239,7 +221,9 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
-        selected_index = self.index[self.first_integ.value() : self.last_integ.value()]
+        selected_index = self.index[
+            self.first_integ.value() - 1 : self.last_integ.value() - 1
+        ]
         self.worker = NuIntegReadWorker(
             self.file_path, selected_index, cyc_number, seg_number
         )
@@ -278,10 +262,8 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
-        masses = nu.masses_from_integ(
-            datas[0], self.info["MassCalCoefficients"], self.segment_delays
-        )[0]
-        signals = nu.signals_from_integs(datas, self.accumulations)
+        masses = nu.masses_from_integ(datas[0], self.info)[0]
+        signals = nu.signals_from_integs(datas, self.info)
 
         times = nu.times_from_integs(datas, self.info) * 1e-9
 
@@ -299,14 +281,7 @@ class NuImportDialog(ImportDialogBase):
                     seg_number=seg_number,
                 )
             )
-            signals = nu.apply_autoblanking(
-                autobs,
-                signals,
-                masses,
-                self.accumulations,
-                self.info["BlMassCalStartCoef"],
-                self.info["BlMassCalEndCoef"],
-            )
+            signals = nu.apply_autoblanking(autobs, signals, masses, self.info)
 
         data_file = SPCalNuDataFile(self.file_path, signals, times, masses, self.info)
         data_file.selected_isotopes = self.table.selectedIsotopes()

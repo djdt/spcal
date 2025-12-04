@@ -158,9 +158,7 @@ def apply_autoblanking(
     autob_events: np.ndarray,
     signals: np.ndarray,
     masses: np.ndarray,
-    num_acc: int,
-    start_coef: tuple[float, float],
-    end_coef: tuple[float, float],
+    info: dict,
 ) -> np.ndarray:
     """Apply the auto-blanking to the integrated data.
     There must be one cycle / segment and no missing acquisitions / data!
@@ -169,13 +167,15 @@ def apply_autoblanking(
         autob: list of events from `read_nu_autob_binary`
         signals: 2d array of signals from `get_signals_from_nu_data`
         masses: 1d array of masses, from `get_masses_from_nu_data`
-        num_acc: number of accumulations per acquisition
-        start_coef: blanker open coefs 'BlMassCalStartCoef'
-        end_coef: blanker close coefs 'BlMassCalEndCoef'
+        info: dict of parameters, as returned by `read_nu_directory`
 
     Returns:
         blanked data
     """
+    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
+    start_coef = info["BlMassCalStartCoef"]
+    end_coef = info["BlMassCalEndCoef"]
+
     regions, mass_regions_list = blanking_regions_from_autob(
         autob_events, num_acc, start_coef, end_coef
     )
@@ -259,47 +259,55 @@ def eventtime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
-def signals_from_integs(integs: list[np.ndarray], num_acc: int) -> np.ndarray:
+def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
     """Converts signals from integ data to counts.
 
     Preserves run length when missing data is present.
 
     Args:
         integ: from `read_integ_binary`
-        num_acc: number of accumulations per acquisition
+        info: dict of parameters, as returned by `read_nu_directory`
 
     Returns:
         signals in counts
     """
 
-    min_acq = min(integ["acq_number"][0] for integ in integs if integ.size > 0)
-    max_acq = max(integ["acq_number"][-1] for integ in integs if integ.size > 0)
+    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
+    segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
+
+    def indicies_for_integ(integ: np.ndarray) -> np.ndarray:
+        idx = (integ["cyc_number"] - 1) * segment_acq[integ["seg_number"] - 1]
+        idx += integ["acq_number"]
+        return idx // num_acc
+
+    indicies = [indicies_for_integ(integ) for integ in integs]
+    min_index = indicies[0][0]
     signals = np.full(
-        ((max_acq - min_acq) // num_acc + 1, integs[0]["result"]["signal"].shape[1]),
+        (indicies[-1][-1] - min_index + 1, integs[0]["result"]["signal"].shape[1]),
         np.nan,
         dtype=np.float32,
     )
-    for integ in integs:
-        signals[((integ["acq_number"] - min_acq) // num_acc)] = integ["result"][
-            "signal"
-        ]
+    for idx, integ in zip(indicies, integs):
+        signals[idx - min_index] = integ["result"]["signal"]
 
     return signals
 
 
-def masses_from_integ(
-    integ: np.ndarray, cal_coef: tuple[float, float], segment_delays: dict[int, float]
-) -> np.ndarray:
+def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
     """Converts Nu peak centers into masses.
 
     Args:
         integ: from `read_integ_binary`
-        cal_coef: from run.info 'MassCalCoefficients'
-        segment_delays: dict of segment nums and delays from `SegmentInfo`
+        info: dict of parameters, as returned by `read_nu_directory`
 
     Returns:
         2d array of masses
     """
+
+    cal_coef = info["MassCalCoefficients"]
+    segment_delays = {
+        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in info["SegmentInfo"]
+    }
 
     delays = np.zeros(max(segment_delays.keys()))
     for k, v in segment_delays.items():
@@ -378,12 +386,6 @@ def read_directory(
     if len(integ_index) == 0:
         raise ValueError("no integ files selected")
 
-    segment_delays = {
-        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in run_info["SegmentInfo"]
-    }
-
-    accumulations = run_info["NumAccumulations1"] * run_info["NumAccumulations2"]
-
     # Collect integrated data
     integs = read_binaries_in_index(
         path,
@@ -395,10 +397,8 @@ def read_directory(
     )
 
     # Get masses from data
-    masses = masses_from_integ(
-        integs[0], run_info["MassCalCoefficients"], segment_delays
-    )[0]
-    signals = signals_from_integs(integs, accumulations)
+    masses = masses_from_integ(integs[0], run_info)[0]
+    signals = signals_from_integs(integs, run_info)
 
     times = times_from_integs(integs, run_info) * 1e-9
 
@@ -417,14 +417,7 @@ def read_directory(
                 seg_number=segment,
             )
         )
-        signals = apply_autoblanking(
-            autobs,
-            signals,
-            masses,
-            accumulations,
-            run_info["BlMassCalStartCoef"],
-            run_info["BlMassCalEndCoef"],
-        )
+        signals = apply_autoblanking(autobs, signals, masses, run_info)
 
     # Account for any missing integ files
     return masses, signals, times, run_info
