@@ -65,7 +65,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.graph.action_view_histogram,
                 self.graph.action_view_composition,
                 self.graph.action_view_options,
-                self.graph.action_zoom_reset
+                self.graph.action_zoom_reset,
             ]
         )
 
@@ -281,11 +281,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess(self.files.currentDataFile())
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
-        option = self.isotope_options.optionForIsotope(isotope)
-        self.currentMethod().isotope_options[isotope] = option
-
         data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
         method = self.currentMethod()
+
+        option = self.isotope_options.optionForIsotope(isotope)
+        method.isotope_options[isotope] = option
 
         self.processing_results[data_file] = method.filterResults(
             self.processing_results[data_file]
