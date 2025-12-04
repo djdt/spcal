@@ -130,6 +130,21 @@ class NuImportDialog(ImportDialogBase):
         self.segment_number.setValue(0)
         self.segment_number.setSpecialValueText("All")
 
+        self.first_integ = QtWidgets.QSpinBox()
+        self.first_integ.setRange(1, len(self.index) + 1)
+        self.first_integ.setValue(0)
+        self.first_integ.valueChanged.connect(self.completeChanged)
+
+        self.last_integ = QtWidgets.QSpinBox()
+        self.last_integ.setRange(2, len(self.index) + 1)
+        self.last_integ.setValue(len(self.index) + 1)
+        self.last_integ.valueChanged.connect(self.completeChanged)
+
+        layout_integ = QtWidgets.QHBoxLayout()
+        layout_integ.addWidget(self.first_integ)
+        layout_integ.addWidget(QtWidgets.QLabel("-"))
+        layout_integ.addWidget(self.last_integ)
+
         # self.file_number = QtWidgets.QSpinBox()
         # self.file_number.setRange(1, len(self.index))
         # self.file_number.setValue(len(self.index))
@@ -168,11 +183,13 @@ class NuImportDialog(ImportDialogBase):
 
         self.box_options_layout.addRow("Cycle:", self.cycle_number)
         self.box_options_layout.addRow("Segment:", self.segment_number)
+        self.box_options_layout.addRow("Integ files:", layout_integ)
         self.box_options_layout.addRow("Max diff m/z:", self.max_mass_diff)
         # self.box_options.layout().addRow("Max file:", self.file_number)
         self.box_options_layout.addRow(self.checkbox_blanking)
 
         self.table.setFocus()
+        self.completeChanged()
 
     @property
     def accumulations(self) -> int:
@@ -200,7 +217,11 @@ class NuImportDialog(ImportDialogBase):
         )
 
     def isComplete(self) -> bool:
-        return self.table.selectedIsotopes() is not None
+        if self.first_integ.value() >= self.last_integ.value():
+            return False
+        if len(self.table.selectedIsotopes()) == 0:
+            return False
+        return True
 
     def setControlsEnabled(self, enabled: bool):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)
@@ -218,8 +239,9 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
+        selected_index = self.index[self.first_integ.value() : self.last_integ.value()]
         self.worker = NuIntegReadWorker(
-            self.file_path, self.index, cyc_number, seg_number
+            self.file_path, selected_index, cyc_number, seg_number
         )
         self.worker.moveToThread(self.import_thread)
         self.worker.started.connect(self.progress.setMaximum)
