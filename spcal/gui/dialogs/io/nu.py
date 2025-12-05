@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 class NuIntegReadWorker(QtCore.QObject):
     started = QtCore.Signal(int)
     progress = QtCore.Signal(int)
-    finished = QtCore.Signal(list)
+    integRead = QtCore.Signal(object)
+    finished = QtCore.Signal()
 
     def __init__(
         self,
@@ -39,7 +40,6 @@ class NuIntegReadWorker(QtCore.QObject):
     @QtCore.Slot()
     def read(self):
         self.started.emit(len(self.index))
-        datas = []
         for i, idx in enumerate(self.index):
             if self.thread().isInterruptionRequested():
                 return
@@ -51,19 +51,21 @@ class NuIntegReadWorker(QtCore.QObject):
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
                     idx["FirstAcqNum"],
+                    memmap=False,
                 )
                 if self.cyc_number is not None:
                     data = data[data["cyc_number"] == self.cyc_number]
                 if self.seg_number is not None:
                     data = data[data["seg_number"] == self.seg_number]
-                datas.append(data)
+                self.integRead.emit(data)
+                del data  # ensure cleared in thread
             else:
                 logger.warning(  # pragma: no cover, missing files
                     f"collect_data_from_index: missing data file {idx['FileNum']}.integ, skipping"
                 )
             self.progress.emit(i)
 
-        self.finished.emit(datas)
+        self.finished.emit()
 
 
 class NuImportDialog(ImportDialogBase):
@@ -76,6 +78,7 @@ class NuImportDialog(ImportDialogBase):
         super().__init__(path, "SPCal Nu Instruments Import", parent)
 
         self.import_thread = QtCore.QThread(self)
+        self.import_data: list[np.ndarray] = []
 
         with self.file_path.joinpath("run.info").open("r") as fp:
             self.info = json.load(fp)
@@ -100,6 +103,7 @@ class NuImportDialog(ImportDialogBase):
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
                     idx["FirstAcqNum"],
+                    memmap=True,
                 )
                 break
         if data is None:
@@ -210,6 +214,9 @@ class NuImportDialog(ImportDialogBase):
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
 
+    def addData(self, data):
+        self.import_data.append(data)
+
     def accept(self):
         self.setControlsEnabled(False)
         self.progress.setValue(0)
@@ -230,6 +237,7 @@ class NuImportDialog(ImportDialogBase):
         self.worker.moveToThread(self.import_thread)
         self.worker.started.connect(self.progress.setMaximum)
         self.worker.progress.connect(self.progress.setValue)
+        self.worker.integRead.connect(self.addData)
         self.worker.finished.connect(self.finalise)
 
         self.import_thread.started.connect(self.worker.read)
@@ -248,9 +256,10 @@ class NuImportDialog(ImportDialogBase):
             super().reject()
 
     @QtCore.Slot()
-    def finalise(self, datas: list[np.ndarray]):
+    def finalise(self):
         self.import_thread.quit()
         self.import_thread.wait()
+        self.import_thread.deleteLater()
 
         if len(self.table.selectedIsotopes()) == 0:
             raise ValueError("no selected isotopes")
@@ -262,10 +271,10 @@ class NuImportDialog(ImportDialogBase):
         if seg_number == 0:
             seg_number = None
 
-        masses = nu.masses_from_integ(datas[0], self.info)[0]
-        signals = nu.signals_from_integs(datas, self.info)
+        masses = nu.masses_from_integ(self.import_data[0], self.info)[0]
+        signals = nu.signals_from_integs(self.import_data, self.info)
 
-        times = nu.times_from_integs(datas, self.info) * 1e-9
+        times = nu.times_from_integs(self.import_data, self.info) * 1e-9
 
         # if not raw:
         signals /= self.info["AverageSingleIonArea"]
