@@ -51,7 +51,7 @@ class NuIntegReadWorker(QtCore.QObject):
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
                     idx["FirstAcqNum"],
-                    memmap=False,
+                    memmap=True,
                 )
                 if self.cyc_number is not None:
                     data = data[data["cyc_number"] == self.cyc_number]
@@ -292,7 +292,14 @@ class NuImportDialog(ImportDialogBase):
             )
             signals = nu.apply_autoblanking(autobs, signals, masses, self.info)
 
-        data_file = SPCalNuDataFile(self.file_path, signals, times, masses, self.info)
+        data_file = SPCalNuDataFile(
+            self.file_path,
+            signals,
+            times,
+            masses,
+            self.info,
+            integ_files=(self.first_integ.value(), self.last_integ.value()),
+        )
         data_file.selected_isotopes = self.table.selectedIsotopes()
         self.dataImported.emit(data_file)
 
