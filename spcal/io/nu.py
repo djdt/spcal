@@ -83,6 +83,7 @@ def read_integ_binary(
     first_cyc_number: int | None = None,
     first_seg_number: int | None = None,
     first_acq_number: int | None = None,
+    memmap: bool = True,
 ) -> np.ndarray:
     def integ_dtype(size: int) -> np.dtype:
         data_dtype = np.dtype(
@@ -119,9 +120,11 @@ def read_integ_binary(
         ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstAcqNum")
         num_results = int.from_bytes(fp.read(4), "little")
-        fp.seek(0)
 
-    return np.memmap(path, dtype=integ_dtype(num_results))
+    if memmap:
+        return np.memmap(path, dtype=integ_dtype(num_results))
+    else:
+        return np.fromfile(path, dtype=integ_dtype(num_results))
 
 
 def read_binaries_in_index(
@@ -129,10 +132,13 @@ def read_binaries_in_index(
     index: list[dict],
     binary_ext: str,
     binary_read_fn: Callable[[Path, int, int, int], np.ndarray],
+    binary_read_kwargs: dict | None = None,
     cyc_number: int | None = None,
     seg_number: int | None = None,
 ) -> list[np.ndarray]:
     datas = []
+    if binary_read_kwargs is None:
+        binary_read_kwargs = {}
     for idx in index:
         binary_path = root.joinpath(f"{idx['FileNum']}.{binary_ext}")
         if binary_path.exists():
@@ -141,6 +147,7 @@ def read_binaries_in_index(
                 idx["FirstCycNum"],
                 idx["FirstSegNum"],
                 idx["FirstAcqNum"],
+                **binary_read_kwargs,
             )
             if cyc_number is not None:
                 data = data[data["cyc_number"] == cyc_number]
@@ -394,6 +401,7 @@ def read_directory(
         read_integ_binary,
         cyc_number=cycle,
         seg_number=segment,
+        binary_read_kwargs={"memmap": False}
     )
 
     # Get masses from data
