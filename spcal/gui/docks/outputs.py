@@ -7,7 +7,7 @@ from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.isotope import SPCalIsotope
-from spcal.processing import SPCalProcessingMethod, SPCalProcessingResult
+from spcal.processing import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
     mass_units,
@@ -16,6 +16,7 @@ from spcal.siunits import (
     size_units,
     volume_units,
 )
+import bottleneck as bn
 
 
 class ResultOutputModel(UnitsModel):
@@ -118,7 +119,7 @@ class ResultOutputModel(UnitsModel):
                 if name == "Background":
                     val = result.background
                 elif name == "LOD":
-                    val = result.limit.detection_threshold
+                    val = bn.nanmean(result.limit.detection_threshold)
                 elif name == "Mean":
                     val = np.mean(result.calibrated("signal"))
                 elif name == "Median":
