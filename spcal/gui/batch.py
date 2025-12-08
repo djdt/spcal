@@ -21,7 +21,12 @@ class NuBatchOptions(BatchOptions):
         self.chunk_size = QtWidgets.QSpinBox()
         self.chunk_size.setRange(1, 10000)
         self.chunk_size.setSingleStep(100)
-        self.chunk_size.setValue(data_file.integ_range[1] - data_file.integ_range[0])
+        if data_file.integ_files[1] is None:
+            self.chunk_size.setValue(1000)
+        else:
+            self.chunk_size.setValue(
+                data_file.integ_files[1] - data_file.integ_files[0]
+            )
 
 
 class BatchProcessingDialog(QtWidgets.QDialog):
@@ -30,4 +35,3 @@ class BatchProcessingDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Batch Processing")
-
