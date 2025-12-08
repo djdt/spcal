@@ -6,7 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.io.export import export_spcal_processing_results
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import mass_units, size_units, volume_units
 
@@ -19,7 +19,7 @@ class ExportDialog(QtWidgets.QDialog):
     def __init__(
         self,
         data_files: list[SPCalDataFile],
-        results: dict[SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]],
+        results: dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]],
         clusters: dict[SPCalDataFile, dict[str, np.ndarray]],
         path: Path | None = None,
         units: dict[str, tuple[str, float]] | None = None,

@@ -2,7 +2,7 @@ import numpy as np
 
 from spcal import particle
 from spcal.detection import background_mask, detection_maxima
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.limit import SPCalLimit
 
 import typing
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
 class SPCalProcessingResult(object):
     def __init__(
         self,
-        isotope: SPCalIsotope,
+        isotope: SPCalIsotopeBase,
         limit: SPCalLimit,
         method: "SPCalProcessingMethod",
         signals: np.ndarray,

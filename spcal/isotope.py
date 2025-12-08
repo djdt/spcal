@@ -8,7 +8,12 @@ RE_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
 
 
 @dataclass(frozen=True)
-class SPCalIsotope:
+class SPCalIsotopeBase:
+    pass
+
+
+@dataclass(frozen=True)
+class SPCalIsotope(SPCalIsotopeBase):
     symbol: str
     isotope: int
     mass: float
@@ -43,6 +48,30 @@ class SPCalIsotope:
 
         logger.info(f"no isotope found for '{text}'")
         return SPCalIsotope(text, 0, 0.0)
+
+
+@dataclass(frozen=True)
+class SPCalIsotopeExpression(SPCalIsotopeBase):
+    name: str
+    tokens: tuple[str | SPCalIsotope, ...]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return f"SPCalIsotopeExpression({self.name}: {self.tokens})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalIsotopeExpression):
+            return False
+        return all(x == y for x, y in zip(self.tokens, other.tokens))
+
+    @classmethod
+    def sumIsotopes(cls, isotopes: list[SPCalIsotope]) -> "SPCalIsotopeExpression":
+        name = "Σ" + "".join([str(iso) for iso in isotopes])
+        tokens: list[str | SPCalIsotope] = ["+"] * (len(isotopes) - 1)
+        tokens.extend(isotopes)
+        return cls(name, tuple(tokens))
 
 
 # class SPCalIon(object):

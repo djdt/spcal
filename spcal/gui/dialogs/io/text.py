@@ -10,7 +10,7 @@ from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.modelviews.headers import CheckableHeaderView
 from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
@@ -245,7 +245,7 @@ class TextImportDialog(ImportDialogBase):
             else None,
         )
 
-        selected = [SPCalIsotope.fromString(name) for name in self.selectedNames()]
+        selected = [SPCalIsotopeBase.fromString(name) for name in self.selectedNames()]
         data_file.selected_isotopes = selected
         self.dataImported.emit(data_file)
         logger.info(

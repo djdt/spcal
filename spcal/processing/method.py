@@ -7,7 +7,7 @@ from spcal import particle
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 
 
 from spcal.processing.options import (
@@ -19,6 +19,11 @@ from spcal.processing.result import SPCalProcessingResult
 
 if typing.TYPE_CHECKING:
     from spcal.processing.filter import SPCalProcessingFilter
+
+class SPCalExpression(object):
+    def __init__(self, tokens: list[str], result: SPCalIsotopeBase):
+        self.tokens = tokens
+        self.result = result
 
 
 class SPCalProcessingMethod(object):
@@ -33,7 +38,7 @@ class SPCalProcessingMethod(object):
         self,
         instrument_options: SPCalInstrumentOptions | None = None,
         limit_options: SPCalLimitOptions | None = None,
-        isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions] | None = None,
+        isotope_options: dict[SPCalIsotopeBase, SPCalIsotopeOptions] | None = None,
         accumulation_method: str = "signal mean",
         points_required: int = 1,
         prominence_required: float = 0.2,
@@ -70,6 +75,8 @@ class SPCalProcessingMethod(object):
         self.filters: list[list["SPCalProcessingFilter"]] = [[]]
         self.exclusion_regions: list[tuple[float, float]] = []
 
+        self.expressions: list[SPCalExpression] = []
+
     def setFilters(self, filters: list[list["SPCalProcessingFilter"]]):
         self.filters = filters
 
@@ -77,7 +84,7 @@ class SPCalProcessingMethod(object):
     def calculate_result_for_isotope(
         method: "SPCalProcessingMethod",
         data_file: SPCalDataFile,
-        isotope: SPCalIsotope,
+        isotope: SPCalIsotopeBase,
         max_size: int | None,
     ) -> SPCalProcessingResult:
         limit = method.limit_options.limitsForIsotope(
@@ -128,9 +135,9 @@ class SPCalProcessingMethod(object):
     def processDataFile(
         self,
         data_file: SPCalDataFile,
-        isotopes: list[SPCalIsotope] | None = None,
+        isotopes: list[SPCalIsotopeBase] | None = None,
         max_size: int | None = None,
-    ) -> dict[SPCalIsotope, SPCalProcessingResult]:
+    ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
         results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
@@ -151,8 +158,8 @@ class SPCalProcessingMethod(object):
         return results
 
     def filterResults(
-        self, results: dict[SPCalIsotope, SPCalProcessingResult]
-    ) -> dict[SPCalIsotope, SPCalProcessingResult]:
+        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
+    ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
@@ -187,7 +194,7 @@ class SPCalProcessingMethod(object):
         return results
 
     def processClusters(
-        self, results: dict[SPCalIsotope, SPCalProcessingResult], key: str = "signal"
+        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult], key: str = "signal"
     ) -> np.ndarray:
         npeaks = (
             np.amax(
@@ -215,7 +222,7 @@ class SPCalProcessingMethod(object):
         X = prepare_data_for_clustering(peak_data)
         return agglomerative_cluster(X, self.cluster_distance)
 
-    def canCalibrate(self, key: str, isotope: SPCalIsotope) -> bool:
+    def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"unknown calibration key '{key}'")
         if isotope not in self.isotope_options:
@@ -226,7 +233,7 @@ class SPCalProcessingMethod(object):
         ) and self.isotope_options[isotope].canCalibrate(key, self.calibration_mode)
 
     def calibrateTo(
-        self, signals: float | np.ndarray, key: str, isotope: SPCalIsotope
+        self, signals: float | np.ndarray, key: str, isotope: SPCalIsotopeBase
     ) -> float | np.ndarray:
         if key == "signal":
             return signals
@@ -240,7 +247,7 @@ class SPCalProcessingMethod(object):
             raise ValueError(f"unknown calibration key '{key}'")
 
     def calibrateToMass(
-        self, signals: float | np.ndarray, isotope: SPCalIsotope
+        self, signals: float | np.ndarray, isotope: SPCalIsotopeBase
     ) -> float | np.ndarray:
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
@@ -266,7 +273,7 @@ class SPCalProcessingMethod(object):
             return signals * mass_response / mass_fraction
 
     def calibrateToSize(
-        self, signals: float | np.ndarray, isotope: SPCalIsotope
+        self, signals: float | np.ndarray, isotope: SPCalIsotopeBase
     ) -> float | np.ndarray:
         density = self.isotope_options[isotope].density
         assert density is not None
@@ -275,7 +282,7 @@ class SPCalProcessingMethod(object):
         )
 
     def calibrateToVolume(
-        self, signals: float | np.ndarray, isotope: SPCalIsotope
+        self, signals: float | np.ndarray, isotope: SPCalIsotopeBase
     ) -> float | np.ndarray:
         density = self.isotope_options[isotope].density
         assert density is not None

@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from spcal.datafile import SPCalDataFile
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.limit import (
     SPCalCompoundPoissonLimit,
     SPCalGaussianLimit,
@@ -152,7 +152,7 @@ class SPCalLimitOptions(object):
     def limitsForIsotope(
         self,
         data_file: SPCalDataFile,
-        isotope: SPCalIsotope,
+        isotope: SPCalIsotopeBase,
         exclusion_regions: list[tuple[float, float]] | None = None,
         method: str | None = None,
     ) -> SPCalLimit:
@@ -177,15 +177,30 @@ class SPCalLimitOptions(object):
         if method == "compound poisson" or (method == "highest" and data_file.isTOF()):
             # Override the default sigma if single ion paramters are present
             if self.single_ion_parameters is not None:
-                if isotope.mass <= 0.0:
-                    logger.warning(f"invalid mass for {isotope}, {isotope.mass}")
-                    sigma = self.compound_poisson_kws["sigma"]
-                else:
+                if isinstance(isotope, SPCalIsotope):
                     sigma = np.interp(
                         isotope.mass,
                         self.single_ion_parameters["mass"],
                         self.single_ion_parameters["sigma"],
                     )
+                elif isinstance(isotope, SPCalIsotopeExpression):
+                    sigma = np.mean(
+                        [
+                            np.interp(
+                                iso.mass,
+                                self.single_ion_parameters["mass"],
+                                self.single_ion_parameters["sigma"],
+                            )
+                            for iso in isotope.tokens
+                            if isinstance(iso, SPCalIsotope)
+                        ]
+                    )
+                else:
+                    raise ValueError("cannot infer sigma from isotope type")
+                # if isotope.mass <= 0.0:
+                #     logger.warning(f"invalid mass for {isotope}, {isotope.mass}")
+                #     sigma = self.compound_poisson_kws["sigma"]
+                # else:
             else:
                 sigma = self.compound_poisson_kws["sigma"]
 

@@ -2,13 +2,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.method import SPCalProcessingMethod
 
 
 class SPCalToolBar(QtWidgets.QToolBar):
     keyChanged = QtCore.Signal(str)
-    isotopeChanged = QtCore.Signal(SPCalIsotope)
+    isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
     viewChanged = QtCore.Signal(QtGui.QAction)
 
     def __init__(
@@ -59,7 +59,7 @@ class SPCalToolBar(QtWidgets.QToolBar):
 
         self.action_group_views.triggered.connect(self.viewChanged)
 
-    def selectedIsotopes(self) -> list[SPCalIsotope]:
+    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         if self.action_all_isotopes.isChecked():
             return [
                 self.combo_isotope.isotope(i) for i in range(self.combo_isotope.count())
@@ -70,7 +70,7 @@ class SPCalToolBar(QtWidgets.QToolBar):
     def overlayOptionChanged(self, checked: bool):
         self.combo_isotope.setEnabled(not checked)
 
-    def setIsotopes(self, isotopes: list[SPCalIsotope]):
+    def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
         self.combo_isotope.blockSignals(True)
         current = self.combo_isotope.currentIsotope()
 

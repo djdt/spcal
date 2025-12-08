@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 from spcal.detection import detection_maxima
 from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.modelviews.isotope import IsotopeComboBox
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import SPCalProcessingResult
 from spcal.siunits import time_units
 
@@ -12,8 +12,8 @@ from spcal.siunits import time_units
 class PeakPropertiesDialog(QtWidgets.QDialog):
     def __init__(
         self,
-        results: dict[SPCalIsotope, SPCalProcessingResult],
-        current: SPCalIsotope,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        current: SPCalIsotopeBase,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)

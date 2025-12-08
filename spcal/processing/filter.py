@@ -2,14 +2,14 @@ from typing import Callable
 
 import numpy as np
 
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 
 from spcal.processing.result import SPCalProcessingResult
 from spcal.processing.method import SPCalProcessingMethod
 
 
 class SPCalProcessingFilter(object):
-    def __init__(self, isotope: SPCalIsotope | None):
+    def __init__(self, isotope: SPCalIsotopeBase | None):
         self.isotope = isotope
 
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
@@ -26,7 +26,7 @@ class SPCalClusterFilter(SPCalProcessingFilter):
 class SPCalValueFilter(SPCalProcessingFilter):
     def __init__(
         self,
-        isotope: SPCalIsotope,
+        isotope: SPCalIsotopeBase,
         key: str,
         operation: Callable[[np.ndarray, float], np.ndarray],
         value: float,

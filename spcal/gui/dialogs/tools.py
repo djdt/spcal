@@ -3,7 +3,7 @@ from typing import Generator
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.particle import (
     nebulisation_efficiency_from_concentration,
     nebulisation_efficiency_from_mass,
@@ -232,7 +232,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
     efficencySelected = QtCore.Signal(float)
     massResponseSelected = QtCore.Signal(float)
 
-    isotopeOptionsChanged = QtCore.Signal(SPCalIsotope, SPCalIsotopeOptions)
+    isotopeOptionsChanged = QtCore.Signal(SPCalIsotopeBase, SPCalIsotopeOptions)
 
     def __init__(
         self,

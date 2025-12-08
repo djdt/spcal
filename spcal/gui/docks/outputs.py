@@ -6,7 +6,7 @@ from spcal.calc import mode as modefn
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
@@ -55,7 +55,7 @@ class ResultOutputModel(UnitsModel):
         ]
         self.key = "signal"
 
-        self.results: dict[SPCalIsotope, SPCalProcessingResult] = {}
+        self.results: dict[SPCalIsotopeBase, SPCalProcessingResult] = {}
 
     def rowCount(
         self,
@@ -168,7 +168,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
         self.setWidget(self.table)
 
-    def setResults(self, results: dict[SPCalIsotope, SPCalProcessingResult]):
+    def setResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
         self.model.beginResetModel()
         self.model.results = results
         self.model.endResetModel()

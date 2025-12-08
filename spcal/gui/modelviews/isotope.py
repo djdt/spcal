@@ -2,7 +2,7 @@ from typing import Any
 
 from PySide6 import QtCore, QtWidgets
 
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 
 
 class IsotopeModel(QtCore.QAbstractListModel):
@@ -10,7 +10,7 @@ class IsotopeModel(QtCore.QAbstractListModel):
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.isotopes: list[SPCalIsotope] = []
+        self.isotopes: list[SPCalIsotopeBase] = []
 
     def rowCount(
         self,
@@ -36,7 +36,7 @@ class IsotopeModel(QtCore.QAbstractListModel):
 
 
 class IsotopeComboBox(QtWidgets.QComboBox):
-    isotopeChanged = QtCore.Signal(SPCalIsotope)
+    isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
 
     IsotopeRole = QtCore.Qt.ItemDataRole.UserRole
 
@@ -44,20 +44,20 @@ class IsotopeComboBox(QtWidgets.QComboBox):
         super().__init__(parent=parent)
         self.currentIndexChanged.connect(self.onIndexChanged)
 
-    def addIsotope(self, isotope: SPCalIsotope):
+    def addIsotope(self, isotope: SPCalIsotopeBase):
         self.addItem(str(isotope), userData=isotope)
 
-    def addIsotopes(self, isotopes: list[SPCalIsotope]):
+    def addIsotopes(self, isotopes: list[SPCalIsotopeBase]):
         for isotope in isotopes:
             self.addIsotope(isotope)
 
-    def currentIsotope(self) -> SPCalIsotope:
+    def currentIsotope(self) -> SPCalIsotopeBase:
         return self.isotope(self.currentIndex())
 
-    def setCurrentIsotope(self, isotope: SPCalIsotope):
+    def setCurrentIsotope(self, isotope: SPCalIsotopeBase):
         self.setCurrentIndex(self.findData(isotope, role=IsotopeComboBox.IsotopeRole))
 
-    def isotope(self, index: int) -> SPCalIsotope:
+    def isotope(self, index: int) -> SPCalIsotopeBase:
         return self.itemData(index, role=IsotopeComboBox.IsotopeRole)
 
     def onIndexChanged(self, index: int):

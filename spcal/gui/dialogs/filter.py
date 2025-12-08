@@ -3,7 +3,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.filter import SPCalProcessingFilter, SPCalClusterFilter, SPCalValueFilter
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
 
@@ -27,7 +27,7 @@ class FilterItemWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        isotopes: list[SPCalIsotope],
+        isotopes: list[SPCalIsotopeBase],
         filter: SPCalProcessingFilter | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -252,7 +252,7 @@ class FilterDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        isotopes: list[SPCalIsotope],
+        isotopes: list[SPCalIsotopeBase],
         filters: list[list[SPCalProcessingFilter]],
         cluster_filters: list[SPCalClusterFilter],
         number_clusters: int = 0,

@@ -19,7 +19,7 @@ from spcal.gui.io import (
     get_save_spcal_path,
     is_spcal_path,
 )
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.isotopes: list[SPCalIsotope] = []
-        self.concentrations: dict[SPCalDataFile, dict[SPCalIsotope, float | None]] = {}
+        self.isotopes: list[SPCalIsotopeBase] = []
+        self.concentrations: dict[SPCalDataFile, dict[SPCalIsotopeBase, float | None]] = {}
 
     def columnCount(
         self,
@@ -116,8 +116,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
 class IntensityModel(QtCore.QAbstractTableModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.isotopes: list[SPCalIsotope] = []
-        self.intensities: dict[SPCalDataFile, dict[SPCalIsotope, float | None]] = {}
+        self.isotopes: list[SPCalIsotopeBase] = []
+        self.intensities: dict[SPCalDataFile, dict[SPCalIsotopeBase, float | None]] = {}
         self.exclusion_regions: dict[SPCalDataFile, list[tuple[float, float]]] = {}
 
     def columnCount(
@@ -288,7 +288,7 @@ class ResponseDialog(QtWidgets.QDialog):
             QtWidgets.QDialogButtonBox.StandardButton.Save
         ).setEnabled(self.isComplete())
 
-    def concentrations(self) -> dict[SPCalIsotope, np.ndarray]:
+    def concentrations(self) -> dict[SPCalIsotopeBase, np.ndarray]:
         concs = {}
         for col, isotope in enumerate(self.model_concs.isotopes):
             concs[isotope] = np.array(
@@ -300,7 +300,7 @@ class ResponseDialog(QtWidgets.QDialog):
             )
         return concs
 
-    def intensities(self) -> dict[SPCalIsotope, np.ndarray]:
+    def intensities(self) -> dict[SPCalIsotopeBase, np.ndarray]:
         intensity = {}
         for col, isotope in enumerate(self.model_intensity.isotopes):
             intensity[isotope] = np.array(

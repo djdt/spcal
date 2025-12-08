@@ -33,7 +33,7 @@ from spcal.gui.io import (
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.gui.io import loadSession, saveSession
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import (
     SPCalIsotopeOptions,
     SPCalProcessingMethod,
@@ -88,7 +88,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         }
 
         self.processing_results: dict[
-            SPCalDataFile, dict[SPCalIsotope, SPCalProcessingResult]
+            SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]
         ] = {}
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
@@ -142,7 +142,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return self.processing_methods["default"]
 
     def colorForIsotope(
-        self, isotope: SPCalIsotope, data_file: SPCalDataFile
+        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
     ) -> QtGui.QColor:
         scheme = color_schemes[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
@@ -155,6 +155,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return scheme[idx % len(scheme)]
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
+        data_file.selected_isotopes.append(
+            SPCalIsotopeExpression.sumIsotopes(data_file.selected_isotopes)
+        )
         self.reprocess(data_file)
         self.updateRecentFiles(data_file)
         # self.onDataFileChanged(data_file)
@@ -196,7 +199,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         all_isotopes = set()
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
-        self.toolbar.setIsotopes(sorted(all_isotopes, key=lambda iso: iso.isotope))
+        self.toolbar.setIsotopes(
+            sorted(
+                all_isotopes,
+                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else -1,
+            )
+        )
 
         self.redraw()
 
@@ -280,7 +288,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.currentMethodChanged.emit(method)
         self.reprocess(self.files.currentDataFile())
 
-    def onIsotopeOptionChanged(self, isotope: SPCalIsotope):
+    def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
@@ -682,7 +690,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def setResponses(self, responses: dict[SPCalIsotope, float]):
+    def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
         method = self.currentMethod()
         for isotope, response in responses.items():
             if isotope in method.isotope_options:

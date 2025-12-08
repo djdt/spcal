@@ -7,7 +7,7 @@ from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDataba
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import SPCalIsotopeOptions
 from spcal.siunits import (
     density_units,
@@ -47,7 +47,7 @@ class IsotopeOptionModel(UnitsModel):
             mass_units,
         ]
 
-        self.isotope_options: dict[SPCalIsotope, SPCalIsotopeOptions] = {}
+        self.isotope_options: dict[SPCalIsotopeBase, SPCalIsotopeOptions] = {}
 
     def rowCount(
         self,
@@ -186,12 +186,12 @@ class IsotopeOptionTable(BasicTableView):
             if name in ["Diameter", "Concentration", "Mass Response"]:
                 self.hideColumn(col)
 
-    def isotope(self, row: int) -> SPCalIsotope:
+    def isotope(self, row: int) -> SPCalIsotopeBase:
         return self.isotope_model.data(
             self.isotope_model.index(row, 0), role=IsotopeOptionModel.IsotopeRole
         )
 
-    def rowForIsotope(self, isotope: SPCalIsotope) -> int:
+    def rowForIsotope(self, isotope: SPCalIsotopeBase) -> int:
         return list(self.isotope_model.isotope_options.keys()).index(isotope)
 
     def dialogParticleDatabase(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
@@ -253,7 +253,7 @@ class IsotopeOptionTable(BasicTableView):
 
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
-    optionChanged = QtCore.Signal(SPCalIsotope)
+    optionChanged = QtCore.Signal(SPCalIsotopeBase)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -269,10 +269,10 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
             self.table.isotope_model.data(index, IsotopeOptionModel.IsotopeRole)
         )
 
-    def isotopeOptions(self) -> dict[SPCalIsotope, SPCalIsotopeOptions]:
+    def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
 
-    def setIsotopes(self, isotopes: list[SPCalIsotope]):
+    def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
         self.table.isotope_model.dataChanged.disconnect(self.onDataChanged)
         self.table.isotope_model.beginResetModel()
         self.table.isotope_model.isotope_options = {
@@ -281,14 +281,14 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.table.isotope_model.endResetModel()
         self.table.isotope_model.dataChanged.connect(self.onDataChanged)
 
-    def setIsotopeOption(self, isotope: SPCalIsotope, option: SPCalIsotopeOptions):
+    def setIsotopeOption(self, isotope: SPCalIsotopeBase, option: SPCalIsotopeOptions):
         self.table.isotope_model.setData(
             self.table.isotope_model.index(self.table.rowForIsotope(isotope), 0),
             option,
             role=IsotopeOptionModel.IsotopeOptionRole,
         )
 
-    def optionForIsotope(self, isotope: SPCalIsotope) -> SPCalIsotopeOptions:
+    def optionForIsotope(self, isotope: SPCalIsotopeBase) -> SPCalIsotopeOptions:
         return self.table.isotope_model.isotope_options[isotope]
 
     def reset(self):
