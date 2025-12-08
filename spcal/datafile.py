@@ -241,6 +241,7 @@ class SPCalNuDataFile(SPCalDataFile):
         times: np.ndarray,
         masses: np.ndarray,
         info: dict,
+        integ_files: tuple[int, int | None],
         max_mass_diff: float = 0.05,
     ):
         super().__init__(path, times, instrument_type="tof")
@@ -250,6 +251,7 @@ class SPCalNuDataFile(SPCalDataFile):
         self.signals = signals
         self.masses = masses
         self.max_mass_diff = max_mass_diff
+        self.integ_files = integ_files
 
         self.isotope_table: dict[SPCalIsotope, int] = {}
         self.generateIsotopeTable()
@@ -281,13 +283,32 @@ class SPCalNuDataFile(SPCalDataFile):
         }
 
     @classmethod
-    def load(cls, path: Path, max_mass_diff: float = 0.05) -> "SPCalNuDataFile":
+    def load(
+        cls,
+        path: Path,
+        max_mass_diff: float = 0.05,
+        first_integ_file: int = 0,
+        last_integ_file: int | None = None,
+    ) -> "SPCalNuDataFile":
         if path.is_file() and path.stem == "run.info":
             path = path.parent
 
-        masses, signals, times, info = nu.read_directory(path, raw=False)
+        masses, signals, times, info = nu.read_directory(
+            path,
+            first_integ_file=first_integ_file,
+            last_integ_file=last_integ_file,
+            raw=False,
+        )
 
-        return cls(path, signals, times, masses, info, max_mass_diff=max_mass_diff)
+        return cls(
+            path,
+            signals,
+            times,
+            masses,
+            info,
+            integ_files=(first_integ_file, last_integ_file),
+            max_mass_diff=max_mass_diff,
+        )
 
 
 class SPCalTOFWERKDataFile(SPCalDataFile):
