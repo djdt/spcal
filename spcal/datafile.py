@@ -30,7 +30,7 @@ class SPCalDataFile(object):
         self.path = path
         self.instrument_type = instrument_type
 
-        self._selected_isotopes: list[SPCalIsotopeBase] = []
+        self._selected_isotopes: list[SPCalIsotope] = []
 
         self.times = times
 
@@ -48,18 +48,18 @@ class SPCalDataFile(object):
             raise ValueError(f"cannot access data for isotope type {type(isotope)}")
 
     @property
-    def selected_isotopes(self) -> list[SPCalIsotopeBase]:
+    def selected_isotopes(self) -> list[SPCalIsotope]:
         return self._selected_isotopes
 
     @selected_isotopes.setter
-    def selected_isotopes(self, selected: list[SPCalIsotopeBase]):
+    def selected_isotopes(self, selected: list[SPCalIsotope]):
         for isotope in selected:
             if isotope not in self.isotopes:
                 raise ValueError(f"{isotope} not in {self}")
         self._selected_isotopes = selected
 
     @property
-    def preferred_isotopes(self) -> list[SPCalIsotopeBase]:
+    def preferred_isotopes(self) -> list[SPCalIsotope]:
         return [
             isotope
             for isotope in self.isotopes
@@ -80,14 +80,14 @@ class SPCalDataFile(object):
         # return self.event_time * self.num_events
 
     @property
-    def isotopes(self) -> list[SPCalIsotopeBase]:
+    def isotopes(self) -> list[SPCalIsotope]:
         raise NotImplementedError
 
     @property
     def num_events(self) -> int:
         raise NotImplementedError
 
-    def dataForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         raise NotImplementedError
 
     def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
@@ -95,7 +95,7 @@ class SPCalDataFile(object):
             variables={
                 str(token): self.dataForIsotope(token)
                 for token in expr.tokens
-                if isinstance(token, SPCalIsotopeBase)
+                if isinstance(token, SPCalIsotope)
             }
         )
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
@@ -113,7 +113,7 @@ class SPCalTextDataFile(SPCalDataFile):
         path: Path,
         signals: np.ndarray,
         times: np.ndarray,
-        isotopes: list[SPCalIsotopeBase],
+        isotopes: list[SPCalIsotope],
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
@@ -141,21 +141,21 @@ class SPCalTextDataFile(SPCalDataFile):
         self.drop_fields = drop_fields
 
     @property
-    def isotopes(self) -> list[SPCalIsotopeBase]:
+    def isotopes(self) -> list[SPCalIsotope]:
         return list(self.isotope_table.keys())
 
     @property
     def num_events(self) -> int:
         return self.signals.shape[0]
 
-    def dataForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         return self.signals[self.isotope_table[isotope]]
 
     @classmethod
     def load(
         cls,
         path: Path,
-        isotopes: list[SPCalIsotopeBase] | None = None,
+        isotopes: list[SPCalIsotope] | None = None,
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
@@ -232,7 +232,7 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if isotopes is None:
             isotopes = [
-                SPCalIsotopeBase.fromString(name) for name in signals.dtype.names
+                SPCalIsotope.fromString(name) for name in signals.dtype.names
             ]
 
         if cps:
@@ -284,7 +284,7 @@ class SPCalNuDataFile(SPCalDataFile):
         self.max_mass_diff = max_mass_diff
         self.integ_files = integ_files
 
-        self.isotope_table: dict[SPCalIsotopeBase, int] = {}
+        self.isotope_table: dict[SPCalIsotope, int] = {}
         self.generateIsotopeTable()
 
     @property
@@ -292,10 +292,10 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals.shape[0]
 
     @property
-    def isotopes(self) -> list[SPCalIsotopeBase]:
+    def isotopes(self) -> list[SPCalIsotope]:
         return list(self.isotope_table.keys())
 
-    def dataForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
 
@@ -356,14 +356,14 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         super().__init__(path, times, instrument_type="tof")
 
     @property
-    def isotopes(self) -> list[SPCalIsotopeBase]:
+    def isotopes(self) -> list[SPCalIsotope]:
         return [x["label"].decode() for x in self.peak_table]
 
     @property
     def masses(self) -> np.ndarray:
         return self.peak_table["mass"]
 
-    def dataForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotopes.index(isotope)
         return self.signals[..., idx].ravel()
 

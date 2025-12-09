@@ -128,7 +128,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.defaultLayout()
 
     def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
-        # todo: filter first based on key and save cluster peak data
         if data_file not in self.processing_clusters:
             self.processing_clusters[data_file] = {}
         if key not in self.processing_clusters[data_file]:
@@ -147,7 +146,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         scheme = color_schemes[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
-        idx = data_file.selected_isotopes.index(isotope)
+        if isinstance(isotope, SPCalIsotope):
+            idx = data_file.selected_isotopes.index(isotope)
+        elif isinstance(isotope, SPCalIsotopeExpression):
+            method = self.currentMethod()
+            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
+        else:
+            raise ValueError(f"unknown isotope type '{type(isotope)}'")
 
         data_files = self.files.dataFiles()
         for i in range(0, data_files.index(data_file)):
@@ -172,13 +177,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # Set the options to current
         self.instrument_options.event_time.setBaseValue(current.event_time)
-        self.isotope_options.setIsotopes(current.selected_isotopes)
-
+        isotopes = current.selected_isotopes + self.currentMethod().expressions
         # Add any missing isotopes to method and isotope options
+        self.isotope_options.setIsotopes(isotopes)
         require_reprocess = False
         method = self.currentMethod()
         self.isotope_options.blockSignals(True)
-        for isotope in current.selected_isotopes:
+        for isotope in isotopes:
             if isotope not in method.isotope_options:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
                 require_reprocess = True
@@ -186,20 +191,21 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 isotope, method.isotope_options[isotope]
             )
         self.isotope_options.blockSignals(False)
-
         if require_reprocess or current not in self.processing_results:
             self.reprocess(current)
-        self.currentMethodChanged.emit(method)
+        self.currentMethodChanged.emit(self.currentMethod())
 
         self.outputs.setResults(self.processing_results[current])
 
-        all_isotopes = set()
+        all_isotopes = set(isotopes)
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
+
+        # all_isotopes = all_isotopes.union(self.currentMethod().expressions)
         self.toolbar.setIsotopes(
             sorted(
                 all_isotopes,
-                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else -1,
+                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
             )
         )
 
@@ -605,41 +611,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         dlg.open()
-
-    #     path, filter = QtWidgets.QFileDialog.getSaveFileName(
-    #         self,
-    #         "Save Data As",
-    #         "",
-    #         "Numpy Archive (*.npz);;CSV Document(*.csv);;All files(*)",
-    #     )
-    #     if path == "":
-    #         return
-    #
-    #     filter_suffix = filter[filter.rfind(".") : -1]
-    #
-    #     path = Path(path)
-    #     if filter_suffix != "":  # append suffix if missing
-    #         path = path.with_suffix(filter_suffix)
-    #
-    #     names = self.sample.responses.dtype.names
-    #     if path.suffix.lower() == ".csv":
-    #         trim = self.sample.trimRegion(names[0])
-    #         header = " ".join(name for name in names)
-    #         np.savetxt(
-    #             path,
-    #             self.sample.responses[trim[0] : trim[1]],
-    #             delimiter="\t",
-    #             comments="",
-    #             header=header,
-    #             fmt="%.16g",
-    #         )
-    #     elif path.suffix.lower() == ".npz":
-    #         np.savez_compressed(
-    #             path,
-    #             **{name: self.sample.trimmedResponse(name) for name in names},
-    #         )
-    #     else:
-    #         raise ValueError("dialogExportData: file suffix must be '.npz' or '.csv'.")
 
     def dialogFilterDetections(self):
         data_file = self.files.currentDataFile()

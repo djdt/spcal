@@ -68,7 +68,10 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
 
     @classmethod
     def sumIsotopes(cls, isotopes: list[SPCalIsotope]) -> "SPCalIsotopeExpression":
-        name = "Σ" + "".join([str(iso) for iso in isotopes])
+        if all(isotope.symbol == isotopes[0].symbol for isotope in isotopes):
+            name = "Σ" + isotopes[0].symbol
+        else:
+            name = "Σ" + "".join([str(iso) for iso in isotopes])
         tokens: list[str | SPCalIsotope] = ["+"] * (len(isotopes) - 1)
         tokens.extend(isotopes)
         return cls(name, tuple(tokens))

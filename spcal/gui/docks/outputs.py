@@ -1,11 +1,12 @@
 from typing import Any
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import mode as modefn
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
+from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import SPCalProcessingResult
 from spcal.siunits import (
@@ -150,21 +151,41 @@ class ResultOutputModel(UnitsModel):
             return super().data(index, role)
 
 
+class ResultOutputView(BasicTableView):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.setHorizontalHeader(self.header)
+
+        self.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
+        self.setItemDelegate(ValueWidgetDelegate())
+
+        self.action_sum = create_action("Sum", "Sum", "Sum", self.sumSelectedIsotopes)
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+        event.accept()
+        menu = self.basicTableMenu()
+        menu.popup(event.globalPos())
+
+    def sumSelectedIsotopes(self):
+        selected_rows = []
+        for idx in self.selectedIndexes():
+            if idx.row() not in selected_rows:
+                selected_rows.append(idx.row())
+
+
+
 class SPCalOutputsDock(QtWidgets.QDockWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Results")
 
         self.model = ResultOutputModel()
-        self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
-        self.header.setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
-        )
-        self.table = BasicTableView()
+        self.table = ResultOutputView()
         self.table.setModel(self.model)
-        self.table.setHorizontalHeader(self.header)
-        self.table.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
-        self.table.setItemDelegate(ValueWidgetDelegate())
 
         self.setWidget(self.table)
 
@@ -194,7 +215,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         elif key != "signal":
             raise ValueError(f"unknown key '{key}'")
 
-        orientation = self.header.orientation()
+        orientation = self.table.header.orientation()
         self.model.setHeaderData(1, orientation, conc_units, role=UnitsModel.UnitsRole)
         self.model.setHeaderData(
             1, orientation, default_conc_unit, role=UnitsModel.CurrentUnitRole

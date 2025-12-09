@@ -1,14 +1,15 @@
 from concurrent.futures import ThreadPoolExecutor
-import typing
 
+from typing import Sequence, TYPE_CHECKING
 import numpy as np
 
 from spcal import particle
 from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
-from spcal.isotope import SPCalIsotopeBase
+from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
+import logging
 
 from spcal.processing.options import (
     SPCalInstrumentOptions,
@@ -17,8 +18,11 @@ from spcal.processing.options import (
 )
 from spcal.processing.result import SPCalProcessingResult
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from spcal.processing.filter import SPCalProcessingFilter
+
+logger = logging.getLogger(__name__)
+
 
 class SPCalExpression(object):
     def __init__(self, tokens: list[str], result: SPCalIsotopeBase):
@@ -75,7 +79,7 @@ class SPCalProcessingMethod(object):
         self.filters: list[list["SPCalProcessingFilter"]] = [[]]
         self.exclusion_regions: list[tuple[float, float]] = []
 
-        self.expressions: list[SPCalExpression] = []
+        self.expressions: list[SPCalIsotopeExpression] = []
 
     def setFilters(self, filters: list[list["SPCalProcessingFilter"]]):
         self.filters = filters
@@ -135,12 +139,15 @@ class SPCalProcessingMethod(object):
     def processDataFile(
         self,
         data_file: SPCalDataFile,
-        isotopes: list[SPCalIsotopeBase] | None = None,
+        isotopes: Sequence[SPCalIsotopeBase] | None = None,
         max_size: int | None = None,
     ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
         results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
+
+        # todo: append expressions, should check if valid
+        isotopes = list(isotopes) + self.expressions
 
         with ThreadPoolExecutor() as exec:
             futures = [
@@ -194,7 +201,9 @@ class SPCalProcessingMethod(object):
         return results
 
     def processClusters(
-        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult], key: str = "signal"
+        self,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        key: str = "signal",
     ) -> np.ndarray:
         npeaks = (
             np.amax(
@@ -226,7 +235,8 @@ class SPCalProcessingMethod(object):
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"unknown calibration key '{key}'")
         if isotope not in self.isotope_options:
-            raise ValueError(f"unknown isotope '{isotope}'")
+            logger.warning(f"cannot calibrate, {isotope} not found in isotope options")
+            return False
 
         return self.instrument_options.canCalibrate(
             key, self.calibration_mode

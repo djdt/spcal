@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Sequence
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -272,7 +272,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
 
-    def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+    def setIsotopes(self, isotopes: Sequence[SPCalIsotopeBase]):
         self.table.isotope_model.dataChanged.disconnect(self.onDataChanged)
         self.table.isotope_model.beginResetModel()
         self.table.isotope_model.isotope_options = {
