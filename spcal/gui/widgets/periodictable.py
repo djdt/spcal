@@ -157,7 +157,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
             any(action.isEnabled() for action in self.isotope_actions.values())
         )
 
-        self.clicked.connect(self.selectPreferredIsotopes)
+        # self.clicked.connect(self.selectPreferredIsotopes)
         self.isotopesChanged.connect(self.updateChecked)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):

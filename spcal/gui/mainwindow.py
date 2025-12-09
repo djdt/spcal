@@ -155,9 +155,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return scheme[idx % len(scheme)]
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
-        data_file.selected_isotopes.append(
-            SPCalIsotopeExpression.sumIsotopes(data_file.selected_isotopes)
-        )
         self.reprocess(data_file)
         self.updateRecentFiles(data_file)
         # self.onDataFileChanged(data_file)
