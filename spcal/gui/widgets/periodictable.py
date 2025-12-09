@@ -160,6 +160,16 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.clicked.connect(self.selectPreferredIsotopes)
         self.isotopesChanged.connect(self.updateChecked)
 
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            if QtCore.Qt.KeyboardModifier.ShiftModifier & event.modifiers():
+                self.selectAllIsotopes(0.1)
+            else:
+                self.selectPreferredIsotopes(not self.isChecked())
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
     def preferred(self) -> SPCalIsotope | None:
         enabled = self.enabledIsotopes()
         for isotope in enabled:
@@ -200,6 +210,17 @@ class PeriodicTableButton(QtWidgets.QToolButton):
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         nums = [n for n, action in self.isotope_actions.items() if action.isChecked()]
         return [iso for iso in self.isotopes if iso.isotope in nums]
+
+    def selectAllIsotopes(self, min_composition: float = 0.0):
+        for isotope, action in zip(self.isotopes, self.isotope_actions.values()):
+            if (
+                isotope.composition is not None
+                and isotope.composition > min_composition
+            ):
+                action.setChecked(True)
+            else:
+                action.setChecked(False)
+        self.update()
 
     def selectPreferredIsotopes(self, checked: bool):
         preferred = self.preferred()
