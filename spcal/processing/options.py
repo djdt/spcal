@@ -178,29 +178,32 @@ class SPCalLimitOptions(object):
             # Override the default sigma if single ion paramters are present
             if self.single_ion_parameters is not None:
                 if isinstance(isotope, SPCalIsotope):
+                    if isotope.mass <= 0.0:
+                        raise ValueError("isotope mass is 0")
                     sigma = np.interp(
                         isotope.mass,
                         self.single_ion_parameters["mass"],
                         self.single_ion_parameters["sigma"],
                     )
                 elif isinstance(isotope, SPCalIsotopeExpression):
+                    masses = [
+                        token.mass
+                        for token in isotope.tokens
+                        if isinstance(token, SPCalIsotope)
+                    ]
+                    if any(x <= 0.0 for x in masses):
+                        raise ValueError("isotope mass is 0")
                     sigma = np.mean(
-                        [
-                            np.interp(
-                                iso.mass,
-                                self.single_ion_parameters["mass"],
-                                self.single_ion_parameters["sigma"],
-                            )
-                            for iso in isotope.tokens
-                            if isinstance(iso, SPCalIsotope)
-                        ]
+                        np.interp(
+                            masses,
+                            self.single_ion_parameters["mass"],
+                            self.single_ion_parameters["sigma"],
+                        )
                     )
                 else:
-                    raise ValueError("cannot infer sigma from isotope type")
-                # if isotope.mass <= 0.0:
-                #     logger.warning(f"invalid mass for {isotope}, {isotope.mass}")
-                #     sigma = self.compound_poisson_kws["sigma"]
-                # else:
+                    raise ValueError(
+                        f"cannot infer sigma from isotope type '{type(isotope)}'"
+                    )
             else:
                 sigma = self.compound_poisson_kws["sigma"]
 
