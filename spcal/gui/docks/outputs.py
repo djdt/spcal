@@ -7,7 +7,7 @@ from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.util import create_action
-from spcal.isotope import SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
@@ -152,6 +152,9 @@ class ResultOutputModel(UnitsModel):
 
 
 class ResultOutputView(BasicTableView):
+    requestAddExpression = QtCore.Signal(object)
+    requestRemoveExpressions = QtCore.Signal(list)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
@@ -163,22 +166,62 @@ class ResultOutputView(BasicTableView):
         self.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
         self.setItemDelegate(ValueWidgetDelegate())
 
-        self.action_sum = create_action("Sum", "Sum", "Sum", self.sumSelectedIsotopes)
+        self.action_sum = create_action(
+            "black_sum",
+            "Sum Isotopes",
+            "Add a calculator expression summing the selected isotopes.",
+            self.sumSelectedIsotopes,
+        )
+        self.action_remove_expr = create_action(
+            "entry-delete",
+            "Remove Expressions",
+            "Delete selected expressions.",
+            self.removeSelectedExpressions,
+        )
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
+        selected = self.selectedIsotopes()
+        if len(selected) > 0:
+            menu.addSeparator()
+        if any(isinstance(iso, SPCalIsotopeExpression) for iso in selected):
+            menu.addAction(self.action_remove_expr)
+        if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
+            menu.addSeparator()
+            menu.addAction(self.action_sum)
         menu.popup(event.globalPos())
 
-    def sumSelectedIsotopes(self):
-        selected_rows = []
+    def selectedIsotopes(self):
+        selected_isotopes = []
         for idx in self.selectedIndexes():
-            if idx.row() not in selected_rows:
-                selected_rows.append(idx.row())
+            isotope = idx.data(ResultOutputModel.IsotopeRole)
+            if isotope not in selected_isotopes:
+                selected_isotopes.append(isotope)
+        return selected_isotopes
 
+    def sumSelectedIsotopes(self):
+        selected_isotopes = [
+            iso for iso in self.selectedIsotopes() if isinstance(iso, SPCalIsotope)
+        ]
+        if len(selected_isotopes) > 1:
+            expr = SPCalIsotopeExpression.sumIsotopes(selected_isotopes)
+            self.requestAddExpression.emit(expr)
+
+    def removeSelectedExpressions(self):
+        selected_expr = [
+            iso
+            for iso in self.selectedIsotopes()
+            if isinstance(iso, SPCalIsotopeExpression)
+        ]
+        if len(selected_expr) > 0:
+            self.requestRemoveExpressions.emit(selected_expr)
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
+    requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
+    requestRemoveExpressions = QtCore.Signal(list)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Results")
@@ -186,6 +229,8 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.model = ResultOutputModel()
         self.table = ResultOutputView()
         self.table.setModel(self.model)
+        self.table.requestAddExpression.connect(self.requestAddExpression)
+        self.table.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
         self.setWidget(self.table)
 

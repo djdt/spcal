@@ -119,6 +119,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.onDataFilesChanged)
 
+        self.outputs.requestAddExpression.connect(self.addExpression)
+        self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
+
         self.toolbar.keyChanged.connect(self.onKeyChanged)
 
         self.createMenuBar()
@@ -158,6 +161,27 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for i in range(0, data_files.index(data_file)):
             idx += len(data_files[i].selected_isotopes)
         return scheme[idx % len(scheme)]
+
+    def addExpression(self, expr: SPCalIsotopeExpression):
+        method = self.currentMethod()
+        if expr not in method.expressions:
+            method.expressions.append(expr)
+            self.currentMethodChanged.emit(method)
+            self.onDataFilesChanged(
+                self.files.currentDataFile(), self.files.selectedDataFiles()
+            )
+            self.reprocess(self.files.currentDataFile())
+
+    def removeExpressions(self, expressions: list[SPCalIsotopeExpression]):
+        method = self.currentMethod()
+        for expr in expressions:
+            if expr in method.expressions:
+                method.expressions.remove(expr)
+            self.removeIsotopeFromResults(expr)
+        self.currentMethodChanged.emit(method)
+        self.onDataFilesChanged(
+            self.files.currentDataFile(), self.files.selectedDataFiles()
+        )
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
         self.reprocess(data_file)
@@ -213,6 +237,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def removeFileFromResults(self, data_file: SPCalDataFile):
         self.processing_results.pop(data_file)
+
+    def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
+        for data_file, results in self.processing_results.items():
+            if isotope in results:
+                results.pop(isotope)
 
     def redraw(self):
         key = self.toolbar.combo_key.currentText()
