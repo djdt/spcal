@@ -3,6 +3,7 @@ from typing import Any, Sequence
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
@@ -164,6 +165,8 @@ class IsotopeOptionModel(UnitsModel):
 
 
 class IsotopeOptionTable(BasicTableView):
+    isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
         self.isotope_model = IsotopeOptionModel()
@@ -176,6 +179,7 @@ class IsotopeOptionTable(BasicTableView):
         self.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
+        self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
 
         for col, name in self.isotope_model.COLUMNS.items():
             delegate = ValueWidgetDelegate()
@@ -186,6 +190,8 @@ class IsotopeOptionTable(BasicTableView):
             if name in ["Diameter", "Concentration", "Mass Response"]:
                 self.hideColumn(col)
 
+        self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
+
     def isotope(self, row: int) -> SPCalIsotopeBase:
         return self.isotope_model.data(
             self.isotope_model.index(row, 0), role=IsotopeOptionModel.IsotopeRole
@@ -193,6 +199,12 @@ class IsotopeOptionTable(BasicTableView):
 
     def rowForIsotope(self, isotope: SPCalIsotopeBase) -> int:
         return list(self.isotope_model.isotope_options.keys()).index(isotope)
+
+    def onHeaderClicked(self, section: int):
+        isotope = self.isotope_model.data(
+            self.isotope_model.index(section, 0), IsotopeOptionModel.IsotopeRole
+        )
+        self.isotopeSelected.emit(isotope)
 
     def dialogParticleDatabase(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
         def set_density(density: float | None):
@@ -253,6 +265,7 @@ class IsotopeOptionTable(BasicTableView):
 
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
+    requestCurrentIsotope = QtCore.Signal(SPCalIsotopeBase)
     optionChanged = QtCore.Signal(SPCalIsotopeBase)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -261,6 +274,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
         self.table = IsotopeOptionTable()
         self.table.isotope_model.dataChanged.connect(self.onDataChanged)
+        self.table.isotopeSelected.connect(self.requestCurrentIsotope)
 
         self.setWidget(self.table)
 

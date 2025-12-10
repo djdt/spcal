@@ -111,6 +111,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
+        self.isotope_options.requestCurrentIsotope.connect(
+            self.toolbar.combo_isotope.setCurrentIsotope
+        )
 
         self.resultsChanged.connect(self.onResultsChanged)
 
@@ -119,6 +122,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.onDataFilesChanged)
 
+        self.outputs.requestCurrentIsotope.connect(
+            self.toolbar.combo_isotope.setCurrentIsotope
+        )
+        self.outputs.requestRemoveIsotopes.connect(self.removeIsotopes)
         self.outputs.requestAddExpression.connect(self.addExpression)
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
@@ -182,6 +189,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.onDataFilesChanged(
             self.files.currentDataFile(), self.files.selectedDataFiles()
         )
+
+    def removeIsotopes(self, isotopes: list[SPCalIsotope]):
+        for file in self.files.dataFiles():
+            for isotope in isotopes:
+                if isotope in file.selected_isotopes:
+                    file.selected_isotopes.remove(isotope)
+        self.reprocess(None)
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
         self.reprocess(data_file)

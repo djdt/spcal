@@ -3,6 +3,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import mode as modefn
+from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
@@ -91,6 +92,8 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
                 return str(list(self.results.keys())[section])
+            elif role == ResultOutputModel.IsotopeRole:
+                return list(self.results.keys())[section]
         return super().headerData(section, orientation, role)
 
     def data(
@@ -152,16 +155,24 @@ class ResultOutputModel(UnitsModel):
 
 
 class ResultOutputView(BasicTableView):
-    requestAddExpression = QtCore.Signal(object)
+    isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+    requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
+    requestRemoveIsotopes = QtCore.Signal(list)
     requestRemoveExpressions = QtCore.Signal(list)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.results_model = ResultOutputModel()
+
         self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.header.setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
+
+        self.setModel(self.results_model)
         self.setHorizontalHeader(self.header)
+        self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
+        self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
 
         self.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
         self.setItemDelegate(ValueWidgetDelegate())
@@ -172,6 +183,12 @@ class ResultOutputView(BasicTableView):
             "Add a calculator expression summing the selected isotopes.",
             self.sumSelectedIsotopes,
         )
+        self.action_remove_isotopes = create_action(
+            "entry-delete",
+            "Remove Isotopes",
+            "Delete the selected isotopes and expressions.",
+            self.removeSelectedIsotopes,
+        )
         self.action_remove_expr = create_action(
             "entry-delete",
             "Remove Expressions",
@@ -179,17 +196,23 @@ class ResultOutputView(BasicTableView):
             self.removeSelectedExpressions,
         )
 
+    def onHeaderClicked(self, section: int):
+        isotope = self.results_model.data(
+            self.results_model.index(section, 0), ResultOutputModel.IsotopeRole
+        )
+        self.isotopeSelected.emit(isotope)
+
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
         selected = self.selectedIsotopes()
-        if len(selected) > 0:
-            menu.addSeparator()
+        menu.addSeparator()
+        if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
+            menu.addAction(self.action_sum)
         if any(isinstance(iso, SPCalIsotopeExpression) for iso in selected):
             menu.addAction(self.action_remove_expr)
-        if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
-            menu.addSeparator()
-            menu.addAction(self.action_sum)
+        if any(isinstance(iso, SPCalIsotope) for iso in selected):
+            menu.addAction(self.action_remove_isotopes)
         menu.popup(event.globalPos())
 
     def selectedIsotopes(self):
@@ -208,6 +231,13 @@ class ResultOutputView(BasicTableView):
             expr = SPCalIsotopeExpression.sumIsotopes(selected_isotopes)
             self.requestAddExpression.emit(expr)
 
+    def removeSelectedIsotopes(self):
+        selected_expr = [
+            iso for iso in self.selectedIsotopes() if isinstance(iso, SPCalIsotope)
+        ]
+        if len(selected_expr) > 0:
+            self.requestRemoveIsotopes.emit(selected_expr)
+
     def removeSelectedExpressions(self):
         selected_expr = [
             iso
@@ -219,6 +249,8 @@ class ResultOutputView(BasicTableView):
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
+    requestCurrentIsotope = QtCore.Signal(SPCalIsotopeBase)
+    requestRemoveIsotopes = QtCore.Signal(list)
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveExpressions = QtCore.Signal(list)
 
@@ -226,21 +258,22 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         super().__init__(parent)
         self.setWindowTitle("Results")
 
-        self.model = ResultOutputModel()
         self.table = ResultOutputView()
-        self.table.setModel(self.model)
+
+        self.table.isotopeSelected.connect(self.requestCurrentIsotope)
+        self.table.requestRemoveIsotopes.connect(self.requestRemoveIsotopes)
         self.table.requestAddExpression.connect(self.requestAddExpression)
         self.table.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
         self.setWidget(self.table)
 
     def setResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
-        self.model.beginResetModel()
-        self.model.results = results
-        self.model.endResetModel()
+        self.table.results_model.beginResetModel()
+        self.table.results_model.results = results
+        self.table.results_model.endResetModel()
 
     def updateOutputsForKey(self, key: str):
-        self.model.key = key
+        self.table.results_model.key = key
         units = signal_units
         default_unit = "cts"
         conc_units = number_concentration_units
@@ -261,14 +294,18 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             raise ValueError(f"unknown key '{key}'")
 
         orientation = self.table.header.orientation()
-        self.model.setHeaderData(1, orientation, conc_units, role=UnitsModel.UnitsRole)
-        self.model.setHeaderData(
+        self.table.results_model.setHeaderData(
+            1, orientation, conc_units, role=UnitsModel.UnitsRole
+        )
+        self.table.results_model.setHeaderData(
             1, orientation, default_conc_unit, role=UnitsModel.CurrentUnitRole
         )
 
         for i in range(2, 6):
-            self.model.setHeaderData(i, orientation, units, role=UnitsModel.UnitsRole)
-            self.model.setHeaderData(
+            self.table.results_model.setHeaderData(
+                i, orientation, units, role=UnitsModel.UnitsRole
+            )
+            self.table.results_model.setHeaderData(
                 i, orientation, default_unit, role=UnitsModel.CurrentUnitRole
             )
 
@@ -279,6 +316,4 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.table.setItemDelegate(delegate)
 
     def reset(self):
-        self.model.beginResetModel()
-        self.model.results.clear()
-        self.model.endResetModel()
+        self.setResults({})
