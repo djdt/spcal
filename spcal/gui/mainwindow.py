@@ -174,10 +174,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if expr not in method.expressions:
             method.expressions.append(expr)
             self.currentMethodChanged.emit(method)
+            self.reprocess(None)
             self.onDataFilesChanged(
                 self.files.currentDataFile(), self.files.selectedDataFiles()
             )
-            self.reprocess(self.files.currentDataFile())
 
     def removeExpressions(self, expressions: list[SPCalIsotopeExpression]):
         method = self.currentMethod()
@@ -629,15 +629,27 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     #     return dlg
     #
     def dialogCalculator(self) -> CalculatorDialog:
-        raise NotImplementedError
+        method = self.currentMethod()
 
-    #     dlg = CalculatorDialog(self.sample.names, self.sample.current_expr, parent=self)
-    #     dlg.expressionAdded.connect(self.sample.addExpression)
-    #     dlg.expressionRemoved.connect(self.sample.removeExpression)
-    #     dlg.expressionAdded.connect(self.reference.addExpression)
-    #     dlg.expressionRemoved.connect(self.reference.removeExpression)
-    #     dlg.open()
-    #     return dlg
+        def set_expressions(expressions: list[SPCalIsotopeExpression]):
+            method.expressions = expressions
+            self.currentMethodChanged.emit(method)
+            self.reprocess(None)
+            self.onDataFilesChanged(
+                self.files.currentDataFile(), self.files.selectedDataFiles()
+            )
+
+        files = self.files.dataFiles()
+
+        all_isotopes = set(files[0].isotopes)
+        for file in files[1:]:
+            all_isotopes.union(file.isotopes)
+        all_isotopes = sorted(all_isotopes, key=lambda iso: iso.isotope)
+
+        dlg = CalculatorDialog(all_isotopes, method.expressions, parent=self)
+        dlg.expressionsChanged.connect(set_expressions)
+        dlg.open()
+        return dlg
 
     def dialogExportResults(self):
         self.reprocess(None)  # force reprocess of all data files
