@@ -47,4 +47,11 @@ size_units = {"nm": 1e-9, "µm": 1e-6, "mm": 1e-3, "m": 1.0}
 
 time_units = {"ns": 1e-9, "µs": 1e-6, "ms": 1e-3, "s": 1.0}
 
+flowrate_units = {
+    "ml/min": 1e-3 / 60.0,
+    "ml/s": 1e-3,
+    "L/min": 1.0 / 60.0,
+    "L/s": 1.0,
+}
+
 volume_units = {"nm³": 1e-27, "µm³": 1e-18, "mm³": 1e-9, "m³": 1.0}
