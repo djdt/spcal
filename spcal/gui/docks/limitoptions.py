@@ -142,14 +142,14 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
     def __init__(
         self,
         alpha: float = 2.867e-7,
-        sigma: float = 5.0,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__("Gaussian", alpha, parent=parent)  # 5.0 sigma
         self.alpha.valueChanged.connect(self.updateSigma)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.sigma = ValueWidget(sigma, min=0.0, max=8.0, step=1.0, sigfigs=sf)
+        self.sigma = ValueWidget(0.0, min=0.0, max=8.0, step=1.0, sigfigs=sf)
+        self.updateSigma()
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )
@@ -343,15 +343,15 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
 
         self.gaussian = GaussianOptionsWidget(
-            limit_options.gaussian_kws["alpha"], limit_options.gaussian_kws["sigma"]
+            limit_options.gaussian_kws["alpha"]
         )
         self.poisson = PoissonOptionsWidget(
             limit_options.poisson_kws["alpha"],
             limit_options.poisson_kws["function"],
-            limit_options.poisson_kws["eta"],
-            limit_options.poisson_kws["epsilon"],
-            limit_options.poisson_kws["t_sample"],
-            limit_options.poisson_kws["t_blank"],
+            limit_options.poisson_kws.get("eta",2.0),
+            limit_options.poisson_kws.get("epsilon", 0.5),
+            limit_options.poisson_kws.get("t_sample",1.0),
+            limit_options.poisson_kws.get("t_blank",1.0),
         )
         self.compound = CompoundPoissonOptionsWidget(
             limit_options.compound_poisson_kws["alpha"],
@@ -477,6 +477,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             options, accumulation_method, points_required, prominence_required
         )
         self.options_widget.optionsChanged.connect(self.optionsChanged)
+        self.setWidget(self.options_widget)
 
     def limitOptions(self) -> SPCalLimitOptions:
         return self.options_widget.limitOptions()
