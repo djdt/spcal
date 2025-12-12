@@ -14,12 +14,13 @@ from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.processing import SPCalProcessingMethod
 
-np_file_filters = (
-    "NP Data Files (*.csv *.info *.h5);;"
-    "CSV Documents(*.csv *.txt *.text);;"
-    "Nu Instruments(*.info);;"
-    "TOFWERK HDF5(*.h5);;"
-    "All files(*)"
+NP_FILE_FILTER = "NP Data Files (*.csv *.info *.h5)"
+TEXT_FILE_FILTER = "CSV Documents(*.csv *.txt *.text)"
+NU_FILE_FILTER = "Nu Instruments(*.info)"
+TOFWERK_FILE_FILTER = "TOFWERK HDF5(*.h5)"
+NP_FILE_FILTERS = (
+    ";;".join([NP_FILE_FILTER, TEXT_FILE_FILTER, NU_FILE_FILTER, TOFWERK_FILE_FILTER])
+    + ";;All files(*)"
 )
 
 
@@ -83,7 +84,7 @@ def get_open_spcal_path(
     else:
         dir = ""
 
-    path, _ = QtWidgets.QFileDialog.getOpenFileName(parent, title, dir, np_file_filters)
+    path, _ = QtWidgets.QFileDialog.getOpenFileName(parent, title, dir, NP_FILE_FILTERS)
     if path == "":
         return None
 
@@ -94,7 +95,9 @@ def get_open_spcal_path(
 
 
 def get_open_spcal_paths(
-    parent: QtWidgets.QWidget, title: str = "Open Files"
+    parent: QtWidgets.QWidget,
+    title: str = "Open Files",
+    selected_filter: str = NP_FILE_FILTER,
 ) -> list[Path]:
     recent = most_recent_spcal_path()
     if recent is not None:
@@ -103,7 +106,7 @@ def get_open_spcal_paths(
         dir = ""
 
     files, _ = QtWidgets.QFileDialog.getOpenFileNames(
-        parent, title, dir, np_file_filters
+        parent, title, dir, NP_FILE_FILTERS, selected_filter
     )
 
     paths = []
