@@ -3,29 +3,43 @@ from PySide6 import QtCore, QtWidgets
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.processing import SPCalInstrumentOptions
-from spcal.siunits import time_units
+from spcal.siunits import flowrate_units, time_units
 
 
-class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
+class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
     efficiencyDialogRequested = QtCore.Signal()
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        instrument_options: SPCalInstrumentOptions,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent)
-        self.setWindowTitle("Instrument Options")
 
-        uptake_units = {
-            "ml/min": 1e-3 / 60.0,
-            "ml/s": 1e-3,
-            "L/min": 1.0 / 60.0,
-            "L/s": 1.0,
-        }
-
-        # load stored options
         settings = QtCore.QSettings()
         sf = int(settings.value("SigFigs", 4))  # type: ignore
 
-        # Actions
+        self.event_time = UnitsWidget(
+            time_units,
+            default_unit="ms",
+            base_value_min=0.0,
+            base_value_max=10.0,
+            sigfigs=sf,
+        )
+        self.event_time.setReadOnly(True)
+        self.event_time.setToolTip(
+            "ICP-MS time per event, updated from imported files if time column exists."
+        )
+
+        self.uptake = UnitsWidget(flowrate_units, step=0.1, default_unit="ml/min")
+        self.uptake.setToolTip("ICP-MS sample flow rate.")
+
+        self.efficiency = ValueWidget(min=0.0, max=1.0, step=0.01, sigfigs=sf)
+        self.efficiency.setToolTip(
+            "Transport efficiency. Can be calculated using a reference particle."
+        )
+
         self.action_efficiency = create_action(
             "folder-calculate",
             "Calculate Efficiency",
@@ -37,26 +51,6 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self.button_efficiency.setEnabled(False)
 
         # Instrument wide options
-        self.event_time = UnitsWidget(
-            time_units,
-            default_unit="ms",
-            base_value_min=0.0,
-            base_value_max=10.0,
-            sigfigs=sf,
-        )
-        self.event_time.setReadOnly(True)
-
-        self.uptake = UnitsWidget(uptake_units, step=0.1, default_unit="ml/min")
-        self.efficiency = ValueWidget(min=0.0, max=1.0, step=0.01, sigfigs=sf)
-
-        self.event_time.setToolTip(
-            "ICP-MS time per event, updated from imported files if time column exists."
-        )
-        self.uptake.setToolTip("ICP-MS sample flow rate.")
-        self.efficiency.setToolTip(
-            "Transport efficiency. Can be calculated using a reference particle."
-        )
-
         self.calibration_mode = QtWidgets.QComboBox()
         self.calibration_mode.addItems(["Efficiency", "Mass Response"])
         self.calibration_mode.currentTextChanged.connect(self.calibrationModeChanged)
@@ -86,7 +80,9 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
         layout_eff = QtWidgets.QHBoxLayout()
         layout_eff.addWidget(self.efficiency, 1)
-        layout_eff.addWidget(self.button_efficiency, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout_eff.addWidget(
+            self.button_efficiency, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow("Uptake:", self.uptake)
@@ -94,22 +90,25 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         form_layout.addRow("Trans. Efficiency:", layout_eff)
         form_layout.addRow("Calibration mode:", self.calibration_mode)
 
-        # layout = QtWidgets.QVBoxLayout()
-        # layout.addLayout(form_layout)
+        self.setLayout(form_layout)
 
-        widget = QtWidgets.QWidget()
-        widget.setLayout(form_layout)
-        self.setWidget(widget)
-
-    def onUptakeChanged(self):
-        self.button_efficiency.setEnabled(self.uptake.baseValue() is not None)
-
-    def asInstrumentOptions(self) -> SPCalInstrumentOptions:
+    def instrumentOptions(self) -> SPCalInstrumentOptions:
         return SPCalInstrumentOptions(
             self.event_time.baseValue(),
             self.uptake.baseValue(),
             self.efficiency.value(),
         )
+
+    def setInstrumentOptions(self, instrument_options: SPCalInstrumentOptions):
+        self.blockSignals(True)
+        self.event_time.setBaseValue(instrument_options.event_time)
+        self.uptake.setBaseValue(instrument_options.uptake)
+        self.efficiency.setValue(instrument_options.efficiency)
+        self.blockSignals(False)
+        self.optionsChanged.emit()
+
+    def onUptakeChanged(self):
+        self.button_efficiency.setEnabled(self.uptake.baseValue() is not None)
 
     def calibrationModeChanged(self, mode: str):
         if mode == "Efficiency":
@@ -134,14 +133,42 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         else:
             raise ValueError(f"Unknown method {mode}.")
 
+
+class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
+    optionsChanged = QtCore.Signal()
+    efficiencyDialogRequested = QtCore.Signal()
+
+    def __init__(
+        self, options: SPCalInstrumentOptions, parent: QtWidgets.QWidget | None = None
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Instrument Options")
+
+        self.options_widget = SPCalInstrumentOptionsWidget(options)
+        self.options_widget.optionsChanged.connect(self.optionsChanged)
+        self.options_widget.efficiencyDialogRequested.connect(
+            self.efficiencyDialogRequested
+        )
+
+        self.setWidget(self.options_widget)
+
+    def calibrationMode(self) -> str:
+        return self.options_widget.calibration_mode.currentText()
+
+    def instrumentOptions(self) -> SPCalInstrumentOptions:
+        return self.options_widget.instrumentOptions()
+
+    def setInstrumentOptions(self, options: SPCalInstrumentOptions):
+        self.options_widget.setInstrumentOptions(options)
+
+    def setEventTime(self, time: float | None):
+        self.options_widget.event_time.setBaseValue(time)
+
     def reset(self):
-        self.blockSignals(True)
-        self.uptake.setValue(None)
-        self.event_time.setValue(None)
-        self.efficiency.setValue(None)
-        self.blockSignals(False)
-        self.optionsChanged.emit()
+        self.options_widget.setInstrumentOptions(
+            SPCalInstrumentOptions(None, None, None)
+        )
 
     def setSignificantFigures(self, num: int):
-        for widget in self.findChildren(ValueWidget):
+        for widget in self.options_widget.findChildren(ValueWidget):
             widget.setSigFigs(num)
