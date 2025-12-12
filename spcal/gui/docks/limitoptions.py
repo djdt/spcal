@@ -15,7 +15,7 @@ from spcal.processing import SPCalLimitOptions
 logger = logging.getLogger(__name__)
 
 
-class LimitOptions(QtWidgets.QGroupBox):
+class LimitOptionsBaseWidget(QtWidgets.QGroupBox):
     optionsChanged = QtCore.Signal()
 
     def __init__(
@@ -33,10 +33,10 @@ class LimitOptions(QtWidgets.QGroupBox):
         layout.addRow("α (Type I):", self.alpha)
         self.setLayout(layout)
 
-    def state(self) -> dict:
+    def parameters(self) -> dict:
         return {"alpha": self.alpha.value()}
 
-    def setState(self, state: dict):
+    def setParameters(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
@@ -50,27 +50,28 @@ class LimitOptions(QtWidgets.QGroupBox):
         self.alpha.setSigFigs(sf)
 
 
-class CompoundPoissonOptions(LimitOptions):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("Compound Poisson", 1e-6, parent=parent)
+class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
+    def __init__(
+        self,
+        alpha: float = 1e-6,
+        sigma: float = 0.6,
+        single_ion_parameters: np.ndarray | None = None,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__("Compound Poisson", alpha, parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        self.single_ion_parameters: np.ndarray | None = (
-            None  # array of (..., [mz, mu,sigma] )
+        self.single_ion_parameters = (
+            single_ion_parameters  # array of (..., [mz, mu,sigma] )
         )
 
         self.lognormal_sigma = ValueWidget(
-            0.5, min=1e-9, max=10.0, step=0.05, sigfigs=sf
+            sigma, min=1e-9, max=10.0, step=0.05, sigfigs=sf
         )
         self.lognormal_sigma.setToolTip(
             "Shape parameter for the log-normal approximation of the SIA. "
         )
         self.lognormal_sigma.valueChanged.connect(self.optionsChanged)
-
-        self.method = QtWidgets.QComboBox()
-        self.method.addItems(["Approximation", "Lookup Table"])
-        self.method.setCurrentText("Lookup Table")
-        self.method.currentIndexChanged.connect(self.optionsChanged)
 
         self.button_sia = QtWidgets.QPushButton("Single Ion Options...")
         self.button_sia.pressed.connect(self.dialogSingleIon)
@@ -79,7 +80,6 @@ class CompoundPoissonOptions(LimitOptions):
 
         layout = self.layout()
         assert isinstance(layout, QtWidgets.QFormLayout)
-        layout.addRow("Method:", self.method)
         layout.addRow("SIA σ:", self.lognormal_sigma)
         layout.addRow(button_layout)
 
@@ -104,21 +104,17 @@ class CompoundPoissonOptions(LimitOptions):
         self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
         self.optionsChanged.emit()
 
-    def state(self) -> dict:
+    def parameters(self) -> dict:
         return {
             "alpha": self.alpha.value(),
-            "method": self.method.currentText().lower(),
             "sigma": self.lognormal_sigma.value(),
             "single ion parameters": self.single_ion_parameters,
         }
 
-    def setState(self, state: dict):
+    def setParameters(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
-        if "method" in state:
-            text = " ".join(x.capitalize() for x in state["method"].split(" "))
-            self.method.setCurrentText(text)
         if "sigma" in state:
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion parameters" in state:
@@ -142,13 +138,18 @@ class CompoundPoissonOptions(LimitOptions):
         self.lognormal_sigma.setSigFigs(sf)
 
 
-class GaussianOptions(LimitOptions):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("Gaussian", 2.867e-7, parent=parent)  # 5.0 sigma
+class GaussianOptionsWidget(LimitOptionsBaseWidget):
+    def __init__(
+        self,
+        alpha: float = 2.867e-7,
+        sigma: float = 5.0,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__("Gaussian", alpha, parent=parent)  # 5.0 sigma
         self.alpha.valueChanged.connect(self.updateSigma)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.sigma = ValueWidget(5.0, min=0.0, max=8.0, step=1.0, sigfigs=sf)
+        self.sigma = ValueWidget(sigma, min=0.0, max=8.0, step=1.0, sigfigs=sf)
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )
@@ -184,9 +185,18 @@ class GaussianOptions(LimitOptions):
         self.sigma.setSigFigs(sf)
 
 
-class PoissonOptions(LimitOptions):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__("Poisson", 0.001, parent=parent)
+class PoissonOptionsWidget(LimitOptionsBaseWidget):
+    def __init__(
+        self,
+        alpha: float = 0.001,
+        function: str = "formula c",
+        eta: float = 2.0,
+        epsilon: float = 0.5,
+        t_sample: float = 1.0,
+        t_blank: float = 1.0,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__("Poisson", alpha, parent=parent)
         self.button_advanced = QtWidgets.QPushButton("Advanced Options...")
         self.button_advanced.pressed.connect(self.dialogAdvancedOptions)
         button_layout = QtWidgets.QHBoxLayout()
@@ -197,13 +207,13 @@ class PoissonOptions(LimitOptions):
         assert isinstance(layout, QtWidgets.QFormLayout)
         layout.addRow(button_layout)
 
-        self.function = "Formula C"
-        self.eta = 2.0
-        self.epsilon = 0.5
-        self.t_sample = 1.0
-        self.t_blank = 1.0
+        self.function = function
+        self.eta = eta
+        self.epsilon = epsilon
+        self.t_sample = t_sample
+        self.t_blank = t_blank
 
-    def state(self) -> dict:
+    def parameters(self) -> dict:
         return {
             "alpha": self.alpha.value(),
             "beta": 0.05,
@@ -211,10 +221,10 @@ class PoissonOptions(LimitOptions):
             "t_blank": self.t_blank,
             "eta": self.eta,
             "epsilon": self.epsilon,
-            "function": self.function.lower(),
+            "function": self.function,
         }
 
-    def setState(self, state: dict):
+    def setParameters(self, state: dict):
         self.blockSignals(True)
         if "alpha" in state:
             self.alpha.setValue(state["alpha"])
@@ -234,7 +244,7 @@ class PoissonOptions(LimitOptions):
 
     def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
         dlg = AdvancedPoissonDialog(
-            self.function,
+            self.function.capitalize(),
             self.eta,
             self.epsilon,
             self.t_sample,
@@ -246,8 +256,8 @@ class PoissonOptions(LimitOptions):
         return dlg
 
     def setOptions(self, formula: str, opt1: float, opt2: float):
-        self.function = formula
-        if formula == "Currie":
+        self.function = formula.lower()
+        if formula == "currie":
             self.eta = opt1 or 2.0
             self.epsilon = opt2 or 0.5
         else:
@@ -260,25 +270,22 @@ class PoissonOptions(LimitOptions):
         return self.alpha.hasAcceptableInput()
 
 
-class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
+class SPCalLimitOptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        limit_options: SPCalLimitOptions,
+        accumulation_method: str,
+        points_required: int,
+        prominence_required: float,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent)
-        self.setWindowTitle("Limit Options")
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Ignored
-        )
 
-        settings = QtCore.QSettings()
-        self.limit_accumulation = str(
-            settings.value("Threshold/AccumulationMethod", "signal mean")
-        )
-        self.points_required = int(settings.value("Threshold/PointsRequired", 1))  # type: ignore
-
-        self.prominence_required = float(
-            settings.value("Threshold/ProminenceRequired", 0.2)  # type: ignore
-        )  # type: ignore
+        self.limit_accumulation = accumulation_method
+        self.points_required = points_required
+        self.prominence_required = prominence_required
 
         self.window_size = QtWidgets.QSpinBox()
         self.window_size.setSingleStep(100)
@@ -307,14 +314,15 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
                 "Manual Input",
             ]
         )
+        self.limit_method.setCurrentText(limit_options.method.capitalize())
         for i, tooltip in enumerate(
             [
                 "Automatically determine the best method.",
                 "Use the highest of Gaussian and Poisson.",
                 "Estimate ToF limits using a compound distribution based on the "
-                "number of accumulations and the single ion distribution..",
+                "number of accumulations and the single ion distribution.",
                 "Threshold using the mean and standard deviation.",
-                "Threshold using Formula C from the MARLAP manual.",
+                "Threshold using poisson statistics, see the MARLAP manual.",
                 "Manually define limits in the sample and reference tabs.",
             ]
         ):
@@ -334,9 +342,22 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
         self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
 
-        self.gaussian = GaussianOptions()
-        self.poisson = PoissonOptions()
-        self.compound = CompoundPoissonOptions()
+        self.gaussian = GaussianOptionsWidget(
+            limit_options.gaussian_kws["alpha"], limit_options.gaussian_kws["sigma"]
+        )
+        self.poisson = PoissonOptionsWidget(
+            limit_options.poisson_kws["alpha"],
+            limit_options.poisson_kws["function"],
+            limit_options.poisson_kws["eta"],
+            limit_options.poisson_kws["epsilon"],
+            limit_options.poisson_kws["t_sample"],
+            limit_options.poisson_kws["t_blank"],
+        )
+        self.compound = CompoundPoissonOptionsWidget(
+            limit_options.compound_poisson_kws["alpha"],
+            limit_options.compound_poisson_kws["sigma"],
+            limit_options.single_ion_parameters,
+        )
 
         self.window_size.valueChanged.connect(self.optionsChanged)
         self.limit_method.currentIndexChanged.connect(self.optionsChanged)
@@ -379,16 +400,28 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
             self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
         layout.addStretch(1)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        self.setWidget(widget)
+        self.setLayout(layout)
+
+    def setLimitOptions(self, options: SPCalLimitOptions):
+        self.blockSignals(True)
+        self.limit_method.setCurrentText(options.method.capitalize())
+        self.gaussian.setParameters(options.gaussian_kws)
+        self.poisson.setParameters(options.poisson_kws)
+        self.compound.setParameters(options.compound_poisson_kws)
+        self.compound.single_ion_parameters = options.single_ion_parameters
+        self.check_window.setChecked(options.window_size > 0)
+        if options.window_size > 0:
+            self.window_size.setValue(options.window_size)
+        self.check_iterative.setChecked(options.max_iterations > 1)
+        self.blockSignals(False)
+        self.optionsChanged.emit()
 
     def limitOptions(self) -> SPCalLimitOptions:
         return SPCalLimitOptions(
             method=self.limit_method.currentText().lower(),
-            gaussian_kws=self.gaussian.state(),
-            poisson_kws=self.poisson.state(),
-            compound_poisson_kws=self.compound.state(),
+            gaussian_kws=self.gaussian.parameters(),
+            poisson_kws=self.poisson.parameters(),
+            compound_poisson_kws=self.compound.parameters(),
             window_size=int(
                 self.window_size.value() or 0 if self.check_window.isChecked() else 0
             ),
@@ -406,6 +439,9 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         dlg.optionsSelected.connect(self.setAdvancedOptions)
         dlg.open()
 
+    def advancedOptions(self) -> tuple[str, int, float]:
+        return (self.limit_accumulation, self.points_required, self.prominence_required)
+
     def setAdvancedOptions(
         self, accumlation_method: str, points_required: int, prominence_required: float
     ):
@@ -414,23 +450,59 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.prominence_required = prominence_required
 
         settings = QtCore.QSettings()
+        settings.setValue("Threshold/AccumulationMethod", accumlation_method)
         settings.setValue("Threshold/PointsRequired", points_required)
         settings.setValue("Threshold/ProminenceRequired", prominence_required)
 
         self.optionsChanged.emit()
 
-    def reset(self):
-        self.blockSignals(True)
-        self.window_size.setValue(1000)
-        self.check_window.setChecked(False)
-        self.check_iterative.setChecked(False)
-        self.gaussian.alpha.setValue(2.867e-7)
-        self.poisson = PoissonOptions()
-        self.compound = CompoundPoissonOptions()
 
+class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
+    optionsChanged = QtCore.Signal()
+
+    def __init__(
+        self,
+        options: SPCalLimitOptions,
+        accumulation_method: str,
+        points_required: int,
+        prominence_required: float,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Limit Options")
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Ignored
+        )
+        self.options_widget = SPCalLimitOptionsWidget(
+            options, accumulation_method, points_required, prominence_required
+        )
+        self.options_widget.optionsChanged.connect(self.optionsChanged)
+
+    def limitOptions(self) -> SPCalLimitOptions:
+        return self.options_widget.limitOptions()
+
+    def accumulationMethod(self) -> str:
+        return self.options_widget.limit_accumulation
+
+    def pointsRequired(self) -> int:
+        return self.options_widget.points_required
+
+    def prominenceRequired(self) -> float:
+        return self.options_widget.prominence_required
+
+    def reset(self):
+        settings = QtCore.QSettings()
+        self.blockSignals(True)
+        self.options_widget.setLimitOptions(SPCalLimitOptions())
+        self.options_widget.setAdvancedOptions(
+            str(settings.value("Threshold/AccumulationMethod", "signal mean")),
+            int(settings.value("Threshold/PointsRequired", 1)),  # type: ignore
+            float(settings.value("Threshold/ProminenceRequired", 0.2)),  # type: ignore
+        )
         self.blockSignals(False)
+        self.optionsChanged.emit()
 
     def setSignificantFigures(self, sf: int):
-        self.poisson.setSignificantFigures(sf)
-        self.gaussian.setSignificantFigures(sf)
-        self.compound.setSignificantFigures(sf)
+        self.options_widget.poisson.setSignificantFigures(sf)
+        self.options_widget.gaussian.setSignificantFigures(sf)
+        self.options_widget.compound.setSignificantFigures(sf)

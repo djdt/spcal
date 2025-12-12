@@ -39,7 +39,6 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
-from spcal.processing.options import SPCalInstrumentOptions
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +57,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
+        settings = QtCore.QSettings()
+        method = SPCalProcessingMethod(
+            accumulation_method=str(
+                settings.value("Threshold/AccumulationMethod", "signal mean")
+            ),
+            points_required=int(settings.value("Threshold/PointsRequired", 1)),  # type: ignore
+            prominence_required=float(
+                settings.value("Threshold/ProminenceRequired", 0.2)  # type: ignore
+            ),
+        )
+        self.processing_methods = {"default": method}
+
         self.graph = SPCalCentralWidget()
 
         self.toolbar = SPCalToolBar(
@@ -71,24 +82,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.instrument_options = SPCalInstrumentOptionsDock(
-            SPCalInstrumentOptions(None, None, None)
+            method.instrument_options,
+            method.calibration_mode,
         )
-        self.limit_options = SPCalLimitOptionsDock()
+
+        self.limit_options = SPCalLimitOptionsDock(
+            method.limit_options,
+            method.accumulation_method,
+            method.points_required,
+            method.prominence_required,
+        )
         self.isotope_options = SPCalIsotopeOptionsDock()
 
         self.files = SPCalDataFilesDock()
         self.outputs = SPCalOutputsDock()
-
-        self.processing_methods = {
-            "default": SPCalProcessingMethod(
-                self.instrument_options.instrumentOptions(),
-                self.limit_options.limitOptions(),
-                accumulation_method=self.limit_options.limit_accumulation,
-                points_required=self.limit_options.points_required,
-                prominence_required=self.limit_options.prominence_required,
-                calibration_mode="efficiency",
-            )
-        }
 
         self.processing_results: dict[
             SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]
@@ -328,9 +335,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onLimitOptionsChanged(self):
         method = self.currentMethod()
         method.limit_options = self.limit_options.limitOptions()
-        method.accumulation_method = self.limit_options.limit_accumulation
-        method.points_required = self.limit_options.points_required
-        method.prominence_required = self.limit_options.prominence_required
+        method.accumulation_method = self.limit_options.accumulationMethod()
+        method.points_required = self.limit_options.pointsRequired()
+        method.prominence_required = self.limit_options.prominenceRequired()
 
         self.currentMethodChanged.emit(method)
         self.reprocess(self.files.currentDataFile())

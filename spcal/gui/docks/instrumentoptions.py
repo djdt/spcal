@@ -12,7 +12,8 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        instrument_options: SPCalInstrumentOptions,
+        options: SPCalInstrumentOptions,
+        calibration_mode: str,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -22,6 +23,7 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
         self.event_time = UnitsWidget(
             time_units,
+            base_value=options.event_time,
             default_unit="ms",
             base_value_min=0.0,
             base_value_max=10.0,
@@ -32,10 +34,14 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
             "ICP-MS time per event, updated from imported files if time column exists."
         )
 
-        self.uptake = UnitsWidget(flowrate_units, step=0.1, default_unit="ml/min")
+        self.uptake = UnitsWidget(
+            flowrate_units, base_value=options.uptake, step=0.1, default_unit="ml/min"
+        )
         self.uptake.setToolTip("ICP-MS sample flow rate.")
 
-        self.efficiency = ValueWidget(min=0.0, max=1.0, step=0.01, sigfigs=sf)
+        self.efficiency = ValueWidget(
+            options.efficiency, min=0.0, max=1.0, step=0.01, sigfigs=sf
+        )
         self.efficiency.setToolTip(
             "Transport efficiency. Can be calculated using a reference particle."
         )
@@ -53,6 +59,7 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         # Instrument wide options
         self.calibration_mode = QtWidgets.QComboBox()
         self.calibration_mode.addItems(["Efficiency", "Mass Response"])
+        self.calibration_mode.setCurrentText(calibration_mode.capitalize())
         self.calibration_mode.currentTextChanged.connect(self.calibrationModeChanged)
         for i, tooltip in enumerate(
             [
@@ -139,12 +146,15 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     efficiencyDialogRequested = QtCore.Signal()
 
     def __init__(
-        self, options: SPCalInstrumentOptions, parent: QtWidgets.QWidget | None = None
+        self,
+        options: SPCalInstrumentOptions,
+        calibration_mode: str,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Instrument Options")
 
-        self.options_widget = SPCalInstrumentOptionsWidget(options)
+        self.options_widget = SPCalInstrumentOptionsWidget(options, calibration_mode)
         self.options_widget.optionsChanged.connect(self.optionsChanged)
         self.options_widget.efficiencyDialogRequested.connect(
             self.efficiencyDialogRequested
@@ -153,21 +163,30 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self.setWidget(self.options_widget)
 
     def calibrationMode(self) -> str:
-        return self.options_widget.calibration_mode.currentText()
+        return self.options_widget.calibration_mode.currentText().lower()
+
+    def setCalibrationMode(self, mode: str):
+        return self.options_widget.calibration_mode.setCurrentText(mode.capitalize())
 
     def instrumentOptions(self) -> SPCalInstrumentOptions:
         return self.options_widget.instrumentOptions()
 
-    def setInstrumentOptions(self, options: SPCalInstrumentOptions):
+    def setInstrumentOptions(
+        self, options: SPCalInstrumentOptions, calibration_mode: str
+    ):
         self.options_widget.setInstrumentOptions(options)
 
     def setEventTime(self, time: float | None):
         self.options_widget.event_time.setBaseValue(time)
 
     def reset(self):
+        self.blockSignals(True)
         self.options_widget.setInstrumentOptions(
             SPCalInstrumentOptions(None, None, None)
         )
+        self.setCalibrationMode("efficiency")
+        self.blockSignals(False)
+        self.optionsChanged.emit()
 
     def setSignificantFigures(self, num: int):
         for widget in self.options_widget.findChildren(ValueWidget):
