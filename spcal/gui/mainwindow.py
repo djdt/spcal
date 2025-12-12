@@ -39,6 +39,7 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
+from spcal.processing.options import SPCalInstrumentOptions
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ]
         )
 
-        self.instrument_options = SPCalInstrumentOptionsDock()
+        self.instrument_options = SPCalInstrumentOptionsDock(
+            SPCalInstrumentOptions(None, None, None)
+        )
         self.limit_options = SPCalLimitOptionsDock()
         self.isotope_options = SPCalIsotopeOptionsDock()
 
@@ -78,7 +81,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.processing_methods = {
             "default": SPCalProcessingMethod(
-                self.instrument_options.asInstrumentOptions(),
+                self.instrument_options.instrumentOptions(),
                 self.limit_options.limitOptions(),
                 accumulation_method=self.limit_options.limit_accumulation,
                 points_required=self.limit_options.points_required,
@@ -206,7 +209,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
     ):
         if current is None:
-            self.instrument_options.event_time.setBaseValue(None)
+            self.instrument_options.setEventTime(None)
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
             self.outputs.setResults({})
@@ -214,7 +217,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             return
 
         # Set the options to current
-        self.instrument_options.event_time.setBaseValue(current.event_time)
+        self.instrument_options.setEventTime(current.event_time)
         isotopes = current.selected_isotopes + self.currentMethod().expressions
         # Add any missing isotopes to method and isotope options
         self.isotope_options.setIsotopes(isotopes)
@@ -307,10 +310,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onInstrumentOptionsChanged(self):
         method = self.currentMethod()
-        method.instrument_options = self.instrument_options.asInstrumentOptions()
-        method.calibration_mode = (
-            self.instrument_options.calibration_mode.currentText().lower()
-        )
+        method.instrument_options = self.instrument_options.instrumentOptions()
+        method.calibration_mode = self.instrument_options.calibrationMode().lower()
 
         data_file = self.files.currentDataFile()
         if data_file is None:
@@ -691,7 +692,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg = TransportEfficiencyDialog(
             self.processing_results[data_file][isotope], parent=self
         )
-        dlg.efficencySelected.connect(self.instrument_options.efficiency.setValue)
+        dlg.efficencySelected.connect(
+            self.instrument_options.options_widget.efficiency.setValue
+        )
         dlg.isotopeOptionsChanged.connect(self.isotope_options.setIsotopeOption)
         dlg.isotopeOptionsChanged.connect(self.onIsotopeOptionChanged)
         dlg.open()
