@@ -390,6 +390,13 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             else:
                 button.setIcon(QtGui.QIcon())
 
+    selected_isotopes_prop = QtCore.Property(
+        "QVariant",  # type: ignore
+        selectedIsotopes,
+        setSelectedIsotopes,
+        notify=isotopesChanged,  # type: ignore
+    )
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
