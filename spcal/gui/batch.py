@@ -13,19 +13,13 @@ from spcal.gui.io import (
     get_open_spcal_paths,
     most_recent_spcal_path,
 )
-from spcal.io.nu import is_nu_run_info_file
+from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
-
-
-class BatchOptions(QtWidgets.QGroupBox):
-    def __init__(self, title: str, parent: QtWidgets.QWidget | None = None):
-        super().__init__(title, parent=parent)
-
-        # self.setLayout()
+from spcal.processing.options import SPCalIsotopeOptions
 
 
 class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
@@ -64,7 +58,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
     }
     FORMAT_FUNCTIONS = {
         "Text": is_text_file,
-        "Nu": is_nu_run_info_file,
+        "Nu": is_nu_directory,
         "TOFWERK": is_tofwerk_file,
     }
     MAX_SEARCH_DEPTH = 5
@@ -195,11 +189,13 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
                 dirs.clear()
             for filename in filenames:
                 filepath = path.joinpath(filename)
+                if is_nu_run_info_file(filepath):
+                    filepath = filepath.parent
                 if file_fn(filepath):
                     self.addFile(filepath)
 
     def isComplete(self) -> bool:
-        return self.files.count() > 1
+        return self.files.count() > 0
 
     def validatePage(self) -> bool:
         format = self.selectedFormat()
@@ -212,11 +208,11 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
     def nextId(self) -> int:
         format = self.selectedFormat()
         if format == "Text":
-            return BatchProcessingWizard.TEXT_PAGE_ID
+            return SPCalBatchProcessingWizard.TEXT_PAGE_ID
         elif format == "Nu":
-            return BatchProcessingWizard.NU_PAGE_ID
+            return SPCalBatchProcessingWizard.NU_PAGE_ID
         elif format == "TOFWERK":
-            return BatchProcessingWizard.TOFWERK_PAGE_ID
+            return SPCalBatchProcessingWizard.TOFWERK_PAGE_ID
         else:
             raise ValueError("unknown format")
 
@@ -316,7 +312,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.chunk_size.setEnabled(state == QtCore.Qt.CheckState.Checked)
 
     def nextId(self):
-        return BatchProcessingWizard.METHOD_PAGE_ID
+        return SPCalBatchProcessingWizard.METHOD_PAGE_ID
 
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
@@ -352,21 +348,44 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             method.prominence_required,
         )
 
-        self.isotope_options = IsotopeOptionTable()
-        self.isotope_options.isotope_model.beginResetModel()
-        self.isotope_options.isotope_model.isotope_options = method.isotope_options
-        self.isotope_options.isotope_model.endResetModel()
+        self.isotope_table = IsotopeOptionTable()
 
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addWidget(self.instrument_options)
         top_layout.addWidget(self.limit_options)
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(top_layout)
-        layout.addWidget(self.isotope_options)
+        layout.addWidget(self.isotope_table)
         self.setLayout(layout)
 
+    def initializePage(self):
+        if self.wizard().hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
+            isotopes = self.field("text.isotopes")
+        elif self.wizard().hasVisitedPage(SPCalBatchProcessingWizard.NU_PAGE_ID):
+            isotopes = self.field("nu.isotopes")
+        elif self.wizard().hasVisitedPage(SPCalBatchProcessingWizard.TOFWERK_PAGE_ID):
+            isotopes = self.field("tofwerk.isotopes")
+        else:
+            raise ValueError("has not visited any format pages")
 
-class BatchProcessingWizard(QtWidgets.QWizard):
+        self.isotope_table.isotope_model.beginResetModel()
+        self.isotope_table.isotope_model.isotope_options = {
+            isotope: self.method.isotope_options.get(
+                isotope, SPCalIsotopeOptions(None, None, None)
+            )
+            for isotope in isotopes
+        }
+        self.isotope_table.isotope_model.endResetModel()
+
+
+class BatchRunWizardPage(QtWidgets.QWizardPage):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+        self.setTitle("SPCal Batch Processing")
+        self.setSubTitle("Run Batch Processing")
+
+
+class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     TEXT_PAGE_ID = 1
     NU_PAGE_ID = 2
     TOFWERK_PAGE_ID = 3
@@ -384,7 +403,8 @@ class BatchProcessingWizard(QtWidgets.QWizard):
 
         self.setPage(0, BatchFilesWizardPage(existing_file))
         self.setPage(
-            BatchProcessingWizard.TEXT_PAGE_ID, BatchTextWizardPage(selected_isotopes)
+            SPCalBatchProcessingWizard.TEXT_PAGE_ID,
+            BatchTextWizardPage(selected_isotopes),
         )
         max_mass_diff = (
             existing_file.max_mass_diff
@@ -392,15 +412,15 @@ class BatchProcessingWizard(QtWidgets.QWizard):
             else 0.1
         )
         self.setPage(
-            BatchProcessingWizard.NU_PAGE_ID,
+            SPCalBatchProcessingWizard.NU_PAGE_ID,
             BatchNuWizardPage(selected_isotopes, max_mass_diff),
         )
         self.setPage(
-            BatchProcessingWizard.TOFWERK_PAGE_ID,
+            SPCalBatchProcessingWizard.TOFWERK_PAGE_ID,
             BatchTOFWERKWizardPage(selected_isotopes),
         )
         self.setPage(
-            BatchProcessingWizard.METHOD_PAGE_ID, BatchMethodWizardPage(method)
+            SPCalBatchProcessingWizard.METHOD_PAGE_ID, BatchMethodWizardPage(method)
         )
 
 
@@ -408,9 +428,11 @@ if __name__ == "__main__":
     from spcal.processing import SPCalProcessingMethod
 
     app = QtWidgets.QApplication()
-    df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
+    df = SPCalNuDataFile.load(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
     method = SPCalProcessingMethod()
-    wiz = BatchProcessingWizard(df, method, [])
+    wiz = SPCalBatchProcessingWizard(df, method, [])
     # wiz.page_files.addFile(
     #     Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att/run.info")
     # )
