@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExportDialog(QtWidgets.QDialog):
-    invalid_chars = '<>:"/\\|?*'
+    INVALID_CHARS = '<>:"/\\|?*'
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class ExportDialog(QtWidgets.QDialog):
             _units.update({k: v[0] for k, v in units.items()})
 
         filename_regexp = QtCore.QRegularExpression(
-            f"(%DataFile%)?[^{self.invalid_chars}]+(%DataFile%)?"
+            f"(%DataFile%)?[^{ExportDialog.INVALID_CHARS}]+(%DataFile%)?"
         )
 
         self.lineedit_name = QtWidgets.QLineEdit("%DataFile%_spcal_results.csv")
