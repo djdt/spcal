@@ -1,5 +1,5 @@
+import json
 from pathlib import Path
-from typing import Callable, Generator
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTOFWERKDataFile
@@ -20,6 +20,8 @@ from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
+
+from spcal.gui.batch.workers import BatchNuWorker, BatchTextWorker, BatchTOFWERKWorker
 
 
 class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
@@ -79,6 +81,10 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         self.radio_tofwerk = QtWidgets.QRadioButton("TOFWERK HDF5")
 
         self.files = QtWidgets.QListWidget()
+        self.files.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.files.setTextElideMode(QtCore.Qt.TextElideMode.ElideLeft)
         self.files.setItemDelegate(BatchFileListDelegate())
         self.files.model().rowsInserted.connect(self.completeChanged)
         self.files.model().rowsRemoved.connect(self.completeChanged)
@@ -127,7 +133,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         layout.addWidget(files_box, 1)
         self.setLayout(layout)
 
-        self.registerField("paths", self, "paths_prop")
+        self.registerField("paths", self, "pathsProp")
 
     def addFile(self, path: Path):
         item = QtWidgets.QListWidgetItem()
@@ -216,7 +222,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         else:
             raise ValueError("unknown format")
 
-    paths_prop = QtCore.Property("QVariant", paths, setPaths, notify=pathsChanged)  # type: ignore
+    pathsProp = QtCore.Property(list, paths, setPaths, notify=pathsChanged)  # type: ignore
 
 
 class BatchTextWizardPage(QtWidgets.QWizardPage):
@@ -251,16 +257,17 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.max_mass_diff.setRange(0.0, 1.0)
         self.max_mass_diff.setValue(max_mass_diff)
 
-        self.check_chunked = QtWidgets.QCheckBox("Split files.")
+        self.check_chunked = QtWidgets.QCheckBox("Split files")
         self.check_chunked.checkStateChanged.connect(self.onChunkChecked)
 
         self.chunk_size = QtWidgets.QSpinBox()
         self.chunk_size.setRange(1, 10000)
-        self.chunk_size.setValue(1000)
+        self.chunk_size.setValue(200)
         self.chunk_size.setSingleStep(100)
         self.chunk_size.setEnabled(False)
 
         self.table = PeriodicTableSelector()
+        self.table.isotopesChanged.connect(self.completeChanged)
         self.table.setSelectedIsotopes(
             [iso for iso in isotopes if isinstance(iso, SPCalIsotope)]
         )
@@ -271,7 +278,6 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 
         options_box = QtWidgets.QGroupBox("Options")
         options_box_layout = QtWidgets.QFormLayout()
-        # options_box_layout.addRow("Max diff m/z:", self.max_mass_diff)
         options_box_layout.addRow("Cycle:", self.cycle_number)
         options_box_layout.addRow("Segment:", self.segment_number)
         options_box_layout.addRow("Chunk size:", layout_chunk)
@@ -282,14 +288,15 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         layout.addWidget(self.table)
         self.setLayout(layout)
 
+        self.registerField("nu.chunked", self.check_chunked)
+        self.registerField("nu.chunk_size", self.chunk_size)
         self.registerField("nu.cycle_number", self.cycle_number)
         self.registerField("nu.segment_number", self.segment_number)
-        self.registerField("nu.max_mass_diff", self.max_mass_diff)
-        self.registerField("nu.isotopes", self.table, "selected_isotopes_prop")
+        self.registerField("nu.max_mass_diff", self.max_mass_diff, "value")
+        self.registerField("nu.isotopes", self.table, "selectedIsotopesProp")
 
     def initializePage(self):
         paths: list[Path] = self.field("paths")
-        paths = [path.parent if is_nu_run_info_file(path) else path for path in paths]
 
         df = SPCalNuDataFile.load(paths[0], last_integ_file=1)
         isotopes = set(df.isotopes)
@@ -314,6 +321,9 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
     def nextId(self):
         return SPCalBatchProcessingWizard.METHOD_PAGE_ID
 
+    def isComplete(self) -> bool:
+        return len(self.table.selectedIsotopes()) > 0
+
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
     def __init__(
@@ -334,7 +344,6 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
         self.setSubTitle("Processing Method")
-        self.method = method
 
         self.instrument_options = SPCalInstrumentOptionsWidget(
             method.instrument_options, method.calibration_mode
@@ -349,6 +358,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         )
 
         self.isotope_table = IsotopeOptionTable()
+        self.isotope_table.isotope_model.isotope_options = method.isotope_options
 
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addWidget(self.instrument_options)
@@ -357,6 +367,8 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         layout.addLayout(top_layout)
         layout.addWidget(self.isotope_table)
         self.setLayout(layout)
+
+        self.registerField("method", self, "methodProp")
 
     def initializePage(self):
         if self.wizard().hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
@@ -368,28 +380,170 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         else:
             raise ValueError("has not visited any format pages")
 
+        current = self.isotope_table.isotope_model.isotope_options
+
         self.isotope_table.isotope_model.beginResetModel()
         self.isotope_table.isotope_model.isotope_options = {
-            isotope: self.method.isotope_options.get(
-                isotope, SPCalIsotopeOptions(None, None, None)
-            )
+            isotope: current.get(isotope, SPCalIsotopeOptions(None, None, None))
             for isotope in isotopes
         }
         self.isotope_table.isotope_model.endResetModel()
 
+    def getMethod(self) -> SPCalProcessingMethod:
+        return SPCalProcessingMethod(
+            instrument_options=self.instrument_options.instrumentOptions(),
+            limit_options=self.limit_options.limitOptions(),
+            isotope_options=self.isotope_table.isotope_model.isotope_options,
+            accumulation_method=self.limit_options.limit_accumulation,
+            points_required=self.limit_options.points_required,
+            prominence_required=self.limit_options.prominence_required,
+            calibration_mode=self.instrument_options.calibration_mode.currentText().lower(),
+        )
+
+    methodProp = QtCore.Property(object, getMethod)
+
 
 class BatchRunWizardPage(QtWidgets.QWizardPage):
+    INVALID_CHARS = '<>:"/\\|?*'
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
         self.setSubTitle("Run Batch Processing")
 
+        filename_regexp = QtCore.QRegularExpression(
+            f"(%DataFile%)?[^{BatchRunWizardPage.INVALID_CHARS}]+(%DataFile%)?"
+        )
+
+        self.output_files = QtWidgets.QListWidget()
+        self.output_files.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.output_files.setTextElideMode(QtCore.Qt.TextElideMode.ElideLeft)
+
+        self.output_name = QtWidgets.QLineEdit("%DataFile%_spcal_results.csv")
+        self.output_name.setMinimumWidth(300)
+        self.output_name.setValidator(
+            QtGui.QRegularExpressionValidator(filename_regexp)
+        )
+        self.output_name.textChanged.connect(self.updateOutputNames)
+
+        self.output_dir = QtWidgets.QLineEdit()
+
+        self.button_dir = QtWidgets.QPushButton("Select")
+        self.button_dir.pressed.connect(self.dialogOutputDirectory)
+
+        layout_dir = QtWidgets.QHBoxLayout()
+        layout_dir.addWidget(self.output_dir, 1)
+        layout_dir.addWidget(self.button_dir, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+
+        box_output = QtWidgets.QGroupBox("Output")
+        box_output_layout = QtWidgets.QFormLayout()
+        box_output_layout.addRow("Filename:", self.output_name)
+        box_output_layout.addRow("Directory:", layout_dir)
+        box_output.setLayout(box_output_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self.output_files, 0, 0)
+        layout.addWidget(box_output, 0, 1)
+        self.setLayout(layout)
+
+    def isComplete(self) -> bool:
+        return (
+            self.output_name.hasAcceptableInput()
+            and Path(self.output_dir.text()).exists()
+        )
+
+    def initializePage(self):
+        paths: list[Path] = self.field("paths")
+        self.output_dir.setText(str(paths[0].parent))
+        self.output_files.clear()
+
+        for path in paths:
+            self.addFile(path)
+
+        self.updateOutputNames()
+
+    def validatePage(self) -> bool:
+        existing = [path for _, path in self.pathPairs() if path.exists()]
+        if len(existing) == 0:
+            return True
+        else:
+            button = QtWidgets.QMessageBox.question(
+                self,
+                f"Overwrite {len(existing)} Files?",
+                f"Are you sure you want to overwrite {', '.join(str(p.name) for p in existing)}?",
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.Yes:
+                return True
+        return False
+
+    def updateOutputNames(self):
+        name = self.output_name.text()
+
+        for i in range(self.output_files.count()):
+            item = self.output_files.item(i)
+            path: Path = item.data(QtCore.Qt.ItemDataRole.UserRole)
+            path_name = path.name if path.is_dir() else path.stem
+            outpath = path.with_stem(name.replace("%DataFile%", path_name))
+            item.setText(str(outpath))
+            if outpath.exists():
+                item.setIcon(QtGui.QIcon.fromTheme("data-warning"))
+            else:
+                item.setIcon(QtGui.QIcon())
+
+    def dialogOutputDirectory(self):
+        dir = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Output Directory", dir=self.output_dir.text()
+        )
+        if dir != "":
+            self.output_dir.setText(dir)
+
+    def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
+        item = QtWidgets.QListWidgetItem()
+        item.setText(str(path))
+        # item.setIcon(QtGui.QIcon.fromTheme("task-process-0"))
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
+        item.setData(QtCore.Qt.ItemDataRole.UserRole + 1, chunk)
+        self.output_files.addItem(item)
+
+    def pathPairs(self) -> list[tuple[Path, Path]]:
+        pairs = []
+        for i in range(self.output_files.count()):
+            item = self.output_files.item(i)
+            pairs.append(
+                (item.data(QtCore.Qt.ItemDataRole.UserRole), Path(item.text()))
+            )
+        return pairs
+
+    def outputProgress(self, index: int, progress: float):
+        item = self.output_files.item(index)
+        if progress >= 1.0:
+            icon = QtGui.QIcon.fromTheme("task-process-4")
+        elif progress >= 0.75:
+            icon = QtGui.QIcon.fromTheme("task-process-3")
+        elif progress >= 0.5:
+            icon = QtGui.QIcon.fromTheme("task-process-2")
+        elif progress >= 0.25:
+            icon = QtGui.QIcon.fromTheme("task-process-1")
+        else:
+            icon = QtGui.QIcon.fromTheme("task-process-0")
+        item.setIcon(icon)
+        self.output_files.update(self.output_files.indexFromItem(item))
+
+    def resetProgress(self):
+        for i in range(self.output_files.count()):
+            item = self.output_files.item(i)
+            item.setIcon(QtGui.QIcon())
+
 
 class SPCalBatchProcessingWizard(QtWidgets.QWizard):
+    FILE_PAGE_ID = 0
     TEXT_PAGE_ID = 1
     NU_PAGE_ID = 2
     TOFWERK_PAGE_ID = 3
     METHOD_PAGE_ID = 4
+    RUN_PAGE_ID = 5
 
     def __init__(
         self,
@@ -399,9 +553,15 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Batch Processing")
+        self.setWindowTitle("SPCal Batch Processing")
+        self.setButtonText(QtWidgets.QWizard.WizardButton.FinishButton, "Start Batch")
+        self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
 
-        self.setPage(0, BatchFilesWizardPage(existing_file))
+        self.process_thread = QtCore.QThread()
+
+        self.setPage(
+            SPCalBatchProcessingWizard.FILE_PAGE_ID, BatchFilesWizardPage(existing_file)
+        )
         self.setPage(
             SPCalBatchProcessingWizard.TEXT_PAGE_ID,
             BatchTextWizardPage(selected_isotopes),
@@ -422,6 +582,76 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.setPage(
             SPCalBatchProcessingWizard.METHOD_PAGE_ID, BatchMethodWizardPage(method)
         )
+        self.run_page = BatchRunWizardPage()
+        self.setPage(SPCalBatchProcessingWizard.RUN_PAGE_ID, self.run_page)
+
+    def accept(self):
+        if not self.validateCurrentPage():
+            return
+
+        self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(False)
+
+        paths = self.run_page.pathPairs()
+        method: SPCalProcessingMethod = self.field("method")
+
+        if self.hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
+            isotopes: list[SPCalIsotope] = self.field("text.isotopes")
+            self.worker = BatchTextWorker(paths, method, isotopes)
+        elif self.hasVisitedPage(SPCalBatchProcessingWizard.NU_PAGE_ID):
+            isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
+
+            if self.field("nu.chunked"):
+                chunk_size = 0
+            else:
+                chunk_size = self.field("nu.chunk_size")
+
+            cyc_number = self.field("nu.cycle_number")
+            if cyc_number == 0:
+                cyc_number = None
+            seg_number = self.field("nu.segment_number")
+            if seg_number == 0:
+                seg_number = None
+            max_mass_diff = self.field("nu.max_mass_diff")
+
+            self.worker = BatchNuWorker(
+                paths,
+                method,
+                isotopes,
+                chunk_size=chunk_size,
+                max_mass_diff=max_mass_diff,
+                cyc_number=cyc_number,
+                seg_number=seg_number,
+            )
+
+        elif self.hasVisitedPage(SPCalBatchProcessingWizard.TOFWERK_PAGE_ID):
+            isotopes: list[SPCalIsotope] = self.field("tofwerk.isotopes")
+            self.worker = BatchTOFWERKWorker(paths, method, isotopes)
+        else:
+            raise ValueError("no format page visited")
+
+        self.worker.moveToThread(self.process_thread)
+        self.worker.progress.connect(self.run_page.outputProgress)
+        self.worker.finished.connect(self.finalise)
+
+        self.process_thread.started.connect(self.worker.run)
+        self.process_thread.finished.connect(self.worker.deleteLater)
+        self.process_thread.start()
+
+    def reject(self):
+        if self.process_thread.isRunning():
+            self.process_thread.requestInterruption()
+            self.process_thread.quit()
+            self.process_thread.wait()
+            self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(True)
+            self.run_page.resetProgress()
+        else:
+            self.finalise()
+            self.process_thread.deleteLater()
+            super().reject()
+
+    def finalise(self):
+        self.process_thread.quit()
+        self.process_thread.wait()
 
 
 if __name__ == "__main__":
@@ -433,8 +663,5 @@ if __name__ == "__main__":
     )
     method = SPCalProcessingMethod()
     wiz = SPCalBatchProcessingWizard(df, method, [])
-    # wiz.page_files.addFile(
-    #     Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att/run.info")
-    # )
     wiz.show()
     app.exec()
