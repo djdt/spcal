@@ -297,7 +297,6 @@ def export_spcal_detection_arrays(
     times = results[0].times[
         all_regions[:, 0] + (all_regions[:, 1] - all_regions[:, 0]) // 2
     ]
-    print(times.size, npeaks)
     datas = [times]
     header = "Times (s)"
 
@@ -321,7 +320,7 @@ def export_spcal_detection_arrays(
                 datas.append(clusters[key])
                 header += f",Cluster ID ({key})"
 
-    np.savetxt(fp, np.stack(datas, axis=1), delimiter=",", header=header)
+    np.savetxt(fp, np.stack(datas, axis=1), delimiter=",", header=header, fmt="%.12g")
 
 
 def export_spcal_processing_results(
