@@ -257,7 +257,10 @@ def export_spcal_compositions(
     units: dict[str, tuple[str, float]],
 ):
     for key in SPCalProcessingMethod.CALIBRATION_KEYS:
-        if not any(result.canCalibrate(key) for result in results) or key not in clusters:
+        if (
+            not any(result.canCalibrate(key) for result in results)
+            or key not in clusters
+        ):
             continue
 
         X = prepare_results_for_clustering(results, key)
@@ -287,7 +290,12 @@ def export_spcal_detection_arrays(
     units: dict[str, tuple[str, float]],
 ):
     assert all(result.peak_indicies is not None for result in results)
-    npeaks = np.amax([result.peak_indicies[-1] for result in results]) + 1  # type: ignore
+    npeaks = [
+        result.peak_indicies[-1]  # type: ignore
+        for result in results
+        if len(result.peak_indicies) > 0  # type: ignore
+    ]
+    npeaks = np.amax(npeaks) + 1 if len(npeaks) > 0 else 0
 
     all_regions = combine_regions([result.regions for result in results], 2)
 

@@ -205,16 +205,16 @@ class SPCalProcessingMethod(object):
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         key: str = "signal",
     ) -> np.ndarray:
-        npeaks = (
-            np.amax(
-                [
-                    result.peak_indicies[-1]
-                    for result in results.values()
-                    if result.peak_indicies is not None
-                ]
-            )
-            + 1
-        )
+        if any(result.peak_indicies is None for result in results.values()):
+            raise ValueError("cannot cluster, peak_indicies have not been generated")
+
+        npeaks = [
+            result.peak_indicies[-1]  # type: ignore , checked above
+            for result in results.values()
+            if len(result.peak_indicies) > 0  # type: ignore , checked above
+        ]
+        npeaks = np.amax(npeaks) + 1 if len(npeaks) > 0 else 0
+
         peak_data = np.zeros((npeaks, len(results)), np.float32)
         for i, result in enumerate(results.values()):
             if result.peak_indicies is None:
