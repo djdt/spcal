@@ -231,9 +231,7 @@ class SPCalTextDataFile(SPCalDataFile):
         assert signals.dtype.names is not None
 
         if isotopes is None:
-            isotopes = [
-                SPCalIsotope.fromString(name) for name in signals.dtype.names
-            ]
+            isotopes = [SPCalIsotope.fromString(name) for name in signals.dtype.names]
 
         if cps:
             for name in signals.dtype.names:
@@ -272,6 +270,8 @@ class SPCalNuDataFile(SPCalDataFile):
         times: np.ndarray,
         masses: np.ndarray,
         info: dict,
+        cycle_number: int | None,
+        segment_number: int | None,
         integ_files: tuple[int, int | None],
         max_mass_diff: float = 0.05,
     ):
@@ -281,6 +281,9 @@ class SPCalNuDataFile(SPCalDataFile):
 
         self.signals = signals
         self.masses = masses
+
+        self.cycle_number = cycle_number
+        self.segment_number = segment_number
         self.max_mass_diff = max_mass_diff
         self.integ_files = integ_files
 
@@ -318,6 +321,8 @@ class SPCalNuDataFile(SPCalDataFile):
         cls,
         path: Path,
         max_mass_diff: float = 0.05,
+        cycle_number: int | None = None,
+        segment_number: int | None = None,
         first_integ_file: int = 0,
         last_integ_file: int | None = None,
     ) -> "SPCalNuDataFile":
@@ -326,6 +331,8 @@ class SPCalNuDataFile(SPCalDataFile):
 
         masses, signals, times, info = nu.read_directory(
             path,
+            cycle=cycle_number,
+            segment=segment_number,
             first_integ_file=first_integ_file,
             last_integ_file=last_integ_file,
             raw=False,
@@ -337,6 +344,8 @@ class SPCalNuDataFile(SPCalDataFile):
             times,
             masses,
             info,
+            cycle_number=cycle_number,
+            segment_number=segment_number,
             integ_files=(first_integ_file, last_integ_file),
             max_mass_diff=max_mass_diff,
         )

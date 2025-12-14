@@ -298,6 +298,8 @@ class NuImportDialog(ImportDialogBase):
             times,
             masses,
             self.info,
+            cycle_number=cyc_number,
+            segment_number=seg_number,
             integ_files=(self.first_integ.value(), self.last_integ.value()),
         )
         data_file.selected_isotopes = self.table.selectedIsotopes()
