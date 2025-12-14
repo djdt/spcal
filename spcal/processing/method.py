@@ -208,6 +208,9 @@ class SPCalProcessingMethod(object):
         if any(result.peak_indicies is None for result in results.values()):
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
+        if all(result.number == 0 for result in results.values()):
+            return np.array([], dtype=int)
+
         npeaks = [
             result.peak_indicies[-1]  # type: ignore , checked above
             for result in results.values()

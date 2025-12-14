@@ -119,6 +119,10 @@ class HistogramView(SinglePlotGraphicsView):
         label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
         # Limit maximum / minimum number of bins
         values = [result.calibrated(key) * mult for result in results]
+
+        if all(x.size == 0 for x in values):
+            return
+
         bins = bins_for_values(
             values, self.bin_widths.get(key, None), self.max_percentile
         )

@@ -94,7 +94,7 @@ class CompositionView(SinglePlotGraphicsView):
         if brushes is None:
             brushes = [QtGui.QBrush(QtCore.Qt.GlobalColor.red) for _ in results]
 
-        X = prepare_results_for_clustering(results, key)
+        X = prepare_results_for_clustering(results, clusters.size, key)
         valid = np.any(X != 0, axis=1)
         X = X[valid]
         means, stds, counts = cluster_information(X, clusters[valid])

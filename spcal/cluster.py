@@ -36,26 +36,26 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
 
 
 def prepare_results_for_clustering(
-    results: list["SPCalProcessingResult"], key: str
+    results: list["SPCalProcessingResult"], number_peaks: int, key: str
 ) -> np.ndarray:
     """Prepare data by stacking into 2D array.
 
     Conveience method for list of results.
 
     Args:
-        results: dictionary of names: array or structured array
+        results: list of results, peak_indicies must be generated
+        number_peaks: number of peaks
 
     Returns:
-        2D array, ready for ``agglomerative_cluster``
+        2D array with length `number_peaks`, ready for ``agglomerative_cluster``
 
     See Also:
         ``prepare_data_from_clustering``
     """
     if any(result.peak_indicies is None for result in results):
         raise ValueError("cannot cluster, peak indidices have not been generated")
-    npeaks = np.amax([result.peak_indicies[-1] for result in results]) + 1  # type: ignore , checked above
 
-    peak_data = np.zeros((npeaks, len(results)), np.float32)
+    peak_data = np.zeros((number_peaks, len(results)), np.float32)
     for i, result in enumerate(results):
         if result.peak_indicies is None:
             raise ValueError("cannot cluster, peak_indicies have not been generated")
