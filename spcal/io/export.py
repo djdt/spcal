@@ -263,7 +263,7 @@ def export_spcal_compositions(
         ):
             continue
 
-        X = prepare_results_for_clustering(results, key)
+        X = prepare_results_for_clustering(results, clusters[key].size, key)
         valid = np.any(X != 0, axis=1)
         X = X[valid]
         means, stds, counts = cluster_information(X, clusters[key][valid])
@@ -290,18 +290,14 @@ def export_spcal_detection_arrays(
     units: dict[str, tuple[str, float]],
 ):
     assert all(result.peak_indicies is not None for result in results)
-    npeaks = [
-        result.peak_indicies[-1]  # type: ignore
-        for result in results
-        if len(result.peak_indicies) > 0  # type: ignore
-    ]
-    npeaks = np.amax(npeaks) + 1 if len(npeaks) > 0 else 0
+    npeaks = np.amax([result.number_peak_indicies for result in results])
 
     all_regions = combine_regions([result.regions for result in results], 2)
 
     times = results[0].times[
         all_regions[:, 0] + (all_regions[:, 1] - all_regions[:, 0]) // 2
     ]
+    print(times.size, npeaks)
     datas = [times]
     header = "Times (s)"
 

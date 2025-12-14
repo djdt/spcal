@@ -176,6 +176,7 @@ class SPCalProcessingMethod(object):
                 np.searchsorted(all_regions[:, 0], result.regions[:, 0], side="right")
                 - 1
             )
+            result.number_peak_indicies = all_regions.shape[0]
         # filter results
         valid_peaks = []
         for filter_group in self.filters:
@@ -208,15 +209,9 @@ class SPCalProcessingMethod(object):
         if any(result.peak_indicies is None for result in results.values()):
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
-        if all(result.number == 0 for result in results.values()):
+        npeaks = np.amax([result.number_peak_indicies for result in results.values()])
+        if npeaks == 0:
             return np.array([], dtype=int)
-
-        npeaks = [
-            result.peak_indicies[-1]  # type: ignore , checked above
-            for result in results.values()
-            if len(result.peak_indicies) > 0  # type: ignore , checked above
-        ]
-        npeaks = np.amax(npeaks) + 1 if len(npeaks) > 0 else 0
 
         peak_data = np.zeros((npeaks, len(results)), np.float32)
         for i, result in enumerate(results.values()):

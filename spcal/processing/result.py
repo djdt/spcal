@@ -35,6 +35,7 @@ class SPCalProcessingResult(object):
         self.regions = regions
 
         self.peak_indicies = indicies
+        self.number_peak_indicies = 0
         self.filter_indicies = np.arange(detections.size)
 
         mask = background_mask(regions, signals.size)
