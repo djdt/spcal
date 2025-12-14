@@ -1,4 +1,5 @@
 import json
+from time import sleep
 from pathlib import Path
 from PySide6 import QtCore
 
@@ -7,6 +8,9 @@ from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
 from spcal.io.export import export_spcal_processing_results
+
+
+# Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
 
 
 class BatchWorker(QtCore.QObject):
@@ -25,10 +29,8 @@ class BatchWorker(QtCore.QObject):
         super().__init__(parent)
 
         self.paths = paths
-
         self.isotopes = isotopes
         self.method = method
-
         self.skip_clusters = skip_clusters
 
     def openDataFile(self, path: Path) -> SPCalDataFile:
@@ -49,7 +51,7 @@ class BatchWorker(QtCore.QObject):
         )
 
     @QtCore.Slot()
-    def run(self):
+    def process(self):
         self.started.emit(len(self.paths))
         for i, (input, output) in enumerate(self.paths):
             if self.thread().isInterruptionRequested():
@@ -60,11 +62,16 @@ class BatchWorker(QtCore.QObject):
             if self.thread().isInterruptionRequested():
                 return
             self.processDataFile(data_file, output)
+            sleep(1)
             self.progress.emit(i, 1.0)
         self.finished.emit()
 
 
-class BatchNuWorker(BatchWorker):
+class NuBatchWorker(QtCore.QObject):
+    started = QtCore.Signal(int)
+    progress = QtCore.Signal(int, float)
+    finished = QtCore.Signal()
+
     def __init__(
         self,
         paths: list[tuple[Path, Path]],
@@ -77,9 +84,12 @@ class BatchNuWorker(BatchWorker):
         skip_clusters: bool = False,
         parent: QtCore.QObject | None = None,
     ):
-        super().__init__(
-            paths, method, isotopes, skip_clusters=skip_clusters, parent=parent
-        )
+        super().__init__(parent)
+
+        self.paths = paths
+        self.isotopes = isotopes
+        self.method = method
+        self.skip_clusters = skip_clusters
 
         self.chunk_size = chunk_size
         self.max_mass_diff = max_mass_diff
@@ -98,28 +108,51 @@ class BatchNuWorker(BatchWorker):
             last_integ_file=last,
         )
 
-    @QtCore.Slot()
-    def run(self):
-        if self.chunk_size == 0:
-            return super().run()
+    def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
+        results = self.method.processDataFile(data_file, self.isotopes)
+        results = self.method.filterResults(results)
+        if self.skip_clusters:
+            clusters = {}
+        else:
+            clusters = {
+                key: self.method.processClusters(results, key)
+                for key in SPCalProcessingMethod.CALIBRATION_KEYS
+            }
+        export_spcal_processing_results(
+            output_path, data_file, list(results.values()), clusters
+        )
 
+    def processChunk(self, i: int, input: Path, output: Path):
+        with input.joinpath("integrated.index").open("r") as fp:
+            nintegs = len(json.load(fp))
+        for first in range(0, nintegs, self.chunk_size):
+            last = min(nintegs, first + self.chunk_size)
+            if self.thread().isInterruptionRequested():
+                return
+            data_file = self.openDataFile(input, first=first, last=last)
+            self.progress.emit(i, last / nintegs)
+            if self.thread().isInterruptionRequested():
+                return
+            self.processDataFile(
+                data_file,
+                output.with_name(output.name + f"_{first // self.chunk_size + 1}"),
+            )
+
+    @QtCore.Slot()
+    def process(self):
         self.started.emit(len(self.paths))
         for i, (input, output) in enumerate(self.paths):
             self.progress.emit(i, 0.0)
-            with input.joinpath("integrated.index").open("r") as fp:
-                nintegs = len(json.load(fp))
-            for first in range(0, nintegs, self.chunk_size):
-                last = min(nintegs, first + self.chunk_size)
+            if self.chunk_size == 0:
+                data_file = self.openDataFile(input)
                 if self.thread().isInterruptionRequested():
                     return
-                data_file = self.openDataFile(input, first=first, last=last)
-                self.progress.emit(i, last / nintegs)
+                self.progress.emit(i, 0.5)
+                self.processDataFile(data_file, output)
                 if self.thread().isInterruptionRequested():
                     return
-                self.processDataFile(
-                    data_file,
-                    output.with_name(output.name + f"_{first // self.chunk_size + 1}"),
-                )
+            else:
+                self.processChunk(i, input, output)
             self.progress.emit(i, 1.0)
         self.finished.emit()
 

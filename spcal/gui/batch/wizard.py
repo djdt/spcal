@@ -20,7 +20,7 @@ from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 
-from spcal.gui.batch.workers import BatchNuWorker, BatchTextWorker, BatchTOFWERKWorker
+from spcal.gui.batch.workers import NuBatchWorker, BatchTextWorker, BatchTOFWERKWorker
 
 
 class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
@@ -515,6 +515,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             )
         return pairs
 
+    @QtCore.Slot()
     def outputProgress(self, index: int, progress: float):
         item = self.output_files.item(index)
         if progress >= 1.0:
@@ -528,7 +529,6 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         else:
             icon = QtGui.QIcon.fromTheme("task-process-0")
         item.setIcon(icon)
-        self.output_files.update(self.output_files.indexFromItem(item))
 
     def resetProgress(self):
         for i in range(self.output_files.count()):
@@ -600,9 +600,9 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
 
             if self.field("nu.chunked"):
-                chunk_size = 0
-            else:
                 chunk_size = self.field("nu.chunk_size")
+            else:
+                chunk_size = 0
 
             cyc_number = self.field("nu.cycle_number")
             if cyc_number == 0:
@@ -612,7 +612,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 seg_number = None
             max_mass_diff = self.field("nu.max_mass_diff")
 
-            self.worker = BatchNuWorker(
+            self.worker = NuBatchWorker(
                 paths,
                 method,
                 isotopes,
@@ -626,29 +626,51 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             isotopes: list[SPCalIsotope] = self.field("tofwerk.isotopes")
             self.worker = BatchTOFWERKWorker(paths, method, isotopes)
         else:
-            raise ValueError("no format page visited")
+            pass
+            # raise ValueError("no format page visited")
+
+        class WaitWorker(QtCore.QObject):
+            progress = QtCore.Signal(int, float)
+            finished = QtCore.Signal()
+
+            def __init__(self, m, parent: QtCore.QObject | None = None):
+                super().__init__(parent)
+                self.m = m
+
+            def anotherFunc(self):
+                pass
+
+            @QtCore.Slot()
+            def process(self):
+                for i in range(50):
+                    self.progress.emit(i, 0.1)
+                    if self.thread().isInterruptionRequested():
+                        return
+                    self.thread().msleep(100)
+                self.finished.emit()
 
         self.worker.moveToThread(self.process_thread)
-        self.worker.progress.connect(self.run_page.outputProgress)
-        self.worker.finished.connect(self.finalise)
 
-        self.process_thread.started.connect(self.worker.run)
+        self.worker.progress.connect(self.run_page.outputProgress)
+        self.worker.finished.connect(self.stopThread)
+
+        self.process_thread.started.connect(self.worker.process)
         self.process_thread.finished.connect(self.worker.deleteLater)
+
         self.process_thread.start()
 
     def reject(self):
         if self.process_thread.isRunning():
             self.process_thread.requestInterruption()
-            self.process_thread.quit()
-            self.process_thread.wait()
+            self.stopThread()
             self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(True)
             self.run_page.resetProgress()
         else:
-            self.finalise()
+            self.stopThread()
             self.process_thread.deleteLater()
             super().reject()
 
-    def finalise(self):
+    def stopThread(self):
         self.process_thread.quit()
         self.process_thread.wait()
 
@@ -662,5 +684,20 @@ if __name__ == "__main__":
     )
     method = SPCalProcessingMethod()
     wiz = SPCalBatchProcessingWizard(df, method, [])
-    wiz.show()
+    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
+    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
+    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
+    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
+    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
+        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
+    )
+    wiz.open()
     app.exec()
