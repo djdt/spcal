@@ -554,19 +554,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         return pairs
 
     @QtCore.Slot()
-    def updateProgress(self, index: int, progress: float, elapsed: int):
+    def updateProgress(self, index: int, progress: float, elapsed: float):
         item = self.output_files.item(index)
-        nitems = self.output_files.count()
-
-        if index > 0:
-            remaining_seconds = elapsed * (nitems / index) - 1.0
-            rmin = remaining_seconds // 60
-            rsec = remaining_seconds % 60
-            self.status.setText(f"Processing {item.text()}... Remaining: {rmin}:{rsec}")
-        elif index == nitems - 1 and progress == 1.0:
-            self.status.setText("Processing Complete!")
-        else:
-            self.status.setText(f"Processing {item.text()}...")
 
         if progress >= 1.0:
             icon = QtGui.QIcon.fromTheme("task-process-4")
@@ -580,10 +569,26 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             icon = QtGui.QIcon.fromTheme("task-process-0")
         item.setIcon(icon)
 
+    def setStatus(self, text: str):
+        self.status.setText(text)
+
+    def updateStatus(self, index: int, elapsed: float):
+        nitems = self.output_files.count()
+        if index == 0:
+            text = "Processing..."
+        else:
+            time_per_task = elapsed / index
+            remaining_time = time_per_task * (nitems - index)
+            if remaining_time < 60.0:
+                text = "Processing... < 1 minute remaining"
+            else:
+                text = (
+                    f"Processing... {int(remaining_time / 60.0) + 1} minutes remaining"
+                )
+        self.status.setText(text)
+
     def resetProgress(self):
-        for i in range(self.output_files.count()):
-            item = self.output_files.item(i)
-            item.setIcon(QtGui.QIcon())
+        self.updateOutputNames()
 
 
 class SPCalBatchProcessingWizard(QtWidgets.QWizard):
@@ -684,7 +689,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         self.worker.started.connect(self.startProgress)
         self.worker.progress.connect(self.updateProgress)
-        self.worker.finished.connect(self.stopThread)
+        self.worker.finished.connect(self.stopProgress)
 
         self.process_thread.started.connect(self.worker.process)
         self.process_thread.finished.connect(self.worker.deleteLater)
@@ -695,7 +700,17 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.process_timer.start()
 
     def updateProgress(self, index: int, partial: float):
-        self.run_page.updateProgress(index, partial, self.process_timer.nsecsElapsed())
+        self.run_page.updateProgress(
+            index,
+            partial,
+        )
+        if partial == 0.0:
+            self.run_page.updateStatus(index, self.process_timer.elapsed() / 1000.0)
+
+    def stopProgress(self):
+        self.stopThread()
+        self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
+        self.run_page.setStatus("Processing Complete!")
 
     def reject(self):
         if self.process_thread.isRunning():
@@ -704,6 +719,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(True)
             self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
             self.run_page.resetProgress()
+            self.run_page.setStatus("Processing Canceled!")
         else:
             self.stopThread()
             self.process_thread.deleteLater()
