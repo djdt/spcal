@@ -517,11 +517,13 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             item = self.output_files.item(i)
             path: Path = item.data(QtCore.Qt.ItemDataRole.UserRole)
             if path.is_dir():
-                outpath = path.with_name(name.replace("%DataFile%", path.name))
+                outname = name.replace("%DataFile%", path.name)
             else:
-                outpath = path.with_stem(name.replace("%DataFile%", path.stem))
+                outname = name.replace("%DataFile%", path.stem)
 
-            item.setText(str(outpath.name))
+            item.setText(outname)
+            outpath = Path(self.output_dir.text()).joinpath(outname)
+
             if outpath.exists():
                 item.setIcon(QtGui.QIcon.fromTheme("data-warning"))
             else:
@@ -554,7 +556,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         return pairs
 
     @QtCore.Slot()
-    def updateProgress(self, index: int, progress: float, elapsed: float):
+    def updateProgress(self, index: int, progress: float):
         item = self.output_files.item(index)
 
         if progress >= 1.0:
@@ -700,10 +702,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.process_timer.start()
 
     def updateProgress(self, index: int, partial: float):
-        self.run_page.updateProgress(
-            index,
-            partial,
-        )
+        self.run_page.updateProgress(index, partial)
         if partial == 0.0:
             self.run_page.updateStatus(index, self.process_timer.elapsed() / 1000.0)
 
