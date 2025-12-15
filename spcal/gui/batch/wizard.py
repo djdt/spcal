@@ -103,6 +103,10 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
             "Recursively search directory for single particle files of the selected format."
         )
 
+        self.button_clear = QtWidgets.QPushButton("Clear")
+        self.button_clear.pressed.connect(self.files.clear)
+        self.button_clear.pressed.connect(self.completeChanged)
+
         # init
         if isinstance(existing_file, SPCalNuDataFile):
             self.radio_nu.setChecked(True)
@@ -119,6 +123,8 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         radio_box.setLayout(radio_box_layout)
 
         file_button_layout = QtWidgets.QHBoxLayout()
+        file_button_layout.addWidget(self.button_clear)
+        file_button_layout.addStretch(1)
         file_button_layout.addWidget(self.button_open)
         file_button_layout.addWidget(self.button_open_all)
         file_button_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
