@@ -82,7 +82,7 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
     Returns:
         cluster indicies
     """
-    if X.size < 2:
+    if X.shape[0] < 2:
         return np.zeros(X.size, dtype=int)
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])

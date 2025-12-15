@@ -4,7 +4,10 @@ from typing import Sequence, TYPE_CHECKING
 import numpy as np
 
 from spcal import particle
-from spcal.cluster import agglomerative_cluster, prepare_data_for_clustering
+from spcal.cluster import (
+    agglomerative_cluster,
+    prepare_results_for_clustering,
+)
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions
 from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
@@ -213,20 +216,7 @@ class SPCalProcessingMethod(object):
         if npeaks == 0:
             return np.array([], dtype=int)
 
-        peak_data = np.zeros((npeaks, len(results)), np.float32)
-        for i, result in enumerate(results.values()):
-            if result.peak_indicies is None:
-                raise ValueError(
-                    "cannot cluster, peak_indicies have not been generated"
-                )
-            if not result.canCalibrate(key):
-                continue
-            np.add.at(
-                peak_data[:, i],
-                result.peak_indicies[result.filter_indicies],
-                result.calibrated(key),
-            )
-        X = prepare_data_for_clustering(peak_data)
+        X = prepare_results_for_clustering(list(results.values()), npeaks, key)
         return agglomerative_cluster(X, self.cluster_distance)
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
