@@ -67,7 +67,9 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
     pathsChanged = QtCore.Signal()
 
     def __init__(
-        self, existing_file: SPCalDataFile, parent: QtWidgets.QWidget | None = None
+        self,
+        existing_file: SPCalDataFile | None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
@@ -546,7 +548,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
     def __init__(
         self,
-        existing_file: SPCalDataFile,
+        existing_file: SPCalDataFile | None,
         method: SPCalProcessingMethod,
         selected_isotopes: list[SPCalIsotopeBase],
         parent: QtWidgets.QWidget | None = None,
@@ -679,25 +681,7 @@ if __name__ == "__main__":
     from spcal.processing import SPCalProcessingMethod
 
     app = QtWidgets.QApplication()
-    df = SPCalNuDataFile.load(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
     method = SPCalProcessingMethod()
-    wiz = SPCalBatchProcessingWizard(df, method, [])
-    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
-    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
-    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
-    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
-    wiz.page(SPCalBatchProcessingWizard.FILE_PAGE_ID).addFile(
-        Path("/home/tom/Downloads/14-38-58 UPW + 80nm Au 90nm UCNP many particles/")
-    )
+    wiz = SPCalBatchProcessingWizard(None, method, [])
     wiz.open()
     app.exec()
