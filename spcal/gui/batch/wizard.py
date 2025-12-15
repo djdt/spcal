@@ -516,8 +516,11 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         for i in range(self.output_files.count()):
             item = self.output_files.item(i)
             path: Path = item.data(QtCore.Qt.ItemDataRole.UserRole)
-            path_name = path.name if path.is_dir() else path.stem
-            outpath = path.with_stem(name.replace("%DataFile%", path_name))
+            if path.is_dir():
+                outpath = path.with_name(name.replace("%DataFile%", path.name))
+            else:
+                outpath = path.with_stem(name.replace("%DataFile%", path.stem))
+
             item.setText(str(outpath.name))
             if outpath.exists():
                 item.setIcon(QtGui.QIcon.fromTheme("data-warning"))
