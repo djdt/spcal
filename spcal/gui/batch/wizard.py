@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -263,7 +264,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 
         self.chunk_size = QtWidgets.QSpinBox()
         self.chunk_size.setRange(1, 10000)
-        self.chunk_size.setValue(200)
+        self.chunk_size.setValue(1000)
         self.chunk_size.setSingleStep(100)
         self.chunk_size.setEnabled(False)
 
@@ -324,6 +325,28 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 
     def isComplete(self) -> bool:
         return len(self.table.selectedIsotopes()) > 0
+
+    def validatePage(self):
+        if self.check_chunked.isChecked() or self.cycle_number.value() > 0:
+            return True
+
+        paths: list[Path] = self.field("paths")
+        for path in paths:
+            with path.joinpath("integrated.index").open("r") as fp:
+                nintegs = len(json.load(fp))
+            if nintegs > 1000:
+                button = QtWidgets.QMessageBox.warning(
+                    self,
+                    "Large Files",
+                    "Some files have more than 1000 integ files, processing in chunks is reccomended.",
+                    QtWidgets.QMessageBox.StandardButton.Ignore
+                    | QtWidgets.QMessageBox.StandardButton.Cancel,
+                )
+                if button == QtWidgets.QMessageBox.StandardButton.Ignore:
+                    return True
+                else:
+                    return False
+        return True
 
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
@@ -434,6 +457,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.button_dir = QtWidgets.QPushButton("Select")
         self.button_dir.pressed.connect(self.dialogOutputDirectory)
 
+        self.status = QtWidgets.QLabel("")
+
         layout_dir = QtWidgets.QHBoxLayout()
         layout_dir.addWidget(self.output_dir, 1)
         layout_dir.addWidget(self.button_dir, 0, QtCore.Qt.AlignmentFlag.AlignRight)
@@ -442,11 +467,17 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         box_output_layout = QtWidgets.QFormLayout()
         box_output_layout.addRow("Filename:", self.output_name)
         box_output_layout.addRow("Directory:", layout_dir)
+        box_output_layout.addRow(self.output_files)
         box_output.setLayout(box_output_layout)
 
+        box_options = QtWidgets.QGroupBox("Options")
+        box_options_layout = QtWidgets.QFormLayout()
+        box_options.setLayout(box_options_layout)
+
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(self.output_files, 0, 0)
+        layout.addWidget(box_options, 0, 0)
         layout.addWidget(box_output, 0, 1)
+        layout.addWidget(self.status, 1, 0, 1, 2)
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
@@ -472,8 +503,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         else:
             button = QtWidgets.QMessageBox.question(
                 self,
-                f"Overwrite {len(existing)} Files?",
-                f"Are you sure you want to overwrite {', '.join(str(p.name) for p in existing)}?",
+                "Overwrite Files?",
+                f"Are you sure you want to overwrite {len(existing)} files?",
             )
             if button == QtWidgets.QMessageBox.StandardButton.Yes:
                 return True
@@ -487,11 +518,11 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             path: Path = item.data(QtCore.Qt.ItemDataRole.UserRole)
             path_name = path.name if path.is_dir() else path.stem
             outpath = path.with_stem(name.replace("%DataFile%", path_name))
-            item.setText(str(outpath))
+            item.setText(str(outpath.name))
             if outpath.exists():
                 item.setIcon(QtGui.QIcon.fromTheme("data-warning"))
             else:
-                item.setIcon(QtGui.QIcon())
+                item.setIcon(QtGui.QIcon.fromTheme("document-new"))
 
     def dialogOutputDirectory(self):
         dir = QtWidgets.QFileDialog.getExistingDirectory(
@@ -503,7 +534,6 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()
         item.setText(str(path))
-        # item.setIcon(QtGui.QIcon.fromTheme("task-process-0"))
         item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
         item.setData(QtCore.Qt.ItemDataRole.UserRole + 1, chunk)
         self.output_files.addItem(item)
@@ -513,13 +543,28 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         for i in range(self.output_files.count()):
             item = self.output_files.item(i)
             pairs.append(
-                (item.data(QtCore.Qt.ItemDataRole.UserRole), Path(item.text()))
+                (
+                    item.data(QtCore.Qt.ItemDataRole.UserRole),
+                    Path(self.output_dir.text()).joinpath(item.text()),
+                )
             )
         return pairs
 
     @QtCore.Slot()
-    def outputProgress(self, index: int, progress: float):
+    def updateProgress(self, index: int, progress: float, elapsed: int):
         item = self.output_files.item(index)
+        nitems = self.output_files.count()
+
+        if index > 0:
+            remaining_seconds = elapsed * (nitems / index) - 1.0
+            rmin = remaining_seconds // 60
+            rsec = remaining_seconds % 60
+            self.status.setText(f"Processing {item.text()}... Remaining: {rmin}:{rsec}")
+        elif index == nitems - 1 and progress == 1.0:
+            self.status.setText("Processing Complete!")
+        else:
+            self.status.setText(f"Processing {item.text()}...")
+
         if progress >= 1.0:
             icon = QtGui.QIcon.fromTheme("task-process-4")
         elif progress >= 0.75:
@@ -559,6 +604,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
 
         self.process_thread = QtCore.QThread()
+        self.process_timer = QtCore.QElapsedTimer()
 
         self.setPage(
             SPCalBatchProcessingWizard.FILE_PAGE_ID, BatchFilesWizardPage(existing_file)
@@ -591,6 +637,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             return
 
         self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(False)
+        self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Cancel")
 
         paths = self.run_page.pathPairs()
         method: SPCalProcessingMethod = self.field("method")
@@ -628,32 +675,12 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             isotopes: list[SPCalIsotope] = self.field("tofwerk.isotopes")
             self.worker = BatchTOFWERKWorker(paths, method, isotopes)
         else:
-            pass
-            # raise ValueError("no format page visited")
-
-        class WaitWorker(QtCore.QObject):
-            progress = QtCore.Signal(int, float)
-            finished = QtCore.Signal()
-
-            def __init__(self, m, parent: QtCore.QObject | None = None):
-                super().__init__(parent)
-                self.m = m
-
-            def anotherFunc(self):
-                pass
-
-            @QtCore.Slot()
-            def process(self):
-                for i in range(50):
-                    self.progress.emit(i, 0.1)
-                    if self.thread().isInterruptionRequested():
-                        return
-                    self.thread().msleep(100)
-                self.finished.emit()
+            raise ValueError("no format page visited")
 
         self.worker.moveToThread(self.process_thread)
 
-        self.worker.progress.connect(self.run_page.outputProgress)
+        self.worker.started.connect(self.startProgress)
+        self.worker.progress.connect(self.updateProgress)
         self.worker.finished.connect(self.stopThread)
 
         self.process_thread.started.connect(self.worker.process)
@@ -661,11 +688,18 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         self.process_thread.start()
 
+    def startProgress(self, number_items: int):
+        self.process_timer.start()
+
+    def updateProgress(self, index: int, partial: float):
+        self.run_page.updateProgress(index, partial, self.process_timer.nsecsElapsed())
+
     def reject(self):
         if self.process_thread.isRunning():
             self.process_thread.requestInterruption()
             self.stopThread()
             self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(True)
+            self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
             self.run_page.resetProgress()
         else:
             self.stopThread()
