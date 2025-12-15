@@ -149,11 +149,11 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         self.sigma = ValueWidget(0.0, min=0.0, max=8.0, step=1.0, sigfigs=sf)
-        self.updateSigma()
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )
         self.sigma.valueChanged.connect(self.updateAlpha)
+        self.updateSigma()
 
         layout = self.layout()
         assert isinstance(layout, QtWidgets.QFormLayout)
