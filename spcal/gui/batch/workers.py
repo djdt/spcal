@@ -125,7 +125,7 @@ class NuBatchWorker(QtCore.QObject):
     def processChunk(self, i: int, input: Path, output: Path):
         with input.joinpath("integrated.index").open("r") as fp:
             nintegs = len(json.load(fp))
-        for first in range(0, nintegs, self.chunk_size):
+        for i, first in enumerate(range(0, nintegs, self.chunk_size)):
             last = min(nintegs, first + self.chunk_size)
             if self.thread().isInterruptionRequested():
                 return
@@ -135,7 +135,7 @@ class NuBatchWorker(QtCore.QObject):
                 return
             self.processDataFile(
                 data_file,
-                output.with_name(output.name + f"_{first // self.chunk_size + 1}"),
+                output.with_name(output.name + f"_{i+1:03}"),
             )
 
     @QtCore.Slot()
