@@ -211,6 +211,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess(data_file)
         self.updateRecentFiles(data_file)
         # self.onDataFileChanged(data_file)
+        logger.info(f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events.")
 
     def onDataFilesChanged(
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]

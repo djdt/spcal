@@ -1,5 +1,6 @@
 import json
 import datetime
+import logging
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -24,6 +25,8 @@ from spcal.processing.options import SPCalIsotopeOptions
 from spcal.siunits import mass_units, size_units, volume_units
 
 from spcal.gui.batch.workers import NuBatchWorker, BatchTextWorker, BatchTOFWERKWorker
+
+logger = logging.getLogger(__name__)
 
 
 class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
@@ -854,6 +857,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
     def startProgress(self, number_items: int):
         self.process_timer.start()
+        logger.info(f"Batch processing started for {number_items} data files.")
 
     def updateProgress(self, index: int, partial: float):
         self.run_page.updateProgress(index, partial)
@@ -864,6 +868,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.stopThread()
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
         self.run_page.setStatus("Processing Complete!")
+        logger.info("Batch processing complete.")
 
     def reject(self):
         if self.process_thread.isRunning():
@@ -873,6 +878,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
             self.run_page.resetProgress()
             self.run_page.setStatus("Processing Canceled!")
+            logger.warning("Batch processing canceled.")
         else:
             self.stopThread()
             self.process_thread.deleteLater()
