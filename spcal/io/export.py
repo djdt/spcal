@@ -176,7 +176,7 @@ def export_spcal_result_options(fp: TextIO, results: list["SPCalProcessingResult
         "conc": ("µg/L", 1e-9),
         "density": ("g/cm³", 1e3),
         "massresponse": ("ag", 1e-21),
-        "response": ("L/kg", 1e9),
+        "response": ("L/µg", 1e9),
         "uptake": ("ml/min", 1e-3 / 60.0),
     }
 
