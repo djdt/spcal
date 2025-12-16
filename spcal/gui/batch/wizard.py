@@ -13,7 +13,7 @@ from spcal.gui.io import (
     get_open_spcal_paths,
     most_recent_spcal_path,
 )
-from spcal.io.nu import is_nu_directory, is_nu_run_info_file
+from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
@@ -81,6 +81,9 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         self.radio_text = QtWidgets.QRadioButton("Text Exports")
         self.radio_nu = QtWidgets.QRadioButton("Nu Instruments")
         self.radio_tofwerk = QtWidgets.QRadioButton("TOFWERK HDF5")
+        self.radio_text.toggled.connect(self.formatChanged)
+        self.radio_nu.toggled.connect(self.formatChanged)
+        self.radio_tofwerk.toggled.connect(self.formatChanged)
 
         self.files = QtWidgets.QListWidget()
         self.files.setHorizontalScrollBarPolicy(
@@ -145,6 +148,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
 
     def addFile(self, path: Path):
         item = QtWidgets.QListWidgetItem()
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
         item.setText(str(path))
         item.setIcon(QtGui.QIcon.fromTheme("list-remove"))
         self.files.addItem(item)
@@ -156,6 +160,19 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         self.files.clear()
         for path in paths:
             self.addFile(path)
+
+    def formatChanged(self):
+        format = self.selectedFormat()
+        file_fn = BatchFilesWizardPage.FORMAT_FUNCTIONS[format]
+        palette = self.palette()
+        for i in range(self.files.count()):
+            item = self.files.item(i)
+            if file_fn(item.data(QtCore.Qt.ItemDataRole.UserRole)):
+                item.setForeground(palette.color(QtGui.QPalette.ColorRole.Text))
+            else:
+                item.setForeground(QtCore.Qt.GlobalColor.red)
+
+        self.completeChanged.emit()
 
     def selectedFormat(self) -> str:
         if self.radio_text.isChecked():
@@ -209,14 +226,40 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
                     self.addFile(filepath)
 
     def isComplete(self) -> bool:
-        return self.files.count() > 0
-
-    def validatePage(self) -> bool:
+        if self.files.count() == 0:
+            return False
         format = self.selectedFormat()
         file_fn = BatchFilesWizardPage.FORMAT_FUNCTIONS[format]
         for path in self.paths():
             if not file_fn(path):
                 return False
+        return True
+
+    def validatePage(self) -> bool:
+        format = self.selectedFormat()
+
+        if format == "Text":
+            pass
+        elif format == "Nu":
+            paths = self.paths()
+            with open(paths[0].joinpath("run.info"), "r") as fp:
+                info = json.load(fp)
+            event_time = eventtime_from_info(info)
+            for path in paths[1:]:
+                with open(path.joinpath("run.info"), "r") as fp:
+                    info = json.load(fp)
+                if eventtime_from_info(info) != event_time:
+                    button = QtWidgets.QMessageBox.warning(
+                        self,
+                        "Different Event Times",
+                        "The event time is not consistent across all selected files.",
+                        QtWidgets.QMessageBox.StandardButton.Ignore
+                        | QtWidgets.QMessageBox.StandardButton.Cancel,
+                    )
+                    if button == QtWidgets.QMessageBox.StandardButton.Ignore:
+                        return True
+                    else:
+                        return False
         return True
 
     def nextId(self) -> int:
@@ -616,6 +659,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Batch Processing")
+        self.resize(1024, 800)
         self.setButtonText(QtWidgets.QWizard.WizardButton.FinishButton, "Start Batch")
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
 
