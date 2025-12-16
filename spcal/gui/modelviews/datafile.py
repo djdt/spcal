@@ -114,9 +114,16 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
     ):
         # data from the model
         path = index.data(DataFileModel.PathRole)
-        nevents = index.data(DataFileModel.NumEventsRole)
         nisotopes = len(index.data(DataFileModel.IsotopesRole))
         nselected = len(index.data(DataFileModel.SelectedIsotopesRole))
+
+        event_time = index.data(DataFileModel.EventTimeRole) * 1000.0
+        event_time_unit = "ms"
+        if event_time < 1.0:
+            event_time *= 1000.0
+            event_time_unit = "µs"
+
+        total_time = index.data(DataFileModel.TotalTimeRole)
 
         # get the style for drawing
         if option.widget is None:  # type: ignore , in QStyleOption
@@ -162,7 +169,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             frame,
             QtCore.Qt.AlignmentFlag.AlignLeft,
             option,
-            path.stem,
+            f"{path.stem} :: [{total_time:.0f} s]",
             bold=True,
         )
         isotope_rect = self.drawElidedText(
@@ -180,7 +187,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             frame,
             QtCore.Qt.AlignmentFlag.AlignBottom,
             option,
-            f"Events: {nevents}",
+            f"Event time: {event_time:.4g} {event_time_unit}",
         )
 
 
@@ -190,6 +197,8 @@ class DataFileModel(QtCore.QAbstractListModel):
     IsotopesRole = QtCore.Qt.ItemDataRole.UserRole + 2
     SelectedIsotopesRole = QtCore.Qt.ItemDataRole.UserRole + 3
     NumEventsRole = QtCore.Qt.ItemDataRole.UserRole + 4
+    EventTimeRole = QtCore.Qt.ItemDataRole.UserRole + 5
+    TotalTimeRole = QtCore.Qt.ItemDataRole.UserRole + 6
 
     editIsotopesRequested = QtCore.Signal(QtCore.QModelIndex)
 
@@ -249,3 +258,7 @@ class DataFileModel(QtCore.QAbstractListModel):
             return data_file.selected_isotopes
         elif role == DataFileModel.NumEventsRole:
             return data_file.num_events
+        elif role == DataFileModel.EventTimeRole:
+            return data_file.event_time
+        elif role == DataFileModel.TotalTimeRole:
+            return data_file.total_time
