@@ -216,7 +216,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
     ):
         if current is None:
-            self.instrument_options.setEventTime(None)
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
             self.outputs.setResults({})
@@ -224,7 +223,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             return
 
         # Set the options to current
-        self.instrument_options.setEventTime(current.event_time)
         isotopes = current.selected_isotopes + self.currentMethod().expressions
         # Add any missing isotopes to method and isotope options
         self.isotope_options.setIsotopes(isotopes)

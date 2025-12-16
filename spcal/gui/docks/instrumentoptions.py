@@ -3,7 +3,7 @@ from PySide6 import QtCore, QtWidgets
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget, ValueWidget
 from spcal.processing import SPCalInstrumentOptions
-from spcal.siunits import flowrate_units, time_units
+from spcal.siunits import flowrate_units
 
 
 class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
@@ -20,19 +20,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
         settings = QtCore.QSettings()
         sf = int(settings.value("SigFigs", 4))  # type: ignore
-
-        self.event_time = UnitsWidget(
-            time_units,
-            base_value=options.event_time,
-            default_unit="ms",
-            base_value_min=0.0,
-            base_value_max=10.0,
-            sigfigs=sf,
-        )
-        self.event_time.setReadOnly(True)
-        self.event_time.setToolTip(
-            "ICP-MS time per event, updated from imported files if time column exists."
-        )
 
         self.uptake = UnitsWidget(
             flowrate_units, base_value=options.uptake, step=0.1, default_unit="ml/min"
@@ -93,7 +80,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow("Uptake:", self.uptake)
-        form_layout.addRow("Event time:", self.event_time)
         form_layout.addRow("Trans. Efficiency:", layout_eff)
         form_layout.addRow("Calibration mode:", self.calibration_mode)
 
@@ -101,14 +87,12 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
     def instrumentOptions(self) -> SPCalInstrumentOptions:
         return SPCalInstrumentOptions(
-            self.event_time.baseValue(),
             self.uptake.baseValue(),
             self.efficiency.value(),
         )
 
     def setInstrumentOptions(self, instrument_options: SPCalInstrumentOptions):
         self.blockSignals(True)
-        self.event_time.setBaseValue(instrument_options.event_time)
         self.uptake.setBaseValue(instrument_options.uptake)
         self.efficiency.setValue(instrument_options.efficiency)
         self.blockSignals(False)
@@ -130,13 +114,12 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         if mode == "Efficiency":
             return all(
                 [
-                    self.event_time.hasAcceptableInput(),
                     self.uptake.hasAcceptableInput(),
                     self.efficiency.hasAcceptableInput(),
                 ]
             )
         elif mode == "Mass Response":
-            return all([self.event_time.hasAcceptableInput()])
+            return True
         else:
             raise ValueError(f"Unknown method {mode}.")
 
@@ -176,13 +159,10 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     ):
         self.options_widget.setInstrumentOptions(options)
 
-    def setEventTime(self, time: float | None):
-        self.options_widget.event_time.setBaseValue(time)
-
     def reset(self):
         self.blockSignals(True)
         self.options_widget.setInstrumentOptions(
-            SPCalInstrumentOptions(None, None, None)
+            SPCalInstrumentOptions(None, None)
         )
         self.setCalibrationMode("efficiency")
         self.blockSignals(False)

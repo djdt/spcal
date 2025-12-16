@@ -17,6 +17,7 @@ class SPCalProcessingResult(object):
         isotope: SPCalIsotopeBase,
         limit: SPCalLimit,
         method: "SPCalProcessingMethod",
+        event_time: float,
         signals: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
@@ -43,7 +44,7 @@ class SPCalProcessingResult(object):
         self.background = float(np.nanmean(signals[mask]))
         self.background_error = float(np.nanstd(signals[mask], mean=self.background))
 
-        self._event_time: float | None = None  # cache
+        self.event_time = event_time
 
     def __repr__(self) -> str:
         return f"SPCalProcessingResult(number={self.number})"
@@ -51,12 +52,6 @@ class SPCalProcessingResult(object):
     @property
     def num_events(self) -> int:
         return int(np.count_nonzero(np.isfinite(self.signals)))
-
-    @property
-    def event_time(self) -> float:
-        if self._event_time is None:
-            self._event_time = float(np.mean(np.diff(self.times)))
-        return self._event_time
 
     @property
     def total_time(self) -> float:
@@ -125,6 +120,6 @@ class SPCalProcessingResult(object):
         values = self.detections
         if filtered:
             values = values[self.filter_indicies]
-        result = self.method.calibrateTo(values, key, self.isotope)
+        result = self.method.calibrateTo(values, key, self.isotope, self.event_time)
         assert isinstance(result, np.ndarray)
         return result

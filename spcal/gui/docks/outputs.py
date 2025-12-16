@@ -132,7 +132,9 @@ class ResultOutputModel(UnitsModel):
                     val = modefn(result.calibrated("signal"))
                 else:
                     raise ValueError(f"unknown column name {name}")
-                return result.method.calibrateTo(float(val), self.key, isotope)
+                return result.method.calibrateTo(
+                    float(val), self.key, isotope, result.event_time
+                )
         elif role == UnitsModel.BaseErrorRole:
             if name == "Number":
                 return result.number_error
@@ -143,7 +145,9 @@ class ResultOutputModel(UnitsModel):
                     val = result.background_error
                 else:
                     val = np.std(result.calibrated("signal"))
-                return result.method.calibrateTo(float(val), self.key, isotope)
+                return result.method.calibrateTo(
+                    float(val), self.key, isotope, result.event_time
+                )
             return None
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
             if name == "LOD":

@@ -17,19 +17,14 @@ logger = logging.getLogger(__name__)
 class SPCalInstrumentOptions(object):
     def __init__(
         self,
-        event_time: float | None,
         uptake: float | None,
         efficiency: float | None,
     ):
-        self.event_time = event_time
         self.uptake = uptake
         self.efficiency = efficiency
 
     def __repr__(self) -> str:
-        return (
-            f"SPCalInstrumentOptions(event_time={self.event_time}, uptake={self.uptake}, "
-            f"efficiency={self.efficiency})"
-        )
+        return f"SPCalInstrumentOptions(uptake={self.uptake}, efficiency={self.efficiency})"
 
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
@@ -37,8 +32,7 @@ class SPCalInstrumentOptions(object):
 
         if mode == "efficiency":
             return all(
-                x is not None and x > 0.0
-                for x in [self.event_time, self.uptake, self.efficiency]
+                x is not None and x > 0.0 for x in [self.uptake, self.efficiency]
             )
         elif mode == "mass response":
             return True
