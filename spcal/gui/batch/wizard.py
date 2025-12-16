@@ -1,4 +1,5 @@
 import json
+import datetime
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -20,6 +21,7 @@ from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
+from spcal.siunits import mass_units, size_units, volume_units
 
 from spcal.gui.batch.workers import NuBatchWorker, BatchTextWorker, BatchTOFWERKWorker
 
@@ -339,8 +341,8 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         layout.addWidget(self.table)
         self.setLayout(layout)
 
-        self.registerField("nu.chunked", self.check_chunked)
-        self.registerField("nu.chunk_size", self.chunk_size)
+        self.registerField("nu.chunk", self.check_chunked)
+        self.registerField("nu.chunk.size", self.chunk_size)
         self.registerField("nu.cycle_number", self.cycle_number)
         self.registerField("nu.segment_number", self.segment_number)
         self.registerField("nu.max_mass_diff", self.max_mass_diff, "value")
@@ -506,30 +508,117 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.button_dir = QtWidgets.QPushButton("Select")
         self.button_dir.pressed.connect(self.dialogOutputDirectory)
 
+        # options
+
+        self.check_export_options = QtWidgets.QCheckBox(
+            "Instrument, limit and isotope options"
+        )
+        self.check_export_options.setChecked(True)
+        self.check_export_clusters = QtWidgets.QCheckBox("Clustering results")
+        self.check_export_arrays = QtWidgets.QCheckBox("Particle data arrays")
+        self.check_export_arrays.setChecked(True)
+        self.check_export_summary = QtWidgets.QCheckBox("Batch summary")
+        self.summary_filename = QtWidgets.QLineEdit(
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%dT%H_%M_%S_scpal_batch.csv')}"
+        )
+        self.check_export_summary.toggled.connect(self.completeChanged)
+        self.check_export_summary.toggled.connect(self.summary_filename.setEnabled)
+        self.summary_filename.setEnabled(False)
+        self.summary_filename.textChanged.connect(self.completeChanged)
+
+        self.check_export_images = QtWidgets.QCheckBox("Images")
+        self.button_image_options = QtWidgets.QPushButton("Options...")
+        self.check_export_images.setEnabled(False)
+
+        # units
+
+        self.mass_units = QtWidgets.QComboBox()
+        self.mass_units.addItems(list(mass_units.keys()))
+        self.mass_units.setCurrentText("fg")
+
+        self.size_units = QtWidgets.QComboBox()
+        self.size_units.addItems(list(size_units.keys()))
+        self.size_units.setCurrentText("nm")
+
+        self.volume_units = QtWidgets.QComboBox()
+        self.volume_units.addItems(list(volume_units.keys()))
+        self.volume_units.setCurrentText("nm³")
+
         self.status = QtWidgets.QLabel("")
 
         layout_dir = QtWidgets.QHBoxLayout()
         layout_dir.addWidget(self.output_dir, 1)
         layout_dir.addWidget(self.button_dir, 0, QtCore.Qt.AlignmentFlag.AlignRight)
 
-        box_output = QtWidgets.QGroupBox("Output")
+        box_output = QtWidgets.QGroupBox("Export Paths")
         box_output_layout = QtWidgets.QFormLayout()
         box_output_layout.addRow("Filename:", self.output_name)
         box_output_layout.addRow("Directory:", layout_dir)
         box_output_layout.addRow(self.output_files)
         box_output.setLayout(box_output_layout)
 
-        box_options = QtWidgets.QGroupBox("Options")
+        summary_option_layout = QtWidgets.QHBoxLayout()
+        summary_option_layout.setDirection(QtWidgets.QHBoxLayout.Direction.RightToLeft)
+        summary_option_layout.addWidget(
+            self.summary_filename,
+            1,
+        )
+        summary_option_layout.addWidget(self.check_export_summary, 0)
+
+        image_option_layout = QtWidgets.QHBoxLayout()
+        image_option_layout.addWidget(self.check_export_images, 1)
+        image_option_layout.addWidget(
+            self.button_image_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+
+        box_options = QtWidgets.QGroupBox("Export Options")
         box_options_layout = QtWidgets.QFormLayout()
-        box_options.setLayout(box_options_layout)
+        box_options_layout.addRow(self.check_export_options)
+        box_options_layout.addRow(self.check_export_arrays)
+        box_options_layout.addRow(self.check_export_clusters)
+        box_options_layout.addRow(image_option_layout)
+        box_options_layout.addRow(summary_option_layout)
+
+        box_units = QtWidgets.QGroupBox("Export Units")
+        box_units_layout = QtWidgets.QFormLayout()
+        box_units_layout.addRow("Mass", self.mass_units)
+        box_units_layout.addRow("Size", self.size_units)
+        box_units_layout.addRow("Volume", self.volume_units)
+        box_units.setLayout(box_units_layout)
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(box_options, 0, 0)
-        layout.addWidget(box_output, 0, 1)
-        layout.addWidget(self.status, 1, 0, 1, 2)
+        layout.addWidget(box_output, 0, 0, 2, 1)
+        layout.addWidget(box_options, 0, 1)
+        layout.addWidget(box_units, 1, 1)
+        layout.addWidget(self.status, 2, 0, 1, 2)
         self.setLayout(layout)
 
+        self.registerField("export.options", self.check_export_options)
+        self.registerField("export.arrays", self.check_export_arrays)
+        self.registerField("export.clusters", self.check_export_clusters)
+        self.registerField("export.images", self.check_export_images)
+        self.registerField("export.summary", self.check_export_images)
+        self.registerField("export.summary.name", self.summary_filename)
+        self.registerField("export.units", self, "unitsProp")
+
+    def units(self) -> dict[str, tuple[str, float]]:
+        mass = self.mass_units.currentText()
+        size = self.size_units.currentText()
+        volume = self.volume_units.currentText()
+        return {
+            "signal": ("cts", 1.0),
+            "mass": (mass, mass_units[mass]),
+            "size": (size, size_units[size]),
+            "volume": (volume, volume_units[volume]),
+        }
+
     def isComplete(self) -> bool:
+        if self.check_export_summary.isChecked() and (
+            not self.summary_filename.hasAcceptableInput()
+            or self.summary_filename.text() == ""
+        ):
+            return False
+
         return (
             self.output_name.hasAcceptableInput()
             and Path(self.output_dir.text()).exists()
@@ -641,6 +730,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
     def resetProgress(self):
         self.updateOutputNames()
 
+    unitsProp = QtCore.Property(dict, units)
+
 
 class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     FILE_PAGE_ID = 0
@@ -702,14 +793,26 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         paths = self.run_page.pathPairs()
         method: SPCalProcessingMethod = self.field("method")
 
+        export_options = {
+            "results": True,
+            "options": self.field("export.options"),
+            "arrays": self.field("export.arrays"),
+            "clusters": self.field("export.clusters"),
+            "summary": self.field("export.summary.name")
+            if self.field("export.summary")
+            else None,
+            "units": self.field("export.units"),
+        }
+        print(export_options)
+
         if self.hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("text.isotopes")
             self.worker = BatchTextWorker(paths, method, isotopes)
         elif self.hasVisitedPage(SPCalBatchProcessingWizard.NU_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
 
-            if self.field("nu.chunked"):
-                chunk_size = self.field("nu.chunk_size")
+            if self.field("nu.chunk"):
+                chunk_size = self.field("nu.chunk.size")
             else:
                 chunk_size = 0
 
@@ -725,6 +828,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 paths,
                 method,
                 isotopes,
+                export_options,
                 chunk_size=chunk_size,
                 max_mass_diff=max_mass_diff,
                 cyc_number=cyc_number,

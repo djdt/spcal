@@ -33,38 +33,38 @@ class BatchWorker(QtCore.QObject):
         self.method = method
         self.skip_clusters = skip_clusters
 
-    def openDataFile(self, path: Path) -> SPCalDataFile:
-        raise NotImplementedError
-
-    def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
-        results = self.method.processDataFile(data_file, self.isotopes)
-        results = self.method.filterResults(results)
-        if self.skip_clusters:
-            clusters = {}
-        else:
-            clusters = {
-                key: self.method.processClusters(results, key)
-                for key in SPCalProcessingMethod.CALIBRATION_KEYS
-            }
-        export_spcal_processing_results(
-            output_path, data_file, list(results.values()), clusters
-        )
-
-    @QtCore.Slot()
-    def process(self):
-        self.started.emit(len(self.paths))
-        for i, (input, output) in enumerate(self.paths):
-            if self.thread().isInterruptionRequested():
-                return
-            self.progress.emit(i, 0.0)
-            data_file = self.openDataFile(input)
-            self.progress.emit(i, 0.5)
-            if self.thread().isInterruptionRequested():
-                return
-            self.processDataFile(data_file, output)
-            sleep(1)
-            self.progress.emit(i, 1.0)
-        self.finished.emit()
+    # def openDataFile(self, path: Path) -> SPCalDataFile:
+    #     raise NotImplementedError
+    #
+    # def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
+    #     results = self.method.processDataFile(data_file, self.isotopes)
+    #     results = self.method.filterResults(results)
+    #     if self.skip_clusters:
+    #         clusters = {}
+    #     else:
+    #         clusters = {
+    #             key: self.method.processClusters(results, key)
+    #             for key in SPCalProcessingMethod.CALIBRATION_KEYS
+    #         }
+    #     export_spcal_processing_results(
+    #         output_path, data_file, list(results.values()), clusters
+    #     )
+    #
+    # @QtCore.Slot()
+    # def process(self):
+    #     self.started.emit(len(self.paths))
+    #     for i, (input, output) in enumerate(self.paths):
+    #         if self.thread().isInterruptionRequested():
+    #             return
+    #         self.progress.emit(i, 0.0)
+    #         data_file = self.openDataFile(input)
+    #         self.progress.emit(i, 0.5)
+    #         if self.thread().isInterruptionRequested():
+    #             return
+    #         self.processDataFile(data_file, output)
+    #         sleep(1)
+    #         self.progress.emit(i, 1.0)
+    #     self.finished.emit()
 
 
 class NuBatchWorker(QtCore.QObject):
@@ -77,11 +77,11 @@ class NuBatchWorker(QtCore.QObject):
         paths: list[tuple[Path, Path]],
         method: SPCalProcessingMethod,
         isotopes: list[SPCalIsotope],
+        export_options: dict,
         chunk_size: int = 0,
         max_mass_diff: float = 0.1,
         cyc_number: int | None = None,
         seg_number: int | None = None,
-        skip_clusters: bool = False,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -89,7 +89,7 @@ class NuBatchWorker(QtCore.QObject):
         self.paths = paths
         self.isotopes = isotopes
         self.method = method
-        self.skip_clusters = skip_clusters
+        self.export_options = export_options
 
         self.chunk_size = chunk_size
         self.max_mass_diff = max_mass_diff
@@ -111,16 +111,26 @@ class NuBatchWorker(QtCore.QObject):
     def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
         results = self.method.processDataFile(data_file, self.isotopes)
         results = self.method.filterResults(results)
-        if self.skip_clusters:
-            clusters = {}
-        else:
+        if self.export_options.get("clusters", False):
             clusters = {
                 key: self.method.processClusters(results, key)
                 for key in SPCalProcessingMethod.CALIBRATION_KEYS
             }
+        else:
+            clusters = {}
         export_spcal_processing_results(
-            output_path, data_file, list(results.values()), clusters
+            output_path,
+            data_file,
+            list(results.values()),
+            clusters,
+            units=self.export_options["units"],
+            export_options=self.export_options["options"],
+            export_results=self.export_options["results"],
+            export_arrays=self.export_options["arrays"],
+            export_compositions=self.export_options["clusters"],
         )
+        if self.export_options["summary"] is not None:
+            raise NotImplementedError
 
     def processChunk(self, i: int, input: Path, output: Path):
         with input.joinpath("integrated.index").open("r") as fp:
