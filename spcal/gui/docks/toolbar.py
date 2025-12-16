@@ -20,6 +20,7 @@ class SPCalToolBar(QtWidgets.QToolBar):
         self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
 
         self.combo_key = QtWidgets.QComboBox()
+        self.combo_key.currentTextChanged.connect(self.keyChanged)
         self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
 
         self.action_all_isotopes = create_action(
