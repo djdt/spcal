@@ -291,6 +291,10 @@ class SPCalNuDataFile(SPCalDataFile):
         self.generateIsotopeTable()
 
     @property
+    def event_time(self) -> float:
+        return nu.eventtime_from_info(self.info)
+
+    @property
     def num_events(self) -> int:
         return self.signals.shape[0]
 
