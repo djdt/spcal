@@ -329,6 +329,7 @@ class SPCalNuDataFile(SPCalDataFile):
         segment_number: int | None = None,
         first_integ_file: int = 0,
         last_integ_file: int | None = None,
+        autoblank: bool = True,
     ) -> "SPCalNuDataFile":
         if path.is_file() and path.stem == "run.info":
             path = path.parent
@@ -339,6 +340,7 @@ class SPCalNuDataFile(SPCalDataFile):
             segment=segment_number,
             first_integ_file=first_integ_file,
             last_integ_file=last_integ_file,
+            autoblank=autoblank,
             raw=False,
         )
 
