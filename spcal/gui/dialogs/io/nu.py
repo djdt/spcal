@@ -173,6 +173,12 @@ class NuImportDialog(ImportDialogBase):
             QtWidgets.QLabel(f"{nu.eventtime_from_info(self.info) * 1000} ms"),
         )
         self.box_info_layout.addRow(
+            "Total time:",
+            QtWidgets.QLabel(
+                f"{nu.eventtime_from_info(self.info) * len(self.info['AcutalRecordLength'])} s"
+            ),
+        )
+        self.box_info_layout.addRow(
             "Integrations:",
             QtWidgets.QLabel(str(len(self.info["IntegrationRegions"]))),
         )
