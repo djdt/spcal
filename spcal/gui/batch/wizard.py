@@ -4,7 +4,13 @@ import logging
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTOFWERKDataFile
+from spcal.datafile import (
+    SPCalDataFile,
+    SPCalNuDataFile,
+    SPCalTOFWERKDataFile,
+    SPCalTextDataFile,
+)
+from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsWidget
 from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
@@ -15,16 +21,17 @@ from spcal.gui.io import (
     get_open_spcal_paths,
     most_recent_spcal_path,
 )
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
-from spcal.io.text import is_text_file
+from spcal.io.text import guess_text_parameters, is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
-from spcal.siunits import mass_units, size_units, volume_units
+from spcal.siunits import mass_units, size_units, volume_units, time_units
 
-from spcal.gui.batch.workers import NuBatchWorker, BatchTextWorker, BatchTOFWERKWorker
+from spcal.gui.batch.workers import NuBatchWorker, TextBatchWorker
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +251,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         format = self.selectedFormat()
 
         if format == "Text":
-            pass
+            return True
         elif format == "Nu":
             paths = self.paths()
             with open(paths[0].joinpath("run.info"), "r") as fp:
@@ -281,15 +288,6 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
     pathsProp = QtCore.Property(list, paths, setPaths, notify=pathsChanged)  # type: ignore
 
 
-class BatchTextWizardPage(QtWidgets.QWizardPage):
-    def __init__(
-        self, isotopes: list[SPCalIsotopeBase], parent: QtWidgets.QWidget | None = None
-    ):
-        super().__init__(parent)
-        self.setTitle("SPCal Batch Processing")
-        self.setSubTitle("Text Options")
-
-
 class BatchNuWizardPage(QtWidgets.QWizardPage):
     def __init__(
         self,
@@ -299,7 +297,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
     ):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
-        self.setSubTitle("Nu Options")
+        self.setSubTitle("Nu Import Options")
 
         self.cycle_number = QtWidgets.QSpinBox()
         self.cycle_number.setValue(0)
@@ -322,6 +320,12 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.chunk_size.setSingleStep(100)
         self.chunk_size.setEnabled(False)
 
+        # todo: option to remove blanked regions?
+        # self.combo_blanking = QtWidgets.QComboBox()
+        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
+        self.check_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
+        self.check_blanking.setChecked(True)
+
         self.table = PeriodicTableSelector()
         self.table.isotopesChanged.connect(self.completeChanged)
         self.table.setSelectedIsotopes(
@@ -337,6 +341,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         options_box_layout.addRow("Cycle:", self.cycle_number)
         options_box_layout.addRow("Segment:", self.segment_number)
         options_box_layout.addRow("Chunk size:", layout_chunk)
+        options_box_layout.addRow(self.check_blanking)
         options_box.setLayout(options_box_layout)
 
         layout = QtWidgets.QVBoxLayout()
@@ -349,6 +354,8 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.registerField("nu.cycle_number", self.cycle_number)
         self.registerField("nu.segment_number", self.segment_number)
         self.registerField("nu.max_mass_diff", self.max_mass_diff, "value")
+        self.registerField("nu.autoblank", self.check_blanking)
+
         self.registerField("nu.isotopes", self.table, "selectedIsotopesProp")
 
     def initializePage(self):
@@ -379,6 +386,228 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 
     def isComplete(self) -> bool:
         return len(self.table.selectedIsotopes()) > 0
+
+    def validatePage(self):
+        if self.check_chunked.isChecked() or self.cycle_number.value() > 0:
+            return True
+
+        paths: list[Path] = self.field("paths")
+        for path in paths:
+            with path.joinpath("integrated.index").open("r") as fp:
+                nintegs = len(json.load(fp))
+            if nintegs > 1000:
+                button = QtWidgets.QMessageBox.warning(
+                    self,
+                    "Large Files",
+                    "Some files have more than 1000 integ files, processing in chunks is reccomended.",
+                    QtWidgets.QMessageBox.StandardButton.Ignore
+                    | QtWidgets.QMessageBox.StandardButton.Cancel,
+                )
+                if button == QtWidgets.QMessageBox.StandardButton.Ignore:
+                    return True
+                else:
+                    return False
+        return True
+
+
+class BatchTextWizardPage(QtWidgets.QWizardPage):
+    def __init__(
+        self,
+        isotopes: list[SPCalIsotopeBase],
+        delimiter: str,
+        skip_rows: int,
+        cps: bool,
+        event_time: float | None,
+        override_event_time: bool,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setTitle("SPCal Batch Processing")
+        self.setSubTitle("Text Import Options")
+
+        if delimiter == "":
+            delimiter = ","
+
+        self.event_time = UnitsWidget(
+            time_units, base_value=event_time, default_unit="ms"
+        )
+        self.event_time.baseValueChanged.connect(self.completeChanged)
+        self.event_time.setEnabled(False)
+
+        self.override_event_time = QtWidgets.QCheckBox("Override")
+        # self.override_event_time.checkStateChanged.connect(
+        #     self.overrideEventTimeChanged
+        # )
+        self.override_event_time.setChecked(override_event_time)
+        self.override_event_time.checkStateChanged.connect(self.completeChanged)
+
+        self.combo_intensity_units = QtWidgets.QComboBox()
+        self.combo_intensity_units.addItems(["Counts", "CPS"])
+        if cps:
+            self.combo_intensity_units.setCurrentText("CPS")
+
+        self.combo_delimiter = QtWidgets.QComboBox()
+        self.combo_delimiter.addItems(list(TextImportDialog.DELIMITERS.values()))
+        self.combo_delimiter.setCurrentIndex(
+            list(TextImportDialog.DELIMITERS.keys()).index(delimiter)
+        )
+        self.combo_delimiter.currentTextChanged.connect(self.updateIsotopes)
+
+        self.first_line = QtWidgets.QSpinBox()
+        self.first_line.setRange(1, TextImportDialog.HEADER_LINE_COUNT - 1)
+        self.first_line.setValue(skip_rows)
+        self.first_line.valueChanged.connect(self.updateIsotopes)
+
+        self.list_isotopes = QtWidgets.QListWidget()
+        self.list_isotopes.itemPressed.connect(self.completeChanged)
+
+        layout_event_time = QtWidgets.QHBoxLayout()
+        layout_event_time.addWidget(self.event_time, 1)
+        layout_event_time.addWidget(
+            self.override_event_time, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+
+        options_box = QtWidgets.QGroupBox("Options")
+        options_box_layout = QtWidgets.QFormLayout()
+        options_box_layout.addRow("Event time:", layout_event_time)
+        options_box_layout.addRow("Intensity units:", self.combo_intensity_units)
+        options_box_layout.addRow("Delimiter:", self.combo_delimiter)
+        options_box_layout.addRow("Import from row:", self.first_line)
+        options_box.setLayout(options_box_layout)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(options_box, 0)
+        layout.addWidget(self.list_isotopes)
+        self.setLayout(layout)
+
+        self.registerField("text.delimiter", self.combo_delimiter)
+        self.registerField("text.first_line", self.first_line)
+        self.registerField("text.units", self.combo_intensity_units)
+        self.registerField("text.event_time", self.event_time, "baseValueProp")
+        self.registerField("text.event_time.override", self.override_event_time)
+
+        self.registerField("text.isotopes", self, "isotopesProp")
+
+    def delimiter(self) -> str:
+        delimiter = self.combo_delimiter.currentText()
+        if delimiter == "Space":
+            delimiter = " "
+        elif delimiter == "Tab":
+            delimiter = "\t"
+        return delimiter
+
+    # @QtCore.Property(bool)
+    # def cps(self) -> bool:
+    #     return self.combo_intensity_units.currentText() == "CPS"
+    #
+    # @QtCore.Property(int)
+    # def skip_rows(self) -> int:
+    #     return self.first_line.value() - 1
+
+    def initializePage(self):
+        paths: list[Path] = self.field("paths")
+
+        size = TextImportDialog.HEADER_LINE_SIZE
+        consistent_parameters = True
+        first_header = paths[0].open("r").readlines(TextImportDialog.HEADER_LINE_COUNT * size)
+        delimiter, skip_rows, columns = guess_text_parameters(first_header)
+
+        for path in paths[1:]:
+            header = path.open("r").readlines((skip_rows + 1) * size)
+            _delimiter, _skip_rows, _columns = guess_text_parameters(header)
+            if _delimiter != delimiter or _skip_rows != skip_rows:
+                consistent_parameters = False
+                break
+
+        if consistent_parameters:
+            self.combo_delimiter.setCurrentText(TextImportDialog.DELIMITERS[delimiter])
+            self.first_line.setValue(skip_rows)
+
+        # header_row = self.spinbox_first_line.value() - 1
+        # for col in range(self.table.columnCount()):
+        #     item = self.table.item(header_row, col)
+        #     if item is None:
+        #         raise ValueError(f"missing item at {header_row}, {col}")
+        #     if "time" in item.text().lower():
+        #         m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", item.text().lower())
+        #         unit = "s"
+        #         if m is not None:
+        #             if m.group(1) == "ms":
+        #                 unit = "ms"
+        #             elif m.group(1) in ["us", "µs"]:
+        #                 unit = "µs"
+        #             elif m.group(1) == "ns":
+        #                 unit = "ns"
+        #
+        #         time_items = [
+        #             self.table.item(row, col)
+        #             for row in range(header_row + 1, self.table.rowCount())
+        #         ]
+        #         time_texts = [
+        #             ti.text().replace(",", ".") for ti in time_items if ti is not None
+        #         ]
+        #         if len(time_texts) == 0:
+        #             raise StopIteration
+        #         elif "00:" in time_texts[0]:
+        #             times = [iso_time_to_float_seconds(tt) for tt in time_texts]
+        #         else:
+        #             times = [float(tt) for tt in time_texts]
+        #         return float(np.mean(np.diff(times))), unit
+        #
+        self.updateIsotopes()
+
+    def updateIsotopes(self):
+        paths: list[Path] = self.field("paths")
+
+        row = self.first_line.value() - 1
+        delimiter: str = self.delimiter()
+        size = TextImportDialog.HEADER_LINE_SIZE
+        header = paths[0].open("r").readlines((row + 1) * size)
+
+        selected_isotopes = self.selectedIsotopes()
+
+        shared_isotopes = set(
+            SPCalIsotope.fromString(x) for x in header[row].split(delimiter)
+        )
+
+        for path in paths[1:]:
+            header = path.open("r").readlines((row + 1) * size)
+            isotopes = set(
+                SPCalIsotope.fromString(x) for x in header[row].split(delimiter)
+            )
+            shared_isotopes = shared_isotopes.intersection(isotopes)
+
+        self.list_isotopes.clear()
+        for isotope in sorted(shared_isotopes, key=lambda iso: iso.isotope):
+            item = QtWidgets.QListWidgetItem(str(isotope))
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, isotope)
+            item.setCheckState(
+                QtCore.Qt.CheckState.Checked
+                if isotope in selected_isotopes
+                else QtCore.Qt.CheckState.Unchecked
+            )
+            self.list_isotopes.addItem(item)
+
+    def selectedIsotopes(self) -> list[SPCalIsotope]:
+        selected = []
+        for i in range(self.list_isotopes.count()):
+            item = self.list_isotopes.item(i)
+            if item.checkState() == QtCore.Qt.CheckState.Checked:
+                selected.append(item.data(QtCore.Qt.ItemDataRole.UserRole))
+        return selected
+
+    def nextId(self):
+        return SPCalBatchProcessingWizard.METHOD_PAGE_ID
+
+    def isComplete(self) -> bool:
+        if (
+            not self.override_event_time.isChecked()
+            and self.event_time.baseValue() is None
+        ):
+            return False
+        if len(self.selectedIsotopes()) == 0:
+            return False
+        return True
 
     def validatePage(self):
         if self.check_chunked.isChecked() or self.cycle_number.value() > 0:
@@ -763,14 +992,33 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.setPage(
             SPCalBatchProcessingWizard.FILE_PAGE_ID, BatchFilesWizardPage(existing_file)
         )
+        delimiter = ","
+        skip_rows = 1
+        cps = False
+        event_time = None
+        override_event_time = False
+        if isinstance(existing_file, SPCalTextDataFile):
+            delimiter = existing_file.delimter
+            skip_rows = existing_file.skip_row
+            cps = existing_file.cps
+            event_time = existing_file.override_event_time
+            override_event_time = existing_file.override_event_time is not None
+
         self.setPage(
             SPCalBatchProcessingWizard.TEXT_PAGE_ID,
-            BatchTextWizardPage(selected_isotopes),
+            BatchTextWizardPage(
+                selected_isotopes,
+                delimiter,
+                skip_rows,
+                cps,
+                event_time,
+                override_event_time,
+            ),
         )
         max_mass_diff = (
             existing_file.max_mass_diff
             if isinstance(existing_file, SPCalNuDataFile)
-            else 0.1
+            else 0.05
         )
         self.setPage(
             SPCalBatchProcessingWizard.NU_PAGE_ID,
@@ -806,26 +1054,30 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             else None,
             "units": self.field("export.units"),
         }
-        print(export_options)
 
         if self.hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("text.isotopes")
-            self.worker = BatchTextWorker(paths, method, isotopes)
+            self.worker = TextBatchWorker(
+                paths,
+                method,
+                isotopes,
+                export_options,
+                delimiter=self.field("text.delimiter"),
+                skip_rows=self.field("text.skip_rows"),
+                cps=self.field("text.cps"),
+                override_event_time=self.field("text.override_event_time"),
+                instrument_type=self.field("text.instrument_type"),
+            )
         elif self.hasVisitedPage(SPCalBatchProcessingWizard.NU_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
 
-            if self.field("nu.chunk"):
-                chunk_size = self.field("nu.chunk.size")
-            else:
-                chunk_size = 0
-
+            chunk_size = self.field("nu.chunk.size") if self.field("nu.chunk") else 0
             cyc_number = self.field("nu.cycle_number")
             if cyc_number == 0:
                 cyc_number = None
             seg_number = self.field("nu.segment_number")
             if seg_number == 0:
                 seg_number = None
-            max_mass_diff = self.field("nu.max_mass_diff")
 
             self.worker = NuBatchWorker(
                 paths,
@@ -833,14 +1085,15 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 isotopes,
                 export_options,
                 chunk_size=chunk_size,
-                max_mass_diff=max_mass_diff,
+                max_mass_diff=self.field("nu.max_mass_diff"),
                 cyc_number=cyc_number,
                 seg_number=seg_number,
+                autoblank=self.field("nu.autoblank"),
             )
 
         elif self.hasVisitedPage(SPCalBatchProcessingWizard.TOFWERK_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("tofwerk.isotopes")
-            self.worker = BatchTOFWERKWorker(paths, method, isotopes)
+            self.worker = TextBatchWorker(paths, method, isotopes)
         else:
             raise ValueError("no format page visited")
 

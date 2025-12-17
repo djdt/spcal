@@ -1,9 +1,8 @@
 import json
-from time import sleep
 from pathlib import Path
 from PySide6 import QtCore
 
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
 from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
@@ -11,60 +10,33 @@ from spcal.io.export import export_spcal_processing_results
 
 
 # Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
-
-
-class BatchWorker(QtCore.QObject):
-    started = QtCore.Signal(int)
-    progress = QtCore.Signal(int, float)
-    finished = QtCore.Signal()
-
-    def __init__(
-        self,
-        paths: list[tuple[Path, Path]],
-        method: SPCalProcessingMethod,
-        isotopes: list[SPCalIsotope],
-        skip_clusters: bool = False,
-        parent: QtCore.QObject | None = None,
-    ):
-        super().__init__(parent)
-
-        self.paths = paths
-        self.isotopes = isotopes
-        self.method = method
-        self.skip_clusters = skip_clusters
-
-    # def openDataFile(self, path: Path) -> SPCalDataFile:
-    #     raise NotImplementedError
-    #
-    # def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
-    #     results = self.method.processDataFile(data_file, self.isotopes)
-    #     results = self.method.filterResults(results)
-    #     if self.skip_clusters:
-    #         clusters = {}
-    #     else:
-    #         clusters = {
-    #             key: self.method.processClusters(results, key)
-    #             for key in SPCalProcessingMethod.CALIBRATION_KEYS
-    #         }
-    #     export_spcal_processing_results(
-    #         output_path, data_file, list(results.values()), clusters
-    #     )
-    #
-    # @QtCore.Slot()
-    # def process(self):
-    #     self.started.emit(len(self.paths))
-    #     for i, (input, output) in enumerate(self.paths):
-    #         if self.thread().isInterruptionRequested():
-    #             return
-    #         self.progress.emit(i, 0.0)
-    #         data_file = self.openDataFile(input)
-    #         self.progress.emit(i, 0.5)
-    #         if self.thread().isInterruptionRequested():
-    #             return
-    #         self.processDataFile(data_file, output)
-    #         sleep(1)
-    #         self.progress.emit(i, 1.0)
-    #     self.finished.emit()
+def process_data_file_and_export(
+    data_file: SPCalDataFile,
+    method: SPCalProcessingMethod,
+    isotopes: list[SPCalIsotope],
+    output_path: Path,
+    export_options: dict,
+):
+    results = method.processDataFile(data_file, isotopes)
+    results = method.filterResults(results)
+    if export_options.get("clusters", False):
+        clusters = {
+            key: method.processClusters(results, key)
+            for key in SPCalProcessingMethod.CALIBRATION_KEYS
+        }
+    else:
+        clusters = {}
+    export_spcal_processing_results(
+        output_path,
+        data_file,
+        list(results.values()),
+        clusters,
+        units=export_options["units"],
+        export_options=export_options["options"],
+        export_results=export_options["results"],
+        export_arrays=export_options["arrays"],
+        export_compositions=export_options["clusters"],
+    )
 
 
 class NuBatchWorker(QtCore.QObject):
@@ -82,6 +54,7 @@ class NuBatchWorker(QtCore.QObject):
         max_mass_diff: float = 0.1,
         cyc_number: int | None = None,
         seg_number: int | None = None,
+        autoblank: bool = True,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -95,6 +68,7 @@ class NuBatchWorker(QtCore.QObject):
         self.max_mass_diff = max_mass_diff
         self.cyc_number = cyc_number
         self.seg_number = seg_number
+        self.autoblank = autoblank
 
     def openDataFile(
         self, path: Path, first: int = 0, last: int | None = None
@@ -106,31 +80,8 @@ class NuBatchWorker(QtCore.QObject):
             segment_number=self.seg_number,
             first_integ_file=first,
             last_integ_file=last,
+            autoblank=self.autoblank,
         )
-
-    def processDataFile(self, data_file: SPCalDataFile, output_path: Path):
-        results = self.method.processDataFile(data_file, self.isotopes)
-        results = self.method.filterResults(results)
-        if self.export_options.get("clusters", False):
-            clusters = {
-                key: self.method.processClusters(results, key)
-                for key in SPCalProcessingMethod.CALIBRATION_KEYS
-            }
-        else:
-            clusters = {}
-        export_spcal_processing_results(
-            output_path,
-            data_file,
-            list(results.values()),
-            clusters,
-            units=self.export_options["units"],
-            export_options=self.export_options["options"],
-            export_results=self.export_options["results"],
-            export_arrays=self.export_options["arrays"],
-            export_compositions=self.export_options["clusters"],
-        )
-        if self.export_options["summary"] is not None:
-            raise NotImplementedError
 
     def processChunk(self, i: int, input: Path, output: Path):
         with input.joinpath("integrated.index").open("r") as fp:
@@ -143,9 +94,12 @@ class NuBatchWorker(QtCore.QObject):
             self.progress.emit(i, last / nintegs)
             if self.thread().isInterruptionRequested():
                 return
-            self.processDataFile(
+            process_data_file_and_export(
                 data_file,
+                self.method,
+                self.isotopes,
                 output.with_stem(output.stem + f"_{j + 1:03}"),
+                self.export_options,
             )
 
     @QtCore.Slot()
@@ -158,7 +112,9 @@ class NuBatchWorker(QtCore.QObject):
                 if self.thread().isInterruptionRequested():
                     return
                 self.progress.emit(i, 0.5)
-                self.processDataFile(data_file, output)
+                process_data_file_and_export(
+                    data_file, self.method, self.isotopes, output, self.export_options
+                )
                 if self.thread().isInterruptionRequested():
                     return
             else:
@@ -167,9 +123,63 @@ class NuBatchWorker(QtCore.QObject):
         self.finished.emit()
 
 
-class BatchTextWorker(BatchWorker):
-    pass
+class TextBatchWorker(QtCore.QObject):
+    started = QtCore.Signal(int)
+    progress = QtCore.Signal(int, float)
+    finished = QtCore.Signal()
 
+    def __init__(
+        self,
+        paths: list[tuple[Path, Path]],
+        method: SPCalProcessingMethod,
+        isotopes: list[SPCalIsotope],
+        export_options: dict,
+        delimiter: str = ",",
+        skip_rows: int = 1,
+        cps: bool = False,
+        drop_fields: list[str] | None = None,
+        override_event_time: float | None = None,
+        instrument_type: str | None = None,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent)
 
-class BatchTOFWERKWorker(BatchWorker):
-    pass
+        self.paths = paths
+        self.isotopes = isotopes
+        self.method = method
+        self.export_options = export_options
+
+        self.delimiter = delimiter
+        self.skip_rows = skip_rows
+        self.cps = cps
+        self.drop_fields = drop_fields
+        self.override_event_time = override_event_time
+        self.instrument_type = instrument_type
+
+    def openDataFile(self, path: Path) -> SPCalDataFile:
+        return SPCalTextDataFile.load(
+            path,
+            delimiter=self.delimiter,
+            skip_rows=self.skip_rows,
+            cps=self.cps,
+            drop_fields=self.drop_fields,
+            override_event_time=self.override_event_time,
+            instrument_type=self.instrument_type,
+        )
+
+    @QtCore.Slot()
+    def process(self):
+        self.started.emit(len(self.paths))
+        for i, (input, output) in enumerate(self.paths):
+            self.progress.emit(i, 0.0)
+            data_file = self.openDataFile(input)
+            if self.thread().isInterruptionRequested():
+                return
+            self.progress.emit(i, 0.5)
+            process_data_file_and_export(
+                data_file, self.method, self.isotopes, output, self.export_options
+            )
+            if self.thread().isInterruptionRequested():
+                return
+            self.progress.emit(i, 1.0)
+        self.finished.emit()
