@@ -159,19 +159,9 @@ class UnitsWidget(QtWidgets.QWidget):
         self._value.setToolTip(text)
         self.combo.setToolTip(text)
 
-    # def setEnabled(self, enabled: bool):
-    #     self._value.setEnabled(enabled)
-    #     self.combo.setEnabled(enabled)
-
-    # def isEnabled(self) -> bool:
-    #     return self.lineedit.isEnabled() and self.combo.isEnabled()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    unit = UnitsWidget({"a": 1.0, "b": 10.0}, base_value_max=2.0)
-    unit.setReadOnly(True)
-    unit.setEnabled(False)
-    unit.resize(200, 60)
-    unit.show()
-    app.exec()
+    baseValueProp = QtCore.Property(
+        object,
+        baseValue,
+        setBaseValue,
+        notify=baseValueChanged,  # type: ignore
+    )
