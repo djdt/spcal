@@ -10,14 +10,15 @@ from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.modelviews.headers import CheckableHeaderView
 from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
-from spcal.isotope import SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
 
 
 class TextImportDialog(ImportDialogBase):
-    HEADER_COUNT = 20
+    HEADER_LINE_COUNT = 20
+    HEADER_LINE_SIZE = 512
     DELIMITERS = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
 
     def __init__(
@@ -32,10 +33,10 @@ class TextImportDialog(ImportDialogBase):
         # Guess the delimiter, skip rows and count from header
 
         delimiter, first_data_line, column_count = guess_text_parameters(
-            self.file_lines[: self.HEADER_COUNT]
+            self.file_lines[: self.HEADER_LINE_COUNT]
         )
         cps = any(
-            "cps" in line.lower() for line in self.file_lines[: self.HEADER_COUNT]
+            "cps" in line.lower() for line in self.file_lines[: self.HEADER_LINE_COUNT]
         )
         event_time, override = None, None
 
@@ -54,7 +55,7 @@ class TextImportDialog(ImportDialogBase):
         self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
-        self.table.setRowCount(self.HEADER_COUNT)
+        self.table.setRowCount(self.HEADER_LINE_COUNT)
         self.table.setFont(QtGui.QFont("Courier"))
         self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.table.setHorizontalHeader(self.table_header)
@@ -89,13 +90,15 @@ class TextImportDialog(ImportDialogBase):
         self.combo_delimiter.currentIndexChanged.connect(self.fillTable)
 
         self.spinbox_first_line = QtWidgets.QSpinBox()
-        self.spinbox_first_line.setRange(1, self.HEADER_COUNT - 1)
+        self.spinbox_first_line.setRange(1, self.HEADER_LINE_COUNT - 1)
         self.spinbox_first_line.setValue(first_data_line)
         self.spinbox_first_line.valueChanged.connect(self.updateTableUseColumns)
 
         layout_event_time = QtWidgets.QHBoxLayout()
         layout_event_time.addWidget(self.event_time, 1)
-        layout_event_time.addWidget(self.override_event_time, 0)
+        layout_event_time.addWidget(
+            self.override_event_time, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
 
         self.box_options_layout.addRow("Event time:", layout_event_time)
         self.box_options_layout.addRow("Intensity units:", self.combo_intensity_units)
@@ -148,7 +151,7 @@ class TextImportDialog(ImportDialogBase):
     def fillTable(self):
         lines = [
             line.split(self.delimiter())
-            for line in self.file_lines[: self.HEADER_COUNT]
+            for line in self.file_lines[: self.HEADER_LINE_COUNT]
         ]
         col_count = max(len(line) for line in lines)
         self.table.setColumnCount(col_count)
@@ -245,7 +248,7 @@ class TextImportDialog(ImportDialogBase):
             else None,
         )
 
-        selected = [SPCalIsotopeBase.fromString(name) for name in self.selectedNames()]
+        selected = [SPCalIsotope.fromString(name) for name in self.selectedNames()]
         data_file.selected_isotopes = selected
         self.dataImported.emit(data_file)
         logger.info(
