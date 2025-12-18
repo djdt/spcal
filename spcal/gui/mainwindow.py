@@ -39,6 +39,7 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
+from spcal.processing.filter import SPCalProcessingFilter
 
 logger = logging.getLogger(__name__)
 
@@ -211,7 +212,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess(data_file)
         self.updateRecentFiles(data_file)
         # self.onDataFileChanged(data_file)
-        logger.info(f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events.")
+        logger.info(
+            f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
+        )
 
     def onDataFilesChanged(
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
@@ -675,17 +678,23 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
 
     def dialogFilterDetections(self):
+        def set_filters(filters: list[SPCalProcessingFilter]):
+            method = self.currentMethod()
+            method.setFilters(filters)
+            self.currentMethodChanged.emit(method)
+
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
+        method = self.currentMethod()
         dlg = FilterDialog(
             list(self.processing_results[data_file].keys()),
-            self.currentMethod().filters,
+            method.filters,
             [],
             number_clusters=99,
             parent=self,
         )
-        dlg.filtersChanged.connect(self.currentMethod().setFilters)
+        dlg.filtersChanged.connect(set_filters)
         dlg.filtersChanged.connect(self.reprocess)
         dlg.open()
 

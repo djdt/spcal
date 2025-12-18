@@ -4,7 +4,11 @@ from PySide6 import QtCore, QtWidgets
 from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
 from spcal.isotope import SPCalIsotopeBase
-from spcal.processing.filter import SPCalProcessingFilter, SPCalClusterFilter, SPCalValueFilter
+from spcal.processing.filter import (
+    SPCalProcessingFilter,
+    SPCalClusterFilter,
+    SPCalValueFilter,
+)
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
 
 
@@ -28,7 +32,7 @@ class FilterItemWidget(QtWidgets.QWidget):
     def __init__(
         self,
         isotopes: list[SPCalIsotopeBase],
-        filter: SPCalProcessingFilter | None = None,
+        filter: SPCalValueFilter | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -52,7 +56,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         for op, label in self.OPERATION_LABELS.items():
             self.operation.insertItem(99, label, op)
 
-        self.value = UnitsWidget(units=signal_units)
+        self.value = UnitsWidget(units=signal_units, base_value=0.0)
         self.value.combo.setSizeAdjustPolicy(
             QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents
         )
@@ -98,7 +102,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         self.value.setBestUnit()
 
     def asFilter(self) -> SPCalProcessingFilter:
-        return SPCalProcessingFilter(
+        return SPCalValueFilter(
             self.isotopes.itemData(self.isotopes.currentIndex()),
             self.key.itemData(self.key.currentIndex()),
             self.operation.itemData(self.operation.currentIndex()),
@@ -253,7 +257,7 @@ class FilterDialog(QtWidgets.QDialog):
     def __init__(
         self,
         isotopes: list[SPCalIsotopeBase],
-        filters: list[list[SPCalProcessingFilter]],
+        filters: list[list[SPCalValueFilter]],
         cluster_filters: list[SPCalClusterFilter],
         number_clusters: int = 0,
         parent: QtWidgets.QWidget | None = None,
@@ -335,8 +339,22 @@ class FilterDialog(QtWidgets.QDialog):
         for cfilter in cluster_filters:
             self.addClusterFilter(cfilter)
 
-    def addFilter(self, filter: SPCalProcessingFilter | None = None):
+    def isComplete(self) -> bool:
+        for i in range(self.list.count()):
+            widget = self.list.itemWidget(self.list.item(i))
+            if isinstance(widget, FilterItemWidget):
+                if widget.value.baseValue() is None:
+                    return False
+        return True
+
+    def completeChanged(self):
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            self.isComplete()
+        )
+
+    def addFilter(self, filter: SPCalValueFilter | None = None):
         widget = FilterItemWidget(self.isotopes, filter=filter)
+        widget.value.baseValueChanged.connect(self.completeChanged)
         self.addWidget(widget)
 
     def addBooleanOr(self):
