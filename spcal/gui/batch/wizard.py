@@ -734,8 +734,10 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             QtGui.QRegularExpressionValidator(filename_regexp)
         )
         self.output_name.textChanged.connect(self.updateOutputNames)
+        self.output_name.textChanged.connect(self.completeChanged)
 
         self.output_dir = QtWidgets.QLineEdit()
+        self.output_name.textChanged.connect(self.completeChanged)
 
         self.button_dir = QtWidgets.QPushButton("Select")
         self.button_dir.pressed.connect(self.dialogOutputDirectory)
@@ -810,6 +812,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         box_options_layout.addRow(self.check_export_clusters)
         box_options_layout.addRow(image_option_layout)
         box_options_layout.addRow(summary_option_layout)
+        box_options.setLayout(box_options_layout)
 
         box_units = QtWidgets.QGroupBox("Export Units")
         box_units_layout = QtWidgets.QFormLayout()
@@ -851,10 +854,11 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         ):
             return False
 
-        return (
-            self.output_name.hasAcceptableInput()
-            and Path(self.output_dir.text()).exists()
-        )
+        outdir = self.output_dir.text()
+        if outdir == "" or (Path(outdir).exists() and not Path(outdir).is_dir()):
+            return False
+
+        return self.output_name.hasAcceptableInput()
 
     def initializePage(self):
         paths: list[Path] = self.field("paths")
@@ -1043,6 +1047,9 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         paths = self.run_page.pathPairs()
         method: SPCalProcessingMethod = self.field("method")
+
+        if not paths[0][1].parent.is_dir():
+            paths[0][1].parent.mkdir()
 
         export_options = {
             "results": True,
