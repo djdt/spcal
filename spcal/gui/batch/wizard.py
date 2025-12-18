@@ -461,7 +461,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.first_line.valueChanged.connect(self.updateIsotopes)
 
         self.list_isotopes = QtWidgets.QListWidget()
-        self.list_isotopes.itemPressed.connect(self.completeChanged)
+        self.list_isotopes.model().dataChanged.connect(self.completeChanged)
 
         layout_event_time = QtWidgets.QHBoxLayout()
         layout_event_time.addWidget(self.event_time, 1)
@@ -631,6 +631,8 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 else:
                     return False
         return True
+    
+    isotopesProp = QtCore.Property(list, selectedIsotopes)
 
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
