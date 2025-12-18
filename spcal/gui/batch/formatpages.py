@@ -14,6 +14,7 @@ from spcal.siunits import time_units
 
 from spcal.gui.batch import METHOD_PAGE_ID
 
+
 class BatchNuWizardPage(QtWidgets.QWizardPage):
     def __init__(
         self,
@@ -161,11 +162,8 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.event_time.setEnabled(False)
 
         self.override_event_time = QtWidgets.QCheckBox("Override")
-        # self.override_event_time.checkStateChanged.connect(
-        #     self.overrideEventTimeChanged
-        # )
         self.override_event_time.setChecked(override_event_time)
-        self.override_event_time.checkStateChanged.connect(self.completeChanged)
+        self.override_event_time.checkStateChanged.connect(self.onOverrideChecked)
 
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
@@ -320,6 +318,10 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             if item.checkState() == QtCore.Qt.CheckState.Checked:
                 selected.append(item.data(QtCore.Qt.ItemDataRole.UserRole))
         return selected
+
+    def onOverrideChecked(self, checked: QtCore.Qt.CheckState):
+        self.event_time.setEnabled(checked == QtCore.Qt.CheckState.Unchecked)
+        self.completeChanged.emit()
 
     def nextId(self):
         return METHOD_PAGE_ID
