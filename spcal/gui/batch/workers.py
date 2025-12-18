@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from pathlib import Path
-from typing import Generator, TextIO
+from typing import Generator
 from PySide6 import QtCore
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile

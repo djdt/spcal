@@ -1,7 +1,9 @@
+import numpy as np
 import json
 import datetime
 import logging
 from pathlib import Path
+import re
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import (
@@ -23,7 +25,7 @@ from spcal.gui.io import (
 )
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
-from spcal.io.text import guess_text_parameters, is_text_file
+from spcal.io.text import guess_text_parameters, is_text_file, iso_time_to_float_seconds
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
@@ -496,13 +498,37 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             delimiter = "\t"
         return delimiter
 
-    # @QtCore.Property(bool)
-    # def cps(self) -> bool:
-    #     return self.combo_intensity_units.currentText() == "CPS"
-    #
-    # @QtCore.Property(int)
-    # def skip_rows(self) -> int:
-    #     return self.first_line.value() - 1
+    def guessEventTime(self, path: Path) -> float | None:
+        header_row = self.first_line.value() - 1
+        re_time = re.compile("[\\(\\[]([nmuµ]s)[\\]\\)]")
+
+        header = path.open("r").readlines(
+            (header_row + 10) * TextImportDialog.HEADER_LINE_SIZE
+        )
+        col_names = header[header_row].split(self.delimiter())
+        for col, name in enumerate(col_names):
+            if "time" in name.lower():
+                m = re_time.search(name.lower())
+                unit = "s"
+                if m is not None:
+                    if m.group(1) == "ms":
+                        unit = "ms"
+                    elif m.group(1) in ["us", "µs"]:
+                        unit = "µs"
+                    elif m.group(1) == "ns":
+                        unit = "ns"
+
+                time_texts = [
+                    line.split(self.delimiter())[col]
+                    for line in header[header_row + 1 :]
+                ]
+                if len(time_texts) == 0:
+                    return None
+                elif "00:" in time_texts[0]:
+                    times = [iso_time_to_float_seconds(tt) for tt in time_texts]
+                else:
+                    times = [float(tt) for tt in time_texts]
+                return float(np.mean(np.diff(times))) * time_units[unit]
 
     def initializePage(self):
         paths: list[Path] = self.field("paths")
@@ -525,37 +551,10 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             self.combo_delimiter.setCurrentText(TextImportDialog.DELIMITERS[delimiter])
             self.first_line.setValue(skip_rows)
 
-        # header_row = self.spinbox_first_line.value() - 1
-        # for col in range(self.table.columnCount()):
-        #     item = self.table.item(header_row, col)
-        #     if item is None:
-        #         raise ValueError(f"missing item at {header_row}, {col}")
-        #     if "time" in item.text().lower():
-        #         m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", item.text().lower())
-        #         unit = "s"
-        #         if m is not None:
-        #             if m.group(1) == "ms":
-        #                 unit = "ms"
-        #             elif m.group(1) in ["us", "µs"]:
-        #                 unit = "µs"
-        #             elif m.group(1) == "ns":
-        #                 unit = "ns"
-        #
-        #         time_items = [
-        #             self.table.item(row, col)
-        #             for row in range(header_row + 1, self.table.rowCount())
-        #         ]
-        #         time_texts = [
-        #             ti.text().replace(",", ".") for ti in time_items if ti is not None
-        #         ]
-        #         if len(time_texts) == 0:
-        #             raise StopIteration
-        #         elif "00:" in time_texts[0]:
-        #             times = [iso_time_to_float_seconds(tt) for tt in time_texts]
-        #         else:
-        #             times = [float(tt) for tt in time_texts]
-        #         return float(np.mean(np.diff(times))), unit
-        #
+            event_time = self.guessEventTime(paths[0])
+            self.event_time.setBaseValue(event_time)
+            self.event_time.setBestUnit()
+
         self.updateIsotopes()
 
     def updateIsotopes(self):
@@ -612,18 +611,18 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         return True
 
     def validatePage(self):
-        if self.check_chunked.isChecked() or self.cycle_number.value() > 0:
+        if self.override_event_time.isChecked():
             return True
 
         paths: list[Path] = self.field("paths")
-        for path in paths:
-            with path.joinpath("integrated.index").open("r") as fp:
-                nintegs = len(json.load(fp))
-            if nintegs > 1000:
+        event_time = self.guessEventTime(paths[0])
+        for path in paths[1:]:
+            _event_time = self.guessEventTime(path)
+            if event_time != _event_time:
                 button = QtWidgets.QMessageBox.warning(
                     self,
-                    "Large Files",
-                    "Some files have more than 1000 integ files, processing in chunks is reccomended.",
+                    "Inconsistent Event Time",
+                    "The event time is different in some files, use the event time override.",
                     QtWidgets.QMessageBox.StandardButton.Ignore
                     | QtWidgets.QMessageBox.StandardButton.Cancel,
                 )
