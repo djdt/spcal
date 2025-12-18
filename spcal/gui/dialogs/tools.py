@@ -221,7 +221,7 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 
     def accept(self):
         idx = self.table.selectedIndexes()
-        self.densitySelected.emit(float(self.proxy.data(idx[3])))
+        self.densitySelected.emit(1000.0 * float(self.proxy.data(idx[3])))
         self.formulaSelected.emit(self.proxy.data(idx[0]))
         super().accept()
 
