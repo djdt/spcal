@@ -1054,14 +1054,19 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         if not paths[0][1].parent.is_dir():
             paths[0][1].parent.mkdir()
 
+        if self.field("export.summary"):
+            summary_path = paths[0][1].parent.joinpath(
+                self.field("export.summary.name")
+            )
+        else:
+            summary_path = None
+
         export_options = {
             "results": True,
             "options": self.field("export.options"),
             "arrays": self.field("export.arrays"),
             "clusters": self.field("export.clusters"),
-            "summary": paths[0][1].parent.joinpath(self.field("export.summary.name"))
-            if self.field("export.summary")
-            else None,
+            "summary": summary_path,
             "units": self.field("export.units"),
         }
         print(export_options)

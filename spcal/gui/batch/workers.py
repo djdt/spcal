@@ -1,6 +1,7 @@
 import json
+import numpy as np
 from pathlib import Path
-from typing import TextIO
+from typing import Generator, TextIO
 from PySide6 import QtCore
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
@@ -8,41 +9,26 @@ from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
 from spcal.io.export import append_results_summary, export_spcal_processing_results
+from spcal.processing.result import SPCalProcessingResult
 
 
 # Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
-def process_data_file_and_export(
+def _batch_process_data_file(
     data_file: SPCalDataFile,
     method: SPCalProcessingMethod,
     isotopes: list[SPCalIsotope],
-    output_path: Path,
-    export_options: dict,
-    summary_fp: TextIO | None = None,
-):
+    process_clusters: bool = False,
+) -> tuple[list[SPCalProcessingResult], dict[str, np.ndarray]]:
     results = method.processDataFile(data_file, isotopes)
     results = method.filterResults(results)
-    if export_options.get("clusters", False):
+    if process_clusters:
         clusters = {
             key: method.processClusters(results, key)
             for key in SPCalProcessingMethod.CALIBRATION_KEYS
         }
     else:
         clusters = {}
-    export_spcal_processing_results(
-        output_path,
-        data_file,
-        list(results.values()),
-        clusters,
-        units=export_options["units"],
-        export_options=export_options["options"],
-        export_results=export_options["results"],
-        export_arrays=export_options["arrays"],
-        export_compositions=export_options["clusters"],
-    )
-    if summary_fp is not None:
-        append_results_summary(
-            summary_fp, data_file, list(results.values()), export_options["units"]
-        )
+    return list(results.values()), clusters
 
 
 class NuBatchWorker(QtCore.QObject):
@@ -76,37 +62,40 @@ class NuBatchWorker(QtCore.QObject):
         self.seg_number = seg_number
         self.autoblank = autoblank
 
-    def openDataFile(
-        self, path: Path, first: int = 0, last: int | None = None
-    ) -> SPCalDataFile:
-        return SPCalNuDataFile.load(
-            path,
-            max_mass_diff=self.max_mass_diff,
-            cycle_number=self.cyc_number,
-            segment_number=self.seg_number,
-            first_integ_file=first,
-            last_integ_file=last,
-            autoblank=self.autoblank,
-        )
-
-    def processChunk(self, i: int, input: Path, output: Path):
-        with input.joinpath("integrated.index").open("r") as fp:
-            nintegs = len(json.load(fp))
-        for j, first in enumerate(range(0, nintegs, self.chunk_size)):
-            last = min(nintegs, first + self.chunk_size)
-            if self.thread().isInterruptionRequested():
-                return
-            data_file = self.openDataFile(input, first=first, last=last)
-            self.progress.emit(i, last / nintegs)
-            if self.thread().isInterruptionRequested():
-                return
-            process_data_file_and_export(
-                data_file,
-                self.method,
-                self.isotopes,
-                output.with_stem(output.stem + f"_{j + 1:03}"),
-                self.export_options,
+    def openDataFileInChunks(
+        self,
+        path: Path,
+        output_path: Path,
+        chunk_size: int = 0,
+    ) -> Generator[tuple[SPCalDataFile, Path, float], None, None]:
+        if chunk_size == 0:
+            yield (
+                SPCalNuDataFile.load(
+                    path,
+                    max_mass_diff=self.max_mass_diff,
+                    cycle_number=self.cyc_number,
+                    segment_number=self.seg_number,
+                    autoblank=self.autoblank,
+                ),
+                output_path,
+                0.5,
             )
+        else:
+            with path.joinpath("integrated.index").open("r") as fp:
+                nintegs = len(json.load(fp))
+            for j, first in enumerate(range(0, nintegs, self.chunk_size)):
+                last = min(nintegs, first + self.chunk_size)
+                yield (
+                    SPCalNuDataFile.load(
+                        path,
+                        max_mass_diff=self.max_mass_diff,
+                        cycle_number=self.cyc_number,
+                        segment_number=self.seg_number,
+                        autoblank=self.autoblank,
+                    ),
+                    output_path.with_stem(output_path.stem + f"_{j + 1:03}"),
+                    last / nintegs,
+                )
 
     @QtCore.Slot()
     def process(self):
@@ -118,24 +107,39 @@ class NuBatchWorker(QtCore.QObject):
 
         for i, (input, output) in enumerate(self.paths):
             self.progress.emit(i, 0.0)
-            if self.chunk_size == 0:
-                data_file = self.openDataFile(input)
+            for data_file, new_output, progress in self.openDataFileInChunks(
+                input, output, self.chunk_size
+            ):
                 if self.thread().isInterruptionRequested():
                     return
-                self.progress.emit(i, 0.5)
-                process_data_file_and_export(
+                self.progress.emit(i, progress)
+
+                results, clusters = _batch_process_data_file(
                     data_file,
                     self.method,
                     self.isotopes,
-                    output,
-                    self.export_options,
-                    summary_fp=summary_fp,
+                    self.export_options["clusters"],
                 )
                 if self.thread().isInterruptionRequested():
                     return
-            else:
-                self.processChunk(i, input, output)
+
+                export_spcal_processing_results(
+                    new_output,
+                    data_file,
+                    results,
+                    clusters,
+                    units=self.export_options["units"],
+                    export_options=self.export_options["options"],
+                    export_results=self.export_options["results"],
+                    export_arrays=self.export_options["arrays"],
+                    export_compositions=self.export_options["clusters"],
+                )
+                if summary_fp is not None:
+                    append_results_summary(
+                        summary_fp, data_file, results, self.export_options["units"]
+                    )
             self.progress.emit(i, 1.0)
+
         if summary_fp is not None:
             summary_fp.close()
         self.finished.emit()
