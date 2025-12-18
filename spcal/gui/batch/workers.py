@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
+from typing import TextIO
 from PySide6 import QtCore
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
 from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
-from spcal.io.export import export_spcal_processing_results
+from spcal.io.export import append_results_summary, export_spcal_processing_results
 
 
 # Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
@@ -16,6 +17,7 @@ def process_data_file_and_export(
     isotopes: list[SPCalIsotope],
     output_path: Path,
     export_options: dict,
+    summary_fp: TextIO | None = None,
 ):
     results = method.processDataFile(data_file, isotopes)
     results = method.filterResults(results)
@@ -37,6 +39,10 @@ def process_data_file_and_export(
         export_arrays=export_options["arrays"],
         export_compositions=export_options["clusters"],
     )
+    if summary_fp is not None:
+        append_results_summary(
+            summary_fp, data_file, list(results.values()), export_options["units"]
+        )
 
 
 class NuBatchWorker(QtCore.QObject):
@@ -105,6 +111,11 @@ class NuBatchWorker(QtCore.QObject):
     @QtCore.Slot()
     def process(self):
         self.started.emit(len(self.paths))
+        if self.export_options["summary"] is not None:
+            summary_fp = Path(self.export_options["summary"]).open("w")
+        else:
+            summary_fp = None
+
         for i, (input, output) in enumerate(self.paths):
             self.progress.emit(i, 0.0)
             if self.chunk_size == 0:
@@ -113,13 +124,20 @@ class NuBatchWorker(QtCore.QObject):
                     return
                 self.progress.emit(i, 0.5)
                 process_data_file_and_export(
-                    data_file, self.method, self.isotopes, output, self.export_options
+                    data_file,
+                    self.method,
+                    self.isotopes,
+                    output,
+                    self.export_options,
+                    summary_fp=summary_fp,
                 )
                 if self.thread().isInterruptionRequested():
                     return
             else:
                 self.processChunk(i, input, output)
             self.progress.emit(i, 1.0)
+        if summary_fp is not None:
+            summary_fp.close()
         self.finished.emit()
 
 

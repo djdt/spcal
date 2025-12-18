@@ -4,7 +4,7 @@ import datetime
 import importlib.metadata
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, TextIO
+from typing import TextIO
 
 import numpy as np
 

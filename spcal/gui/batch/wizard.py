@@ -509,7 +509,9 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         size = TextImportDialog.HEADER_LINE_SIZE
         consistent_parameters = True
-        first_header = paths[0].open("r").readlines(TextImportDialog.HEADER_LINE_COUNT * size)
+        first_header = (
+            paths[0].open("r").readlines(TextImportDialog.HEADER_LINE_COUNT * size)
+        )
         delimiter, skip_rows, columns = guess_text_parameters(first_header)
 
         for path in paths[1:]:
@@ -737,7 +739,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.output_name.textChanged.connect(self.completeChanged)
 
         self.output_dir = QtWidgets.QLineEdit()
-        self.output_name.textChanged.connect(self.completeChanged)
+        self.output_dir.textChanged.connect(self.updateOutputNames)
+        self.output_dir.textChanged.connect(self.completeChanged)
 
         self.button_dir = QtWidgets.QPushButton("Select")
         self.button_dir.pressed.connect(self.dialogOutputDirectory)
@@ -832,7 +835,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.registerField("export.arrays", self.check_export_arrays)
         self.registerField("export.clusters", self.check_export_clusters)
         self.registerField("export.images", self.check_export_images)
-        self.registerField("export.summary", self.check_export_images)
+        self.registerField("export.summary", self.check_export_summary)
         self.registerField("export.summary.name", self.summary_filename)
         self.registerField("export.units", self, "unitsProp")
 
@@ -1056,11 +1059,12 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             "options": self.field("export.options"),
             "arrays": self.field("export.arrays"),
             "clusters": self.field("export.clusters"),
-            "summary": self.field("export.summary.name")
+            "summary": paths[0][1].parent.joinpath(self.field("export.summary.name"))
             if self.field("export.summary")
             else None,
             "units": self.field("export.units"),
         }
+        print(export_options)
 
         if self.hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("text.isotopes")
