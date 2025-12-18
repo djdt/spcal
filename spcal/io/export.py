@@ -13,143 +13,11 @@ from spcal.calc import mode as modefn
 from spcal.cluster import cluster_information, prepare_results_for_clustering
 from spcal.detection import combine_regions
 
+from spcal.datafile import SPCalDataFile
+from spcal.processing import SPCalProcessingResult
 from spcal.processing.method import SPCalProcessingMethod
 
-if TYPE_CHECKING:
-    from spcal.processing import SPCalProcessingResult
-    from spcal.datafile import SPCalDataFile
-
 logger = logging.getLogger(__name__)
-
-
-# def append_results_summary(
-#     path: TextIO | Path,
-#     results: dict[str, "SPCalResult"],
-#     units_for_results: dict[str, tuple[str, float]] | None = None,
-# ):
-#     """Export and append flattened results for elements to a file.
-#
-#     Args:
-#         path: path to output csv
-#         results: dict of element: SPCalResult
-#         units_for_results: units for output of detections and lods
-#         output_results: write basic results, e.g. means, median
-#     """
-#
-# result_units = {k: v for k, v in "SPCalResult".base_units.items()}
-#
-# if units_for_results is not None:
-#     result_units.update(units_for_results)
-#
-#     if isinstance(path, Path):
-#         path = path.open("a")
-#
-#     def write_header(fp: TextIO, results: dict[str, SPCalResult]):
-#         fp.write(",,," + ",".join(results.keys()) + "\n")
-#
-#     def write_detection_results(fp: TextIO, results: dict[str, SPCalResult]):
-#         if len(results) == 0:
-#             return
-#         file = next(iter(results.values())).file.stem
-#
-#         _write_if_exists(fp, results, lambda r: r.number, f"{file},Number,#,")
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: r.number_error,
-#             f"{file},Number error,#,",
-#         )
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: r.number_concentration,
-#             f"{file},Number concentration,#/L,",
-#         )
-#         unit, factor = result_units["mass"]
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: ((r.mass_concentration or 0.0) / factor) or None,
-#             f"{file},Mass concentration,{unit}/L,",
-#         )
-#
-#         # === Background ===
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: r.background,
-#             f"{file},Background,counts,",
-#         )
-#         unit, factor = result_units["size"]
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: (
-#                 r.asSize(r.background) / factor if r.canCalibrate("size") else None
-#             ),
-#             f"{file},Background,{unit},",
-#         )
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: r.background_error,
-#             f"{file},Background error,counts,",
-#         )
-#         unit, factor = result_units["mass"]
-#         _write_if_exists(
-#             fp,
-#             results,
-#             lambda r: ((r.ionic_background or 0.0) / factor) or None,
-#             f"{file},Ionic background,{unit}/L,",
-#         )
-#
-#         for label, ufunc in zip(["Mean", "Median", "Mode"], [np.mean, np.median, mode]):
-#             for key in SPCalResult.base_units.keys():
-#                 unit, factor = result_units[key]
-#                 _write_if_exists(
-#                     fp,
-#                     results,
-#                     lambda r: (_ufunc_or_none(r, ufunc, key, factor)),
-#                     f"{file},{label},{unit},",
-#                 )
-
-# def write_limits(fp: TextIO, results: dict[str, "SPCalResult"]):
-# def limit_or_range(
-#     r: SPCalResult, key: str, factor: float = 1.0, format: str = "{:.8g}"
-# ) -> str | None:
-#     lod = r.limits.detection_limit
-#     if isinstance(lod, np.ndarray):
-#         lod = np.array([lod.min(), lod.max()])
-#
-#     if not r.canCalibrate(key):
-#         return None
-#
-#     lod = r.convertTo(lod, key)  # type: ignore
-#     if isinstance(lod, np.ndarray):
-#         return (
-#             format.format(lod[0] / factor)
-#             + " - "
-#             + format.format(lod[1] / factor)
-#         )
-#     return format.format(lod / factor)
-#
-# if len(results) == 0:
-#     return
-# file = next(iter(results.values())).file.stem
-#
-# for key in SPCalResult.base_units.keys():
-#     unit, factor = result_units[key]
-#     _write_if_exists(
-#         fp,
-#         results,
-#         lambda r: limit_or_range(r, key, factor),
-#         f"{file},Limit of detection,{unit},",
-#         format="{}",
-#     )
-#
-# write_header(path, results)
-# write_detection_results(path, results)
-# write_limits(path, results)
 
 
 def _value(v: float | None) -> str:
@@ -158,6 +26,36 @@ def _value(v: float | None) -> str:
 
 def _scaled(v: float | None, factor: float) -> str:
     return "" if v is None else str(v / factor)
+
+
+def append_results_summary(
+    fp: TextIO,
+    data_file: SPCalDataFile,
+    results: list[SPCalProcessingResult],
+    units: dict[str, tuple[str, float]],
+):
+    if fp.tell() == 0:
+        fp.write("Data File,Isotope,Name,Unit,Value\n")
+    for result in results:
+        detections = np.resize
+        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+            if not result.canCalibrate(key):
+                continue
+            unit, factor = units[key]
+            detections = result.calibrated(key)
+            values = [
+                ("Background", result.background),
+                ("Background Error", result.background_error),
+                ("LOD", result.limit.detection_threshold),
+                ("Mean", np.mean(detections)),
+                ("Std", np.std(detections)),
+                ("Median", np.median(detections)),
+                ("Mode", modefn(detections)),
+            ]
+            for name, value in values:
+                fp.write(
+                    f"{data_file.path},{result.isotope},{name},{unit},{_scaled(value, factor)}\n"
+                )
 
 
 def export_spcal_datafile_header(fp: TextIO, data_file: "SPCalDataFile"):
