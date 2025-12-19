@@ -257,7 +257,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.currentMethodChanged.emit(self.currentMethod())
 
-        print(self.processing_results[current])
         self.outputs.setResults(self.processing_results[current])
 
         all_isotopes = set(isotopes)
