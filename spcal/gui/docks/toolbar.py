@@ -80,6 +80,9 @@ class SPCalToolBar(QtWidgets.QToolBar):
         if current is not None:
             self.combo_isotope.setCurrentIsotope(current)
 
+        if self.combo_isotope.currentIndex() == -1:
+            self.combo_isotope.setCurrentIndex(0)
+
         self.combo_isotope.blockSignals(False)
 
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)
