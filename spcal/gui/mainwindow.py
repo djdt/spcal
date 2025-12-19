@@ -241,17 +241,29 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 isotope, method.isotope_options[isotope]
             )
         self.isotope_options.blockSignals(False)
+
+        # Reprocess if new isotopes exist
         if require_reprocess or current not in self.processing_results:
             self.reprocess(current)
+        # otherwise remove old isotopes
+        else:
+            removed_isotopes = [
+                isotope
+                for isotope in self.processing_results[current]
+                if isotope not in current.selected_isotopes
+            ]
+            for removed in removed_isotopes:
+                self.processing_results[current].pop(removed)
+
         self.currentMethodChanged.emit(self.currentMethod())
 
+        print(self.processing_results[current])
         self.outputs.setResults(self.processing_results[current])
 
         all_isotopes = set(isotopes)
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
 
-        # all_isotopes = all_isotopes.union(self.currentMethod().expressions)
         self.toolbar.setIsotopes(
             sorted(
                 all_isotopes,
@@ -385,7 +397,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
 
         for file in files:
-            results = method.processDataFile(file)
+            results = method.processDataFile(file, file.selected_isotopes)
             self.processing_results[file] = method.filterResults(results)
             # refresh clusters
             if file in self.processing_clusters:
