@@ -44,7 +44,7 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
 
 
 class ParticleView(SinglePlotGraphicsView):
-    exclusionRegionChanged = QtCore.Signal()
+    exclusionRegionsChanged = QtCore.Signal(list)
     requestPeakProperties = QtCore.Signal()
 
     def __init__(
@@ -82,8 +82,11 @@ class ParticleView(SinglePlotGraphicsView):
             "Prevent analysis in a region of the data.",
             self.addExclusionRegion,
         )
-        self.action_exclusion_region.triggered.connect(self.exclusionRegionChanged)
+        self.action_exclusion_region.triggered.connect(self.onRegionsChanged)
         self.context_menu_actions.append(self.action_exclusion_region)
+
+    def onRegionsChanged(self):
+        self.exclusionRegionsChanged.emit(self.exclusionRegions())
 
     def exclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
@@ -101,7 +104,7 @@ class ParticleView(SinglePlotGraphicsView):
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
         region = ExclusionRegion(start, end)  # type: ignore not None, see above
-        region.sigRegionChangeFinished.connect(self.exclusionRegionChanged)
+        region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
@@ -111,7 +114,7 @@ class ParticleView(SinglePlotGraphicsView):
         if not isinstance(region, ExclusionRegion):
             return
         self.plot.removeItem(region)
-        self.exclusionRegionChanged.emit()
+        self.onRegionsChanged()
 
     def drawResult(
         self,
