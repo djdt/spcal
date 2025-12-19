@@ -136,7 +136,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
             raise ValueError(f"Unknown method {mode}.")
 
     def dialogAdvancedOptions(self):
-        print(self.cluster_distance)
         val, ok = QtWidgets.QInputDialog.getDouble(
             self,
             "Advanced Options",
