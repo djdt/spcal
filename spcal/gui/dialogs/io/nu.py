@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile
@@ -51,7 +51,7 @@ class NuIntegReadWorker(QtCore.QObject):
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
                     idx["FirstAcqNum"],
-                    memmap=True,
+                    memmap=False,
                 )
                 if self.cyc_number is not None:
                     data = data[data["cyc_number"] == self.cyc_number]
@@ -223,9 +223,19 @@ class NuImportDialog(ImportDialogBase):
     def addData(self, data):
         self.import_data.append(data)
 
+    def closeEvent(self, event: QtGui.QCloseEvent):
+        self.cleanup()
+
+    def cleanup(self):
+        print("cleaned")
+        self.import_thread.deleteLater()
+        self.import_data.clear()
+
     def accept(self):
         self.setControlsEnabled(False)
         self.progress.setValue(0)
+
+        self.import_data.clear()
 
         cyc_number = self.cycle_number.value()
         if cyc_number == 0:
@@ -259,13 +269,13 @@ class NuImportDialog(ImportDialogBase):
             self.setControlsEnabled(True)
             self.progress.reset()
         else:
+            self.cleanup()
             super().reject()
 
     @QtCore.Slot()
     def finalise(self):
         self.import_thread.quit()
         self.import_thread.wait()
-        self.import_thread.deleteLater()
 
         if len(self.table.selectedIsotopes()) == 0:
             raise ValueError("no selected isotopes")
@@ -311,4 +321,28 @@ class NuImportDialog(ImportDialogBase):
         data_file.selected_isotopes = self.table.selectedIsotopes()
         self.dataImported.emit(data_file)
 
+        self.cleanup()
         super().accept()
+
+
+if __name__ == "__main__":
+    import tracemalloc
+    import gc
+
+    def print_stats():
+        gc.collect()
+        snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.statistics("lineno")
+        for stat in top_stats[:3]:
+            print(stat)
+
+    app = QtWidgets.QApplication()
+    tracemalloc.start(20)
+    dlg = NuImportDialog(
+        Path("/mnt/storage/TOF/2025 Ice Cores/run2/14-42-07 ice_run2_a04_1")
+    )
+    dlg.dataImported.connect(print_stats)
+    app.aboutToQuit.connect(print_stats)
+    dlg.open()
+
+    app.exec()
