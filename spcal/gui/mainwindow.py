@@ -84,8 +84,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.instrument_options = SPCalInstrumentOptionsDock(
-            method.instrument_options,
-            method.calibration_mode,
+            method.instrument_options, method.calibration_mode, method.cluster_distance
         )
 
         self.limit_options = SPCalLimitOptionsDock(
@@ -141,11 +140,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.toolbar.keyChanged.connect(self.onKeyChanged)
 
-        self.createMenuBar()
-        self.updateRecentFiles()
-
         self.setCentralWidget(self.graph)
         self.defaultLayout()
+
+        self.createMenuBar()
+        self.updateRecentFiles()
 
     # Access
 
@@ -484,6 +483,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
         method.instrument_options = self.instrument_options.instrumentOptions()
         method.calibration_mode = self.instrument_options.calibrationMode().lower()
+        method.cluster_distance = self.instrument_options.clusterDistance()
 
         data_file = self.files.currentDataFile()
         if data_file is None:
@@ -801,6 +801,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
+    # UI
+
     def defaultLayout(self):
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
 
@@ -841,8 +843,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             [left_width, isotope_width, size.width() - left_width - isotope_width],
             QtCore.Qt.Orientation.Horizontal,
         )
-
-    # UI
 
     def reset(self):
         self.files.reset()
