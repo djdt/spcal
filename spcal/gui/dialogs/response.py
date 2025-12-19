@@ -19,7 +19,7 @@ from spcal.gui.io import (
     get_save_spcal_path,
     is_spcal_path,
 )
-from spcal.isotope import SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
@@ -436,10 +436,13 @@ class ResponseDialog(QtWidgets.QDialog):
         return dlg
 
     def addDataFile(self, data_file: SPCalDataFile):
+        new_isotopes = set(self.model_concs.isotopes)
+        new_isotopes = new_isotopes.union(data_file.selected_isotopes)
         new_isotopes = sorted(
-            set(data_file.selected_isotopes).union(self.model_concs.isotopes),
-            key=lambda i: i.isotope,
+            new_isotopes,
+            key=lambda i: i.isotope if isinstance(i, SPCalIsotope) else 9999,
         )
+
         self.model_concs.beginResetModel()
         self.model_concs.concentrations[data_file] = {}
         self.model_concs.isotopes = new_isotopes
@@ -537,9 +540,11 @@ class ResponseDialog(QtWidgets.QDialog):
         self.model_concs.isotopes.clear()
         self.model_concs.concentrations.clear()
         self.model_concs.endResetModel()
+
         self.model_intensity.beginResetModel()
         self.model_intensity.isotopes.clear()
         self.model_intensity.intensities.clear()
+        self.model_intensity.exclusion_regions.clear()
         self.model_intensity.endResetModel()
 
     def dialogSaveToFile(self):
