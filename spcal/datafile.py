@@ -133,7 +133,7 @@ class SPCalTextDataFile(SPCalDataFile):
             iso: name for iso, name in zip(isotopes, signals.dtype.names)
         }
 
-        self.delimter = delimiter
+        self.delimiter = delimiter
         self.skip_row = skip_rows
         self.cps = cps
         self.override_event_time = override_event_time

@@ -631,7 +631,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 else:
                     return False
         return True
-    
+
     isotopesProp = QtCore.Property(list, selectedIsotopes)
 
 
@@ -1000,13 +1000,10 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.setPage(
             SPCalBatchProcessingWizard.FILE_PAGE_ID, BatchFilesWizardPage(existing_file)
         )
-        delimiter = ","
-        skip_rows = 1
-        cps = False
-        event_time = None
-        override_event_time = False
+        delimiter, skip_rows, cps = ",", 1, False
+        event_time, override_event_time = None, False
         if isinstance(existing_file, SPCalTextDataFile):
-            delimiter = existing_file.delimter
+            delimiter = existing_file.delimiter
             skip_rows = existing_file.skip_row
             cps = existing_file.cps
             event_time = existing_file.override_event_time
@@ -1070,7 +1067,6 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             "summary": summary_path,
             "units": self.field("export.units"),
         }
-        print(export_options)
 
         if self.hasVisitedPage(SPCalBatchProcessingWizard.TEXT_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("text.isotopes")
