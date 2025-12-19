@@ -334,11 +334,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
         menuview.addSeparator()
-        menuview.addAction(self.action_default_layout)
 
         menu_docks = menuview.addMenu("Show/hide dock widgets")
         for dock in self.findChildren(QtWidgets.QDockWidget):
             menu_docks.addAction(dock.toggleViewAction())
+
+        menuview.addAction(self.action_default_layout)
 
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)

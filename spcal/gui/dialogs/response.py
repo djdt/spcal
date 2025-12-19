@@ -32,7 +32,9 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
         self.isotopes: list[SPCalIsotopeBase] = []
-        self.concentrations: dict[SPCalDataFile, dict[SPCalIsotopeBase, float | None]] = {}
+        self.concentrations: dict[
+            SPCalDataFile, dict[SPCalIsotopeBase, float | None]
+        ] = {}
 
     def columnCount(
         self,
@@ -88,6 +90,14 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
             data_file = list(self.concentrations.keys())[index.row()]
             isotope = self.isotopes[index.column()]
             return self.concentrations[data_file].get(isotope, None)
+        elif role == QtCore.Qt.ItemDataRole.BackgroundRole:
+            if not index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
+                return QtGui.QBrush(
+                    QtWidgets.QApplication.palette().color(
+                        QtGui.QPalette.ColorGroup.Inactive,
+                        QtGui.QPalette.ColorRole.Window,
+                    )
+                )
         elif role == ConcentrationModel.DataFileRole:
             return list(self.concentrations.keys())[index.row()]
         elif role == ConcentrationModel.IsotopeRole:
@@ -134,6 +144,19 @@ class IntensityModel(QtCore.QAbstractTableModel):
     ) -> int:
         return len(self.intensities)
 
+    def flags(
+        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+    ) -> QtCore.Qt.ItemFlag:
+        flags = super().flags(index)
+        if index.isValid():
+            data_file = list(self.intensities.keys())[index.row()]
+            isotope = self.isotopes[index.column()]
+            if isotope in data_file.selected_isotopes:
+                flags |= QtCore.Qt.ItemFlag.ItemIsEditable
+            else:
+                flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
+        return flags
+
     def headerData(
         self,
         section: int,
@@ -171,6 +194,14 @@ class IntensityModel(QtCore.QAbstractTableModel):
                     val = None
                 self.intensities[data_file][isotope] = val
             return self.intensities[data_file][isotope]
+        elif role == QtCore.Qt.ItemDataRole.BackgroundRole:
+            if not index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
+                return QtGui.QBrush(
+                    QtWidgets.QApplication.palette().color(
+                        QtGui.QPalette.ColorGroup.Inactive,
+                        QtGui.QPalette.ColorRole.Window,
+                    )
+                )
         elif role == ConcentrationModel.DataFileRole:
             return list(self.intensities.keys())[index.row()]
         elif role == ConcentrationModel.IsotopeRole:
@@ -186,7 +217,6 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setMinimumSize(640, 480)
 
         self.intensity = IntensityView()
-        # self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
         self.intensity.exclusionRegionChanged.connect(self.updateExclusionRegions)
 
         self.calibration = CalibrationView()
@@ -204,11 +234,13 @@ class ResponseDialog(QtWidgets.QDialog):
 
         for table in [self.table_concs, self.table_intensity]:
             table.setItemDelegate(ValueWidgetDelegate(sigfigs=sf))
-            table.selectionModel().currentChanged.connect(self.tableIndexChanged)
+            table.selectionModel().selectionChanged.connect(self.tableSelectionChanged)
 
             table.setSizeAdjustPolicy(
                 QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
             )
+
+        self.model_intensity.dataChanged.connect(self.updateCalibration)
 
         self.model_concs.dataChanged.connect(self.completeChanged)
         self.model_concs.dataChanged.connect(self.updateCalibration)
@@ -312,26 +344,38 @@ class ResponseDialog(QtWidgets.QDialog):
             )
         return intensity
 
-    def tableIndexChanged(self, index: QtCore.QModelIndex):
-        self.table_concs.selectionModel().currentChanged.disconnect(
-            self.tableIndexChanged
+    def tableSelectionChanged(
+        self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
+    ):
+        self.table_concs.selectionModel().selectionChanged.disconnect(
+            self.tableSelectionChanged
         )
-        self.table_intensity.selectionModel().currentChanged.disconnect(
-            self.tableIndexChanged
-        )
-
-        self.table_concs.selectionModel().setCurrentIndex(
-            index, QtCore.QItemSelectionModel.SelectionFlag.SelectCurrent
-        )
-        self.table_intensity.selectionModel().setCurrentIndex(
-            index, QtCore.QItemSelectionModel.SelectionFlag.SelectCurrent
+        self.table_intensity.selectionModel().selectionChanged.disconnect(
+            self.tableSelectionChanged
         )
 
-        self.table_concs.selectionModel().currentChanged.connect(self.tableIndexChanged)
-        self.table_intensity.selectionModel().currentChanged.connect(
-            self.tableIndexChanged
+        self.table_concs.selectionModel().select(
+            selected, QtCore.QItemSelectionModel.SelectionFlag.Select
         )
-        self.drawDataFile(index)
+        self.table_concs.selectionModel().select(
+            deselected, QtCore.QItemSelectionModel.SelectionFlag.Deselect
+        )
+
+        self.table_intensity.selectionModel().select(
+            selected, QtCore.QItemSelectionModel.SelectionFlag.Select
+        )
+        self.table_intensity.selectionModel().select(
+            deselected, QtCore.QItemSelectionModel.SelectionFlag.Deselect
+        )
+
+        self.table_concs.selectionModel().selectionChanged.connect(
+            self.tableSelectionChanged
+        )
+        self.table_intensity.selectionModel().selectionChanged.connect(
+            self.tableSelectionChanged
+        )
+        if len(selected.indexes()) > 0:
+            self.drawDataFile(selected.indexes()[0])
 
     def updateExclusionRegions(self):
         index = self.table_concs.currentIndex()
@@ -556,14 +600,15 @@ if __name__ == "__main__":
     dlg = ResponseDialog()
     dlg.show()
 
-    # df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att"))
     df = SPCalNuDataFile.load(
         Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP/")
     )
     df.selected_isotopes = [df.isotopes[60], df.isotopes[70]]
     dlg.addDataFile(df)
-    # df = SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-36-31 10 ppb att"))
-    # df.selected_isotopes = [df.isotopes[60], df.isotopes[70], df.isotopes[30]]
-    # dlg.addDataFile(df)
+    df = SPCalNuDataFile.load(
+        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP/")
+    )
+    df.selected_isotopes = [df.isotopes[50]]
+    dlg.addDataFile(df)
 
     app.exec()
