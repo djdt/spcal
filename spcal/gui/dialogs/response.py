@@ -590,25 +590,3 @@ class ResponseDialog(QtWidgets.QDialog):
                     + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
-
-
-if __name__ == "__main__":
-    from spcal.datafile import SPCalNuDataFile
-
-    app = QtWidgets.QApplication()
-
-    dlg = ResponseDialog()
-    dlg.show()
-
-    df = SPCalNuDataFile.load(
-        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP/")
-    )
-    df.selected_isotopes = [df.isotopes[60], df.isotopes[70]]
-    dlg.addDataFile(df)
-    df = SPCalNuDataFile.load(
-        Path("/home/tom/Downloads/15-03-56 5.0ppb + 80nm Au + UCNP/")
-    )
-    df.selected_isotopes = [df.isotopes[50]]
-    dlg.addDataFile(df)
-
-    app.exec()
