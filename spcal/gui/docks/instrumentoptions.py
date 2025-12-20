@@ -8,15 +8,19 @@ from spcal.siunits import flowrate_units
 
 class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
+    clusterDistanceChanged = QtCore.Signal(float)
     efficiencyDialogRequested = QtCore.Signal()
 
     def __init__(
         self,
         options: SPCalInstrumentOptions,
         calibration_mode: str,
+        cluster_distance: float = 0.03,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
+
+        self.cluster_distance = cluster_distance
 
         settings = QtCore.QSettings()
         sf = int(settings.value("SigFigs", 4))  # type: ignore
@@ -67,6 +71,9 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
             )
         )
 
+        self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
+        self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
+
         # Complete Changed
         self.uptake.baseValueChanged.connect(self.optionsChanged)
         self.efficiency.valueChanged.connect(self.optionsChanged)
@@ -83,7 +90,12 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         form_layout.addRow("Trans. Efficiency:", layout_eff)
         form_layout.addRow("Calibration mode:", self.calibration_mode)
 
-        self.setLayout(form_layout)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(form_layout, 0)
+        layout.addWidget(
+            self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        self.setLayout(layout)
 
     def instrumentOptions(self) -> SPCalInstrumentOptions:
         return SPCalInstrumentOptions(
@@ -123,6 +135,21 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         else:
             raise ValueError(f"Unknown method {mode}.")
 
+    def dialogAdvancedOptions(self):
+        val, ok = QtWidgets.QInputDialog.getDouble(
+            self,
+            "Advanced Options",
+            "Cluster distance:",
+            value=self.cluster_distance * 100.0,
+            minValue=0.1,
+            maxValue=100.0,
+            decimals=1,
+            step=1.0,
+        )
+        if ok and val / 100.0 != self.cluster_distance:
+            self.cluster_distance = val / 100.0
+            self.optionsChanged.emit()
+
 
 class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     optionsChanged = QtCore.Signal()
@@ -132,18 +159,24 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         self,
         options: SPCalInstrumentOptions,
         calibration_mode: str,
+        cluster_distance: float,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Instrument Options")
 
-        self.options_widget = SPCalInstrumentOptionsWidget(options, calibration_mode)
+        self.options_widget = SPCalInstrumentOptionsWidget(
+            options, calibration_mode, cluster_distance
+        )
         self.options_widget.optionsChanged.connect(self.optionsChanged)
         self.options_widget.efficiencyDialogRequested.connect(
             self.efficiencyDialogRequested
         )
 
         self.setWidget(self.options_widget)
+
+    def clusterDistance(self) -> float:
+        return self.options_widget.cluster_distance
 
     def calibrationMode(self) -> str:
         return self.options_widget.calibration_mode.currentText().lower()
@@ -161,9 +194,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
 
     def reset(self):
         self.blockSignals(True)
-        self.options_widget.setInstrumentOptions(
-            SPCalInstrumentOptions(None, None)
-        )
+        self.options_widget.setInstrumentOptions(SPCalInstrumentOptions(None, None))
         self.setCalibrationMode("efficiency")
         self.blockSignals(False)
         self.optionsChanged.emit()

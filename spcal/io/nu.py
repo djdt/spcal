@@ -83,7 +83,7 @@ def read_integ_binary(
     first_cyc_number: int | None = None,
     first_seg_number: int | None = None,
     first_acq_number: int | None = None,
-    memmap: bool = True,
+    memmap: bool = False,
 ) -> np.ndarray:
     def integ_dtype(size: int) -> np.dtype:
         data_dtype = np.dtype(
@@ -122,7 +122,7 @@ def read_integ_binary(
         num_results = int.from_bytes(fp.read(4), "little")
 
     if memmap:
-        return np.memmap(path, dtype=integ_dtype(num_results))
+        return np.memmap(path, dtype=integ_dtype(num_results), mode="r")
     else:
         return np.fromfile(path, dtype=integ_dtype(num_results))
 
@@ -401,7 +401,7 @@ def read_directory(
         read_integ_binary,
         cyc_number=cycle,
         seg_number=segment,
-        binary_read_kwargs={"memmap": False}
+        binary_read_kwargs={"memmap": False},
     )
 
     # Get masses from data

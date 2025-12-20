@@ -399,7 +399,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         layout.addWidget(
             self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        layout.addStretch(1)
         self.setLayout(layout)
 
     def setLimitOptions(self, options: SPCalLimitOptions):

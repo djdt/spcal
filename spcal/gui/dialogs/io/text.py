@@ -44,7 +44,7 @@ class TextImportDialog(ImportDialogBase):
             delimiter = ","
 
         if isinstance(existing_file, SPCalTextDataFile):
-            delimiter = existing_file.delimter
+            delimiter = existing_file.delimiter
             first_data_line = existing_file.skip_row
             cps = existing_file.cps
             event_time = existing_file.event_time

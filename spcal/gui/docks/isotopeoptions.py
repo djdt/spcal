@@ -208,8 +208,6 @@ class IsotopeOptionTable(BasicTableView):
 
     def dialogParticleDatabase(self, index: QtCore.QModelIndex) -> QtWidgets.QDialog:
         def set_density(density: float | None):
-            if density is not None:
-                density /= 1000.0  # g/cm3 -> kg/m3
             self.isotope_model.setData(index, density, UnitsModel.BaseValueRole)
 
         dlg = ParticleDatabaseDialog(parent=self)

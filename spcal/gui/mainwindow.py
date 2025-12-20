@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 
+from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
@@ -39,6 +40,7 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
+from spcal.processing.filter import SPCalProcessingFilter
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +84,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.instrument_options = SPCalInstrumentOptionsDock(
-            method.instrument_options,
-            method.calibration_mode,
+            method.instrument_options, method.calibration_mode, method.cluster_distance
         )
 
         self.limit_options = SPCalLimitOptionsDock(
@@ -103,9 +104,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
-        self.graph.particle.exclusionRegionChanged.connect(
-            self.onExclusionRegionChanged
-        )
+        self.graph.particle.exclusionRegionsChanged.connect(self.setExclusionRegions)
         self.graph.requestRedraw.connect(self.redraw)
 
         self.toolbar.isotopeChanged.connect(self.redraw)
@@ -141,11 +140,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.toolbar.keyChanged.connect(self.onKeyChanged)
 
+        self.setCentralWidget(self.graph)
+        self.defaultLayout()
+
         self.createMenuBar()
         self.updateRecentFiles()
 
-        self.setCentralWidget(self.graph)
-        self.defaultLayout()
+    # Access
 
     def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
         if data_file not in self.processing_clusters:
@@ -160,247 +161,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
 
-    def colorForIsotope(
-        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
-    ) -> QtGui.QColor:
-        scheme = color_schemes[
-            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-        ]
-        if isinstance(isotope, SPCalIsotope):
-            idx = data_file.selected_isotopes.index(isotope)
-        elif isinstance(isotope, SPCalIsotopeExpression):
-            method = self.currentMethod()
-            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
-        else:
-            raise ValueError(f"unknown isotope type '{type(isotope)}'")
-
-        data_files = self.files.dataFiles()
-        for i in range(0, data_files.index(data_file)):
-            idx += len(data_files[i].selected_isotopes)
-        return scheme[idx % len(scheme)]
-
-    def addExpression(self, expr: SPCalIsotopeExpression):
-        method = self.currentMethod()
-        if expr not in method.expressions:
-            method.expressions.append(expr)
-            self.currentMethodChanged.emit(method)
-            self.reprocess(None)
-            self.onDataFilesChanged(
-                self.files.currentDataFile(), self.files.selectedDataFiles()
-            )
-
-    def removeExpressions(self, expressions: list[SPCalIsotopeExpression]):
-        method = self.currentMethod()
-        for expr in expressions:
-            if expr in method.expressions:
-                method.expressions.remove(expr)
-            self.removeIsotopeFromResults(expr)
-        self.currentMethodChanged.emit(method)
-        self.onDataFilesChanged(
-            self.files.currentDataFile(), self.files.selectedDataFiles()
-        )
-
-    def removeIsotopes(self, isotopes: list[SPCalIsotope]):
-        for file in self.files.dataFiles():
-            for isotope in isotopes:
-                if isotope in file.selected_isotopes:
-                    file.selected_isotopes.remove(isotope)
-        self.reprocess(None)
-
-    def onDataFileAdded(self, data_file: SPCalDataFile):
-        self.reprocess(data_file)
-        self.updateRecentFiles(data_file)
-        # self.onDataFileChanged(data_file)
-        logger.info(f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events.")
-
-    def onDataFilesChanged(
-        self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
-    ):
-        if current is None:
-            self.isotope_options.setIsotopes([])
-            self.toolbar.setIsotopes([])
-            self.outputs.setResults({})
-            self.graph.clear()
-            return
-
-        # Set the options to current
-        isotopes = current.selected_isotopes + self.currentMethod().expressions
-        # Add any missing isotopes to method and isotope options
-        self.isotope_options.setIsotopes(isotopes)
-        require_reprocess = False
-        method = self.currentMethod()
-        self.isotope_options.blockSignals(True)
-        for isotope in isotopes:
-            if isotope not in method.isotope_options:
-                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
-                require_reprocess = True
-            self.isotope_options.setIsotopeOption(
-                isotope, method.isotope_options[isotope]
-            )
-        self.isotope_options.blockSignals(False)
-        if require_reprocess or current not in self.processing_results:
-            self.reprocess(current)
-        self.currentMethodChanged.emit(self.currentMethod())
-
-        self.outputs.setResults(self.processing_results[current])
-
-        all_isotopes = set(isotopes)
-        for file in selected:
-            all_isotopes = all_isotopes.union(file.selected_isotopes)
-
-        # all_isotopes = all_isotopes.union(self.currentMethod().expressions)
-        self.toolbar.setIsotopes(
-            sorted(
-                all_isotopes,
-                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
-            )
-        )
-
-        self.redraw()
-
-    def removeFileFromResults(self, data_file: SPCalDataFile):
-        self.processing_results.pop(data_file)
-
-    def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
-        for data_file, results in self.processing_results.items():
-            if isotope in results:
-                results.pop(isotope)
-
-    def redraw(self):
-        key = self.toolbar.combo_key.currentText()
-        view = self.graph.currentView()
-        isotopes = self.toolbar.selectedIsotopes()
-
-        self.graph.clear()
-
-        if view == "composition":
-            data_file = self.files.currentDataFile()
-            if data_file is None:
-                return
-            clusters = self.clusters(data_file, key)
-            colors = [
-                self.colorForIsotope(isotope, data_file)
-                for isotope in self.processing_results[data_file].keys()
-            ]
-            self.graph.drawResultsComposition(
-                list(self.processing_results[data_file].values()), colors, key, clusters
-            )
-        else:
-            files = self.files.selectedDataFiles()
-            if len(files) == 0:
-                current = self.files.currentDataFile()
-                files = [current] if current is not None else []
-
-            drawable = []
-            colors = []
-            for data_file in files:
-                for isotope, result in self.processing_results[data_file].items():
-                    if isotope in isotopes:
-                        drawable.append(result)
-                        colors.append(self.colorForIsotope(isotope, data_file))
-
-            if view == "particle":
-                self.graph.drawResultsParticle(drawable, colors, key)
-                for start, end in self.currentMethod().exclusion_regions:
-                    self.graph.particle.addExclusionRegion(start, end)
-            elif view == "histogram":
-                self.graph.drawResultsHistogram(drawable, colors, key)
-
-    def onClusterDistanceChanged(self, distance: float):
-        method = self.currentMethod()
-        if not np.isclose(method.cluster_distance, distance):
-            method.cluster_distance = distance
-
-            self.currentMethodChanged.emit(method)
-            self.reprocess(self.files.currentDataFile())
-
-    def onInstrumentOptionsChanged(self):
-        method = self.currentMethod()
-        method.instrument_options = self.instrument_options.instrumentOptions()
-        method.calibration_mode = self.instrument_options.calibrationMode().lower()
-
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
-        self.processing_results[data_file] = method.filterResults(
-            self.processing_results[data_file]
-        )
-        if data_file in self.processing_clusters:
-            self.processing_clusters[data_file].clear()
-
-        self.currentMethodChanged.emit(method)
-        self.resultsChanged.emit(data_file)
-
-    def onLimitOptionsChanged(self):
-        method = self.currentMethod()
-        method.limit_options = self.limit_options.limitOptions()
-        method.accumulation_method = self.limit_options.accumulationMethod()
-        method.points_required = self.limit_options.pointsRequired()
-        method.prominence_required = self.limit_options.prominenceRequired()
-
-        self.currentMethodChanged.emit(method)
-        self.reprocess(self.files.currentDataFile())
-
-    def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
-        method = self.currentMethod()
-
-        option = self.isotope_options.optionForIsotope(isotope)
-        method.isotope_options[isotope] = option
-
-        self.processing_results[data_file] = method.filterResults(
-            self.processing_results[data_file]
-        )
-        if data_file in self.processing_clusters:
-            self.processing_clusters[data_file].clear()
-        self.resultsChanged.emit(data_file)
-
-    def onKeyChanged(self, key: str):
-        self.outputs.updateOutputsForKey(key)
-        if self.graph.currentView() != "particle":
-            self.redraw()
-
-    def onResultsChanged(self, data_file: SPCalDataFile):
-        if data_file == self.files.currentDataFile():
-            self.outputs.setResults(self.processing_results[data_file])
-            self.redraw()
-        self.action_export.setEnabled(len(self.processing_results) > 0)
-
-    def onExclusionRegionChanged(self):
-        regions = self.graph.particle.exclusionRegions()
-        self.currentMethod().exclusion_regions = regions
-        self.reprocess(self.files.currentDataFile())
-
-    def reprocess(self, data_file: SPCalDataFile | None):
-        if not isinstance(data_file, SPCalDataFile):
-            files = self.files.dataFiles()
-        else:
-            files = [data_file]
-
-        method = self.currentMethod()
-
-        for file in files:
-            results = method.processDataFile(file)
-            self.processing_results[file] = method.filterResults(results)
-            # refresh clusters
-            if file in self.processing_clusters:
-                self.processing_clusters[file].clear()
-            self.resultsChanged.emit(file)
-
-    def dialogPeakProperties(self) -> QtWidgets.QDialog | None:
-        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
-
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
-
-        dlg = PeakPropertiesDialog(
-            self.processing_results[data_file],
-            self.toolbar.combo_isotope.currentIsotope(),
-        )
-        dlg.exec()
+    # Menu
 
     def createMenuBar(self):
         # File
@@ -573,16 +334,283 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
         menuview.addSeparator()
-        menuview.addAction(self.action_default_layout)
 
         menu_docks = menuview.addMenu("Show/hide dock widgets")
         for dock in self.findChildren(QtWidgets.QDockWidget):
             menu_docks.addAction(dock.toggleViewAction())
 
+        menuview.addAction(self.action_default_layout)
+
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
         menuhelp.addAction(self.action_documentation)
         menuhelp.addAction(self.action_about)
+
+    def colorForIsotope(
+        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
+    ) -> QtGui.QColor:
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        if isinstance(isotope, SPCalIsotope):
+            idx = data_file.selected_isotopes.index(isotope)
+        elif isinstance(isotope, SPCalIsotopeExpression):
+            method = self.currentMethod()
+            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
+        else:
+            raise ValueError(f"unknown isotope type '{type(isotope)}'")
+
+        data_files = self.files.dataFiles()
+        for i in range(0, data_files.index(data_file)):
+            idx += len(data_files[i].selected_isotopes)
+        return scheme[idx % len(scheme)]
+
+    # Method modification
+
+    def addExpression(self, expr: SPCalIsotopeExpression):
+        method = self.currentMethod()
+        if expr not in method.expressions:
+            method.expressions.append(expr)
+            self.currentMethodChanged.emit(method)
+            self.reprocess(None)
+            self.onDataFilesChanged(
+                self.files.currentDataFile(), self.files.selectedDataFiles()
+            )
+
+    def removeExpressions(self, expressions: list[SPCalIsotopeExpression]):
+        method = self.currentMethod()
+        for expr in expressions:
+            if expr in method.expressions:
+                method.expressions.remove(expr)
+            self.removeIsotopeFromResults(expr)
+        self.currentMethodChanged.emit(method)
+        self.onDataFilesChanged(
+            self.files.currentDataFile(), self.files.selectedDataFiles()
+        )
+
+    def setExclusionRegions(self, regions: list[tuple[float, float]]):
+        self.currentMethod().exclusion_regions = regions
+        self.reprocess(self.files.currentDataFile())
+
+    def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
+        method = self.currentMethod()
+        for isotope, response in responses.items():
+            if isotope in method.isotope_options:
+                method.isotope_options[isotope].response = response
+            else:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(
+                    None, response, None
+                )
+            if isotope in self.isotope_options.isotopeOptions():
+                option = self.isotope_options.optionForIsotope(isotope)
+                option.response = response
+                self.isotope_options.setIsotopeOption(isotope, option)
+
+    # def setClusterDistance(self, distance: float):
+    #     method = self.currentMethod()
+    #     if not np.isclose(method.cluster_distance, distance):
+    #         method.cluster_distance = distance
+    #
+    #         self.currentMethodChanged.emit(method)
+    #         self.reprocess(self.files.currentDataFile())
+
+    # Slots for signals
+
+    def onDataFileAdded(self, data_file: SPCalDataFile):
+        self.reprocess(data_file)
+        self.updateRecentFiles(data_file)
+        # self.onDataFileChanged(data_file)
+        logger.info(
+            f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
+        )
+
+    def onDataFilesChanged(
+        self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
+    ):
+        if current is None:
+            self.isotope_options.setIsotopes([])
+            self.toolbar.setIsotopes([])
+            self.outputs.setResults({})
+            self.graph.clear()
+            return
+
+        # Set the options to current
+        isotopes = current.selected_isotopes + self.currentMethod().expressions
+        # Add any missing isotopes to method and isotope options
+        self.isotope_options.setIsotopes(isotopes)
+        require_reprocess = False
+        method = self.currentMethod()
+        self.isotope_options.blockSignals(True)
+        for isotope in isotopes:
+            if isotope not in method.isotope_options:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
+                require_reprocess = True
+            self.isotope_options.setIsotopeOption(
+                isotope, method.isotope_options[isotope]
+            )
+        self.isotope_options.blockSignals(False)
+
+        # Reprocess if new isotopes exist
+        if require_reprocess or current not in self.processing_results:
+            self.reprocess(current)
+        # otherwise remove old isotopes
+        else:
+            removed_isotopes = [
+                isotope
+                for isotope in self.processing_results[current]
+                if isotope not in current.selected_isotopes
+            ]
+            for removed in removed_isotopes:
+                self.processing_results[current].pop(removed)
+
+        self.currentMethodChanged.emit(self.currentMethod())
+
+        self.outputs.setResults(self.processing_results[current])
+
+        all_isotopes = set(isotopes)
+        for file in selected:
+            all_isotopes = all_isotopes.union(file.selected_isotopes)
+
+        self.toolbar.setIsotopes(
+            sorted(
+                all_isotopes,
+                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
+            )
+        )
+
+        self.redraw()
+
+    def onInstrumentOptionsChanged(self):
+        method = self.currentMethod()
+        method.instrument_options = self.instrument_options.instrumentOptions()
+        method.calibration_mode = self.instrument_options.calibrationMode().lower()
+        method.cluster_distance = self.instrument_options.clusterDistance()
+
+        data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
+        self.processing_results[data_file] = method.filterResults(
+            self.processing_results[data_file]
+        )
+        if data_file in self.processing_clusters:
+            self.processing_clusters[data_file].clear()
+
+        self.currentMethodChanged.emit(method)
+        self.resultsChanged.emit(data_file)
+
+    def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
+        data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
+        method = self.currentMethod()
+
+        option = self.isotope_options.optionForIsotope(isotope)
+        method.isotope_options[isotope] = option
+
+        self.processing_results[data_file] = method.filterResults(
+            self.processing_results[data_file]
+        )
+        if data_file in self.processing_clusters:
+            self.processing_clusters[data_file].clear()
+        self.resultsChanged.emit(data_file)
+
+    def onKeyChanged(self, key: str):
+        self.outputs.updateOutputsForKey(key)
+        if self.graph.currentView() != "particle":
+            self.redraw()
+
+    def onLimitOptionsChanged(self):
+        method = self.currentMethod()
+        method.limit_options = self.limit_options.limitOptions()
+        method.accumulation_method = self.limit_options.accumulationMethod()
+        method.points_required = self.limit_options.pointsRequired()
+        method.prominence_required = self.limit_options.prominenceRequired()
+
+        self.currentMethodChanged.emit(method)
+        self.reprocess(self.files.currentDataFile())
+
+    def onResultsChanged(self, data_file: SPCalDataFile):
+        if data_file == self.files.currentDataFile():
+            self.outputs.setResults(self.processing_results[data_file])
+            self.redraw()
+        self.action_export.setEnabled(len(self.processing_results) > 0)
+
+    # data modification
+
+    def removeFileFromResults(self, data_file: SPCalDataFile):
+        self.processing_results.pop(data_file)
+
+    def removeIsotopes(self, isotopes: list[SPCalIsotope]):
+        for file in self.files.dataFiles():
+            for isotope in isotopes:
+                if isotope in file.selected_isotopes:
+                    file.selected_isotopes.remove(isotope)
+        self.reprocess(None)
+
+    def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
+        for data_file, results in self.processing_results.items():
+            if isotope in results:
+                results.pop(isotope)
+
+    # drawing
+
+    def redraw(self):
+        key = self.toolbar.combo_key.currentText()
+        view = self.graph.currentView()
+        isotopes = self.toolbar.selectedIsotopes()
+
+        self.graph.clear()
+
+        if view == "composition":
+            data_file = self.files.currentDataFile()
+            if data_file is None:
+                return
+            clusters = self.clusters(data_file, key)
+            colors = [
+                self.colorForIsotope(isotope, data_file)
+                for isotope in self.processing_results[data_file].keys()
+            ]
+            self.graph.drawResultsComposition(
+                list(self.processing_results[data_file].values()), colors, key, clusters
+            )
+        else:
+            files = self.files.selectedDataFiles()
+            if len(files) == 0:
+                current = self.files.currentDataFile()
+                files = [current] if current is not None else []
+
+            drawable = []
+            colors = []
+            for data_file in files:
+                for isotope, result in self.processing_results[data_file].items():
+                    if isotope in isotopes:
+                        drawable.append(result)
+                        colors.append(self.colorForIsotope(isotope, data_file))
+
+            if view == "particle":
+                self.graph.drawResultsParticle(drawable, colors, key)
+                for start, end in self.currentMethod().exclusion_regions:
+                    self.graph.particle.addExclusionRegion(start, end)
+            elif view == "histogram":
+                self.graph.drawResultsHistogram(drawable, colors, key)
+
+    def reprocess(self, data_file: SPCalDataFile | None):
+        if not isinstance(data_file, SPCalDataFile):
+            files = self.files.dataFiles()
+        else:
+            files = [data_file]
+
+        method = self.currentMethod()
+
+        for file in files:
+            results = method.processDataFile(file, file.selected_isotopes)
+            self.processing_results[file] = method.filterResults(results)
+            # refresh clusters
+            if file in self.processing_clusters:
+                self.processing_clusters[file].clear()
+            self.resultsChanged.emit(file)
+
+    # Dialogs
 
     def about(self) -> QtWidgets.QDialog:
         dlg = QtWidgets.QMessageBox(
@@ -600,41 +628,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogLoadFile(self, path: Path | None = None) -> ImportDialogBase | None:
-        if path is None:
-            path = get_open_spcal_path(self)
-            if path is None:
-                return None
-        else:
-            path = Path(path)
-
-        dlg = get_import_dialog_for_path(
-            self,
-            path,
-            self.files.currentDataFile(),
-            screening_method=self.currentMethod(),
-        )
-        dlg.dataImported.connect(self.files.addDataFile)
-        # the importer can take up a lot of memory so delete it
-        dlg.finished.connect(dlg.deleteLater)
-        dlg.exec()
-        return dlg
-
     def dialogBatchProcess(self):  # BatchProcessDialog:
-        raise NotImplementedError
+        df = self.files.currentDataFile()
+        dlg = SPCalBatchProcessingWizard(
+            df,
+            self.currentMethod(),
+            df.selected_isotopes if df is not None else [],
+            parent=self,
+        )
+        dlg.exec()
 
-    #     self.results.updateResults()  # Force an update
-    #     dlg = BatchProcessDialog(
-    #         [],
-    #         self.sample,
-    #         self.reference,
-    #         self.options,
-    #         self.results,
-    #         parent=self,
-    #     )
-    #     dlg.open()
-    #     return dlg
-    #
     def dialogCalculator(self) -> CalculatorDialog:
         method = self.currentMethod()
 
@@ -675,19 +678,74 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
 
     def dialogFilterDetections(self):
+        def set_filters(filters: list[SPCalProcessingFilter]):
+            method = self.currentMethod()
+            method.setFilters(filters)
+            self.currentMethodChanged.emit(method)
+
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
+        method = self.currentMethod()
         dlg = FilterDialog(
             list(self.processing_results[data_file].keys()),
-            self.currentMethod().filters,
+            method.filters,
             [],
             number_clusters=99,
             parent=self,
         )
-        dlg.filtersChanged.connect(self.currentMethod().setFilters)
+        dlg.filtersChanged.connect(set_filters)
         dlg.filtersChanged.connect(self.reprocess)
         dlg.open()
+
+    def dialogIonicResponse(self) -> ResponseDialog:
+        dlg = ResponseDialog(parent=self)
+        dlg.responsesSelected.connect(self.setResponses)
+        dlg.open()
+        return dlg
+
+    def dialogLoadFile(self, path: Path | None = None) -> ImportDialogBase | None:
+        if path is None:
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
+        else:
+            path = Path(path)
+
+        dlg = get_import_dialog_for_path(
+            self,
+            path,
+            self.files.currentDataFile(),
+            screening_method=self.currentMethod(),
+        )
+        dlg.dataImported.connect(self.files.addDataFile)
+        # the importer can take up a lot of memory so delete it
+        dlg.finished.connect(dlg.deleteLater)
+        dlg.exec()
+        return dlg
+
+    def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
+        dlg = MassFractionCalculatorDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogParticleDatabase(self) -> ParticleDatabaseDialog:
+        dlg = ParticleDatabaseDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogPeakProperties(self) -> QtWidgets.QDialog | None:
+        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+
+        data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
+
+        dlg = PeakPropertiesDialog(
+            self.processing_results[data_file],
+            self.toolbar.combo_isotope.currentIsotope(),
+        )
+        dlg.exec()
 
     def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog | None:
         isotope = self.toolbar.combo_isotope.currentIsotope()
@@ -705,36 +763,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.isotopeOptionsChanged.connect(self.onIsotopeOptionChanged)
         dlg.open()
         return dlg
-
-    def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
-        dlg = MassFractionCalculatorDialog(parent=self)
-        dlg.open()
-        return dlg
-
-    def dialogParticleDatabase(self) -> ParticleDatabaseDialog:
-        dlg = ParticleDatabaseDialog(parent=self)
-        dlg.open()
-        return dlg
-
-    def dialogIonicResponse(self) -> ResponseDialog:
-        dlg = ResponseDialog(parent=self)
-        dlg.responsesSelected.connect(self.setResponses)
-        dlg.open()
-        return dlg
-
-    def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
-        method = self.currentMethod()
-        for isotope, response in responses.items():
-            if isotope in method.isotope_options:
-                method.isotope_options[isotope].response = response
-            else:
-                method.isotope_options[isotope] = SPCalIsotopeOptions(
-                    None, response, None
-                )
-            if isotope in self.isotope_options.isotopeOptions():
-                option = self.isotope_options.optionForIsotope(isotope)
-                option.response = response
-                self.isotope_options.setIsotopeOption(isotope, option)
 
     def dialogSaveSession(self):
         raise NotImplementedError
@@ -774,14 +802,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
-    def reset(self):
-        self.files.reset()
-        self.graph.clear()
-        self.outputs.reset()
-        self.instrument_options.reset()
-        self.limit_options.reset()
-        self.isotope_options.reset()
-        self.toolbar.reset()
+    # UI
 
     def defaultLayout(self):
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
@@ -823,6 +844,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             [left_width, isotope_width, size.width() - left_width - isotope_width],
             QtCore.Qt.Orientation.Horizontal,
         )
+
+    def reset(self):
+        self.files.reset()
+        self.graph.clear()
+        self.outputs.reset()
+        self.instrument_options.reset()
+        self.limit_options.reset()
+        self.isotope_options.reset()
+        self.toolbar.reset()
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
