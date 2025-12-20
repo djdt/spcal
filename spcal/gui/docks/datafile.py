@@ -2,6 +2,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
+from spcal.gui.modelviews import DataFileRole
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 from spcal.processing import SPCalProcessingMethod
 
@@ -51,7 +52,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
     def currentDataFile(self) -> SPCalDataFile | None:
         index = self.list.currentIndex()
         if index.isValid():
-            return self.list.currentIndex().data(DataFileModel.DataFileRole)
+            return self.list.currentIndex().data(DataFileRole)
         else:
             return None
 
@@ -75,10 +76,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         )
 
     def selectedDataFiles(self) -> list[SPCalDataFile]:
-        selected = [
-            index.data(DataFileModel.DataFileRole)
-            for index in self.list.selectedIndexes()
-        ]
+        selected = [index.data(DataFileRole) for index in self.list.selectedIndexes()]
         if len(selected) == 0:
             current = self.currentDataFile()
             return [current] if current is not None else []
@@ -91,7 +89,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         if self.screening_method is None:
             raise ValueError("screening method has not been set")
         dlg = SelectIsotopesDialog(
-            index.data(DataFileModel.DataFileRole), self.screening_method, parent=self
+            index.data(DataFileRole), self.screening_method, parent=self
         )
         dlg.isotopesSelected.connect(self.onCurrentOrSelectionChanged)
         dlg.open()

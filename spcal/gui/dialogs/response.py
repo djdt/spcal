@@ -7,8 +7,6 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
-from spcal.gui.modelviews.basic import BasicTableView
-from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs import color_schemes
@@ -19,6 +17,9 @@ from spcal.gui.io import (
     get_save_spcal_path,
     is_spcal_path,
 )
+from spcal.gui.modelviews import DataFileRole, IsotopeRole
+from spcal.gui.modelviews.basic import BasicTableView
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.siunits import mass_concentration_units
 
@@ -26,9 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 class ConcentrationModel(QtCore.QAbstractTableModel):
-    DataFileRole = QtCore.Qt.ItemDataRole.UserRole + 1
-    IsotopeRole = QtCore.Qt.ItemDataRole.UserRole + 2
-
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
         self.isotopes: list[SPCalIsotopeBase] = []
@@ -98,9 +96,9 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
                         QtGui.QPalette.ColorRole.Window,
                     )
                 )
-        elif role == ConcentrationModel.DataFileRole:
+        elif role == DataFileRole:
             return list(self.concentrations.keys())[index.row()]
-        elif role == ConcentrationModel.IsotopeRole:
+        elif role == IsotopeRole:
             return self.isotopes[index.column()]
 
     def setData(
@@ -202,9 +200,9 @@ class IntensityModel(QtCore.QAbstractTableModel):
                         QtGui.QPalette.ColorRole.Window,
                     )
                 )
-        elif role == ConcentrationModel.DataFileRole:
+        elif role == DataFileRole:
             return list(self.intensities.keys())[index.row()]
-        elif role == ConcentrationModel.IsotopeRole:
+        elif role == IsotopeRole:
             return self.isotopes[index.column()]
 
 
@@ -379,7 +377,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def updateExclusionRegions(self):
         index = self.table_concs.currentIndex()
-        data_file = index.data(ConcentrationModel.DataFileRole)
+        data_file = index.data(DataFileRole)
         regions = self.intensity.exclusionRegions()
 
         self.model_intensity.exclusion_regions[data_file] = regions
@@ -396,8 +394,8 @@ class ResponseDialog(QtWidgets.QDialog):
         if not index.isValid():
             return
 
-        data_file = index.data(ConcentrationModel.DataFileRole)
-        isotope = index.data(ConcentrationModel.IsotopeRole)
+        data_file = index.data(DataFileRole)
+        isotope = index.data(IsotopeRole)
 
         # Draw the trace
         self.intensity.drawCurve(data_file.times, data_file[isotope])

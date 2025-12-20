@@ -2,18 +2,17 @@ from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.modelviews.values import ValueWidgetDelegate
+from spcal.gui.modelviews import (
+    BaseValueErrorRole,
+    BaseValueRole,
+    CurrentUnitRole,
+    UnitLabelRole,
+    UnitsRole,
+    ValueErrorRole,
+)
 
 
 class UnitsModel(QtCore.QAbstractTableModel):
-    BaseValueRole = QtCore.Qt.ItemDataRole.UserRole + 100
-    CurrentUnitRole = QtCore.Qt.ItemDataRole.UserRole + 101
-    UnitsRole = QtCore.Qt.ItemDataRole.UserRole + 102
-    UnitLabelRole = QtCore.Qt.ItemDataRole.UserRole + 103
-
-    ErrorRole = ValueWidgetDelegate.ErrorRole
-    BaseErrorRole = ValueWidgetDelegate.ErrorRole + 1
-
     def __init__(
         self,
         units_orientation: QtCore.Qt.Orientation = QtCore.Qt.Orientation.Horizontal,
@@ -56,11 +55,11 @@ class UnitsModel(QtCore.QAbstractTableModel):
                 if unit != "":
                     label = f"{label} ({unit})"
                 return label
-            elif role == UnitsModel.UnitLabelRole:
+            elif role == UnitLabelRole:
                 return self.unit_labels[section]
-            elif role == UnitsModel.CurrentUnitRole:
+            elif role == CurrentUnitRole:
                 return self.current_unit[section]
-            elif role == UnitsModel.UnitsRole:
+            elif role == UnitsRole:
                 return self.units[section]
         return super().headerData(section, orientation, role)
 
@@ -72,13 +71,13 @@ class UnitsModel(QtCore.QAbstractTableModel):
         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> bool:
         if orientation == self.units_orientation:
-            if role == UnitsModel.UnitLabelRole:
+            if role == UnitLabelRole:
                 self.unit_labels[section] = value
-            elif role == UnitsModel.CurrentUnitRole:
+            elif role == CurrentUnitRole:
                 self.current_unit[section] = value
                 tl, br = self.unitStartEndIndices(section)
                 self.dataChanged.emit(tl, br)
-            elif role == UnitsModel.UnitsRole:
+            elif role == UnitsRole:
                 self.units[section] = value
                 tl, br = self.unitStartEndIndices(section)
                 self.dataChanged.emit(tl, br)
@@ -97,20 +96,20 @@ class UnitsModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return
 
-        if role == UnitsModel.BaseValueRole:
+        if role == BaseValueRole:
             raise NotImplementedError
-        elif role == UnitsModel.BaseErrorRole:
+        elif role == BaseValueErrorRole:
             raise NotImplementedError
         elif role in [
             QtCore.Qt.ItemDataRole.DisplayRole,
             QtCore.Qt.ItemDataRole.EditRole,
         ]:
-            base = self.data(index, UnitsModel.BaseValueRole)
+            base = self.data(index, BaseValueRole)
             if base is not None:
                 base = float(base) / self.modifer(index)
             return base
-        elif role == UnitsModel.ErrorRole:
-            base = self.data(index, UnitsModel.BaseErrorRole)
+        elif role == ValueErrorRole:
+            base = self.data(index, BaseValueErrorRole)
             if base is not None:
                 base = float(base) / self.modifer(index)
             return base
@@ -125,24 +124,24 @@ class UnitsModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return False
 
-        if role == UnitsModel.BaseValueRole:
+        if role == BaseValueRole:
             raise NotImplementedError
-        elif role == UnitsModel.BaseErrorRole:
+        elif role == BaseValueErrorRole:
             raise NotImplementedError
-        elif role == UnitsModel.CurrentUnitRole:
+        elif role == CurrentUnitRole:
             self.current_unit[index.column()] = value
-        elif role == UnitsModel.UnitsRole:
+        elif role == UnitsRole:
             self.units[index.column()] = value
         elif role in [
             QtCore.Qt.ItemDataRole.EditRole,
         ]:
             if value is not None:
                 value = float(value) * self.modifer(index)
-            return self.setData(index, value, UnitsModel.BaseValueRole)
-        elif role == UnitsModel.ErrorRole:
+            return self.setData(index, value, BaseValueRole)
+        elif role == ValueErrorRole:
             if value is not None:
                 value = float(value) * self.modifer(index)
-            return self.setData(index, value, UnitsModel.BaseErrorRole)
+            return self.setData(index, value, BaseValueErrorRole)
         else:
             return False
 
@@ -154,16 +153,12 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
     sectionChanged = QtCore.Signal(int)
 
     def showComboBox(self, section: int):
-        units = self.model().headerData(
-            section, self.orientation(), UnitsModel.UnitsRole
-        )
+        units = self.model().headerData(section, self.orientation(), UnitsRole)
 
         widget = QtWidgets.QComboBox(self)
         widget.addItems(list(units.keys()))
         widget.setCurrentText(
-            self.model().headerData(
-                section, self.orientation(), UnitsModel.CurrentUnitRole
-            )
+            self.model().headerData(section, self.orientation(), CurrentUnitRole)
         )
 
         pos = self.sectionViewportPosition(section)
@@ -172,7 +167,7 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
         widget.setGeometry(QtCore.QRect(pos, 0, size.width(), size.height()))
         widget.currentTextChanged.connect(
             lambda value: self.model().setHeaderData(
-                section, self.orientation(), value, UnitsModel.CurrentUnitRole
+                section, self.orientation(), value, CurrentUnitRole
             )
         )
         widget.currentIndexChanged.connect(self.sectionChanged)
@@ -189,9 +184,7 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
         logicalIndex = self.logicalIndexAt(event.position().toPoint())
-        units = self.model().headerData(
-            logicalIndex, self.orientation(), UnitsModel.UnitsRole
-        )
+        units = self.model().headerData(logicalIndex, self.orientation(), UnitsRole)
         if len(units) > 1:
             self.showComboBox(logicalIndex)
         else:
@@ -208,9 +201,7 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
                 logicalIndex, self.orientation(), QtCore.Qt.ItemDataRole.EditRole
             )
         )
-        units = self.model().headerData(
-            logicalIndex, self.orientation(), UnitsModel.UnitsRole
-        )
+        units = self.model().headerData(logicalIndex, self.orientation(), UnitsRole)
         if len(units) < 2:
             option.subControls = (  # type: ignore
                 option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow  # type: ignore

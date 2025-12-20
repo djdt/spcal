@@ -3,6 +3,7 @@ from typing import Any
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
+from spcal.gui.modelviews import DataFileRole
 
 
 class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
@@ -113,17 +114,13 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         # data from the model
-        path = index.data(DataFileModel.PathRole)
-        nisotopes = len(index.data(DataFileModel.IsotopesRole))
-        nselected = len(index.data(DataFileModel.SelectedIsotopesRole))
+        data_file: SPCalDataFile = index.data(DataFileRole)
 
-        event_time = index.data(DataFileModel.EventTimeRole) * 1000.0
+        event_time = data_file.event_time * 1000.0
         event_time_unit = "ms"
         if event_time < 1.0:
             event_time *= 1000.0
             event_time_unit = "µs"
-
-        total_time = index.data(DataFileModel.TotalTimeRole)
 
         # get the style for drawing
         if option.widget is None:  # type: ignore , in QStyleOption
@@ -150,7 +147,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         style.drawItemPixmap(painter, close_rect, self.close_align, close_pixmap)
 
         # draw the menu button
-        if nisotopes > 1:
+        if len(data_file.isotopes) > 1:
             menu_pixmap = self.menu_icon.pixmap(pixmap_size, QtGui.QIcon.Mode.Normal)
             menu_rect = style.itemPixmapRect(frame, self.menu_align, menu_pixmap)
             if menu_rect.contains(option.widget.mapFromGlobal(QtGui.QCursor.pos())):  # type: ignore
@@ -169,7 +166,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             frame,
             QtCore.Qt.AlignmentFlag.AlignLeft,
             option,
-            f"{path.stem} :: [{total_time:.0f} s]",
+            f"{data_file.path.stem} :: [{data_file.total_time:.0f} s]",
             bold=True,
         )
         isotope_rect = self.drawElidedText(
@@ -178,7 +175,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             frame,
             QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignBottom,
             option,
-            f"Isotopes: {nselected} / {nisotopes}",
+            f"Isotopes: {len(data_file.selected_isotopes)} / {len(data_file.isotopes)}",
         )
         frame.setRight(isotope_rect.left())
         self.drawElidedText(
@@ -192,14 +189,6 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
 
 
 class DataFileModel(QtCore.QAbstractListModel):
-    DataFileRole = QtCore.Qt.ItemDataRole.UserRole
-    PathRole = QtCore.Qt.ItemDataRole.UserRole + 1
-    IsotopesRole = QtCore.Qt.ItemDataRole.UserRole + 2
-    SelectedIsotopesRole = QtCore.Qt.ItemDataRole.UserRole + 3
-    NumEventsRole = QtCore.Qt.ItemDataRole.UserRole + 4
-    EventTimeRole = QtCore.Qt.ItemDataRole.UserRole + 5
-    TotalTimeRole = QtCore.Qt.ItemDataRole.UserRole + 6
-
     editIsotopesRequested = QtCore.Signal(QtCore.QModelIndex)
 
     def __init__(
@@ -248,17 +237,5 @@ class DataFileModel(QtCore.QAbstractListModel):
 
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
             return f"{data_file.path.stem} :: {data_file.num_events} events, {len(data_file.isotopes)} isotopes"
-        elif role == DataFileModel.DataFileRole:
+        elif role == DataFileRole:
             return data_file
-        elif role == DataFileModel.PathRole:
-            return data_file.path
-        elif role == DataFileModel.IsotopesRole:
-            return data_file.isotopes
-        elif role == DataFileModel.SelectedIsotopesRole:
-            return data_file.selected_isotopes
-        elif role == DataFileModel.NumEventsRole:
-            return data_file.num_events
-        elif role == DataFileModel.EventTimeRole:
-            return data_file.event_time
-        elif role == DataFileModel.TotalTimeRole:
-            return data_file.total_time

@@ -1,11 +1,10 @@
 from PySide6 import QtCore, QtWidgets
 
+from spcal.gui.modelviews import ValueErrorRole
 from spcal.gui.widgets.values import ValueWidget
 
 
 class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
-    ErrorRole = QtCore.Qt.ItemDataRole.UserRole + 300
-
     def __init__(
         self,
         sigfigs: int = 6,
@@ -50,7 +49,7 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
     ):
         assert isinstance(editor, ValueWidget)
         value = index.data(QtCore.Qt.ItemDataRole.EditRole)
-        error = index.data(ValueWidgetDelegate.ErrorRole)
+        error = index.data(ValueErrorRole)
         editor.setValue(value)
         editor.setError(error)
 
@@ -75,7 +74,7 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
             QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
         )
         # Draw the error if set
-        error = index.data(ValueWidgetDelegate.ErrorRole)
+        error = index.data(ValueErrorRole)
         if error is not None:
             option.text = (  # type: ignore
                 option.text  # type: ignore

@@ -1,12 +1,21 @@
 from typing import Any
+
+import bottleneck as bn
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import mode as modefn
-from spcal.gui.objects import ContextMenuRedirectFilter
+from spcal.gui.modelviews import (
+    BaseValueErrorRole,
+    BaseValueRole,
+    CurrentUnitRole,
+    IsotopeRole,
+    UnitsRole,
+)
 from spcal.gui.modelviews.basic import BasicTableView
-from spcal.gui.modelviews.units import UnitsModel, UnitsHeaderView
+from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
+from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import SPCalProcessingResult
@@ -18,7 +27,6 @@ from spcal.siunits import (
     size_units,
     volume_units,
 )
-import bottleneck as bn
 
 
 class ResultOutputModel(UnitsModel):
@@ -31,15 +39,6 @@ class ResultOutputModel(UnitsModel):
         5: "Median",
         6: "Mode",
     }
-
-    IsotopeRole = QtCore.Qt.ItemDataRole.UserRole
-    # NumberRole = QtCore.Qt.ItemDataRole.UserRole + 1
-    # ConcentrationRole = QtCore.Qt.ItemDataRole.UserRole + 2
-    # BackgroundRole = QtCore.Qt.ItemDataRole.UserRole + 3
-    # LODRole = QtCore.Qt.ItemDataRole.UserRole + 4
-    # MeanRole = QtCore.Qt.ItemDataRole.UserRole + 5
-    # MedianRole = QtCore.Qt.ItemDataRole.UserRole + 6
-    # ModeRole = QtCore.Qt.ItemDataRole.UserRole + 7
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent=parent)
@@ -92,7 +91,7 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
                 return str(list(self.results.keys())[section])
-            elif role == ResultOutputModel.IsotopeRole:
+            elif role == IsotopeRole:
                 return list(self.results.keys())[section]
         return super().headerData(section, orientation, role)
 
@@ -107,9 +106,9 @@ class ResultOutputModel(UnitsModel):
         isotope = list(self.results.keys())[index.row()]
         name = ResultOutputModel.COLUMNS[index.column()]
         result = self.results[isotope]
-        if role == ResultOutputModel.IsotopeRole:
+        if role == IsotopeRole:
             return isotope
-        elif role == UnitsModel.BaseValueRole:
+        elif role == BaseValueRole:
             if name == "Number":
                 return result.number
             elif name == "Concentration":
@@ -135,7 +134,7 @@ class ResultOutputModel(UnitsModel):
                 return result.method.calibrateTo(
                     float(val), self.key, isotope, result.event_time
                 )
-        elif role == UnitsModel.BaseErrorRole:
+        elif role == BaseValueErrorRole:
             if name == "Number":
                 return result.number_error
             elif name in ["Background", "Mean"]:
@@ -202,7 +201,7 @@ class ResultOutputView(BasicTableView):
 
     def onHeaderClicked(self, section: int):
         isotope = self.results_model.data(
-            self.results_model.index(section, 0), ResultOutputModel.IsotopeRole
+            self.results_model.index(section, 0), IsotopeRole
         )
         self.isotopeSelected.emit(isotope)
 
@@ -222,7 +221,7 @@ class ResultOutputView(BasicTableView):
     def selectedIsotopes(self):
         selected_isotopes = []
         for idx in self.selectedIndexes():
-            isotope = idx.data(ResultOutputModel.IsotopeRole)
+            isotope = idx.data(IsotopeRole)
             if isotope not in selected_isotopes:
                 selected_isotopes.append(isotope)
         return selected_isotopes
@@ -299,18 +298,18 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
         orientation = self.table.header.orientation()
         self.table.results_model.setHeaderData(
-            1, orientation, conc_units, role=UnitsModel.UnitsRole
+            1, orientation, conc_units, role=UnitsRole
         )
         self.table.results_model.setHeaderData(
-            1, orientation, default_conc_unit, role=UnitsModel.CurrentUnitRole
+            1, orientation, default_conc_unit, role=CurrentUnitRole
         )
 
         for i in range(2, 6):
             self.table.results_model.setHeaderData(
-                i, orientation, units, role=UnitsModel.UnitsRole
+                i, orientation, units, role=UnitsRole
             )
             self.table.results_model.setHeaderData(
-                i, orientation, default_unit, role=UnitsModel.CurrentUnitRole
+                i, orientation, default_unit, role=CurrentUnitRole
             )
 
     def setSignificantFigures(self, sf: int):
