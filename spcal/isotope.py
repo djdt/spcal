@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-RE_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
+REGEX_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class SPCalIsotope(SPCalIsotopeBase):
 
     @classmethod
     def fromString(cls, text: str) -> "SPCalIsotope":
-        m = RE_ISOTOPE.match(text.strip())
+        m = REGEX_ISOTOPE.fullmatch(text.strip())
         if m is not None:
             symbol = m.group(2)
             if m.group(1) is not None:
@@ -42,12 +42,12 @@ class SPCalIsotope(SPCalIsotopeBase):
             elif m.group(3) is not None:
                 isotope = int(m.group(3))
             else:
-                isotope = 0
+                raise NameError(f"'{text}' is missing isotope number")
+
             if (symbol, isotope) in ISOTOPE_TABLE:
                 return ISOTOPE_TABLE[(symbol, isotope)]
 
-        logger.info(f"no isotope found for '{text}'")
-        return SPCalIsotope(text, 0, 0.0)
+        raise NameError(f"'{text}' is not a valid isotope")
 
 
 @dataclass(frozen=True)

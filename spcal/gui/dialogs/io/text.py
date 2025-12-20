@@ -7,13 +7,108 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
+from spcal.gui.modelviews import IsotopeRole
 from spcal.gui.modelviews.headers import CheckableHeaderView
 from spcal.gui.widgets import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import (
+    ISOTOPE_TABLE,
+    RECOMMENDED_ISOTOPES,
+    SPCalIsotope,
+    REGEX_ISOTOPE,
+)
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)
+
+
+class IsotopeValidator(QtGui.QValidator):
+    def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
+        match = REGEX_ISOTOPE.fullmatch(input)
+        if match is None:
+            return QtGui.QValidator.State.Intermediate, input, pos
+        symbol = match.group(2)
+        if match.group(1) is not None:
+            isotope = int(match.group(1))
+        elif match.group(3) is not None:
+            isotope = int(match.group(3))
+        else:
+            return QtGui.QValidator.State.Intermediate, input, pos
+
+        if (symbol, isotope) in ISOTOPE_TABLE:
+            return QtGui.QValidator.State.Acceptable, input, pos
+        else:
+            return QtGui.QValidator.State.Intermediate, input, pos
+
+    def fixup(self, input: str) -> str:
+        match = REGEX_ISOTOPE.match(input)
+        if match is None:
+            return input
+        if (
+            len(match.group(2)) == 2
+            and match.group(1) is None
+            and match.group(3) is None
+        ):
+            if match.group(2) in RECOMMENDED_ISOTOPES:
+                return input + str(RECOMMENDED_ISOTOPES[match.group(2)])
+        elif match.group(1) is not None:
+            return match.group(1) + match.group(2)
+        elif match.group(3) is not None:
+            return match.group(2) + match.group(3)
+
+        return input
+
+
+class IsotopeNameDelegate(QtWidgets.QItemDelegate):
+    ISOTOPE_COMPLETER_STRINGS = list(
+        f"{symbol}{isotope}" for symbol, isotope in ISOTOPE_TABLE.keys()
+    ) + list(f"{isotope}{symbol}" for symbol, isotope in ISOTOPE_TABLE.keys())
+
+    def createEditor(
+        self,
+        parent: QtWidgets.QWidget,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ) -> QtWidgets.QWidget:
+        editor = QtWidgets.QLineEdit(
+            index.data(QtCore.Qt.ItemDataRole.EditRole), parent=parent
+        )
+        editor.setValidator(IsotopeValidator())
+        editor.setCompleter(
+            QtWidgets.QCompleter(IsotopeNameDelegate.ISOTOPE_COMPLETER_STRINGS)
+        )
+        return editor
+
+    def setEditorData(
+        self,
+        editor: QtWidgets.QWidget,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
+        assert isinstance(editor, QtWidgets.QLineEdit)
+        editor.setText(index.data(QtCore.Qt.ItemDataRole.EditRole))
+
+    def setModelData(
+        self,
+        editor: QtWidgets.QWidget,
+        model: QtCore.QAbstractItemModel,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
+        assert isinstance(editor, QtWidgets.QLineEdit)
+        model.setData(index, editor.text(), QtCore.Qt.ItemDataRole.EditRole)
+        try:
+            isotope = SPCalIsotope.fromString(editor.text())
+            model.setData(index, isotope, IsotopeRole)
+            model.setData(
+                index,
+                QtGui.QPalette.ColorRole.Text,
+                QtCore.Qt.ItemDataRole.ForegroundRole,
+            )
+        except NameError:
+            model.setData(
+                index,
+                QtGui.QPalette.ColorRole.Accent,
+                QtCore.Qt.ItemDataRole.ForegroundRole,
+            )
 
 
 class TextImportDialog(ImportDialogBase):
@@ -57,6 +152,9 @@ class TextImportDialog(ImportDialogBase):
         self.table.setColumnCount(column_count)
         self.table.setRowCount(self.HEADER_LINE_COUNT)
         self.table.setFont(QtGui.QFont("Courier"))
+
+        self.table.setItemDelegate(IsotopeNameDelegate())
+
         self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
@@ -112,7 +210,14 @@ class TextImportDialog(ImportDialogBase):
         self.layout_body.addWidget(self.table)
 
     def isComplete(self) -> bool:
-        return not self.event_time.isEnabled() or self.event_time.hasAcceptableInput()
+        if self.event_time.isEnabled() and not self.event_time.hasAcceptableInput():
+            return False
+
+        try:
+            self.selectedIsotopes()
+        except NameError:
+            return False
+        return True
 
     def overrideEventTimeChanged(self):
         self.event_time.setEnabled(self.override_event_time.isChecked())
@@ -148,6 +253,9 @@ class TextImportDialog(ImportDialogBase):
                 names.append(item.text().replace(" ", "_"))
         return names
 
+    def selectedIsotopes(self) -> list[SPCalIsotope]:
+        return [SPCalIsotope.fromString(name) for name in self.selectedNames()]
+
     def fillTable(self):
         lines = [
             line.split(self.delimiter())
@@ -180,14 +288,24 @@ class TextImportDialog(ImportDialogBase):
                 item = self.table.item(row, col)
                 if item is None:
                     continue
+
+                color_group = QtGui.QPalette.ColorGroup.Active
+                color_role = QtGui.QPalette.ColorRole.Text
                 if row != header_row:
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+                    if not REGEX_ISOTOPE.fullmatch(item.text()):
+                        color_group = QtGui.QPalette.ColorGroup.Active
+                        color_role = QtGui.QPalette.ColorRole.Accent
+
                 if row < header_row or col not in self.useColumns():
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
+                    color_group = QtGui.QPalette.ColorGroup.Disabled
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
+
+                item.setForeground(self.palette().color(color_group, color_role))
 
     def guessIsotopesFromTable(self):
         columns = []
