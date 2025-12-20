@@ -46,7 +46,11 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             self.name_flags.update(name_flags)
 
     # Rows and Columns
-    def columnCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+    def columnCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
         if parent.isValid():
             return 0
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
@@ -54,7 +58,11 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         else:
             return len(self.array.dtype.names)  # type: ignore
 
-    def rowCount(self, parent: QtCore.QModelIndex = QtCore.QModelIndex()) -> int:
+    def rowCount(
+        self,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+    ) -> int:
         if parent.isValid():
             return 0
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
@@ -64,16 +72,21 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
     # Data
     def data(
-        self, index: QtCore.QModelIndex, role: int = QtCore.Qt.DisplayRole
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> str | None:
-        if not index.isValid():
+        if not index.isValid() or self.array.dtype.names is None:
             return None
 
         row, column = index.row(), index.column()
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
             row, column = column, row
 
-        if role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
+        if role in (
+            QtCore.Qt.ItemDataRole.DisplayRole,
+            QtCore.Qt.ItemDataRole.EditRole,
+        ):
             name = self.array.dtype.names[column]
             value = self.array[name][row]
             if np.isreal(value) and np.isnan(value):
@@ -83,9 +96,12 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             return None
 
     def setData(
-        self, index: QtCore.QModelIndex, value: Any, role: QtCore.Qt.ItemFlag
+        self,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+        value: Any,
+        role: int = QtCore.Qt.ItemDataRole.EditRole,
     ) -> bool:
-        if not index.isValid():
+        if not index.isValid() or self.array.dtype.names is None:
             return False
 
         row, column = index.row(), index.column()
@@ -93,7 +109,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             row, column = column, row
 
         name = self.array.dtype.names[column]
-        if role == QtCore.Qt.EditRole:
+        if role == QtCore.Qt.ItemDataRole.EditRole:
             if value == "":
                 value = self.fill_values[self.array[name].dtype.kind]
             self.array[name][row] = value
@@ -101,9 +117,11 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             return True
         return False
 
-    def flags(self, index: QtCore.QModelIndex) -> QtCore.Qt.ItemFlags:
-        if not index.isValid():  # pragma: no cover
-            return 0
+    def flags(
+        self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
+    ) -> QtCore.Qt.ItemFlag:
+        if not index.isValid() or self.array.dtype.names is None:  # pragma: no cover
+            return QtCore.Qt.ItemFlag.NoItemFlags
 
         idx = (
             index.column()
@@ -113,7 +131,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
         name = self.array.dtype.names[idx]
         return self.name_flags.get(
-            name, super().flags(index) | QtCore.Qt.ItemIsEditable
+            name, super().flags(index) | QtCore.Qt.ItemFlag.ItemIsEditable
         )
 
     # Header
@@ -121,18 +139,23 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         self,
         section: int,
         orientation: QtCore.Qt.Orientation,
-        role: QtCore.Qt.ItemDataRole,
+        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> str | None:
-        if role != QtCore.Qt.DisplayRole:  # pragma: no cover
+        if role != QtCore.Qt.ItemDataRole.DisplayRole:  # pragma: no cover
             return None
 
         if orientation == self.orientation:
             return str(section)
         else:
+            assert self.array.dtype.names is not None
             return self.array.dtype.names[section]
 
     def insertColumns(
-        self, pos: int, columns: int, parent: QtCore.QModelIndex = QtCore.QModelIndex()
+        self,
+        pos: int,
+        columns: int,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> bool:
         if self.orientation == QtCore.Qt.Orientation.Vertical:
             raise NotImplementedError("name insert is not implemented")
@@ -142,7 +165,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             [
                 tuple(
                     self.fill_values[d.kind]
-                    for d, v in self.array.dtype.fields.values()
+                    for d, v in self.array.dtype.fields.values()  # type: ignore
                 )
             ],
             dtype=self.array.dtype,
@@ -152,7 +175,11 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         return True
 
     def insertRows(
-        self, pos: int, rows: int, parent: QtCore.QModelIndex = QtCore.QModelIndex()
+        self,
+        pos: int,
+        rows: int,
+        parent: QtCore.QModelIndex
+        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> bool:
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
             raise NotImplementedError("name insert is not implemented")
@@ -162,7 +189,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             [
                 tuple(
                     self.fill_values[d.kind]
-                    for d, v in self.array.dtype.fields.values()
+                    for d, v in self.array.dtype.fields.values()  # type: ignore
                 )
             ],
             dtype=self.array.dtype,
@@ -183,7 +210,9 @@ class SearchColumnsProxyModel(QtCore.QSortFilterProxyModel):
         self.invalidateFilter()
 
     def filterAcceptsRow(
-        self, source_row: int, source_parent: QtCore.QModelIndex
+        self,
+        source_row: int,
+        source_parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ) -> bool:
         if self._search_string == "":
             return True
