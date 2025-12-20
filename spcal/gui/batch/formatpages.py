@@ -109,7 +109,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.chunk_size.setEnabled(state == QtCore.Qt.CheckState.Checked)
 
     def nextId(self):
-        return SPCalBatchProcessingWizard.METHOD_PAGE_ID
+        return METHOD_PAGE_ID
 
     def isComplete(self) -> bool:
         return len(self.table.selectedIsotopes()) > 0
@@ -184,6 +184,9 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         self.list_isotopes = QtWidgets.QListWidget()
         self.list_isotopes.model().dataChanged.connect(self.completeChanged)
+
+        self.table_isotopes = QtWidgets.QTableView()
+        self.table_isotopes.setItemDelegateForColumn(0, QtWidgets.QItemDelegate)
 
         layout_event_time = QtWidgets.QHBoxLayout()
         layout_event_time.addWidget(self.event_time, 1)
