@@ -643,9 +643,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.process_thread = QtCore.QThread()
         self.process_timer = QtCore.QElapsedTimer()
 
-        self.setPage(
-            SPCalBatchProcessingWizard.FILE_PAGE_ID, BatchFilesWizardPage(existing_file)
-        )
+        self.setPage(FILE_PAGE_ID, BatchFilesWizardPage(existing_file))
         delimiter, skip_rows, cps = ",", 1, False
         event_time, override_event_time = None, False
         if isinstance(existing_file, SPCalTextDataFile):
