@@ -242,7 +242,7 @@ class TextImportDialog(ImportDialogBase):
         for c in range(self.table.columnCount()):
             item = self.table.item(self.spinbox_first_line.value() - 1, c)
             if item is not None:
-                names.append(item.text().replace(" ", "_"))
+                names.append(item.text())
         return names
 
     def selectedNames(self) -> list[str]:
@@ -250,8 +250,21 @@ class TextImportDialog(ImportDialogBase):
         for c in self.useColumns():
             item = self.table.item(self.spinbox_first_line.value() - 1, c)
             if item is not None:
-                names.append(item.text().replace(" ", "_"))
+                names.append(item.text())
         return names
+
+    def isotopeTable(self) -> dict[SPCalIsotope, str]:
+        table = {}
+        for c in range(self.table.columnCount()):
+            item = self.table.item(self.spinbox_first_line.value() - 1, c)
+            if item is not None:
+                try:
+                    table[SPCalIsotope.fromString(item.text())] = item.data(
+                        QtCore.Qt.ItemDataRole.UserRole
+                    )
+                except NameError:
+                    pass
+        return table
 
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         return [SPCalIsotope.fromString(name) for name in self.selectedNames()]
@@ -267,7 +280,8 @@ class TextImportDialog(ImportDialogBase):
         for row, line in enumerate(lines):
             line.extend([""] * (col_count - len(line)))
             for col, text in enumerate(line):
-                item = QtWidgets.QTableWidgetItem(text.strip().replace(" ", "_"))
+                item = QtWidgets.QTableWidgetItem(text.strip())
+                item.setData(QtCore.Qt.ItemDataRole.UserRole, text.strip())
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
@@ -358,6 +372,7 @@ class TextImportDialog(ImportDialogBase):
     def accept(self):
         data_file = SPCalTextDataFile.load(
             self.file_path,
+            isotope_table=self.isotopeTable(),
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
             cps=self.combo_intensity_units.currentText() == "CPS",
@@ -366,8 +381,7 @@ class TextImportDialog(ImportDialogBase):
             else None,
         )
 
-        selected = [SPCalIsotope.fromString(name) for name in self.selectedNames()]
-        data_file.selected_isotopes = selected
+        data_file.selected_isotopes = self.selectedIsotopes()
         self.dataImported.emit(data_file)
         logger.info(
             f"Text data loaded from {self.file_path} ({data_file.num_events} events)."

@@ -113,7 +113,7 @@ class SPCalTextDataFile(SPCalDataFile):
         path: Path,
         signals: np.ndarray,
         times: np.ndarray,
-        isotopes: list[SPCalIsotope],
+        isotope_table: dict[SPCalIsotope, str],
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
@@ -124,20 +124,19 @@ class SPCalTextDataFile(SPCalDataFile):
         super().__init__(path, times=times, instrument_type=instrument_type)
 
         if signals.dtype.names is None:
-            raise ValueError("expected signals to have a structured dtype")
-        if len(isotopes) != len(signals.dtype.names):
-            raise ValueError("number of isotopes does not match names in signals")
+            raise ValueError("expected `signals` to have a structured dtype")
+        for name in isotope_table.values():
+            if name not in signals.dtype.names:
+                raise ValueError(f"`isotope_table` '{name}' not found in `signals` array")
 
         self.signals = signals
-        self.isotope_table = {
-            iso: name for iso, name in zip(isotopes, signals.dtype.names)
-        }
+        self.isotope_table = isotope_table
 
         self.delimiter = delimiter
         self.skip_row = skip_rows
         self.cps = cps
         self.override_event_time = override_event_time
-        # self.rename_fields = rename_fields
+
         self.drop_fields = drop_fields
 
     @property
@@ -155,7 +154,7 @@ class SPCalTextDataFile(SPCalDataFile):
     def load(
         cls,
         path: Path,
-        isotopes: list[SPCalIsotope] | None = None,
+        isotope_table: dict[SPCalIsotope, str] | None = None,
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
@@ -230,8 +229,10 @@ class SPCalTextDataFile(SPCalDataFile):
         signals = rfn.drop_fields(signals, drop_fields)
         assert signals.dtype.names is not None
 
-        if isotopes is None:
-            isotopes = [SPCalIsotope.fromString(name) for name in signals.dtype.names]
+        if isotope_table is None:
+            isotope_table = {
+                SPCalIsotope.fromString(name): name for name in signals.dtype.names
+            }
 
         if cps:
             for name in signals.dtype.names:
@@ -244,7 +245,7 @@ class SPCalTextDataFile(SPCalDataFile):
             path,
             signals,
             times,
-            isotopes,
+            isotope_table,
             delimiter=delimiter,
             skip_rows=skip_rows,
             cps=cps,
