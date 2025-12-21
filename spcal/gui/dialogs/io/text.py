@@ -281,7 +281,9 @@ class TextImportDialog(ImportDialogBase):
             line.extend([""] * (col_count - len(line)))
             for col, text in enumerate(line):
                 item = QtWidgets.QTableWidgetItem(text.strip())
-                item.setData(QtCore.Qt.ItemDataRole.UserRole, text.strip())
+                item.setData(
+                    QtCore.Qt.ItemDataRole.UserRole, text.strip().replace(" ", "_")
+                )
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
@@ -309,6 +311,7 @@ class TextImportDialog(ImportDialogBase):
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+                    item.setText(IsotopeValidator().fixup(item.text()))
                     if not REGEX_ISOTOPE.fullmatch(item.text()):
                         color_group = QtGui.QPalette.ColorGroup.Active
                         color_role = QtGui.QPalette.ColorRole.Accent
