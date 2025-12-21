@@ -42,7 +42,9 @@ class IsotopeComboBox(QtWidgets.QComboBox):
         self.currentIndexChanged.connect(self.onIndexChanged)
 
     def addIsotope(self, isotope: SPCalIsotopeBase):
-        self.addItem(str(isotope), userData=isotope)
+        index = self.count()
+        self.insertItem(index, str(isotope))
+        self.setItemData(index, isotope, IsotopeRole)
 
     def addIsotopes(self, isotopes: list[SPCalIsotopeBase]):
         for isotope in isotopes:
