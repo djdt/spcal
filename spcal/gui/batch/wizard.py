@@ -602,6 +602,11 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             icon = QtGui.QIcon.fromTheme("task-process-0")
         item.setIcon(icon)
 
+    def exceptionRaised(self, index: int, exception: Exception):
+        item = self.output_files.item(index)
+        item.setIcon(QtGui.QIcon.fromTheme("data-error"))
+        item.setData(QtCore.Qt.ItemDataRole.ToolTipRole, str(exception))
+
     def setStatus(self, text: str):
         self.status.setText(text)
 
@@ -642,6 +647,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         self.process_thread = QtCore.QThread()
         self.process_timer = QtCore.QElapsedTimer()
+        self.process_exceptions: list[Exception] = []
 
         self.setPage(FILE_PAGE_ID, BatchFilesWizardPage(existing_file))
         delimiter, skip_rows, cps = ",", 1, False
@@ -688,6 +694,8 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(False)
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Cancel")
 
+        self.process_exceptions.clear()
+
         paths = self.run_page.pathPairs()
         method: SPCalProcessingMethod = self.field("method")
 
@@ -712,16 +720,30 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         if self.hasVisitedPage(TEXT_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("text.isotopes")
+            isotope_table = self.field("text.isotopes.table")
+            override = (
+                self.field("text.event_time")
+                if self.field("text.event_time.override")
+                else None
+            )
+            delimiter = self.field("text.delimiter")
+            if delimiter == "Space":
+                delimiter = " "
+            elif delimiter == "Tab":
+                delimiter = "\t"
+
+            cps = self.field("text.cps").lower() == "cps"
             self.worker = TextBatchWorker(
                 paths,
                 method,
                 isotopes,
                 export_options,
-                delimiter=self.field("text.delimiter"),
-                skip_rows=self.field("text.skip_rows"),
-                cps=self.field("text.cps"),
-                override_event_time=self.field("text.override_event_time"),
-                instrument_type=self.field("text.instrument_type"),
+                isotope_table=isotope_table,
+                delimiter=delimiter,
+                skip_rows=self.field("text.first_line"),
+                cps=cps,
+                override_event_time=override,
+                instrument_type=self.field("text.instrument_type").lower(),
             )
         elif self.hasVisitedPage(NU_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
@@ -756,6 +778,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         self.worker.started.connect(self.startProgress)
         self.worker.progress.connect(self.updateProgress)
+        self.worker.exception.connect(self.workerExceptionRaised)
         self.worker.finished.connect(self.stopProgress)
 
         self.process_thread.started.connect(self.worker.process)
@@ -775,8 +798,19 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     def stopProgress(self):
         self.stopThread()
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
-        self.run_page.setStatus("Processing Complete!")
-        logger.info("Batch processing complete.")
+
+        if len(self.process_exceptions) == 0:
+            self.run_page.setStatus("Processing complete!")
+        else:
+            self.run_page.setStatus(
+                f"Processing complete, {len(self.process_exceptions)} failed!"
+            )
+            logger.info("Batch processing complete.")
+
+    @QtCore.Slot()
+    def workerExceptionRaised(self, index: int, exception: Exception):
+        self.run_page.exceptionRaised(index, exception)
+        self.process_exceptions.append(exception)
 
     def reject(self):
         if self.process_thread.isRunning():
@@ -785,8 +819,8 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             self.button(QtWidgets.QWizard.WizardButton.FinishButton).setEnabled(True)
             self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
             self.run_page.resetProgress()
-            self.run_page.setStatus("Processing Canceled!")
-            logger.warning("Batch processing canceled.")
+            self.run_page.setStatus("Processing cancelled!")
+            logger.warning("Batch processing cancelled.")
         else:
             self.stopThread()
             self.process_thread.deleteLater()
@@ -803,5 +837,9 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
     method = SPCalProcessingMethod()
     wiz = SPCalBatchProcessingWizard(None, method, [])
+
+    wiz.page(FILE_PAGE_ID).addFile(
+        Path("/home/tom/Sync/Research/Experimental/ICPMS/spTOF/mix.csv")
+    )
     wiz.open()
     app.exec()

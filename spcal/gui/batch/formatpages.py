@@ -1,18 +1,19 @@
-import numpy as np
 import json
-from pathlib import Path
 import re
-from PySide6 import QtCore, QtWidgets
+from pathlib import Path
+
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalNuDataFile
+from spcal.gui.batch import METHOD_PAGE_ID
 from spcal.gui.dialogs.io.text import TextImportDialog
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
-from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.siunits import time_units
-
-from spcal.gui.batch import METHOD_PAGE_ID
+from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 
 
 class BatchNuWizardPage(QtWidgets.QWizardPage):
@@ -182,11 +183,13 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.first_line.setValue(skip_rows)
         self.first_line.valueChanged.connect(self.updateIsotopes)
 
-        self.list_isotopes = QtWidgets.QListWidget()
-        self.list_isotopes.model().dataChanged.connect(self.completeChanged)
+        self.instrument_type = QtWidgets.QComboBox()
+        self.instrument_type.addItems(["Quadrupole", "TOF"])
 
-        self.table_isotopes = QtWidgets.QTableView()
-        self.table_isotopes.setItemDelegateForColumn(0, QtWidgets.QItemDelegate)
+        self.table_isotopes = QtWidgets.QTableWidget()
+        self.table_isotopes.setColumnCount(2)
+        self.table_isotopes.setItemDelegateForColumn(1, IsotopeNameDelegate())
+        self.table_isotopes.model().dataChanged.connect(self.completeChanged)
 
         layout_event_time = QtWidgets.QHBoxLayout()
         layout_event_time.addWidget(self.event_time, 1)
@@ -200,20 +203,23 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         options_box_layout.addRow("Intensity units:", self.combo_intensity_units)
         options_box_layout.addRow("Delimiter:", self.combo_delimiter)
         options_box_layout.addRow("Import from row:", self.first_line)
+        options_box_layout.addRow("Instrument type:", self.instrument_type)
         options_box.setLayout(options_box_layout)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(options_box, 0)
-        layout.addWidget(self.list_isotopes)
+        layout.addWidget(self.table_isotopes)
         self.setLayout(layout)
 
-        self.registerField("text.delimiter", self.combo_delimiter)
+        self.registerField("text.delimiter", self.combo_delimiter, "currentText")
         self.registerField("text.first_line", self.first_line)
-        self.registerField("text.units", self.combo_intensity_units)
+        self.registerField("text.cps", self.combo_intensity_units, "currentText")
         self.registerField("text.event_time", self.event_time, "baseValueProp")
         self.registerField("text.event_time.override", self.override_event_time)
+        self.registerField("text.instrument_type", self.instrument_type, "currentText")
 
         self.registerField("text.isotopes", self, "isotopesProp")
+        self.registerField("text.isotopes.table", self, "isotopesTableProp")
 
     def delimiter(self) -> str:
         delimiter = self.combo_delimiter.currentText()
@@ -290,41 +296,73 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         size = TextImportDialog.HEADER_LINE_SIZE
         header = paths[0].open("r").readlines((row + 1) * size)
 
-        selected_isotopes = self.selectedIsotopes()
-
-        shared_isotopes = set(
-            SPCalIsotope.fromString(x) for x in header[row].split(delimiter)
-        )
+        shared_names = set(header[row].split(delimiter))
 
         for path in paths[1:]:
             header = path.open("r").readlines((row + 1) * size)
-            isotopes = set(
-                SPCalIsotope.fromString(x) for x in header[row].split(delimiter)
-            )
-            shared_isotopes = shared_isotopes.intersection(isotopes)
+            shared_names = shared_names.intersection(header[row].split(delimiter))
 
-        self.list_isotopes.clear()
-        for isotope in sorted(shared_isotopes, key=lambda iso: iso.isotope):
-            item = QtWidgets.QListWidgetItem(str(isotope))
-            item.setData(QtCore.Qt.ItemDataRole.UserRole, isotope)
-            item.setCheckState(
-                QtCore.Qt.CheckState.Checked
-                if isotope in selected_isotopes
-                else QtCore.Qt.CheckState.Unchecked
-            )
-            self.list_isotopes.addItem(item)
+        self.table_isotopes.clear()
+        self.table_isotopes.setRowCount(len(shared_names))
+
+        isotope_count = 0
+
+        validator = IsotopeNameValidator()
+        for row, name in enumerate(shared_names):
+            name = name.strip()
+            item = QtWidgets.QTableWidgetItem()
+            item.setText(name.replace(" ", "_"))
+            item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
+            item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+
+            self.table_isotopes.setItem(row, 0, item)
+            iso_item = QtWidgets.QTableWidgetItem()
+            try:
+                name = validator.fixup(name)
+                SPCalIsotope.fromString(name)
+                iso_item.setText(name)
+                item.setCheckState(QtCore.Qt.CheckState.Checked)
+                background = QtGui.QPalette.ColorRole.Base
+                isotope_count += 1
+            except NameError:
+                background = QtGui.QPalette.ColorRole.AlternateBase
+            iso_item.setBackground(self.palette().color(background))
+
+            self.table_isotopes.setItem(row, 1, iso_item)
+
+        self.instrument_type.setEnabled(isotope_count > 1)
+        if isotope_count == 1:
+            self.instrument_type.setCurrentText("Quadrupole")
+        else:
+            self.instrument_type.setCurrentText("TOF")
 
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         selected = []
-        for i in range(self.list_isotopes.count()):
-            item = self.list_isotopes.item(i)
-            if item.checkState() == QtCore.Qt.CheckState.Checked:
-                selected.append(item.data(QtCore.Qt.ItemDataRole.UserRole))
+        for i in range(self.table_isotopes.rowCount()):
+            item = self.table_isotopes.item(i, 0)
+            if item is not None and item.checkState() == QtCore.Qt.CheckState.Checked:
+                item = self.table_isotopes.item(i, 1)
+                if item is not None:
+                    selected.append(SPCalIsotope.fromString(item.text()))
         return selected
 
     def onOverrideChecked(self, checked: QtCore.Qt.CheckState):
-        self.event_time.setEnabled(checked == QtCore.Qt.CheckState.Unchecked)
+        self.event_time.setEnabled(checked == QtCore.Qt.CheckState.Checked)
         self.completeChanged.emit()
+
+    def isotopesTable(self) -> dict[SPCalIsotope, str]:
+        table = {}
+        for r in range(self.table_isotopes.rowCount()):
+            name_item = self.table_isotopes.item(r, 0)
+            iso_item = self.table_isotopes.item(r, 1)
+            if name_item is None or iso_item is None:
+                continue
+            try:
+                isotope = SPCalIsotope.fromString(iso_item.text())
+                table[isotope] = name_item.text()
+            except NameError:
+                continue
+        return table
 
     def nextId(self):
         return METHOD_PAGE_ID
@@ -362,6 +400,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         return True
 
     isotopesProp = QtCore.Property(list, selectedIsotopes)
+    isotopesTableProp = QtCore.Property(object, isotopesTable)
 
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):

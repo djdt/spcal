@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from pathlib import Path
-from typing import Generator
+from typing import Generator, TextIO
 from PySide6 import QtCore
 
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
@@ -11,6 +11,9 @@ from spcal.processing.method import SPCalProcessingMethod
 from spcal.io.export import append_results_summary, export_spcal_processing_results
 from spcal.processing.result import SPCalProcessingResult
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
 def _batch_process_data_file(
@@ -31,9 +34,33 @@ def _batch_process_data_file(
     return list(results.values()), clusters
 
 
+def _batch_export_results(
+    data_file: SPCalDataFile,
+    outpath: Path,
+    results: list[SPCalProcessingResult],
+    clusters: dict[str, np.ndarray],
+    export_options: dict,
+    summary_fp: TextIO | None,
+):
+    export_spcal_processing_results(
+        outpath,
+        data_file,
+        results,
+        clusters,
+        units=export_options["units"],
+        export_options=export_options["options"],
+        export_results=export_options["results"],
+        export_arrays=export_options["arrays"],
+        export_compositions=export_options["clusters"],
+    )
+    if summary_fp is not None:
+        append_results_summary(summary_fp, data_file, results, export_options["units"])
+
+
 class NuBatchWorker(QtCore.QObject):
     started = QtCore.Signal(int)
     progress = QtCore.Signal(int, float)
+    exception = QtCore.Signal(int, object)
     finished = QtCore.Signal()
 
     def __init__(
@@ -97,6 +124,37 @@ class NuBatchWorker(QtCore.QObject):
                     last / nintegs,
                 )
 
+    def processFile(
+        self, index: int, path: Path, outpath: Path, summary_fp: TextIO | None
+    ):
+        self.progress.emit(index, 0.0)
+        for data_file, new_output, progress in self.openDataFileInChunks(
+            path, outpath, self.chunk_size
+        ):
+            if self.thread().isInterruptionRequested():
+                return
+            self.progress.emit(index, progress)
+
+            results, clusters = _batch_process_data_file(
+                data_file,
+                self.method,
+                self.isotopes,
+                self.export_options["clusters"],
+            )
+            if self.thread().isInterruptionRequested():
+                return
+
+            _batch_export_results(
+                data_file,
+                new_output,
+                results,
+                clusters,
+                self.export_options,
+                summary_fp,
+            )
+
+        self.progress.emit(index, 1.0)
+
     @QtCore.Slot()
     def process(self):
         self.started.emit(len(self.paths))
@@ -106,39 +164,12 @@ class NuBatchWorker(QtCore.QObject):
             summary_fp = None
 
         for i, (input, output) in enumerate(self.paths):
-            self.progress.emit(i, 0.0)
-            for data_file, new_output, progress in self.openDataFileInChunks(
-                input, output, self.chunk_size
-            ):
-                if self.thread().isInterruptionRequested():
-                    return
-                self.progress.emit(i, progress)
-
-                results, clusters = _batch_process_data_file(
-                    data_file,
-                    self.method,
-                    self.isotopes,
-                    self.export_options["clusters"],
-                )
-                if self.thread().isInterruptionRequested():
-                    return
-
-                export_spcal_processing_results(
-                    new_output,
-                    data_file,
-                    results,
-                    clusters,
-                    units=self.export_options["units"],
-                    export_options=self.export_options["options"],
-                    export_results=self.export_options["results"],
-                    export_arrays=self.export_options["arrays"],
-                    export_compositions=self.export_options["clusters"],
-                )
-                if summary_fp is not None:
-                    append_results_summary(
-                        summary_fp, data_file, results, self.export_options["units"]
-                    )
-            self.progress.emit(i, 1.0)
+            try:
+                self.processFile(i, input, output, summary_fp)
+            except Exception as e:
+                self.exception.emit(i, e)
+                logger.exception(e)
+                continue
 
         if summary_fp is not None:
             summary_fp.close()
@@ -148,6 +179,7 @@ class NuBatchWorker(QtCore.QObject):
 class TextBatchWorker(QtCore.QObject):
     started = QtCore.Signal(int)
     progress = QtCore.Signal(int, float)
+    exception = QtCore.Signal(int, object)
     finished = QtCore.Signal()
 
     def __init__(
@@ -156,6 +188,7 @@ class TextBatchWorker(QtCore.QObject):
         method: SPCalProcessingMethod,
         isotopes: list[SPCalIsotope],
         export_options: dict,
+        isotope_table: dict[SPCalIsotope, str],
         delimiter: str = ",",
         skip_rows: int = 1,
         cps: bool = False,
@@ -171,6 +204,7 @@ class TextBatchWorker(QtCore.QObject):
         self.method = method
         self.export_options = export_options
 
+        self.isotope_table = isotope_table
         self.delimiter = delimiter
         self.skip_rows = skip_rows
         self.cps = cps
@@ -181,6 +215,7 @@ class TextBatchWorker(QtCore.QObject):
     def openDataFile(self, path: Path) -> SPCalDataFile:
         return SPCalTextDataFile.load(
             path,
+            self.isotope_table,
             delimiter=self.delimiter,
             skip_rows=self.skip_rows,
             cps=self.cps,
@@ -189,19 +224,53 @@ class TextBatchWorker(QtCore.QObject):
             instrument_type=self.instrument_type,
         )
 
+    def processFile(
+        self, index: int, path: Path, outpath: Path, summary_fp: TextIO | None
+    ):
+        self.progress.emit(index, 0.0)
+        data_file = self.openDataFile(path)
+        if self.thread().isInterruptionRequested():
+            return
+        self.progress.emit(index, 0.5)
+        results, clusters = _batch_process_data_file(
+            data_file, self.method, self.isotopes, self.export_options["clusters"]
+        )
+        if self.thread().isInterruptionRequested():
+            return
+        export_spcal_processing_results(
+            outpath,
+            data_file,
+            results,
+            clusters,
+            units=self.export_options["units"],
+            export_options=self.export_options["options"],
+            export_results=self.export_options["results"],
+            export_arrays=self.export_options["arrays"],
+            export_compositions=self.export_options["clusters"],
+        )
+        if summary_fp is not None:
+            append_results_summary(
+                summary_fp, data_file, results, self.export_options["units"]
+            )
+        self.progress.emit(index, 1.0)
+
     @QtCore.Slot()
     def process(self):
         self.started.emit(len(self.paths))
+        if self.export_options["summary"] is not None:
+            summary_fp = Path(self.export_options["summary"]).open("w")
+        else:
+            summary_fp = None
+
         for i, (input, output) in enumerate(self.paths):
-            self.progress.emit(i, 0.0)
-            data_file = self.openDataFile(input)
-            if self.thread().isInterruptionRequested():
-                return
-            self.progress.emit(i, 0.5)
-            process_data_file_and_export(
-                data_file, self.method, self.isotopes, output, self.export_options
-            )
-            if self.thread().isInterruptionRequested():
-                return
-            self.progress.emit(i, 1.0)
+            try:
+                self.processFile(i, input, output, summary_fp)
+            except Exception as e:
+                self.exception.emit(i, e)
+                logger.exception(e)
+                continue
+
+        if summary_fp is not None:
+            summary_fp.close()
+
         self.finished.emit()

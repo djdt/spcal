@@ -220,14 +220,14 @@ class NuImportDialog(ImportDialogBase):
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
 
-    def addData(self, data):
+    @QtCore.Slot()
+    def addData(self, data: np.ndarray):
         self.import_data.append(data)
 
     def closeEvent(self, event: QtGui.QCloseEvent):
         self.cleanup()
 
     def cleanup(self):
-        print("cleaned")
         self.import_thread.deleteLater()
         self.import_data.clear()
 
