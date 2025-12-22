@@ -132,10 +132,20 @@ def export_spcal_result_outputs(
             detections = result.calibrated(key)
 
             values = [
-                result.background,
-                result.background_error,
-                result.limit.detection_threshold,
-                result.limit.mean_signal,
+                result.method.calibrateTo(
+                    result.background, key, result.isotope, result.event_time
+                ),
+                result.method.calibrateTo(
+                    result.background_error, key, result.isotope, result.event_time
+                ),
+                np.nanmean(
+                    result.method.calibrateTo(
+                        result.limit.detection_threshold,
+                        key,
+                        result.isotope,
+                        result.event_time,
+                    )
+                ),
                 np.mean(detections),
                 np.std(detections),
                 np.median(detections),
