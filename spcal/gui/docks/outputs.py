@@ -120,20 +120,23 @@ class ResultOutputModel(UnitsModel):
                 if not result.canCalibrate(self.key):
                     return None
                 if name == "Background":
-                    val = result.background
+                    return result.method.calibrateTo(
+                        result.background, self.key, isotope, result.event_time
+                    )
                 elif name == "LOD":
-                    val = bn.nanmean(result.limit.detection_threshold)
+                    lod = bn.nanmean(result.limit.detection_threshold)
+                    return result.method.calibrateTo(
+                        float(lod), self.key, isotope, result.event_time
+                    )
                 elif name == "Mean":
-                    val = np.mean(result.calibrated("signal"))
+                    return np.mean(result.calibrated(self.key))
                 elif name == "Median":
-                    val = np.median(result.calibrated("signal"))
+                    return np.median(result.calibrated(self.key))
                 elif name == "Mode":
-                    val = modefn(result.calibrated("signal"))
+                    return modefn(result.calibrated(self.key))
                 else:
                     raise ValueError(f"unknown column name {name}")
-                return result.method.calibrateTo(
-                    float(val), self.key, isotope, result.event_time
-                )
+                return
         elif role == BaseValueErrorRole:
             if name == "Number":
                 return result.number_error
@@ -141,12 +144,14 @@ class ResultOutputModel(UnitsModel):
                 if not result.canCalibrate(self.key):
                     return None
                 if name == "Background":
-                    val = result.background_error
+                    return result.method.calibrateTo(
+                        float(result.background_error),
+                        self.key,
+                        isotope,
+                        result.event_time,
+                    )
                 else:
-                    val = np.std(result.calibrated("signal"))
-                return result.method.calibrateTo(
-                    float(val), self.key, isotope, result.event_time
-                )
+                    return np.std(result.calibrated(self.key))
             return None
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
             if name == "LOD":
@@ -304,7 +309,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             1, orientation, default_conc_unit, role=CurrentUnitRole
         )
 
-        for i in range(2, 6):
+        for i in range(2, 7):
             self.table.results_model.setHeaderData(
                 i, orientation, units, role=UnitsRole
             )
