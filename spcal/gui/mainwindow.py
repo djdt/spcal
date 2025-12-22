@@ -184,7 +184,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "Process multiple files using the current sample and reference settings.",
             self.dialogBatchProcess,
         )
-        self.action_open_batch.setEnabled(False)
 
         self.action_save_session = create_action(
             "cloud-upload",
@@ -438,20 +437,22 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         isotopes = current.selected_isotopes + self.currentMethod().expressions
         # Add any missing isotopes to method and isotope options
         self.isotope_options.setIsotopes(isotopes)
-        require_reprocess = False
         method = self.currentMethod()
         self.isotope_options.blockSignals(True)
         for isotope in isotopes:
             if isotope not in method.isotope_options:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
-                require_reprocess = True
             self.isotope_options.setIsotopeOption(
                 isotope, method.isotope_options[isotope]
             )
         self.isotope_options.blockSignals(False)
 
         # Reprocess if new isotopes exist
-        if require_reprocess or current not in self.processing_results:
+        if current not in self.processing_results:
+            self.reprocess(current)
+        elif any(
+            isotope not in self.processing_results[current] for isotope in isotopes
+        ):
             self.reprocess(current)
         # otherwise remove old isotopes
         else:
