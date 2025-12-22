@@ -44,7 +44,7 @@ class ExportDialog(QtWidgets.QDialog):
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
 
-        _units = {"mass": "kg", "size": "m", "volume": "L"}
+        _units = {"mass": "fg", "size": "nm", "volume": "nm³"}
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
