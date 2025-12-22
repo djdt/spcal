@@ -34,7 +34,7 @@ class SPCalExpression(object):
 
 
 class SPCalProcessingMethod(object):
-    CALIBRATION_KEYS = ["signal", "mass", "size", "volume"]
+    CALIBRATION_KEYS = ["signal", "mass", "size"]  # , "volume"] :: scaled mass
     ACCUMULATION_METHODS = [
         "signal mean",
         "half detection threshold",
@@ -288,4 +288,4 @@ class SPCalProcessingMethod(object):
     ) -> float | np.ndarray:
         density = self.isotope_options[isotope].density
         assert density is not None
-        return self.calibrateToMass(signals, isotope, event_time) * density
+        return self.calibrateToMass(signals, isotope, event_time) / density
