@@ -636,7 +636,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
         self,
         existing_file: SPCalDataFile | None,
         method: SPCalProcessingMethod,
-        selected_isotopes: list[SPCalIsotopeBase],
+        selected_isotopes: list[SPCalIsotope],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)

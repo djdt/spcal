@@ -141,7 +141,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 class BatchTextWizardPage(QtWidgets.QWizardPage):
     def __init__(
         self,
-        isotopes: list[SPCalIsotopeBase],
+        isotopes: list[SPCalIsotope],
         delimiter: str,
         skip_rows: int,
         cps: bool,
@@ -405,7 +405,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
 class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
     def __init__(
-        self, isotopes: list[SPCalIsotopeBase], parent: QtWidgets.QWidget | None = None
+        self, isotopes: list[SPCalIsotope], parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
