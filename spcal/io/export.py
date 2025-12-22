@@ -44,9 +44,14 @@ def append_results_summary(
             unit, factor = units[key]
             detections = result.calibrated(key)
             values = [
-                ("Background", result.background),
-                ("Background Error", result.background_error),
-                ("LOD", result.limit.detection_threshold),
+                ("Background", result.calibrateTo(result.background, key)),
+                ("Background Error", result.calibrateTo(result.background_error, key)),
+                (
+                    "LOD",
+                    np.nanmean(
+                        result.calibrateTo(result.limit.detection_threshold, key)
+                    ),
+                ),
                 ("Mean", np.mean(detections)),
                 ("Std", np.std(detections)),
                 ("Median", np.median(detections)),
@@ -132,20 +137,9 @@ def export_spcal_result_outputs(
             detections = result.calibrated(key)
 
             values = [
-                result.method.calibrateTo(
-                    result.background, key, result.isotope, result.event_time
-                ),
-                result.method.calibrateTo(
-                    result.background_error, key, result.isotope, result.event_time
-                ),
-                np.nanmean(
-                    result.method.calibrateTo(
-                        result.limit.detection_threshold,
-                        key,
-                        result.isotope,
-                        result.event_time,
-                    )
-                ),
+                result.calibrateTo(result.background, key),
+                result.calibrateTo(result.background_error, key),
+                np.nanmean(result.calibrateTo(result.limit.detection_threshold, key)),
                 np.mean(detections),
                 np.std(detections),
                 np.median(detections),

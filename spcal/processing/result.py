@@ -123,3 +123,6 @@ class SPCalProcessingResult(object):
         result = self.method.calibrateTo(values, key, self.isotope, self.event_time)
         assert isinstance(result, np.ndarray)
         return result
+
+    def calibrateTo(self, value: float | np.ndarray, key: str) -> float | np.ndarray:
+        return self.method.calibrateTo(value, key, self.isotope, self.event_time)

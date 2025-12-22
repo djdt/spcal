@@ -120,14 +120,10 @@ class ResultOutputModel(UnitsModel):
                 if not result.canCalibrate(self.key):
                     return None
                 if name == "Background":
-                    return result.method.calibrateTo(
-                        result.background, self.key, isotope, result.event_time
-                    )
+                    return result.calibrateTo(result.background, self.key)
                 elif name == "LOD":
                     lod = bn.nanmean(result.limit.detection_threshold)
-                    return result.method.calibrateTo(
-                        float(lod), self.key, isotope, result.event_time
-                    )
+                    return result.calibrateTo(float(lod), self.key)
                 elif name == "Mean":
                     return np.mean(result.calibrated(self.key))
                 elif name == "Median":
@@ -144,12 +140,7 @@ class ResultOutputModel(UnitsModel):
                 if not result.canCalibrate(self.key):
                     return None
                 if name == "Background":
-                    return result.method.calibrateTo(
-                        float(result.background_error),
-                        self.key,
-                        isotope,
-                        result.event_time,
-                    )
+                    return result.calibrateTo(float(result.background_error), self.key)
                 else:
                     return np.std(result.calibrated(self.key))
             return None
