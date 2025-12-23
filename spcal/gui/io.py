@@ -70,7 +70,7 @@ def get_save_spcal_path(
     filter_ext = filter[filter.rfind(".") : -1]
 
     path = Path(path)
-    if not any(path.stem.lower() == ext for _, ext in filters):
+    if not any(path.suffix.lower() == ext for _, ext in filters):
         path = path.with_suffix(path.suffix + filter_ext)
     return path
 
