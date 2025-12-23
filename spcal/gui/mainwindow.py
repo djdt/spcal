@@ -371,7 +371,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if expr not in method.expressions:
             method.expressions.append(expr)
             self.currentMethodChanged.emit(method)
-            self.reprocess(None)
             self.onDataFilesChanged(
                 self.files.currentDataFile(), self.files.selectedDataFiles()
             )
@@ -459,7 +458,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             removed_isotopes = [
                 isotope
                 for isotope in self.processing_results[current]
-                if isotope not in current.selected_isotopes
+                if isotope not in isotopes
             ]
             for removed in removed_isotopes:
                 self.processing_results[current].pop(removed)
