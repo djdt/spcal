@@ -3,7 +3,9 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
+from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog
 from spcal.gui.widgets import ElidedLabel
+from spcal.processing.method import SPCalProcessingMethod
 
 
 class ImportDialogBase(QtWidgets.QDialog):
@@ -13,9 +15,14 @@ class ImportDialogBase(QtWidgets.QDialog):
         self,
         path: str | Path,
         title: str,
+        screening_method: SPCalProcessingMethod | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
+
+        self.screening_method = screening_method
+        self.screening_ppm = 100
+        self.screening_size = 1000000
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -27,6 +34,11 @@ class ImportDialogBase(QtWidgets.QDialog):
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
             False
         )
+        if screening_method is not None:
+            self.button_box.addButton(
+                "Screen", QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+            )
+        self.button_box.clicked.connect(self.onButtonClicked)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
@@ -52,6 +64,28 @@ class ImportDialogBase(QtWidgets.QDialog):
         layout.addLayout(self.layout_body)
         layout.addWidget(self.button_box)
         self.setLayout(layout)
+
+    def onButtonClicked(self, button: QtWidgets.QAbstractButton):
+        if (
+            self.button_box.buttonRole(button)
+            == QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+        ):
+            self.dialogScreening()
+
+    def dialogScreening(self):
+        dlg = ScreeningOptionsDialog(
+            self.screening_ppm, self.screening_size, parent=self
+        )
+        dlg.screeningOptionsSelected.connect(self.setScreeningParameters)
+        dlg.screeningOptionsSelected.connect(self.screenDataFile)
+        dlg.open()
+
+    def setScreeningParameters(self, ppm: int, size: int):
+        self.screening_ppm = ppm
+        self.screening_size = size
+
+    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+        raise NotImplementedError
 
     def completeChanged(self):
         complete = self.isComplete()

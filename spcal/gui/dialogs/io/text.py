@@ -28,7 +28,7 @@ class TextImportDialog(ImportDialogBase):
         existing_file: SPCalDataFile | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__(path, "SPCal Text Import", parent)
+        super().__init__(path, "SPCal Text Import", parent=parent)
 
         self.file_lines = self.file_path.open("r").readlines()
         # Guess the delimiter, skip rows and count from header

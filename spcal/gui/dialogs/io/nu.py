@@ -13,6 +13,7 @@ from spcal.gui.widgets import (
 )
 from spcal.io import nu
 from spcal.isotope import ISOTOPE_TABLE
+from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +74,10 @@ class NuImportDialog(ImportDialogBase):
         self,
         path: str | Path,
         existing_file: SPCalDataFile | None = None,
+        screening_method: SPCalProcessingMethod | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__(path, "SPCal Nu Instruments Import", parent)
+        super().__init__(path, "SPCal Nu Instruments Import", screening_method, parent)
 
         self.import_thread = QtCore.QThread(self)
         self.import_data: list[np.ndarray] = []
@@ -132,7 +134,7 @@ class NuImportDialog(ImportDialogBase):
 
         self.first_integ = QtWidgets.QSpinBox()
         self.first_integ.setRange(1, len(self.index) + 1)
-        self.first_integ.setValue(0)
+        self.first_integ.setValue(1)
         self.first_integ.valueChanged.connect(self.completeChanged)
 
         self.last_integ = QtWidgets.QSpinBox()
@@ -207,6 +209,57 @@ class NuImportDialog(ImportDialogBase):
         self.table.setEnabledIsotopes(
             [iso for iso, v in zip(natural_isotopes, valid) if v]
         )
+
+    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+        if self.screening_method is None:
+            return
+
+        first = self.first_integ.value() - 1
+        while (
+            first < len(self.index)
+            and self.index[first]["FirstCycNum"] < self.cycle_number.value()
+            and self.index[first]["FirstSegNum"] < self.segment_number.value()
+        ):
+            first += 1
+        first_acq_number = self.index[first]["FirstAcqNum"]
+
+        last = first + 1
+        while (
+            last < len(self.index)
+            and self.index[last]["FirstAcqNum"] - first_acq_number < screening_size
+        ):
+            last += 1
+
+        data_file = SPCalNuDataFile.load(
+            self.file_path,
+            self.max_mass_diff.value(),
+            cycle_number=self.cycle_number.value() or None,
+            segment_number=self.segment_number.value() or None,
+            first_integ_file=first,
+            last_integ_file=last,
+        )
+
+        results = self.screening_method.processDataFile(
+            data_file, data_file.preferred_isotopes, max_size=screening_size
+        )
+        selected_isotopes = []
+        selected_numbers = []
+        for isotope, result in results.items():
+            if result.number > result.num_events * screening_target_ppm * 1e-6:
+                selected_isotopes.append(isotope)
+                selected_numbers.append(result.number)
+
+        if len(selected_numbers) == 0:
+            return
+
+        # vals = np.log(
+        #     1.0 + np.array(selected_numbers) / np.amax(selected_numbers)
+        # ) / np.log(2.0)
+
+        nmax = np.amax(selected_numbers)
+        colors = [QtGui.QColor.fromRgbF(n / nmax, 0.0, 0.0) for n in selected_numbers]
+        self.table.setSelectedIsotopes(selected_isotopes)
+        self.table.setIsotopeColors(selected_isotopes, colors)
 
     def isComplete(self) -> bool:
         if self.first_integ.value() >= self.last_integ.value():
@@ -316,7 +369,7 @@ class NuImportDialog(ImportDialogBase):
             self.info,
             cycle_number=cyc_number,
             segment_number=seg_number,
-            integ_files=(self.first_integ.value(), self.last_integ.value()),
+            integ_files=(self.first_integ.value() - 1, self.last_integ.value() - 1),
         )
         data_file.selected_isotopes = self.table.selectedIsotopes()
         self.dataImported.emit(data_file)

@@ -3,13 +3,15 @@ import re
 from pathlib import Path
 
 import h5py
-from PySide6 import QtWidgets
+import numpy as np
+from PySide6 import QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets import PeriodicTableSelector
 from spcal.io.tofwerk import factor_extraction_to_acquisition
 from spcal.isotope import ISOTOPE_TABLE
+from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +20,11 @@ class TofwerkImportDialog(ImportDialogBase):
     def __init__(
         self,
         path: str | Path,
-        existing_file: SPCalDataFile,
+        existing_file: SPCalDataFile | None,
+        screening_method: SPCalProcessingMethod | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__(path, "SPCal TOFWERK Import", parent)
+        super().__init__(path, "SPCal TOFWERK Import", screening_method, parent)
 
         # Get the masses from the file
         self.h5 = h5py.File(self.file_path, "r")
@@ -64,6 +67,30 @@ class TofwerkImportDialog(ImportDialogBase):
             "Event time:", QtWidgets.QLabel(f"{extraction_time * 1e3:.4f} ms")
         )
         self.table.setFocus()
+
+    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+        if self.screening_method is None:
+            return
+
+        data_file = SPCalTOFWERKDataFile.load(self.file_path, screening_size)
+
+        results = self.screening_method.processDataFile(
+            data_file, data_file.preferred_isotopes, max_size=screening_size
+        )
+        selected_isotopes = []
+        selected_numbers = []
+        for isotope, result in results.items():
+            if result.number > result.num_events * screening_target_ppm * 1e-6:
+                selected_isotopes.append(isotope)
+                selected_numbers.append(result.number)
+
+        if len(selected_numbers) == 0:
+            return
+
+        nmax = np.amax(selected_numbers)
+        colors = [QtGui.QColor.fromRgbF(n / nmax, 0.0, 0.0) for n in selected_numbers]
+        self.table.setSelectedIsotopes(selected_isotopes)
+        self.table.setIsotopeColors(selected_isotopes, colors)
 
     def isComplete(self) -> bool:
         isotopes = self.table.selectedIsotopes()

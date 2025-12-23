@@ -408,15 +408,15 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         return self.signals[..., idx].ravel()
 
     @classmethod
-    def load(cls, path: Path) -> "SPCalTOFWERKDataFile":
+    def load(cls, path: Path, max_size: int | None = None) -> "SPCalTOFWERKDataFile":
         with h5py.File(path) as h5:
             if "PeakData" in h5["PeakData"]:  # type: ignore , supported
-                peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]  # type: ignore , returns numpy array
+                peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]  # type: ignore , returns numpy array
             elif "ToFData" in h5["FullSpectra"]:  # type: ignore , supported
                 logger.warning(
                     f"PeakData missing from TOFWERK file {path.stem}, integrating"
                 )
-                peak_data = tofwerk.integrate_tof_data(h5)
+                peak_data = tofwerk.integrate_tof_data(h5)[:max_size]
             else:
                 raise ValueError(
                     f"PeakData and ToFData are missing, {path.stem} is an invalid file"
@@ -427,7 +427,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             peak_table: np.ndarray = h5["PeakData"]["PeakTable"][:]  # type: ignore , defined in tofdaq
 
             time_per_buf: float = h5["TimingData"].attrs["BlockPeriod"][0]  # type: ignore , defined in tofdaq
-            times: np.ndarray = h5["TimingData"]["BufTimes"][:]  # type: ignore , defined in tofdaq
+            times: np.ndarray = h5["TimingData"]["BufTimes"][:max_size]  # type: ignore , defined in tofdaq
             times = (
                 times[:, :, None]
                 + np.linspace(0.0, time_per_buf * 1e-9, 1000, endpoint=False)[
