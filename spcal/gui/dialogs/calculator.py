@@ -12,13 +12,7 @@ from spcal.pratt import (
 
 
 class CalculatorFormula(QtWidgets.QTextEdit):
-    """Input for the calculator.
-
-    Parsers input using a `:class:pewpew.lib.pratt.Parser` and
-    colors input red when invalid. Implements completion when `completer` is set.
-    """
-
-    expressionSelected = QtCore.Signal(str)
+    requestSubmit = QtCore.Signal()
 
     def __init__(
         self,
@@ -99,7 +93,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
 
         if event.key() in [QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return]:
             if self.hasAcceptableInput():
-                self.sumbitExpression()
+                self.requestSubmit.emit()
                 event.accept()
             else:
                 event.ignore()
@@ -133,10 +127,6 @@ class CalculatorFormula(QtWidgets.QTextEdit):
             )
             self.completer.complete(rect)
 
-    def sumbitExpression(self):
-        self.expressionSelected.emit(self.expr)
-        self.clear()
-
 
 class CalculatorExprList(QtWidgets.QListWidget):
     expressionRemoved = QtCore.Signal(SPCalIsotopeExpression)
@@ -155,7 +145,7 @@ class CalculatorExprList(QtWidgets.QListWidget):
     def addExpression(self, expr: SPCalIsotopeExpression):
         item = QtWidgets.QListWidgetItem()
         item.setData(QtCore.Qt.ItemDataRole.UserRole, expr)
-        item.setText(" ".join(str(x) for x in expr.tokens))
+        item.setText(f"{expr.name}: " + " ".join(str(x) for x in expr.tokens))
         self.addItem(item)
 
     def expressions(self) -> list[SPCalIsotopeExpression]:
@@ -244,14 +234,18 @@ class CalculatorDialog(QtWidgets.QDialog):
                 + [k + "(" for k in self.functions.keys()]
             )
         )
+        self.formula.requestSubmit.connect(self.reformAndAddExpression)
+        self.formula.textChanged.connect(self.completeChanged)
+
         self.button_add = QtWidgets.QToolButton()
         self.button_add.setIcon(QtGui.QIcon.fromTheme("list-add"))
         self.button_add.setText("Add Expression")
         self.button_add.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
-        self.button_add.pressed.connect(self.formula.sumbitExpression)
+        self.button_add.setEnabled(False)
+        self.button_add.pressed.connect(self.reformAndAddExpression)
 
-        self.formula.expressionSelected.connect(self.reformAndAddExpression)
-        self.formula.textChanged.connect(self.completeChanged)
+        self.name = QtWidgets.QLineEdit()
+        self.name.textChanged.connect(self.completeChanged)
 
         self.expressions = CalculatorExprList()
         for expr in expressions:
@@ -261,13 +255,14 @@ class CalculatorDialog(QtWidgets.QDialog):
         layout_combos.addWidget(self.combo_isotope)
         layout_combos.addWidget(self.combo_function)
 
-        layout_formula = QtWidgets.QVBoxLayout()
-        layout_formula.addWidget(self.formula, 1)
-        layout_formula.addWidget(self.button_add, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        layout_name = QtWidgets.QHBoxLayout()
+        layout_name.addWidget(self.name, 1)
+        layout_name.addWidget(self.button_add, 0, QtCore.Qt.AlignmentFlag.AlignRight)
 
         layout_controls = QtWidgets.QFormLayout()
         layout_controls.addRow("Insert:", layout_combos)
-        layout_controls.addRow("Formula:", layout_formula)
+        layout_controls.addRow("Formula:", self.formula)
+        layout_controls.addRow("Name:", layout_name)
         layout_controls.addRow("Current:", self.expressions)
 
         self.button_box = QtWidgets.QDialogButtonBox(
@@ -282,20 +277,34 @@ class CalculatorDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
-    def reformAndAddExpression(self, expr_string: str):
-        tokens = expr_string.split(" ")
+    def reformAndAddExpression(self):
+        expr = self.formula.expr
+        tokens = expr.split(" ")
+        name = self.name.text()
+        if name == "":
+            name = f"({expr})"
+
         expr = SPCalIsotopeExpression(
-            name=f"({expr_string})",
+            name=name,
             tokens=tuple([self.isotope_table.get(token, token) for token in tokens]),
         )
         self.expressions.addExpression(expr)
 
-    # def isComplete(self) -> bool:
-    #     return self.formula.hasAcceptableInput()
+    def isComplete(self) -> bool:
+        if not self.formula.hasAcceptableInput():
+            return False
+        name = self.name.text()
+        if name == "":
+            return True
+
+        if any(name == x for x in self.isotope_table.keys()):
+            return False
+        if any(name == x.name for x in self.expressions.expressions()):
+            return False
+        return True
 
     def completeChanged(self):
-        formula_ready = self.formula.hasAcceptableInput()
-        self.button_add.setEnabled(formula_ready)
+        self.button_add.setEnabled(self.isComplete())
 
     def insertIsotope(self, index: int):
         if index == 0:
@@ -307,7 +316,7 @@ class CalculatorDialog(QtWidgets.QDialog):
 
     def accept(self):
         if self.formula.hasAcceptableInput():
-            self.formula.sumbitExpression()
+            self.reformAndAddExpression()
 
         expressions = self.expressions.expressions()
         if set(expressions) != set(self.old_expressions):
