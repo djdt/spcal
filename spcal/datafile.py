@@ -127,7 +127,9 @@ class SPCalTextDataFile(SPCalDataFile):
             raise ValueError("expected `signals` to have a structured dtype")
         for name in isotope_table.values():
             if name not in signals.dtype.names:
-                raise ValueError(f"`isotope_table` '{name}' not found in `signals` array")
+                raise ValueError(
+                    f"`isotope_table` '{name}' not found in `signals` array"
+                )
 
         self.signals = signals
         self.isotope_table = isotope_table
@@ -364,16 +366,38 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     def __init__(
         self, path: Path, signals: np.ndarray, times: np.ndarray, peak_table: np.ndarray
     ):
+        super().__init__(path, times, instrument_type="tof")
+
         self.signals = signals
+        self.times = times
         self.peak_table = peak_table
 
-        self.isotope_table = {}
+        self._event_time: float | None = None
 
-        super().__init__(path, times, instrument_type="tof")
+        self.isotope_table: dict[SPCalIsotope, int] = {}
+
+        self.generateIsotopeTable()
+
+    def generateIsotopeTable(self):
+        for i, peak in enumerate(self.peak_table):
+            m = SPCalTOFWERKDataFile.re_isotope.match(peak["label"].decode())
+            if m is None:
+                continue
+            self.isotope_table[ISOTOPE_TABLE[(m.group(2), int(m.group(1)))]] = i
+
+    @property
+    def event_time(self) -> float:
+        if self._event_time is None:
+            self._event_time = float(np.mean(np.diff(self.times)))
+        return self._event_time
+
+    @property
+    def num_events(self) -> int:
+        return self.signals.shape[0]
 
     @property
     def isotopes(self) -> list[SPCalIsotope]:
-        return [x["label"].decode() for x in self.peak_table]
+        return list(self.isotope_table.keys())
 
     @property
     def masses(self) -> np.ndarray:
