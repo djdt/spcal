@@ -217,8 +217,10 @@ class SPCalProcessingMethod(object):
         if npeaks == 0:
             return np.array([], dtype=int)
 
-        X = prepare_results_for_clustering(list(results.values()), npeaks, key)
-        return agglomerative_cluster(X, self.cluster_distance)
+        X, valid = prepare_results_for_clustering(list(results.values()), npeaks, key)
+        clusters = np.zeros(npeaks, dtype=int)
+        clusters[valid] = agglomerative_cluster(X[valid], self.cluster_distance)
+        return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:

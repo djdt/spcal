@@ -37,7 +37,7 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
 
 def prepare_results_for_clustering(
     results: list["SPCalProcessingResult"], number_peaks: int, key: str
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """Prepare data by stacking into 2D array.
 
     Conveience method for list of results.
@@ -48,6 +48,7 @@ def prepare_results_for_clustering(
 
     Returns:
         2D array with length `number_peaks`, ready for ``agglomerative_cluster``
+        mask of valid (unfiltered) peaks
 
     See Also:
         ``prepare_data_from_clustering``
@@ -56,6 +57,7 @@ def prepare_results_for_clustering(
         raise ValueError("cannot cluster, peak indidices have not been generated")
 
     peak_data = np.zeros((number_peaks, len(results)), np.float32)
+    valid = np.zeros(number_peaks, dtype=bool)
     for i, result in enumerate(results):
         if result.peak_indicies is None:
             raise ValueError("cannot cluster, peak_indicies have not been generated")
@@ -66,7 +68,8 @@ def prepare_results_for_clustering(
             result.peak_indicies[result.filter_indicies],
             result.calibrated(key),
         )
-    return prepare_data_for_clustering(peak_data)
+        valid[result.peak_indicies[result.filter_indicies]] = True
+    return prepare_data_for_clustering(peak_data), valid
 
 
 def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
@@ -86,7 +89,7 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
         return np.zeros(X.size, dtype=int)
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
-    T = cluster_by_distance(Z, ZD, max_dist) - 1
+    T = cluster_by_distance(Z, ZD, max_dist)
     return T
 
 

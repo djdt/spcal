@@ -165,10 +165,8 @@ def export_spcal_compositions(
         ):
             continue
 
-        X = prepare_results_for_clustering(results, clusters[key].size, key)
-        valid = np.any(X != 0, axis=1)
-        X = X[valid]
-        means, stds, counts = cluster_information(X, clusters[key][valid])
+        X, valid = prepare_results_for_clustering(results, clusters[key].size, key)
+        means, stds, counts = cluster_information(X[valid], clusters[key][valid])
 
         unit, factor = units[key]
         fp.write(f"# Compositions ({key}),Count")
@@ -222,7 +220,10 @@ def export_spcal_detection_arrays(
                 datas.append(clusters[key])
                 header += f",Cluster ID ({key})"
 
-    np.savetxt(fp, np.stack(datas, axis=1), delimiter=",", header=header, fmt="%.12g")
+    # Filter out any all zero (filtered) results
+    datas = np.stack(datas, axis=1)
+    datas = datas[np.any(datas[:, 1:] > 0, axis=1)]
+    np.savetxt(fp, datas, delimiter=",", header=header, fmt="%.12g")
 
 
 def export_spcal_processing_results(
