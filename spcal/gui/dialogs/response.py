@@ -433,6 +433,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
         return dlg
 
+    @QtCore.Slot()
     def addDataFile(self, data_file: SPCalDataFile):
         new_isotopes = set(self.model_concs.isotopes)
         new_isotopes = new_isotopes.union(data_file.selected_isotopes)

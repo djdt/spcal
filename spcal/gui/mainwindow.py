@@ -700,6 +700,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dialogIonicResponse(self) -> ResponseDialog:
         dlg = ResponseDialog(parent=self)
+        dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         dlg.responsesSelected.connect(self.setResponses)
         dlg.open()
         return dlg

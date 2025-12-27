@@ -134,19 +134,11 @@ def get_import_dialog_for_path(
     elif is_tofwerk_file(path):
         dlg = TofwerkImportDialog(path, data_file, screening_method, parent=parent)
     elif is_text_file(path):
-        dlg = TextImportDialog(path, data_file, None, parent=parent)
+        dlg = TextImportDialog(path, data_file, parent=parent)
     else:
         raise FileNotFoundError("getImportDialogForPath: invalid file.")
 
-    # if import_options is not None:
-    #     try:
-    #         dlg.setImportOptions(
-    #             import_options, path=False, dwelltime=dlg.dwelltime.value() is None
-    #         )
-    #     except (ValueError, KeyError):
-    #         pass
-    # if screening_options is not None:
-    #     dlg.setScreeningOptions(screening_options)
+    dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
     return dlg
 
 
