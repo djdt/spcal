@@ -223,7 +223,8 @@ def export_spcal_detection_arrays(
     # Filter out any all zero (filtered) results
     datas = np.stack(datas, axis=1)
     datas = datas[np.any(datas[:, 1:] > 0, axis=1)]
-    np.savetxt(fp, datas, delimiter=",", header=header, fmt="%.12g")
+    fp.write(header + "\n")  # can't use save txt as it appends a hash
+    np.savetxt(fp, datas, delimiter=",", fmt="%.12g")
 
 
 def export_spcal_processing_results(
