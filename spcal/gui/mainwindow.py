@@ -720,7 +720,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         dlg.dataImported.connect(self.files.addDataFile)
         # the importer can take up a lot of memory so delete it
-        dlg.finished.connect(dlg.deleteLater)
+        # dlg.finished.connect(dlg.deleteLater)
         dlg.exec()
         return dlg
 

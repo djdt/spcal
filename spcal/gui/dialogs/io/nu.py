@@ -281,7 +281,6 @@ class NuImportDialog(ImportDialogBase):
         self.cleanup()
 
     def cleanup(self):
-        self.import_thread.deleteLater()
         self.import_data.clear()
 
     def accept(self):
