@@ -64,14 +64,17 @@ class HistogramView(SinglePlotGraphicsView):
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
+        label: str | None = None,
     ):
-        label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
+        unit_label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
 
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+        if label is None:
+            label = str(result.isotope)
 
         if not result.canCalibrate(key):
             return
@@ -91,7 +94,7 @@ class HistogramView(SinglePlotGraphicsView):
         if self.plot.legend is not None:
             fm = QtGui.QFontMetrics(self.font())
             legend = HistogramItemSample(fm, [curve])
-            self.plot.legend.addItem(legend, str(result.isotope))
+            self.plot.legend.addItem(legend, label)
 
         if self.draw_filtered:
             counts, edges = np.histogram(signals[~mask], bins, range=range)
@@ -106,7 +109,7 @@ class HistogramView(SinglePlotGraphicsView):
                 counts, edges, width=width, offset=offset, pen=pen, brush=filtered_brush
             )
 
-        self.plot.xaxis.setLabel(label, unit)
+        self.plot.xaxis.setLabel(unit_label, unit)
         self.setDataLimits(xMax=1.0)
 
     def drawResults(
@@ -115,6 +118,7 @@ class HistogramView(SinglePlotGraphicsView):
         key: str = "signal",
         pen: QtGui.QPen | None = None,
         brushes: list[QtGui.QBrush] | None = None,
+        labels: list[str] | None = None,
     ):
         label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
         # Limit maximum / minimum number of bins
@@ -129,6 +133,7 @@ class HistogramView(SinglePlotGraphicsView):
 
         for i, result in enumerate(results):
             brush = brushes[i] if brushes is not None else None
+            label = labels[i] if labels is not None else None
             # width = 1.0 / len(results)
             self.drawResult(
                 result,
@@ -138,6 +143,7 @@ class HistogramView(SinglePlotGraphicsView):
                 offset=0.0,
                 pen=pen,
                 brush=brush,
+                label=label,
             )
 
         self.zoomReset()

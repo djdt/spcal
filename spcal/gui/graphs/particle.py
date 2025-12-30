@@ -121,6 +121,7 @@ class ParticleView(SinglePlotGraphicsView):
         result: SPCalProcessingResult,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
+        label: str | None = None,
         scatter_size: float = 6.0,
         scatter_symbol: str = "t",
     ):
@@ -129,6 +130,8 @@ class ParticleView(SinglePlotGraphicsView):
             pen.setCosmetic(True)
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+        if label is None:
+            label = str(result.isotope)
 
         curve = self.drawCurve(result.times, result.signals, pen)
 
@@ -174,6 +177,6 @@ class ParticleView(SinglePlotGraphicsView):
             #     pen.color(),
             #     items=[curve, scatter],  # type: ignore , works
             # )
-            self.plot.legend.addItem(legend, str(result.isotope))
+            self.plot.legend.addItem(legend, label)
 
         self.setDataLimits(xMin=0.0, xMax=1.0)

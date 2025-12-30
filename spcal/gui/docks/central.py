@@ -155,9 +155,10 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self,
         results: list[SPCalProcessingResult],
         colors: list[QtGui.QColor],
+        names: list[str],
         key: str,
     ):
-        for i, (result, color) in enumerate(zip(results, colors)):
+        for i, (result, color, name) in enumerate(zip(results, colors, names)):
             symbol = symbols[i % len(symbols)]
             pen = QtGui.QPen(color, 1.0)  # cant change to other than 1, slow
             pen.setCosmetic(True)
@@ -168,6 +169,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 brush=brush,
                 scatter_size=5.0 * np.sqrt(self.devicePixelRatio()),
                 scatter_symbol=symbol,
+                label=name,
             )
 
     def drawResultsComposition(
@@ -190,6 +192,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self,
         results: list[SPCalProcessingResult],
         colors: list[QtGui.QColor],
+        names: list[str],
         key: str,
     ):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
@@ -204,7 +207,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 brushes.append(QtGui.QBrush(color))
 
         if len(drawable) > 0:
-            self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes)
+            self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes,labels=names)
 
     def zoomReset(self):
         view = self.currentWidget()

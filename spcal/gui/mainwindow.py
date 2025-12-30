@@ -359,7 +359,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         else:
             raise ValueError(f"unknown isotope type '{type(isotope)}'")
 
-        data_files = self.files.dataFiles()
+        data_files = self.files.selectedDataFiles()
         for i in range(0, data_files.index(data_file)):
             idx += len(data_files[i].selected_isotopes)
         return scheme[idx % len(scheme)]
@@ -580,19 +580,25 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 files = [current] if current is not None else []
 
             drawable = []
-            colors = []
+            names, colors = [], []
             for data_file in files:
                 for isotope, result in self.processing_results[data_file].items():
                     if isotope in isotopes:
                         drawable.append(result)
                         colors.append(self.colorForIsotope(isotope, data_file))
+                        name = (
+                            f"{data_file.path.stem} - {isotope}"
+                            if len(files) > 1
+                            else str(isotope)
+                        )
+                        names.append(name)
 
             if view == "particle":
-                self.graph.drawResultsParticle(drawable, colors, key)
+                self.graph.drawResultsParticle(drawable, colors, names, key)
                 for start, end in self.currentMethod().exclusion_regions:
                     self.graph.particle.addExclusionRegion(start, end)
             elif view == "histogram":
-                self.graph.drawResultsHistogram(drawable, colors, key)
+                self.graph.drawResultsHistogram(drawable, colors, names, key)
 
     def reprocess(self, data_file: SPCalDataFile | None):
         if not isinstance(data_file, SPCalDataFile):
