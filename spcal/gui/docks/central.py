@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
@@ -12,6 +13,7 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
 from spcal.processing import SPCalProcessingResult
 
@@ -34,38 +36,42 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self.particle = ParticleView(font=font)
         self.histogram = HistogramView(font=font)
         self.composition = CompositionView(font=font)
+        self.spectra = SpectraView(font=font)
 
         self.addWidget(self.particle)  # type: ignore , works
         self.addWidget(self.histogram)  # type: ignore , works
         self.addWidget(self.composition)  # type: ignore , works
+        self.addWidget(self.spectra)  # type: ignore , works
 
         self.action_view_composition = create_action(
             "office-chart-pie",
             "Composition View",
             "Cluster and view results as pie or bar charts.",
-            None,
+            lambda: self.setView("composition"),
             checkable=True,
         )
         self.action_view_histogram = create_action(
             "view-object-histogram-linear",
             "Results View",
             "View signal and calibrated results as histograms.",
-            None,
+            lambda: self.setView("histogram"),
             checkable=True,
         )
         self.action_view_particle = create_action(
             "office-chart-line",
             "Particle View",
             "View raw signal and detected particle peaks.",
-            None,
+            lambda: self.setView("particle"),
+            checkable=True,
+        )
+        self.action_view_spectra = create_action(
+            "none",
+            "Spectra View",
+            "View the mass spectra of selected peaks.",
+            lambda: self.setView("spectra"),
             checkable=True,
         )
         self.action_view_particle.setChecked(True)
-        self.action_view_composition.triggered.connect(
-            lambda: self.setView("composition")
-        )
-        self.action_view_histogram.triggered.connect(lambda: self.setView("histogram"))
-        self.action_view_particle.triggered.connect(lambda: self.setView("particle"))
 
         self.action_view_options = create_action(
             "configure",
@@ -95,6 +101,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             self.setCurrentWidget(self.histogram)
         elif view == "particle":
             self.setCurrentWidget(self.particle)
+        elif view == "spectra":
+            self.setCurrentWidget(self.spectra)
 
         self.action_view_options.setEnabled(view != "particle")
 
@@ -106,6 +114,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             return "histogram"
         elif view == self.composition:
             return "composition"
+        elif view == self.spectra:
+            return "spectra"
         else:
             raise ValueError("current view is invalid")
 
@@ -207,7 +217,22 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 brushes.append(QtGui.QBrush(color))
 
         if len(drawable) > 0:
-            self.histogram.drawResults(drawable, key, pen=pen, brushes=brushes,labels=names)
+            self.histogram.drawResults(
+                drawable, key, pen=pen, brushes=brushes, labels=names
+            )
+
+    def drawResultsSpectra(
+        self, data_file: SPCalDataFile, result: SPCalProcessingResult
+    ):
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
+        pen.setCosmetic(True)
+
+        bg_regions = np.reshape(result.regions.ravel()[1:-1], (-1, 2))
+
+        self.spectra.drawDataFile(data_file, result.regions, pen=pen)
+        self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
+        self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
+        self.spectra.zoomReset()
 
     def zoomReset(self):
         view = self.currentWidget()
