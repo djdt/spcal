@@ -1,4 +1,3 @@
-from pathlib import Path
 import bottleneck as bn
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -43,7 +42,7 @@ class SpectraPlotItem(pyqtgraph.PlotCurveItem):
                     closest_pos = polygon.at(1)
             if closest_pos is not None and closest_dist < self.opts["mouseWidth"]:
                 self.label.setPos(closest_pos)
-                self.label.setText(f"{closest_pos.x():.4g}")
+                self.label.setText(f"{closest_pos.x():.2f}")
                 self.label.setVisible(True)
             else:
                 self.label.setVisible(False)
@@ -111,9 +110,10 @@ class SpectraView(SinglePlotGraphicsView):
         xs = xs[mask]
         ys = ys[mask]
 
-
         if negative:
             ys *= -1.0
+            # self.data_for_export["m/z_bottom"] = xs
+            # self.data_for_export["intensity_bottom"] = ys
         else:
             self.data_for_export["m/z"] = xs
             self.data_for_export["intensity"] = ys

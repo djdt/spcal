@@ -4,20 +4,31 @@ from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.method import SPCalProcessingMethod
+from spcal.gui.modelviews import IsotopeRole
 
 
-class SPCalToolBar(QtWidgets.QToolBar):
+class BackgroundIsotope(SPCalIsotopeBase):
+    pass
+
+
+class SPCalOptionsToolBar(QtWidgets.QToolBar):
     keyChanged = QtCore.Signal(str)
     isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
-    viewChanged = QtCore.Signal(QtGui.QAction)
+
+    requestFilterDialog = QtCore.Signal()
 
     def __init__(
-        self, view_actions: list[QtGui.QAction], parent: QtWidgets.QWidget | None = None
+        self,
+        title: str = "SPCal Options Toolbar",
+        parent: QtWidgets.QWidget | None = None,
     ):
-        super().__init__("SPCal", parent=parent)
+        super().__init__(title, parent=parent)
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
+
+        self.combo_isotope_additional = IsotopeComboBox()
+        self.combo_isotope_additional.isotopeChanged.connect(self.isotopeChanged)
 
         self.combo_key = QtWidgets.QComboBox()
         self.combo_key.currentTextChanged.connect(self.keyChanged)
@@ -35,13 +46,8 @@ class SPCalToolBar(QtWidgets.QToolBar):
             "view-filter",
             "Filter Detections",
             "Filter detections based on element compositions.",
-            None,
+            self.requestFilterDialog,
         )
-
-        self.action_group_views = QtGui.QActionGroup(self)
-        for action in view_actions:
-            self.action_group_views.addAction(action)
-            self.addAction(action)
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
@@ -55,13 +61,24 @@ class SPCalToolBar(QtWidgets.QToolBar):
         self.addSeparator()
 
         self.addAction(self.action_all_isotopes)
-        self.addWidget(self.combo_isotope)
-        self.addWidget(self.combo_key)
 
-        self.action_group_views.triggered.connect(self.viewChanged)
+        self.isotope_action = self.addWidget(self.combo_isotope)
+        self.isotope_additional_action = self.addWidget(self.combo_isotope_additional)
+        self.key_action = self.addWidget(self.combo_key)
+
+        self.isotope_additional_action.setVisible(False)
+
+    def onViewChanged(self, view: str):
+        if view in ["spectra"]:
+            self.isotope_additional_action.setVisible(True)
+        else:
+            self.isotope_additional_action.setVisible(False)
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
-        if self.action_all_isotopes.isChecked():
+        if (
+            self.action_all_isotopes.isVisible()
+            and self.action_all_isotopes.isChecked()
+        ):
             return [
                 self.combo_isotope.isotope(i) for i in range(self.combo_isotope.count())
             ]
@@ -70,24 +87,87 @@ class SPCalToolBar(QtWidgets.QToolBar):
 
     def overlayOptionChanged(self, checked: bool):
         self.combo_isotope.setEnabled(not checked)
+        self.isotopeChanged.emit(None)
 
     def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
-        self.combo_isotope.blockSignals(True)
-        current = self.combo_isotope.currentIsotope()
+        for combo in [self.combo_isotope, self.combo_isotope_additional]:
+            current = combo.currentIsotope()
+            combo.blockSignals(True)
 
-        self.combo_isotope.clear()
-        self.combo_isotope.addIsotopes(isotopes)
-        if current is not None:
-            self.combo_isotope.setCurrentIsotope(current)
+            combo.clear()
 
-        if self.combo_isotope.currentIndex() == -1:
-            self.combo_isotope.setCurrentIndex(0)
+            if combo == self.combo_isotope_additional:
+                combo.insertItem(0, "Background")
+                combo.setItemData(0, BackgroundIsotope(), IsotopeRole)
+            combo.addIsotopes(isotopes)
 
-        self.combo_isotope.blockSignals(False)
+            if current is not None:
+                combo.setCurrentIsotope(current)
+
+            if combo.currentIndex() == -1:
+                combo.setCurrentIndex(0)
+
+            combo.blockSignals(False)
 
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)
-    
+
     def reset(self):
-        self.combo_isotope.blockSignals(True)
-        self.combo_isotope.clear()
-        self.combo_isotope.blockSignals(False)
+        for combo in [self.combo_isotope, self.combo_isotope_additional]:
+            combo.blockSignals(True)
+            combo.clear()
+            combo.blockSignals(False)
+
+
+class SPCalViewToolBar(QtWidgets.QToolBar):
+    viewChanged = QtCore.Signal(str)
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__("View Toolbar", parent=parent)
+
+        self.action_view_composition = create_action(
+            "office-chart-pie",
+            "Composition View",
+            "Cluster and view results as pie or bar charts.",
+            lambda: self.viewChanged.emit("composition"),
+            checkable=True,
+        )
+        self.action_view_histogram = create_action(
+            "view-object-histogram-linear",
+            "Results View",
+            "View signal and calibrated results as histograms.",
+            lambda: self.viewChanged.emit("histogram"),
+            checkable=True,
+        )
+        self.action_view_particle = create_action(
+            "office-chart-line",
+            "Particle View",
+            "View raw signal and detected particle peaks.",
+            lambda: self.viewChanged.emit("particle"),
+            checkable=True,
+        )
+        self.action_view_spectra = create_action(
+            "none",
+            "Spectra View",
+            "View the mass spectra of selected peaks.",
+            lambda: self.viewChanged.emit("spectra"),
+            checkable=True,
+        )
+        self.action_view_particle.setChecked(True)
+
+        action_group_views = QtGui.QActionGroup(self)
+        for action in [
+            self.action_view_histogram,
+            self.action_view_particle,
+            self.action_view_composition,
+            self.action_view_spectra,
+        ]:
+            action_group_views.addAction(action)
+            self.addAction(action)
+
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+
+        self.addWidget(spacer)

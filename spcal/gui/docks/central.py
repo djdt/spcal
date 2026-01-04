@@ -35,43 +35,13 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         self.particle = ParticleView(font=font)
         self.histogram = HistogramView(font=font)
-        self.composition = CompositionView(font=font)
+        self.composition = CompositionView(font=font)  # type: ignore
         self.spectra = SpectraView(font=font)
 
         self.addWidget(self.particle)  # type: ignore , works
         self.addWidget(self.histogram)  # type: ignore , works
         self.addWidget(self.composition)  # type: ignore , works
         self.addWidget(self.spectra)  # type: ignore , works
-
-        self.action_view_composition = create_action(
-            "office-chart-pie",
-            "Composition View",
-            "Cluster and view results as pie or bar charts.",
-            lambda: self.setView("composition"),
-            checkable=True,
-        )
-        self.action_view_histogram = create_action(
-            "view-object-histogram-linear",
-            "Results View",
-            "View signal and calibrated results as histograms.",
-            lambda: self.setView("histogram"),
-            checkable=True,
-        )
-        self.action_view_particle = create_action(
-            "office-chart-line",
-            "Particle View",
-            "View raw signal and detected particle peaks.",
-            lambda: self.setView("particle"),
-            checkable=True,
-        )
-        self.action_view_spectra = create_action(
-            "none",
-            "Spectra View",
-            "View the mass spectra of selected peaks.",
-            lambda: self.setView("spectra"),
-            checkable=True,
-        )
-        self.action_view_particle.setChecked(True)
 
         self.action_view_options = create_action(
             "configure",
@@ -94,17 +64,19 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             if isinstance(widget, SinglePlotGraphicsView):
                 widget.clear()
 
+    @QtCore.Slot()
     def setView(self, view: str):
         if view == "composition":
-            self.setCurrentWidget(self.composition)
+            self.setCurrentWidget(self.composition)  # type: ignore
         elif view == "histogram":
-            self.setCurrentWidget(self.histogram)
+            self.setCurrentWidget(self.histogram)  # type: ignore
         elif view == "particle":
-            self.setCurrentWidget(self.particle)
+            self.setCurrentWidget(self.particle)  # type: ignore
         elif view == "spectra":
-            self.setCurrentWidget(self.spectra)
+            self.setCurrentWidget(self.spectra)  # type: ignore
 
         self.action_view_options.setEnabled(view != "particle")
+        self.requestRedraw.emit()
 
     def currentView(self) -> str:
         view = self.currentWidget()
@@ -222,15 +194,23 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             )
 
     def drawResultsSpectra(
-        self, data_file: SPCalDataFile, result: SPCalProcessingResult
+        self,
+        data_file: SPCalDataFile,
+        result: SPCalProcessingResult,
+        reverse_result: SPCalProcessingResult | None = None,
     ):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
         pen.setCosmetic(True)
 
-        bg_regions = np.reshape(result.regions.ravel()[1:-1], (-1, 2))
-
         self.spectra.drawDataFile(data_file, result.regions, pen=pen)
-        self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
+        if reverse_result is None:
+            bg_regions = np.reshape(result.regions.ravel()[1:-1], (-1, 2))
+            self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
+        else:
+            self.spectra.drawDataFile(
+                data_file, reverse_result.regions, negative=True, pen=pen
+            )
+
         self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
         self.spectra.zoomReset()
 

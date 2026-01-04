@@ -25,7 +25,11 @@ from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
-from spcal.gui.docks.toolbar import SPCalToolBar
+from spcal.gui.docks.toolbar import (
+    BackgroundIsotope,
+    SPCalOptionsToolBar,
+    SPCalViewToolBar,
+)
 from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
     get_import_dialog_for_path,
@@ -73,15 +77,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.graph = SPCalCentralWidget()
 
-        self.toolbar = SPCalToolBar(
-            [
-                self.graph.action_view_particle,
-                self.graph.action_view_histogram,
-                self.graph.action_view_composition,
-                self.graph.action_view_options,
-                self.graph.action_zoom_reset,
-            ]
-        )
+        self.toolbar = SPCalOptionsToolBar()
+        self.toolbar_view = SPCalViewToolBar()
 
         self.instrument_options = SPCalInstrumentOptionsDock(
             method.instrument_options, method.calibration_mode, method.cluster_distance
@@ -106,11 +103,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
         self.graph.particle.exclusionRegionsChanged.connect(self.setExclusionRegions)
         self.graph.requestRedraw.connect(self.redraw)
-
-        self.toolbar.isotopeChanged.connect(self.redraw)
-        self.toolbar.viewChanged.connect(self.redraw)
-        self.toolbar.action_all_isotopes.triggered.connect(self.redraw)
-        self.toolbar.action_filter.triggered.connect(self.dialogFilterDetections)
 
         self.instrument_options.efficiencyDialogRequested.connect(
             self.dialogTransportEfficiencyCalculator
@@ -138,7 +130,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.requestAddExpression.connect(self.addExpression)
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
+        self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
+        self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
+        self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
+        self.toolbar_view.viewChanged.connect(self.graph.setView)
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()
@@ -573,6 +569,25 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.graph.drawResultsComposition(
                 list(self.processing_results[data_file].values()), colors, key, clusters
             )
+        elif view == "spectra":
+            data_file = self.files.currentDataFile()
+            isotope = self.toolbar.combo_isotope.currentIsotope()
+            isotope_additional = self.toolbar.combo_isotope_additional.currentIsotope()
+            if data_file is None:
+                return
+
+            if isinstance(isotope_additional, BackgroundIsotope):
+                result_additional = None
+            else:
+                result_additional = self.processing_results[data_file][
+                    isotope_additional
+                ]
+
+            self.graph.drawResultsSpectra(
+                data_file,
+                self.processing_results[data_file][isotope],
+                result_additional,
+            )
         else:
             files = self.files.selectedDataFiles()
             if len(files) == 0:
@@ -813,6 +828,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def defaultLayout(self):
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
+        self.addToolBar(QtCore.Qt.ToolBarArea.RightToolBarArea, self.toolbar_view)
 
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
