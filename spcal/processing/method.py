@@ -181,11 +181,13 @@ class SPCalProcessingMethod(object):
                 - 1
             )
             result.number_peak_indicies = all_regions.shape[0]
+
         # filter results
         valid_peaks = []
         for filter_group in self.filters:
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
+                print(filter.preferInvalid())
                 if filter.isotope is None:  # isotope not important, e.g. time based
                     for result in results.values():
                         filter_invalid = filter.invalidPeaks(result)
@@ -193,15 +195,17 @@ class SPCalProcessingMethod(object):
                             group_valid, filter_invalid, assume_unique=True
                         )
                 elif filter.isotope in results:
-                    filter_valid = filter.validPeaks(results[filter.isotope])
-                    group_valid = np.intersect1d(
-                        group_valid, filter_valid, assume_unique=True
-                    )
+                    if filter.preferInvalid():
+                        filter_invalid = filter.invalidPeaks(results[filter.isotope])
+                        group_valid = np.setdiff1d(group_valid, filter_invalid)
+                    else:
+                        filter_valid = filter.validPeaks(results[filter.isotope])
+                        group_valid = np.intersect1d(group_valid, filter_valid)
             valid_peaks = np.union1d(group_valid, valid_peaks)
 
         for result in results.values():
             result.filter_indicies = np.flatnonzero(
-                np.in1d(result.peak_indicies, valid_peaks)  # type: ignore , set above
+                np.isin(result.peak_indicies, valid_peaks)  # type: ignore , set above
             )
         return results
 

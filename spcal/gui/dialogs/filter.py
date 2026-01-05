@@ -28,6 +28,13 @@ class FilterItemWidget(QtWidgets.QWidget):
         np.less_equal: "<=",
         np.equal: "==",
     }
+    OPERATION_PREFER_INVALID = {
+        np.greater: False,
+        np.less: True,
+        np.greater_equal: False,
+        np.less_equal: True,
+        np.equal: True,
+    }
 
     def __init__(
         self,
@@ -107,6 +114,9 @@ class FilterItemWidget(QtWidgets.QWidget):
             self.key.itemData(self.key.currentIndex()),
             self.operation.itemData(self.operation.currentIndex()),
             self.value.baseValue() or 0.0,
+            prefer_invalid=FilterItemWidget.OPERATION_PREFER_INVALID[
+                self.operation.itemData(self.operation.currentIndex())
+            ],
         )
 
     def close(self) -> bool:

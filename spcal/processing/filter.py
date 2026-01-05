@@ -12,6 +12,9 @@ class SPCalProcessingFilter(object):
     def __init__(self, isotope: SPCalIsotopeBase | None):
         self.isotope = isotope
 
+    def preferInvalid(self) -> bool:
+        return False
+
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
         raise NotImplementedError
 
@@ -30,6 +33,7 @@ class SPCalValueFilter(SPCalProcessingFilter):
         key: str,
         operation: Callable[[np.ndarray, float], np.ndarray],
         value: float,
+        prefer_invalid: bool = False,
     ):
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"invalid key {key}")
@@ -37,6 +41,11 @@ class SPCalValueFilter(SPCalProcessingFilter):
         self.key = key
         self.operation = operation
         self.value = value
+
+        self.prefer_invalid = prefer_invalid
+
+    def preferInvalid(self) -> bool:
+        return self.prefer_invalid
 
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
         if result.peak_indicies is None:
