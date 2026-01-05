@@ -202,13 +202,16 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
         pen.setCosmetic(True)
 
-        self.spectra.drawDataFile(data_file, result.regions, pen=pen)
+        regions = result.regions[result.filter_indicies]
+
+        self.spectra.drawDataFile(data_file, regions, pen=pen)
         if reverse_result is None:
-            bg_regions = np.reshape(result.regions.ravel()[1:-1], (-1, 2))
+            bg_regions = np.reshape(regions.ravel()[1:-1], (-1, 2))
             self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
         else:
+            regions = reverse_result.regions[reverse_result.filter_indicies]
             self.spectra.drawDataFile(
-                data_file, reverse_result.regions, negative=True, pen=pen
+                data_file, regions, negative=True, pen=pen
             )
 
         self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
