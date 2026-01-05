@@ -133,8 +133,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
         self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
+        self.toolbar.requestZoomReset.connect(self.graph.zoomReset)
+
         self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
         self.toolbar_view.viewChanged.connect(self.graph.setView)
+        self.toolbar_view.requestViewOptionsDialog.connect(
+            self.graph.dialogGraphOptions
+        )
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()

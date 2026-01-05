@@ -16,6 +16,7 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
     isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
 
     requestFilterDialog = QtCore.Signal()
+    requestZoomReset = QtCore.Signal()
 
     def __init__(
         self,
@@ -49,6 +50,13 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             self.requestFilterDialog,
         )
 
+        self.action_zoom_reset = create_action(
+            "zoom-original",
+            "Reset Zoom",
+            "Reset the zoom to the full graph extent.",
+            self.requestZoomReset,
+        )
+
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
@@ -57,9 +65,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.addWidget(spacer)
 
-        self.addAction(self.action_filter)
-        self.addSeparator()
-
         self.addAction(self.action_all_isotopes)
 
         self.isotope_action = self.addWidget(self.combo_isotope)
@@ -67,6 +72,12 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.key_action = self.addWidget(self.combo_key)
 
         self.isotope_additional_action.setVisible(False)
+
+        self.addSeparator()
+        self.addAction(self.action_filter)
+
+        self.addSeparator()
+        self.addAction(self.action_zoom_reset)
 
     def onViewChanged(self, view: str):
         if view in ["spectra"]:
@@ -120,49 +131,48 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
 class SPCalViewToolBar(QtWidgets.QToolBar):
     viewChanged = QtCore.Signal(str)
+    requestViewOptionsDialog = QtCore.Signal()
+
+    VIEWS = {
+        "particle": ("office-chart-line", "Show signals and detected peaks."),
+        "histogram": (
+            "view-object-histogram-linear",
+            "Show results as signal, mass and size histograms.",
+        ),
+        "composition": ("office-chart-pie", "Plot particle compositions."),
+        "spectra": ("office-chart-bar", "Plot the mass spectra of selected peaks."),
+    }
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("View Toolbar", parent=parent)
 
-        self.action_view_composition = create_action(
-            "office-chart-pie",
-            "Composition View",
-            "Cluster and view results as pie or bar charts.",
-            lambda: self.viewChanged.emit("composition"),
-            checkable=True,
+        self.view_actions = {
+            name: create_action(
+                icon,
+                f"{name.capitalize()} View",
+                tip,
+                self.onViewChanged,
+                checkable=True,
+            )
+            for name, (icon, tip) in SPCalViewToolBar.VIEWS.items()
+        }
+        next(iter(self.view_actions.values())).setChecked(True)
+
+        self.action_view_options = create_action(
+            "configure",
+            "Graph Options",
+            "Set options specific to the current graph.",
+            self.requestViewOptionsDialog,
         )
-        self.action_view_histogram = create_action(
-            "view-object-histogram-linear",
-            "Results View",
-            "View signal and calibrated results as histograms.",
-            lambda: self.viewChanged.emit("histogram"),
-            checkable=True,
-        )
-        self.action_view_particle = create_action(
-            "office-chart-line",
-            "Particle View",
-            "View raw signal and detected particle peaks.",
-            lambda: self.viewChanged.emit("particle"),
-            checkable=True,
-        )
-        self.action_view_spectra = create_action(
-            "none",
-            "Spectra View",
-            "View the mass spectra of selected peaks.",
-            lambda: self.viewChanged.emit("spectra"),
-            checkable=True,
-        )
-        self.action_view_particle.setChecked(True)
+        self.action_view_options.setEnabled(False)
 
         action_group_views = QtGui.QActionGroup(self)
-        for action in [
-            self.action_view_histogram,
-            self.action_view_particle,
-            self.action_view_composition,
-            self.action_view_spectra,
-        ]:
+        for action in self.view_actions.values():
             action_group_views.addAction(action)
             self.addAction(action)
+
+        self.addSeparator()
+        self.addAction(self.action_view_options)
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
@@ -171,3 +181,17 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
         )
 
         self.addWidget(spacer)
+
+
+    def currentView(self) -> str:
+        for name, action in self.view_actions.items():
+            if action.isChecked():
+                return name
+        raise StopIteration
+
+    def onViewChanged(self):
+        view = self.currentView()
+        self.action_view_options.setEnabled(
+            view in ["histogram", "composition"]
+        )
+        self.viewChanged.emit(view)
