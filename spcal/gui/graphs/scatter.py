@@ -2,7 +2,10 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.cluster import prepare_results_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+
+from spcal.processing.result import SPCalProcessingResult
 
 
 class ScatterView(SinglePlotGraphicsView):
@@ -11,30 +14,45 @@ class ScatterView(SinglePlotGraphicsView):
     ):
         super().__init__("Scatter", font=font, parent=parent)
 
-    def drawData(
+    def drawResults(
         self,
-        x: np.ndarray,
-        y: np.ndarray,
+        result_x: SPCalProcessingResult,
+        result_y: SPCalProcessingResult,
+        key: str,
         logx: bool = False,
         logy: bool = False,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
         if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.black)
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
-        if logx:
-            x = np.log10(x)
-        if logy:
-            y = np.log10(y)
+        if result_x.peak_indicies is None or result_y.peak_indicies is None:
+            raise ValueError("peak_indicies have not been generated")
 
-        self.plot.setLogMode(logx, logy)
+        npeaks = result_x.number_peak_indicies
+        x, y = np.zeros(npeaks, dtype=np.float32), np.zeros(npeaks, dtype=np.float32)
+        np.add.at(
+            x,
+            result_x.peak_indicies[result_x.filter_indicies],
+            result_x.calibrated(key),
+        )
+        np.add.at(
+            y,
+            result_y.peak_indicies[result_y.filter_indicies],
+            result_y.calibrated(key),
+        )
+        valid = np.zeros(npeaks, dtype=bool)
+        valid[result_x.peak_indicies[result_x.filter_indicies]] = True
+        valid[result_y.peak_indicies[result_y.filter_indicies]] = True
 
-        curve = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
-        self.plot.addItem(curve)
+        self.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
+
+        self.plot.xaxis.setLabel(str(result_x.isotope))
+        self.plot.yaxis.setLabel(str(result_y.isotope))
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
@@ -50,7 +68,7 @@ class ScatterView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
     ):
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.red, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
 
         if weighting == "none":

@@ -13,6 +13,7 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
 from spcal.processing import SPCalProcessingResult
@@ -37,11 +38,13 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self.histogram = HistogramView(font=font)
         self.composition = CompositionView(font=font)  # type: ignore
         self.spectra = SpectraView(font=font)
+        self.scatter = ScatterView(font=font)
 
         self.addWidget(self.particle)  # type: ignore , works
         self.addWidget(self.histogram)  # type: ignore , works
         self.addWidget(self.composition)  # type: ignore , works
         self.addWidget(self.spectra)  # type: ignore , works
+        self.addWidget(self.scatter)  # type: ignore , works
 
         self.action_view_options = create_action(
             "configure",
@@ -74,6 +77,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             self.setCurrentWidget(self.particle)  # type: ignore
         elif view == "spectra":
             self.setCurrentWidget(self.spectra)  # type: ignore
+        elif view == "scatter":
+            self.setCurrentWidget(self.scatter)  # type: ignore
 
         self.action_view_options.setEnabled(view != "particle")
         self.requestRedraw.emit()
@@ -88,6 +93,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             return "composition"
         elif view == self.spectra:
             return "spectra"
+        elif view == self.scatter:
+            return "scatter"
         else:
             raise ValueError("current view is invalid")
 
@@ -193,6 +200,14 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 drawable, key, pen=pen, brushes=brushes, labels=names
             )
 
+    def drawResultsScatter(
+        self, result_x: SPCalProcessingResult, result_y: SPCalProcessingResult, key: str
+    ):
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+        pen.setCosmetic(True)
+
+        self.scatter.drawResults(result_x, result_y, key, pen=pen)
+
     def drawResultsSpectra(
         self,
         data_file: SPCalDataFile,
@@ -210,9 +225,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
         else:
             regions = reverse_result.regions[reverse_result.filter_indicies]
-            self.spectra.drawDataFile(
-                data_file, regions, negative=True, pen=pen
-            )
+            self.spectra.drawDataFile(data_file, regions, negative=True, pen=pen)
 
         self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
         self.spectra.zoomReset()

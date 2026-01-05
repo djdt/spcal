@@ -561,6 +561,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         isotopes = self.toolbar.selectedIsotopes()
 
         self.graph.clear()
+        print(view)
 
         if view == "composition":
             data_file = self.files.currentDataFile()
@@ -574,6 +575,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.graph.drawResultsComposition(
                 list(self.processing_results[data_file].values()), colors, key, clusters
             )
+        elif view == "scatter":
+            data_file = self.files.currentDataFile()
+            if data_file is None:
+                return
+
+            isotope = self.toolbar.combo_isotope.currentIsotope()
+            isotope_additional = self.toolbar.combo_isotope_additional.currentIsotope()
+
+            self.graph.drawResultsScatter(
+                self.processing_results[data_file][isotope],
+                self.processing_results[data_file][isotope_additional],
+                key,
+            )
+
         elif view == "spectra":
             data_file = self.files.currentDataFile()
             isotope = self.toolbar.combo_isotope.currentIsotope()

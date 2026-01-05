@@ -80,10 +80,24 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.addAction(self.action_zoom_reset)
 
     def onViewChanged(self, view: str):
-        if view in ["spectra"]:
+        if view in ["scatter", "spectra"]:
             self.isotope_additional_action.setVisible(True)
         else:
             self.isotope_additional_action.setVisible(False)
+
+        # insert a fake background isotope
+        self.combo_isotope_additional.blockSignals(True)
+        if view in ["spectra"] and not isinstance(
+            self.combo_isotope_additional.isotope(0), BackgroundIsotope
+        ):
+            self.combo_isotope_additional.insertItem(0, "Background")
+            self.combo_isotope_additional.setItemData(
+                0, BackgroundIsotope(), IsotopeRole
+            )
+            self.combo_isotope_additional.setCurrentIndex(0)
+        elif isinstance(self.combo_isotope_additional.isotope(0), BackgroundIsotope):
+            self.combo_isotope_additional.removeItem(0)
+        self.combo_isotope_additional.blockSignals(False)
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         if (
@@ -106,10 +120,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             combo.blockSignals(True)
 
             combo.clear()
-
-            if combo == self.combo_isotope_additional:
-                combo.insertItem(0, "Background")
-                combo.setItemData(0, BackgroundIsotope(), IsotopeRole)
             combo.addIsotopes(isotopes)
 
             if current is not None:
@@ -141,6 +151,10 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
         ),
         "composition": ("office-chart-pie", "Plot particle compositions."),
         "spectra": ("office-chart-bar", "Plot the mass spectra of selected peaks."),
+        "scatter": (
+            "office-chart-scatter",
+            "Plot the signal, mass or size of two isotopes.",
+        ),
     }
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -182,7 +196,6 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
         self.addWidget(spacer)
 
-
     def currentView(self) -> str:
         for name, action in self.view_actions.items():
             if action.isChecked():
@@ -191,7 +204,5 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
     def onViewChanged(self):
         view = self.currentView()
-        self.action_view_options.setEnabled(
-            view in ["histogram", "composition"]
-        )
+        self.action_view_options.setEnabled(view in ["histogram", "composition"])
         self.viewChanged.emit(view)
