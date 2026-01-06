@@ -78,16 +78,16 @@ class SpectraView(SinglePlotGraphicsView):
     ) -> tuple[np.ndarray, np.ndarray]:
         sums = np.zeros_like(data_file.masses)
         for region in regions:
-            sums += bn.nansum(data_file.signals[region[0] : region[1]], axis=0) / (
-                region[1] - region[0]
-            )
-        return data_file.masses, sums
+            sums += bn.nansum(data_file.signals[region[0] : region[1]], axis=0)
+        counts = np.sum(regions[:, 1] - regions[:, 0])
+
+        return data_file.masses, sums / counts
 
     def drawDataFile(
         self,
         data_file: SPCalDataFile,
         regions: np.ndarray,
-        min_value: float = 0.5,
+        min_value: float = 0.1,
         pen: QtGui.QPen | None = None,
         negative: bool = False,
     ):
