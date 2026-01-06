@@ -64,11 +64,14 @@ class SpectraView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
-        assert self.plot.vb is not None
+
+        # options
+        self.subtract_background = True
 
     def spectraForTOFWERKFile(
         self, data_file: SPCalTOFWERKDataFile, regions: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
         peak_sums = np.add.reduceat(data_file.signals, regions.ravel(), axis=0)[::2]
         sums = np.nansum(peak_sums, axis=0)
         return data_file.masses, sums
@@ -77,17 +80,29 @@ class SpectraView(SinglePlotGraphicsView):
         self, data_file: SPCalNuDataFile, regions: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         sums = np.zeros_like(data_file.masses)
+
         for region in regions:
             sums += bn.nansum(data_file.signals[region[0] : region[1]], axis=0)
-        counts = np.sum(regions[:, 1] - regions[:, 0])
 
-        return data_file.masses, sums / counts
+        counts = np.sum(regions[:, 1] - regions[:, 0])
+        sums /= counts
+
+        if self.subtract_background:
+            bg_regions = np.reshape(regions.ravel()[1:-1], (-1, 2))
+            bg = np.zeros_like(data_file.masses)
+            for region in bg_regions:
+                bg += bn.nansum(data_file.signals[region[0] : region[1]], axis=0)
+
+            bg_counts = np.sum(bg_regions[:, 1] - bg_regions[:, 0])
+            sums -= bg / bg_counts
+
+        return data_file.masses, sums
 
     def drawDataFile(
         self,
         data_file: SPCalDataFile,
         regions: np.ndarray,
-        min_value: float = 0.1,
+        min_value: float = 0.5,
         pen: QtGui.QPen | None = None,
         negative: bool = False,
     ):
@@ -104,19 +119,18 @@ class SpectraView(SinglePlotGraphicsView):
 
         if self.plot.vb is None:
             return
+
         self.plot.vb.setLimits(xMin=xs[0] - 1, xMax=xs[-1] + 1)
 
-        mask = ys > min_value
+        mask = np.abs(ys) > min_value
         xs = xs[mask]
         ys = ys[mask]
 
         if negative:
             ys *= -1.0
-            # self.data_for_export["m/z_bottom"] = xs
-            # self.data_for_export["intensity_bottom"] = ys
-        else:
-            self.data_for_export["m/z"] = xs
-            self.data_for_export["intensity"] = ys
+
+        self.data_for_export["m/z"] = xs
+        self.data_for_export["intensity"] = ys
 
         curve = SpectraPlotItem(xs, ys, pen)
         self.plot.addItem(curve)

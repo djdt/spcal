@@ -7,6 +7,7 @@ from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
+    SpectraOptionsDialog,
 )
 from spcal.gui.graphs import symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
@@ -117,6 +118,10 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self.histogram.draw_filtered = draw_filtered
         self.requestRedraw.emit()
 
+    def setSpectraOptions(self, subtract_background: bool):
+        self.spectra.subtract_background = subtract_background
+        self.requestRedraw.emit()
+
     def dialogGraphOptions(self):
         view = self.currentView()
         if view == "histogram":
@@ -134,6 +139,11 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 parent=self,
             )
             dlg.optionsChanged.connect(self.setCompositionOptions)
+        elif view == "spectra":
+            dlg = SpectraOptionsDialog(
+                subtract_background=self.spectra.subtract_background, parent=self
+            )
+            dlg.optionsChanged.connect(self.setSpectraOptions)
         else:
             return
 
@@ -220,12 +230,11 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         regions = result.regions[result.filter_indicies]
 
         self.spectra.drawDataFile(data_file, regions, pen=pen)
-        if reverse_result is None:
-            bg_regions = np.reshape(regions.ravel()[1:-1], (-1, 2))
-            self.spectra.drawDataFile(data_file, bg_regions, negative=True, pen=pen)
-        else:
-            regions = reverse_result.regions[reverse_result.filter_indicies]
-            self.spectra.drawDataFile(data_file, regions, negative=True, pen=pen)
+        if reverse_result is not None:
+            reverse_regions = reverse_result.regions[reverse_result.filter_indicies]
+            self.spectra.drawDataFile(
+                data_file, reverse_regions, negative=True, pen=pen
+            )
 
         self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
         self.spectra.zoomReset()

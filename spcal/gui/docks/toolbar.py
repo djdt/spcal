@@ -7,10 +7,6 @@ from spcal.processing.method import SPCalProcessingMethod
 from spcal.gui.modelviews import IsotopeRole
 
 
-class BackgroundIsotope(SPCalIsotopeBase):
-    pass
-
-
 class SPCalOptionsToolBar(QtWidgets.QToolBar):
     keyChanged = QtCore.Signal(str)
     isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
@@ -69,24 +65,10 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.addAction(self.action_filter)
 
     def onViewChanged(self, view: str):
-        if view in ["scatter", "spectra"]:
+        if view in ["scatter"]:
             self.isotope_additional_action.setVisible(True)
         else:
             self.isotope_additional_action.setVisible(False)
-
-        # insert a fake background isotope
-        self.combo_isotope_additional.blockSignals(True)
-        if view in ["spectra"] and not isinstance(
-            self.combo_isotope_additional.isotope(0), BackgroundIsotope
-        ):
-            self.combo_isotope_additional.insertItem(0, "Background")
-            self.combo_isotope_additional.setItemData(
-                0, BackgroundIsotope(), IsotopeRole
-            )
-            self.combo_isotope_additional.setCurrentIndex(0)
-        elif isinstance(self.combo_isotope_additional.isotope(0), BackgroundIsotope):
-            self.combo_isotope_additional.removeItem(0)
-        self.combo_isotope_additional.blockSignals(False)
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         if (
@@ -203,5 +185,5 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
     def onViewChanged(self):
         view = self.currentView()
-        self.action_view_options.setEnabled(view in ["histogram", "composition"])
+        self.action_view_options.setEnabled(view in ["histogram", "composition", "spectra"])
         self.viewChanged.emit(view)

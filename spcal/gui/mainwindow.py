@@ -25,11 +25,7 @@ from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
-from spcal.gui.docks.toolbar import (
-    BackgroundIsotope,
-    SPCalOptionsToolBar,
-    SPCalViewToolBar,
-)
+from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
     get_import_dialog_for_path,
@@ -591,21 +587,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         elif view == "spectra":
             data_file = self.files.currentDataFile()
             isotope = self.toolbar.combo_isotope.currentIsotope()
-            isotope_additional = self.toolbar.combo_isotope_additional.currentIsotope()
             if data_file is None:
                 return
-
-            if isinstance(isotope_additional, BackgroundIsotope):
-                result_additional = None
-            else:
-                result_additional = self.processing_results[data_file][
-                    isotope_additional
-                ]
 
             self.graph.drawResultsSpectra(
                 data_file,
                 self.processing_results[data_file][isotope],
-                result_additional,
+                None,
             )
         else:
             files = self.files.selectedDataFiles()

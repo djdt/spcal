@@ -150,7 +150,6 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        # distance: float = 0.03,
         minimum_size: str | float = "5%",
         mode: str = "pie",
         parent: QtWidgets.QWidget | None = None,
@@ -158,15 +157,8 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Composition Options")
 
-        # self.distance = distance
         self.minimum_size = minimum_size
         self.mode = mode
-
-        # self.spinbox_distance = QtWidgets.QDoubleSpinBox()
-        # self.spinbox_distance.setRange(0.1, 99.9)
-        # self.spinbox_distance.setValue(distance * 100.0)
-        # self.spinbox_distance.setDecimals(1)
-        # self.spinbox_distance.setSuffix(" %")
 
         self.lineedit_size = QtWidgets.QLineEdit(str(minimum_size))
         self.lineedit_size.setValidator(DoubleOrPercentValidator(0.0, 1e99, 3, 0, 100))
@@ -211,16 +203,11 @@ class CompositionsOptionsDialog(QtWidgets.QDialog):
             self.reject()
 
     def apply(self):
-        # distance = self.spinbox_distance.value() / 100.0
         size = self.lineedit_size.text().strip().replace(" ", "")
         mode = self.combo_mode.currentText().lower()
 
         # Check for changes
-        if (
-            # abs(self.distance - distance) > 0.001
-            self.minimum_size != size or self.mode != mode
-        ):
-            # self.distance = distance
+        if self.minimum_size != size or self.mode != mode:
             self.minimum_size = size
             self.mode = mode
             self.optionsChanged.emit(self.minimum_size, self.mode)
@@ -309,3 +296,58 @@ class ScatterOptionsDialog(QtWidgets.QDialog):
 #     def reset(self):
 #         self.combo_weighting.setCurrentText("none")
 #         self.check_draw_filtered.setChecked(False)
+
+
+class SpectraOptionsDialog(QtWidgets.QDialog):
+    optionsChanged = QtCore.Signal(bool)
+
+    def __init__(
+        self,
+        subtract_background: bool,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Spectra Options")
+
+        self.subtract_background = subtract_background
+
+        self.check_subtract_background = QtWidgets.QCheckBox("Subtract background.")
+        self.check_subtract_background.setToolTip(
+            "Subtract regions between detections before plotting spectra."
+        )
+        self.check_subtract_background.setChecked(subtract_background)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults
+            | QtWidgets.QDialogButtonBox.StandardButton.Apply
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.clicked.connect(self.buttonBoxClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.check_subtract_background)
+        layout.addWidget(self.button_box)
+
+        self.setLayout(layout)
+
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
+        sbutton = self.button_box.standardButton(button)
+        if sbutton == QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults:
+            self.reset()
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Apply:
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.apply()
+            self.accept()
+        else:
+            self.reject()
+
+    def apply(self):
+        if self.subtract_background != self.check_subtract_background.isChecked():
+            self.subtract_background = self.check_subtract_background.isChecked()
+            self.optionsChanged.emit(self.subtract_background)
+
+    def reset(self):
+        self.check_subtract_background.setChecked(True)
