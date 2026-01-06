@@ -375,26 +375,3 @@ class NuImportDialog(ImportDialogBase):
 
         self.cleanup()
         super().accept()
-
-
-if __name__ == "__main__":
-    import tracemalloc
-    import gc
-
-    def print_stats():
-        gc.collect()
-        snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.statistics("lineno")
-        for stat in top_stats[:3]:
-            print(stat)
-
-    app = QtWidgets.QApplication()
-    tracemalloc.start(20)
-    dlg = NuImportDialog(
-        Path("/mnt/storage/TOF/2025 Ice Cores/run2/14-42-07 ice_run2_a04_1")
-    )
-    dlg.dataImported.connect(print_stats)
-    app.aboutToQuit.connect(print_stats)
-    dlg.open()
-
-    app.exec()

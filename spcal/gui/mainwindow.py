@@ -561,7 +561,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         isotopes = self.toolbar.selectedIsotopes()
 
         self.graph.clear()
-        print(view)
 
         if view == "composition":
             data_file = self.files.currentDataFile()
