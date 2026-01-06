@@ -16,7 +16,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
     isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
 
     requestFilterDialog = QtCore.Signal()
-    requestZoomReset = QtCore.Signal()
 
     def __init__(
         self,
@@ -50,13 +49,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             self.requestFilterDialog,
         )
 
-        self.action_zoom_reset = create_action(
-            "zoom-original",
-            "Reset Zoom",
-            "Reset the zoom to the full graph extent.",
-            self.requestZoomReset,
-        )
-
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
@@ -75,9 +67,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.addSeparator()
         self.addAction(self.action_filter)
-
-        self.addSeparator()
-        self.addAction(self.action_zoom_reset)
 
     def onViewChanged(self, view: str):
         if view in ["scatter", "spectra"]:
@@ -142,6 +131,7 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 class SPCalViewToolBar(QtWidgets.QToolBar):
     viewChanged = QtCore.Signal(str)
     requestViewOptionsDialog = QtCore.Signal()
+    requestZoomReset = QtCore.Signal()
 
     VIEWS = {
         "particle": ("office-chart-line", "Show signals and detected peaks."),
@@ -180,13 +170,22 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
         )
         self.action_view_options.setEnabled(False)
 
+        self.action_zoom_reset = create_action(
+            "zoom-original",
+            "Reset Zoom",
+            "Reset the zoom to the full graph extent.",
+            self.requestZoomReset,
+        )
+
         action_group_views = QtGui.QActionGroup(self)
         for action in self.view_actions.values():
             action_group_views.addAction(action)
             self.addAction(action)
 
+
         self.addSeparator()
         self.addAction(self.action_view_options)
+        self.addAction(self.action_zoom_reset)
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
