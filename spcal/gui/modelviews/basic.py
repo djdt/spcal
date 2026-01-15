@@ -72,24 +72,35 @@ class BasicTableView(QtWidgets.QTableView):
             )
 
     def _copy(self):
-        selection = sorted(self.selectedIndexes(), key=lambda i: (i.row(), i.column()))
+        selected = self.selectedIndexes()
+
+        top = min(index.row() for index in selected)
+        bottom = max(index.row() for index in selected)
+
+        left = min(index.column() for index in selected)
+        right = max(index.column() for index in selected)
+
         data = (
             '<meta http-equiv="content-type" content="text/html; charset=utf-8"/>'
             "<table><tr>"
         )
-        text = ""
 
-        prev = None
-        for i in selection:
-            if prev is not None and prev.row() != i.row():  # New row
+        text = ""
+        for row in range(top, bottom + 1):
+            for col in range(left, right + 1):
+                index = self.model().index(row, col)
+                data += "<td>"
+                if index.data() is not None:
+                    text += str(index.data())
+                    data += str(index.data())
+                data += "</td>"
+                if col != right:
+                    text += "\t"
+
+            if row != bottom:
                 data += "</tr><tr>"
                 text += "\n"
-            value = "" if i.data() is None else i.data()
-            data += f"<td>{value}</td>"
-            if i.column() != 0:
-                text += "\t"
-            text += f"{value}"
-            prev = i
+
         data += "</tr></table>"
 
         mime = QtCore.QMimeData()
@@ -127,14 +138,28 @@ class BasicTableView(QtWidgets.QTableView):
                     )
 
     def _paste(self):
-        text = QtWidgets.QApplication.clipboard().text("plain")
-        selection = self.selectedIndexes()
-        start_row = min(selection, key=lambda i: i.row()).row()
-        start_column = min(selection, key=lambda i: i.column()).column()
+        clipboard_text, _ = QtWidgets.QApplication.clipboard().text("plain")
 
-        for row, row_text in enumerate(text[0].split("\n")):
-            for column, text in enumerate(row_text.split("\t")):
-                index = self.model().index(start_row + row, start_column + column)
+        texts = [line.split("\t") for line in clipboard_text.split("\n")]
+
+        selected = self.selectedIndexes()
+
+        top = min(index.row() for index in selected)
+        bottom = max(index.row() for index in selected)
+        left = min(index.column() for index in selected)
+        right = max(index.column() for index in selected)
+
+        # The selection is larger, expand
+        if len(texts) > bottom - top:
+            bottom = top + len(texts) - 1
+        if any(len(line) for line in texts) > right - left:
+            right = left + max(len(line) for line in texts) - 1
+
+        for row in range(top, bottom + 1):
+            for col in range(left, right + 1):
+                text_row = (row - top) % len(texts)
+                text = texts[text_row][(col - left) % len(texts[text_row])]
+                index = self.model().index(row, col)
                 if (
                     index.isValid()
                     and index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable
