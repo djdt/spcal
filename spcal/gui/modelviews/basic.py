@@ -126,6 +126,8 @@ class BasicTableView(QtWidgets.QTableView):
 
         left = min(index.column() for index in selected)
         right = max(index.column() for index in selected)
+
+        self.model().blockSignals(True)
         for col in range(left, right + 1):
             value = self.model().index(top, col).data(QtCore.Qt.ItemDataRole.EditRole)
             for row in range(top + 1, bottom + 1):
@@ -136,6 +138,13 @@ class BasicTableView(QtWidgets.QTableView):
                         value,
                         QtCore.Qt.ItemDataRole.EditRole,
                     )
+
+        self.model().blockSignals(False)
+        self.model().dataChanged.emit(
+            self.model().index(top, left),
+            self.model().index(bottom, right),
+            QtCore.Qt.ItemDataRole.EditRole,
+        )
 
     def _paste(self):
         clipboard_text, _ = QtWidgets.QApplication.clipboard().text("plain")
@@ -155,6 +164,7 @@ class BasicTableView(QtWidgets.QTableView):
         if any(len(line) for line in texts) > right - left:
             right = left + max(len(line) for line in texts) - 1
 
+        self.model().blockSignals(True)
         for row in range(top, bottom + 1):
             for col in range(left, right + 1):
                 text_row = (row - top) % len(texts)
@@ -165,6 +175,13 @@ class BasicTableView(QtWidgets.QTableView):
                     and index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable
                 ):
                     self.model().setData(index, text, QtCore.Qt.ItemDataRole.EditRole)
+
+        self.model().blockSignals(False)
+        self.model().dataChanged.emit(
+            self.model().index(top, left),
+            self.model().index(bottom, right),
+            QtCore.Qt.ItemDataRole.EditRole,
+        )
 
 
 class BasicTable(QtWidgets.QTableWidget):
