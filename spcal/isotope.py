@@ -9,20 +9,20 @@ REGEX_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
 
 @dataclass(frozen=True)
 class SPCalIsotopeBase:
-    pass
+    name: str
 
 
 @dataclass(frozen=True)
 class SPCalIsotope(SPCalIsotopeBase):
-    symbol: str
+    name: str
     isotope: int
     mass: float
     composition: float | None = None
 
     def __str__(self) -> str:
         if self.isotope == 0:
-            return f'"{self.symbol}"'
-        return f"{self.isotope}{self.symbol}"
+            return f'"{self.name}"'
+        return f"{self.isotope}{self.name}"
 
     def __repr__(self) -> str:
         return f"SPCalIsotope({self.__str__()})"
@@ -30,7 +30,11 @@ class SPCalIsotope(SPCalIsotopeBase):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SPCalIsotope):
             return False
-        return self.symbol == other.symbol and self.isotope == other.isotope
+        return self.name == other.name and self.isotope == other.isotope
+
+    @property
+    def symbol(self) -> str:
+        return self.name
 
     @classmethod
     def fromString(cls, text: str) -> "SPCalIsotope":
