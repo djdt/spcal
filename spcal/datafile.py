@@ -100,7 +100,8 @@ class SPCalDataFile(object):
         )
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
         if not isinstance(result, np.ndarray):
-            raise ReducerException("Non-array reduction result")
+            raise ReducerException("reduction of expression is not an array")
+        result[~np.isfinite(result)] = np.nan  # set all infinite to nan
         return result
 
     def isTOF(self) -> bool:
