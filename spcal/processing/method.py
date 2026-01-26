@@ -187,7 +187,6 @@ class SPCalProcessingMethod(object):
         for filter_group in self.filters:
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
-                print(filter.preferInvalid())
                 if filter.isotope is None:  # isotope not important, e.g. time based
                     for result in results.values():
                         filter_invalid = filter.invalidPeaks(result)
