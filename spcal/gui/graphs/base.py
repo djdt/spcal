@@ -173,6 +173,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
         self.action_auto_scale_y.setCheckable(True)
 
+        self.action_zoom_reset = create_action(
+            "zoom-reset",
+            "Reset zoom",
+            "Show the full extent of the data.",
+            self.zoomReset,
+        )
+
         self.action_copy_image = create_action(
             "insert-image",
             "Copy Image to Clipboard",
@@ -363,10 +370,13 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def customContextMenu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
+        menu.addSeparator()
         menu.addAction(self.action_auto_scale_y)
 
         if self.plot.legend is not None:
             menu.addAction(self.action_show_legend)
+
+        menu.addAction(self.action_zoom_reset)
 
         menu.addSeparator()
         if len(self.data_for_export) > 0:
