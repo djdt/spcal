@@ -464,6 +464,7 @@ RECOMMENDED_ISOTOPES = {
     "K": 39,
     "Ca": 44,
     "Sc": 45,
+    "Ti": 47,
     "V": 51,
     "Cr": 52,
     "Mn": 55,
