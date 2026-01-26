@@ -222,10 +222,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         self.plot.requestContextMenu.connect(self.customContextMenu)
 
-    def font(self) -> QtGui.QFont:
-        return self.plot.font()
+    def font(self) -> QtGui.QFont:  # type: ignore , weird pyqtgraph classes
+        return self.plot.font()  # type: ignore
 
-    def setFont(self, font: QtGui.QFont):
+    def setFont(self, font: QtGui.QFont):  # type: ignore
         self.plot.setFont(font)
 
     def drawCurve(
