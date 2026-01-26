@@ -1,6 +1,6 @@
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 
 from spcal.pratt import (
@@ -194,7 +194,7 @@ class CalculatorDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        isotopes: list[SPCalIsotopeBase],
+        isotopes: list[SPCalIsotope],
         expressions: list[SPCalIsotopeExpression],
         parent: QtWidgets.QWidget | None = None,
     ):
