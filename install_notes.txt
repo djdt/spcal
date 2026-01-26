@@ -1,0 +1,4 @@
+Set environment for tbb include in actions?
+
+$env:INCLUDE="path to tbb includes"
+$enc:LIB="path to tbb lib"
