@@ -35,6 +35,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.gui.io import loadSession, saveSession
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.pratt import Reducer, ReducerException
 from spcal.processing import (
     SPCalIsotopeOptions,
     SPCalProcessingMethod,
@@ -127,15 +128,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
         self.toolbar.isotopeChanged.connect(self.redraw)
+        self.toolbar.scatterOptionsChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
-        self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
+        self.toolbar.requestViewOptionsDialog.connect(self.graph.dialogGraphOptions)
 
         self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
         self.toolbar_view.viewChanged.connect(self.graph.setView)
-        self.toolbar_view.requestViewOptionsDialog.connect(
-            self.graph.dialogGraphOptions
-        )
-        self.toolbar_view.requestZoomReset.connect(self.graph.zoomReset)
+        self.toolbar_view.requestFilterDialog.connect(self.dialogFilterDetections)
+        # self.toolbar_view.requestZoomReset.connect(self.graph.zoomReset)
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()
@@ -575,13 +575,34 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if data_file is None:
                 return
 
-            isotope = self.toolbar.combo_isotope.currentIsotope()
-            isotope_additional = self.toolbar.combo_isotope_additional.currentIsotope()
+            def get_reduction(expr: str, key: str) -> np.ndarray | None:
+                reducer = Reducer()
+                reducer.variables = {
+                    str(iso): result.calibrateTo(result.peakValues(), key)
+                    for iso, result in self.processing_results[data_file].items()
+                    if result.canCalibrate(key)
+                }
+                try:
+                    x = reducer.reduce(expr)
+                    if isinstance(x, np.ndarray):
+                        return x
+                    else:
+                        return None
+                except ReducerException:
+                    return None
+
+            x = get_reduction(
+                self.toolbar.scatter_x.expr(), self.toolbar.scatter_key_x.currentText()
+            )
+            y = get_reduction(
+                self.toolbar.scatter_y.expr(), self.toolbar.scatter_key_y.currentText()
+            )
+
+            if x is None or y is None:
+                return
 
             self.graph.drawResultsScatter(
-                self.processing_results[data_file][isotope],
-                self.processing_results[data_file][isotope_additional],
-                key,
+                x, y, self.toolbar.scatter_x.text(), self.toolbar.scatter_y.text()
             )
 
         elif view == "spectra":

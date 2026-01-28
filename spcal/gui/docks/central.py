@@ -211,12 +211,20 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             )
 
     def drawResultsScatter(
-        self, result_x: SPCalProcessingResult, result_y: SPCalProcessingResult, key: str
+        self, result_x: np.ndarray, result_y: np.ndarray, label_x: str, label_y: str
     ):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
         pen.setCosmetic(True)
 
-        self.scatter.drawResults(result_x, result_y, key, pen=pen)
+        self.scatter.drawArrays(result_x, result_y, label_x, label_y, pen=pen)
+
+    # def drawResultsScatter(
+    #     self, result_x: SPCalProcessingResult, result_y: SPCalProcessingResult, key: str
+    # ):
+    #     pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+    #     pen.setCosmetic(True)
+    #
+    #     self.scatter.drawResults(result_x, result_y, key, pen=pen)
 
     def drawResultsSpectra(
         self,

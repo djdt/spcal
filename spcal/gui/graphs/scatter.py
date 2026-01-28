@@ -77,15 +77,14 @@ class ScatterView(SinglePlotGraphicsView):
     ):
         super().__init__("Scatter", font=font, parent=parent)
 
-        self.poly: PolygonSelectionItem| None = None
+        self.poly: PolygonSelectionItem | None = None
 
-    def drawResults(
+    def drawArrays(
         self,
-        result_x: SPCalProcessingResult,
-        result_y: SPCalProcessingResult,
-        key: str,
-        logx: bool = False,
-        logy: bool = False,
+        x: np.ndarray,
+        y: np.ndarray,
+        label_x: str,
+        label_y: str,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
@@ -95,6 +94,26 @@ class ScatterView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
+        valid = np.logical_and(x != 0, y != 0)
+
+        self.data_for_export[f"x_{label_x}"] = x[valid]
+        self.data_for_export[f"y_{label_y}"] = y[valid]
+
+        self.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
+
+        self.plot.xaxis.setLabel(label_x)
+        self.plot.yaxis.setLabel(label_y)
+
+        self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
+
+    def drawResults(
+        self,
+        result_x: SPCalProcessingResult,
+        result_y: SPCalProcessingResult,
+        key: str,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ):
         if result_x.peak_indicies is None or result_y.peak_indicies is None:
             raise ValueError("peak_indicies have not been generated")
 
@@ -110,24 +129,10 @@ class ScatterView(SinglePlotGraphicsView):
             result_y.peak_indicies[result_y.filter_indicies],
             result_y.calibrated(key),
         )
-        valid = np.zeros(npeaks, dtype=bool)
-        valid[result_x.peak_indicies[result_x.filter_indicies]] = True
-        valid[result_y.peak_indicies[result_y.filter_indicies]] = True
 
-        self.data_for_export[f"x_{result_x.isotope}"] = x[valid]
-        self.data_for_export[f"y_{result_y.isotope}"] = y[valid]
+        self.drawArrays(x, y, str(result_x.isotope), str(result_y.isotope), pen, brush)
 
-        self.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
-
-        self.plot.xaxis.setLabel(str(result_x.isotope))
-        self.plot.yaxis.setLabel(str(result_y.isotope))
-
-        self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
-
-    def selectedPoints(self, rect:QtCore.QRectF):
-        points = self.da
-
-    def mousePressEvent(self, event: QtGui.QMouseEvent): # type: ignore , more pyqtgraph
+    def mousePressEvent(self, event: QtGui.QMouseEvent):  # type: ignore , more pyqtgraph
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             # self.band = QtWidgets.QRubberBand(QtWidgets.QRubberBand.Shape.Rectangle, self)
             # self.band.setGeometry(QtCore.QRect(event.pos(), QtCore.QSize(0,0)))
@@ -143,9 +148,11 @@ class ScatterView(SinglePlotGraphicsView):
         else:
             super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event:QtGui.QMouseEvent):
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.button() == QtCore.Qt.MouseButton.LeftButton and self.band is not None:
-            self.band.setGeometry(QtCore.QRect(self.band.geometry().topLeft(), event.pos()))
+            self.band.setGeometry(
+                QtCore.QRect(self.band.geometry().topLeft(), event.pos())
+            )
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent):

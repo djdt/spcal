@@ -113,6 +113,13 @@ class SPCalProcessingResult(object):
             self.total_time,
         )
 
+    def peakValues(self) -> np.ndarray:
+        if self.peak_indicies is None:
+            raise ValueError("peak_indicies not generated")
+        values = np.zeros(self.number_peak_indicies, dtype=self.detections.dtype)
+        np.add.at(values, self.peak_indicies[self.filter_indicies], self.detections)
+        return values
+
     def canCalibrate(self, key: str) -> bool:
         return self.method.canCalibrate(key, self.isotope)
 
