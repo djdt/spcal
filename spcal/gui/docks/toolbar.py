@@ -3,7 +3,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
-from spcal.pratt import Parser, ParserException
 from spcal.processing.method import SPCalProcessingMethod
 
 
@@ -12,21 +11,16 @@ class ScatterExprLineEdit(QtWidgets.QLineEdit):
         super().__init__(parent)
 
         self._completer = QtWidgets.QCompleter()
-        self.parser = Parser()
-
-    def expr(self) -> str:
-        try:
-            return self.parser.parse(self.text())
-        except ParserException:
-            return ""
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed
+        )
 
     def insertCompletion(self, completion: str):
         prefix = self._completer.completionPrefix()
         self.setText(self.text()[: self.cursorPosition() - len(prefix)] + completion)
 
     def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
-        self.parser.variables = [str(isotope) for isotope in isotopes]
-        self._completer = QtWidgets.QCompleter(self.parser.variables)
+        self._completer = QtWidgets.QCompleter([str(isotope) for isotope in isotopes])
         self._completer.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
         self._completer.setWidget(self)
         self._completer.activated.connect(self.insertCompletion)
@@ -116,7 +110,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             "Set options specific to the current graph.",
             self.requestViewOptionsDialog,
         )
-        self.action_view_options.setVisible(False)
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
@@ -132,18 +125,27 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.key_action = self.addWidget(self.combo_key)
 
-        self.scatter_x_action = self.addWidget(self.scatter_x)
-        self.scatter_key_x_action = self.addWidget(self.scatter_key_x)
         self.scatter_y_action = self.addWidget(self.scatter_y)
         self.scatter_key_y_action = self.addWidget(self.scatter_key_y)
+        self.scatter_x_action = self.addWidget(self.scatter_x)
+        self.scatter_key_x_action = self.addWidget(self.scatter_key_x)
 
         self.addSeparator()
         self.addAction(self.action_view_options)
 
+        for action in [
+            self.action_view_options,
+            self.scatter_y_action,
+            self.scatter_key_y_action,
+            self.scatter_x_action,
+            self.scatter_key_x_action,
+        ]:
+            action.setVisible(False)
+
     def onViewChanged(self, view: str):
         self.isotope_action.setVisible(view in ["particle", "histogram"])
         self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
-        self.action_view_options.setVisible(view not in ["particle"])
+        self.action_view_options.setVisible(view not in ["particle", "scatter"])
 
         self.key_action.setVisible(view not in ["scatter"])
         for widget in [

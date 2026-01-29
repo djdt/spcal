@@ -4,6 +4,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 
+from spcal.isotope import SPCalIsotopeBase
+from spcal.pratt import Parser, ParserException, Reducer, ReducerException
 from spcal.processing.result import SPCalProcessingResult
 
 
@@ -85,6 +87,8 @@ class ScatterView(SinglePlotGraphicsView):
         y: np.ndarray,
         label_x: str,
         label_y: str,
+        unit_x: str = "",
+        unit_y: str = "",
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
@@ -101,65 +105,103 @@ class ScatterView(SinglePlotGraphicsView):
 
         self.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
 
-        self.plot.xaxis.setLabel(label_x)
-        self.plot.yaxis.setLabel(label_y)
+        self.plot.xaxis.setLabel(label_x, unit_x)
+        self.plot.yaxis.setLabel(label_y, unit_y)
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
+        self.zoomReset()
 
-    def drawResults(
+    # def drawResults(
+    #     self,
+    #     result_x: SPCalProcessingResult,
+    #     result_y: SPCalProcessingResult,
+    #     key: str,
+    #     pen: QtGui.QPen | None = None,
+    #     brush: QtGui.QBrush | None = None,
+    # ):
+    #     if result_x.peak_indicies is None or result_y.peak_indicies is None:
+    #         raise ValueError("peak_indicies have not been generated")
+    #
+    #     npeaks = result_x.number_peak_indicies
+    #     x, y = np.zeros(npeaks, dtype=np.float32), np.zeros(npeaks, dtype=np.float32)
+    #     np.add.at(
+    #         x,
+    #         result_x.peak_indicies[result_x.filter_indicies],
+    #         result_x.calibrated(key),
+    #     )
+    #     np.add.at(
+    #         y,
+    #         result_y.peak_indicies[result_y.filter_indicies],
+    #         result_y.calibrated(key),
+    #     )
+    #
+    #     self.drawArrays(x, y, str(result_x.isotope), str(result_y.isotope), pen, brush)
+
+    def drawResultsExpr(
         self,
-        result_x: SPCalProcessingResult,
-        result_y: SPCalProcessingResult,
-        key: str,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        text_x: str,
+        text_y: str,
+        key_x: str,
+        key_y: str,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
-        if result_x.peak_indicies is None or result_y.peak_indicies is None:
-            raise ValueError("peak_indicies have not been generated")
+        parser = Parser(variables=[str(key) for key in results.keys()])
 
-        npeaks = result_x.number_peak_indicies
-        x, y = np.zeros(npeaks, dtype=np.float32), np.zeros(npeaks, dtype=np.float32)
-        np.add.at(
-            x,
-            result_x.peak_indicies[result_x.filter_indicies],
-            result_x.calibrated(key),
-        )
-        np.add.at(
-            y,
-            result_y.peak_indicies[result_y.filter_indicies],
-            result_y.calibrated(key),
-        )
+        def get_reduction(text: str, key: str) -> np.ndarray | None:
+            reducer = Reducer()
+            reducer.variables = {
+                str(iso): result.calibrateTo(result.peakValues(), key)
+                for iso, result in results.items()
+                if result.canCalibrate(key)
+            }
+            try:
+                expr = parser.parse(text)
+                x = reducer.reduce(expr)
+                if isinstance(x, np.ndarray):
+                    return x
+                else:
+                    return None
+            except (ReducerException, ParserException):
+                return None
 
-        self.drawArrays(x, y, str(result_x.isotope), str(result_y.isotope), pen, brush)
+        x = get_reduction(text_x, key_x)
+        y = get_reduction(text_y, key_y)
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent):  # type: ignore , more pyqtgraph
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            # self.band = QtWidgets.QRubberBand(QtWidgets.QRubberBand.Shape.Rectangle, self)
-            # self.band.setGeometry(QtCore.QRect(event.pos(), QtCore.QSize(0,0)))
-            # # pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 0.0)
-            # # rb
-            # #
-            # # self.poly = PolygonSelectionItem(pen)
-            # # self.plot.addItem(self.poly)
-            # # self.poly.addPoint(event.pos())
-            self.setDragMode(QtWidgets.QGraphicsView.DragMode.RubberBandDrag)
+        if x is None or y is None:
+            return
 
-            event.accept()
-        else:
-            super().mousePressEvent(event)
+        self.drawArrays(x, y, text_x, text_y)
 
-    def mouseMoveEvent(self, event: QtGui.QMouseEvent):
-        if event.button() == QtCore.Qt.MouseButton.LeftButton and self.band is not None:
-            self.band.setGeometry(
-                QtCore.QRect(self.band.geometry().topLeft(), event.pos())
-            )
-        super().mouseMoveEvent(event)
+    # def mousePressEvent(self, event: QtGui.QMouseEvent):  # type: ignore , more pyqtgraph
+    #     if event.button() == QtCore.Qt.MouseButton.LeftButton:
+    #         # self.band = QtWidgets.QRubberBand(QtWidgets.QRubberBand.Shape.Rectangle, self)
+    #         # self.band.setGeometry(QtCore.QRect(event.pos(), QtCore.QSize(0,0)))
+    #         # # pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 0.0)
+    #         # # rb
+    #         # #
+    #         # # self.poly = PolygonSelectionItem(pen)
+    #         # # self.plot.addItem(self.poly)
+    #         # # self.poly.addPoint(event.pos())
+    #         self.setDragMode(QtWidgets.QGraphicsView.DragMode.RubberBandDrag)
+    #
+    #         event.accept()
+    #     else:
+    #         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
-        if self.dragMode() == QtWidgets.QGraphicsView.DragMode.RubberBandDrag:
-            rect = self.rubberBandRect().normalized()
-        if self.poly is not None:
-            self.removeItem
+    # def mouseMoveEvent(self, event: QtGui.QMouseEvent):
+    #     if event.button() == QtCore.Qt.MouseButton.LeftButton and self.band is not None:
+    #         self.band.setGeometry(
+    #             QtCore.QRect(self.band.geometry().topLeft(), event.pos())
+    #         )
+    #     super().mouseMoveEvent(event)
+    #
+    # def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
+    #     if self.dragMode() == QtWidgets.QGraphicsView.DragMode.RubberBandDrag:
+    #         rect = self.rubberBandRect().normalized()
+    #     if self.poly is not None:
+    #         self.removeItem
 
     def drawFit(
         self,

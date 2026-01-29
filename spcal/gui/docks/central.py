@@ -17,6 +17,8 @@ from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
+from spcal.isotope import SPCalIsotopeBase
+from spcal.pratt import Reducer, ReducerException
 from spcal.processing import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
@@ -210,13 +212,18 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
                 drawable, key, pen=pen, brushes=brushes, labels=names
             )
 
-    def drawResultsScatter(
-        self, result_x: np.ndarray, result_y: np.ndarray, label_x: str, label_y: str
+    def drawResultsScatterExpr(
+        self,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        text_x: str,
+        text_y: str,
+        key_x: str,
+        key_y: str,
     ):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
         pen.setCosmetic(True)
 
-        self.scatter.drawArrays(result_x, result_y, label_x, label_y, pen=pen)
+        self.scatter.drawResultsExpr(results, text_x, text_y, key_x, key_y)
 
     # def drawResultsScatter(
     #     self, result_x: SPCalProcessingResult, result_y: SPCalProcessingResult, key: str

@@ -575,34 +575,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if data_file is None:
                 return
 
-            def get_reduction(expr: str, key: str) -> np.ndarray | None:
-                reducer = Reducer()
-                reducer.variables = {
-                    str(iso): result.calibrateTo(result.peakValues(), key)
-                    for iso, result in self.processing_results[data_file].items()
-                    if result.canCalibrate(key)
-                }
-                try:
-                    x = reducer.reduce(expr)
-                    if isinstance(x, np.ndarray):
-                        return x
-                    else:
-                        return None
-                except ReducerException:
-                    return None
-
-            x = get_reduction(
-                self.toolbar.scatter_x.expr(), self.toolbar.scatter_key_x.currentText()
-            )
-            y = get_reduction(
-                self.toolbar.scatter_y.expr(), self.toolbar.scatter_key_y.currentText()
-            )
-
-            if x is None or y is None:
-                return
-
-            self.graph.drawResultsScatter(
-                x, y, self.toolbar.scatter_x.text(), self.toolbar.scatter_y.text()
+            self.graph.drawResultsScatterExpr(
+                self.processing_results[data_file],
+                self.toolbar.scatter_x.text(),
+                self.toolbar.scatter_y.text(),
+                self.toolbar.scatter_key_x.currentText(),
+                self.toolbar.scatter_key_y.currentText(),
             )
 
         elif view == "spectra":
