@@ -189,8 +189,9 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.scatter_x.setIsotopes(isotopes)
         self.scatter_y.setIsotopes(isotopes)
-        self.scatter_x.setText(str(isotopes[0]))
-        self.scatter_y.setText(str(isotopes[1]))
+        if len(isotopes) >= 2:
+            self.scatter_x.setText(str(isotopes[0]))
+            self.scatter_y.setText(str(isotopes[1]))
 
         self.action_all_isotopes.setEnabled(len(isotopes) > 1)
 
