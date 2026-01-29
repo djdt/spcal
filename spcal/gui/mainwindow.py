@@ -35,7 +35,6 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.gui.io import loadSession, saveSession
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
-from spcal.pratt import Reducer, ReducerException
 from spcal.processing import (
     SPCalIsotopeOptions,
     SPCalProcessingMethod,

@@ -18,7 +18,6 @@ from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
-from spcal.pratt import Reducer, ReducerException
 from spcal.processing import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
