@@ -23,7 +23,7 @@ from spcal.gui.io import (
 from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.siunits import mass_units, size_units, volume_units
@@ -410,7 +410,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.check_export_arrays.setChecked(True)
         self.check_export_summary = QtWidgets.QCheckBox("Batch summary")
         self.summary_filename = QtWidgets.QLineEdit(
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%dT%H_%M_%S_scpal_batch.csv')}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%dT%H_%M_%S_spcal_batch.csv')}"
         )
         self.check_export_summary.toggled.connect(self.completeChanged)
         self.check_export_summary.toggled.connect(self.summary_filename.setEnabled)
