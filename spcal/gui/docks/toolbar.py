@@ -143,7 +143,7 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             action.setVisible(False)
 
     def onViewChanged(self, view: str):
-        self.isotope_action.setVisible(view in ["particle", "histogram"])
+        self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])
         self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
         self.action_view_options.setVisible(view not in ["particle", "scatter"])
 
