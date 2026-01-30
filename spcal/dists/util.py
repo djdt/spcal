@@ -246,6 +246,8 @@ def extract_compound_poisson_lognormal_parameters(
     Returns:
         array of [..., (lambda, mu, sigma)]
     """
+    # this needs to be rewrittin for other shapes
+
     if mask is None:
         mask = ~np.isnan(x)
     else:

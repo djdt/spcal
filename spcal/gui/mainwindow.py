@@ -134,7 +134,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
         self.toolbar_view.viewChanged.connect(self.graph.setView)
         self.toolbar_view.requestViewOptionsDialog.connect(self.graph.dialogGraphOptions)
-        # self.toolbar_view.requestZoomReset.connect(self.graph.zoomReset)
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()
