@@ -181,21 +181,21 @@ def test_single_particle_peak_splitting():
     loa, lod = 19.90, 45.0
 
     # Split peak, largest on left
-    sums, labels, regions = detection.accumulate_detections(
+    sums, regions = detection.accumulate_detections(
         x["a"], loa, lod, prominence_required=0.2, points_required=1
     )
     assert sums.size == 2
     assert regions[0][1] == regions[1][0]
 
     # Two peaks, with many maxima
-    sums, labels, regions = detection.accumulate_detections(
+    sums, regions = detection.accumulate_detections(
         x["b"], loa, lod, prominence_required=0.2, points_required=1
     )
     assert sums.size == 2
     assert regions[0][1] < regions[1][0]
 
     # Split peak, largest on right, another peak
-    sums, labels, regions = detection.accumulate_detections(
+    sums, regions = detection.accumulate_detections(
         x["c"], loa, lod, prominence_required=0.2, points_required=1
     )
     assert sums.size == 3
