@@ -251,6 +251,7 @@ def extract_compound_poisson_lognormal_parameters(
     else:
         mask = np.logical_and(~np.isnan(x), mask)
 
+    # todo: maybe no mask is faster
     params = ext.extract_cpln_parameters(x, mask)
     return params
 
