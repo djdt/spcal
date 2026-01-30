@@ -66,7 +66,7 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
     keyChanged = QtCore.Signal(str)
     scatterOptionsChanged = QtCore.Signal()
 
-    requestViewOptionsDialog = QtCore.Signal()
+    requestFilterDialog = QtCore.Signal()
 
     def __init__(
         self,
@@ -104,11 +104,11 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
             checkable=True,
         )
 
-        self.action_view_options = create_action(
-            "configure",
-            "Graph Options",
-            "Set options specific to the current graph.",
-            self.requestViewOptionsDialog,
+        self.action_filter = create_action(
+            "view-filter",
+            "Filter Detections",
+            "Filter detections based on element compositions.",
+            self.requestFilterDialog,
         )
 
         spacer = QtWidgets.QWidget()
@@ -131,10 +131,9 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.scatter_key_x_action = self.addWidget(self.scatter_key_x)
 
         self.addSeparator()
-        self.addAction(self.action_view_options)
+        self.addAction(self.action_filter)
 
         for action in [
-            self.action_view_options,
             self.scatter_y_action,
             self.scatter_key_y_action,
             self.scatter_x_action,
@@ -145,7 +144,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
     def onViewChanged(self, view: str):
         self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])
         self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
-        self.action_view_options.setVisible(view not in ["particle", "scatter"])
 
         self.key_action.setVisible(view not in ["scatter"])
         for widget in [
@@ -204,7 +202,8 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
 class SPCalViewToolBar(QtWidgets.QToolBar):
     viewChanged = QtCore.Signal(str)
-    requestFilterDialog = QtCore.Signal()
+
+    requestViewOptionsDialog = QtCore.Signal()
 
     VIEWS = {
         "particle": ("office-chart-line", "Show signals and detected peaks."),
@@ -235,11 +234,11 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
         }
         next(iter(self.view_actions.values())).setChecked(True)
 
-        self.action_filter = create_action(
-            "view-filter",
-            "Filter Detections",
-            "Filter detections based on element compositions.",
-            self.requestFilterDialog,
+        self.action_view_options = create_action(
+            "configure",
+            "Graph Options",
+            "Set options specific to the current graph.",
+            self.requestViewOptionsDialog,
         )
 
         action_group_views = QtGui.QActionGroup(self)
@@ -248,8 +247,7 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
             self.addAction(action)
 
         self.addSeparator()
-        self.addSeparator()
-        self.addAction(self.action_filter)
+        self.addAction(self.action_view_options)
 
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
