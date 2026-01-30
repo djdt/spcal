@@ -1,7 +1,5 @@
 """Reading single particle data from csv files."""
 
-import re
-import numpy.lib.recfunctions as rfn
 import datetime
 import logging
 from pathlib import Path
@@ -82,9 +80,7 @@ def iso_time_to_float_seconds(text: str) -> float:
 def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
-    columns: tuple[int, ...] | np.ndarray | None = None,
     skip_rows: int = 1,
-    convert_cps: float | None = None,
     max_rows: int | None = None,
 ) -> np.ndarray:
     """Imports data stored as text with elements in columns.
@@ -92,10 +88,7 @@ def read_single_particle_file(
     Args:
         path: path to file
         delimiter: delimiting character between columns
-        columns: which columns to import, deafults to all
-        first_line: the first data (not header) line
-        convert_cps: the dwelltime (in s) if data is stored as counts per second,
-        else None
+        first_line: the first data (not header) line else None
 
     Returns:
         data, structred array
@@ -116,32 +109,17 @@ def read_single_particle_file(
 
         gen = replace_comma_decimal(fp, delimiter)
 
-        signals = np.genfromtxt(  # type: ignore
+        # todo: protential speed-up by trying loadtxt
+        data = np.genfromtxt(  # type: ignore
             gen,
             delimiter=delimiter,
             names=header,
             dtype=dtype,
-            max_rows=max_rows,
+            deletechars="",  # todo: see if this causes any issue with calculator or saving
             converters=converters,  # type: ignore , works
             invalid_raise=False,
             loose=True,
         )
 
-        assert signals.dtype.names is not None
-
-        times = None
-        for name in signals.dtype.names:
-            if "time" in name.lower():
-                times = signals[name]
-                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", name.lower())
-                if m is not None:
-                    if m.group(1) in ["ms"]:
-                        times *= 1e-3
-                    elif m.group(1) in ["us", "µs"]:
-                        times *= 1e-6
-                    elif m.group(1) in ["ns"]:
-                        times *= 1e-9
-                signals = rfn.drop_fields(signals, [name])
-                break
-
-    return signals
+    assert data.dtype.names is not None
+    return data
