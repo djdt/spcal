@@ -37,7 +37,19 @@ def append_results_summary(
     if fp.tell() == 0:
         fp.write("Data File,Isotope,Name,Unit,Value\n")
     for result in results:
-        detections = np.resize
+        fp.write(f"{data_file.path},{result.isotope},Number,#,{result.number}\n")
+        fp.write(
+            f"{data_file.path},{result.isotope},Number Error,#,{result.number_error}\n"
+        )
+        if result.number_concentration is not None:
+            fp.write(
+                f"{data_file.path},{result.isotope},Number Error,#/L,{result.number_concentration}\n"
+            )
+        if result.mass_concentration is not None:
+            unit, factor = units["mass"]
+            fp.write(
+                f"{data_file.path},{result.isotope},Number Error,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
+            )
         for key in SPCalProcessingMethod.CALIBRATION_KEYS:
             if not result.canCalibrate(key):
                 continue
@@ -114,13 +126,14 @@ def export_spcal_result_outputs(
     results: list["SPCalProcessingResult"],
     units: dict[str, tuple[str, float]],
 ):
+    mass_unit, mass_factor = units["mass"]
     fp.write(
-        "# Outputs (number),Number,Number Error,Number Concentration (#/L),Mass Concentration (kg/L)\n"
+        f"# Outputs (number),Number,Number Error,Number Concentration (#/L),Mass Concentration ({mass_unit}/L)\n"
     )
     for result in results:
         fp.write(
             f"# {result.isotope},{result.number},{result.number_error},"
-            f"{_value(result.number_concentration)},{_value(result.mass_concentration)}\n"
+            f"{_value(result.number_concentration)},{_scaled(result.mass_concentration, mass_factor)}\n"
         )
 
     for key in SPCalProcessingMethod.CALIBRATION_KEYS:
