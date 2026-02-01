@@ -8,7 +8,7 @@ from spcal.gui.io import get_save_spcal_path, most_recent_spcal_path
 from spcal.gui.util import create_action
 
 
-class AxisEditDialog(QtWidgets.QDialog):
+class AxisRangeDialog(QtWidgets.QDialog):
     rangeSelected = QtCore.Signal(float, float)
 
     def __init__(
@@ -85,14 +85,14 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             font = QtGui.QFont()
         self.setFont(font)
 
-    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
-        self.requestContextMenu.emit(event.pos().toPoint())
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):  # type: ignore
+        self.requestContextMenu.emit(event.pos().toPoint())  # type: ignore
 
     def setFont(self, font: QtGui.QFont):  # type: ignore , pyqtgraph qt versions
-        super().setFont(font)
+        super().setFont(font)  # type: ignore
 
         fm = QtGui.QFontMetrics(font)
-        pen: QtGui.QPen = self.xaxis.tickPen()
+        pen: QtGui.QPen = self.xaxis.tickPen()  # type: ignore
         pen.setWidthF(fm.lineWidth())
 
         self.xaxis.setStyle(tickFont=font)
@@ -128,7 +128,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         self.legend.clear()
         # re-add
         for item, text in items:
-            self.scene().addItem(item)
+            self.scene().addItem(item)  # type: ignore
             item.show()
             self.legend.addItem(item, text)
         # fix label heights
@@ -162,16 +162,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     ):
         super().__init__(background="white", parent=parent)
 
-        # self.has_image_export = False
         self.data_for_export: dict[str, np.ndarray] = {}
-
-        self.action_auto_scale_y = create_action(
-            "auto-scale-y",
-            "Auto Scale Y",
-            "Scale the y-axis to the maximum shown data point.",
-            self.setAutoScaleY,
-        )
-        self.action_auto_scale_y.setCheckable(True)
 
         self.action_zoom_reset = create_action(
             "zoom-reset",
@@ -227,7 +218,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
         self.setCentralWidget(self.plot)
 
-        self.plot.requestContextMenu.connect(self.customContextMenu)
+        self.plot.requestContextMenu.connect(self.customContextMenu)  # type: ignore
 
     def font(self) -> QtGui.QFont:  # type: ignore , weird pyqtgraph classes
         return self.plot.font()  # type: ignore
@@ -338,40 +329,73 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.plot.addItem(scatter)
         return scatter
 
-    def mouseDoubleClickEvent(self, event: QtGui.QMouseEvent):
-        pos = self.plot.xaxis.mapFromView(event.pos())
-        if self.plot.vb is None:
-            return
-        if pos is not None and self.plot.xaxis.contains(pos):
+    def axisMenu(self, axis: str = "x") -> QtWidgets.QMenu:
+        assert self.plot.vb is not None
+
+        (x1, x2), (y1, y2) = self.plot.vb.viewRange()
+        min, max = self.plot.vb.state["limits"][f"{axis}Limits"]
+        if axis == "x":
             scale = self.plot.xaxis.scale
-            (v1, v2), (_, _) = self.plot.vb.viewRange()
-            min, max = self.plot.vb.state["limits"]["xLimits"]
-            dlg = AxisEditDialog(
-                (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
-            )
-            dlg.rangeSelected.connect(self.setXAxisRange)
-            dlg.open()
-            event.accept()
-            return
-        pos = self.plot.yaxis.mapFromView(event.pos())
-        if pos is not None and self.plot.yaxis.contains(pos):
+            v1, v2 = x1, x2
+        elif axis == "y":
             scale = self.plot.yaxis.scale
-            (_, _), (v1, v2) = self.plot.vb.viewRange()
-            min, max = self.plot.vb.state["limits"]["yLimits"]
-            dlg = AxisEditDialog(
-                (v1 * scale, v2 * scale), (min * scale, max * scale), parent=self
+            v1, v2 = y1, y2
+        else:
+            raise ValueError("axis must be 'x' or 'y'")
+
+        def open_range_dialog():
+            dlg = AxisRangeDialog(
+                (v1 * scale, v2 * scale),
+                (min * scale, max * scale),
+                self.font(),
+                parent=self,  # type: ignore , pyqtgraph weirdness
             )
-            dlg.rangeSelected.connect(self.setYAxisRange)
+            dlg.rangeSelected.connect(
+                lambda min, max: self.setAxisRange(axis, min, max)
+            )
             dlg.open()
-            event.accept()
-            return
-        super().mouseDoubleClickEvent(event)
+
+        menu = QtWidgets.QMenu(self)  # type: ignore
+
+        autoscale_action = create_action(
+            f"auto-scale-{axis}",
+            "Auto Scale",
+            "Automatically scale the axis with visible data.",
+            lambda autoscale: self.setAxisAutoScale(axis, autoscale),
+            checkable=True,
+        )
+        autoscale_action.setParent(self)  # type: ignore
+        autoscale_action.setChecked(
+            self.plot.vb.state["autoRange"][["x", "y"].index(axis)] is not False
+        )
+        range_action = create_action(
+            f"panel-fit-{['width', 'height'][['x', 'y'].index(axis)]}",
+            "Set Range...",
+            "Set the view range of the axis.",
+            open_range_dialog,
+        )
+        range_action.setParent(self)  # type: ignore
+
+        menu.addAction(autoscale_action)
+        menu.addAction(range_action)
+
+        return menu
 
     def customContextMenu(self, pos: QtCore.QPoint):
-        menu = QtWidgets.QMenu(self)
+        view_pos = self.plot.xaxis.mapFromView(pos)
+        if view_pos is not None and self.plot.xaxis.contains(view_pos):
+            menu = self.axisMenu("x")
+            menu.popup(self.mapToGlobal(pos))  # type: ignore
+            return
+        view_pos = self.plot.yaxis.mapFromView(pos)
+        if view_pos is not None and self.plot.yaxis.contains(view_pos):
+            menu = self.axisMenu("y")
+            menu.popup(self.mapToGlobal(pos))  # type: ignore
+            return
+
+        menu = QtWidgets.QMenu(self)  # type: ignore
         menu.addAction(self.action_copy_image)
         menu.addSeparator()
-        menu.addAction(self.action_auto_scale_y)
 
         if self.plot.legend is not None:
             menu.addAction(self.action_show_legend)
@@ -390,26 +414,28 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         menu.popup(self.mapToGlobal(pos))
 
-    def setXAxisRange(self, min: float, max: float):
-        scale = self.plot.xaxis.scale
-        if min > max:
-            min, max = max, min
+    def setAxisRange(self, axis: str, min: float, max: float):
         if self.plot.vb is None:
             return
-        self.plot.vb.setRange(xRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
-
-    def setYAxisRange(self, min: float, max: float):
-        scale = self.plot.yaxis.scale
-        self.setAutoScaleY(False)
         if min > max:
             min, max = max, min
+        if axis == "x":
+            scale = self.plot.xaxis.scale
+            self.plot.vb.setRange(xRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
+        elif axis == "y":
+            scale = self.plot.yaxis.scale
+            self.plot.vb.setRange(yRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
+        else:
+            raise ValueError(f"bad axis '{axis}', must be x or y")
+
+    def setAxisAutoScale(self, axis: str, auto_scale: bool):
         if self.plot.vb is None:
             return
-        self.plot.vb.setRange(yRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
-
-    def setAutoScaleY(self, auto_scale: bool):
-        self.action_auto_scale_y.setChecked(auto_scale)
-        if self.plot.vb is not None:
+        if axis == "x":
+            self.plot.vb.setMouseEnabled(x=not auto_scale)
+            self.plot.vb.setAutoVisible(x=auto_scale)
+            self.plot.vb.enableAutoRange(x=auto_scale)
+        else:
             self.plot.vb.setMouseEnabled(y=not auto_scale)
             self.plot.vb.setAutoVisible(y=auto_scale)
             self.plot.vb.enableAutoRange(y=auto_scale)

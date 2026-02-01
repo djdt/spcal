@@ -66,7 +66,7 @@ class ParticleView(SinglePlotGraphicsView):
 
         assert self.plot.vb is not None
         self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
-        self.setAutoScaleY(True)
+        self.setAxisAutoScale("y", True)
 
         self.action_peak_properties = create_action(
             "office-chart-area-focus-peak-node",
