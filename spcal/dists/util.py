@@ -133,45 +133,45 @@ def compound_poisson_lognormal_quantile_approximation(
     return q
 
 
-def zero_truncated_poisson(lam: float, size: int) -> np.ndarray:
-    """Poisson distribution with no zeros.
-
-    Args:
-        lam: lambda of non-zero truncated distribution
-        size: size of output
-
-    Returns:
-        array of random values from the zero-truncated distribution
-    """
-    u = np.random.uniform(np.exp(-lam), size=size)
-    return 1 + np.random.poisson(lam + np.log(u), size=size)
-
-
-def simulate_zt_compound_poisson(
-    lam: float, dist: np.ndarray, weights: np.ndarray | None = None, size: int = 100000
-) -> np.ndarray:
-    """Simulate a zero-truncated compound poisson distribution.
-
-    The distribution is :math:`Y = \\sum_{n=1}^{N} X_n` where X is ``dist``
-    and ``N`` is defined by a Poisson distribution with mean ``lam``.
-
-    Args:
-        lam: mean of the Poisson distribution
-        dist: distribution to sample from
-        weights: probabilities to draw sample from ``dist``
-        size: size of simulation
-
-    Returns:
-        ``size`` points from Y
-    """
-    sim = np.zeros(size, dtype=np.float32)
-
-    poi = zero_truncated_poisson(lam, size=size)
-    unique, idx, counts = np.unique(poi, return_counts=True, return_inverse=True)
-    for i, (u, c) in enumerate(zip(unique, counts)):
-        sim[idx == i] += np.sum(np.random.choice(dist, size=(u, c), p=weights), axis=0)
-
-    return sim
+# def zero_truncated_poisson(lam: float, size: int) -> np.ndarray:
+#     """Poisson distribution with no zeros.
+#
+#     Args:
+#         lam: lambda of non-zero truncated distribution
+#         size: size of output
+#
+#     Returns:
+#         array of random values from the zero-truncated distribution
+#     """
+#     u = np.random.uniform(np.exp(-lam), size=size)
+#     return 1 + np.random.poisson(lam + np.log(u), size=size)
+#
+#
+# def simulate_zt_compound_poisson(
+#     lam: float, dist: np.ndarray, weights: np.ndarray | None = None, size: int = 100000
+# ) -> np.ndarray:
+#     """Simulate a zero-truncated compound poisson distribution.
+#
+#     The distribution is :math:`Y = \\sum_{n=1}^{N} X_n` where X is ``dist``
+#     and ``N`` is defined by a Poisson distribution with mean ``lam``.
+#
+#     Args:
+#         lam: mean of the Poisson distribution
+#         dist: distribution to sample from
+#         weights: probabilities to draw sample from ``dist``
+#         size: size of simulation
+#
+#     Returns:
+#         ``size`` points from Y
+#     """
+#     sim = np.zeros(size, dtype=np.float32)
+#
+#     poi = zero_truncated_poisson(lam, size=size)
+#     unique, idx, counts = np.unique(poi, return_counts=True, return_inverse=True)
+#     for i, (u, c) in enumerate(zip(unique, counts)):
+#         sim[idx == i] += np.sum(np.random.choice(dist, size=(u, c), p=weights), axis=0)
+#
+#     return sim
 
 
 def sum_iid_lognormals(
@@ -204,11 +204,11 @@ def sum_iid_lognormals(
         sigma2_x = np.log((np.exp(sigma**2) - 1.0) / n + 1.0)
         mu_x = np.log(n * np.exp(mu)) + 0.5 * (sigma**2 - sigma2_x)
         return mu_x, np.sqrt(sigma2_x)
-    elif method == "Lo":
+    elif method == "Lo":  # pragma: no cover , no used in SPCal
         Sp = n * np.exp(mu + 0.5 * sigma**2)
         sigma2_s = n / Sp**2 * sigma**2 * np.exp(mu + 0.5 * sigma**2) ** 2
         return np.log(Sp) - 0.5 * sigma2_s, np.sqrt(sigma2_s)
-    else:
+    else:  # pragma: no cover
         raise NotImplementedError
 
 
@@ -252,7 +252,7 @@ def extract_compound_poisson_lognormal_parameters(
     if x.ndim == 1:
         x = np.reshape(x, (-1, 1))
         mask = np.reshape(mask, (-1, 1))
-    elif x.ndim > 2:
+    elif x.ndim > 2:  # pragma: no cover
         raise ValueError("array must be 1- or 2d")
 
     params = ext.extract_cpln_parameters(x, mask)
