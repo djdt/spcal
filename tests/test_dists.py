@@ -82,7 +82,7 @@ def test_dist_poisson():
 
     qs = np.arange(0.1, 1.0, 0.01)
     for q in qs:
-        assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))
+        assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))  # type: ignore
 
 
 def test_compound_poisson_lognormal_quantile_approximation():
