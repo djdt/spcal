@@ -53,15 +53,15 @@ def prepare_results_for_clustering(
     See Also:
         ``prepare_data_from_clustering``
     """
-    if any(result.peak_indicies is None for result in results):
+    if any(result.peak_indicies is None for result in results):  # pragma: no cover
         raise ValueError("cannot cluster, peak indidices have not been generated")
 
     peak_data = np.empty((number_peaks, len(results)), np.float32)
     valid = np.zeros(number_peaks, dtype=bool)
     for i, result in enumerate(results):
-        if result.peak_indicies is None:
+        if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
-        if not result.canCalibrate(key):
+        if not result.canCalibrate(key):  # pragma: no cover
             continue
         peak_data[:, i] = result.calibrateTo(result.peakValues(), key)
         valid[result.peak_indicies[result.filter_indicies]] = True
@@ -105,13 +105,13 @@ def cluster_information(
         cluster stds
         cluster counts
     """
-    counts = np.bincount(T)
+    counts = np.bincount(T)[1:]  # ignore zero index
     means = np.empty((counts.size, X.shape[1]), dtype=np.float64)
     stds = np.empty((counts.size, X.shape[1]), dtype=np.float64)
 
     for i in range(means.shape[1]):
-        sx = np.bincount(T, weights=X[:, i])
-        sx2 = np.bincount(T, weights=X[:, i] ** 2)
+        sx = np.bincount(T, weights=X[:, i])[1:]
+        sx2 = np.bincount(T, weights=X[:, i] ** 2)[1:]
         means[:, i] = np.divide(sx, counts, where=counts >= 1.0)
         var = np.divide(sx2, counts, where=counts >= 1.0) - means[:, i] ** 2
         stds[:, i] = np.sqrt(np.where(var > 0.0, var, 0.0))
