@@ -267,3 +267,13 @@ def test_split_peaks():
     _left, _right = detection.split_peaks(prom, left, right, 1.0)
     assert np.all(_left == [2])
     assert np.all(_right == [10])
+
+    # previous error
+    prom, left, right = [3.0, 4.0, 2.0, 6.0], [0, 4, 8, 8], [4, 8, 10, 13]
+    _left, _right = detection.split_peaks(prom, left, right, 0.0)
+    assert np.all(_left == [0, 4, 8, 10])
+    assert np.all(_right == [4, 8, 10, 13])
+
+    _left, _right = detection.split_peaks(prom, left, right, 1.0)
+    assert np.all(_left == [0, 4, 8])
+    assert np.all(_right == [4, 8, 13])
