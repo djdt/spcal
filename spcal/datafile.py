@@ -27,6 +27,9 @@ class SPCalDataFile(object):
         times: np.ndarray,
         instrument_type: str | None = None,
     ):
+        if instrument_type not in ["quadrupole", "tof"]:
+            raise ValueError("instrument_type must be one of 'quadrupole', 'tof'")
+
         self.path = path
         self.instrument_type = instrument_type
 
