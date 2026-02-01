@@ -246,16 +246,19 @@ def extract_compound_poisson_lognormal_parameters(
     Returns:
         array of [..., (lambda, mu, sigma)]
     """
-    # this needs to be rewrittin for other shapes
-
     if mask is None:
         mask = ~np.isnan(x)
     else:
         mask = np.logical_and(~np.isnan(x), mask)
 
-    # todo: maybe no mask is faster
+    if x.ndim == 1:
+        x = np.reshape(x, (-1, 1))
+        mask = np.reshape(mask, (-1, 1))
+    elif x.ndim > 2:
+        raise ValueError("array must be 1- or 2d")
+
     params = ext.extract_cpln_parameters(x, mask)
-    return params
+    return params.squeeze()
 
 
 def extract_compound_poisson_lognormal_parameters_iterative(
