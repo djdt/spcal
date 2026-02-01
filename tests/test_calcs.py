@@ -18,6 +18,23 @@ def test_is_integer_or_near():
         calc.is_integer_or_near(1.0, max_deviation=-0.1)
 
 
+def test_expand_mask():
+    x = np.zeros((9, 9))
+    x[4, 4] = 1
+    x = calc.expand_mask(x, 1)
+    assert np.all(x[3:6, 4])
+    x = calc.expand_mask(x, 2)
+    assert np.all(x[1:8, 4])
+
+def test_searchsorted_closest():
+    x = np.arange(10.0)
+    y = calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]))
+    assert np.all(y == [1, 5, 9, 6])
+
+    with pytest.raises(ValueError):
+        calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1)
+
+
 def test_mode():
     x = np.array([0.1, 0.2, 0.3, 0.3, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.8, 0.9, 1.0, 2.0])
     assert np.isclose(calc.mode(x), 0.3, atol=0.01)
