@@ -21,7 +21,7 @@ def is_integer_or_near(
     return np.abs(x - np.round(x)) <= max_deviation
 
 
-def expand_mask(mask: np.ndarray, size: int, axis: int = 0) -> np.ndarray:
+def expand_mask(mask: np.ndarray, size: int) -> np.ndarray:
     """Grows mask values in ``mask`` by ``size`` on either side.
 
     Used to expand the regions where peaks are detected, to exclude nearby data.
@@ -248,7 +248,7 @@ def weighted_linreg(
     r2 = weighted_rsq(x, y, w)
     if x.size > 2:
         error = np.sqrt(np.sum(((coef[0] + x * coef[1]) - y) ** 2) / (x.size - 2))
-    else:
+    else:  # pragma: no cover , trivial
         error = 0.0
 
     return coef[1], coef[0], r2, error
