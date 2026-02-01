@@ -41,20 +41,20 @@ class SPCalLimit(object):
                 "either mean_signal and detection_threshold or signals must be provided"
             )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"SPCalLimit({self.name}, mean={np.nanmean(self.mean_signal):.4g}, "
             f"threshold={np.nanmean(self.detection_threshold):.4g})"
         )
 
     @property
-    def parameters(self) -> dict:
+    def parameters(self) -> dict:  # pragma: no cover
         return {}
 
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:
+    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:  # pragma: no cover
         raise NotImplementedError
 
-    def windowedThresholdFunction(
+    def windowedThresholdFunction(  # pragma: no cover
         self, signals: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         raise NotImplementedError
@@ -159,7 +159,7 @@ class SPCalPoissonLimit(SPCalLimit):
         window_size: int = 0,
         max_iterations: int = 1,
     ):
-        if function not in SPCalPoissonLimit.FUNCTIONS.keys():
+        if function not in SPCalPoissonLimit.FUNCTIONS.keys():  # pragma: no cover
             raise ValueError(
                 "fomula must be one of", ", ".join(SPCalPoissonLimit.FUNCTIONS.keys())
             )

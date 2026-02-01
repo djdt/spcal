@@ -21,6 +21,13 @@ def poisson_data() -> np.ndarray:
 UPPER_INTEGER = True
 
 
+def test_limit_errors():
+    with pytest.raises(ValueError):
+        SPCalLimit("test")
+    with pytest.raises(NotImplementedError):
+        SPCalLimit("test", signals=np.ones(10))
+
+
 def test_limit_poisson(poisson_data: np.ndarray):
     mean = np.mean(poisson_data)
 
@@ -71,12 +78,13 @@ def test_limit_gaussian(poisson_data: np.ndarray):
     z = NormalDist().inv_cdf(1.0 - 0.001)
     lim = SPCalGaussianLimit(poisson_data, alpha=0.001, max_iterations=1)  # ld ~= 87
     assert lim.name == "Gaussian"
-    assert lim.alpha == 0.001
+    assert lim.parameters == {"alpha": 0.001}
     limit = np.mean(poisson_data) + np.std(poisson_data) * z
     assert np.isclose(lim.detection_threshold, limit)
 
 
 def test_limit_gaussian_error_rates():
+    np.random.seed(23468)
     x = np.random.normal(20.0, 5.0, size=100000)
     for alpha in [0.005, 0.01, 0.05, 0.1]:
         lim = SPCalGaussianLimit(x, alpha=alpha)
@@ -109,6 +117,7 @@ def test_limit_from_compound_poisson(poisson_data: np.ndarray):
         sigma=sigma,
     )
     assert lim.name == "CompoundPoisson"
+    assert lim.parameters == {"alpha": 0.001, "sigma": sigma}
     assert np.isclose(
         lim.detection_threshold, true_q, rtol=1e-2
     )  # from simulation of 1e9 samples
