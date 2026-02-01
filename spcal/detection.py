@@ -38,7 +38,7 @@ def accumulate_detections(
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
-    if prominence_required < 0.0 or prominence_required > 1.0:
+    if prominence_required < 0.0 or prominence_required > 1.0:  # pragma: no cover
         raise ValueError(
             "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
         )
@@ -116,7 +116,7 @@ def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
     Returns:
         merged regions
     """
-    return ext.combine_regions(regions, overlap)
+    return ext.combine_regions(regions, overlap)  # pragma: no cover, covered in ext
 
 
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:

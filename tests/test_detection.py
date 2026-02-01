@@ -89,6 +89,13 @@ def test_accumulate_detections_prominence():
     )
     assert np.all(sums == [16.0, 16.0])
 
+def test_background_mask():
+    mask = detection.background_mask(np.array([[3, 5],[6,8]]), 10)
+    assert np.all(mask[:3])
+    assert not np.any(mask[3:5])
+    assert np.all(mask[5])
+    assert not np.any(mask[6:8])
+    assert np.all(mask[8:])
 
 def test_detection_maxima():
     x = np.array([2.0, 1.0, 0.0, 2.0, 3.0, 5.0, 2.0, 3.0, 0.0, 3.0, 0.0])
