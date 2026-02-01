@@ -74,6 +74,7 @@ def compound_poisson_lognormal_quantile_lookup(
     )
     # data collected for mean of 1.0 (mu = -0.5 * sigma**2) rescale to mu
     qs *= np.exp(mu + 0.5 * sigma**2)
+    qs[np.isnan(lam)] = np.nan
 
     return qs.squeeze()
 
