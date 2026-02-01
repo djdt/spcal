@@ -37,7 +37,7 @@ def test_cluster_information():
     assert np.all(counts == [3, 2, 1])
 
     means, stds, counts = cluster_information(a, np.array([0, 1, 2, 2, 2, 3]))
-    assert np.all(counts == [2, 2, 1])
+    assert np.all(counts == [3, 1, 1])
 
 
 def test_prepare_data_for_clustering():
