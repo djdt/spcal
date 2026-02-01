@@ -24,7 +24,7 @@ class SPCalIsotope(SPCalIsotopeBase):
             return f'"{self.name}"'
         return f"{self.isotope}{self.name}"
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalIsotope({self.__str__()})"
 
     def __eq__(self, other: object) -> bool:
@@ -62,7 +62,7 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
     def __str__(self) -> str:
         return self.name
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalIsotopeExpression({self.name}: {self.tokens})"
 
     def __eq__(self, other: object) -> bool:
