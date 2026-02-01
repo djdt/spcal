@@ -7,6 +7,7 @@
 
 namespace py = pybind11;
 
+// todo: maybe no mask is faster
 py::array_t<double>
 extract_cpln_parameters(const py::array_t<double> &signals_array,
                         const py::array_t<bool> &mask_array) {

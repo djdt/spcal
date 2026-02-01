@@ -38,7 +38,7 @@ def test_calibration_modes():
 
 def test_calibration():
     with h5py.File(path, "r") as h5:
-        mass = h5["FullSpectra"]["MassAxis"][:]
+        mass: np.ndarray = h5["FullSpectra"]["MassAxis"][:]  # type: ignore , h5
     idx = np.arange(mass.size)
 
     # From file, unable to test other modes
@@ -55,8 +55,8 @@ def test_calibration():
 def test_integrate():
     with h5py.File(path, "r") as h5:
         data = integrate_tof_data(h5)
-        data_ar = integrate_tof_data(h5, idx=[45])
-        peak_data = h5["PeakData"]["PeakData"][:]
+        data_ar = integrate_tof_data(h5, idx=[45])  # type: ignore
+        peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]  # type: ignore , h5
 
     assert data.shape[-1] == 315
     assert data_ar.shape[-1] == 1
@@ -75,6 +75,7 @@ def test_read_tofwerk_file():
     data, info, dwell = read_tofwerk_file(path)
 
     assert data.shape == (200,)
+    assert data.dtype.names is not None
     assert len(data.dtype.names) == 315
     assert np.all(data["[6Li]+"] == 0.0)
     assert np.isclose(data["[40Ar]+"].mean(), 565.63306)

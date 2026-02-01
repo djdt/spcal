@@ -458,6 +458,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is not None:
             self.plot.legend.clear()
         self.plot.clear()
+        self.scene().invalidate()
 
     def dataBounds(self) -> tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]

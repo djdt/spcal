@@ -124,11 +124,11 @@ def compound_poisson_lognormal_quantile_approximation(
     # Get the sum LN for each value of the Poisson
     mus, sigmas = sum_iid_lognormals(k, mu, sigma)
     # The quantile of the last log-normal, must be lower than this
-    upper_q = lognormal.quantile(q0, mus[-1], sigmas[-1])
+    upper_q = lognormal.quantile(q0, mus[-1], sigmas[-1])  # type: ignore
 
     xs = np.linspace(lam, upper_q, 10000)
     cdf = np.sum(
-        [w * lognormal.cdf(xs, m, s) for w, m, s in zip(weights, mus, sigmas)],
+        [w * lognormal.cdf(xs, m, s) for w, m, s in zip(weights, mus, sigmas)],  # type: ignore
         axis=0,
     )
     q = xs[np.argmax(cdf > q0)]
@@ -246,30 +246,16 @@ def extract_compound_poisson_lognormal_parameters(
     Returns:
         array of [..., (lambda, mu, sigma)]
     """
+    # this needs to be rewrittin for other shapes
+
     if mask is None:
         mask = ~np.isnan(x)
     else:
         mask = np.logical_and(~np.isnan(x), mask)
 
+    # todo: maybe no mask is faster
     params = ext.extract_cpln_parameters(x, mask)
     return params
-
-    # zeros = np.count_nonzero(np.logical_and(mask, x == 0), axis=0)
-    # pzero = zeros / np.count_nonzero(mask, axis=0)
-    # lam = -np.log(pzero)
-    #
-    # if np.any(pzero < 1e-3):
-    #     logger.warning("low number of non zero values")
-    #
-    # mean = np.mean(x, axis=0, where=mask)
-    #
-    # with np.errstate(divide="ignore", invalid="ignore"):
-    #     EX = mean / lam
-    #     EX2 = np.var(x, mean=mean, axis=0, where=mask) / lam
-    #
-    # mu = np.log(EX**2 / np.sqrt(EX2))
-    # sigma = np.sqrt(np.log(EX2 / EX**2))
-    # return np.asarray((lam, mu, sigma))
 
 
 def extract_compound_poisson_lognormal_parameters_iterative(

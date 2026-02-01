@@ -149,7 +149,7 @@ class BasicTableView(QtWidgets.QTableView):
     def _paste(self):
         clipboard_text, _ = QtWidgets.QApplication.clipboard().text("plain")
 
-        texts = [line.split("\t") for line in clipboard_text.split("\n")]
+        texts = [line.split("\t") for line in clipboard_text.rstrip("\n").split("\n")]
 
         selected = self.selectedIndexes()
 

@@ -127,15 +127,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
         self.toolbar.isotopeChanged.connect(self.redraw)
+        self.toolbar.scatterOptionsChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
         self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
 
         self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
         self.toolbar_view.viewChanged.connect(self.graph.setView)
-        self.toolbar_view.requestViewOptionsDialog.connect(
-            self.graph.dialogGraphOptions
-        )
-        self.toolbar_view.requestZoomReset.connect(self.graph.zoomReset)
+        self.toolbar_view.requestViewOptionsDialog.connect(self.graph.dialogGraphOptions)
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()
@@ -575,13 +573,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if data_file is None:
                 return
 
-            isotope = self.toolbar.combo_isotope.currentIsotope()
-            isotope_additional = self.toolbar.combo_isotope_additional.currentIsotope()
-
-            self.graph.drawResultsScatter(
-                self.processing_results[data_file][isotope],
-                self.processing_results[data_file][isotope_additional],
-                key,
+            self.graph.drawResultsScatterExpr(
+                self.processing_results[data_file],
+                self.toolbar.scatter_x.text(),
+                self.toolbar.scatter_y.text(),
+                self.toolbar.scatter_key_x.currentText(),
+                self.toolbar.scatter_key_y.currentText(),
             )
 
         elif view == "spectra":

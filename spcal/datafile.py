@@ -165,34 +165,9 @@ class SPCalTextDataFile(SPCalDataFile):
         override_event_time: float | None = None,
         instrument_type: str | None = None,
     ) -> "SPCalTextDataFile":
-        with path.open("r") as fp:
-            for i in range(skip_rows - 1):
-                fp.readline()
-
-            header = fp.readline().strip().split(delimiter)
-            converters = {i: lambda s: float(s or 0.0) for i in range(len(header))}
-            dtype = np.float32
-
-            data_start_pos = fp.tell()
-            peek = fp.readline()
-            if "00:" in peek:  # we are dealing with a thremo iCap export
-                converters = {1: lambda s: text.iso_time_to_float_seconds(s)}
-            fp.seek(data_start_pos)
-
-            gen = text.replace_comma_decimal(fp, delimiter)
-
-            # todo: protential speed-up by trying loadtxt
-            signals = np.genfromtxt(  # type: ignore
-                gen,
-                delimiter=delimiter,
-                names=header,
-                dtype=dtype,
-                deletechars="",  # todo: see if this causes any issue with calculator or saving
-                converters=converters,  # type: ignore , works
-                invalid_raise=False,
-                loose=True,
-            )
-
+        signals = text.read_single_particle_file(
+            path, delimiter=delimiter, skip_rows=skip_rows
+        )
         assert signals.dtype.names is not None
 
         if override_event_time is not None:

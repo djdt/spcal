@@ -6,6 +6,22 @@ import pyqtgraph
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTOFWERKDataFile
 
+from spcal.isotope import ISOTOPE_TABLE
+
+
+def text_for_mz(mz: float) -> str:
+    text = f"{mz:.2f}"
+    possible_isotopes = [
+        iso
+        for iso in ISOTOPE_TABLE.values()
+        if abs(iso.mass - mz) < 0.1
+        and iso.composition is not None
+        and iso.composition > 0.05
+    ]
+    if len(possible_isotopes) > 0:
+        text += "(" + ",".join(iso.symbol for iso in possible_isotopes) + ")"
+    return text
+
 
 class SpectraPlotItem(pyqtgraph.PlotCurveItem):
     def __init__(
@@ -42,7 +58,7 @@ class SpectraPlotItem(pyqtgraph.PlotCurveItem):
                     closest_pos = polygon.at(1)
             if closest_pos is not None and closest_dist < self.opts["mouseWidth"]:
                 self.label.setPos(closest_pos)
-                self.label.setText(f"{closest_pos.x():.2f}")
+                self.label.setText(text_for_mz(closest_pos.x()))
                 self.label.setVisible(True)
             else:
                 self.label.setVisible(False)

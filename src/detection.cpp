@@ -154,7 +154,7 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
                       const py::array_t<long> &left_array,
                       const py::array_t<long> &right_array,
                       const double prominence_required) {
-  /* Split overlaping peaks that are a feaction the max prominence.
+  /* Split overlaping peaks that are a fraction the max prominence.
    * @param prominence
    * @param left
    * @param right
@@ -202,7 +202,7 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
         }
       }
 
-      long current_left = lefts(valid[0]);
+      long current_left = lefts(0);
       long current_right = rights(valid[0]);
 
       split_left->push_back(current_left);
