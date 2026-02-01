@@ -228,6 +228,8 @@ class SPCalProcessingMethod(object):
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
             raise ValueError(f"unknown calibration key '{key}'")
+        if key == "signal":
+            return True  # no calibration
         if isotope not in self.isotope_options:
             logger.warning(f"cannot calibrate, {isotope} not found in isotope options")
             return False
