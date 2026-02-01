@@ -56,18 +56,14 @@ def prepare_results_for_clustering(
     if any(result.peak_indicies is None for result in results):
         raise ValueError("cannot cluster, peak indidices have not been generated")
 
-    peak_data = np.zeros((number_peaks, len(results)), np.float32)
+    peak_data = np.empty((number_peaks, len(results)), np.float32)
     valid = np.zeros(number_peaks, dtype=bool)
     for i, result in enumerate(results):
         if result.peak_indicies is None:
             raise ValueError("cannot cluster, peak_indicies have not been generated")
         if not result.canCalibrate(key):
             continue
-        np.add.at(
-            peak_data[:, i],
-            result.peak_indicies[result.filter_indicies],
-            result.calibrated(key),
-        )
+        peak_data[:, i] = result.calibrateTo(result.peakValues(), key)
         valid[result.peak_indicies[result.filter_indicies]] = True
     return prepare_data_for_clustering(peak_data), valid
 
