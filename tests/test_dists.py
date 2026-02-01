@@ -104,6 +104,14 @@ def test_compound_poisson_lognormal_quantile_approximation():
                 assert np.isclose(qaprx, qtrue, rtol=0.05)
 
 
+def test_extract_compound_poisson_lognormal_parameters():
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        predicted = util.extract_compound_poisson_lognormal_parameters(data[file])
+        assert np.allclose(params, predicted, atol=0.01)
+
+
 def test_extract_compound_poisson_lognormal_parameters_iterative():
     data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations.npz"))
     for file in data:
