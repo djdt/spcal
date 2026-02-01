@@ -7,7 +7,6 @@
 
 namespace py = pybind11;
 
-// todo: maybe no mask is faster
 py::array_t<double>
 extract_cpln_parameters(const py::array_t<double> &signals_array,
                         const py::array_t<bool> &mask_array) {
@@ -24,7 +23,7 @@ extract_cpln_parameters(const py::array_t<double> &signals_array,
 
   if (sbuf.ndim != 2)
     std::runtime_error("signals must have ndim of 2");
-  if (mbuf.shape[0] != sbuf.shape[0])
+  if ((mbuf.shape[0] != sbuf.shape[0]) or (mbuf.shape[1] != sbuf.shape[1]))
     std::runtime_error("mask must be same shape as signals");
 
   py::array_t<double> params_array({sbuf.shape[1], py::ssize_t(3)});
