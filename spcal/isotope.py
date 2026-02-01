@@ -20,7 +20,7 @@ class SPCalIsotope(SPCalIsotopeBase):
     composition: float | None = None
 
     def __str__(self) -> str:
-        if self.isotope == 0:
+        if self.isotope == 0:  # pragma: no cover , unused?
             return f'"{self.name}"'
         return f"{self.isotope}{self.name}"
 
@@ -28,7 +28,7 @@ class SPCalIsotope(SPCalIsotopeBase):
         return f"SPCalIsotope({self.__str__()})"
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalIsotope):
+        if not isinstance(other, SPCalIsotope):  # pragma: no cover
             return False
         return self.name == other.name and self.isotope == other.isotope
 
@@ -66,7 +66,7 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
         return f"SPCalIsotopeExpression({self.name}: {self.tokens})"
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalIsotopeExpression):
+        if not isinstance(other, SPCalIsotopeExpression):  # pragma: no cover
             return False
         return all(x == y for x, y in zip(self.tokens, other.tokens))
 

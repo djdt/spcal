@@ -40,6 +40,9 @@ def test_isotope_expression():
     expr = isotope.SPCalIsotopeExpression(
         "test expr", (isotope.ISOTOPE_TABLE[("H", 1)], isotope.ISOTOPE_TABLE[("H", 2)])
     )
+    assert expr != isotope.SPCalIsotopeExpression(
+        "test expr", (isotope.ISOTOPE_TABLE[("H", 1)], isotope.ISOTOPE_TABLE[("H", 3)])
+    )
     assert str(expr) == "test expr"
 
 
