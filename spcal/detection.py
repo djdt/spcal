@@ -43,7 +43,7 @@ def accumulate_detections(
             "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
         )
 
-    above = np.greater(y, limit_detection)
+    above = np.greater_equal(y, limit_detection)
 
     possible_detections = np.flatnonzero(np.logical_and(above, ext.local_maxima(y)))
 
