@@ -117,7 +117,11 @@ class SPCalProcessingResult(object):
         if self.peak_indicies is None:
             raise ValueError("peak_indicies not generated")
         values = np.zeros(self.number_peak_indicies, dtype=self.detections.dtype)
-        np.add.at(values, self.peak_indicies[self.filter_indicies], self.detections)
+        np.add.at(
+            values,
+            self.peak_indicies[self.filter_indicies],
+            self.detections[self.filter_indicies],
+        )
         return values
 
     def canCalibrate(self, key: str) -> bool:
