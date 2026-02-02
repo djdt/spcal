@@ -57,9 +57,9 @@ def test_prepare_data_for_clustering():
     assert np.allclose(pd[:, 1], np.ones(5) / (np.arange(5) + 1))
 
 
-def test_preprare_results_for_clustering(random_result_generator):
-    a = random_result_generator()
-    b = random_result_generator()
+def test_preprare_results_for_clustering(random_result_generator, default_method):
+    a = random_result_generator(default_method)
+    b = random_result_generator(default_method)
 
     a.peak_indicies = np.array([0, 1, 2, 2, 5, 6, 8, 9, 10, 10])
     a.number_peak_indicies = 12

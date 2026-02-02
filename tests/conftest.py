@@ -3,7 +3,7 @@ import numpy as np
 import random
 import pytest
 
-from spcal.isotope import ISOTOPE_TABLE
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.limit import SPCalLimit
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.result import SPCalProcessingResult
@@ -24,11 +24,11 @@ def test_data_path() -> Path:
     return Path(__file__).parent.joinpath("data")
 
 
-@pytest.fixture(scope="function")
-def random_result_generator(default_method):
-    method = SPCalProcessingMethod()
-
-    def random_result() -> SPCalProcessingResult:
+@pytest.fixture(scope="session")
+def random_result_generator():
+    def random_result(
+        method: SPCalProcessingMethod, isotope: SPCalIsotope | None = None
+    ) -> SPCalProcessingResult:
         signals = np.random.poisson(1.0, size=1000)
         times = np.linspace(0.001, 1, 1000)
 
@@ -37,9 +37,12 @@ def random_result_generator(default_method):
         signals[regions + 100] = detections
         regions = np.stack((regions + 100, regions + 101), axis=1)
 
+        if isotope is None:
+            isotope = random.choice(list(ISOTOPE_TABLE.values()))
+
         return SPCalProcessingResult(
-            random.choice(list(ISOTOPE_TABLE.values())),
-            SPCalLimit("limit", 1.0, 3.0),
+            isotope,
+            SPCalLimit("TestLimit", 1.0, 3.0),
             method,
             0.001,
             signals,
