@@ -79,7 +79,7 @@ class SPCalDataFile(object):
 
     @property
     def total_time(self) -> float:
-        return self.times[-1] - self.times[0]
+        return self.times[-1] - self.times[0] + self.event_time
 
     @property
     def isotopes(self) -> list[SPCalIsotope]:  # pragma: no cover, not implemented
