@@ -408,7 +408,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             times: np.ndarray = h5["TimingData"]["BufTimes"][:max_size]  # type: ignore , defined in tofdaq
             times = (
                 times[:, :, None]
-                + np.linspace(0.0, time_per_buf * 1e-9, 1000, endpoint=False)[
+                + np.linspace(0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False)[
                     None, None, :
                 ]
             ).ravel()
