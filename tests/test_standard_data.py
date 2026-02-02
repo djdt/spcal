@@ -25,7 +25,7 @@ def test_standard_sizes():
         assert isinstance(ub, float)
         # 15 nm
         yc, _ = poisson.formula_c(ub, alpha=0.05)
-        detections, _, _ = detection.accumulate_detections(x, ub, yc + ub)
+        detections, _ = detection.accumulate_detections(x, ub, yc + ub)
 
         masses = particle.particle_mass(
             detections,
