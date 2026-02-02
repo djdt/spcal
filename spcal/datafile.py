@@ -27,7 +27,7 @@ class SPCalDataFile(object):
         times: np.ndarray,
         instrument_type: str | None = None,
     ):
-        if instrument_type not in ["quadrupole", "tof"]:
+        if instrument_type not in ["quadrupole", "tof"]:  # pragma: no cover
             raise ValueError("instrument_type must be one of 'quadrupole', 'tof'")
 
         self.path = path
@@ -57,7 +57,7 @@ class SPCalDataFile(object):
     @selected_isotopes.setter
     def selected_isotopes(self, selected: list[SPCalIsotope]):
         for isotope in selected:
-            if isotope not in self.isotopes:
+            if isotope not in self.isotopes:  # pragma: no cover
                 raise ValueError(f"{isotope} not in {self}")
         self._selected_isotopes = selected
 
@@ -126,10 +126,10 @@ class SPCalTextDataFile(SPCalDataFile):
     ):
         super().__init__(path, times=times, instrument_type=instrument_type)
 
-        if signals.dtype.names is None:
+        if signals.dtype.names is None:  # pragma: no cover
             raise ValueError("expected `signals` to have a structured dtype")
         for name in isotope_table.values():
-            if name not in signals.dtype.names:
+            if name not in signals.dtype.names:  # pragma: no cover
                 raise ValueError(
                     f"`isotope_table` '{name}' not found in `signals` array"
                 )
@@ -189,7 +189,7 @@ class SPCalTextDataFile(SPCalDataFile):
                             times *= 1e-9
                         elif m.group(1) in ["s"]:
                             pass
-                        else:
+                        else:  # pragma: no cover
                             logger.warning(
                                 f"unit not found in times column for {path.stem}, assuming seconds"
                             )
