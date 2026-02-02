@@ -39,7 +39,7 @@ class SPCalDataFile(object):
 
         self._event_time = None
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.path.stem})"
 
     def __getitem__(self, isotope: SPCalIsotopeBase) -> np.ndarray:
@@ -80,17 +80,16 @@ class SPCalDataFile(object):
     @property
     def total_time(self) -> float:
         return self.times[-1] - self.times[0]
-        # return self.event_time * self.num_events
 
     @property
-    def isotopes(self) -> list[SPCalIsotope]:
+    def isotopes(self) -> list[SPCalIsotope]:  # pragma: no cover, not implemented
         raise NotImplementedError
 
     @property
-    def num_events(self) -> int:
+    def num_events(self) -> int:  # pragma: no cover, not implemented
         raise NotImplementedError
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:  # pragma: no cover
         raise NotImplementedError
 
     def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
@@ -217,7 +216,7 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if cps:
             for name in signals.dtype.names:
-                signals[name] /= np.diff(times, append=times[-1] - times[-2])
+                signals[name] *= np.diff(times, append=times[-1] - times[-2])
 
         if instrument_type is None:
             instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
