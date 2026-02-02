@@ -112,7 +112,7 @@ class SPCalIsotopeOptions(object):
 class SPCalLimitOptions(object):
     def __init__(
         self,
-        method: str = "automatic",
+        limit_method: str = "automatic",
         gaussian_kws: dict | None = None,
         poisson_kws: dict | None = None,
         compound_poisson_kws: dict | None = None,
@@ -120,7 +120,7 @@ class SPCalLimitOptions(object):
         max_iterations: int = 1,
         single_ion_parameters: np.ndarray | None = None,
     ):
-        self.method = method
+        self.limit_method = limit_method
 
         # deafult kws
         _gaussian_kws = {"alpha": 2.867e-7}
@@ -148,7 +148,7 @@ class SPCalLimitOptions(object):
         data_file: SPCalDataFile,
         isotope: SPCalIsotopeBase,
         exclusion_regions: list[tuple[float, float]] | None = None,
-        method: str | None = None,
+        limit_method: str | None = None,
     ) -> SPCalLimit:
         signals = data_file[isotope]
         if exclusion_regions is not None and len(exclusion_regions) > 0:
@@ -157,18 +157,20 @@ class SPCalLimitOptions(object):
             for start, end in idx:
                 signals[start:end] = np.nan
 
-        if method is None:
-            method = self.method
+        if limit_method is None:
+            limit_method = self.limit_method
 
-        if method == "automatic":
+        if limit_method == "automatic":
             if SPCalGaussianLimit.isGaussianDistributed(signals):
-                method = "gaussian"
+                limit_method = "gaussian"
             elif data_file.isTOF():
-                method = "compound poisson"
+                limit_method = "compound poisson"
             else:
-                method = "poisson"
+                limit_method = "poisson"
 
-        if method == "compound poisson" or (method == "highest" and data_file.isTOF()):
+        if limit_method == "compound poisson" or (
+            limit_method == "highest" and data_file.isTOF()
+        ):
             # Override the default sigma if single ion paramters are present
             if self.single_ion_parameters is not None:
                 if isinstance(isotope, SPCalIsotope):
@@ -201,14 +203,14 @@ class SPCalLimitOptions(object):
             else:
                 sigma = self.compound_poisson_kws["sigma"]
 
-        if method == "gaussian":
+        if limit_method == "gaussian":
             return SPCalGaussianLimit(
                 signals,
                 **self.gaussian_kws,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif method == "poisson":
+        elif limit_method == "poisson":
             if data_file.isTOF():
                 logger.warning(
                     "Poisson limit created for TOF data file, use Compound-Poisson"
@@ -219,7 +221,7 @@ class SPCalLimitOptions(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif method == "compound poisson":
+        elif limit_method == "compound poisson":
             if not data_file.isTOF():
                 logger.warning("Compound-Poisson limit created for non-TOF data file")
 
@@ -230,7 +232,7 @@ class SPCalLimitOptions(object):
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
-        elif method == "highest":
+        elif limit_method == "highest":
             gaussian = SPCalGaussianLimit(
                 signals,
                 **self.gaussian_kws,
@@ -257,4 +259,4 @@ class SPCalLimitOptions(object):
             else:
                 return gaussian
         else:
-            raise ValueError(f"unknown limit method {method}")
+            raise ValueError(f"unknown limit method {limit_method}")

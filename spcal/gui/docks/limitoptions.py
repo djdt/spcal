@@ -314,7 +314,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
                 "Manual Input",
             ]
         )
-        self.limit_method.setCurrentText(limit_options.method.capitalize())
+        self.limit_method.setCurrentText(limit_options.limit_method.capitalize())
         for i, tooltip in enumerate(
             [
                 "Automatically determine the best method.",
@@ -403,7 +403,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
 
     def setLimitOptions(self, options: SPCalLimitOptions):
         self.blockSignals(True)
-        self.limit_method.setCurrentText(options.method.capitalize())
+        self.limit_method.setCurrentText(options.limit_method.capitalize())
         self.gaussian.setParameters(options.gaussian_kws)
         self.poisson.setParameters(options.poisson_kws)
         self.compound.setParameters(options.compound_poisson_kws)
@@ -417,7 +417,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
 
     def limitOptions(self) -> SPCalLimitOptions:
         return SPCalLimitOptions(
-            method=self.limit_method.currentText().lower(),
+            limit_method=self.limit_method.currentText().lower(),
             gaussian_kws=self.gaussian.parameters(),
             poisson_kws=self.poisson.parameters(),
             compound_poisson_kws=self.compound.parameters(),
