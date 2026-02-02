@@ -12,7 +12,7 @@ def test_spcal_datafile():
     assert df._event_time is None
     assert df.event_time == 0.01
     assert df._event_time is not None  # test cache
-    assert df.total_time == 1.0
+    assert df.total_time == 1.01
     assert not df.isTOF()
 
 
