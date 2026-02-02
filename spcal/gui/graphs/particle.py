@@ -144,8 +144,8 @@ class ParticleView(SinglePlotGraphicsView):
             symbol=scatter_symbol,
         )
 
-        self.data_for_export[str(result.isotope) + "_x"] = curve.xData  # type: ignore , just set
-        self.data_for_export[str(result.isotope) + "_y"] = curve.yData  # type: ignore , just set
+        self.data_for_export[str(result.isotope) + "_x"] = result.times  # type: ignore , just set
+        self.data_for_export[str(result.isotope) + "_y"] = result.signals  # type: ignore , just set
         self.data_for_export[str(result.isotope) + "_particle_x"] = scatter.getData()[0]
         self.data_for_export[str(result.isotope) + "_particle_y"] = scatter.getData()[1]
 
