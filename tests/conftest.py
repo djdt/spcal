@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import random
 import pytest
@@ -16,6 +17,11 @@ def pytest_sessionstart(session):
 def default_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
     return method
+
+
+@pytest.fixture()
+def test_data_path() -> Path:
+    return Path(__file__).parent.joinpath("data")
 
 
 @pytest.fixture(scope="function")

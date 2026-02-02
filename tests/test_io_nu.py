@@ -13,38 +13,36 @@ from spcal.io.nu import (
 )
 
 
-def test_is_nu_run_info_file():
-    path = Path(__file__).parent.joinpath("data/nu")
+def test_is_nu_run_info_file(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
     assert not is_nu_run_info_file(path)
     assert is_nu_run_info_file(path.joinpath("run.info"))
 
 
-def test_is_nu_dir():
-    path = Path(__file__).parent.joinpath("data/nu")
+def test_is_nu_dir(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
     assert is_nu_directory(path)
     assert not is_nu_directory(path.parent)
     assert not is_nu_directory(path.joinpath("fake"))
 
 
-def test_io_nu_import():
-    path = Path(__file__).parent.joinpath("data/nu")
+def test_io_nu_import(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
     assert masses.size == 127
     assert signals.shape == (50, 127)
     assert np.isclose(masses[0], 80.90475)
     assert np.isclose(masses[-1], 208.9560)
 
-    assert np.all(
-        np.isclose(info["MassCalCoefficients"], [-0.221135, 0.000613])
-    )
+    assert np.all(np.isclose(info["MassCalCoefficients"], [-0.221135, 0.000613]))
     assert len(info["SegmentInfo"]) == 1
     assert info["SegmentInfo"][0]["AcquisitionTriggerDelayNs"] == 14950.0
 
     assert np.isclose(eventtime_from_info(info), 0.09824e-3)
 
 
-def test_io_nu_import_integ_limits():
-    path = Path(__file__).parent.joinpath("data/nu")
+def test_io_nu_import_integ_limits(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
     masses, signals, times, info = read_directory(
         path, last_integ_file=1, cycle=1, segment=1
     )
@@ -65,8 +63,8 @@ def test_io_nu_import_integ_limits():
         )
 
 
-def test_io_nu_import_integ_missing():
-    path = Path(__file__).parent.joinpath("data/nu")
+def test_io_nu_import_integ_missing(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
     assert signals.shape == (50, 127)
     assert np.all(~np.isnan(signals[:30]))
@@ -74,8 +72,8 @@ def test_io_nu_import_integ_missing():
     assert np.all(~np.isnan(signals[40:]))
 
 
-def test_io_nu_import_autoblank(tmp_path: Path):
-    path = Path(__file__).parent.joinpath("data/nu/autob.zip")
+def test_io_nu_import_autoblank(test_data_path: Path, tmp_path: Path):
+    path = test_data_path.joinpath("nu/autob.zip")
     zp = zipfile.ZipFile(path)
     zp.extractall(tmp_path)
 

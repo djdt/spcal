@@ -9,22 +9,22 @@ from spcal.io.text import (
 )
 
 
-def test_io_is_text_file():
-    assert is_text_file(Path(__file__).parent.joinpath("data/text/text_normal.csv"))
-    assert not is_text_file(Path(__file__).parent.joinpath("data/text/text_normal.bad"))
-    assert not is_text_file(Path(__file__).parent.joinpath("data/text/fake.txt"))
+def test_io_is_text_file(test_data_path: Path):
+    assert is_text_file(test_data_path.joinpath("text/text_normal.csv"))
+    assert not is_text_file(test_data_path.joinpath("text/text_normal.bad"))
+    assert not is_text_file(test_data_path.joinpath("text/fake.txt"))
 
 
-def test_io_text_import():
-    path = Path(__file__).parent.joinpath("data/text/text_normal.csv")
+def test_io_text_import(test_data_path: Path):
+    path = test_data_path.joinpath("text/text_normal.csv")
     data = read_single_particle_file(path, skip_rows=2)
     assert np.all(data["A"] == 1)
     assert np.all(data["B"] == [1, 2, 3])
     assert np.all(data["C"] == [1, 2, 4])
 
 
-def test_io_text_import_euro():
-    path = Path(__file__).parent.joinpath("data/text/text_euro.csv")
+def test_io_text_import_euro(test_data_path: Path):
+    path = test_data_path.joinpath("text/text_euro.csv")
     data = read_single_particle_file(path, delimiter=";", skip_rows=2)
     assert np.all(data["A"] == 1)
     assert np.all(data["B"] == [1, 2, 3])
