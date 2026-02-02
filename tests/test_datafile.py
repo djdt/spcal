@@ -22,7 +22,7 @@ def test_spcal_datafile_text_agilent(test_data_path: Path):
 
     assert df.num_events == 9996
     assert np.isclose(df.event_time, 100e-6)
-    assert np.isclose(df.total_time, 9995 * 100e-6)
+    assert np.isclose(df.total_time, 9996 * 100e-6)
     assert not df.isTOF()
     assert not df.cps
 
@@ -48,13 +48,52 @@ def test_spcal_datafile_text_icap(test_data_path: Path):
     )
     assert df.num_events == 1000
     assert np.isclose(df.event_time, 50e-6)
-    assert np.isclose(df.total_time, 999 * 50e-6)
+    assert np.isclose(df.total_time, 1000 * 50e-6)
     assert not df.isTOF()
     assert df.cps
 
     assert df.isotopes == [ISOTOPE_TABLE[("Se", 80)]]
 
     assert np.isclose(df[df.isotopes[0]].max(), 2.0, atol=0.1)  # check cps
+
+
+def test_spcal_datafile_text_nu(test_data_path: Path):
+    path = test_data_path.joinpath("text/nu_export_auag.csv")
+
+    df = datafile.SPCalTextDataFile.load(
+        path,
+        skip_rows=1,
+        drop_fields=["Time_(ms)"],
+        isotope_table={
+            ISOTOPE_TABLE[("Ag", 107)]: "106.905_-_seg_Full_mass_spectrum_att_1",
+            ISOTOPE_TABLE[("Ag", 109)]: "108.905_-_seg_Full_mass_spectrum_att_1",
+            ISOTOPE_TABLE[("Au", 197)]: "196.967_-_seg_Full_mass_spectrum_att_1",
+        },
+    )
+    assert df.num_events == 999
+    assert np.isclose(df.event_time, 4.852e-5)
+    assert np.isclose(df.total_time, 999 * 4.852e-5)
+    assert df.isTOF()
+
+    assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Ag", 107)]]), 0.006001689)
+    assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Ag", 109)]]), 0.004975563)
+    assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 0.002678757)
+
+
+def test_spcal_datafile_text_tofwerk(test_data_path: Path):
+    path = test_data_path.joinpath("text/tofwerk_export_au.csv")
+    df = datafile.SPCalTextDataFile.load(
+        path,
+        skip_rows=1,
+        drop_fields=["Index", "timestamp_(s)"],
+        isotope_table={ISOTOPE_TABLE[("Au", 197)]: "[197Au]+_(cts)"},
+    )
+
+    assert df.num_events == 999
+    assert np.isclose(df.event_time, 0.9999e-3)
+    assert np.isclose(df.total_time, 999 * 0.9999e-3)
+
+    assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 2.142439)
 
 
 def test_spcal_datafile_nu():
