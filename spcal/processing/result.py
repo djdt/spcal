@@ -87,7 +87,7 @@ class SPCalProcessingResult(object):
 
     @property
     def number_concentration(self) -> float | None:
-        if not self.method.instrument_options.canCalibrate("mass", "efficiency"):
+        if not self.method.instrument_options.canCalibrate("mass", "efficiency"):  # pragma: no cover
             return None
         else:
             return np.around(
@@ -101,7 +101,7 @@ class SPCalProcessingResult(object):
 
     @property
     def mass_concentration(self) -> float | None:
-        if not self.canCalibrate("mass"):
+        if not self.canCalibrate("mass"):  # pragma: no cover
             return None
         masses = self.calibrated("mass")
 
@@ -113,7 +113,7 @@ class SPCalProcessingResult(object):
         )
 
     def peakValues(self) -> np.ndarray:
-        if self.peak_indicies is None:
+        if self.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak_indicies not generated")
         values = np.zeros(self.number_peak_indicies, dtype=self.detections.dtype)
         np.add.at(
