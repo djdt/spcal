@@ -43,12 +43,12 @@ def append_results_summary(
         )
         if result.number_concentration is not None:
             fp.write(
-                f"{data_file.path},{result.isotope},Number Error,#/L,{result.number_concentration}\n"
+                f"{data_file.path},{result.isotope},Number,#/L,{result.number_concentration}\n"
             )
         if result.mass_concentration is not None:
             unit, factor = units["mass"]
             fp.write(
-                f"{data_file.path},{result.isotope},Number Error,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
+                f"{data_file.path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
             )
         for key in SPCalProcessingMethod.CALIBRATION_KEYS:
             if not result.canCalibrate(key):
