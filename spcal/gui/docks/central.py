@@ -243,7 +243,11 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         regions = result.regions[result.filter_indicies]
 
-        self.spectra.drawDataFile(data_file, regions, pen=pen)
+        try:
+            self.spectra.drawDataFile(data_file, regions, pen=pen)
+        except NotImplementedError:
+            logger.warning(f"spectra not implemented for {type(data_file)}")
+            return
         if reverse_result is not None:
             reverse_regions = reverse_result.regions[reverse_result.filter_indicies]
             self.spectra.drawDataFile(

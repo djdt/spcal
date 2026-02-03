@@ -84,16 +84,8 @@ class SpectraView(SinglePlotGraphicsView):
         # options
         self.subtract_background = True
 
-    def spectraForTOFWERKFile(
-        self, data_file: SPCalTOFWERKDataFile, regions: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        raise NotImplementedError
-        peak_sums = np.add.reduceat(data_file.signals, regions.ravel(), axis=0)[::2]
-        sums = np.nansum(peak_sums, axis=0)
-        return data_file.masses, sums
-
-    def spectraForNuFile(
-        self, data_file: SPCalNuDataFile, regions: np.ndarray
+    def spectraForTOFFile(
+        self, data_file: SPCalNuDataFile | SPCalTOFWERKDataFile, regions: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         sums = np.zeros_like(data_file.masses)
 
@@ -122,10 +114,8 @@ class SpectraView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         negative: bool = False,
     ):
-        if isinstance(data_file, SPCalNuDataFile):
-            xs, ys = self.spectraForNuFile(data_file, regions)
-        elif isinstance(data_file, SPCalTOFWERKDataFile):
-            xs, ys = self.spectraForTOFWERKFile(data_file, regions)
+        if isinstance(data_file, (SPCalNuDataFile, SPCalTOFWERKDataFile)):
+            xs, ys = self.spectraForTOFFile(data_file, regions)
         else:
             raise NotImplementedError
 
