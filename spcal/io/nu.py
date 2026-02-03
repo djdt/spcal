@@ -269,7 +269,7 @@ def eventtime_from_info(info: dict) -> float:
 def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
     """Converts signals from integ data to counts.
 
-    Preserves run length when missing data is present.
+    Inserts nan values for discontinuities in integ index.
 
     Args:
         integ: from `read_integ_binary`
@@ -287,17 +287,15 @@ def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
         idx += integ["acq_number"]
         return idx // num_acc
 
-    indicies = [indicies_for_integ(integ) for integ in integs]
-    min_index = indicies[0][0]
-    signals = np.full(
-        (indicies[-1][-1] - min_index + 1, integs[0]["result"]["signal"].shape[1]),
-        np.nan,
-        dtype=np.float32,
-    )
-    for idx, integ in zip(indicies, integs):
-        signals[idx - min_index] = integ["result"]["signal"]
+    signals = [integ["result"]["signal"] for integ in integs]
+    for i in range(len(integs) - 1):
+        if (
+            indicies_for_integ(integs[i][-1])
+            != indicies_for_integ(integs[i + 1][0]) - 1
+        ):
+            integs[i][-1]["result"]["signal"] = np.nan
 
-    return signals
+    return np.concatenate(signals, axis=0)
 
 
 def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
@@ -336,6 +334,7 @@ def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
     seg_periods = np.array(
         [seg["AcquisitionPeriodNs"] for seg in run_info["SegmentInfo"]]
     )
+
     times = np.sum(seg_times) * (np.concatenate([x["cyc_number"] for x in integs]) - 1)
     times += np.cumsum(np.concatenate([[0], seg_times]))[
         np.concatenate([x["seg_number"] for x in integs]) - 1
@@ -407,7 +406,6 @@ def read_directory(
     # Get masses from data
     masses = masses_from_integ(integs[0], run_info)[0]
     signals = signals_from_integs(integs, run_info)
-
     times = times_from_integs(integs, run_info) * 1e-9
 
     if not raw:
