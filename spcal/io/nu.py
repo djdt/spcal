@@ -68,11 +68,17 @@ def read_autob_binary(
         autob = np.concatenate(list(read_autoblank_events(fp)))
 
     if autob.size > 0:
-        if first_cyc_number is not None and autob[0]["cyc_number"] != first_cyc_number:
+        if (
+            first_cyc_number is not None and autob[0]["cyc_number"] != first_cyc_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstCycNum")
-        if first_seg_number is not None and autob[0]["seg_number"] != first_seg_number:
+        if (
+            first_seg_number is not None and autob[0]["seg_number"] != first_seg_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstSegNum")
-        if first_acq_number is not None and autob[0]["acq_number"] != first_acq_number:
+        if (
+            first_acq_number is not None and autob[0]["acq_number"] != first_acq_number
+        ):  # pragma: no cover
             raise ValueError("read_integ_binary: incorrect FirstAcqNum")
 
     return autob

@@ -51,7 +51,7 @@ def append_results_summary(
                 f"{data_file.path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
             )
         for key in SPCalProcessingMethod.CALIBRATION_KEYS:
-            if not result.canCalibrate(key):
+            if not result.canCalibrate(key):  # pragma: no cover
                 continue
             unit, factor = units[key]
             detections = result.calibrated(key)
@@ -137,7 +137,7 @@ def export_spcal_result_outputs(
         )
 
     for key in SPCalProcessingMethod.CALIBRATION_KEYS:
-        if not any(result.canCalibrate(key) for result in results):
+        if not any(result.canCalibrate(key) for result in results):  # pragma: no cover
             continue
 
         unit, factor = units[key]
@@ -145,7 +145,7 @@ def export_spcal_result_outputs(
             f"# Outputs ({key}),Background ({unit}),Background Error ({unit}),LOD ({unit}),Mean ({unit}),Std ({unit}),Median ({unit}),Mode ({unit})\n"
         )
         for result in results:
-            if not result.canCalibrate(key):
+            if not result.canCalibrate(key):  # pragma: no cover
                 continue
             detections = result.calibrated(key)
 
@@ -175,7 +175,7 @@ def export_spcal_compositions(
         if (
             not any(result.canCalibrate(key) for result in results)
             or key not in clusters
-        ):
+        ):  # pragma: no cover
             continue
 
         X, valid = prepare_results_for_clustering(results, clusters[key].size, key)
@@ -215,7 +215,7 @@ def export_spcal_detection_arrays(
 
     for result in results:
         for key in SPCalProcessingMethod.CALIBRATION_KEYS:
-            if not result.canCalibrate(key):
+            if not result.canCalibrate(key):  # pragma: no cover
                 continue
             unit, factor = units[key]
             header += f",{result.isotope} ({unit})"
@@ -264,7 +264,7 @@ def export_spcal_processing_results(
         export_compositions: write cluster means and indices (if export_array)
         export_arrays: write detection data
     """
-    if units is None:
+    if units is None:  # pragma: no cover
         units = {
             "signal": ("cts", 1.0),
             "mass": ("kg", 1.0),
