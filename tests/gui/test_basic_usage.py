@@ -7,6 +7,7 @@ from pytestqt.qtbot import QtBot
 
 from spcal.gui.inputs import InputWidget, ReferenceWidget
 from spcal.gui.main import SPCalWindow
+from spcal.gui.mainwindow import SPCalMainWindow
 from spcal.gui.options import OptionsWidget
 from spcal.gui.results import ResultsWidget
 
@@ -298,3 +299,9 @@ def test_spcal_single_quad_data(qtbot: QtBot, test_locales):
         assert io.lod_count.value() is not None
 
     window.resetInputs()
+
+def test_gui_no_data(qtbot: QtBot):
+    win = SPCalMainWindow()
+    qtbot.addWidget(win)
+    with qtbot.waitExposed(win):
+        win.show()
