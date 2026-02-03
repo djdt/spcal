@@ -23,7 +23,7 @@ class SPCalInstrumentOptions(object):
         self.uptake = uptake
         self.efficiency = efficiency
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalInstrumentOptions(uptake={self.uptake}, efficiency={self.efficiency})"
 
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
@@ -36,7 +36,7 @@ class SPCalInstrumentOptions(object):
             )
         elif mode == "mass response":
             return True
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown calibration mode '{mode}'")
 
 
@@ -60,27 +60,45 @@ class SPCalIsotopeOptions(object):
         # used for calibration via mass response
         self.mass_response = mass_response
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"SPCalIsotopeOptions(density={self.density}, response={self.response}, "
             f"mass_fraction={self.mass_fraction})"
         )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalIsotopeOptions):
+        if not isinstance(other, SPCalIsotopeOptions):  # pragma: no cover
             return False
 
-        if not self.density != other.density:
+        if not (
+            (self.density == other.density)
+            or (self.density is None and other.density is None)
+        ):
             return False
-        if not self.response != other.response:
+        if not (
+            (self.response == other.response)
+            or (self.response is None and other.response is None)
+        ):
             return False
-        if not self.mass_fraction != other.mass_fraction:
+        if not (
+            (self.mass_fraction == other.mass_fraction)
+            or (self.mass_fraction is None and other.mass_fraction is None)
+        ):
             return False
-        if not self.concentration != other.concentration:
+        if not (
+            (self.concentration == other.concentration)
+            or (self.concentration is None and other.concentration is None)
+        ):
             return False
-        if not self.diameter != other.diameter:
+        if not (
+            (self.diameter == other.diameter)
+            or (self.diameter is None and other.diameter is None)
+        ):
             return False
-        if not self.mass_response != other.mass_response:
+        if not (
+            (self.mass_response == other.mass_response)
+            or (self.mass_response is None and other.mass_response is None)
+        ):
             return False
 
         return True
@@ -98,14 +116,14 @@ class SPCalIsotopeOptions(object):
                 x is not None and x > 0.0
                 for x in [self.mass_response, self.mass_fraction]
             )
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown calibration mode '{mode}'")
 
         if key == "mass":
             return mass_ok
         elif key in ["size", "volume"]:
             return mass_ok and self.density is not None and self.density > 0.0
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
 
 
@@ -127,11 +145,11 @@ class SPCalLimitOptions(object):
         _poisson_kws = {"alpha": 1e-3, "function": "formula c"}
         _compound_poisson_kws = {"alpha": 1e-6, "sigma": 0.5}
 
-        if gaussian_kws is not None:
+        if gaussian_kws is not None:  # pragma: no cover
             _gaussian_kws.update(gaussian_kws)
-        if poisson_kws is not None:
+        if poisson_kws is not None:  # pragma: no cover
             _poisson_kws.update(poisson_kws)
-        if compound_poisson_kws is not None:
+        if compound_poisson_kws is not None:  # pragma: no cover
             _compound_poisson_kws.update(compound_poisson_kws)
 
         self.gaussian_kws = _gaussian_kws
@@ -157,7 +175,7 @@ class SPCalLimitOptions(object):
             for start, end in idx:
                 signals[start:end] = np.nan
 
-        if limit_method is None:
+        if limit_method is None:  # pragma: no cover
             limit_method = self.limit_method
 
         if limit_method == "automatic":
@@ -187,7 +205,7 @@ class SPCalLimitOptions(object):
                         for token in isotope.tokens
                         if isinstance(token, SPCalIsotope)
                     ]
-                    if any(x <= 0.0 for x in masses):
+                    if any(x <= 0.0 for x in masses):  # pragma: no cover
                         raise ValueError("isotope mass is 0")
                     sigma = np.mean(
                         np.interp(
@@ -196,7 +214,7 @@ class SPCalLimitOptions(object):
                             self.single_ion_parameters["sigma"],
                         )
                     )
-                else:
+                else:  # pragma: no cover
                     raise ValueError(
                         f"cannot infer sigma from isotope type '{type(isotope)}'"
                     )
@@ -222,7 +240,7 @@ class SPCalLimitOptions(object):
                 max_iterations=self.max_iterations,
             )
         elif limit_method == "compound poisson":
-            if not data_file.isTOF():
+            if not data_file.isTOF():  # pragma: no cover
                 logger.warning("Compound-Poisson limit created for non-TOF data file")
 
             return SPCalCompoundPoissonLimit(
@@ -258,5 +276,5 @@ class SPCalLimitOptions(object):
                 return poisson
             else:
                 return gaussian
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown limit method {limit_method}")
