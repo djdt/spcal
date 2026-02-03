@@ -46,7 +46,7 @@ class SPCalProcessingResult(object):
 
         self.event_time = event_time
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalProcessingResult(number={self.number})"
 
     @property
@@ -68,6 +68,8 @@ class SPCalProcessingResult(object):
 
         Requires 'response' input.
         """
+        if self.isotope not in self.method.isotope_options:
+            return None
         response = self.method.isotope_options[self.isotope].response
         if response is None:
             return None
@@ -124,7 +126,7 @@ class SPCalProcessingResult(object):
         )
         return values
 
-    def canCalibrate(self, key: str) -> bool:
+    def canCalibrate(self, key: str) -> bool:  # pragma: no cover, tested in method
         return self.method.canCalibrate(key, self.isotope)
 
     def calibrated(self, key: str, filtered: bool = True) -> np.ndarray:
@@ -135,5 +137,7 @@ class SPCalProcessingResult(object):
         assert isinstance(result, np.ndarray)
         return result
 
-    def calibrateTo(self, value: float | np.ndarray, key: str) -> float | np.ndarray:
+    def calibrateTo(
+        self, value: float | np.ndarray, key: str
+    ) -> float | np.ndarray:  # pragma: no cover, tested in method
         return self.method.calibrateTo(value, key, self.isotope, self.event_time)

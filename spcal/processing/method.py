@@ -27,12 +27,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class SPCalExpression(object):
-    def __init__(self, tokens: list[str], result: SPCalIsotopeBase):
-        self.tokens = tokens
-        self.result = result
-
-
 class SPCalProcessingMethod(object):
     CALIBRATION_KEYS = ["signal", "mass", "size"]  # , "volume"] :: scaled mass
     ACCUMULATION_METHODS = [
@@ -52,11 +46,13 @@ class SPCalProcessingMethod(object):
         calibration_mode: str = "efficiency",
         cluster_distance: float = 0.03,
     ):
-        if accumulation_method not in SPCalProcessingMethod.ACCUMULATION_METHODS:
+        if (
+            accumulation_method not in SPCalProcessingMethod.ACCUMULATION_METHODS
+        ):  # pragma: no cover
             raise ValueError(
                 f"accumulation method must be one of {', '.join(SPCalProcessingMethod.ACCUMULATION_METHODS)}"
             )
-        if calibration_mode not in ["efficiency", "mass response"]:
+        if calibration_mode not in ["efficiency", "mass response"]:  # pragma: no cover
             raise ValueError(
                 "calibration mode must be one of 'efficiency', 'mass response'"
             )
@@ -104,7 +100,7 @@ class SPCalProcessingMethod(object):
             limit_accumulation = (limit.mean_signal + limit.detection_threshold) / 2.0
         elif method.accumulation_method == "detection threshold":
             limit_accumulation = limit.detection_threshold
-        else:
+        else:  # pragma: no cover
             raise ValueError(
                 f"unknown accumulation method {method.accumulation_method}"
             )
@@ -213,11 +209,13 @@ class SPCalProcessingMethod(object):
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         key: str = "signal",
     ) -> np.ndarray:
-        if any(result.peak_indicies is None for result in results.values()):
+        if any(
+            result.peak_indicies is None for result in results.values()
+        ):  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
         npeaks = np.amax([result.number_peak_indicies for result in results.values()])
-        if npeaks == 0:
+        if npeaks == 0:  # pragma: no cover
             return np.array([], dtype=int)
 
         X, valid = prepare_results_for_clustering(list(results.values()), npeaks, key)
@@ -226,11 +224,11 @@ class SPCalProcessingMethod(object):
         return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
-        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
+        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
         if key == "signal":
             return True  # no calibration
-        if isotope not in self.isotope_options:
+        if isotope not in self.isotope_options:  # pragma: no cover
             logger.warning(f"cannot calibrate, {isotope} not found in isotope options")
             return False
 
@@ -251,9 +249,7 @@ class SPCalProcessingMethod(object):
             return self.calibrateToMass(signals, isotope, event_time)
         elif key == "size":
             return self.calibrateToSize(signals, isotope, event_time)
-        elif key == "volume":
-            return self.calibrateToVolume(signals, isotope, event_time)
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
 
     def calibrateToMass(
@@ -289,10 +285,3 @@ class SPCalProcessingMethod(object):
         return particle.particle_size(
             self.calibrateToMass(signals, isotope, event_time), density=density
         )
-
-    def calibrateToVolume(
-        self, signals: float | np.ndarray, isotope: SPCalIsotopeBase, event_time: float
-    ) -> float | np.ndarray:
-        density = self.isotope_options[isotope].density
-        assert density is not None
-        return self.calibrateToMass(signals, isotope, event_time) / density
