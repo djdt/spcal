@@ -165,6 +165,17 @@ def test_spcal_processing_method(test_datafile: SPCalTOFWERKDataFile):
     assert np.isclose(np.mean(next(iter(results.values())).detections), 133.014)
 
 
+def test_spcal_processing_method_exclusions(test_datafile: SPCalTOFWERKDataFile):
+    indium = ISOTOPE_TABLE[("In", 115)]
+
+    method = processing.SPCalProcessingMethod()
+    results = method.processDataFile(test_datafile, [indium])
+    assert np.isclose(np.mean(results[indium].detections), 138.305)
+    method.exclusion_regions = [(5.0, 10.0)]
+    results = method.processDataFile(test_datafile, [indium])
+    assert not np.isclose(np.mean(results[indium].detections), 138.305)
+
+
 def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
     indium = ISOTOPE_TABLE[("In", 115)]
     tin = ISOTOPE_TABLE[("Sn", 118)]
@@ -177,7 +188,9 @@ def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
     results = method.filterResults(results)
     assert results[indium].number == 1
 
-    method.setFilters([[SPCalValueFilter(indium, "signal", np.less, 200.0)]])
+    method.setFilters(
+        [[SPCalValueFilter(indium, "signal", np.less, 200.0, prefer_invalid=True)]]
+    )
 
     results = method.filterResults(results)
     assert results[indium].number == 5
@@ -186,7 +199,7 @@ def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
         [
             [
                 SPCalValueFilter(indium, "signal", np.greater, 10.0),
-                SPCalValueFilter(indium, "signal", np.less, 25.0),
+                SPCalValueFilter(indium, "signal", np.less, 25.0, prefer_invalid=True),
             ]
         ]
     )
@@ -196,7 +209,7 @@ def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
     method.setFilters(
         [
             [SPCalValueFilter(indium, "signal", np.greater, 10.0)],
-            [SPCalValueFilter(indium, "signal", np.less, 25.0)],
+            [SPCalValueFilter(indium, "signal", np.less, 25.0, prefer_invalid=True)],
         ]
     )
     results = method.filterResults(results)

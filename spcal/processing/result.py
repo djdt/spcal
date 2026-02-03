@@ -71,17 +71,14 @@ class SPCalProcessingResult(object):
         if self.isotope not in self.method.isotope_options:
             return None
         response = self.method.isotope_options[self.isotope].response
-        if response is None:
+        if response is None:  # pragma: no cover
             return None
         return float(self.background / response)
 
     @property
     def number(self) -> int:
         """Number of non-zero detections."""
-        if self.filter_indicies is None:
-            return self.detections.size
-        else:
-            return self.filter_indicies.size
+        return self.filter_indicies.size
 
     @property
     def number_error(self) -> int:

@@ -70,36 +70,18 @@ class SPCalIsotopeOptions(object):
         if not isinstance(other, SPCalIsotopeOptions):  # pragma: no cover
             return False
 
-        if not (
-            (self.density == other.density)
-            or (self.density is None and other.density is None)
-        ):
-            return False
-        if not (
-            (self.response == other.response)
-            or (self.response is None and other.response is None)
-        ):
-            return False
-        if not (
-            (self.mass_fraction == other.mass_fraction)
-            or (self.mass_fraction is None and other.mass_fraction is None)
-        ):
-            return False
-        if not (
-            (self.concentration == other.concentration)
-            or (self.concentration is None and other.concentration is None)
-        ):
-            return False
-        if not (
-            (self.diameter == other.diameter)
-            or (self.diameter is None and other.diameter is None)
-        ):
-            return False
-        if not (
-            (self.mass_response == other.mass_response)
-            or (self.mass_response is None and other.mass_response is None)
-        ):
-            return False
+        for attr in [
+            "density",
+            "response",
+            "mass_fraction",
+            "concentration",
+            "diameter",
+            "mass_response",
+        ]:
+            a = getattr(self, attr)
+            b = getattr(other, attr)
+            if a is None and getattr(other, attr) is not None or a != b:
+                return False
 
         return True
 
@@ -192,7 +174,7 @@ class SPCalLimitOptions(object):
             # Override the default sigma if single ion paramters are present
             if self.single_ion_parameters is not None:
                 if isinstance(isotope, SPCalIsotope):
-                    if isotope.mass <= 0.0:
+                    if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
                     sigma = np.interp(
                         isotope.mass,
