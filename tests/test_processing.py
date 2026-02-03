@@ -1,14 +1,21 @@
 import numpy as np
 from pathlib import Path
+import pytest
 
 from spcal import processing
 from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import (
-    SPCalProcessingFilter,
     SPCalTimeFilter,
     SPCalValueFilter,
 )
+
+
+@pytest.fixture(scope="module")
+def test_datafile(test_data_path: Path) -> SPCalTOFWERKDataFile:
+    return SPCalTOFWERKDataFile.load(
+        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    )
 
 
 def test_spcal_procesing_instrument_options():
@@ -43,36 +50,32 @@ def test_spcal_processing_isotope_options():
     assert empty != full
 
 
-def test_spcal_processing_limit_options(test_data_path: Path):
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
-
+def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     options = processing.SPCalLimitOptions()
 
     for method in ["gaussian", "poisson", "compound poisson"]:
         limit = options.limitsForIsotope(
-            df, ISOTOPE_TABLE[("Au", 197)], limit_method=method
+            test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method=method
         )
         assert limit.name == method.title()
 
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
+        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
     )
     assert limit.name == "Compound Poisson"
 
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
+        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
     )
     assert limit.name == "Compound Poisson"
 
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("K", 41)], limit_method="automatic"
+        test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="automatic"
     )
     assert limit.name == "Gaussian"
 
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("K", 41)], limit_method="highest"
+        test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="highest"
     )
     assert limit.name == "Compound Poisson"
 
@@ -82,7 +85,7 @@ def test_spcal_processing_limit_options(test_data_path: Path):
         dtype=[("mass", float), ("mu", float), ("sigma", float)],
     )
     limit_sia = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("K", 41)], limit_method="compound poisson"
+        test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="compound poisson"
     )
     assert limit.detection_threshold != limit_sia.detection_threshold
 
@@ -91,41 +94,38 @@ def test_spcal_processing_limit_options(test_data_path: Path):
         "test", (ISOTOPE_TABLE[("Ar", 40)], ISOTOPE_TABLE[("K", 41)])
     )
     limit_sia_expr = options.limitsForIsotope(
-        df, isotope, limit_method="compound poisson"
+        test_datafile, isotope, limit_method="compound poisson"
     )
     assert limit_sia_expr.parameters["sigma"] < limit_sia.parameters["sigma"]
 
-    df.instrument_type = "quadrupole"  # fake for test
+    test_datafile.instrument_type = "quadrupole"  # fake for test
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
+        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
     )
     assert limit.name == "Poisson"
 
     limit = options.limitsForIsotope(
-        df, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
+        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
     )
     assert limit.name == "Poisson"
 
     # exclusion region
     limit_excluded = options.limitsForIsotope(
-        df,
+        test_datafile,
         ISOTOPE_TABLE[("Au", 197)],
         limit_method="automatic",
         exclusion_regions=[(10, 20)],
     )
     assert limit.mean_signal != limit_excluded.mean_signal
-    df.instrument_type = "tof"  # fake for test
+    test_datafile.instrument_type = "tof"  # fake for test
 
 
-def test_spcal_processing_method(test_data_path: Path):
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
+def test_spcal_processing_method(test_datafile: SPCalTOFWERKDataFile):
     indium = ISOTOPE_TABLE[("In", 115)]
     tin = ISOTOPE_TABLE[("Sn", 118)]
 
     method = processing.SPCalProcessingMethod()
-    results = method.processDataFile(df, [indium, tin])
+    results = method.processDataFile(test_datafile, [indium, tin])
     results = method.filterResults(results)
     assert len(results) == 2
 
@@ -157,23 +157,20 @@ def test_spcal_processing_method(test_data_path: Path):
 
     # test other accumulation methods
     method.accumulation_method = "half detection threshold"
-    results = method.processDataFile(df, [indium])
+    results = method.processDataFile(test_datafile, [indium])
     assert np.isclose(np.mean(next(iter(results.values())).detections), 135.354)
 
     method.accumulation_method = "detection threshold"
-    results = method.processDataFile(df, [indium])
+    results = method.processDataFile(test_datafile, [indium])
     assert np.isclose(np.mean(next(iter(results.values())).detections), 133.014)
 
 
-def test_spcal_processing_method_filters(test_data_path: Path):
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
+def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
     indium = ISOTOPE_TABLE[("In", 115)]
     tin = ISOTOPE_TABLE[("Sn", 118)]
 
     method = processing.SPCalProcessingMethod()
-    results = method.processDataFile(df, [indium, tin])
+    results = method.processDataFile(test_datafile, [indium, tin])
 
     method.setFilters([[SPCalValueFilter(indium, "signal", np.greater, 200.0)]])
 
@@ -210,17 +207,14 @@ def test_spcal_processing_method_filters(test_data_path: Path):
     assert results[indium].number == 4
 
 
-def test_spcal_processing_results(test_data_path: Path):
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
+def test_spcal_processing_results(test_datafile: SPCalTOFWERKDataFile):
     indium = ISOTOPE_TABLE[("In", 115)]
     tin = ISOTOPE_TABLE[("Sn", 118)]
 
     method = processing.SPCalProcessingMethod()
     method.isotope_options[indium] = processing.SPCalIsotopeOptions(1.0, 1.0, 1.0)
     method.setFilters([[SPCalValueFilter(indium, "signal", np.less, 200.0)]])
-    results = method.processDataFile(df, [indium, tin])
+    results = method.processDataFile(test_datafile, [indium, tin])
 
     assert results[indium].isotope == indium
     assert results[indium].limit.name == "Compound Poisson"

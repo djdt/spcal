@@ -13,18 +13,17 @@ def pytest_sessionstart(session):
     np.seterr(invalid="raise")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def default_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
     return method
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def test_data_path() -> Path:
     return Path(__file__).parent.joinpath("data")
 
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def random_result_generator():
     def random_result(
         method: SPCalProcessingMethod, isotope: SPCalIsotope | None = None
