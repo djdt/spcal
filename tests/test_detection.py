@@ -46,6 +46,24 @@ def test_accumulate_detections():
     assert regions.size == 0
 
 
+def test_accumulate_detections_edges():
+    x = np.array([9, 1, 3, 1, 0, 2, 4, 2, 0, 4, 2, 6, 2, 1]).astype(float)
+    sums, regions = detection.accumulate_detections(
+        x, 0.5, 1.0, prominence_required=0.0
+    )
+    assert np.all(sums == [5.0, 8.0, 4.0, 10.0])
+
+
+def test_accumulate_detections_windowed():
+    x = np.array([0, 1, 3, 1, 0, 2, 4, 2, 0, 4, 2, 6, 2, 0]).astype(float)
+    lc = np.full(x.shape, 0.5)
+    ld = np.array(
+        [1.0, 2.0, 2.0, 2.0, 1.0, 4.0, 6.0, 6.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0]
+    )
+    sums, regions = detection.accumulate_detections(x, lc, ld, prominence_required=0.0)
+    assert np.all(sums == [5.0, 4.0, 10.0])
+
+
 def test_accumulate_detections_multiple_points():
     x = np.array([0, 3, 0, 0, 3, 3, 0, 0, 3, 3, 3, 0, 0, 0]).astype(float)
 
@@ -89,13 +107,15 @@ def test_accumulate_detections_prominence():
     )
     assert np.all(sums == [16.0, 16.0])
 
+
 def test_background_mask():
-    mask = detection.background_mask(np.array([[3, 5],[6,8]]), 10)
+    mask = detection.background_mask(np.array([[3, 5], [6, 8]]), 10)
     assert np.all(mask[:3])
     assert not np.any(mask[3:5])
     assert np.all(mask[5])
     assert not np.any(mask[6:8])
     assert np.all(mask[8:])
+
 
 def test_detection_maxima():
     x = np.array([2.0, 1.0, 0.0, 2.0, 3.0, 5.0, 2.0, 3.0, 0.0, 3.0, 0.0])
