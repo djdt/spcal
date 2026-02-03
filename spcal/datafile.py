@@ -390,12 +390,12 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         with h5py.File(path) as h5:
             if "PeakData" in h5["PeakData"]:  # type: ignore , supported
                 peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]  # type: ignore , returns numpy array
-            elif "ToFData" in h5["FullSpectra"]:  # type: ignore , supported
-                logger.warning(
+            elif "ToFData" in h5["FullSpectra"]:  # type: ignore , supported  # pragma: no cover, tested in test_io_tofwerk
+                logger.warning(  # pragma: no cover
                     f"PeakData missing from TOFWERK file {path.stem}, integrating"
                 )
                 peak_data = tofwerk.integrate_tof_data(h5)[:max_size]
-            else:
+            else:  # pragma: no cover
                 raise ValueError(
                     f"PeakData and ToFData are missing, {path.stem} is an invalid file"
                 )
@@ -408,9 +408,9 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             times: np.ndarray = h5["TimingData"]["BufTimes"][:max_size]  # type: ignore , defined in tofdaq
             times = (
                 times[:, :, None]
-                + np.linspace(0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False)[
-                    None, None, :
-                ]
+                + np.linspace(
+                    0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False
+                )[None, None, :]
             ).ravel()
 
         return cls(path, signals=peak_data, times=times, peak_table=peak_table)
