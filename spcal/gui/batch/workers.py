@@ -4,7 +4,12 @@ from pathlib import Path
 from typing import Generator, TextIO
 from PySide6 import QtCore
 
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
+from spcal.datafile import (
+    SPCalDataFile,
+    SPCalNuDataFile,
+    SPCalTOFWERKDataFile,
+    SPCalTextDataFile,
+)
 from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
@@ -14,6 +19,7 @@ from spcal.processing.result import SPCalProcessingResult
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 # Lots of repeated code here but inheriting a base class causes blocking when running in a QThread
 def _batch_process_data_file(
@@ -153,6 +159,81 @@ class NuBatchWorker(QtCore.QObject):
                 summary_fp,
             )
 
+        self.progress.emit(index, 1.0)
+
+    @QtCore.Slot()
+    def process(self):
+        self.started.emit(len(self.paths))
+        if self.export_options["summary"] is not None:
+            summary_fp = Path(self.export_options["summary"]).open("w")
+        else:
+            summary_fp = None
+
+        for i, (input, output) in enumerate(self.paths):
+            try:
+                self.processFile(i, input, output, summary_fp)
+            except Exception as e:
+                self.exception.emit(i, e)
+                logger.exception(e)
+                continue
+
+        if summary_fp is not None:
+            summary_fp.close()
+        self.finished.emit()
+
+
+class TOFWERKBatchWorker(QtCore.QObject):
+    started = QtCore.Signal(int)
+    progress = QtCore.Signal(int, float)
+    exception = QtCore.Signal(int, object)
+    finished = QtCore.Signal()
+
+    def __init__(
+        self,
+        paths: list[tuple[Path, Path]],
+        method: SPCalProcessingMethod,
+        isotopes: list[SPCalIsotope],
+        export_options: dict,
+        parent: QtCore.QObject | None = None,
+    ):
+        super().__init__(parent)
+
+        self.paths = paths
+        self.isotopes = isotopes
+        self.method = method
+        self.export_options = export_options
+
+    def openDataFile(self, path: Path) -> SPCalDataFile:
+        return SPCalTOFWERKDataFile.load(path)
+
+    def processFile(
+        self, index: int, path: Path, outpath: Path, summary_fp: TextIO | None
+    ):
+        self.progress.emit(index, 0.0)
+        data_file = self.openDataFile(path)
+        if self.thread().isInterruptionRequested():
+            return
+        self.progress.emit(index, 0.5)
+        results, clusters = _batch_process_data_file(
+            data_file, self.method, self.isotopes, self.export_options["clusters"]
+        )
+        if self.thread().isInterruptionRequested():
+            return
+        export_spcal_processing_results(
+            outpath,
+            data_file,
+            results,
+            clusters,
+            units=self.export_options["units"],
+            export_options=self.export_options["options"],
+            export_results=self.export_options["results"],
+            export_arrays=self.export_options["arrays"],
+            export_compositions=self.export_options["clusters"],
+        )
+        if summary_fp is not None:
+            append_results_summary(
+                summary_fp, data_file, results, self.export_options["units"]
+            )
         self.progress.emit(index, 1.0)
 
     @QtCore.Slot()

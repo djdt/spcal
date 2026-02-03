@@ -5,13 +5,13 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalNuDataFile
+from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile
 from spcal.gui.batch import METHOD_PAGE_ID
 from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope
 from spcal.siunits import time_units
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 
@@ -19,7 +19,7 @@ from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidat
 class BatchNuWizardPage(QtWidgets.QWizardPage):
     def __init__(
         self,
-        isotopes: list[SPCalIsotopeBase],
+        isotopes: list[SPCalIsotope],
         max_mass_diff: float,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -410,4 +410,33 @@ class BatchTOFWERKWizardPage(QtWidgets.QWizardPage):
         super().__init__(parent)
         self.setTitle("SPCal Batch Processing")
         self.setSubTitle("TOFWERK Options")
+
         self.table = PeriodicTableSelector()
+        self.table.isotopesChanged.connect(self.completeChanged)
+        self.table.setSelectedIsotopes(
+            [iso for iso in isotopes if isinstance(iso, SPCalIsotope)]
+        )
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.table)
+        self.setLayout(layout)
+
+        self.registerField("tofwerk.isotopes", self.table, "selectedIsotopesProp")
+
+    def initializePage(self):
+        paths: list[Path] = self.field("paths")
+
+        df = SPCalTOFWERKDataFile.load(paths[0], max_size=1)
+        isotopes = set(df.isotopes)
+
+        for path in paths[1:]:
+            df = SPCalTOFWERKDataFile.load(path, max_size=1)
+            isotopes = isotopes.intersection(df.isotopes)
+
+        self.table.setEnabledIsotopes(list(isotopes))
+
+    def nextId(self):
+        return METHOD_PAGE_ID
+
+    def isComplete(self) -> bool:
+        return len(self.table.selectedIsotopes()) > 0

@@ -41,7 +41,7 @@ from spcal.gui.batch.formatpages import (
     BatchTextWizardPage,
     BatchTOFWERKWizardPage,
 )
-from spcal.gui.batch.workers import NuBatchWorker, TextBatchWorker
+from spcal.gui.batch.workers import NuBatchWorker, TOFWERKBatchWorker, TextBatchWorker
 
 logger = logging.getLogger(__name__)
 
@@ -517,10 +517,12 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
 
         return self.output_name.hasAcceptableInput()
 
+    def cleanupPage(self):
+        self.output_files.clear()
+
     def initializePage(self):
         paths: list[Path] = self.field("paths")
         self.output_dir.setText(str(paths[0].parent))
-        self.output_files.clear()
 
         for path in paths:
             self.addFile(path)
@@ -770,7 +772,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
         elif self.hasVisitedPage(TOFWERK_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("tofwerk.isotopes")
-            self.worker = TextBatchWorker(paths, method, isotopes)
+            self.worker = TOFWERKBatchWorker(paths, method, isotopes, export_options)
         else:
             raise ValueError("no format page visited")
 
