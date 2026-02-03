@@ -32,6 +32,10 @@ def test_spcal_datafile_text_agilent(test_data_path: Path):
     assert np.isclose(np.median(df[df.isotopes[0]]), 1.0)
     assert np.isclose(df[df.isotopes[0]].max(), 439.67)
 
+    df = datafile.SPCalTextDataFile.load(path, skip_rows=4, override_event_time=1.0)
+    assert np.isclose(df.event_time, 1.0)
+    assert np.isclose(df.total_time, 9996.0)
+
 
 def test_spcal_datafile_text_icap(test_data_path: Path):
     path = test_data_path.joinpath("text/thermo_icap_export.csv")
@@ -98,7 +102,7 @@ def test_spcal_datafile_text_tofwerk(test_data_path: Path):
 
 
 def test_spcal_datafile_nu(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/run.info")
     df = datafile.SPCalNuDataFile.load(path)
 
     assert df.times.size == 40
@@ -126,6 +130,7 @@ def test_spcal_datafile_tofwerk(test_data_path: Path):
     df = datafile.SPCalTOFWERKDataFile.load(path)
 
     assert df.signals.shape[-1] == 315
+    assert df.masses.shape[0] == 315
     assert len(df.isotopes) == 278  # ions are removed
 
     assert df.num_events == 89 * 11 * 5
