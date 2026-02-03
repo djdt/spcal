@@ -67,17 +67,12 @@ def accumulate_detections(
     lefts, rights = ext.split_peaks(prominence, lefts, rights, prominence_required)
     regions = np.stack((lefts, rights), axis=1)
 
-    indicies = regions.ravel()
-    if indicies.size > 0 and indicies[-1] == y.size:
-        indicies = indicies[:-1]
     # Get number above limit in each region
-    num_detections = np.add.reduceat(above, indicies)[::2]
+    num_detections = np.add.reduceat(above, regions.flat)[::2]
     # Remove regions without minimum_size values above detection limit
     regions = regions[num_detections >= points_required]
 
     indicies = regions.ravel()
-    if indicies.size > 0 and indicies[-1] == y.size:
-        indicies = indicies[:-1]
 
     # Sum regions
     if integrate:
