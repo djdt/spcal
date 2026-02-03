@@ -47,7 +47,7 @@ class SPCalDataFile(object):
             return self.dataForIsotope(isotope)
         elif isinstance(isotope, SPCalIsotopeExpression):
             return self.dataForExpression(isotope)
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"cannot access data for isotope type {type(isotope)}")
 
     @property
@@ -101,7 +101,7 @@ class SPCalDataFile(object):
             }
         )
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
-        if not isinstance(result, np.ndarray):
+        if not isinstance(result, np.ndarray):  # pragma: no cover
             raise ReducerException("reduction of expression is not an array")
         result[~np.isfinite(result)] = np.nan  # set all infinite to nan
         return result
@@ -195,7 +195,7 @@ class SPCalTextDataFile(SPCalDataFile):
                             )
                     break
 
-        if times is None:
+        if times is None:  # pragma: no cover
             raise ValueError(
                 f"unable to read times in {path.stem} and no 'override_event_time' provided"
             )
@@ -312,7 +312,7 @@ class SPCalNuDataFile(SPCalDataFile):
         last_integ_file: int | None = None,
         autoblank: bool = True,
     ) -> "SPCalNuDataFile":
-        if path.is_file() and path.stem == "run.info":
+        if path.is_file() and path.name == "run.info":
             path = path.parent
 
         masses, signals, times, info = nu.read_directory(
