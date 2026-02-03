@@ -222,7 +222,7 @@ class SPCalCompoundPoissonLimit(SPCalLimit):
         self.sigma = sigma
 
         super().__init__(
-            "CompoundPoisson",
+            "Compound Poisson",
             signals=signals,
             window_size=window_size,
             max_iterations=max_iterations,

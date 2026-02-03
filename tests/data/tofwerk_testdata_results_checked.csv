@@ -9,9 +9,9 @@
 # ,0.2,0.1
 #
 # Limit Options,Type,Parameters
-# 115In,CompoundPoisson,alpha=1e-06;sigma=0.4
-# 118Sn,CompoundPoisson,alpha=1e-06;sigma=0.4
-# 121Sb,CompoundPoisson,alpha=1e-06;sigma=0.4
+# 115In,Compound Poisson,alpha=1e-06;sigma=0.4
+# 118Sn,Compound Poisson,alpha=1e-06;sigma=0.4
+# 121Sb,Compound Poisson,alpha=1e-06;sigma=0.4
 #
 # Isotope Options,Density (g/cm³),Response (L/µg),Mass Fraction,Concentration (µg/L),Mass Response (ag)
 # 115In,5.775,0.001,0.4853,,

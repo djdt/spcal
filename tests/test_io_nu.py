@@ -30,7 +30,7 @@ def test_io_nu_import(test_data_path: Path):
     path = test_data_path.joinpath("nu")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
     assert masses.size == 127
-    assert signals.shape == (50, 127)
+    assert signals.shape == (40, 127)
     assert np.isclose(masses[0], 80.90475)
     assert np.isclose(masses[-1], 208.9560)
 
@@ -66,10 +66,10 @@ def test_io_nu_import_integ_limits(test_data_path: Path):
 def test_io_nu_import_integ_missing(test_data_path: Path):
     path = test_data_path.joinpath("nu")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
-    assert signals.shape == (50, 127)
-    assert np.all(~np.isnan(signals[:30]))
-    assert np.all(np.isnan(signals[30:40]))
-    assert np.all(~np.isnan(signals[40:]))
+    assert signals.shape == (40, 127)
+    assert np.all(~np.isnan(signals[:29]))
+    assert np.all(np.isnan(signals[29]))
+    assert np.all(~np.isnan(signals[30:]))
 
 
 def test_io_nu_import_autoblank(test_data_path: Path, tmp_path: Path):

@@ -116,7 +116,7 @@ def test_limit_from_compound_poisson(poisson_data: np.ndarray):
         max_iterations=1,
         sigma=sigma,
     )
-    assert lim.name == "CompoundPoisson"
+    assert lim.name == "Compound Poisson"
     assert lim.parameters == {"alpha": 0.001, "sigma": sigma}
     assert np.isclose(
         lim.detection_threshold, true_q, rtol=1e-2
