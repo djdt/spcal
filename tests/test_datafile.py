@@ -96,8 +96,25 @@ def test_spcal_datafile_text_tofwerk(test_data_path: Path):
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 2.142439)
 
 
-def test_spcal_datafile_nu():
-    pass
+def test_spcal_datafile_nu(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
+    df = datafile.SPCalNuDataFile.load(path)
+
+    assert df.num_events == 50
+    assert df.event_time == 9.824e-5
+
+    assert len(df.masses) == 127
+    assert df.signals.shape == (50, 127)
+    assert len(df.isotopes) == 188
+
+    assert np.isclose(np.nanmean(df[ISOTOPE_TABLE[("Au", 197)]]), 3.898484)
+    assert df.isotope_table[ISOTOPE_TABLE[("Au", 197)]] == 114
+
+
+def test_spcal_datafile_nu_integ_range(test_data_path: Path):
+    path = test_data_path.joinpath("nu")
+    df = datafile.SPCalNuDataFile.load(path, first_integ_file=1, last_integ_file=2)
+    assert df.num_events == 10
 
 
 def test_spcal_datafile_tofwerk(test_data_path: Path):
