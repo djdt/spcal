@@ -382,8 +382,8 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         return self.peak_table["mass"]
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
-        idx = self.isotopes.index(isotope)
-        return self.signals[..., idx].ravel()
+        idx = self.isotope_table[isotope]
+        return self.signals[:, idx]
 
     @classmethod
     def load(cls, path: Path, max_size: int | None = None) -> "SPCalTOFWERKDataFile":
