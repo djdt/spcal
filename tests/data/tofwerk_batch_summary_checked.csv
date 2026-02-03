@@ -1,0 +1,76 @@
+Data File,Isotope,Name,Unit,Value
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Number,#,8
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Number Error,#,2.8284271247461903
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Number,#/L,1304347826.0
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Number,fg/L,3.6238898e+11
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background,cts,0.5727950930595398
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background Error,cts,0.5906250476837158
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,LOD,cts,9.507005113260707
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mean,cts,107.60884
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Std,cts,194.53429
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Median,cts,31.38115
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mode,cts,62.021145
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background,fg,7239.116499962589
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background Error,fg,7464.455578941118
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,LOD,fg,120151.7233903407
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mean,fg,1.3599854e+06
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Std,fg,2.4585692e+06
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Median,fg,396602.16
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mode,fg,783837.56
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background,nm,1337.7603457090536
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Background Error,nm,1351.4993536613622
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,LOD,nm,3412.398935956745
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mean,nm,6150.7607
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Std,nm,2999.4866
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Median,nm,5078.1665
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,115In,Mode,nm,4455.3496
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Number,#,3
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Number Error,#,1.7320508075688772
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Number,#/L,489130435.0
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Number,fg/L,9.1999625e+10
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background,cts,0.2141883671283722
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background Error,cts,0.3752877712249756
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,LOD,cts,7.116043896252781
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mean,cts,87.45568
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Std,cts,84.63787
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Median,cts,29.581795
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mode,cts,55.900887
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background,fg,2254.8723853770734
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background Error,fg,3950.8496341340838
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,LOD,fg,74914.29665353654
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mean,fg,920691.44
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Std,fg,891026.9
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Median,fg,311422.9
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mode,fg,588497.7
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background,nm,856.6648048151152
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Background Error,nm,1032.7624420453287
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,LOD,nm,2753.9655559767907
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mean,nm,5707.4844
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Std,nm,1956.2484
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Median,nm,4428.131
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,118Sn,Mode,nm,4930.9375
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Number,#,9
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Number Error,#,3.0
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Number,#/L,1467391304.0
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Number,fg/L,2.2498119e+11
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background,cts,1.3834657669067383
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background Error,cts,0.9978508353233337
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,LOD,cts,12.895134370559502
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mean,cts,188.90674
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Std,cts,333.8696
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Median,cts,64.37884
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mode,cts,119.09695
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background,fg,5496.344541841343
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background Error,fg,3964.342395377067
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,LOD,fg,51230.831372434885
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mean,fg,750503.94
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Std,fg,1.326424e+06
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Median,fg,255769.44
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mode,fg,473157.94
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background,nm,1220.4156813898712
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Background Error,nm,1094.4775272257064
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,LOD,nm,2568.385824364117
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mean,nm,5172.3457
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Std,nm,2334.126
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Median,nm,4389.678
+/home/tom/Documents/python/spcal/tests/data/tofwerk/tofwerk_testdata.h5,121Sb,Mode,nm,3980.7056
