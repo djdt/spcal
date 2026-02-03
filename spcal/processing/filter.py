@@ -12,13 +12,17 @@ class SPCalProcessingFilter(object):
     def __init__(self, isotope: SPCalIsotopeBase | None):
         self.isotope = isotope
 
-    def preferInvalid(self) -> bool:
+    def preferInvalid(self) -> bool:  # pragma: no cover
         return False
 
-    def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+    def invalidPeaks(
+        self, result: SPCalProcessingResult
+    ) -> np.ndarray:  # pragma: no cover
         raise NotImplementedError
 
-    def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+    def validPeaks(
+        self, result: SPCalProcessingResult
+    ) -> np.ndarray:  # pragma: no cover
         raise NotImplementedError
 
 
@@ -35,7 +39,7 @@ class SPCalValueFilter(SPCalProcessingFilter):
         value: float,
         prefer_invalid: bool = False,
     ):
-        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:
+        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
         super().__init__(isotope)
         self.key = key
@@ -46,11 +50,11 @@ class SPCalValueFilter(SPCalProcessingFilter):
 
     def preferInvalid(self) -> bool:
         return self.prefer_invalid
-
+    
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        if result.peak_indicies is None:
+        if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak indicies have not been calculated")
-        if not result.canCalibrate(self.key):
+        if not result.canCalibrate(self.key):  # pragma: no cover
             return result.peak_indicies
         return result.peak_indicies[
             np.logical_not(
@@ -59,9 +63,9 @@ class SPCalValueFilter(SPCalProcessingFilter):
         ]
 
     def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        if result.peak_indicies is None:
+        if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak indicies have not been calculated")
-        if not result.canCalibrate(self.key):
+        if not result.canCalibrate(self.key):  # pragma: no cover
             return np.array([])
         return result.peak_indicies[
             self.operation(result.calibrated(self.key, filtered=False), self.value)
@@ -74,15 +78,17 @@ class SPCalTimeFilter(SPCalProcessingFilter):
         self.start, self.end = start, end
 
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        if result.peak_indicies is None:
+        if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak indicies have not been calculated")
         peak_times = result.times[result.maxima]
         return result.peak_indicies[
             np.logical_and(peak_times >= self.start, peak_times <= self.end)
         ]
 
-    def validPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        if result.peak_indicies is None:
+    def validPeaks(
+        self, result: SPCalProcessingResult
+    ) -> np.ndarray:  # pragma: no cover , unused
+        if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak indicies have not been calculated")
         peak_times = result.times[result.maxima]
         return result.peak_indicies[
