@@ -142,6 +142,8 @@ class SPCalLimitOptions(object):
         self.max_iterations = max_iterations
 
         self.single_ion_parameters = single_ion_parameters
+        self.manual_limits: dict[SPCalIsotopeBase, float] = {}
+        self.default_manual_limit = 100.0
 
     def limitsForIsotope(
         self,
@@ -159,6 +161,12 @@ class SPCalLimitOptions(object):
 
         if limit_method is None:  # pragma: no cover
             limit_method = self.limit_method
+
+        if limit_method == "manual input":
+            if isotope not in self.manual_limits:
+                logger.warning(f"no manual limit for isotope '{isotope}', using default")
+            threshold = self.manual_limits.get(isotope, self.default_manual_limit)
+            return SPCalLimit("Manual", float(np.nanmean(signals)), threshold)
 
         if limit_method == "automatic":
             if SPCalGaussianLimit.isGaussianDistributed(signals):
