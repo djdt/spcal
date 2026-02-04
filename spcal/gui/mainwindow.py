@@ -40,7 +40,7 @@ from spcal.processing import (
     SPCalProcessingMethod,
     SPCalProcessingResult,
 )
-from spcal.processing.filter import SPCalProcessingFilter
+from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.toolbar_view.viewChanged.connect(self.toolbar.onViewChanged)
         self.toolbar_view.viewChanged.connect(self.graph.setView)
-        self.toolbar_view.requestViewOptionsDialog.connect(self.graph.dialogGraphOptions)
+        self.toolbar_view.requestViewOptionsDialog.connect(
+            self.graph.dialogGraphOptions
+        )
 
         self.setCentralWidget(self.graph)
         self.defaultLayout()
@@ -703,19 +705,26 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
 
     def dialogFilterDetections(self):
-        def set_filters(filters: list[SPCalProcessingFilter]):
+        data_file = self.files.currentDataFile()
+        if data_file is None:
+            return
+
+        def set_filters(
+            filters: list[list[SPCalResultFilter]],
+            cluster_filters: list[SPCalIndexFilter],
+        ):
+            for filter in cluster_filters:
+                filter.clusters = self.clusters(data_file, filter.key)
+
             method = self.currentMethod()
             method.setFilters(filters)
             self.currentMethodChanged.emit(method)
 
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
         method = self.currentMethod()
         dlg = FilterDialog(
             list(self.processing_results[data_file].keys()),
             method.filters,
-            [],
+            method.index_filters,
             number_clusters=99,
             parent=self,
         )

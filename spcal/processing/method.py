@@ -22,7 +22,7 @@ from spcal.processing.options import (
 from spcal.processing.result import SPCalProcessingResult
 
 if TYPE_CHECKING:
-    from spcal.processing.filter import SPCalProcessingFilter
+    from spcal.processing.filter import SPCalResultFilter, SPCalIndexFilter, SPCalValueFilter
 
 logger = logging.getLogger(__name__)
 
@@ -75,13 +75,19 @@ class SPCalProcessingMethod(object):
 
         self.cluster_distance = cluster_distance
 
-        self.filters: list[list["SPCalProcessingFilter"]] = [[]]
+        self.result_filters: list[list["SPCalResultFilter"]] = [[]]
+        self.index_filters: list["SPCalIndexFilter"] = []
         self.exclusion_regions: list[tuple[float, float]] = []
 
         self.expressions: list[SPCalIsotopeExpression] = []
 
-    def setFilters(self, filters: list[list["SPCalProcessingFilter"]]):
-        self.filters = filters
+    def setFilters(
+        self,
+        result_filters: list[list["SPCalResultFilter"]],
+        index_filters: list[list["SPCalIndexFilter"]],
+    ):
+        self.result_filters = result_filters
+        self.index_filters = index_filters
 
     @staticmethod
     def calculate_result_for_isotope(
@@ -180,22 +186,47 @@ class SPCalProcessingMethod(object):
 
         # filter results
         valid_peaks = []
-        for filter_group in self.filters:
+        for filter_group in self.result_filters:
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
-                if filter.isotope is None:  # isotope not important, e.g. time based
-                    for result in results.values():
-                        filter_invalid = filter.invalidPeaks(result)
-                        group_valid = np.setdiff1d(
-                            group_valid, filter_invalid, assume_unique=True
-                        )
-                elif filter.isotope in results:
+                if isinstance(filter, SPCalValueFilter) and filter.isotope in results:
                     if filter.preferInvalid():
                         filter_invalid = filter.invalidPeaks(results[filter.isotope])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
                     else:
                         filter_valid = filter.validPeaks(results[filter.isotope])
                         group_valid = np.intersect1d(group_valid, filter_valid)
+                elif isinstance(filter, SPCalIndexFilter):
+                    group_valid = np.intersect1d(group_valid, filter.validPeaks())
+                else:
+                    raise NotImplementedError(f"filter type {type(filter)}")
+
+            valid_peaks = np.union1d(group_valid, valid_peaks)
+
+        for result in results.values():
+            result.filter_indicies = np.flatnonzero(
+                np.isin(result.peak_indicies, valid_peaks)  # type: ignore , set above
+            )
+        return results
+
+    def filterIndicies(
+        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
+    ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
+        # filter results
+        valid_peaks = []
+        for filter_group in self.index_filters:
+            group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
+            for filter in filter_group:
+                if isinstance(filter, SPCalIndexFilter):
+                    if filter.preferInvalid():
+                        filter_invalid = filter.invalidPeaks()
+                        group_valid = np.setdiff1d(group_valid, filter_invalid)
+                    else:
+                        filter_valid = filter.validPeaks()
+                        group_valid = np.intersect1d(group_valid, filter_valid)
+                else:
+                    raise NotImplementedError(f"filter type {type(filter)}")
+
             valid_peaks = np.union1d(group_valid, valid_peaks)
 
         for result in results.values():

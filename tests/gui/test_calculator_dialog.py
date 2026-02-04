@@ -75,3 +75,11 @@ def test_calculator_dialog_existing_expr(qtbot: QtBot):
     )
     qtbot.keyClick(dlg.expressions.viewport(), QtCore.Qt.Key.Key_Delete)
     assert dlg.expressions.count() == 0
+
+    def check_expressions(exprs: list[SPCalIsotopeExpression]) -> bool:
+        return len(exprs) == 0
+
+    with qtbot.waitSignal(
+        dlg.expressionsChanged, check_params_cb=check_expressions, timeout=100
+    ):
+        dlg.accept()

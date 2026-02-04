@@ -5,8 +5,8 @@ from spcal.gui.util import create_action
 from spcal.gui.widgets import UnitsWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.filter import (
-    SPCalProcessingFilter,
-    SPCalClusterFilter,
+    SPCalResultFilter,
+    SPCalIndexFilter,
     SPCalValueFilter,
 )
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
@@ -19,7 +19,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         "signal": "Intensity",
         "mass": "Mass",
         "size": "Size",
-        "volume": "Volume",
+        # "volume": "Volume",
     }
     OPERATION_LABELS = {
         np.greater: ">",
@@ -108,7 +108,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         self.value.setBaseValue(filter.value)
         self.value.setBestUnit()
 
-    def asFilter(self) -> SPCalProcessingFilter:
+    def asFilter(self) -> SPCalResultFilter:
         return SPCalValueFilter(
             self.isotopes.itemData(self.isotopes.currentIndex()),
             self.key.itemData(self.key.currentIndex()),
@@ -143,7 +143,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        filter: SPCalClusterFilter | None = None,
+        filter: SPCalIndexFilter | None = None,
         maximum_index: int = 99,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -154,9 +154,10 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         self.index.setMinimum(1)
         self.index.setMaximum(maximum_index)
 
-        self.unit = QtWidgets.QComboBox()
-        self.unit.addItems(list(FilterItemWidget.KEY_LABELS.values()))
-        self.unit.setSizeAdjustPolicy(
+        self.key = QtWidgets.QComboBox()
+        for key, label in FilterItemWidget.KEY_LABELS.items():
+            self.key.insertItem(99, label, key)
+        self.key.setSizeAdjustPolicy(
             QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContentsOnFirstShow
         )
 
@@ -176,7 +177,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QVBoxLayout()
         hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.unit, 0)
+        hlayout.addWidget(self.key, 0)
         hlayout.addWidget(self.index, 0)
         hlayout.addStretch(1)
         hlayout.addWidget(self.button_close, 0, QtCore.Qt.AlignmentFlag.AlignRight)
@@ -203,19 +204,16 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: SPCalClusterFilter):
-        label = next(
-            lbl
-            for lbl, unit in FilterItemWidget.KEY_LABELS.items()
-            if unit == filter.unit
-        )
-        self.unit.setCurrentText(label)
-        self.index.setValue(filter.idx + 1)
+    def setFilter(self, filter: SPCalIndexFilter):
+        label = FilterItemWidget.KEY_LABELS[filter.key]
+        self.key.setCurrentText(label)
+        self.index.setValue(filter.index)
 
-    def asFilter(self) -> SPCalClusterFilter:
-        return SPCalClusterFilter(
-            self.index.value() - 1,
-            FilterItemWidget.KEY_LABELS[self.unit.currentText()],
+    def asFilter(self) -> SPCalIndexFilter:
+        return SPCalIndexFilter(
+            self.key.itemData(self.key.currentIndex()),
+            np.array([]),
+            self.index.value(),
         )
 
     def close(self) -> bool:
@@ -268,7 +266,7 @@ class FilterDialog(QtWidgets.QDialog):
         self,
         isotopes: list[SPCalIsotopeBase],
         filters: list[list[SPCalValueFilter]],
-        cluster_filters: list[SPCalClusterFilter],
+        cluster_filters: list[SPCalIndexFilter],
         number_clusters: int = 0,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -388,7 +386,7 @@ class FilterDialog(QtWidgets.QDialog):
                 self.list.takeItem(i)
                 break
 
-    def addClusterFilter(self, filter: SPCalClusterFilter | None = None):
+    def addClusterFilter(self, filter: SPCalIndexFilter | None = None):
         widget = ClusterFilterItemWidget(
             filter=filter, maximum_index=self.number_clusters
         )
@@ -426,6 +424,7 @@ class FilterDialog(QtWidgets.QDialog):
         cluster_filters = []
         for i in range(self.cluster_list.count()):
             widget = self.cluster_list.itemWidget(self.cluster_list.item(i))
+            assert isinstance(widget, ClusterFilterItemWidget)
             cluster_filters.append(widget.asFilter())
 
         self.filtersChanged.emit(filters, cluster_filters)

@@ -8,9 +8,8 @@ from spcal.processing.result import SPCalProcessingResult
 from spcal.processing.method import SPCalProcessingMethod
 
 
-class SPCalProcessingFilter(object):
-    def __init__(self, isotope: SPCalIsotopeBase | None):
-        self.isotope = isotope
+class SPCalResultFilter(object):
+    # def __init__(self):
 
     def preferInvalid(self) -> bool:  # pragma: no cover
         return False
@@ -26,11 +25,25 @@ class SPCalProcessingFilter(object):
         raise NotImplementedError
 
 
-class SPCalClusterFilter(SPCalProcessingFilter):
-    pass
+#
+class SPCalIndexFilter(object):
+    def __init__(
+        self,
+        key: str,
+        indicies: np.ndarray,
+        index: int,
+    ):
+        self.indicies = indicies
+        self.index = index
+
+    def invalidPeaks(self) -> np.ndarray:
+        return self.indicies != self.index
+
+    def validPeaks(self) -> np.ndarray:
+        return self.indicies == self.index
 
 
-class SPCalValueFilter(SPCalProcessingFilter):
+class SPCalValueFilter(SPCalResultFilter):
     def __init__(
         self,
         isotope: SPCalIsotopeBase,
@@ -41,7 +54,8 @@ class SPCalValueFilter(SPCalProcessingFilter):
     ):
         if key not in SPCalProcessingMethod.CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
-        super().__init__(isotope)
+        super().__init__()
+        self.isotope = isotope
         self.key = key
         self.operation = operation
         self.value = value
@@ -50,7 +64,7 @@ class SPCalValueFilter(SPCalProcessingFilter):
 
     def preferInvalid(self) -> bool:
         return self.prefer_invalid
-    
+
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
         if result.peak_indicies is None:  # pragma: no cover
             raise ValueError("peak indicies have not been calculated")
@@ -72,9 +86,9 @@ class SPCalValueFilter(SPCalProcessingFilter):
         ]
 
 
-class SPCalTimeFilter(SPCalProcessingFilter):
+class SPCalTimeFilter(SPCalResultFilter):
     def __init__(self, start: float, end: float):
-        super().__init__(None)
+        super().__init__()
         self.start, self.end = start, end
 
     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
