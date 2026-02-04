@@ -132,7 +132,7 @@ class CalculatorExprList(QtWidgets.QListWidget):
     expressionRemoved = QtCore.Signal(SPCalIsotopeExpression)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
-        if event.matches(QtGui.QKeySequence.StandardKey.Backspace) or event.matches(
+        if event.key() == QtCore.Qt.Key.Key_Backspace or event.matches(
             QtGui.QKeySequence.StandardKey.Delete
         ):
             for index in self.selectedIndexes():
@@ -210,7 +210,7 @@ class CalculatorDialog(QtWidgets.QDialog):
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.addItem("Isotopes")
-        self.combo_isotope.addIsotopes(isotopes)
+        self.combo_isotope.addIsotopes(isotopes)  # type: ignore
         self.combo_isotope.activated.connect(self.insertIsotope)
 
         functions = [k + v[0][1] for k, v in self.functions.items()]
@@ -289,6 +289,7 @@ class CalculatorDialog(QtWidgets.QDialog):
             tokens=tuple([self.isotope_table.get(token, token) for token in tokens]),
         )
         self.expressions.addExpression(expr)
+        self.formula.clear()
 
     def isComplete(self) -> bool:
         if not self.formula.hasAcceptableInput():
