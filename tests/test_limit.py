@@ -180,3 +180,18 @@ def test_limit_iterative(poisson_data: np.ndarray):
         assert np.isclose(  # Estimates background within 1%
             lim.mean_signal, 50.0, atol=0.0, rtol=0.01
         )
+
+
+def test_limit_windowed_iterative(poisson_data: np.ndarray):
+    y = poisson_data.astype(float)
+    idx = np.random.choice(1000, size=100, replace=False)
+    y[idx] = y[idx] * 1000.0
+
+    for limit_class in [
+        SPCalPoissonLimit,
+        SPCalGaussianLimit,
+        SPCalCompoundPoissonLimit,
+    ]:
+        lim = limit_class(y, max_iterations=10, window_size=10)
+
+        assert lim.detection_threshold.size == 1000

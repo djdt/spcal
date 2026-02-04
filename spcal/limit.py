@@ -51,7 +51,9 @@ class SPCalLimit(object):
     def parameters(self) -> dict:  # pragma: no cover
         return {}
 
-    def thresholdFunction(self, signals: np.ndarray) -> tuple[float, float]:  # pragma: no cover
+    def thresholdFunction(
+        self, signals: np.ndarray
+    ) -> tuple[float, float]:  # pragma: no cover
         raise NotImplementedError
 
     def windowedThresholdFunction(  # pragma: no cover
@@ -62,9 +64,9 @@ class SPCalLimit(object):
     def calculate(
         self, signals: np.ndarray
     ) -> tuple[float | np.ndarray, float | np.ndarray]:
-        mu, threshold, prev_threshold = 0.0, np.inf, np.inf
+        mu, threshold, prev_threshold = 0.0, np.inf, 0.0
         self.iterations_required = 0
-        if self.window_size != 0:
+        if self.window_size > 0:
             halfwin = self.window_size // 2
             padded_signal = np.pad(signals, [halfwin, halfwin], mode="reflect")
 
@@ -74,12 +76,13 @@ class SPCalLimit(object):
         ) or self.iterations_required == 0:
             prev_threshold = threshold
 
-            if self.window_size == 0:
-                mu, threshold = self.thresholdFunction(signals[signals < threshold])
-            else:
-                mu, threshold = self.windowedThresholdFunction(
-                    np.where(padded_signal < threshold, padded_signal, np.nan),  # type: ignore , is bound
+            if self.window_size > 0:
+                padded_signal[halfwin:-halfwin] = np.where(  # type: ignore , is bound
+                    signals < threshold, signals, np.nan
                 )
+                mu, threshold = self.windowedThresholdFunction(padded_signal)  # type: ignore
+            else:
+                mu, threshold = self.thresholdFunction(signals[signals < threshold])
 
             self.iterations_required += 1
 
