@@ -1,48 +1,77 @@
-from pathlib import Path
-
-import numpy as np
-import numpy.lib.recfunctions as rfn
+from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.dialogs.calculator import CalculatorDialog
-from spcal.gui.main import SPCalWindow
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 
 
 def test_calculator_dialog(qtbot: QtBot):
-    window = SPCalWindow()
-    qtbot.add_widget(window)
+    isotopes = [
+        ISOTOPE_TABLE[("B", 10)],
+        ISOTOPE_TABLE[("Ag", 107)],
+        ISOTOPE_TABLE[("Au", 197)],
+    ]
 
-    npz = np.load(Path(__file__).parent.parent.joinpath("data/tofwerk_auag.npz"))
-    data = rfn.unstructured_to_structured(
-        np.stack((npz["107Ag"], npz["197Au"]), axis=1),
-        dtype=[("Au", np.float32), ("Ag", np.float32)],
-    )
-
-    window.options.efficiency_method.setCurrentText("Reference Particle")
-
-    window.sample.loadData(data, {"path": "test/data.csv", "dwelltime": 0.1})
-    window.sample.io["Ag"].response.setBaseValue(100.0)
-    window.sample.io["Au"].response.setBaseValue(200.0)
-
-    window.reference.loadData(data.copy(), {"path": "test/ref.csv", "dwelltime": 0.1})
-    window.reference.io["Ag"].response.setBaseValue(100.0)
-    window.reference.io["Au"].response.setBaseValue(200.0)
-
-    dlg = CalculatorDialog(
-        window.sample.names, window.sample.current_expr, parent=window
-    )
-    dlg.expressionAdded.connect(window.sample.addExpression)
-    dlg.expressionAdded.connect(window.reference.addExpression)
-
-    with qtbot.wait_exposed(dlg):
+    dlg = CalculatorDialog(isotopes, [])
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
         dlg.show()
 
-    dlg.formula.setPlainText("Ag + Au")
-    with qtbot.waitSignal(dlg.expressionAdded):
+    assert dlg.combo_isotope.currentText() == "Isotopes"
+    assert dlg.combo_isotope.count() == 3 + 1
+    assert dlg.formula.toPlainText() == ""
+    assert not dlg.isComplete()
+
+    dlg.combo_isotope.activated.emit(1)
+    assert dlg.formula.toPlainText() == "10B"
+    assert dlg.isComplete()
+
+    dlg.combo_isotope.activated.emit(2)
+    assert dlg.formula.toPlainText() == "10B107Ag"
+    assert not dlg.isComplete()
+
+    dlg.formula.setText("10B + 107Ag")
+    assert dlg.isComplete()
+    dlg.button_add.pressed.emit()
+
+    assert dlg.expressions.count() == 1
+    assert dlg.formula.toPlainText() == ""
+
+    dlg.formula.setText("107Ag / 197Au")
+
+    def check_expressions(exprs: list[SPCalIsotopeExpression]) -> bool:
+        if not len(exprs) == 2:
+            return False
+        if not exprs[0].name == "(+ 10B 107Ag)":
+            return False
+        if not exprs[1].name == "(/ 107Ag 197Au)":
+            return False
+        return True
+
+    with qtbot.waitSignal(
+        dlg.expressionsChanged, check_params_cb=check_expressions, timeout=100
+    ):
         dlg.accept()
 
-    assert "{Ag+Au}" in window.sample.names
-    assert "{Ag+Au}" in window.reference.names
 
-    assert window.sample.io["{Ag+Au}"].response.baseValue() == 300.0
-    assert window.reference.io["{Ag+Au}"].response.baseValue() == 300.0
+def test_calculator_dialog_existing_expr(qtbot: QtBot):
+    isotopes = [
+        ISOTOPE_TABLE[("Ag", 107)],
+        ISOTOPE_TABLE[("Ag", 109)],
+    ]
+    exprs = [SPCalIsotopeExpression("sum Ag", ("+", isotopes[0], isotopes[1]))]
+
+    dlg = CalculatorDialog(isotopes, exprs)
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.expressions.count() == 1
+    assert dlg.expressions.item(0).text() == "sum Ag: + 107Ag 109Ag"
+    qtbot.mouseClick(
+        dlg.expressions.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        pos=dlg.expressions.visualItemRect(dlg.expressions.item(0)).center(),
+    )
+    qtbot.keyClick(dlg.expressions.viewport(), QtCore.Qt.Key.Key_Delete)
+    assert dlg.expressions.count() == 0
