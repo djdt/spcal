@@ -13,7 +13,8 @@ from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsPr
 from spcal.gui.widgets import ValidColorLineEdit
 from spcal.gui.widgets import ValueWidget, UnitsWidget
 from spcal.npdb import db
-from spcal.processing import SPCalIsotopeOptions, SPCalProcessingResult
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
     density_units,
     mass_units,

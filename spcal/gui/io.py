@@ -12,7 +12,7 @@ from spcal.gui.dialogs.io import (
 from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
-from spcal.processing import SPCalProcessingMethod
+from spcal.processing.method import SPCalProcessingMethod
 
 NP_FILE_FILTER = "NP Data Files (*.csv *.info *.h5)"
 TEXT_FILE_FILTER = "CSV Documents(*.csv *.txt *.text)"

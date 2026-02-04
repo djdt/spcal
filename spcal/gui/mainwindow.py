@@ -35,11 +35,9 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.gui.io import loadSession, saveSession
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
-from spcal.processing import (
-    SPCalIsotopeOptions,
-    SPCalProcessingMethod,
-    SPCalProcessingResult,
-)
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.result import SPCalProcessingResult
 from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
 
 logger = logging.getLogger(__name__)
@@ -630,11 +628,21 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
 
         for file in files:
-            results = method.processDataFile(file, file.selected_isotopes)
-            self.processing_results[file] = method.filterResults(results)
+            self.processing_results[file] = method.processDataFile(
+                file, file.selected_isotopes
+            )
+            method.filterResults(self.processing_results[file])
             # refresh clusters
             if file in self.processing_clusters:
                 self.processing_clusters[file].clear()
+
+            if sum(len(filters) for filters in method.index_filters) > 0:
+                keys = np.unique(
+                    [f.key for filters in method.index_filters for f in filters]
+                )
+                clusters = {key: self.clusters(file, key) for key in keys}
+                method.filterIndicies(self.processing_results[file], clusters)
+
             self.resultsChanged.emit(file)
 
     # Dialogs
@@ -711,19 +719,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         def set_filters(
             filters: list[list[SPCalResultFilter]],
-            cluster_filters: list[SPCalIndexFilter],
+            cluster_filters: list[list[SPCalIndexFilter]],
         ):
-            for filter in cluster_filters:
-                filter.clusters = self.clusters(data_file, filter.key)
-
             method = self.currentMethod()
-            method.setFilters(filters)
+            method.setFilters(filters, cluster_filters)
             self.currentMethodChanged.emit(method)
 
         method = self.currentMethod()
         dlg = FilterDialog(
             list(self.processing_results[data_file].keys()),
-            method.filters,
+            method.result_filters,
             method.index_filters,
             number_clusters=99,
             parent=self,

@@ -4,12 +4,12 @@ import numpy as np
 
 from spcal.isotope import SPCalIsotopeBase
 
+from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.result import SPCalProcessingResult
-from spcal.processing.method import SPCalProcessingMethod
 
 
 class SPCalResultFilter(object):
-    # def __init__(self):
+    """A filter that takes an SPCalProcessingResult."""
 
     def preferInvalid(self) -> bool:  # pragma: no cover
         return False
@@ -25,22 +25,27 @@ class SPCalResultFilter(object):
         raise NotImplementedError
 
 
-#
 class SPCalIndexFilter(object):
-    def __init__(
-        self,
-        key: str,
-        indicies: np.ndarray,
-        index: int,
-    ):
-        self.indicies = indicies
+    """A filter that compares existing indicies."""
+
+    def __init__(self, operation: Callable[[np.ndarray, int], np.ndarray], index: int):
+        self.operation = operation
         self.index = index
 
-    def invalidPeaks(self) -> np.ndarray:
-        return self.indicies != self.index
+    def preferInvalid(self) -> bool:  # pragma: no cover
+        return False
 
-    def validPeaks(self) -> np.ndarray:
-        return self.indicies == self.index
+    def invalidPeaks(self, indicies: np.ndarray) -> np.ndarray:
+        return np.flatnonzero(np.logical_not(self.operation(indicies, self.index)))
+
+    def validPeaks(self, indicies: np.ndarray) -> np.ndarray:
+        return np.flatnonzero(self.operation(indicies, self.index))
+
+
+class SPCalClusterFilter(SPCalIndexFilter):
+    def __init__(self, key: str, index: int):
+        super().__init__(np.equal, index)
+        self.key = key
 
 
 class SPCalValueFilter(SPCalResultFilter):
@@ -52,7 +57,7 @@ class SPCalValueFilter(SPCalResultFilter):
         value: float,
         prefer_invalid: bool = False,
     ):
-        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:  # pragma: no cover
+        if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
         super().__init__()
         self.isotope = isotope

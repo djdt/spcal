@@ -2,7 +2,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.widgets import PeriodicTableSelector
-from spcal.processing import SPCalProcessingMethod
+from spcal.processing.method import SPCalProcessingMethod
 from spcal.gui.graphs import viridis_32
 
 

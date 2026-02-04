@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence
 import numpy as np
 
 from spcal import particle
@@ -14,6 +14,7 @@ from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
 import logging
 
+from spcal.processing import ACCUMULATION_METHODS, CALIBRATION_KEYS
 from spcal.processing.options import (
     SPCalInstrumentOptions,
     SPCalIsotopeOptions,
@@ -21,20 +22,17 @@ from spcal.processing.options import (
 )
 from spcal.processing.result import SPCalProcessingResult
 
-if TYPE_CHECKING:
-    from spcal.processing.filter import SPCalResultFilter, SPCalIndexFilter, SPCalValueFilter
+from spcal.processing.filter import (
+    SPCalResultFilter,
+    SPCalIndexFilter,
+    SPCalValueFilter,
+    SPCalClusterFilter,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class SPCalProcessingMethod(object):
-    CALIBRATION_KEYS = ["signal", "mass", "size"]  # , "volume"] :: scaled mass
-    ACCUMULATION_METHODS = [
-        "signal mean",
-        "half detection threshold",
-        "detection threshold",
-    ]
-
     def __init__(
         self,
         instrument_options: SPCalInstrumentOptions | None = None,
@@ -46,11 +44,9 @@ class SPCalProcessingMethod(object):
         calibration_mode: str = "efficiency",
         cluster_distance: float = 0.03,
     ):
-        if (
-            accumulation_method not in SPCalProcessingMethod.ACCUMULATION_METHODS
-        ):  # pragma: no cover
+        if accumulation_method not in ACCUMULATION_METHODS:  # pragma: no cover
             raise ValueError(
-                f"accumulation method must be one of {', '.join(SPCalProcessingMethod.ACCUMULATION_METHODS)}"
+                f"accumulation method must be one of {', '.join(ACCUMULATION_METHODS)}"
             )
         if calibration_mode not in ["efficiency", "mass response"]:  # pragma: no cover
             raise ValueError(
@@ -76,7 +72,7 @@ class SPCalProcessingMethod(object):
         self.cluster_distance = cluster_distance
 
         self.result_filters: list[list["SPCalResultFilter"]] = [[]]
-        self.index_filters: list["SPCalIndexFilter"] = []
+        self.index_filters: list[list["SPCalIndexFilter"]] = [[]]
         self.exclusion_regions: list[tuple[float, float]] = []
 
         self.expressions: list[SPCalIsotopeExpression] = []
@@ -196,8 +192,6 @@ class SPCalProcessingMethod(object):
                     else:
                         filter_valid = filter.validPeaks(results[filter.isotope])
                         group_valid = np.intersect1d(group_valid, filter_valid)
-                elif isinstance(filter, SPCalIndexFilter):
-                    group_valid = np.intersect1d(group_valid, filter.validPeaks())
                 else:
                     raise NotImplementedError(f"filter type {type(filter)}")
 
@@ -210,19 +204,23 @@ class SPCalProcessingMethod(object):
         return results
 
     def filterIndicies(
-        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
+        self,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        clusters: dict[str, np.ndarray],
     ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
-        # filter results
+        if len(results) == 0:
+            return results
+
         valid_peaks = []
         for filter_group in self.index_filters:
             group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
             for filter in filter_group:
-                if isinstance(filter, SPCalIndexFilter):
+                if isinstance(filter, SPCalClusterFilter) and filter.key in clusters:
                     if filter.preferInvalid():
-                        filter_invalid = filter.invalidPeaks()
+                        filter_invalid = filter.invalidPeaks(clusters[filter.key])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
                     else:
-                        filter_valid = filter.validPeaks()
+                        filter_valid = filter.validPeaks(clusters[filter.key])
                         group_valid = np.intersect1d(group_valid, filter_valid)
                 else:
                     raise NotImplementedError(f"filter type {type(filter)}")
@@ -255,7 +253,7 @@ class SPCalProcessingMethod(object):
         return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
-        if key not in SPCalProcessingMethod.CALIBRATION_KEYS:  # pragma: no cover
+        if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
         if key == "signal":
             return True  # no calibration

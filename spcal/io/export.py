@@ -14,8 +14,8 @@ from spcal.cluster import cluster_information, prepare_results_for_clustering
 from spcal.detection import combine_regions
 
 from spcal.datafile import SPCalDataFile
-from spcal.processing import SPCalProcessingResult
-from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.result import SPCalProcessingResult
+from spcal.processing import CALIBRATION_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def append_results_summary(
             fp.write(
                 f"{data_file.path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
             )
-        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+        for key in CALIBRATION_KEYS:
             if not result.canCalibrate(key):  # pragma: no cover
                 continue
             unit, factor = units[key]
@@ -136,7 +136,7 @@ def export_spcal_result_outputs(
             f"{_value(result.number_concentration)},{_scaled(result.mass_concentration, mass_factor)}\n"
         )
 
-    for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+    for key in CALIBRATION_KEYS:
         if not any(result.canCalibrate(key) for result in results):  # pragma: no cover
             continue
 
@@ -171,7 +171,7 @@ def export_spcal_compositions(
     clusters: dict[str, np.ndarray],
     units: dict[str, tuple[str, float]],
 ):
-    for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+    for key in CALIBRATION_KEYS:
         if (
             not any(result.canCalibrate(key) for result in results)
             or key not in clusters
@@ -214,7 +214,7 @@ def export_spcal_detection_arrays(
     header = "Times (s)"
 
     for result in results:
-        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+        for key in CALIBRATION_KEYS:
             if not result.canCalibrate(key):  # pragma: no cover
                 continue
             unit, factor = units[key]
@@ -228,7 +228,7 @@ def export_spcal_detection_arrays(
             datas.append(peak_data / factor)
 
     if clusters is not None:
-        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+        for key in CALIBRATION_KEYS:
             if key in clusters:
                 datas.append(clusters[key])
                 header += f",Cluster ID ({key})"

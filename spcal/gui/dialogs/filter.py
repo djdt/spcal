@@ -6,7 +6,7 @@ from spcal.gui.widgets import UnitsWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.filter import (
     SPCalResultFilter,
-    SPCalIndexFilter,
+    SPCalClusterFilter,
     SPCalValueFilter,
 )
 from spcal.siunits import mass_units, signal_units, size_units, volume_units
@@ -143,7 +143,7 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
 
     def __init__(
         self,
-        filter: SPCalIndexFilter | None = None,
+        filter: SPCalClusterFilter | None = None,
         maximum_index: int = 99,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -204,16 +204,14 @@ class ClusterFilterItemWidget(QtWidgets.QWidget):
         if filter is not None:
             self.setFilter(filter)
 
-    def setFilter(self, filter: SPCalIndexFilter):
+    def setFilter(self, filter: SPCalClusterFilter):
         label = FilterItemWidget.KEY_LABELS[filter.key]
         self.key.setCurrentText(label)
         self.index.setValue(filter.index)
 
-    def asFilter(self) -> SPCalIndexFilter:
-        return SPCalIndexFilter(
-            self.key.itemData(self.key.currentIndex()),
-            np.array([]),
-            self.index.value(),
+    def asFilter(self) -> SPCalClusterFilter:
+        return SPCalClusterFilter(
+            self.key.itemData(self.key.currentIndex()), self.index.value()
         )
 
     def close(self) -> bool:
@@ -266,7 +264,7 @@ class FilterDialog(QtWidgets.QDialog):
         self,
         isotopes: list[SPCalIsotopeBase],
         filters: list[list[SPCalValueFilter]],
-        cluster_filters: list[SPCalIndexFilter],
+        cluster_filters: list[list[SPCalClusterFilter]],
         number_clusters: int = 0,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -344,8 +342,12 @@ class FilterDialog(QtWidgets.QDialog):
                     self.addFilter(filter)
             if i < len(filters) - 1:
                 self.addBooleanOr()
-        for cfilter in cluster_filters:
-            self.addClusterFilter(cfilter)
+        # add the vluster filters
+        for i in range(len(cluster_filters)):
+            for filter in cluster_filters[i]:
+                self.addClusterFilter(filter)
+            if i < len(cluster_filters) - 1:
+                self.addBooleanOr()
 
     def isComplete(self) -> bool:
         for i in range(self.list.count()):
@@ -386,7 +388,7 @@ class FilterDialog(QtWidgets.QDialog):
                 self.list.takeItem(i)
                 break
 
-    def addClusterFilter(self, filter: SPCalIndexFilter | None = None):
+    def addClusterFilter(self, filter: SPCalClusterFilter | None = None):
         widget = ClusterFilterItemWidget(
             filter=filter, maximum_index=self.number_clusters
         )
@@ -425,7 +427,7 @@ class FilterDialog(QtWidgets.QDialog):
         for i in range(self.cluster_list.count()):
             widget = self.cluster_list.itemWidget(self.cluster_list.item(i))
             assert isinstance(widget, ClusterFilterItemWidget)
-            cluster_filters.append(widget.asFilter())
+            cluster_filters.append([widget.asFilter()])
 
         self.filtersChanged.emit(filters, cluster_filters)
         super().accept()

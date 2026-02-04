@@ -10,7 +10,7 @@ from spcal.gui.dialogs.advancedoptions import (
 )
 from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.widgets import CollapsableWidget, ValueWidget
-from spcal.processing import SPCalLimitOptions
+from spcal.processing.options import SPCalLimitOptions
 
 logger = logging.getLogger(__name__)
 

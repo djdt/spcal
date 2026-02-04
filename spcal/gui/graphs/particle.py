@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.legends import ParticleItemSample
 from spcal.gui.util import create_action
-from spcal.processing import SPCalProcessingResult
+from spcal.processing.result import SPCalProcessingResult
 
 
 class ExclusionRegion(pyqtgraph.LinearRegionItem):

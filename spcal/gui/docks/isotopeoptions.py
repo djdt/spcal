@@ -15,7 +15,7 @@ from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.isotope import SPCalIsotopeBase
-from spcal.processing import SPCalIsotopeOptions
+from spcal.processing.options import SPCalIsotopeOptions
 from spcal.siunits import (
     density_units,
     mass_concentration_units,

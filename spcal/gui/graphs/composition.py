@@ -8,7 +8,7 @@ from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import FontScaledItemSample
 from spcal.gui.modelviews.basic import BasicTable
 from spcal.gui.util import create_action
-from spcal.processing import SPCalProcessingResult
+from spcal.processing.result import SPCalProcessingResult
 
 
 class CompositionDetailDialog(QtWidgets.QDialog):

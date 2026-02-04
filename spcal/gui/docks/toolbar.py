@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
+from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
 
 
@@ -81,15 +82,15 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.combo_key = QtWidgets.QComboBox()
         self.combo_key.currentTextChanged.connect(self.keyChanged)
-        self.combo_key.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
+        self.combo_key.addItems(CALIBRATION_KEYS)
 
         self.scatter_x = ScatterExprLineEdit()
         self.scatter_y = ScatterExprLineEdit()
 
         self.scatter_key_x = QtWidgets.QComboBox()
         self.scatter_key_y = QtWidgets.QComboBox()
-        self.scatter_key_x.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
-        self.scatter_key_y.addItems(SPCalProcessingMethod.CALIBRATION_KEYS)
+        self.scatter_key_x.addItems(CALIBRATION_KEYS)
+        self.scatter_key_y.addItems(CALIBRATION_KEYS)
 
         self.scatter_x.editingFinished.connect(self.scatterOptionsChanged)
         self.scatter_y.editingFinished.connect(self.scatterOptionsChanged)

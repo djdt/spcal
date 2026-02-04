@@ -18,7 +18,7 @@ from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
-from spcal.processing import SPCalProcessingResult
+from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
     mass_units,

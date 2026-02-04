@@ -1,3 +1,6 @@
-from .method import SPCalProcessingMethod
-from .result import SPCalProcessingResult
-from .options import SPCalInstrumentOptions, SPCalIsotopeOptions, SPCalLimitOptions
+CALIBRATION_KEYS = ["signal", "mass", "size"]  # , "volume"] :: scaled mass
+ACCUMULATION_METHODS = [
+    "signal mean",
+    "half detection threshold",
+    "detection threshold",
+]

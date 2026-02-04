@@ -4,7 +4,7 @@ from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
 from spcal.gui.modelviews import DataFileRole
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
-from spcal.processing import SPCalProcessingMethod
+from spcal.processing.method import SPCalProcessingMethod
 
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
