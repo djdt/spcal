@@ -67,6 +67,7 @@ def _click_through_mainwindow(qtbot: QtBot, win: SPCalMainWindow):
         qtbot.mouseClick(
             win.toolbar_view.widgetForAction(action), QtCore.Qt.MouseButton.LeftButton
         )
+        qtbot.waitExposed(win.graph.currentWidget())
 
 
 @pytest.mark.parametrize(
