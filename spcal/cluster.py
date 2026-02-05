@@ -122,6 +122,5 @@ def cluster_information(
         var = np.divide(sx2, counts) - means[:, i] ** 2
         stds[:, i] = np.sqrt(np.where(var > 0.0, var, 0.0))
 
-    return means, stds, counts
     idx = np.argsort(counts)[::-1]
     return means[idx], stds[idx], counts[idx]
