@@ -270,7 +270,7 @@ class FilterDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Particle Filtering")
-        self.setMinimumSize(640, 480)
+        self.setMinimumSize(640, 640)
 
         self.isotopes = isotopes
         self.number_clusters = number_clusters
@@ -330,8 +330,8 @@ class FilterDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.button_bar, 0)
-        layout.addWidget(gbox_comp, 2)
-        layout.addWidget(gbox_cluster, 1)
+        layout.addWidget(gbox_comp, 3)
+        layout.addWidget(gbox_cluster, 2)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
