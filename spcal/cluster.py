@@ -79,14 +79,20 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
         max_dist: maximum distance between clusters
 
     Returns:
-        cluster indicies
+        cluster indicies, sorted by size (1=largest)
     """
     if X.shape[0] < 2:
         return np.zeros(X.size, dtype=int)
     dists = pairwise_euclidean(X)
     Z, ZD = mst_linkage(dists, X.shape[0])
     T = cluster_by_distance(Z, ZD, max_dist)
-    return T
+
+    # sort by largest
+    counts = np.bincount(T)
+    idx = np.argsort(counts)[::-1]
+    lookup = np.zeros_like(counts)
+    lookup[idx] = np.arange(1, idx.size + 1)
+    return lookup[T]
 
 
 def cluster_information(
@@ -116,5 +122,6 @@ def cluster_information(
         var = np.divide(sx2, counts) - means[:, i] ** 2
         stds[:, i] = np.sqrt(np.where(var > 0.0, var, 0.0))
 
+    return means, stds, counts
     idx = np.argsort(counts)[::-1]
     return means[idx], stds[idx], counts[idx]
