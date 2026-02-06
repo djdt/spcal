@@ -113,11 +113,11 @@ class IsotopeNameValidator(QtGui.QValidator):
         match = REGEX_ISOTOPE.fullmatch(input)
         if match is None:
             return QtGui.QValidator.State.Intermediate, input, pos
-        symbol = match.group(2)
-        if match.group(1) is not None:
-            isotope = int(match.group(1))
-        elif match.group(3) is not None:
-            isotope = int(match.group(3))
+
+        if match.group(1) is not None and match.group(2) is not None:
+            symbol, isotope = match.group(2), int(match.group(1))
+        if match.group(3) is not None and match.group(4) is not None:
+            symbol, isotope = match.group(3), int(match.group(4))
         else:
             return QtGui.QValidator.State.Intermediate, input, pos
 
@@ -130,17 +130,12 @@ class IsotopeNameValidator(QtGui.QValidator):
         match = REGEX_ISOTOPE.fullmatch(input)
         if match is None:
             return input
-        if (
-            len(match.group(2)) == 2
-            and match.group(1) is None
-            and match.group(3) is None
-        ):
-            if match.group(2) in RECOMMENDED_ISOTOPES:
-                return input + str(RECOMMENDED_ISOTOPES[match.group(2)])
-        elif match.group(1) is not None:
-            return match.group(1) + match.group(2)
-        elif match.group(3) is not None:
-            return match.group(2) + match.group(3)
+        # Swap symbol - isotope
+        if match.group(3) is not None and match.group(4) is not None:
+            return match.group(4) + match.group(3)
+        # Lone symbol
+        elif input in RECOMMENDED_ISOTOPES:
+            return str(RECOMMENDED_ISOTOPES[input]) + input
 
         return input
 
