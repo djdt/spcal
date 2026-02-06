@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 
 import pytest
-from spcal.datafile import SPCalTOFWERKDataFile
+from spcal.datafile import SPCalTextDataFile
 from spcal.io import export
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
@@ -12,38 +12,45 @@ from spcal.processing.options import SPCalIsotopeOptions
 @pytest.fixture(scope="module")
 def export_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
-    method.limit_options.compound_poisson_kws["sigma"] = 0.4
+    method.limit_options.compound_poisson_kws["sigma"] = 0.65
     method.instrument_options.uptake = 0.2e-3 / 60.0
     method.instrument_options.efficiency = 0.1
-    method.isotope_options[ISOTOPE_TABLE[("In", 115)]] = SPCalIsotopeOptions(
-        5.775e3, 1e6, 0.4853
+    method.isotope_options[ISOTOPE_TABLE[("Ag", 107)]] = SPCalIsotopeOptions(
+        10.49e3, 1e9, 1.0
     )
-    method.isotope_options[ISOTOPE_TABLE[("Sn", 118)]] = SPCalIsotopeOptions(
-        6.85e3, 2e6, 0.2913
+    method.isotope_options[ISOTOPE_TABLE[("Ag", 109)]] = SPCalIsotopeOptions(
+        5.852e3, 2e9, 0.8502
     )
-    method.isotope_options[ISOTOPE_TABLE[("Sb", 121)]] = SPCalIsotopeOptions(
-        5.775e3, 3e6, 0.5146
+    method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(
+        19.3e3, 3e9, 1.0
     )
     return method
 
 
+@pytest.fixture(scope="module")
+def export_datafile(test_data_path: Path) -> SPCalTextDataFile:
+    df = SPCalTextDataFile.load(
+        test_data_path.joinpath("text/tof_mix_au_ag_auag.csv"), skip_rows=1
+    )
+    df.selected_isotopes = [
+        ISOTOPE_TABLE[("Ag", 107)],
+        ISOTOPE_TABLE[("Ag", 109)],
+        ISOTOPE_TABLE[("Au", 197)],
+    ]
+    return df
+
+
 def test_export_spcal_processing_results_known(
-    test_data_path: Path, tmp_path: Path, export_method: SPCalProcessingMethod
+    test_data_path: Path,
+    tmp_path: Path,
+    export_datafile: SPCalTextDataFile,
+    export_method: SPCalProcessingMethod,
 ):
     tmp = tmp_path.joinpath("test_export.csv")
 
     units = {"signal": ("cts", 1.0), "mass": ("fg", 1e-18), "size": ("nm", 1e-9)}
 
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
-    df.selected_isotopes = [
-        ISOTOPE_TABLE[("In", 115)],
-        ISOTOPE_TABLE[("Sn", 118)],
-        ISOTOPE_TABLE[("Sb", 121)],
-    ]
-
-    results = export_method.processDataFile(df)
+    results = export_method.processDataFile(export_datafile)
     export_method.filterResults(results)
     clusters = {
         key: export_method.processClusters(results, key)
@@ -51,13 +58,16 @@ def test_export_spcal_processing_results_known(
     }
 
     export.export_spcal_processing_results(
-        tmp, df, list(results.values()), clusters, units, export_compositions=True
+        tmp,
+        export_datafile,
+        list(results.values()),
+        clusters,
+        units,
+        export_compositions=True,
     )
     lines = tmp.open("r").readlines()
     lines_checked = (
-        test_data_path.joinpath("tofwerk_testdata_results_checked.csv")
-        .open("r")
-        .readlines()
+        test_data_path.joinpath("text_results_checked.csv").open("r").readlines()
     )
 
     assert lines[0].startswith("# SPCal Export")
@@ -73,30 +83,25 @@ def test_export_spcal_processing_results_known(
 
 
 def test_export_spcal_append_summary(
-    test_data_path: Path, tmp_path: Path, export_method: SPCalProcessingMethod
+    test_data_path: Path,
+    tmp_path: Path,
+    export_datafile: SPCalTextDataFile,
+    export_method: SPCalProcessingMethod,
 ):
     units = {"signal": ("cts", 1.0), "mass": ("fg", 1e-18), "size": ("nm", 1e-9)}
-    df = SPCalTOFWERKDataFile.load(
-        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
-    )
-    df.selected_isotopes = [
-        ISOTOPE_TABLE[("In", 115)],
-        ISOTOPE_TABLE[("Sn", 118)],
-        ISOTOPE_TABLE[("Sb", 121)],
-    ]
 
-    results = export_method.processDataFile(df)
+    results = export_method.processDataFile(export_datafile)
     export_method.filterResults(results)
 
     tmp = tmp_path.joinpath("test_summary.csv")
     with tmp.open("w") as fp:
-        export.append_results_summary(fp, df, list(results.values()), units)
+        export.append_results_summary(
+            fp, export_datafile, list(results.values()), units
+        )
 
     lines = tmp.open("r").readlines()
     lines_checked = (
-        test_data_path.joinpath("tofwerk_batch_summary_checked.csv")
-        .open("r")
-        .readlines()
+        test_data_path.joinpath("text_batch_checked.csv").open("r").readlines()
     )
 
     assert lines[0] == "Data File,Isotope,Name,Unit,Value\n"

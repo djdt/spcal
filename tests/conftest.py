@@ -13,11 +13,10 @@ def pytest_sessionstart(session):
     np.seterr(invalid="raise")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def default_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
     method.limit_options.compound_poisson_kws["sigma"] = 0.65
-
     return method
 
 

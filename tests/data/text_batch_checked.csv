@@ -1,0 +1,76 @@
+Data File,Isotope,Name,Unit,Value
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number,#,4
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number Error,#,2.0
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number,#/L,144770162771.0
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number,fg/L,1.2069106e+09
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background,cts,0.5559512972831726
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background Error,cts,1.0058014392852783
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,LOD,cts,21.916150890887746
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mean,cts,301.4259
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Std,cts,157.63959
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Median,cts,281.17642
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mode,cts,182.80057
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background,fg,0.015360935890105721
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background Error,fg,0.02779029656471468
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,LOD,fg,0.605543310066847
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mean,fg,8.328399
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Std,fg,4.3555827
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Median,fg,7.7689047
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mode,fg,5.0507803
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background,nm,14.08903307607
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background Error,nm,17.167472364617275
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,LOD,nm,47.950193785088274
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mean,nm,111.07891
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Std,nm,20.934864
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Median,nm,111.36361
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Mode,nm,92.21569
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number,#,4
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number Error,#,2.0
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number,#/L,144770162771.0
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number,fg/L,6.067469e+08
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background,cts,0.5544607639312744
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background Error,cts,1.0676957368850708
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,LOD,cts,21.38457273618931
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mean,cts,257.67017
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Std,cts,151.068
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Median,cts,237.59724
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mode,cts,141.25789
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background,fg,0.009009499205744185
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background Error,fg,0.017349115607817517
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,LOD,fg,0.3474804776371103
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mean,fg,4.1869135
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Std,fg,2.4547217
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Median,fg,3.860746
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mode,fg,2.295316
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background,nm,14.32625148393089
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background Error,nm,17.823437480163815
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,LOD,nm,48.403394927331746
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mean,nm,106.101906
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Std,nm,23.367275
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Median,nm,107.37422
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Mode,nm,126.12498
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number,#,2
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number Error,#,1.4142135623730951
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number,#/L,72385081386.0
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number,fg/L,3.2784483e+08
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background,cts,0.07578926533460617
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background Error,cts,0.32269471883773804
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,LOD,cts,19.659525253650607
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mean,cts,491.27545
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Std,cts,215.70891
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Median,cts,491.27545
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mode,cts,383.42102
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background,fg,0.0006980192039916028
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background Error,fg,0.002972018659647329
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,LOD,fg,0.18106424581134012
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mean,fg,4.524647
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Std,fg,1.9866791
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Median,fg,4.524647
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mode,fg,3.5313075
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background,nm,4.103021694469519
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background Error,nm,6.650156515718888
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,LOD,nm,26.167300567159838
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mean,nm,74.732
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Std,nm,11.639646
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Median,nm,74.732
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Mode,nm,68.91218
