@@ -185,7 +185,9 @@ class SPCalProcessingMethod(object):
         for filter_group in self.result_filters:
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
-                if isinstance(filter, SPCalValueFilter) and filter.isotope in results:
+                if isinstance(filter, SPCalValueFilter):
+                    if filter.isotope not in results:
+                        continue
                     if filter.preferInvalid():
                         filter_invalid = filter.invalidPeaks(results[filter.isotope])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
@@ -214,7 +216,9 @@ class SPCalProcessingMethod(object):
         for filter_group in self.index_filters:
             group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
             for filter in filter_group:
-                if isinstance(filter, SPCalClusterFilter) and filter.key in clusters:
+                if isinstance(filter, SPCalClusterFilter):
+                    if filter.key not in clusters:
+                        continue
                     if filter.preferInvalid():
                         filter_invalid = filter.invalidPeaks(clusters[filter.key])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
