@@ -6,10 +6,7 @@ from spcal.processing import options
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
-from spcal.processing.filter import (
-    SPCalTimeFilter,
-    SPCalValueFilter,
-)
+from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 
 
 @pytest.fixture(scope="module")
@@ -54,8 +51,9 @@ def test_spcal_processing_isotope_options():
 def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     limit_options = options.SPCalLimitOptions()
     limit_options.compound_poisson_kws["sigma"] = 0.65  # lock
+    limit_options.manual_limits[ISOTOPE_TABLE[("Ru", 101)]] = 10.0
 
-    for method in ["gaussian", "poisson", "compound poisson"]:
+    for method in ["gaussian", "poisson", "compound poisson", "manual input"]:
         limit = limit_options.limitsForIsotope(
             test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method=method
         )
@@ -80,6 +78,16 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
         test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="highest"
     )
     assert limit.name == "Compound Poisson"
+
+    # manual
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="manual input"
+    )
+    assert limit.detection_threshold == 10.0
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="manual input"
+    )
+    assert limit.detection_threshold == limit_options.default_manual_limit
 
     # sia
     limit_options.single_ion_parameters = np.array(
@@ -213,6 +221,38 @@ def test_spcal_processing_method_filters(
     )
     method.filterResults(results)
     assert results[ru[0]].number == 2
+
+    # index filter
+    method.setFilters([[]], [[SPCalClusterFilter("signal", 1)]])
+    method.filterResults(results)
+
+    clusters = {"signal": method.processClusters(results)}
+    method.filterIndicies(results, clusters)
+
+    assert results[ru[0]].number == 5
+
+    method.setFilters([[]], [[SPCalClusterFilter("signal", 2)]])
+    method.filterIndicies(results, clusters)
+
+    assert results[ru[0]].number == 0
+
+    method.setFilters(
+        [[]], [[SPCalClusterFilter("signal", 1)], [SPCalClusterFilter("signal", 3)]]
+    )
+    method.filterIndicies(results, clusters)
+
+    assert results[ru[0]].number == 6
+
+    # combined
+    method.setFilters(
+        [[SPCalValueFilter(ru[0], "signal", np.greater, 200.0)]],
+        [[SPCalClusterFilter("signal", 1)]],
+    )
+    method.filterResults(results)
+    clusters = {"signal": method.processClusters(results)}
+    method.filterIndicies(results, clusters)
+
+    assert results[ru[0]].number == 1
 
     # not implemented
     # method.setFilters([[SPCalTimeFilter(0.0, 10.0)]], [[]])
