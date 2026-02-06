@@ -166,7 +166,7 @@ class SPCalLimitOptions(object):
             if isotope not in self.manual_limits:
                 logger.info(f"no manual limit for isotope '{isotope}', using default")
             threshold = self.manual_limits.get(isotope, self.default_manual_limit)
-            return SPCalLimit("Manual", float(np.nanmean(signals)), threshold)
+            return SPCalLimit("Manual Input", float(np.nanmean(signals)), threshold)
 
         if limit_method == "automatic":
             if SPCalGaussianLimit.isGaussianDistributed(signals):
