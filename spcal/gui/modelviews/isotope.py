@@ -127,7 +127,7 @@ class IsotopeNameValidator(QtGui.QValidator):
             return QtGui.QValidator.State.Intermediate, input, pos
 
     def fixup(self, input: str) -> str:
-        match = REGEX_ISOTOPE.match(input)
+        match = REGEX_ISOTOPE.fullmatch(input)
         if match is None:
             return input
         if (

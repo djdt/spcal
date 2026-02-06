@@ -239,8 +239,16 @@ class TextImportDialog(ImportDialogBase):
             item = self.table.item(header_row, col)
             if item is None:
                 raise ValueError(f"missing item at {header_row}, {col}")
-            text = item.text().lower()
-            if not any(x in text for x in ["time", "index"]):
+            if not any(x in item.text().lower() for x in ["time", "index", "number"]):
+                m = REGEX_ISOTOPE.search(item.text())
+                if m is not None and m.group(1) is not None and m.group(2) is not None:
+                    item.setToolTip(f"Original: '{item.text()}'")
+                    item.setText(m.group(1) + m.group(2))
+                elif (
+                    m is not None and m.group(3) is not None and m.group(4) is not None
+                ):
+                    item.setToolTip(f"Original: '{item.text()}'")
+                    item.setText(m.group(4) + m.group(3))
                 columns.append(col)
 
         for col in columns:
