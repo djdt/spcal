@@ -20,7 +20,7 @@ class TofwerkImportDialog(ImportDialogBase):
     def __init__(
         self,
         path: str | Path,
-        existing_file: SPCalDataFile | None,
+        existing_file: SPCalDataFile | None = None,
         screening_method: SPCalProcessingMethod | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
