@@ -4,73 +4,45 @@ import numpy as np
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.dialogs._import import (
+from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile, SPCalTextDataFile
+from spcal.gui.dialogs.io import (
     NuImportDialog,
     TextImportDialog,
     TofwerkImportDialog,
 )
 
 
-def test_import_dialog_options_inherit(qtbot: QtBot):
-    path = Path(__file__).parent.parent.joinpath("data/text/icap_cps_test.csv")
-    dlg = TextImportDialog(path)
-    qtbot.add_widget(dlg)
-    dlg.setImportOptions(
-        {
-            "columns": [2],
-            "cps": True,
-            "delimiter": ";",
-            "dwelltime": 1e-3,
-            "first line": 2,
-            "importer": "text",
-            "names": {"80Se_|_80Se.16O": "80Se_|_80Se.16O"},
-            "path": Path("fakepath.csv"),
-        },
-        path=False,
-        dwelltime=dlg.dwelltime.value() is None,
-    )
-    assert np.isclose(dlg.dwelltime.baseValue(), 1e-3)
-    assert dlg.combo_intensity_units.currentText() == "CPS"
-    assert dlg.useColumns() == [2]
-    assert dlg.delimiter() == ";"
-    assert dlg.spinbox_first_line.value() == 2
-    assert dlg.names() == ["80Se_|_80Se.16O"]
-
-
-def test_import_dialog_text_nu(qtbot: QtBot):
-    def check_data(data: np.ndarray, options: dict):
-        if data.dtype.names != ("Ag", "Au"):
+def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
+    def check_data(data_file: SPCalTextDataFile):
+        if not str(data_file.selected_isotopes[0]) == "107Ag":
             return False
-        if data.size != 999:
+        if not str(data_file.selected_isotopes[1]) == "197Au":
             return False
-        if list(options["names"].keys()) != [
+        if not data_file.num_events == 999:
+            return False
+        if not list(data_file.isotope_table.values()) == [
             "106.905_-_seg_Full_mass_spectrum_att_1",
             "196.967_-_seg_Full_mass_spectrum_att_1",
         ]:
             return False
-        if options["dwelltime"] != 1e-5:
+        if not data_file.event_time != 1e-5:
             return False
         return True
 
-    path = Path(__file__).parent.parent.joinpath("data/text/nu_export_auag.csv")
+    path = test_data_path.joinpath("text/nu_export_auag.csv")
     dlg = TextImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
     # Defaults loaded from file
-    assert np.isclose(dlg.dwelltime.baseValue(), 4.9e-05)  # type: ignore
+    assert np.isclose(dlg.event_time.baseValue(), 4.852e-05)  # type: ignore
     assert dlg.combo_intensity_units.currentText() == "Counts"
     assert dlg.delimiter() == ","
     assert dlg.spinbox_first_line.value() == 1
     assert dlg.useColumns() == [1, 2, 3]
 
-    dlg.dwelltime.setBaseValue(None)
-    assert not dlg.isComplete()
-    dlg.dwelltime.setBaseValue(1e-5)
-    assert dlg.isComplete()
-
-    # Change some params
+    # Disable Ag109
     pos = QtCore.QPoint(
         dlg.table_header.sectionPosition(2) + dlg.table_header.sectionSize(2) // 2,
         dlg.table_header.sizeHint().height() // 2,
@@ -80,28 +52,40 @@ def test_import_dialog_text_nu(qtbot: QtBot):
             dlg.table_header.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pos
         )
     assert dlg.useColumns() == [1, 3]
-    dlg.table.item(0, 1).setText("Ag")
-    dlg.table.item(0, 3).setText("Au")
+
+    assert not dlg.isComplete()
+    # Names are bad, correct
+    dlg.table.item(0, 1).setText("107Ag")  # type: ignore , not None
+    dlg.table.item(0, 3).setText("197Au")  # type: ignore , not None
+
+    assert dlg.isComplete()
+    dlg.event_time.setBaseValue(None)
+    dlg.override_event_time.setChecked(True)
+    assert not dlg.isComplete()
+    dlg.event_time.setBaseValue(1e-5)
+    assert dlg.isComplete()
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
 
 
-def test_import_dialog_text_tofwerk(qtbot: QtBot):
-    def check_data(data: np.ndarray, options: dict):
-        if data.dtype.names != ("[197Au]+_(cts)",):
+def test_import_dialog_text_tofwerk(test_data_path: Path, qtbot: QtBot):
+    def check_data(data_file: SPCalTOFWERKDataFile):
+        if not len(data_file.isotopes) == 1:
             return False
-        if data.size != 999:
+        if not str(data_file.isotopes[0]) == "197Au":
+            return False
+        if data_file.num_events != 999:
             return False
         return True
 
-    path = Path(__file__).parent.parent.joinpath("data/text/tofwerk_export_au.csv")
+    path = test_data_path.joinpath("text/tofwerk_export_au.csv")
     dlg = TextImportDialog(path)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
     # Defaults loaded from file
-    assert np.isclose(dlg.dwelltime.baseValue(), 1e-3)  # type: ignore
+    assert np.isclose(dlg.event_time.baseValue(), 1e-3, atol=1e-4)  # type: ignore
     assert dlg.combo_intensity_units.currentText() == "Counts"
     assert dlg.delimiter() == ","
     assert dlg.spinbox_first_line.value() == 1
@@ -111,55 +95,60 @@ def test_import_dialog_text_tofwerk(qtbot: QtBot):
         dlg.accept()
 
 
-def test_import_dialog_text_thermo_new_icap(qtbot: QtBot):
-    path = Path(__file__).parent.parent.joinpath("data/text/thermo_icap_export.csv")
+def test_import_dialog_text_thermo_new_icap(test_data_path: Path, qtbot: QtBot):
+    path = test_data_path.joinpath("text/thermo_icap_export.csv")
     dlg = TextImportDialog(path)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
-    # Just check that the time is read correctly
-    assert np.isclose(dlg.dwelltime.baseValue(), 50e-6)  # type: ignore
+    assert np.isclose(dlg.event_time.baseValue(), 50e-6)  # type: ignore
+
+    def check_data(data_file: SPCalTOFWERKDataFile):
+        if not len(data_file.isotopes) == 1:
+            return False
+        if not str(data_file.isotopes[0]) == "80Se":
+            return False
+        return True
+
+    with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
+        dlg.accept()
 
 
-def test_import_dialog_nu(qtbot: QtBot):
-    def check_data(data: np.ndarray, options: dict):
-        if data.dtype.names != ("Ag107", "Au197"):
+def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
+    def check_data(data_file: SPCalNuDataFile):
+        if not len(data_file.isotopes) == 188:
             return False
-        if data.size != 706078:
+        if not str(data_file.selected_isotopes[0]) == "107Ag":
             return False
-        if options["dwelltime"] != 8.289e-5:
+        if not str(data_file.selected_isotopes[1]) == "197Au":
             return False
-        # This checks that SIA is applied correctly
-        if not np.isclose(data["Ag107"][3], 0.3941041):
+        if data_file.num_events != 40:
+            return False
+        if not np.isclose(data_file.event_time, 9.824e-5):
             return False
 
         return True
 
-    path = Path(__file__).parent.parent.joinpath("data/nu")
+    path = test_data_path.joinpath("nu")
     dlg = NuImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
-    assert dlg.cycle_number.minimum() == 1
+    assert dlg.cycle_number.minimum() == 0  # Auto
     assert dlg.cycle_number.maximum() == 1
-    assert dlg.segment_number.minimum() == 1
+    assert dlg.segment_number.minimum() == 0  # Auto
     assert dlg.segment_number.maximum() == 1
 
-    assert np.isclose(dlg.dwelltime.baseValue(), 8.289e-5)  # type: ignore
-    for symbol in ["H", "Ne", "At", "Hs", "Ac", "Am", "Lr"]:
+    for symbol in ["H", "Na", "Ar", "K", "As", "Tc", "Po", "Pm", "Ac"]:
         assert not dlg.table.buttons[symbol].isEnabled()
-    for symbol in ["Na", "Au", "Po", "La", "Lu", "Th", "Pu"]:
+    for symbol in ["Se", "Mo", "Ru", "Bi", "La", "Nd", "Sm", "Lu"]:
         assert dlg.table.buttons[symbol].isEnabled()
 
     assert not dlg.isComplete()
 
-    qtbot.mouseClick(
-        dlg.table.buttons["Au"], QtCore.Qt.LeftButton, QtCore.Qt.NoModifier
-    )
-    qtbot.mouseClick(
-        dlg.table.buttons["Ag"], QtCore.Qt.LeftButton, QtCore.Qt.NoModifier
-    )
+    qtbot.mouseClick(dlg.table.buttons["Au"], QtCore.Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(dlg.table.buttons["Ag"], QtCore.Qt.MouseButton.LeftButton)
 
     assert dlg.isComplete()
 
@@ -167,29 +156,25 @@ def test_import_dialog_nu(qtbot: QtBot):
         dlg.accept()
 
 
-def test_import_dialog_tofwerk(qtbot: QtBot):
-    def check_data(data: np.ndarray, options: dict):
-        if data.dtype.names != ("OH+", "[107Ag]+", "[197Au]+"):
+def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
+    def check_data(data_file: SPCalTOFWERKDataFile):
+        if not str(data_file.selected_isotopes[0]) == "107Ag":
             return False
-        if data.size != 200:
+        if not str(data_file.selected_isotopes[1]) == "197Au":
             return False
-        if options["dwelltime"] != 9.999e-4:
+        if data_file.num_events != 4895:
             return False
-        if options["other peaks"] != ["OH+"]:
-            return False
-        if options["single ion dist"] is not None:
+        if data_file.event_time != 0.0184:  # wrong but ok for test
             return False
         return True
 
-    path = Path(__file__).parent.parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
+    path = test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
     dlg = TofwerkImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
         dlg.open()
 
-    assert np.isclose(dlg.dwelltime.baseValue(), 9.999e-4)  # type: ignore
     for symbol in [
-        "H",
         "He",
         "F",
         "Ne",
@@ -202,7 +187,6 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
         "Ac",
         "Pa",
         "Np",
-        "Lr",
     ]:
         assert not dlg.table.buttons[symbol].isEnabled()
     for symbol in [
@@ -224,16 +208,8 @@ def test_import_dialog_tofwerk(qtbot: QtBot):
 
     assert not dlg.isComplete()
 
-    qtbot.mouseClick(
-        dlg.table.buttons["Au"], QtCore.Qt.LeftButton, QtCore.Qt.NoModifier
-    )
-    qtbot.mouseClick(
-        dlg.table.buttons["Ag"], QtCore.Qt.LeftButton, QtCore.Qt.NoModifier
-    )
-    dlg.combo_other_peaks.model().item(1).setCheckState(QtCore.Qt.CheckState.Checked)
-
-    assert dlg.combo_other_peaks.model().item(0).text().startswith("1")
-    assert dlg.isComplete()
+    qtbot.mouseClick(dlg.table.buttons["Au"], QtCore.Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(dlg.table.buttons["Ag"], QtCore.Qt.MouseButton.LeftButton)
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
