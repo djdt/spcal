@@ -7,9 +7,15 @@ from spcal.gui.graphs import viridis_32
 
 
 class ScreeningOptionsDialog(QtWidgets.QDialog):
-    screeningOptionsSelected = QtCore.Signal(float, int)
+    screeningOptionsSelected = QtCore.Signal(float, int, bool)
 
-    def __init__(self, ppm: int, size: int, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        ppm: int,
+        size: int,
+        replace_isotopes: bool = True,
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent)
         self.setWindowTitle("Screening Options")
         self.setSizePolicy(
@@ -34,6 +40,12 @@ class ScreeningOptionsDialog(QtWidgets.QDialog):
             "Number of events to screen, a larger number takes longer."
         )
 
+        self.checkbox_replace_isotopes = QtWidgets.QCheckBox("Replace isotopes.")
+        self.checkbox_replace_isotopes.setChecked(replace_isotopes)
+        self.checkbox_replace_isotopes.setToolTip(
+            "Replace the current isotope selection. If not checked, adds to selection."
+        )
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel
@@ -45,6 +57,7 @@ class ScreeningOptionsDialog(QtWidgets.QDialog):
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow("Screening Threshold", self.screening_ppm)
         form_layout.addRow("Screening Size", self.screening_size)
+        form_layout.addRow(self.checkbox_replace_isotopes)
         layout.addLayout(form_layout, 1)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
@@ -52,7 +65,9 @@ class ScreeningOptionsDialog(QtWidgets.QDialog):
 
     def accept(self):
         self.screeningOptionsSelected.emit(
-            self.screening_ppm.value(), self.screening_size.value()
+            self.screening_ppm.value(),
+            self.screening_size.value(),
+            self.checkbox_replace_isotopes.isChecked(),
         )
         super().accept()
 
@@ -73,6 +88,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         self.screening_method = screening_method
         self.screening_ppm = 100
         self.screening_size = 1000000
+        self.screening_replace_isotopes = True
 
         self.table = PeriodicTableSelector(
             data_file.isotopes, data_file.selected_isotopes
@@ -97,11 +113,14 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
-    def setScreeningParameters(self, ppm: int, size: int):
+    def setScreeningParameters(self, ppm: int, size: int, replace_isotopes: bool):
         self.screening_ppm = ppm
         self.screening_size = size
+        self.screening_replace_isotopes = replace_isotopes
 
-    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+    def screenDataFile(
+        self, screening_target_ppm: int, screening_size: int, replace_isotopes: bool
+    ):
         results = self.screening_method.processDataFile(
             self.data_file, self.data_file.preferred_isotopes, max_size=screening_size
         )
@@ -116,8 +135,13 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             return
         nmax = max(selected_numbers)
         colors = [viridis_32[int(n / nmax * 31)] for n in selected_numbers]
-        self.table.setSelectedIsotopes(selected_isotopes)
+
         self.table.setIsotopeColors(selected_isotopes, colors)
+        if not replace_isotopes:
+            selected_isotopes = set(selected_isotopes)
+            selected_isotopes.update(self.table.selectedIsotopes())
+            selected_isotopes = list(selected_isotopes)
+        self.table.setSelectedIsotopes(selected_isotopes)
 
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
@@ -130,7 +154,9 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             self.reject()
 
     def dialogScreen(self):
-        dlg = ScreeningOptionsDialog(self.screening_ppm, self.screening_size)
+        dlg = ScreeningOptionsDialog(
+            self.screening_ppm, self.screening_size, self.screening_replace_isotopes
+        )
         dlg.screeningOptionsSelected.connect(self.setScreeningParameters)
         dlg.screeningOptionsSelected.connect(self.screenDataFile)
         dlg.exec()
