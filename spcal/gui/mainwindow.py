@@ -484,9 +484,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
-        self.processing_results[data_file] = method.filterResults(
-            self.processing_results[data_file]
-        )
+        method.filterResults(self.processing_results[data_file])
         if data_file in self.processing_clusters:
             self.processing_clusters[data_file].clear()
 
@@ -502,9 +500,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         option = self.isotope_options.optionForIsotope(isotope)
         method.isotope_options[isotope] = option
 
-        self.processing_results[data_file] = method.filterResults(
-            self.processing_results[data_file]
-        )
+        method.filterResults(self.processing_results[data_file])
         if data_file in self.processing_clusters:
             self.processing_clusters[data_file].clear()
         self.resultsChanged.emit(data_file)

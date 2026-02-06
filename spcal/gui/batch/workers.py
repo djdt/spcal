@@ -11,6 +11,7 @@ from spcal.datafile import (
     SPCalTextDataFile,
 )
 from spcal.isotope import SPCalIsotope
+from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
 
 from spcal.io.export import append_results_summary, export_spcal_processing_results
@@ -29,11 +30,11 @@ def _batch_process_data_file(
     process_clusters: bool = False,
 ) -> tuple[list[SPCalProcessingResult], dict[str, np.ndarray]]:
     results = method.processDataFile(data_file, isotopes)
-    results = method.filterResults(results)
+    method.filterResults(results)
     if process_clusters:
         clusters = {
             key: method.processClusters(results, key)
-            for key in SPCalProcessingMethod.CALIBRATION_KEYS
+            for key in CALIBRATION_KEYS
         }
     else:
         clusters = {}

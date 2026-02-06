@@ -16,6 +16,8 @@ def pytest_sessionstart(session):
 @pytest.fixture(scope="module")
 def default_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
+    method.limit_options.compound_poisson_kws["sigma"] = 0.65
+
     return method
 
 

@@ -5,7 +5,7 @@ import pytest
 from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.io import export
 from spcal.isotope import ISOTOPE_TABLE
-from spcal.processing import SPCalProcessingMethod
+from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 
 
@@ -44,7 +44,7 @@ def test_export_spcal_processing_results_known(
     ]
 
     results = export_method.processDataFile(df)
-    results = export_method.filterResults(results)
+    export_method.filterResults(results)
     clusters = {
         key: export_method.processClusters(results, key)
         for key in ["signal", "mass", "size"]
@@ -86,7 +86,7 @@ def test_export_spcal_append_summary(
     ]
 
     results = export_method.processDataFile(df)
-    results = export_method.filterResults(results)
+    export_method.filterResults(results)
 
     tmp = tmp_path.joinpath("test_summary.csv")
     with tmp.open("w") as fp:

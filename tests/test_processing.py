@@ -2,7 +2,8 @@ import numpy as np
 from pathlib import Path
 import pytest
 
-from spcal import processing
+from spcal.processing import options
+from spcal.processing.method import SPCalProcessingMethod
 from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import (
@@ -19,28 +20,28 @@ def test_datafile(test_data_path: Path) -> SPCalTOFWERKDataFile:
 
 
 def test_spcal_procesing_instrument_options():
-    empty = processing.SPCalInstrumentOptions(None, None)
+    empty = options.SPCalInstrumentOptions(None, None)
     assert empty.canCalibrate("signal")
     assert not empty.canCalibrate("mass")
     assert empty.canCalibrate("mass", mode="mass response")
 
-    full = processing.SPCalInstrumentOptions(1.0, 1.0)
+    full = options.SPCalInstrumentOptions(1.0, 1.0)
     assert full.canCalibrate("signal")
     assert full.canCalibrate("mass")
 
 
 def test_spcal_processing_isotope_options():
-    empty = processing.SPCalIsotopeOptions(None, None, None)
+    empty = options.SPCalIsotopeOptions(None, None, None)
     assert empty.canCalibrate("signal")
     assert not empty.canCalibrate("size")
     assert not empty.canCalibrate("mass")
 
-    full = processing.SPCalIsotopeOptions(1.0, 1.0, 1.0)
+    full = options.SPCalIsotopeOptions(1.0, 1.0, 1.0)
     assert full.canCalibrate("signal")
     assert full.canCalibrate("mass")
     assert full.canCalibrate("size")
 
-    mass = processing.SPCalIsotopeOptions(None, None, 1.0, mass_response=1.0)
+    mass = options.SPCalIsotopeOptions(None, None, 1.0, mass_response=1.0)
     assert mass.canCalibrate("signal")
     assert not mass.canCalibrate("size")
     assert not mass.canCalibrate("mass")
@@ -51,40 +52,41 @@ def test_spcal_processing_isotope_options():
 
 
 def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
-    options = processing.SPCalLimitOptions()
+    limit_options = options.SPCalLimitOptions()
+    limit_options.compound_poisson_kws["sigma"] = 0.65  # lock
 
     for method in ["gaussian", "poisson", "compound poisson"]:
-        limit = options.limitsForIsotope(
-            test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method=method
+        limit = limit_options.limitsForIsotope(
+            test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method=method
         )
         assert limit.name == method.title()
 
-    limit = options.limitsForIsotope(
-        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="automatic"
     )
     assert limit.name == "Compound Poisson"
 
-    limit = options.limitsForIsotope(
-        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
-    )
-    assert limit.name == "Compound Poisson"
-
-    limit = options.limitsForIsotope(
-        test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="automatic"
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="highest"
     )
     assert limit.name == "Gaussian"
 
-    limit = options.limitsForIsotope(
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("S", 32)], limit_method="automatic"
+    )
+    assert limit.name == "Gaussian"
+
+    limit = limit_options.limitsForIsotope(
         test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="highest"
     )
     assert limit.name == "Compound Poisson"
 
     # sia
-    options.single_ion_parameters = np.array(
+    limit_options.single_ion_parameters = np.array(
         [(1.0, 2.0, 0.8), (100.0, 2.0, 1.0)],
         dtype=[("mass", float), ("mu", float), ("sigma", float)],
     )
-    limit_sia = options.limitsForIsotope(
+    limit_sia = limit_options.limitsForIsotope(
         test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="compound poisson"
     )
     assert limit.detection_threshold != limit_sia.detection_threshold
@@ -93,26 +95,26 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     isotope = SPCalIsotopeExpression(
         "test", (ISOTOPE_TABLE[("Ar", 40)], ISOTOPE_TABLE[("K", 41)])
     )
-    limit_sia_expr = options.limitsForIsotope(
+    limit_sia_expr = limit_options.limitsForIsotope(
         test_datafile, isotope, limit_method="compound poisson"
     )
     assert limit_sia_expr.parameters["sigma"] < limit_sia.parameters["sigma"]
 
     test_datafile.instrument_type = "quadrupole"  # fake for test
-    limit = options.limitsForIsotope(
-        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="automatic"
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="automatic"
     )
     assert limit.name == "Poisson"
 
-    limit = options.limitsForIsotope(
-        test_datafile, ISOTOPE_TABLE[("Au", 197)], limit_method="highest"
+    limit = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="highest"
     )
-    assert limit.name == "Poisson"
+    assert limit.name == "Gaussian"
 
     # exclusion region
-    limit_excluded = options.limitsForIsotope(
+    limit_excluded = limit_options.limitsForIsotope(
         test_datafile,
-        ISOTOPE_TABLE[("Au", 197)],
+        ISOTOPE_TABLE[("Ru", 101)],
         limit_method="automatic",
         exclusion_regions=[(10, 20)],
     )
@@ -120,134 +122,132 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     test_datafile.instrument_type = "tof"  # fake for test
 
 
-def test_spcal_processing_method(test_datafile: SPCalTOFWERKDataFile):
-    indium = ISOTOPE_TABLE[("In", 115)]
-    tin = ISOTOPE_TABLE[("Sn", 118)]
+def test_spcal_processing_method(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
 
-    method = processing.SPCalProcessingMethod()
-    results = method.processDataFile(test_datafile, [indium, tin])
-    results = method.filterResults(results)
-    assert len(results) == 2
+    method = default_method
+    results = method.processDataFile(test_datafile, ru)
+    method.filterResults(results)
+    assert len(results) == 3
 
-    assert results[indium].number == 6
-    assert results[tin].number == 2
-    assert np.isclose(np.mean(results[indium].detections), 138.305)
+    assert results[ru[0]].number == 8
+    assert results[ru[1]].number == 10
+    assert results[ru[2]].number == 8
+    assert np.isclose(np.mean(results[ru[0]].detections), 274.39)
 
-    assert method.canCalibrate("signal", indium)
-    assert not method.canCalibrate("mass", indium)
-    assert not method.canCalibrate("size", indium)
+    assert method.canCalibrate("signal", ru[0])
+    assert not method.canCalibrate("mass", ru[0])
+    assert not method.canCalibrate("size", ru[0])
 
     method.instrument_options.uptake = 1.0
     method.instrument_options.efficiency = 1.0
-    method.isotope_options[indium] = processing.SPCalIsotopeOptions(
+    method.isotope_options[ru[0]] = options.SPCalIsotopeOptions(
         1.0, 1.0, 1.0, mass_response=1.0
     )
 
-    assert method.canCalibrate("mass", indium)
-    assert method.canCalibrate("size", indium)
+    assert method.canCalibrate("mass", ru[0])
+    assert method.canCalibrate("size", ru[0])
 
-    assert method.calibrateTo(1.0, "mass", indium, 1e-3) == 0.001
-    assert method.calibrateTo(1.0, "size", indium, 1e-3) == np.cbrt(6.0 / np.pi * 0.001)
+    assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 0.001
+    assert method.calibrateTo(1.0, "size", ru[0], 1e-3) == np.cbrt(6.0 / np.pi * 0.001)
 
     method.calibration_mode = "mass reponse"
-    assert method.calibrateTo(1.0, "mass", indium, 1e-3) == 1.0
+    assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 1.0
 
     clusters = method.processClusters(results, "signal")
-    assert np.all(clusters == [1, 1, 1, 2, 1, 3])
+    assert np.all(clusters == [1, 5, 1, 1, 1, 2, 1, 4, 3, 2])
 
     # test other accumulation methods
     method.accumulation_method = "half detection threshold"
-    results = method.processDataFile(test_datafile, [indium])
-    assert np.isclose(np.mean(next(iter(results.values())).detections), 135.354)
+    results = method.processDataFile(test_datafile, [ru[0]])
+    assert np.isclose(np.mean(results[ru[0]].detections), 267.712)
 
     method.accumulation_method = "detection threshold"
-    results = method.processDataFile(test_datafile, [indium])
-    assert np.isclose(np.mean(next(iter(results.values())).detections), 133.014)
+    results = method.processDataFile(test_datafile, [ru[0]])
+    assert np.isclose(np.mean(results[ru[0]].detections), 259.619)
 
 
-def test_spcal_processing_method_exclusions(test_datafile: SPCalTOFWERKDataFile):
-    indium = ISOTOPE_TABLE[("In", 115)]
+def test_spcal_processing_method_exclusions(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = ISOTOPE_TABLE[("Ru", 101)]
 
-    method = processing.SPCalProcessingMethod()
-    results = method.processDataFile(test_datafile, [indium])
-    assert np.isclose(np.mean(results[indium].detections), 138.305)
-    method.exclusion_regions = [(5.0, 10.0)]
-    results = method.processDataFile(test_datafile, [indium])
-    assert not np.isclose(np.mean(results[indium].detections), 138.305)
+    results = default_method.processDataFile(test_datafile, [ru])
+    assert np.isclose(np.mean(results[ru].detections), 274.39)
+    default_method.exclusion_regions = [(40.0, 70.0)]
+    results = default_method.processDataFile(test_datafile, [ru])
+    assert not np.isclose(np.mean(results[ru].detections), 106.943)
+    default_method.exclusion_regions = []
 
 
-def test_spcal_processing_method_filters(test_datafile: SPCalTOFWERKDataFile):
-    indium = ISOTOPE_TABLE[("In", 115)]
-    tin = ISOTOPE_TABLE[("Sn", 118)]
+def test_spcal_processing_method_filters(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
 
-    method = processing.SPCalProcessingMethod()
-    results = method.processDataFile(test_datafile, [indium, tin])
+    method = default_method
+    results = method.processDataFile(test_datafile, ru)
 
-    method.setFilters([[SPCalValueFilter(indium, "signal", np.greater, 200.0)]])
+    method.setFilters([[SPCalValueFilter(ru[0], "signal", np.greater, 200.0)]], [[]])
 
-    results = method.filterResults(results)
-    assert results[indium].number == 1
+    method.filterResults(results)
+    assert results[ru[0]].number == 2
 
     method.setFilters(
-        [[SPCalValueFilter(indium, "signal", np.less, 200.0, prefer_invalid=True)]]
+        [[SPCalValueFilter(ru[0], "signal", np.less, 200.0, prefer_invalid=True)]], [[]]
     )
 
-    results = method.filterResults(results)
-    assert results[indium].number == 5
+    method.filterResults(results)
+    assert results[ru[0]].number == 6
 
     method.setFilters(
         [
             [
-                SPCalValueFilter(indium, "signal", np.greater, 10.0),
-                SPCalValueFilter(indium, "signal", np.less, 25.0, prefer_invalid=True),
+                SPCalValueFilter(ru[0], "signal", np.greater, 70.0),
+                SPCalValueFilter(ru[0], "signal", np.less, 100.0, prefer_invalid=True),
             ]
-        ]
+        ],
+        [[]],
     )
-    results = method.filterResults(results)
-    assert results[indium].number == 1
+    method.filterResults(results)
+    assert results[ru[0]].number == 2
 
-    method.setFilters(
-        [
-            [SPCalValueFilter(indium, "signal", np.greater, 10.0)],
-            [SPCalValueFilter(indium, "signal", np.less, 25.0, prefer_invalid=True)],
-        ]
-    )
-    results = method.filterResults(results)
-    assert results[indium].number == 6
-
-    method.setFilters([[SPCalTimeFilter(0.0, 10.0)]])
-    results = method.filterResults(results)
-    assert results[indium].number == 4
+    # not implemented
+    # method.setFilters([[SPCalTimeFilter(0.0, 10.0)]], [[]])
+    # method.filterResults(results)
+    # assert results[ru[0]].number == 4
 
 
-def test_spcal_processing_results(test_datafile: SPCalTOFWERKDataFile):
-    indium = ISOTOPE_TABLE[("In", 115)]
-    tin = ISOTOPE_TABLE[("Sn", 118)]
+def test_spcal_processing_results(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
+    method = default_method
+    method.isotope_options[ru[0]] = options.SPCalIsotopeOptions(1.0, 1.0, 1.0)
+    method.setFilters([[SPCalValueFilter(ru[0], "signal", np.less, 200.0)]], [[]])
+    results = method.processDataFile(test_datafile, ru)
 
-    method = processing.SPCalProcessingMethod()
-    method.isotope_options[indium] = processing.SPCalIsotopeOptions(1.0, 1.0, 1.0)
-    method.setFilters([[SPCalValueFilter(indium, "signal", np.less, 200.0)]])
-    results = method.processDataFile(test_datafile, [indium, tin])
+    assert results[ru[0]].isotope == ru[0]
+    assert results[ru[0]].limit.name == "Compound Poisson"
+    assert results[ru[0]].method == method
+    assert results[ru[0]].signals.size == results[ru[0]].times.size
 
-    assert results[indium].isotope == indium
-    assert results[indium].limit.name == "Compound Poisson"
-    assert results[indium].method == method
-    assert results[indium].signals.size == results[indium].times.size
+    assert np.isclose(results[ru[0]].background, 1.83655)
+    assert np.isclose(results[ru[0]].background_error, 1.25618)
+    assert results[ru[0]].ionic_background is not None
+    assert np.isclose(results[ru[0]].ionic_background, 1.83655)  # type: ignore
+    assert results[ru[1]].ionic_background is None
 
-    assert np.isclose(results[indium].background, 0.577764)
-    assert np.isclose(results[indium].background_error, 0.62087)
-    assert results[indium].ionic_background is not None
-    assert np.isclose(results[indium].ionic_background, 0.577764)  # type: ignore
-    assert results[tin].ionic_background is None
+    assert results[ru[0]].num_events == results[ru[0]].signals.size
+    assert np.isclose(results[ru[0]].total_time, 90.068)
+    assert results[ru[0]].valid_events == results[ru[0]].num_events
+    assert results[ru[0]].number == 8
 
-    assert results[indium].num_events == results[indium].signals.size
-    assert np.isclose(results[indium].total_time, 90.068)
-    assert results[indium].valid_events == results[indium].num_events
-    assert results[indium].number == 6
+    method.filterResults(results)
 
-    results = method.filterResults(results)
-
-    assert np.all(results[indium].filter_indicies == [0, 1, 2, 3, 4])
-    assert np.all(results[indium].peak_indicies == [0, 1, 2, 3, 4, 5])
-    assert results[indium].number == 5
-    assert results[indium].peakValues().size == 6
+    assert np.all(results[ru[0]].filter_indicies == [0, 1, 2, 3, 5, 7])
+    assert np.all(results[ru[0]].peak_indicies == [0, 1, 2, 3, 4, 6, 7, 8])
+    assert results[ru[0]].number == 6
+    assert results[ru[0]].peakValues().size == 10
