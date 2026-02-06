@@ -35,6 +35,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.gui.io import loadSession, saveSession
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.result import SPCalProcessingResult
@@ -696,7 +697,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess(None)  # force reprocess of all data files
 
         # ensure clusters are generated
-        for key in SPCalProcessingMethod.CALIBRATION_KEYS:
+        for key in CALIBRATION_KEYS:
             for file in self.files.dataFiles():
                 self.clusters(file, key)
 
