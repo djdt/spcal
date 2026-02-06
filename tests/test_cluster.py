@@ -14,7 +14,8 @@ def test_agglomerative_cluster():
     )
 
     T = agglomerative_cluster(a, 0.5)
-    assert np.all(T == [1, 1, 2, 2, 2, 3])
+    # ordered by size
+    assert np.all(T == [2, 2, 1, 1, 1, 3])
 
 
 def test_agglomerative_cluster_zero_and_one():
