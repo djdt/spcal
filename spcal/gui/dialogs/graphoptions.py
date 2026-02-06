@@ -10,12 +10,84 @@ from spcal.siunits import (
 )
 
 
+class CompositionsOptionsDialog(QtWidgets.QDialog):
+    optionsChanged = QtCore.Signal(object, str)
+
+    def __init__(
+        self,
+        minimum_size: str | float = "5%",
+        mode: str = "pie",
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Composition Options")
+
+        self.minimum_size = str(minimum_size)
+        self.mode = mode
+
+        self.lineedit_size = QtWidgets.QLineEdit(self.minimum_size)
+        self.lineedit_size.setValidator(DoubleOrPercentValidator(0.0, 1e99, 3, 0, 100))
+
+        self.combo_mode = QtWidgets.QComboBox()
+        self.combo_mode.addItems(["Pie", "Bar"])
+        if mode == "bar":
+            self.combo_mode.setCurrentIndex(1)
+
+        box = QtWidgets.QGroupBox("Clustering")
+        box_layout = QtWidgets.QFormLayout()
+        # box_layout.addRow("Distance threshold:", self.spinbox_distance)
+        box_layout.addRow("Minimum cluster size:", self.lineedit_size)
+        box_layout.addRow("Display mode:", self.combo_mode)
+        box.setLayout(box_layout)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults
+            | QtWidgets.QDialogButtonBox.StandardButton.Apply
+            | QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.clicked.connect(self.buttonBoxClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(box)
+        layout.addWidget(self.button_box)
+
+        self.setLayout(layout)
+
+    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
+        sbutton = self.button_box.standardButton(button)
+        if sbutton == QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults:
+            self.reset()
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Apply:
+            self.apply()
+        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.apply()
+            self.accept()
+        else:
+            self.reject()
+
+    def apply(self):
+        size = self.lineedit_size.text().strip().replace(" ", "")
+        mode = self.combo_mode.currentText().lower()
+
+        # Check for changes
+        if self.minimum_size != size or self.mode != mode:
+            self.minimum_size = size
+            self.mode = mode
+            self.optionsChanged.emit(self.minimum_size, self.mode)
+
+    def reset(self):
+        # self.spinbox_distance.setValue(3.0)
+        self.lineedit_size.setText("5%")
+        self.combo_mode.setCurrentIndex(0)
+
+
 class HistogramOptionsDialog(QtWidgets.QDialog):
     optionsChanged = QtCore.Signal(dict, float, bool)
 
     def __init__(
         self,
-        # fit: str | None,
         bin_widths: dict[str, float | None],
         percentile: float,
         draw_filtered: bool,
@@ -141,81 +213,8 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_volume,
         ]:
             widget.setBaseValue(None)
-        self.spinbox_percentile.setValue(95.0)
+        self.spinbox_percentile.setValue(98.0)
         self.check_draw_filtered.setChecked(False)
-
-
-class CompositionsOptionsDialog(QtWidgets.QDialog):
-    optionsChanged = QtCore.Signal(object, str)
-
-    def __init__(
-        self,
-        minimum_size: str | float = "5%",
-        mode: str = "pie",
-        parent: QtWidgets.QWidget | None = None,
-    ):
-        super().__init__(parent)
-        self.setWindowTitle("Composition Options")
-
-        self.minimum_size = minimum_size
-        self.mode = mode
-
-        self.lineedit_size = QtWidgets.QLineEdit(str(minimum_size))
-        self.lineedit_size.setValidator(DoubleOrPercentValidator(0.0, 1e99, 3, 0, 100))
-
-        self.combo_mode = QtWidgets.QComboBox()
-        self.combo_mode.addItems(["Pie", "Bar"])
-        if mode == "bar":
-            self.combo_mode.setCurrentIndex(1)
-
-        box = QtWidgets.QGroupBox("Clustering")
-        box_layout = QtWidgets.QFormLayout()
-        # box_layout.addRow("Distance threshold:", self.spinbox_distance)
-        box_layout.addRow("Minimum cluster size:", self.lineedit_size)
-        box_layout.addRow("Display mode:", self.combo_mode)
-        box.setLayout(box_layout)
-
-        self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults
-            | QtWidgets.QDialogButtonBox.StandardButton.Apply
-            | QtWidgets.QDialogButtonBox.StandardButton.Ok
-            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
-        )
-        self.button_box.clicked.connect(self.buttonBoxClicked)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(box)
-        layout.addWidget(self.button_box)
-
-        self.setLayout(layout)
-
-    def buttonBoxClicked(self, button: QtWidgets.QAbstractButton):
-        sbutton = self.button_box.standardButton(button)
-        if sbutton == QtWidgets.QDialogButtonBox.StandardButton.RestoreDefaults:
-            self.reset()
-            self.apply()
-        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Apply:
-            self.apply()
-        elif sbutton == QtWidgets.QDialogButtonBox.StandardButton.Ok:
-            self.apply()
-            self.accept()
-        else:
-            self.reject()
-
-    def apply(self):
-        size = self.lineedit_size.text().strip().replace(" ", "")
-        mode = self.combo_mode.currentText().lower()
-
-        # Check for changes
-        if self.minimum_size != size or self.mode != mode:
-            self.minimum_size = size
-            self.mode = mode
-            self.optionsChanged.emit(self.minimum_size, self.mode)
-
-    def reset(self):
-        # self.spinbox_distance.setValue(3.0)
-        self.lineedit_size.setText("5%")
-        self.combo_mode.setCurrentIndex(0)
 
 
 #

@@ -51,7 +51,7 @@ class HistogramView(SinglePlotGraphicsView):
 
         # options
         self.bin_widths: dict[str, float | None] = {}
-        self.max_percentile = 95.0
+        self.max_percentile = 98.0
         self.draw_filtered = True
 
     def drawResult(
