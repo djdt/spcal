@@ -116,7 +116,9 @@ class TextImportDialog(ImportDialogBase):
         self.layout_body.addWidget(self.table)
 
     def isComplete(self) -> bool:
-        if self.event_time.isEnabled() and not self.event_time.hasAcceptableInput():
+        if self.event_time.isEnabled() and (
+            not self.event_time.hasAcceptableInput() or self.event_time.value() is None
+        ):
             return False
 
         try:
