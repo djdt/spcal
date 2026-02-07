@@ -45,7 +45,7 @@ class SPCalIsotope(SPCalIsotopeBase):
             if m.group(1) is not None and m.group(2) is not None:
                 symbol, isotope = m.group(2), int(m.group(1))
             elif m.group(3) is not None and m.group(4) is not None:
-                symbol, isotope = m.group(3), int(m.group(3))
+                symbol, isotope = m.group(3), int(m.group(4))
             else:
                 raise NameError(f"'{text}' is not a valid isotope")
 
