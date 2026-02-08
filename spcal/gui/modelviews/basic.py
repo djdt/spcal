@@ -57,7 +57,7 @@ class BasicTableView(QtWidgets.QTableView):
         else:
             super().keyPressEvent(event)
 
-    def mousePressEvent(self, event: QtGui.QMouseEvent):
+    def mousePressEvent(self, event: QtGui.QMouseEvent):  # pragma, no cover
         if event.button() == QtCore.Qt.MouseButton.RightButton:
             event.ignore()
         else:
@@ -97,6 +97,7 @@ class BasicTableView(QtWidgets.QTableView):
                 if col != right:
                     text += "\t"
 
+            print(row)
             if row != bottom:
                 data += "</tr><tr>"
                 text += "\n"
@@ -132,7 +133,10 @@ class BasicTableView(QtWidgets.QTableView):
             value = self.model().index(top, col).data(QtCore.Qt.ItemDataRole.EditRole)
             for row in range(top + 1, bottom + 1):
                 index = self.model().index(row, col)
-                if index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable:
+                if (
+                    index.isValid()
+                    and index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable
+                ):
                     self.model().setData(
                         index,
                         value,
