@@ -278,7 +278,9 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.setWidget(self.table)
 
     def onDataChanged(self, index: QtCore.QModelIndex):
-        self.optionChanged.emit(self.table.isotope_model.data(index, IsotopeRole))
+        isotope = self.table.isotope_model.data(index, IsotopeRole)
+        if isotope is not None:
+            self.optionChanged.emit(isotope)
 
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
