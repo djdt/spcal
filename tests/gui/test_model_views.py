@@ -1,4 +1,3 @@
-from random import choice
 import numpy as np
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -15,7 +14,18 @@ from spcal.gui.modelviews.isotope import (
     IsotopeNameDelegate,
     IsotopeNameValidator,
 )
-from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
+from spcal.isotope import ISOTOPE_TABLE
+
+
+def random_datafile() -> SPCalTextDataFile:
+    data = np.random.random(100).astype([("Au", np.float32)])
+    return SPCalTextDataFile(
+        Path(),
+        data,
+        np.linspace(0.0, 1.0, 100),
+        isotope_table={ISOTOPE_TABLE[("Au", 197)]: "Au"},
+        instrument_type="quadrupole",
+    )
 
 
 def test_basic_table(qtbot: QtBot):
@@ -169,19 +179,35 @@ def test_combo_header_view(qtbot: QtBot):
 
 
 def test_datafile_model(qtmodeltester: ModelTester):
-    def random_datafile() -> SPCalTextDataFile:
-        data = np.random.random(100).astype([("Au", np.float32)])
-        return SPCalTextDataFile(
-            Path(),
-            data,
-            np.linspace(0.0, 1.0, 100),
-            isotope_table={ISOTOPE_TABLE[("Au", 197)]: "Au"},
-            instrument_type="quadrupole",
-        )
-
     model = DataFileModel([random_datafile() for _ in range(5)])
     qtmodeltester.check(model, force_py=True)
 
+
+def test_datafile_delegate(qtbot: QtBot):
+    view = QtWidgets.QListView()
+    model = DataFileModel([random_datafile() for _ in range(5)])
+    qtbot.addWidget(view)
+
+    view.setModel(model)
+    view.setItemDelegate(DataFileDelegate())
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    delegate = view.itemDelegateForIndex(model.index(0, 0))
+    assert isinstance(delegate, DataFileDelegate)
+    # Click close button
+    with qtbot.waitSignal(model.rowsRemoved, timeout=100):
+        pos = view.rectForIndex(model.index(0, 0)).topRight()
+        pos -= QtCore.QPoint(
+            DataFileDelegate.margin + 1, -(DataFileDelegate.margin + 1)
+        )
+        qtbot.mouseClick(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pos)
+    # Click edit button
+    with qtbot.waitSignal(model.editIsotopesRequested, timeout=100):
+        pos = view.rectForIndex(model.index(0, 0)).bottomRight()
+        pos -= QtCore.QPoint(DataFileDelegate.margin + 1, DataFileDelegate.margin + 1)
+        qtbot.mouseClick(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pos)
 
 
 def test_isotope_combo_box(qtbot: QtBot):
