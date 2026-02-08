@@ -12,32 +12,55 @@ from spcal.isotope import (
 )
 
 
-class IsotopeModel(QtCore.QAbstractListModel):
-    def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent)
-        self.isotopes: list[SPCalIsotopeBase] = []
-
-    def rowCount(
-        self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
-    ) -> int:
-        return len(self.isotopes)
-
-    def data(
-        self,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-        role: int = QtCore.Qt.ItemDataRole.DisplayRole,
-    ) -> Any:
-        if not index.isValid():
-            return None
-
-        isotope = self.isotopes[index.row()]
-
-        if role == QtCore.Qt.ItemDataRole.DisplayRole:
-            return str(isotope)
-        elif role == IsotopeRole:
-            return isotope
+# class IsotopeModel(QtCore.QAbstractListModel):
+#     def __init__(self, parent: QtCore.QObject | None = None):
+#         super().__init__(parent)
+#         self.isotopes: list[SPCalIsotopeBase] = []
+#
+#     def rowCount(
+#         self,
+#         parent: QtCore.QModelIndex
+#         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+#     ) -> int:
+#         return len(self.isotopes)
+#
+#     def data(
+#         self,
+#         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+#         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+#     ) -> Any:
+#         if not index.isValid():
+#             return None
+#
+#         isotope = self.isotopes[index.row()]
+#
+#         if role in [
+#             QtCore.Qt.ItemDataRole.DisplayRole,
+#             QtCore.Qt.ItemDataRole.EditRole,
+#         ]:
+#             return str(isotope)
+#         elif role == IsotopeRole:
+#             return isotope
+#
+#     def setData(
+#         self,
+#         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+#         value: Any,
+#         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
+#     ) -> bool:
+#         if role in [
+#             QtCore.Qt.ItemDataRole.DisplayRole,
+#             QtCore.Qt.ItemDataRole.EditRole,
+#         ]:
+#             m = REGEX_ISOTOPE.match(value)
+#             if m is None:
+#                 return False
+#             raise NotImplementedError
+#         elif role == IsotopeRole:
+#             self.isotopes[index.row()] = value
+#             return True
+#
+#         return False
 
 
 class IsotopeComboBox(QtWidgets.QComboBox):
@@ -69,45 +92,6 @@ class IsotopeComboBox(QtWidgets.QComboBox):
         self.isotopeChanged.emit(self.isotope(index))
 
 
-class IsotopeComboDelegate(QtWidgets.QStyledItemDelegate):
-    def __init__(
-        self, isotopes: list[SPCalIsotopeBase], parent: QtWidgets.QWidget | None = None
-    ):
-        super().__init__(parent)
-        self.isotopes = isotopes
-
-    def createEditor(
-        self,
-        parent: QtWidgets.QWidget,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ) -> QtWidgets.QWidget:
-        editor = IsotopeComboBox(parent)
-        editor.addIsotopes(self.isotopes)
-        editor.setCurrentIsotope(index.data(IsotopeRole))
-        return editor
-
-    def setEditorData(
-        self,
-        editor: QtWidgets.QWidget,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ):
-        assert isinstance(editor, IsotopeComboBox)
-        editor.setCurrentIsotope(index.data(IsotopeRole))
-
-    def setModelData(
-        self,
-        editor: QtWidgets.QWidget,
-        model: QtCore.QAbstractItemModel,
-        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
-    ):
-        assert isinstance(editor, IsotopeComboBox)
-        model.setData(index, editor.currentIsotope(), IsotopeRole)
-        model.setData(
-            index, str(editor.currentIsotope()), QtCore.Qt.ItemDataRole.DisplayRole
-        )
-
-
 class IsotopeNameValidator(QtGui.QValidator):
     def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
         match = REGEX_ISOTOPE.fullmatch(input)
@@ -116,7 +100,7 @@ class IsotopeNameValidator(QtGui.QValidator):
 
         if match.group(1) is not None and match.group(2) is not None:
             symbol, isotope = match.group(2), int(match.group(1))
-        if match.group(3) is not None and match.group(4) is not None:
+        elif match.group(3) is not None and match.group(4) is not None:
             symbol, isotope = match.group(3), int(match.group(4))
         else:
             return QtGui.QValidator.State.Intermediate, input, pos
@@ -127,15 +111,16 @@ class IsotopeNameValidator(QtGui.QValidator):
             return QtGui.QValidator.State.Intermediate, input, pos
 
     def fixup(self, input: str) -> str:
-        match = REGEX_ISOTOPE.fullmatch(input)
+        # Lone symbol
+        if input in RECOMMENDED_ISOTOPES:
+            return str(RECOMMENDED_ISOTOPES[input]) + input
+
+        match = REGEX_ISOTOPE.match(input)
         if match is None:
             return input
         # Swap symbol - isotope
         if match.group(3) is not None and match.group(4) is not None:
             return match.group(4) + match.group(3)
-        # Lone symbol
-        elif input in RECOMMENDED_ISOTOPES:
-            return str(RECOMMENDED_ISOTOPES[input]) + input
 
         return input
 
