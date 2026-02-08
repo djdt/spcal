@@ -1,11 +1,11 @@
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.detection import detection_maxima
-from spcal.gui.modelviews.basic import BasicTable
+from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.isotope import SPCalIsotopeBase
-from spcal.processing import SPCalProcessingResult
+from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
 
 
@@ -26,19 +26,21 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.combo_isotope.addIsotopes(list(results.keys()))
         self.combo_isotope.isotopeChanged.connect(self.updateValues)
 
-        self.table = BasicTable()
+        self.table = BasicTableView()
+        self.model = QtGui.QStandardItemModel()
+        self.table.setModel(self.model)
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setColumnCount(5)
-        self.table.setRowCount(3)
+        self.model.setColumnCount(5)
+        self.model.setRowCount(3)
 
         for i in range(3):
             for j in range(5):
-                item = QtWidgets.QTableWidgetItem()
+                item = QtGui.QStandardItem()
                 item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
-                self.table.setItem(i, j, item)
+                self.model.setItem(i, j, item)
 
-        self.table.setHorizontalHeaderLabels(["min", "max", "mean", "std", "median"])
-        self.table.setVerticalHeaderLabels(["width", "height", "skew"])
+        self.model.setHorizontalHeaderLabels(["min", "max", "mean", "std", "median"])
+        self.model.setVerticalHeaderLabels(["width", "height", "skew"])
 
         self.width_units = QtWidgets.QComboBox()
         self.width_units.addItems(list(time_units.keys()))
@@ -64,7 +66,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
     def clear(self):
         for i in range(3):
             for j in range(5):
-                item = self.table.item(i, j)
+                item = self.model.item(i, j)
                 if item is None:
                     raise ValueError("item is None")
                 item.setText("")
@@ -92,8 +94,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         for i, x in enumerate([widths, heights, skews]):
-            self.table.item(i, 0).setText(f"{np.min(x):.{sf}g}")
-            self.table.item(i, 1).setText(f"{np.max(x):.{sf}g}")
-            self.table.item(i, 2).setText(f"{np.mean(x):.{sf}g}")
-            self.table.item(i, 3).setText(f"{np.std(x):.{sf}g}")
-            self.table.item(i, 4).setText(f"{np.median(x):.{sf}g}")
+            self.model.item(i, 0).setText(f"{np.min(x):.{sf}g}")
+            self.model.item(i, 1).setText(f"{np.max(x):.{sf}g}")
+            self.model.item(i, 2).setText(f"{np.mean(x):.{sf}g}")
+            self.model.item(i, 3).setText(f"{np.std(x):.{sf}g}")
+            self.model.item(i, 4).setText(f"{np.median(x):.{sf}g}")

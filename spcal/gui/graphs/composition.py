@@ -6,7 +6,7 @@ from spcal.cluster import cluster_information, prepare_results_for_clustering
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.items import BarChart, PieChart
 from spcal.gui.graphs.legends import FontScaledItemSample
-from spcal.gui.modelviews.basic import BasicTable
+from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.util import create_action
 from spcal.processing.result import SPCalProcessingResult
 
@@ -24,20 +24,22 @@ class CompositionDetailDialog(QtWidgets.QDialog):
         names = [k[:-5] for k in export_data.keys() if "_mean" in k]
         nrows = export_data["count"].size
 
-        self.table = BasicTable()
+        self.table = BasicTableView()
+        self.model = QtGui.QStandardItemModel()
+        self.table.setModel(self.model)
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setRowCount(nrows)
-        self.table.setColumnCount(len(names) + 1)
+        self.model.setRowCount(nrows)
+        self.model.setColumnCount(len(names) + 1)
 
-        self.table.setHorizontalHeaderLabels(["Count"] + names)
+        self.model.setHorizontalHeaderLabels(["Count"] + names)
         for i in range(nrows):
-            item = QtWidgets.QTableWidgetItem(f"{export_data['count'][i]}")
-            self.table.setItem(i, 0, item)
+            item = QtGui.QStandardItem(f"{export_data['count'][i]}")
+            self.model.setItem(i, 0, item)
             for j, name in enumerate(names):
                 mean = export_data[name + "_mean"][i]
                 std = export_data[name + "_std"][i]
-                item = QtWidgets.QTableWidgetItem(f"{mean:.2f} ± {std:.2f}")
-                self.table.setItem(i, j + 1, item)
+                item = QtGui.QStandardItem(f"{mean:.2f} ± {std:.2f}")
+                self.model.setItem(i, j + 1, item)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.table)
