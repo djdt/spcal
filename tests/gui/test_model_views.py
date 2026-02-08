@@ -1,17 +1,21 @@
+from random import choice
+import numpy as np
+from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
+from pytestqt.modeltest import ModelTester
 
+from spcal.datafile import SPCalTextDataFile
+from spcal.gui.modelviews import IsotopeRole
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 from spcal.gui.modelviews.headers import CheckableHeaderView, ComboHeaderView
 from spcal.gui.modelviews.isotope import (
     IsotopeComboBox,
-    IsotopeModel,
-    IsotopeComboDelegate,
     IsotopeNameDelegate,
     IsotopeNameValidator,
 )
-# from spcal.gui.modelviews.models import
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 
 
 def test_basic_table(qtbot: QtBot):
@@ -162,3 +166,94 @@ def test_combo_header_view(qtbot: QtBot):
         combo.setCurrentIndex(1)
 
     assert model.headerData(1, QtCore.Qt.Orientation.Horizontal) == "B2"
+
+
+def test_datafile_model(qtmodeltester: ModelTester):
+    def random_datafile() -> SPCalTextDataFile:
+        data = np.random.random(100).astype([("Au", np.float32)])
+        return SPCalTextDataFile(
+            Path(),
+            data,
+            np.linspace(0.0, 1.0, 100),
+            isotope_table={ISOTOPE_TABLE[("Au", 197)]: "Au"},
+            instrument_type="quadrupole",
+        )
+
+    model = DataFileModel([random_datafile() for _ in range(5)])
+    qtmodeltester.check(model, force_py=True)
+
+
+def test_isotope_model(qtmodeltester: ModelTester):
+    def random_isotope() -> SPCalIsotope:
+        return choice(list(ISOTOPE_TABLE.values()))
+
+    isotopes = [random_isotope() for _ in range(5)]
+    model = IsotopeModel()
+    model.isotopes = isotopes  # type: ignore
+    qtmodeltester.check(model, force_py=True)
+
+
+def test_isotope_combo_box(qtbot: QtBot):
+    combo = IsotopeComboBox()
+    qtbot.addWidget(combo)
+
+    with qtbot.waitExposed(combo):
+        combo.show()
+
+    combo.addIsotopes([ISOTOPE_TABLE[("Ag", 107)], ISOTOPE_TABLE[("Ag", 109)]])
+
+    assert str(combo.currentIsotope()) == "107Ag"
+    with qtbot.waitSignal(combo.isotopeChanged, timeout=100):
+        combo.setCurrentIndex(1)
+    assert str(combo.currentIsotope()) == "109Ag"
+    with qtbot.waitSignal(combo.isotopeChanged, timeout=100):
+        combo.setCurrentIsotope(ISOTOPE_TABLE[("Ag", 107)])
+    assert combo.currentIndex() == 0
+
+
+def test_isotope_name_validator(qtbot: QtBot):
+    val = IsotopeNameValidator()
+    qtbot.addWidget(val)
+
+    assert val.validate("", 0)[0] == QtGui.QValidator.State.Intermediate
+    assert val.validate("197Au", 0)[0] == QtGui.QValidator.State.Acceptable
+    assert val.validate("197 Au", 0)[0] == QtGui.QValidator.State.Intermediate
+    assert val.validate("Au", 0)[0] == QtGui.QValidator.State.Intermediate
+    assert val.validate("197", 0)[0] == QtGui.QValidator.State.Intermediate
+    assert val.validate("Au197", 0)[0] == QtGui.QValidator.State.Acceptable
+
+    assert val.fixup("Au197") == "197Au"
+    assert val.fixup("Au197->197") == "197Au"
+    assert val.fixup("Au") == "197Au"
+
+
+def test_isotope_name_delegate(qtbot: QtBot):
+    table = QtWidgets.QTableWidget()
+    qtbot.addWidget(table)
+
+    table.setRowCount(1)
+    table.setColumnCount(2)
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem("107Ag"))
+    table.setItem(0, 1, QtWidgets.QTableWidgetItem("109Ag"))
+    table.setItemDelegate(IsotopeNameDelegate())
+
+    with qtbot.waitExposed(table):
+        table.show()
+
+    delegate = table.itemDelegateForIndex(table.model().index(0, 0))
+    assert isinstance(delegate, IsotopeNameDelegate)
+    editor = delegate.createEditor(
+        table, QtWidgets.QStyleOptionViewItem(), table.model().index(0, 0)
+    )
+    assert isinstance(editor, QtWidgets.QLineEdit)
+    assert editor.text() == "107Ag"
+    editor.setText("Au")
+    assert not editor.hasAcceptableInput()
+    editor.setText("197Au")
+    assert editor.hasAcceptableInput()
+
+    with qtbot.waitSignal(table.model().dataChanged, timeout=100):
+        delegate.setModelData(editor, table.model(), table.model().index(0, 0))
+
+    assert table.model().index(0, 0).data() == "197Au"
+    assert table.model().index(0, 0).data(IsotopeRole) == ISOTOPE_TABLE[("Au", 197)]
