@@ -1,16 +1,41 @@
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.objects import (
+    ContextMenuRedirectFilter,
     DoubleOrEmptyValidator,
     DoubleOrPercentValidator,
 )
 
 
+class TestWidget(QtWidgets.QWidget):
+    testSignal = QtCore.Signal()
+
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+        self.testSignal.emit()
+
+
+def test_context_menu_redirect_filter(qtbot: QtBot):
+    w = TestWidget()
+    qtbot.addWidget(w)
+
+    w2 = QtWidgets.QWidget()
+    qtbot.addWidget(w2)
+
+    filter = ContextMenuRedirectFilter(w)
+    w2.installEventFilter(filter)
+
+    with qtbot.waitSignal(w.testSignal, timeout=100):
+        event = QtGui.QContextMenuEvent(
+            QtGui.QContextMenuEvent.Reason.Mouse, QtCore.QPoint(0, 0)
+        )
+        QtWidgets.QApplication.sendEvent(w2, event)
+
+
 def test_double_or_empty_validator(qtbot: QtBot):
     le = QtWidgets.QLineEdit("")
     le.setValidator(DoubleOrEmptyValidator(-1.0, 1.0, 4))
-    qtbot.add_widget(le)
+    qtbot.addWidget(le)
 
     # empty
     assert le.hasAcceptableInput()
@@ -27,7 +52,7 @@ def test_double_or_percent_validator(qtbot: QtBot):
             -1.0, 1.0, decimals=2, percent_bottom=0.0, percent_top=10.0
         )
     )
-    qtbot.add_widget(le)
+    qtbot.addWidget(le)
 
     # empty
     assert not le.hasAcceptableInput()
