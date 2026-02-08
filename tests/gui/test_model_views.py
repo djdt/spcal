@@ -21,6 +21,10 @@ def test_basic_table(qtbot: QtBot):
     model = QtGui.QStandardItemModel()
     table.setModel(model)
 
+    qtbot.addWidget(table)
+    with qtbot.waitExposed(table):
+        table.show()
+
     model.setRowCount(3)
     model.setColumnCount(2)
 
@@ -41,7 +45,7 @@ def test_basic_table(qtbot: QtBot):
     table._copy()
     mime_data = QtWidgets.QApplication.clipboard().mimeData()
     assert mime_data.text() == "a\tb"
-    
+
     # Paste is repeated
     table.selectAll()
     table._paste()
@@ -88,3 +92,73 @@ def test_basic_table(qtbot: QtBot):
             QtCore.QPoint(0, 0),
         )
     )
+
+
+def test_checkable_header_view(qtbot: QtBot):
+    header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
+
+    table = QtWidgets.QTableView()
+    table.setHorizontalHeader(header)
+
+    model = QtGui.QStandardItemModel()
+    table.setModel(model)
+
+    model.setRowCount(1)
+    model.setColumnCount(3)
+    model.setHorizontalHeaderLabels(["A", "B", "C"])
+
+    qtbot.addWidget(table)
+    with qtbot.waitExposed(table):
+        table.show()
+
+    assert header.checkState(0) == QtCore.Qt.CheckState.Unchecked
+    assert header.checkState(1) == QtCore.Qt.CheckState.Unchecked
+    assert header.checkState(2) == QtCore.Qt.CheckState.Unchecked
+
+    with qtbot.waitSignal(header.checkStateChanged, timeout=100):
+        header.setCheckState(0, QtCore.Qt.CheckState.Checked)
+    assert header.checkState(0) == QtCore.Qt.CheckState.Checked
+
+    with qtbot.waitSignal(header.checkStateChanged, timeout=100):
+        qtbot.mouseClick(
+            header.viewport(),
+            QtCore.Qt.MouseButton.LeftButton,
+            pos=QtCore.QPoint(header.sectionViewportPosition(1), header.height() // 2),
+        )
+    assert header.checkState(1) == QtCore.Qt.CheckState.Checked
+
+
+def test_combo_header_view(qtbot: QtBot):
+    header = ComboHeaderView(
+        {1: ["B1", "B2", "B3"], 2: ["C1", "C2"]}, QtCore.Qt.Orientation.Horizontal
+    )
+
+    table = QtWidgets.QTableView()
+    table.setHorizontalHeader(header)
+
+    model = QtGui.QStandardItemModel()
+    table.setModel(model)
+
+    model.setRowCount(1)
+    model.setColumnCount(3)
+    model.setHorizontalHeaderLabels(["A", "B1", "C2"])
+
+    qtbot.addWidget(table)
+    with qtbot.waitExposed(table):
+        table.show()
+
+    with qtbot.waitSignal(header.sectionChanged, timeout=100):
+        qtbot.mouseClick(
+            header.viewport(),
+            QtCore.Qt.MouseButton.LeftButton,
+            pos=QtCore.QPoint(header.sectionViewportPosition(1), header.height() // 2),
+            delay=10,
+        )
+        combo = header.findChild(QtWidgets.QComboBox)
+        assert isinstance(combo, QtWidgets.QComboBox)
+        assert combo.itemText(0) == "B1"
+        assert combo.itemText(1) == "B2"
+        assert combo.itemText(2) == "B3"
+        combo.setCurrentIndex(1)
+
+    assert model.headerData(1, QtCore.Qt.Orientation.Horizontal) == "B2"
