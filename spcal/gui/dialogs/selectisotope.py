@@ -155,7 +155,10 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
 
     def dialogScreen(self):
         dlg = ScreeningOptionsDialog(
-            self.screening_ppm, self.screening_size, self.screening_replace_isotopes
+            self.screening_ppm,
+            self.screening_size,
+            self.screening_replace_isotopes,
+            parent=self,
         )
         dlg.screeningOptionsSelected.connect(self.setScreeningParameters)
         dlg.screeningOptionsSelected.connect(self.screenDataFile)
