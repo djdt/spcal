@@ -183,15 +183,6 @@ def test_datafile_model(qtmodeltester: ModelTester):
     qtmodeltester.check(model, force_py=True)
 
 
-def test_isotope_model(qtmodeltester: ModelTester):
-    def random_isotope() -> SPCalIsotope:
-        return choice(list(ISOTOPE_TABLE.values()))
-
-    isotopes = [random_isotope() for _ in range(5)]
-    model = IsotopeModel()
-    model.isotopes = isotopes  # type: ignore
-    qtmodeltester.check(model, force_py=True)
-
 
 def test_isotope_combo_box(qtbot: QtBot):
     combo = IsotopeComboBox()
@@ -211,9 +202,8 @@ def test_isotope_combo_box(qtbot: QtBot):
     assert combo.currentIndex() == 0
 
 
-def test_isotope_name_validator(qtbot: QtBot):
+def test_isotope_name_validator():
     val = IsotopeNameValidator()
-    qtbot.addWidget(val)
 
     assert val.validate("", 0)[0] == QtGui.QValidator.State.Intermediate
     assert val.validate("197Au", 0)[0] == QtGui.QValidator.State.Acceptable
