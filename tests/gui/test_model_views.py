@@ -4,7 +4,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 from pytestqt.modeltest import ModelTester
 
-from spcal.gui.dialogs.response import ConcentrationModel, IntensityModel
 from spcal.gui.modelviews import IsotopeRole
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
@@ -15,8 +14,12 @@ from spcal.gui.modelviews.isotope import (
     IsotopeNameValidator,
 )
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel
+from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
+from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 
 
+from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import ISOTOPE_TABLE
 
 
@@ -390,9 +393,7 @@ def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
     qtmodeltester.check(model, force_py=True)
 
 
-def test_response_dialog_models(
-    qtmodeltester: ModelTester, random_datafile_gen: Callable
-):
+def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callable):
     isotopes = [
         ISOTOPE_TABLE[("Fe", 56)],
         ISOTOPE_TABLE[("Cu", 63)],
@@ -405,8 +406,8 @@ def test_response_dialog_models(
 
     conc_model = ConcentrationModel()
     conc_model.beginResetModel()
-    conc_model.isotopes = isotopes
-    conc_model.concentrations = concs
+    conc_model.isotopes = isotopes  # type: ignore
+    conc_model.concentrations = concs  # type: ignore
     conc_model.endResetModel()
 
     assert (
@@ -420,7 +421,7 @@ def test_response_dialog_models(
 
     intensity_model = IntensityModel()
     intensity_model.beginResetModel()
-    intensity_model.isotopes = isotopes
+    intensity_model.isotopes = isotopes  # type: ignore
     intensity_model.intensities = intensities
     intensity_model.endResetModel()
 
@@ -433,3 +434,35 @@ def test_response_dialog_models(
     assert intensity_model.data(intensity_model.index(0, 0), IsotopeRole) == isotopes[0]
 
     qtmodeltester.check(intensity_model)
+
+
+# def test_units_model(qtbot: QtBot):
+
+# def test_units_header_view(qtbot: QtBot):
+
+
+def test_value_widget_delegate(qtbot: QtBot):
+    table = QtWidgets.QTableWidget()
+    qtbot.addWidget(table)
+
+    table.setRowCount(1)
+    table.setColumnCount(2)
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem(""))
+    table.setItem(0, 1, QtWidgets.QTableWidgetItem(""))
+    table.setItemDelegate(ValueWidgetDelegate())
+
+    with qtbot.waitExposed(table):
+        table.show()
+
+    delegate = table.itemDelegateForIndex(table.model().index(0, 0))
+    assert isinstance(delegate, ValueWidgetDelegate)
+    editor = delegate.createEditor(
+        table, QtWidgets.QStyleOptionViewItem(), table.model().index(0, 0)
+    )
+    assert isinstance(editor, ValueWidget)
+    assert editor.value() is None
+    editor.setValue(10.0)
+    with qtbot.waitSignal(table.model().dataChanged, timeout=100):
+        delegate.setModelData(editor, table.model(), table.model().index(0, 0))
+
+    assert table.item(0, 0).text() == "10"
