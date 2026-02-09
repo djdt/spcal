@@ -1,7 +1,8 @@
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
-from spcal.gui.widgets import UnitsWidget, ValueWidget
+from spcal.gui.widgets.units import UnitsWidget
+from spcal.gui.widgets.values import ValueWidget
 from spcal.processing.options import SPCalInstrumentOptions
 from spcal.siunits import flowrate_units
 

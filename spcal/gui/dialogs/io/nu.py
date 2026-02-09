@@ -8,9 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
-from spcal.gui.widgets import (
-    PeriodicTableSelector,
-)
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io import nu
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod

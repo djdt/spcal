@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog
-from spcal.gui.widgets import ElidedLabel
+from spcal.gui.widgets.elidedlabel import ElidedLabel
 from spcal.processing.method import SPCalProcessingMethod
 
 

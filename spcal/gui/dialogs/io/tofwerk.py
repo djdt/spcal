@@ -8,7 +8,7 @@ from PySide6 import QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
-from spcal.gui.widgets import PeriodicTableSelector
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io.tofwerk import factor_extraction_to_acquisition
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod

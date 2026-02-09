@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.widgets import ValueWidget
+from spcal.gui.widgets.values import ValueWidget
 
 
 class AdvancedThresholdOptions(QtWidgets.QDialog):

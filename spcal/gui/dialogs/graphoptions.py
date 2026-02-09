@@ -1,7 +1,7 @@
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.objects import DoubleOrPercentValidator
-from spcal.gui.widgets import UnitsWidget
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.siunits import (
     mass_units,
     signal_units,

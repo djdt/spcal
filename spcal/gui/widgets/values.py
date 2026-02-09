@@ -68,12 +68,18 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         validator = self.lineEdit().validator()
         assert isinstance(validator, QtGui.QDoubleValidator)
         validator.setRange(min, max)
+        value = self.value()
+        if value is not None and value > max:
+            self.setValue(max)
+        elif value is not None and value < min:
+            self.setValue(min)
 
     def setSigFigs(self, sigfigs: int):
         self.sigfigs = sigfigs
         validator = self.lineEdit().validator()
         assert isinstance(validator, QtGui.QDoubleValidator)
         validator.setDecimals(sigfigs)
+        self.textFromValue()
 
     def setStep(self, step: float | Callable[[float, int], float]):
         self.step = step
@@ -102,7 +108,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
                 enabled |= QtWidgets.QAbstractSpinBox.StepEnabledFlag.StepDownEnabled
         return enabled
 
-    def textFromValue(self, value: float | None):
+    def textFromValue(self):
         if self._value is None:
             text = ""
         elif self.hasFocus() and self.isEnabled() and not self.isReadOnly():
@@ -129,13 +135,13 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
 
     def focusInEvent(self, event: QtGui.QFocusEvent):
         super().focusInEvent(event)
-        self.textFromValue(self.value())
+        self.textFromValue()
         self.selectAll()  # select all text
 
     def focusOutEvent(self, event: QtGui.QFocusEvent):
         super().focusOutEvent(event)
-        self.textFromValue(self.value())
+        self.textFromValue()
 
     def showEvent(self, event: QtGui.QShowEvent):
-        self.textFromValue(self.value())
+        self.textFromValue()
         super().showEvent(event)

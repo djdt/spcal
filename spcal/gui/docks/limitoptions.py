@@ -9,7 +9,8 @@ from spcal.gui.dialogs.advancedoptions import (
     AdvancedThresholdOptions,
 )
 from spcal.gui.dialogs.singleion import SingleIonDialog
-from spcal.gui.widgets import CollapsableWidget, ValueWidget
+from spcal.gui.widgets.collapsablewidget import CollapsableWidget
+from spcal.gui.widgets.values import ValueWidget
 from spcal.processing.options import SPCalLimitOptions
 
 logger = logging.getLogger(__name__)

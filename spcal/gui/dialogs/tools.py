@@ -10,8 +10,8 @@ from spcal.particle import (
     reference_particle_mass,
 )
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
-from spcal.gui.widgets import ValidColorLineEdit
-from spcal.gui.widgets import ValueWidget, UnitsWidget
+from spcal.gui.widgets.values import ValueWidget
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.npdb import db
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.processing.result import SPCalProcessingResult
@@ -60,7 +60,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.ratios: dict[str, float] = {}
         self.mw = 0.0
 
-        self.lineedit_formula = ValidColorLineEdit(formula)
+        self.lineedit_formula = QtWidgets.QLineEdit(formula)
         self.lineedit_formula.setPlaceholderText("Molecular Formula")
         self.lineedit_formula.setValidator(FormulaValidator(self.regex))
         self.lineedit_formula.textChanged.connect(self.recalculate)

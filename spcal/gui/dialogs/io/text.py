@@ -9,7 +9,7 @@ from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 from spcal.gui.modelviews.headers import CheckableHeaderView
-from spcal.gui.widgets import UnitsWidget
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
 from spcal.isotope import SPCalIsotope, REGEX_ISOTOPE
 from spcal.siunits import time_units

@@ -2,7 +2,7 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
-from spcal.gui.widgets import UnitsWidget
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.filter import (
     SPCalResultFilter,
