@@ -37,8 +37,8 @@ class ElidedLabel(QtWidgets.QWidget):
         elided = fm.elidedText(self._text, self._elide, self.width() + 1)
         painter.drawText(
             self.contentsRect(),
-            QtCore.Qt.AlignVCenter
-            | QtCore.Qt.TextSingleLine
-            | QtCore.Qt.TextShowMnemonic,
+            QtCore.Qt.AlignmentFlag.AlignVCenter
+            | QtCore.Qt.TextFlag.TextSingleLine
+            | QtCore.Qt.TextFlag.TextShowMnemonic,
             elided,
         )
