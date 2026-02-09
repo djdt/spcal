@@ -396,13 +396,3 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         setSelectedIsotopes,
         notify=isotopesChanged,  # type: ignore
     )
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    table = PeriodicTableSelector(
-        enabled_isotopes=[ISOTOPE_TABLE[("Cu", 63)]],
-        selected_isotopes=[ISOTOPE_TABLE[("Cu", 63)]],
-    )
-    table.show()
-    app.exec()

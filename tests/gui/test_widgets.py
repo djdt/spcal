@@ -7,6 +7,7 @@ from spcal.gui.widgets.elidedlabel import ElidedLabel
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.gui.widgets.values import ValueWidget
+from spcal.isotope import ISOTOPE_TABLE
 
 
 def test_collapsable_widget(qtbot: QtBot):
@@ -32,6 +33,8 @@ def test_edlided_label(qtbot: QtBot):
 
     with qtbot.waitExposed(label):
         label.show()
+
+    label.setText("short text")
 
 
 def test_periodic_table_selector(qtbot: QtBot):
@@ -85,6 +88,21 @@ def test_periodic_table_selector(qtbot: QtBot):
     # Remove color
     pt.setIsotopeColors([enabled[50]], [QtGui.QColor.fromRgb(255, 0, 0)])
     assert pt.buttons["Cr"].indicator is None
+
+    # Select all Tin
+    pt.buttons["Sn"].selectAllIsotopes(0.1)
+    assert len(pt.buttons["Sn"].selectedIsotopes()) == 3
+
+    # Only enable 3, 2 selected
+    pt.setEnabledIsotopes(
+        [
+            ISOTOPE_TABLE[("Sn", 116)],
+            ISOTOPE_TABLE[("Sn", 117)],
+            ISOTOPE_TABLE[("Sn", 118)],
+        ]
+    )
+    assert len(pt.enabledIsotopes()) == 3
+    assert len(pt.selectedIsotopes()) == 2
 
 
 def test_units_widget(qtbot: QtBot):
