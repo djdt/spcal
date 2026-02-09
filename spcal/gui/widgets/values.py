@@ -49,6 +49,8 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         return self._error
 
     def setError(self, error: float | None):
+        if error is None or np.isnan(error):
+            error = None
         if self._error != error:
             self._error = error
             self.errorChanged.emit(error)
