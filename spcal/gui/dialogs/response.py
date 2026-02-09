@@ -472,16 +472,13 @@ class ResponseDialog(QtWidgets.QDialog):
 
             brush = QtGui.QBrush(scheme[i % len(scheme)])
 
-            scatter = self.calibration.drawScatter(
-                x, y, size=6.0 * self.devicePixelRatio(), brush=brush
+            self.calibration.drawScatter(
+                x, y, size=6.0 * self.devicePixelRatio(), brush=brush, name=str(isotope)
             )
 
             pen = QtGui.QPen(scheme[i % len(scheme)], 1.0 * self.devicePixelRatio())
             pen.setCosmetic(True)
             self.calibration.drawTrendline(x, y, pen=pen)
-
-            if self.calibration.plot.legend is not None:
-                self.calibration.plot.legend.addItem(str(isotope), scatter)
 
     def calibrationResult(
         self, x: np.ndarray, y: np.ndarray

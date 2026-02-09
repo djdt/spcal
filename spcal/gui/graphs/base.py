@@ -318,13 +318,20 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         size: float = 6.0,
         symbol: str = "o",
         pen: QtGui.QPen | None = None,
+        name: str | None = None,
         brush: QtGui.QBrush | None = None,
     ) -> pyqtgraph.ScatterPlotItem:
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
 
         scatter = pyqtgraph.ScatterPlotItem(
-            x=x, y=y, size=size, symbol=symbol, pen=pen, brush=brush
+            x=x,
+            y=y,
+            size=size,
+            symbol=symbol,
+            pen=pen,
+            brush=brush,
+            name=name,
         )
         self.plot.addItem(scatter)
         return scatter
