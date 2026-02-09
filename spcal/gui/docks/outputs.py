@@ -41,19 +41,21 @@ class ResultOutputModel(UnitsModel):
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent=parent)
+        super().__init__(
+            list(ResultOutputModel.COLUMNS.values()),
+            ["", "#/L", "cts", "cts", "cts", "cts", "cts"],
+            [
+                {},
+                number_concentration_units,
+                signal_units,
+                signal_units,
+                signal_units,
+                signal_units,
+                signal_units,
+            ],
+            parent=parent,
+        )
 
-        self.unit_labels = list(ResultOutputModel.COLUMNS.values())
-        self.current_unit = ["", "#/L", "cts", "cts", "cts", "cts", "cts"]
-        self.units = [
-            {},
-            number_concentration_units,
-            signal_units,
-            signal_units,
-            signal_units,
-            signal_units,
-            signal_units,
-        ]
         self.key = "signal"
 
         self.results: dict[SPCalIsotopeBase, SPCalProcessingResult] = {}

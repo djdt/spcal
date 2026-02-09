@@ -38,18 +38,19 @@ class IsotopeOptionModel(UnitsModel):
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
-        super().__init__(parent=parent)
-
-        self.unit_labels = list(IsotopeOptionModel.COLUMNS.values())
-        self.current_unit = ["g/cm³", "L/µg", "", "nm", "µg/L", "ag"]
-        self.units = [
-            density_units,
-            response_units,
-            {},
-            size_units,
-            mass_concentration_units,
-            mass_units,
-        ]
+        super().__init__(
+            list(IsotopeOptionModel.COLUMNS.values()),
+            ["g/cm³", "L/µg", "", "nm", "µg/L", "ag"],
+            [
+                density_units,
+                response_units,
+                {},
+                size_units,
+                mass_concentration_units,
+                mass_units,
+            ],
+            parent=parent,
+        )
 
         self.isotope_options: dict[SPCalIsotopeBase, SPCalIsotopeOptions] = {}
 

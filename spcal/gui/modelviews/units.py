@@ -15,6 +15,9 @@ from spcal.gui.modelviews import (
 class UnitsModel(QtCore.QAbstractTableModel):
     def __init__(
         self,
+        units_labels: list[str],
+        current_units: list[str],
+        units: list[dict[str, float]],
         units_orientation: QtCore.Qt.Orientation = QtCore.Qt.Orientation.Horizontal,
         parent: QtCore.QObject | None = None,
     ):
@@ -22,9 +25,9 @@ class UnitsModel(QtCore.QAbstractTableModel):
 
         self.units_orientation = units_orientation
 
-        self.unit_labels: list[str] = []
-        self.current_unit: list[str] = []
-        self.units: list[dict[str, float]] = []
+        self.unit_labels = units_labels
+        self.current_unit = current_units
+        self.units = units
 
     def modifer(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
