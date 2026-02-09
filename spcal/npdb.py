@@ -18,15 +18,6 @@ inorganic:
     Density: density in h/cm3
     Ref: source of data
 
-isotopes:
-    Number: number, e.g. 3
-    Symbol: symbol, e.g. Li
-    Isotope: isotope number, e.g. 7
-    Mass: molecular wieght in g/mol
-    Composition: fraction of natural isotopic composition
-    Preferred: listed as preferred on Agilent Abundance Table
-    Ref: source of data
-
 polymer:
     Formula: formula of plastic
     Name: common name
