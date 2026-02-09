@@ -1,10 +1,10 @@
+from typing import Callable
 import numpy as np
-from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 from pytestqt.modeltest import ModelTester
 
-from spcal.datafile import SPCalTextDataFile
+from spcal.gui.dialogs.response import ConcentrationModel, IntensityModel
 from spcal.gui.modelviews import IsotopeRole
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
@@ -18,17 +18,6 @@ from spcal.gui.modelviews.models import NumpyRecArrayTableModel
 
 
 from spcal.isotope import ISOTOPE_TABLE
-
-
-def random_datafile() -> SPCalTextDataFile:
-    data = np.random.random(100).astype([("Au", np.float32)])
-    return SPCalTextDataFile(
-        Path(),
-        data,
-        np.linspace(0.0, 1.0, 100),
-        isotope_table={ISOTOPE_TABLE[("Au", 197)]: "Au"},
-        instrument_type="quadrupole",
-    )
 
 
 def test_basic_table(qtbot: QtBot):
@@ -181,14 +170,14 @@ def test_combo_header_view(qtbot: QtBot):
     assert model.headerData(1, QtCore.Qt.Orientation.Horizontal) == "B2"
 
 
-def test_datafile_model(qtmodeltester: ModelTester):
-    model = DataFileModel([random_datafile() for _ in range(5)])
+def test_datafile_model(qtmodeltester: ModelTester, random_datafile_gen: Callable):
+    model = DataFileModel([random_datafile_gen() for _ in range(5)])
     qtmodeltester.check(model, force_py=True)
 
 
-def test_datafile_delegate(qtbot: QtBot):
+def test_datafile_delegate(qtbot: QtBot, random_datafile_gen):
     view = QtWidgets.QListView()
-    model = DataFileModel([random_datafile() for _ in range(5)])
+    model = DataFileModel([random_datafile_gen() for _ in range(5)])
     qtbot.addWidget(view)
 
     view.setModel(model)
@@ -399,3 +388,48 @@ def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
     assert model.array["int"][1] == 10
 
     qtmodeltester.check(model, force_py=True)
+
+
+def test_response_dialog_models(
+    qtmodeltester: ModelTester, random_datafile_gen: Callable
+):
+    isotopes = [
+        ISOTOPE_TABLE[("Fe", 56)],
+        ISOTOPE_TABLE[("Cu", 63)],
+        ISOTOPE_TABLE[("Zn", 66)],
+    ]
+
+    concs = {
+        random_datafile_gen(isotopes=isotopes, size=10): {iso: 1.0 for iso in isotopes}
+    }
+
+    conc_model = ConcentrationModel()
+    conc_model.beginResetModel()
+    conc_model.isotopes = isotopes
+    conc_model.concentrations = concs
+    conc_model.endResetModel()
+
+    assert (
+        conc_model.data(conc_model.index(0, 0), QtCore.Qt.ItemDataRole.EditRole) == 1.0
+    )
+    assert conc_model.data(conc_model.index(0, 0), IsotopeRole) == isotopes[0]
+
+    qtmodeltester.check(conc_model)
+
+    intensities = {random_datafile_gen(isotopes=isotopes, size=10): {}}
+
+    intensity_model = IntensityModel()
+    intensity_model.beginResetModel()
+    intensity_model.isotopes = isotopes
+    intensity_model.intensities = intensities
+    intensity_model.endResetModel()
+
+    assert np.isclose(
+        intensity_model.data(
+            intensity_model.index(0, 0), QtCore.Qt.ItemDataRole.EditRole
+        ),
+        np.mean(next(iter(intensities.keys())).signals[str(isotopes[0])]),
+    )
+    assert intensity_model.data(intensity_model.index(0, 0), IsotopeRole) == isotopes[0]
+
+    qtmodeltester.check(intensity_model)

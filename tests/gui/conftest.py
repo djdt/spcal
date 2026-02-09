@@ -1,5 +1,10 @@
+from pathlib import Path
+
+import numpy as np
 import pytest
 from PySide6 import QtCore
+from spcal.datafile import SPCalTextDataFile
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 
 
 @pytest.fixture(
@@ -14,3 +19,33 @@ def test_locales(request):
         | locale.NumberOption.RejectGroupSeparator
     )
     QtCore.QLocale.setDefault(locale)
+
+
+@pytest.fixture(scope="function")
+def random_datafile_gen():
+    def random_datafile(
+        size: int = 100,
+        lam: float = 1.0,
+        isotopes: list[SPCalIsotope] | None = None,
+        path: Path | None = None,
+    ):
+        if isotopes is None:
+            isotopes = [ISOTOPE_TABLE[("Ag", 109)], ISOTOPE_TABLE[("Au", 197)]]
+        data = np.empty(
+            size, dtype=[(str(isotope), np.float32) for isotope in isotopes]
+        )
+        assert data.dtype.names is not None
+        for name in data.dtype.names:
+            data[name] = np.random.poisson(lam=lam, size=size)
+
+        df = SPCalTextDataFile(
+            path or Path(),
+            data,
+            np.linspace(0.0, 1.0, 100),
+            isotope_table={isotope: str(isotope) for isotope in isotopes},
+            instrument_type="quadrupole",
+        )
+        df.selected_isotopes = isotopes
+        return df
+
+    return random_datafile

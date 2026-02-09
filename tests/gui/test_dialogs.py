@@ -1,5 +1,8 @@
+from typing import Callable
+import numpy as np
 from pathlib import Path
 from PySide6 import QtCore
+from pytestqt.modeltest import ModelTester
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalNuDataFile
@@ -10,6 +13,11 @@ from spcal.gui.dialogs.graphoptions import (
     SpectraOptionsDialog,
 )
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
+from spcal.gui.dialogs.response import (
+    ConcentrationModel,
+    IntensityModel,
+    ResponseDialog,
+)
 
 
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
@@ -304,3 +312,116 @@ def test_select_isotope_screening_dialog(qtbot: QtBot):
         timeout=100,
     ):
         dlg.accept()
+
+
+def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
+    dlg = ResponseDialog()
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    dlg.reset()
+
+    df = random_datafile_gen(
+        isotopes=[
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Cu", 63)],
+            ISOTOPE_TABLE[("Zn", 66)],
+        ]
+    )
+
+    dlg.addDataFile(df)
+    assert dlg.model_concs.columnCount() == 3
+    assert dlg.model_concs.rowCount() == 1
+    assert dlg.model_intensity.columnCount() == 3
+    assert dlg.model_intensity.rowCount() == 1
+    dlg.model_concs.setData(
+        dlg.model_concs.index(0, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+
+    df = random_datafile_gen(
+        lam=10.0,
+        isotopes=[
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Cu", 63)],
+            ISOTOPE_TABLE[("Zn", 66)],
+        ],
+    )
+
+    dlg.addDataFile(df)
+    assert dlg.model_concs.rowCount() == 2
+    assert dlg.model_intensity.rowCount() == 2
+
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 0), 10.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+
+    dlg.combo_unit.setCurrentText("mg/L")
+
+    def check_response(responses: dict):
+        if len(responses) != 2:
+            return False
+        if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], 1e6, rtol=0.05):
+            return False
+        if not np.isclose(responses[ISOTOPE_TABLE[("Cu", 63)]], 1e6, rtol=0.05):
+            return False
+        return True
+
+    #
+    with qtbot.wait_signal(
+        dlg.responsesSelected, timeout=100, check_params_cb=check_response
+    ):
+        dlg.accept()
+
+
+def test_response_dialog_save(
+    tmp_path: Path, qtbot: QtBot, random_datafile_gen: Callable
+):
+    dlg = ResponseDialog()
+    qtbot.add_widget(dlg)
+
+    df = random_datafile_gen(
+        isotopes=[
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Cu", 63)],
+            ISOTOPE_TABLE[("Zn", 66)],
+        ]
+    )
+
+    dlg.addDataFile(df)
+
+    df2 = random_datafile_gen(
+        isotopes=[
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Cu", 63)],
+            ISOTOPE_TABLE[("Zn", 66)],
+        ]
+    )
+
+    dlg.addDataFile(df2)
+
+    dlg.model_concs.setData(
+        dlg.model_concs.index(0, 0), 0.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(0, 1), 1.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(0, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole
+    )
+
+    path = tmp_path.joinpath("test_response_dialog.csv")
+    dlg.saveToFile(path)
+
+    # todo: test output, may change

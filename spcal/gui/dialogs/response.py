@@ -39,6 +39,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.isotopes)
 
     def rowCount(
@@ -46,6 +48,8 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.concentrations)
 
     def headerData(
@@ -133,6 +137,8 @@ class IntensityModel(QtCore.QAbstractTableModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.isotopes)
 
     def rowCount(
@@ -140,6 +146,8 @@ class IntensityModel(QtCore.QAbstractTableModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.intensities)
 
     def flags(
