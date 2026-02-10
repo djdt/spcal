@@ -19,7 +19,7 @@ license = "GPL-3.0-or-later"
 authors = [{name = "Thomas Lockwood", email = "thomas.lockwood@uts.edu.au"}]
 
 [project.optional-dependencies]
-tests = ["pytest", "scipy"]
+tests = ["pytest", "pytest-qt", "scipy"]
 
 [project.urls]
 Repository = "https://github.com/djdt/spcal"
