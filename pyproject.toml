@@ -37,3 +37,5 @@ filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
     "ignore:Failed to disconnect .* from signal:RuntimeWarning",
 ]
+[dependency-groups]
+dev = ["spcal[tests]"]
