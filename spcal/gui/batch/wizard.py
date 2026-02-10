@@ -1,6 +1,7 @@
 import json
 import datetime
 import logging
+import numpy as np
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -275,7 +276,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
             for path in paths[1:]:
                 with open(path.joinpath("run.info"), "r") as fp:
                     info = json.load(fp)
-                if eventtime_from_info(info) != event_time:
+                if not np.isclose(eventtime_from_info(info), event_time):
                     button = QtWidgets.QMessageBox.warning(
                         self,
                         "Different Event Times",
