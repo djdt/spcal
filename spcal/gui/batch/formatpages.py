@@ -11,7 +11,7 @@ from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 
@@ -308,7 +308,6 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         isotope_count = 0
 
-        validator = IsotopeNameValidator()
         for row, name in enumerate(shared_names):
             name = name.strip()
             item = QtWidgets.QTableWidgetItem()
@@ -318,14 +317,18 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
             self.table_isotopes.setItem(row, 0, item)
             iso_item = QtWidgets.QTableWidgetItem()
-            try:
-                name = validator.fixup(name)
-                SPCalIsotope.fromString(name)
-                iso_item.setText(name)
+            m = REGEX_ISOTOPE.search(name)
+            if m is not None and m.group(1) is not None and m.group(2) is not None:
+                iso_item.setText(m.group(1) + m.group(2))
                 item.setCheckState(QtCore.Qt.CheckState.Checked)
                 background = QtGui.QPalette.ColorRole.Base
                 isotope_count += 1
-            except NameError:
+            elif m is not None and m.group(3) is not None and m.group(4) is not None:
+                iso_item.setText(m.group(4) + m.group(3))
+                item.setCheckState(QtCore.Qt.CheckState.Checked)
+                background = QtGui.QPalette.ColorRole.Base
+                isotope_count += 1
+            else:
                 background = QtGui.QPalette.ColorRole.AlternateBase
             iso_item.setBackground(self.palette().color(background))
 
@@ -343,7 +346,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             item = self.table_isotopes.item(i, 0)
             if item is not None and item.checkState() == QtCore.Qt.CheckState.Checked:
                 item = self.table_isotopes.item(i, 1)
-                if item is not None and item.text != "":
+                if item is not None and item.text() != "":
                     selected.append(SPCalIsotope.fromString(item.text()))
         return selected
 
