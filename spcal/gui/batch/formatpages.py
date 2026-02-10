@@ -308,7 +308,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         isotope_count = 0
 
-        for row, name in enumerate(shared_names):
+        for row, name in enumerate(sorted(shared_names)):
             name = name.strip()
             item = QtWidgets.QTableWidgetItem()
             item.setText(name.replace(" ", "_"))
