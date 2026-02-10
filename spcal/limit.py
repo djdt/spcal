@@ -152,7 +152,7 @@ class SPCalPoissonLimit(SPCalLimit):
     def __init__(
         self,
         signals: np.ndarray,
-        function: str = "formula c",
+        function: str = "currie",
         alpha: float = 1e-3,
         beta: float = 0.05,
         t_sample: float = 1.0,

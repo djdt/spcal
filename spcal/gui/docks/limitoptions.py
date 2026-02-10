@@ -190,7 +190,7 @@ class PoissonOptionsWidget(LimitOptionsBaseWidget):
     def __init__(
         self,
         alpha: float = 0.001,
-        function: str = "formula c",
+        function: str = "currie",
         eta: float = 2.0,
         epsilon: float = 0.5,
         t_sample: float = 1.0,
@@ -343,16 +343,14 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
         self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
 
-        self.gaussian = GaussianOptionsWidget(
-            limit_options.gaussian_kws["alpha"]
-        )
+        self.gaussian = GaussianOptionsWidget(limit_options.gaussian_kws["alpha"])
         self.poisson = PoissonOptionsWidget(
             limit_options.poisson_kws["alpha"],
             limit_options.poisson_kws["function"],
-            limit_options.poisson_kws.get("eta",2.0),
+            limit_options.poisson_kws.get("eta", 2.0),
             limit_options.poisson_kws.get("epsilon", 0.5),
-            limit_options.poisson_kws.get("t_sample",1.0),
-            limit_options.poisson_kws.get("t_blank",1.0),
+            limit_options.poisson_kws.get("t_sample", 1.0),
+            limit_options.poisson_kws.get("t_blank", 1.0),
         )
         self.compound = CompoundPoissonOptionsWidget(
             limit_options.compound_poisson_kws["alpha"],
