@@ -387,9 +387,14 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         paths: list[Path] = self.field("paths")
         event_time = self.guessEventTime(paths[0])
+        if event_time is None:
+            return True
+
         for path in paths[1:]:
             _event_time = self.guessEventTime(path)
-            if event_time != _event_time:
+            if _event_time is None:
+                return False
+            if not np.isclose(event_time, _event_time, rtol=0.01):
                 button = QtWidgets.QMessageBox.warning(
                     self,
                     "Inconsistent Event Time",
