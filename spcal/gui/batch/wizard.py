@@ -169,6 +169,11 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         self.registerField("paths", self, "pathsProp")
 
     def addFile(self, path: Path):
+        format = self.selectedFormat()
+        if not path.exists():
+            raise FileNotFoundError(f"'{path}' does not exist")
+        if not BatchFilesWizardPage.FORMAT_FUNCTIONS[format](path):
+            raise FileNotFoundError(f"'{path.name}' is not a '{format}' file")
         item = QtWidgets.QListWidgetItem()
         item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
         item.setText(str(path))
@@ -831,17 +836,3 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     def stopThread(self):
         self.process_thread.quit()
         self.process_thread.wait()
-
-
-if __name__ == "__main__":
-    from spcal.processing import SPCalProcessingMethod
-
-    app = QtWidgets.QApplication()
-    method = SPCalProcessingMethod()
-    wiz = SPCalBatchProcessingWizard(None, method, [])
-
-    wiz.page(FILE_PAGE_ID).addFile(
-        Path("/home/tom/Sync/Research/Experimental/ICPMS/spTOF/mix.csv")
-    )
-    wiz.open()
-    app.exec()
