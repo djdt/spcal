@@ -112,7 +112,7 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         self.optionsChanged.emit()
 
     def onUptakeChanged(self):
-        self.button_efficiency.setEnabled(self.uptake.baseValue() is not None)
+        self.action_efficiency.setEnabled(self.uptake.baseValue() is not None)
 
     def calibrationModeChanged(self, mode: str):
         if mode == "Efficiency":
