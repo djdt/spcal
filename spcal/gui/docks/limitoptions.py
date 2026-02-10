@@ -315,7 +315,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
                 "Manual Input",
             ]
         )
-        self.limit_method.setCurrentText(limit_options.limit_method.capitalize())
+        self.limit_method.setCurrentText(limit_options.limit_method.title())
         for i, tooltip in enumerate(
             [
                 "Automatically determine the best method.",
