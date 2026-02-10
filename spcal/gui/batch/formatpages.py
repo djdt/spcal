@@ -188,6 +188,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         self.table_isotopes = QtWidgets.QTableWidget()
         self.table_isotopes.setColumnCount(2)
+        self.table_isotopes.setHorizontalHeaderLabels(["Column Name", "Isotope"])
         self.table_isotopes.setItemDelegateForColumn(1, IsotopeNameDelegate())
         self.table_isotopes.model().dataChanged.connect(self.completeChanged)
 
@@ -342,7 +343,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             item = self.table_isotopes.item(i, 0)
             if item is not None and item.checkState() == QtCore.Qt.CheckState.Checked:
                 item = self.table_isotopes.item(i, 1)
-                if item is not None:
+                if item is not None and item.text != "":
                     selected.append(SPCalIsotope.fromString(item.text()))
         return selected
 
