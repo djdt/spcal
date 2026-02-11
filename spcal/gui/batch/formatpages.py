@@ -13,7 +13,7 @@ from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
 from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
-from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
+from spcal.gui.modelviews.isotope import IsotopeNameDelegate
 
 
 class BatchNuWizardPage(QtWidgets.QWizardPage):

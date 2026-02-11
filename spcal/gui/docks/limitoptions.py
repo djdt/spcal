@@ -62,9 +62,8 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         super().__init__("Compound Poisson", alpha, parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        self.single_ion_parameters = (
-            single_ion_parameters  # array of (..., [mz, mu,sigma] )
-        )
+        # array of (..., [mz, mu,sigma] )
+        self.single_ion_parameters = single_ion_parameters
 
         self.lognormal_sigma = ValueWidget(
             sigma, min=1e-9, max=10.0, step=0.05, sigfigs=sf
@@ -73,6 +72,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
             "Shape parameter for the log-normal approximation of the SIA. "
         )
         self.lognormal_sigma.valueChanged.connect(self.optionsChanged)
+        self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
 
         self.button_sia = QtWidgets.QPushButton("Single Ion Options...")
         self.button_sia.pressed.connect(self.dialogSingleIon)
@@ -291,18 +291,20 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.window_size = QtWidgets.QSpinBox()
         self.window_size.setSingleStep(100)
         self.window_size.setRange(3, 9999999)
-        self.window_size.setValue(1000)
+        self.window_size.setValue(limit_options.window_size or 1000)
         self.window_size.setToolTip("Size of window for moving thresholds.")
-        self.window_size.setEnabled(False)
+        self.window_size.setEnabled(limit_options.window_size > 0)
         self.check_window = QtWidgets.QCheckBox("Use window")
         self.check_window.setToolTip(
             "Calculate threhold for each point using data from surrounding points."
         )
+        self.check_window.setChecked(limit_options.window_size > 0)
         self.check_window.toggled.connect(self.window_size.setEnabled)
         self.check_window.toggled.connect(self.optionsChanged)
 
         self.check_iterative = QtWidgets.QCheckBox("Iterative")
         self.check_iterative.setToolTip("Iteratively filter on non detections.")
+        self.check_iterative.setChecked(limit_options.max_iterations > 1)
 
         self.limit_method = QtWidgets.QComboBox()
         self.limit_method.addItems(
