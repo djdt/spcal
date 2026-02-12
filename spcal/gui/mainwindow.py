@@ -30,6 +30,7 @@ from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
     get_import_dialog_for_path,
     get_open_spcal_path,
+    is_spcal_path,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -54,6 +55,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resize(1600, 900)
 
         self.setDockNestingEnabled(True)
+
+        self.setAcceptDrops(True)
 
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
@@ -963,6 +966,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             action = QtGui.QAction(str(path), self)
             self.action_open_recent.addAction(action)
             self.menu_recent.addAction(action)
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
+        for url in event.mimeData().urls():
+            if is_spcal_path(url.path()):
+                event.accept()
+                return
+        event.ignore()
+
+    def dropEvent(self, event: QtGui.QDropEvent):
+        for url in event.mimeData().urls():
+            path = Path(url.path())
+            if is_spcal_path(path):
+                self.dialogLoadFile(path)
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None
