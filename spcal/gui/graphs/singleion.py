@@ -5,34 +5,68 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
+from spcal.isotope import ISOTOPE_TABLE
 
-def zero_truncated_compound_poisson_lognormal(
-    size: int, lam: float, mu: float, sigma: float
-) -> np.ndarray:
-    """Draw values from a zero-truncated compound-Poisson-lognormal.
 
-    This is the same as ``compound_poisson_lognormal`` except all Poisson values
-    must be 1 or greater.
+def text_for_mz(mz: float) -> str:
+    text = f"{mz:.2f}"
+    possible_isotopes = [
+        iso
+        for iso in ISOTOPE_TABLE.values()
+        if abs(iso.mass - mz) < 0.1
+        and iso.composition is not None
+        and iso.composition > 0.05
+    ]
+    if len(possible_isotopes) > 0:
+        text += "(" + ",".join(iso.symbol for iso in possible_isotopes) + ")"
+    return text
 
-    Args:
-        size: number of values
-        lam: the expected value of the Poisson
-        mu: the location of the lognormal
-        sigma: the shape of the lognormal
+class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):
+    pointHovered = QtCore.Signal(QtCore.QPointF, int)
+    pointClicked = QtCore.Signal(QtCore.QPointF, int)
 
-    Returns:
-        values of size ``size``
-    """
-    x = np.zeros(size, dtype=np.float32)
-    u = np.random.uniform(np.exp(-lam), 1.0, size=size)
-    zp = 1 + np.random.poisson(lam - (-np.log(u)))
+    def __init__(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ):
+        super().__init__(x=x, y=y, pen=pen, brush=brush)
+        self.setAcceptHoverEvents(True)
+        self.opts["mouseWidth"] = 50.0
 
-    for i in range(1, zp.max()):
-        x[zp >= i] += np.random.lognormal(mu, sigma, size=np.count_nonzero(zp >= i))
-    return x
+        self.label = pyqtgraph.TextItem(anchor=(0.5, 1))
+        self.label.setParentItem(self)
+        self.label.setVisible(False)
+
+    def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent):
+        if event.button() != QtCore.Qt.MouseButton.LeftButton:
+            return
+        points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
+        if len(points) > 0:
+            self.pointClicked.emit(points[0].pos(), points[0].index())
+
+    def hoverMoveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):
+        points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
+        if len(points) == 0:
+            self.label.setVisible(False)
+            return
+
+        self.label.setPos(points[0].pos())
+        self.label.setText(text_for_mz(points[0].pos().x()))
+        self.label.setVisible(True)
+
+        self.pointHovered.emit(
+            QtCore.QPointF(points[0].pos().x(), points[0].pos().y()),
+            int(points[0].index()),
+        )
 
 
 class SingleIonScatterView(SinglePlotGraphicsView):
+    pointHovered = QtCore.Signal(QtCore.QPointF, int)
+    pointClicked = QtCore.Signal(QtCore.QPointF, int)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(
             "Extracted Parameters",
@@ -40,11 +74,16 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             ylabel="Shape (σ)",
             parent=parent,
         )
+        self.plot.yaxis.autoSIPrefix = False
 
-        self.points: pyqtgraph.ScatterPlotItem | None = None
+        self.points: SingleIonScatterPlot | None = None
         self.lines: dict[str, pyqtgraph.PlotCurveItem] = {}
-
         self.plot.setLimits(xMin=0.0, yMin=0.0)
+
+    #     self.pointHovered.connect(self.onPointHovered)
+    #
+    # def onPointHovered(self, pos: QtCore.QPointF, index: int):
+    #     self.label.setPos(pos)
 
     def clear(self):
         super().clear()
@@ -67,7 +106,9 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
-        self.points = pyqtgraph.ScatterPlotItem(x=x, y=y, pen=pen, brush=brush)
+        self.points = SingleIonScatterPlot(x=x, y=y, pen=pen, brush=brush)
+        self.points.pointHovered.connect(self.pointHovered)
+        self.points.pointClicked.connect(self.pointClicked)
         self.plot.addItem(self.points)
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)

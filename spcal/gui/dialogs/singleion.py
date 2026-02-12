@@ -8,6 +8,7 @@ from PySide6.QtGui import QValidator
 from spcal.dists.util import (
     extract_compound_poisson_lognormal_parameters,
 )
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import SingleIonHistogramView, SingleIonScatterView
 from spcal.gui.io import get_open_spcal_path
 from spcal.io import nu, tofwerk
@@ -45,6 +46,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         assert self.hist.plot.vb is not None
         self.hist.plot.vb.setMouseEnabled(x=False, y=False)
         self.scatter = SingleIonScatterView()
+        self.scatter.pointClicked.connect(self.onPointClicked)
 
         self.masses = np.array([])
         self.counts = np.array([])
@@ -131,6 +133,15 @@ class SingleIonDialog(QtWidgets.QDialog):
         # A 'read-only' mode for existing parameters
         if params is not None and params.size > 0:
             self.scatter.drawData(params["mass"], params["sigma"])
+
+    @QtCore.Slot()
+    def onPointClicked(self, pos: QtCore.QPointF, index: int):
+        view = SinglePlotGraphicsView(f"{pos.x():2f} m/z")
+        view.setWindowTitle("Single Ion Inspection")
+        view.setMaximumHeight(200)
+        view.drawCurve(np.arange(self.counts[:, index].size), self.counts[:, index])
+        view.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+        view.show()
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
