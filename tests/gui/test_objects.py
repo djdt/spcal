@@ -10,7 +10,7 @@ from spcal.gui.objects import (
 )
 
 
-class TestWidget(QtWidgets.QWidget):
+class RedirectTestWidget(QtWidgets.QWidget):
     contextMenuSignal = QtCore.Signal()
     dragEnterSignal = QtCore.Signal()
     dragLeaveSignal = QtCore.Signal()
@@ -39,7 +39,7 @@ class TestWidget(QtWidgets.QWidget):
 
 
 def test_context_menu_redirect_filter(qtbot: QtBot):
-    to = TestWidget()
+    to = RedirectTestWidget()
     qtbot.addWidget(to)
 
     frm = QtWidgets.QWidget()
@@ -56,7 +56,7 @@ def test_context_menu_redirect_filter(qtbot: QtBot):
 
 
 def test_drag_drop_redirect_filter(qtbot: QtBot):
-    to = TestWidget()
+    to = RedirectTestWidget()
     to.setAcceptDrops(True)
     qtbot.addWidget(to)
 
