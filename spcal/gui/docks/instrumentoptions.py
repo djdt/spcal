@@ -44,9 +44,10 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
             "Open a dialog for calculating transport efficiency using the current file and isotope.",
             self.efficiencyDialogRequested,
         )
+        self.action_efficiency.setEnabled(False)
+
         self.button_efficiency = QtWidgets.QToolButton()
         self.button_efficiency.setDefaultAction(self.action_efficiency)
-        self.button_efficiency.setEnabled(False)
 
         # Instrument wide options
         self.calibration_mode = QtWidgets.QComboBox()
