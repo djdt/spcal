@@ -10,7 +10,7 @@ from spcal.processing.result import SPCalProcessingResult
 
 
 def pytest_sessionstart(session):
-    np.seterr(invalid="raise")
+    np.seterr(invalid="raise", divide="raise")
 
 
 @pytest.fixture(scope="function")
