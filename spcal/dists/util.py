@@ -30,7 +30,9 @@ def zero_trunc_quantile(
         quantile(s) of the zero-truncated dist
     """
     k0 = np.exp(-lam)
-    return np.maximum((y - k0) / (1.0 - k0), 0.0)
+    y0 = np.atleast_1d(y - k0)
+    np.divide(y0, 1.0 - k0, where=k0 != 1.0, out=y0)
+    return np.maximum(y0, 0.0).squeeze()
 
 
 def compound_poisson_lognormal_quantile_lookup(
