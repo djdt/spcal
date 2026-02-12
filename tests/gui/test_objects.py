@@ -50,7 +50,9 @@ def test_context_menu_redirect_filter(qtbot: QtBot):
 
     with qtbot.waitSignal(to.contextMenuSignal, timeout=100):
         event = QtGui.QContextMenuEvent(
-            QtGui.QContextMenuEvent.Reason.Mouse, QtCore.QPoint(0, 0)
+            QtGui.QContextMenuEvent.Reason.Mouse,
+            QtCore.QPoint(0, 0),
+            QtCore.QPoint(0, 0),
         )
         QtWidgets.QApplication.sendEvent(frm, event)
 
