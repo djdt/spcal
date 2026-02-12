@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from scipy.signal import peak_prominences
 
@@ -79,7 +80,9 @@ def test_peak_prominence_scipy():
     y = np.random.choice(100, 10)
 
     p1, l1, r1 = detection.peak_prominence(x, y)
-    p2, l2, r2 = peak_prominences(x, y)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="some peaks have a prominence of 0")
+        p2, l2, r2 = peak_prominences(x, y)
 
     assert np.allclose(p1, p2)
     assert np.all(l1 == l2)
