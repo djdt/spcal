@@ -3,8 +3,10 @@
 import datetime
 import logging
 from pathlib import Path
+import warnings
 
 import numpy as np
+from numpy.lib._iotools import ConversionWarning
 
 
 logger = logging.getLogger(__name__)
@@ -109,16 +111,18 @@ def read_single_particle_file(
         gen = replace_comma_decimal(fp, delimiter)
 
         # todo: protential speed-up by trying loadtxt
-        data = np.genfromtxt(  # type: ignore
-            gen,
-            delimiter=delimiter,
-            names=header,
-            dtype=np.float32,
-            deletechars="",  # todo: see if this causes any issue with calculator or saving
-            converters=converters,  # type: ignore , works
-            invalid_raise=False,
-            loose=True,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action="ignore", category=ConversionWarning)
+            data = np.genfromtxt(  # type: ignore
+                gen,
+                delimiter=delimiter,
+                names=header,
+                dtype=np.float32,
+                deletechars="",  # todo: see if this causes any issue with calculator or saving
+                converters=converters,  # type: ignore , works
+                invalid_raise=False,
+                loose=True,
+            )
 
     assert data.dtype.names is not None
     return data
