@@ -461,7 +461,8 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
-        ]
+        ],
+        seed=79826
     )
 
     dlg.addDataFile(df)
@@ -480,6 +481,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
         ],
+        seed=79827
     )
 
     dlg.addDataFile(df)

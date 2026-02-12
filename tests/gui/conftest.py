@@ -28,7 +28,11 @@ def random_datafile_gen():
         lam: float = 1.0,
         isotopes: list[SPCalIsotope] | None = None,
         path: Path | None = None,
+        seed: int | None = None
     ):
+        if seed is not None:
+            np.random.seed(seed)
+
         if isotopes is None:
             isotopes = [ISOTOPE_TABLE[("Ag", 109)], ISOTOPE_TABLE[("Au", 197)]]
         data = np.empty(
