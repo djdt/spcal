@@ -206,8 +206,9 @@ class SearchColumnsProxyModel(QtCore.QSortFilterProxyModel):
         self.columns = columns
 
     def setSearchString(self, string: str):
+        self.beginFilterChange()
         self._search_string = string
-        self.invalidateFilter()
+        self.endFilterChange()
 
     def filterAcceptsRow(
         self,
