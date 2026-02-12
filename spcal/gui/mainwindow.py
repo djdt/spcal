@@ -979,6 +979,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             path = Path(url.path())
             if is_spcal_path(path):
                 self.dialogLoadFile(path)
+                event.accept()
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None
