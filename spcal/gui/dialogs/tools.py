@@ -230,8 +230,8 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
 class TransportEfficiencyDialog(QtWidgets.QDialog):
     efficencyChanged = QtCore.Signal(object)
     massResponseChanged = QtCore.Signal(object)
-    efficencySelected = QtCore.Signal(float)
-    massResponseSelected = QtCore.Signal(float)
+    efficiencySelected = QtCore.Signal(object)
+    massResponseSelected = QtCore.Signal(object)
 
     isotopeOptionsChanged = QtCore.Signal(SPCalIsotopeBase, SPCalIsotopeOptions)
 
@@ -320,20 +320,20 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
     def updateEfficiency(self):
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
+        mass_fraction = self.mass_fraction.value()
 
-        if density is None or diameter is None:
-            return None
+        if density is None or diameter is None or mass_fraction is None:
+            self.massResponseChanged.emit(None)
+            self.efficencyChanged.emit(None)
+            return
 
         reference_mass = reference_particle_mass(density, diameter)
-
-        mass_fraction = self.mass_fraction.value()
-        if mass_fraction is not None:
-            mass_response = float(
-                reference_mass
-                * mass_fraction
-                / np.mean(self.proc_result.calibrated("signal"))
-            )
-            self.massResponseChanged.emit(mass_response)
+        mass_response = float(
+            reference_mass
+            * mass_fraction
+            / np.mean(self.proc_result.calibrated("signal"))
+        )
+        self.massResponseChanged.emit(mass_response)
 
         concentration = self.concentration.baseValue()
         uptake = self.proc_result.method.instrument_options.uptake
@@ -373,7 +373,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         )
 
     def accept(self):
-        self.efficencySelected.emit(self.efficiency.value())
+        self.efficiencySelected.emit(self.efficiency.value())
         self.massResponseSelected.emit(self.mass_response.baseValue())
 
         # Set any changed
@@ -387,7 +387,9 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
             self.mass_response.baseValue(),
         )
         if options != new_options:
-            self.proc_result.method.isotope_options[self.proc_result.isotope] = new_options
+            self.proc_result.method.isotope_options[self.proc_result.isotope] = (
+                new_options
+            )
             self.isotopeOptionsChanged.emit(self.proc_result.isotope, new_options)
 
         super().accept()

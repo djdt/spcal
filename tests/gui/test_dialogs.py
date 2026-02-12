@@ -17,13 +17,20 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
+from spcal.particle import nebulisation_efficiency_from_mass
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.response import ResponseDialog
-from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
+from spcal.gui.dialogs.tools import (
+    MassFractionCalculatorDialog,
+    ParticleDatabaseDialog,
+    TransportEfficiencyDialog,
+)
 
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.result import SPCalProcessingResult
 
 
 def test_calculator_dialog(qtbot: QtBot):
@@ -462,7 +469,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
         ],
-        seed=79826
+        seed=79826,
     )
 
     dlg.addDataFile(df)
@@ -481,7 +488,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
         ],
-        seed=79827
+        seed=79827,
     )
 
     dlg.addDataFile(df)
@@ -640,5 +647,48 @@ def test_particle_database(qtbot: QtBot):
 
     with qtbot.wait_signal(
         dlg.densitySelected, timeout=100, check_params_cb=lambda d: d == 4430.0
+    ):
+        dlg.accept()
+
+
+def test_transport_efficiency_dialog(
+    qtbot: QtBot, random_result_generator, default_method: SPCalProcessingMethod
+):
+    default_method.instrument_options.uptake = 1.0
+    default_method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(
+        1.0, 1.0, None, diameter=10.0
+    )
+    result: SPCalProcessingResult = random_result_generator(
+        default_method, isotope=ISOTOPE_TABLE[("Au", 197)]
+    )
+    dlg = TransportEfficiencyDialog(result)
+
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.diameter.baseValue() == 10.0
+    assert dlg.density.baseValue() == 1.0
+    assert dlg.concentration.baseValue() is None
+    assert dlg.response.baseValue() == 1.0
+    assert dlg.mass_fraction.value() is None
+
+    assert not dlg.isComplete()
+
+    with qtbot.waitSignal(dlg.efficencyChanged, timeout=100):
+        dlg.mass_fraction.setValue(1.0)
+
+    assert dlg.isComplete()
+    assert dlg.efficiency.value() is not None
+    assert dlg.mass_response.value() is not None
+
+    with qtbot.waitSignals(
+        [dlg.efficiencySelected, dlg.massResponseSelected, dlg.isotopeOptionsChanged],
+        check_params_cbs=[
+            lambda eff: eff is not None,
+            lambda mr: mr is not None,
+            lambda _, opt: opt.mass_fraction == 1.0,
+        ],
+        timeout=100,
     ):
         dlg.accept()
