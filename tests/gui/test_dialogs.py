@@ -17,7 +17,6 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
-from spcal.particle import nebulisation_efficiency_from_mass
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import (

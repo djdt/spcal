@@ -29,7 +29,6 @@ class OddValueSpinBox(QtWidgets.QSpinBox):
 
 
 class SingleIonDialog(QtWidgets.QDialog):
-    # distributionSelected = QtCore.Signal(np.ndarray)
     resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
 
@@ -42,6 +41,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.setWindowTitle("Single Ion Distribution")
 
         self.hist = SingleIonHistogramView()
+        self.hist.plot.yaxis.setLabel("Event Density")
         assert self.hist.plot.vb is not None
         self.hist.plot.vb.setMouseEnabled(x=False, y=False)
         self.scatter = SingleIonScatterView()
@@ -260,7 +260,6 @@ class SingleIonDialog(QtWidgets.QDialog):
         if self.check_restrict.isChecked():
             p0 = np.exp(-self.lams)
             p2 = (self.lams**2 * p0) / 2.0
-            p2 = (self.lams**2 * p0) / 2.0
             single_ions = np.logical_and(p0 > 1e-2, p2 < 1e-3)
             self.valid = np.logical_and(self.valid, single_ions)
 
@@ -292,7 +291,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         if smoothing < 3:
             return xs, ys
         elif smoothing % 2 == 1:
-            _xs = np.arange(xs[0], xs[-1] + 1.0, 0.5)
+            _xs = np.arange(xs[0], xs[-1] + 1.0, 1.0)
             _ys = np.interp(_xs, xs, ys)
             _ys[smoothing // 2 - 1 : -(smoothing // 2 + 1)] = np.convolve(
                 _ys, np.ones(smoothing) / smoothing, mode="valid"
@@ -345,8 +344,8 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonDialog()
-    # win.loadSingleIonData("/home/tom/Downloads/Raw data/NT012A/11-43-47 1ppb att")
-    win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
+    win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
+    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
     win.show()
 
     app.exec()
