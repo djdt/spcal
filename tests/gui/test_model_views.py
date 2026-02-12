@@ -13,7 +13,7 @@ from spcal.gui.modelviews.isotope import (
     IsotopeNameDelegate,
     IsotopeNameValidator,
 )
-from spcal.gui.modelviews.models import NumpyRecArrayTableModel
+from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
@@ -393,6 +393,51 @@ def test_numpy_recarray_table_model_horizontal(qtmodeltester: ModelTester):
     qtmodeltester.check(model, force_py=True)
 
 
+def test_search_columns_proxy_model(qtbot: QtBot):
+    model = QtGui.QStandardItemModel()
+    model.setColumnCount(3)
+    model.setRowCount(5)
+
+    proxy = SearchColumnsProxyModel([0, 1])
+    proxy.setSourceModel(model)
+
+    view = QtWidgets.QTableView()
+    qtbot.addWidget(view)
+    view.setModel(proxy)
+
+    for i in range(model.rowCount()):
+        for j in range(model.columnCount()):
+            item = QtGui.QStandardItem(f"{i},{j}")
+            model.setItem(i, j, item)
+
+    assert proxy.rowCount() == 5
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString("0,0")
+    assert proxy.rowCount() == 1
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString("0,2")
+    assert proxy.rowCount() == 0
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString("1")
+    assert proxy.rowCount() == 5
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString(",1")
+    assert proxy.rowCount() == 5
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString("1,1")
+    assert proxy.rowCount() == 1
+    assert proxy.columnCount() == 3
+
+    proxy.setSearchString("2")
+    assert proxy.rowCount() == 1
+    assert proxy.columnCount() == 3
+
+
 def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callable):
     isotopes = [
         ISOTOPE_TABLE[("Fe", 56)],
@@ -465,4 +510,4 @@ def test_value_widget_delegate(qtbot: QtBot):
     with qtbot.waitSignal(table.model().dataChanged, timeout=100):
         delegate.setModelData(editor, table.model(), table.model().index(0, 0))
 
-    assert table.item(0, 0).text() == "10"
+    assert table.item(0, 0).text() == "10"  # type: ignore
