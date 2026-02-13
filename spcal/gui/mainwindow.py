@@ -266,7 +266,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.action_font = create_action(
-            "font",
+            "gtk-select-font",
             "Graph Font",
             "Choose the font to use for text in graphs.",
             self.setGraphFont,

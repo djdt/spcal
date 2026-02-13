@@ -4,7 +4,6 @@ from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import CALIBRATION_KEYS
-from spcal.processing.method import SPCalProcessingMethod
 
 
 class ScatterExprLineEdit(QtWidgets.QLineEdit):
@@ -207,17 +206,26 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
     requestViewOptionsDialog = QtCore.Signal()
 
     VIEWS = {
-        "particle": ("office-chart-line", "Show signals and detected peaks."),
+        "particle": (
+            "office-chart-line-stacked",
+            "Show signals and detected peaks.",
+        ),  # icon: "office-chart-line-stacked"
         "histogram": (
             "view-object-histogram-linear",
             "Show results as signal, mass and size histograms.",
-        ),
-        "composition": ("office-chart-pie", "Plot particle compositions."),
-        "spectra": ("office-chart-bar", "Plot the mass spectra of selected peaks."),
+        ),  # icon: "view-object-histogram-linear"
+        "composition": (
+            "office-chart-pie",
+            "Plot particle compositions.",
+        ),  # icon: "office-chart-pie"
+        "spectra": (
+            "office-chart-bar",
+            "Plot the mass spectra of selected peaks.",
+        ),  # icon: "office-chart-bar"
         "scatter": (
             "office-chart-scatter",
             "Plot the signal, mass or size of two isotopes.",
-        ),
+        ),  # icon: "office-chart-scatter"
     }
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):

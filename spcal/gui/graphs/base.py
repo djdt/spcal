@@ -165,7 +165,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.data_for_export: dict[str, np.ndarray] = {}
 
         self.action_zoom_reset = create_action(
-            "zoom-reset",
+            "zoom-original",
             "Reset zoom",
             "Show the full extent of the data.",
             self.zoomReset,

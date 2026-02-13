@@ -8,7 +8,7 @@ from typing import Set
 
 
 def collect_icons(path: Path) -> Set[str]:
-    regex_icon = "(?:fromTheme|create_action)\\(\\s*['\"]([a-z\\-]+)['\"]"
+    regex_icon = "(?:(?:fromTheme\\(|create_action\\()|#\\sicon:)\\s*['\"]([a-z\\-]+)['\"]"
     icons = set()
 
     for path in sorted(path.glob("**/*.py")):
@@ -17,11 +17,13 @@ def collect_icons(path: Path) -> Set[str]:
     return icons
 
 
-def write_index_theme(path: Path, sizes: list[int]):
+def write_index_theme(path: Path, sizes: list[int], theme_name: str = "spcal"):
     directories = [f"{size}x{size}" for size in sizes]
     directories.extend([dir + "@2" for dir in directories])
     with path.open("w") as fp:
-        fp.write("[Icon Theme]\nName=spcal\nComment=Icons from KDE theme Breeze\n")
+        fp.write(
+            f"[Icon Theme]\nName={theme_name}\nComment=Icons from KDE theme Breeze\n"
+        )
         fp.write(f"Directories={','.join(directories)}\n")
         fp.write("\n")
         for size in sizes:
@@ -35,10 +37,11 @@ def write_qrc(
     icons: Path,
     icon_names: list[str],
     sizes: list[int],
+    theme_name: str = "spcal",
 ):
     with qrc.open("w") as fp:
         fp.write('<RCC version="1.0">\n')
-        fp.write('<qresource prefix="icons/spcal/">\n')
+        fp.write(f'<qresource prefix="icons/{theme_name}/">\n')
 
         fp.write(f'\t<file alias="index.theme">{index}</file>\n')
         for icon in sorted(icon_names):
@@ -69,6 +72,7 @@ def build_icons_resource(qrc: Path, output: Path, rcc: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("project", type=Path, help="The project directory.")
+    parser.add_argument("theme_name", type=str, help="The icon theme name")
     parser.add_argument(
         "--icons",
         type=Path,
@@ -78,7 +82,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sizes",
         nargs="+",
-        default=[16, 24, 32],
+        default=[16, 22, 24, 32],
         help="icon sizes to use",
     )
     parser.add_argument(
@@ -96,6 +100,7 @@ if __name__ == "__main__":
         tempfile.NamedTemporaryFile() as qrc_tmp,
     ):
         index, qrc = Path(index_tmp.name), Path(qrc_tmp.name)
-        write_index_theme(index, args.sizes)
-        write_qrc(qrc, index, args.icons, list(icon_names), args.sizes)
+        write_index_theme(index, args.sizes, theme_name=args.theme_name)
+        write_qrc(qrc, index, args.icons, list(icon_names), args.sizes, theme_name=args.theme_name)
+
         build_icons_resource(qrc, args.output, args.rcc)
