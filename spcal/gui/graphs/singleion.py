@@ -21,6 +21,7 @@ def text_for_mz(mz: float) -> str:
         text += "(" + ",".join(iso.symbol for iso in possible_isotopes) + ")"
     return text
 
+
 class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):
     pointHovered = QtCore.Signal(QtCore.QPointF, int)
     pointClicked = QtCore.Signal(QtCore.QPointF, int)
@@ -132,7 +133,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             pen.setCosmetic(True)
 
         if "max_diff" not in self.lines:
-            max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs")
+            max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs", antialias=True)
             self.plot.addItem(max_diff)
             self.lines["max_diff"] = max_diff
 
