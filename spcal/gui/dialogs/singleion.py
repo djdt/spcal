@@ -2,7 +2,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 from PySide6.QtGui import QValidator
 
 from spcal.dists.util import (
@@ -49,21 +49,8 @@ class SingleIonSignalsPopup(QtWidgets.QDialog):
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(
-            400 * self.devicePixelRatio(), 200 * self.devicePixelRatio()
+            int(400 * self.devicePixelRatio()), int(200 * self.devicePixelRatio())
         )
-
-    # def focusOutEvent(self, e):
-    #     self.close()
-
-    # def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
-    #     if isinstance(event, QtGui.QMouseEvent):
-    #         print(obj, event)
-    #         print(event.position(), self.rect(),flush=True)
-    #         if not self.rect().contains(event.pos()):
-    #             self.close()
-    #             return True
-    #
-    #     return super().eventFilter(obj, event)
 
 
 class SingleIonDialog(QtWidgets.QDialog):
