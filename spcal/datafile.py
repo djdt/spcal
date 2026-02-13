@@ -216,7 +216,7 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if cps:
             for name in signals.dtype.names:
-                signals[name] *= np.diff(times, append=times[-1] - times[-2])
+                signals[name] *= np.diff(times, append=times[-1] + (times[-1] - times[-2]))
 
         if instrument_type is None:
             instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
