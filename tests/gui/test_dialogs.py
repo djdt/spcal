@@ -1,7 +1,7 @@
 from typing import Callable
 import numpy as np
 from pathlib import Path
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalNuDataFile
@@ -17,8 +17,9 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
-from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.response import ResponseDialog
+from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
+from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.dialogs.tools import (
     MassFractionCalculatorDialog,
     ParticleDatabaseDialog,
@@ -691,3 +692,37 @@ def test_transport_efficiency_dialog(
         timeout=100,
     ):
         dlg.accept()
+
+
+def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
+    params = np.empty(100, dtype=[("mass", float), ("mu", float), ("sigma", float)])
+    params["mass"] = np.random.uniform(-0.001, 0.001, size=100) + np.arange(30, 130)
+    params["mu"] = np.random.uniform(6.0, 8.0, size=100)
+    params["sigma"] = np.linspace(0.5, 0.7, 100)
+
+    dlg = SingleIonDialog(params)
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    # View only
+    assert not dlg.isComplete()
+    assert not dlg.controls_box.isEnabled()
+
+    dlg.loadSingleIonData(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    assert dlg.mus.size > 0
+    assert dlg.sigmas.size > 0
+    q1, q3 = np.nanpercentile(dlg.sigmas, [25, 75])
+    assert q1 > 0.3 and q3 < 0.6
+    assert dlg.masses.size == 309
+
+    assert np.count_nonzero(dlg.valid) == 260
+    dlg.max_sigma_difference.setValue(0.2)
+    assert np.count_nonzero(dlg.valid) == 285
+
+    with qtbot.waitSignal(dlg.parametersExtracted, timeout=100):
+        dlg.accept()
+
+    with qtbot.waitSignal(dlg.resetRequested, timeout=100):
+        dlg.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Reset).click()
