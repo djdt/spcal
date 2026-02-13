@@ -336,7 +336,7 @@ class ImportOptionsWidget(QtWidgets.QGroupBox):
             widget.setBestUnit()
         elif key == "isotopes":
             widget = AdjustingTextEdit(
-                ", ".join(f"{x['Symbol']}{x['Number']}" for x in value)
+                ", ".join(f"{x['Symbol']}{x['Isotope']}" for x in value)
             )
         elif isinstance(value, list) and len(value) > 1:
             widget = AdjustingTextEdit(", ".join(str(x) for x in value))
