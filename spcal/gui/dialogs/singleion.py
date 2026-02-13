@@ -2,7 +2,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
 
 from spcal.dists.util import (
@@ -27,6 +27,43 @@ class OddValueSpinBox(QtWidgets.QSpinBox):
         if value % 2 != 1:
             return QValidator.State.Intermediate
         return QValidator.State.Acceptable
+
+
+class SingleIonSignalsPopup(QtWidgets.QDialog):
+    def __init__(
+        self, mz: float, y: np.ndarray, parent: QtWidgets.QWidget | None = None
+    ):
+        super().__init__(parent)
+        self.view = SinglePlotGraphicsView(f"{mz:2f} m/z", ylabel="Counts")
+        self.view.plot.xaxis.setVisible(False)
+        self.view.setInteractive(False)
+        self.setWindowTitle("Single Ion Inspection")
+        self.setWindowFlags(QtCore.Qt.WindowType.Popup)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.view.drawCurve(np.arange(y.size), y)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.setContentsMargins(QtCore.QMargins(1, 1, 1, 1))
+        layout.addWidget(self.view)
+        self.setLayout(layout)
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(
+            400 * self.devicePixelRatio(), 200 * self.devicePixelRatio()
+        )
+
+    # def focusOutEvent(self, e):
+    #     self.close()
+
+    # def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
+    #     if isinstance(event, QtGui.QMouseEvent):
+    #         print(obj, event)
+    #         print(event.position(), self.rect(),flush=True)
+    #         if not self.rect().contains(event.pos()):
+    #             self.close()
+    #             return True
+    #
+    #     return super().eventFilter(obj, event)
 
 
 class SingleIonDialog(QtWidgets.QDialog):
@@ -136,12 +173,9 @@ class SingleIonDialog(QtWidgets.QDialog):
 
     @QtCore.Slot()
     def onPointClicked(self, pos: QtCore.QPointF, index: int):
-        view = SinglePlotGraphicsView(f"{pos.x():2f} m/z")
-        view.setWindowTitle("Single Ion Inspection")
-        view.setMaximumHeight(200)
-        view.drawCurve(np.arange(self.counts[:, index].size), self.counts[:, index])
-        view.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
-        view.show()
+        sia = np.exp(self.mus[index] + 0.5 * self.sigmas[index] ** 2)
+        popup = SingleIonSignalsPopup(pos.x(), self.counts[:, index] / sia, parent=self)
+        popup.show()
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)

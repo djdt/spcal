@@ -40,7 +40,7 @@ class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):
         self.label.setParentItem(self)
         self.label.setVisible(False)
 
-    def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent):
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent):
         if event.button() != QtCore.Qt.MouseButton.LeftButton:
             return
         points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
