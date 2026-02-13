@@ -39,6 +39,13 @@ def test_guess_text_parameters():
     assert columns == 1
 
 
+def test_io_text_import_agilent(test_data_path: Path):
+    path = test_data_path.joinpath("text/agilent_au50nm.csv")
+    data = read_single_particle_file(path, delimiter=",", skip_rows=4)
+    assert np.all(np.isfinite(data["Au197"]))
+    assert np.isclose(data["Au197"].mean(), 6.2062)
+
+
 def test_guess_text_parameters_agilent():
     agilent_header = [
         "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",

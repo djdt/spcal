@@ -37,6 +37,15 @@ def test_spcal_datafile_text_agilent(test_data_path: Path):
     assert np.isclose(df.total_time, 9996.0)
 
 
+def test_spcal_datafile_text_agilent_cps(test_data_path: Path):
+    path = test_data_path.joinpath("text/agilent_negative_test.csv")
+    df = datafile.SPCalTextDataFile.load(path, skip_rows=4, cps=True)
+
+    assert np.all(np.isfinite(df[df.isotopes[0]]))
+    assert np.all(df[df.isotopes[0]] >= 0.0)
+    assert np.isclose(np.max(df[df.isotopes[0]]), 39.62782)
+
+
 def test_spcal_datafile_text_icap(test_data_path: Path):
     path = test_data_path.joinpath("text/thermo_icap_export.csv")
 
