@@ -1,7 +1,6 @@
 import logging
 import re
 from typing import Any, Sequence
-import numpy as np
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -9,7 +8,6 @@ from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDataba
 from spcal.gui.modelviews import (
     BaseValueErrorRole,
     BaseValueRole,
-    CurrentUnitRole,
     IsotopeOptionRole,
     IsotopeRole,
 )
