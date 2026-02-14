@@ -127,6 +127,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         if text == "":
             self.setValue(None)
         else:
+            text = self.fixup(text)
             value, ok = self.locale().toDouble(text)
             if ok:
                 value = min(value, self.max)
@@ -134,6 +135,9 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
                 self.valueChanged.disconnect(self.textFromValue)
                 self.setValue(value)
                 self.valueChanged.connect(self.textFromValue)
+
+    def fixup(self, input: str) -> str:
+        return self.lineEdit().validator().fixup(input)
 
     def focusInEvent(self, event: QtGui.QFocusEvent):
         super().focusInEvent(event)

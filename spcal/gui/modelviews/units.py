@@ -116,6 +116,10 @@ class UnitsModel(QtCore.QAbstractTableModel):
             if base is not None:
                 base = float(base) / self.modifer(index)
             return base
+        elif role == CurrentUnitRole:
+            return self.current_unit[index.column()]
+        elif role == UnitsRole:
+            return self.units[index.column()]
         return None
 
     def setData(
