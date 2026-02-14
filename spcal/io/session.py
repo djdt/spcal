@@ -1,243 +1,124 @@
-# """Save and restore SPCal sessions."""
-#
-# import re
-# from pathlib import Path
-#
-# import h5py
-# import numpy as np
-# from PySide6 import QtWidgets
-#
-# from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
-# from spcal.gui.options import OptionsWidget
-# from spcal.gui.results import ResultsWidget
-# from spcal.result import ClusterFilter, Filter
-#
-#
-# def cast_structured_array_types(
-#     x: np.ndarray, char_casts: dict[str, str]
-# ) -> np.ndarray:
-#     fields = x.dtype.fields
-#     if fields is None:
-#         raise ValueError("must be structured array")
-#
-#     trans = str.maketrans(char_casts)
-#
-#     new_dtype = np.dtype(
-#         {
-#             "names": list(fields.keys()),
-#             "formats": [field[0].str.translate(trans) for field in fields.values()],
-#         }
-#     )
-#     return x.astype(new_dtype)
-#
-#
-# def flatten_dict(d: dict, prefix: str = "", sep: str = "/") -> dict:
-#     flat = {}
-#     for k, v in d.items():
-#         newk = prefix + sep + k if prefix else k
-#         if isinstance(v, dict):
-#             flat.update(flatten_dict(v, newk, sep))
-#         else:
-#             flat[newk] = v
-#     return flat
-#
-#
-# def unflatten_dict(d: dict, base: dict | None = None, sep: str = "/") -> dict:
-#     if base is None:
-#         base = {}
-#     for k, v in d.items():
-#         root = base
-#         if sep in k:
-#             *tokens, k = k.split("/")
-#             for token in tokens:
-#                 root.setdefault(token, {})
-#                 root = root[token]
-#         root[k] = v
-#     return base
-#
-#
-# def sanitiseOptions(options: dict) -> dict:
-#     return flatten_dict(options)
-#
-#
-# def restoreOptions(options: dict) -> dict:
-#     return unflatten_dict(options)
-#
-#
-# def sanitiseFilters(filters: list[list[Filter]]) -> np.ndarray:
-#     dtype = np.dtype(
-#         [
-#             ("name", "S64"),
-#             ("unit", "S64"),
-#             ("operation", "S2"),
-#             ("value", float),
-#             ("id", int),
-#         ]
-#     )
-#
-#     size = sum(len(f) for f in filters)
-#     data = np.empty(size, dtype=dtype)
-#     i = 0
-#     for group in filters:
-#         for id, filter in enumerate(group):
-#             data[i] = (filter.name, filter.unit, filter.operation, filter.value, id)
-#             i += 1
-#     return data
-#
-#
-# def restoreFilters(data: np.ndarray) -> list[list[Filter]]:
-#     filters: list[list[Filter]] = []
-#     group: list[Filter] = []
-#     for x in data:
-#         if x["id"] == 0:
-#             if len(group) > 0:
-#                 filters.append(group)
-#             group = []
-#         group.append(
-#             Filter(
-#                 x["name"].decode(),
-#                 x["unit"].decode(),
-#                 x["operation"].decode(),
-#                 x["value"],
-#             )
-#         )
-#     if len(group) > 0:
-#         filters.append(group)
-#
-#     return filters
-#
-#
-# def sanitiseClusterFilters(filters: list[ClusterFilter]) -> np.ndarray:
-#     data = np.empty(len(filters), dtype=[("unit", "S64"), ("index", int)])
-#     data["unit"] = [filter.unit for filter in filters]
-#     data["index"] = [filter.idx for filter in filters]
-#     return data
-#
-#
-# def restoreClusterFilters(data: np.ndarray) -> list[ClusterFilter]:
-#     filters: list[ClusterFilter] = []
-#     for x in data:
-#         filters.append(ClusterFilter(unit=x["unit"].decode(), idx=x["index"]))
-#     return filters
-#
-#
-# def sanitiseImportOptions(options: dict) -> dict:
-#     safe = {}
-#     for key, val in options.items():
-#         if isinstance(val, Path):
-#             key = key + "<from Path>"
-#             val = str(val)
-#         elif isinstance(val, np.ndarray):
-#             if val.dtype.names is not None and any(
-#                 "U" in x for _, x in val.dtype.descr
-#             ):
-#                 val = cast_structured_array_types(val, {"U": "S"})
-#                 key = key + "<from arrayU>"
-#             elif val.dtype.kind == "U":
-#                 val = val.astype("S")
-#                 key = key + "<from arrayU>"
-#         elif val is None:
-#             key = key + "<from None>"
-#             val = "None"
-#         safe[key] = val
-#     return flatten_dict(safe)
-#
-#
-# def restoreImportOptions(options: dict) -> dict:
-#     re_type = re.compile("(\\w+)(?:\\<from (\\w+)\\>)?")
-#
-#     restored = {}
-#     for key, val in unflatten_dict(options).items():
-#         m = re_type.match(key)
-#         if m is None:
-#             raise KeyError(f"invalid type ({type(key)}) for {key}")
-#         key, type_token = m.groups()
-#         if type_token == "Path":
-#             val = Path(val)
-#         elif type_token == "arrayU":
-#             if val.dtype.names is not None:
-#                 val = cast_structured_array_types(val, {"S": "U"})
-#             else:
-#                 val = val.astype("U")
-#         elif type_token == "None":
-#             val = None
-#         restored[key] = val
-#     return restored
-#
-#
-# def saveSession(
-#     path: Path,
-#     options: OptionsWidget,
-#     sample: SampleWidget,
-#     reference: ReferenceWidget,
-#     results: ResultsWidget,
-# ):
-#     with h5py.File(path, "w") as h5:
-#         h5.attrs["version"] = QtWidgets.QApplication.applicationVersion()
-#         options_group = h5.create_group("options")
-#         for key, val in sanitiseOptions(options.state()).items():
-#             options_group.attrs[key] = val
-#
-#         expressions_group = h5.create_group("expressions")
-#         for key, val in sample.current_expr.items():
-#             expressions_group.attrs[key] = val
-#
-#         h5.create_dataset("filters", data=sanitiseFilters(results.filters))
-#         h5.create_dataset(
-#             "cluster filters", data=sanitiseClusterFilters(results.cluster_filters)
-#         )
-#
-#         input: InputWidget
-#         for input_key, input in zip(["sample", "reference"], [sample, reference]):
-#             if input.responses.dtype.names is not None:
-#                 input_group = h5.create_group(input_key)
-#                 dset = input_group.create_dataset(
-#                     "data", data=input.responses, compression="gzip"
-#                 )
-#                 dset.attrs["trim"] = input.trimRegion("")
-#
-#                 import_group = input_group.create_group("import options")
-#                 for key, val in sanitiseImportOptions(input.import_options).items():
-#                     import_group.attrs[key] = val
-#
-#                 element_group = input_group.create_group("elements")
-#                 for name in input.responses.dtype.names:
-#                     name_group = element_group.create_group(name)
-#                     for key, val in input.io[name].state().items():
-#                         name_group.attrs[key] = val
-#
-#
-# def restoreSession(
-#     path: Path,
-#     options: OptionsWidget,
-#     sample: SampleWidget,
-#     reference: ReferenceWidget,
-#     results: ResultsWidget,
-# ):
-#     # Clear old session
-#     options.resetInputs()
-#     sample.resetInputs()
-#     reference.resetInputs()
-#
-#     with h5py.File(path, "r") as h5:
-#         if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 14):
-#             raise ValueError("Unsupported version.")  # pragma: no cover
-#
-#         options.setState(restoreOptions(h5["options"].attrs))
-#         for key, val in h5["expressions"].attrs.items():
-#             sample.current_expr[key] = val
-#             reference.current_expr[key] = val
-#
-#         input: InputWidget
-#         for key, input in zip(["sample", "reference"], [sample, reference]):
-#             if key in h5:
-#                 data = h5[key]["data"][:]
-#                 import_options = restoreImportOptions(h5[key]["import options"].attrs)
-#                 input.loadData(data, import_options)
-#                 input.graph.region.setRegion(h5[key]["data"].attrs["trim"])
-#                 for name in h5[key]["elements"].keys():
-#                     input.io[name].setState(h5[key]["elements"][name].attrs)
-#
-#         results.setFilters(
-#             restoreFilters(h5["filters"]), restoreClusterFilters(h5["cluster filters"])
-#         )
+from typing import Any, TextIO
+import tomllib
+from pathlib import Path
+
+from importlib.metadata import version
+
+from spcal.isotope import SPCalIsotope
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import SPCalIsotopeOptions
+
+
+def save_method(path: Path, method: SPCalProcessingMethod):
+    def write_if_not_none(
+        fp: TextIO, name: str, value: Any, comment: str | None = None
+    ):
+        if value is None or value == "":
+            return
+
+        if isinstance(value, str):
+            value = '"' + value + '"'
+
+        fp.write(f"{name} = {value}")
+        if comment is not None:
+            fp.write(f"  # {comment}")
+        fp.write("\n")
+
+    with path.open("w") as fp:
+        fp.write(f"# SPCal {version('spcal')} method\n")
+
+        fp.write("[instrument]\n")
+        write_if_not_none(fp, "uptake", method.instrument_options.uptake, comment="L/s")
+        write_if_not_none(fp, "efficiency", method.instrument_options.efficiency)
+
+        for isotope in method.isotope_options.keys():
+            option = method.isotope_options[isotope]
+            fp.write(f"[isotope.{isotope}]\n")
+            write_if_not_none(fp, "density", option.density, "kg/m3")
+            write_if_not_none(fp, "response", option.response, "cts*L/kg")
+            write_if_not_none(fp, "mass_fraction", option.mass_fraction)
+            write_if_not_none(fp, "concentration", option.concentration, "kg/L")
+            write_if_not_none(fp, "mass_response", option.mass_response, "kg/cts")
+
+        fp.write("[limit]\n")
+        fp.write(f'method = "{method.limit_options.limit_method}"\n')
+        fp.write(f"max_iterations = {method.limit_options.max_iterations}\n")
+        fp.write(f"window_size = {method.limit_options.window_size}\n")
+        fp.write(
+            f"default_manual_limit = {method.limit_options.default_manual_limit}\n"
+        )
+
+        for name, kws in zip(
+            ["gaussian", "poisson", "compound"],
+            [
+                method.limit_options.gaussian_kws,
+                method.limit_options.poisson_kws,
+                method.limit_options.compound_poisson_kws,
+            ],
+        ):
+            fp.write(f"[limit.{name}]\n")
+            for k, v in kws.items():
+                write_if_not_none(fp, k, v)
+
+        if len(method.limit_options.manual_limits) > 0:
+            fp.write("[limit.manual]\n")
+            for k, v in method.limit_options.manual_limits.items():
+                fp.write(f"{k} = {v}\n")
+
+        fp.write("[processing]\n")
+        fp.write(f"points_required = {method.points_required}\n")
+        fp.write(f"prominence_required = {method.prominence_required}\n")
+        fp.write(f'accumulation_method = "{method.accumulation_method}"\n')
+        fp.write(f"cluster_distance = {method.cluster_distance}\n")
+
+
+def load_method(
+    path: Path, method: SPCalProcessingMethod | None = None
+) -> SPCalProcessingMethod:
+    if method is None:
+        method = SPCalProcessingMethod()
+
+    params = tomllib.load(path.open("rb"))
+    method.instrument_options.uptake = params["instrument"].get("uptake", None)
+    method.instrument_options.uptake = params["instrument"].get("efficiency", None)
+
+    if "isotope" in params:
+        for key in params["isotope"]:
+            isotope_options = SPCalIsotopeOptions(
+                params["isotope"][key].get("density", None),
+                params["isotope"][key].get("response", None),
+                params["isotope"][key].get("mass_fraction", None),
+                params["isotope"][key].get("concentration", None),
+                params["isotope"][key].get("mass_response", None),
+            )
+            method.isotope_options[SPCalIsotope.fromString(key)] = isotope_options
+
+    method.limit_options.limit_method = params["limit"]["method"]
+    method.limit_options.max_iterations = params["limit"]["max_iterations"]
+    method.limit_options.window_size = params["limit"]["window_size"]
+    method.limit_options.default_manual_limit = params["limit"]["default_manual_limit"]
+    method.limit_options.gaussian_kws = params["limit"]["gaussian"]
+    method.limit_options.poisson_kws = params["limit"]["poisson"]
+    method.limit_options.compound_poisson_kws = params["limit"]["compound"]
+
+    if "manual" in params["limit"]:
+        manual = {}
+        for k, v in params["limit"]["manual"].items():
+            manual[SPCalIsotope.fromString(k)] = v
+
+    method.points_required = params["processing"]["points_required"]
+    method.prominence_required = params["processing"]["prominence_required"]
+    method.accumulation_method = params["processing"]["accumulation_method"]
+    method.cluster_distance = params["processing"]["cluster_distance"]
+
+    return method
+
+if __name__ == "__main__":
+    method = SPCalProcessingMethod()
+    method.isotope_options[SPCalIsotope.fromString("197Au")] = SPCalIsotopeOptions(
+        1.0, 2.0, 3.0
+    )
+    method.limit_options.manual_limits = {SPCalIsotope.fromString("107Ag"): 10.2}
+
+    save_method(Path("/home/tom/Downloads/test.spcal.toml"), method)
+    load_method(Path("/home/tom/Downloads/test.spcal.toml"))
