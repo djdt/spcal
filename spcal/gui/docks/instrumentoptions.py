@@ -123,19 +123,19 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
 
         self.optionsChanged.emit()
 
-    def isComplete(self) -> bool:
-        mode = self.calibration_mode.currentText()
-        if mode == "Efficiency":
-            return all(
-                [
-                    self.uptake.hasAcceptableInput(),
-                    self.efficiency.hasAcceptableInput(),
-                ]
-            )
-        elif mode == "Mass Response":
-            return True
-        else:
-            raise ValueError(f"Unknown method {mode}.")
+    # def isComplete(self) -> bool:
+    #     mode = self.calibration_mode.currentText()
+    #     if mode == "Efficiency":
+    #         return all(
+    #             [
+    #                 self.uptake.hasAcceptableInput(),
+    #                 self.efficiency.hasAcceptableInput(),
+    #             ]
+    #         )
+    #     elif mode == "Mass Response":
+    #         return True
+    #     else:
+    #         raise ValueError(f"Unknown method {mode}.")
 
     def dialogAdvancedOptions(self):
         val, ok = QtWidgets.QInputDialog.getDouble(
@@ -184,7 +184,7 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
         return self.options_widget.calibration_mode.currentText().lower()
 
     def setCalibrationMode(self, mode: str):
-        return self.options_widget.calibration_mode.setCurrentText(mode.capitalize())
+        return self.options_widget.calibration_mode.setCurrentText(mode.title())
 
     def instrumentOptions(self) -> SPCalInstrumentOptions:
         return self.options_widget.instrumentOptions()
