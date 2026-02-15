@@ -81,6 +81,8 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             self.setCurrentWidget(self.spectra)  # type: ignore
         elif view == "scatter":
             self.setCurrentWidget(self.scatter)  # type: ignore
+        else:
+            raise ValueError(f"unknown view {view}")
 
         self.action_view_options.setEnabled(view != "particle")
         self.requestRedraw.emit()
