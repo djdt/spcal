@@ -45,7 +45,7 @@ def random_datafile_gen():
         df = SPCalTextDataFile(
             path or Path(),
             data,
-            np.linspace(0.0, 1.0, 100),
+            np.linspace(0.0, 1.0, size),
             isotope_table={isotope: str(isotope) for isotope in isotopes},
             instrument_type="quadrupole",
         )
