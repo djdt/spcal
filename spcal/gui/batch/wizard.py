@@ -48,6 +48,14 @@ logger = logging.getLogger(__name__)
 
 
 class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
+    def initStyleOption(
+        self,
+        option: QtWidgets.QStyleOptionViewItem,
+        index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+    ):
+        super().initStyleOption(option, index)
+        option.decorationPosition = QtWidgets.QStyleOptionViewItem.Position.Right  # type: ignore
+
     def editorEvent(
         self,
         event: QtCore.QEvent,
