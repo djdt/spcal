@@ -157,7 +157,10 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
                 self.combo_isotope.isotope(i) for i in range(self.combo_isotope.count())
             ]
         else:
-            return [self.combo_isotope.currentIsotope()]
+            isotope = self.combo_isotope.currentIsotope()
+            if isotope is not None:
+                return [isotope]
+        return []
 
     def overlayOptionChanged(self, checked: bool):
         self.combo_isotope.setEnabled(not checked)

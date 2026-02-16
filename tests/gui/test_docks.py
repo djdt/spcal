@@ -317,3 +317,51 @@ def test_spcal_toolbar(qtbot: QtBot):
     qtbot.addWidget(toolbar)
     with qtbot.waitExposed(toolbar):
         toolbar.show()
+
+    assert not toolbar.scatter_actions.isVisible()
+    assert len(toolbar.selectedIsotopes()) == 0
+
+    toolbar.setIsotopes(
+        [
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Fe", 57)],
+            ISOTOPE_TABLE[("Ni", 58)],
+        ]
+    )
+
+    assert toolbar.combo_isotope.currentText() == "56Fe"
+    assert toolbar.scatter_x.text() == "56Fe"
+    assert toolbar.scatter_y.text() == "57Fe"
+    assert len(toolbar.selectedIsotopes()) == 1
+
+    with qtbot.waitSignal(toolbar.isotopeChanged, timeout=100):
+        toolbar.combo_isotope.setCurrentIsotope(ISOTOPE_TABLE[("Fe", 57)])
+
+    # test retain current
+    toolbar.setIsotopes(
+        [
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Fe", 57)],
+            ISOTOPE_TABLE[("Cu", 63)],
+        ]
+    )
+    assert toolbar.combo_isotope.currentText() == "57Fe"
+
+    with qtbot.waitSignal(toolbar.isotopeChanged, timeout=100):
+        toolbar.action_all_isotopes.trigger()
+    assert len(toolbar.selectedIsotopes()) == 3
+
+    with qtbot.waitSignal(toolbar.keyChanged, timeout=100):
+        toolbar.combo_key.setCurrentIndex(1)
+
+    toolbar.onViewChanged("scatter")
+    assert toolbar.scatter_actions.isVisible()
+
+    with qtbot.waitSignal(toolbar.scatterOptionsChanged, timeout=100):
+        toolbar.scatter_x.setText("Fe56+Fe56")
+        toolbar.scatter_x.editingFinished.emit()
+
+    with qtbot.waitSignal(toolbar.requestFilterDialog, timeout=100):
+        toolbar.action_filter.trigger()
+
+    toolbar.reset()
