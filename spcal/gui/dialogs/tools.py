@@ -3,6 +3,7 @@ from typing import Generator
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.datafile import SPCalDataFile
 from spcal.isotope import SPCalIsotopeBase
 from spcal.particle import (
     nebulisation_efficiency_from_concentration,
@@ -237,6 +238,8 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
+        data_file: SPCalDataFile,
+        isotope: SPCalIsotopeBase,
         result: SPCalProcessingResult,
         parent: QtWidgets.QWidget | None = None,
     ):
@@ -285,6 +288,13 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
+        gbox_info = QtWidgets.QGroupBox("Data file")
+        gbox_info_layout = QtWidgets.QFormLayout()
+        gbox_info_layout.addRow("Name:", QtWidgets.QLabel(str(data_file.path.name)))
+        gbox_info_layout.addRow("Isotope:", QtWidgets.QLabel(str(isotope)))
+        gbox_info_layout.addRow("No events:", QtWidgets.QLabel(str(result.number)))
+        gbox_info.setLayout(gbox_info_layout)
+
         gbox_mass = QtWidgets.QGroupBox("Reference properties")
         gbox_mass_layout = QtWidgets.QFormLayout()
         gbox_mass_layout.addRow("Density", self.density)
@@ -305,10 +315,11 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         gbox_output.setLayout(gbox_ouput_layout)
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(gbox_mass, 0, 0, 1, 1)
-        layout.addWidget(gbox_conc, 1, 0, 1, 1)
-        layout.addWidget(gbox_output, 0, 1, 2, 1)
-        layout.addWidget(self.button_box, 2, 0, 1, 2)
+        layout.addWidget(gbox_info, 0, 0, 1, 2)
+        layout.addWidget(gbox_mass, 1, 0, 1, 1)
+        layout.addWidget(gbox_conc, 2, 0, 1, 1)
+        layout.addWidget(gbox_output, 1, 1, 2, 1)
+        layout.addWidget(self.button_box, 3, 0, 1, 2)
 
         self.setLayout(layout)
         self.onOptionChanged()

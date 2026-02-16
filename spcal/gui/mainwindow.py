@@ -794,7 +794,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             return None
 
         dlg = TransportEfficiencyDialog(
-            self.processing_results[data_file][isotope], parent=self
+            data_file, isotope, self.processing_results[data_file][isotope], parent=self
         )
         dlg.efficiencySelected.connect(
             self.instrument_options.options_widget.efficiency.setValue
