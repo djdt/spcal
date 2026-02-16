@@ -125,34 +125,28 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
 
         self.key_action = self.addWidget(self.combo_key)
 
-        self.scatter_y_action = self.addWidget(self.scatter_y)
-        self.scatter_key_y_action = self.addWidget(self.scatter_key_y)
-        self.scatter_x_action = self.addWidget(self.scatter_x)
-        self.scatter_key_x_action = self.addWidget(self.scatter_key_x)
+        scatter_y_action = self.addWidget(self.scatter_y)
+        scatter_key_y_action = self.addWidget(self.scatter_key_y)
+        scatter_x_action = self.addWidget(self.scatter_x)
+        scatter_key_x_action = self.addWidget(self.scatter_key_x)
+
+        self.scatter_actions = QtGui.QActionGroup(self)
+        self.scatter_actions.addAction(scatter_y_action)
+        self.scatter_actions.addAction(scatter_key_y_action)
+        self.scatter_actions.addAction(scatter_x_action)
+        self.scatter_actions.addAction(scatter_key_x_action)
 
         self.addSeparator()
         self.addAction(self.action_filter)
 
-        for action in [
-            self.scatter_y_action,
-            self.scatter_key_y_action,
-            self.scatter_x_action,
-            self.scatter_key_x_action,
-        ]:
-            action.setVisible(False)
+        self.scatter_actions.setVisible(False)
 
     def onViewChanged(self, view: str):
         self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])
         self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
 
         self.key_action.setVisible(view not in ["scatter"])
-        for widget in [
-            self.scatter_x_action,
-            self.scatter_y_action,
-            self.scatter_key_x_action,
-            self.scatter_key_y_action,
-        ]:
-            widget.setVisible(view in ["scatter"])
+        self.scatter_actions.setVisible(view in ["scatter"])
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         if (
