@@ -70,8 +70,8 @@ def test_batch_wizard_text(
             page.files.viewport(),
             QtCore.Qt.MouseButton.LeftButton,
             pos=page.files.visualItemRect(page.files.item(2))
-            .marginsRemoved(QtCore.QMargins(5, 0, 0, 5))
-            .bottomLeft(),
+            .marginsRemoved(QtCore.QMargins(0, 0, 5, 5))
+            .bottomRight(),
         )
     assert page.files.count() == 2
 
@@ -257,8 +257,8 @@ def test_batch_wizard_tofwerk(
             page.files.viewport(),
             QtCore.Qt.MouseButton.LeftButton,
             pos=page.files.visualItemRect(page.files.item(1))
-            .marginsRemoved(QtCore.QMargins(5, 0, 0, 5))
-            .bottomLeft(),
+            .marginsRemoved(QtCore.QMargins(0, 0, 5, 5))
+            .bottomRight(),
         )
     assert page.files.count() == 1
     assert page.isComplete()
