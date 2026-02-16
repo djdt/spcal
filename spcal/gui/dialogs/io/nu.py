@@ -166,7 +166,7 @@ class NuImportDialog(ImportDialogBase):
         )
         self.box_info_layout.addRow(
             "Events:",
-            QtWidgets.QLabel(str(self.info["ActualRecordLength"])),
+            QtWidgets.QLabel(str(self.info["TotalAcquisitions"])),
         )
         self.box_info_layout.addRow(
             "Event time:",
@@ -175,7 +175,7 @@ class NuImportDialog(ImportDialogBase):
         self.box_info_layout.addRow(
             "Total time:",
             QtWidgets.QLabel(
-                f"{nu.eventtime_from_info(self.info) * self.info['ActualRecordLength']} s"
+                f"{nu.eventtime_from_info(self.info) * self.info['TotalAcquisitions']:.2f} s"
             ),
         )
         self.box_info_layout.addRow(
