@@ -1,19 +1,30 @@
-from PySide6 import QtGui
+from PySide6 import QtCore, QtGui
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.central import SPCalCentralWidget
-from spcal.gui.docks.instrumentoptions import (
-    SPCalInstrumentOptionsDock,
-    SPCalInstrumentOptionsWidget,
-)
-from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock, IsotopeOptionTable
-from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock, SPCalLimitOptionsWidget
-from spcal.gui.docks.outputs import SPCalOutputsDock, ResultOutputView
+from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
+from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
+from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
+from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
+from spcal.gui.modelviews import UnitsRole
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.processing.options import SPCalInstrumentOptions
+from spcal.processing.options import (
+    SPCalInstrumentOptions,
+    SPCalIsotopeOptions,
+    SPCalLimitOptions,
+)
+
+from spcal.siunits import (
+    number_concentration_units,
+    mass_concentration_units,
+    signal_units,
+    mass_units,
+    size_units,
+)
 
 
 def test_spcal_datfiles_dock(qtbot: QtBot, random_datafile_gen):
@@ -119,7 +130,7 @@ def test_spcal_central_widget(
         assert widget.currentView() == view
 
 
-def test_spcal_instrument_options_dock_and_widget(qtbot: QtBot):
+def test_spcal_instrument_options_dock(qtbot: QtBot):
     dock = SPCalInstrumentOptionsDock(
         SPCalInstrumentOptions(None, 0.1), "efficiency", 0.04
     )
@@ -148,3 +159,158 @@ def test_spcal_instrument_options_dock_and_widget(qtbot: QtBot):
         dock.options_widget.button_efficiency.click()
 
     assert dock.instrumentOptions().uptake == 0.3
+
+
+def test_spcal_isotope_options_dock(qtbot: QtBot):
+    dock = SPCalIsotopeOptionsDock()
+
+    qtbot.addWidget(dock)
+    with qtbot.waitExposed(dock):
+        dock.show()
+
+    isotopes = [
+        ISOTOPE_TABLE[("Fe", 56)],
+        ISOTOPE_TABLE[("Fe", 57)],
+        ISOTOPE_TABLE[("Ni", 58)],
+    ]
+
+    assert len(dock.isotopeOptions()) == 0
+
+    dock.setIsotopes(isotopes)
+
+    assert len(dock.isotopeOptions()) == 3
+
+    dock.setIsotopeOption(isotopes[0], SPCalIsotopeOptions(None, None, 1.0))
+    dock.setIsotopeOption(isotopes[1], SPCalIsotopeOptions(1.0, 2.0, 0.5))
+
+    assert dock.optionForIsotope(isotopes[0]).density is None
+    assert dock.optionForIsotope(isotopes[1]).density == 1.0
+    assert dock.optionForIsotope(isotopes[2]).density is None
+
+    dock.setSignificantFigures(3)
+
+    dock.reset()
+    assert len(dock.isotopeOptions()) == 3
+    assert dock.optionForIsotope(isotopes[1]).density is None
+
+
+def test_spcal_limit_options_dock(qtbot: QtBot):
+    dock = SPCalLimitOptionsDock(
+        SPCalLimitOptions(
+            "poisson",
+            window_size=100,
+            max_iterations=100,
+            gaussian_kws={"alpha": 1e-3},
+            poisson_kws={"function": "currie", "alpha": 1e-4},
+            compound_poisson_kws={"alpha": 1e-5, "sigma": 0.6},
+        ),
+        "signal mean",
+        2,
+        0.5,
+    )
+
+    qtbot.addWidget(dock)
+    with qtbot.waitExposed(dock):
+        dock.show()
+
+    assert dock.accumulationMethod() == "signal mean"
+    assert dock.pointsRequired() == 2
+    assert dock.prominenceRequired() == 0.5
+
+    assert dock.options_widget.limit_method.currentText() == "Poisson"
+    assert dock.options_widget.window_size.value() == 100
+    assert dock.options_widget.check_window.isChecked()
+    assert dock.options_widget.check_iterative.isChecked()
+    assert dock.options_widget.gaussian.alpha.value() == 1e-3
+    assert dock.options_widget.poisson.alpha.value() == 1e-4
+    assert dock.options_widget.poisson.function == "currie"
+    assert dock.options_widget.compound.alpha.value() == 1e-5
+    assert dock.options_widget.compound.lognormal_sigma.value() == 0.6
+
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.poisson.alpha.setValue(1e-3)
+
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.reset()
+
+
+def test_spcal_outputs_dock(
+    qtbot: QtBot, random_datafile_gen, default_method: SPCalProcessingMethod
+):
+    default_method.instrument_options.uptake = 1.0
+    default_method.instrument_options.efficiency = 0.1
+    default_method.isotope_options[ISOTOPE_TABLE[("Fe", 56)]] = SPCalIsotopeOptions(
+        1.0, 1.0, 1.0
+    )
+    default_method.isotope_options[ISOTOPE_TABLE[("Fe", 57)]] = SPCalIsotopeOptions(
+        None, None, None
+    )
+    default_method.isotope_options[ISOTOPE_TABLE[("Ni", 58)]] = SPCalIsotopeOptions(
+        1.0, 2.0, 3.0
+    )
+
+    df = random_datafile_gen(
+        isotopes=[
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Fe", 57)],
+            ISOTOPE_TABLE[("Ni", 58)],
+        ]
+    )
+    results = default_method.processDataFile(df)
+
+    dock = SPCalOutputsDock()
+    qtbot.addWidget(dock)
+    with qtbot.waitExposed(dock):
+        dock.show()
+
+    assert dock.table.results_model.rowCount() == 0
+    dock.setResults(results)
+    assert dock.table.results_model.rowCount() == 3
+
+    orientation = QtCore.Qt.Orientation.Horizontal
+
+    assert (dock.table.results_model.headerData(0, orientation, UnitsRole)) == {}
+    assert (
+        dock.table.results_model.headerData(1, orientation, UnitsRole)
+    ) == number_concentration_units
+    for i in range(2, 7):
+        assert (
+            dock.table.results_model.headerData(i, orientation, UnitsRole)
+        ) == signal_units
+
+    dock.updateOutputsForKey("mass")
+    assert (
+        dock.table.results_model.headerData(1, orientation, UnitsRole)
+    ) == mass_concentration_units
+    for i in range(2, 7):
+        assert (
+            dock.table.results_model.headerData(i, orientation, UnitsRole)
+        ) == mass_units
+
+    dock.updateOutputsForKey("size")
+    assert (
+        dock.table.results_model.headerData(1, orientation, UnitsRole)
+    ) == number_concentration_units
+    for i in range(2, 7):
+        assert (
+            dock.table.results_model.headerData(i, orientation, UnitsRole)
+        ) == size_units
+
+    dock.setSignificantFigures(3)
+    delegate = dock.table.itemDelegate()
+    assert isinstance(delegate, ValueWidgetDelegate)
+    assert delegate.sigfigs == 3
+
+    with qtbot.waitSignal(
+        dock.requestCurrentIsotope,
+        check_params_cb=lambda iso: iso == ISOTOPE_TABLE[("Fe", 56)],
+        timeout=100,
+    ):
+        dock.table.onHeaderClicked(0)
+
+    dock.reset()
+    assert dock.table.results_model.rowCount() == 0
+
+
+# def test_spcal_toolbar(qtbot: QtBot):
+#
