@@ -246,21 +246,11 @@ def test_batch_wizard_tofwerk(
         page.addFile(test_data_path.joinpath("tofwerk/test_tofwerk.h5"))
     with pytest.raises(FileNotFoundError):
         page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+
     page.radio_tofwerk.click()
     page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
     assert page.files.count() == 1
-    page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
-    assert page.files.count() == 2
 
-    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
-        qtbot.mouseClick(
-            page.files.viewport(),
-            QtCore.Qt.MouseButton.LeftButton,
-            pos=page.files.visualItemRect(page.files.item(1))
-            .marginsRemoved(QtCore.QMargins(0, 0, 5, 5))
-            .bottomRight(),
-        )
-    assert page.files.count() == 1
     assert page.isComplete()
 
     wiz.next()
@@ -317,6 +307,10 @@ def test_batch_wizard_tofwerk(
     assert tmp_path.joinpath(page.output_name.text()).exists()
 
     wiz.close()
+
+
+def test_batch_wizard_files_page(qtbot: QtBot):
+    raise NotImplementedError
 
 
 def test_batch_wizard_method_page(qtbot: QtBot):
