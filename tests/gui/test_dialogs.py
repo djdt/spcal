@@ -469,6 +469,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
         ],
+        number=0,
         seed=79826,
     )
 
@@ -488,6 +489,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
         ],
+        number=0,
         seed=79827,
     )
 
@@ -652,16 +654,20 @@ def test_particle_database(qtbot: QtBot):
 
 
 def test_transport_efficiency_dialog(
-    qtbot: QtBot, random_result_generator, default_method: SPCalProcessingMethod
+    qtbot: QtBot,
+    random_datafile_gen,
+    default_method: SPCalProcessingMethod,
 ):
     default_method.instrument_options.uptake = 1.0
     default_method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(
         1.0, 1.0, None, diameter=10.0
     )
-    result: SPCalProcessingResult = random_result_generator(
-        default_method, isotope=ISOTOPE_TABLE[("Au", 197)]
+    df = random_datafile_gen(isotopes=[ISOTOPE_TABLE[("Au", 197)]])
+    result = default_method.processDataFile(df)
+
+    dlg = TransportEfficiencyDialog(
+        df, ISOTOPE_TABLE[("Au", 197)], result[ISOTOPE_TABLE[("Au", 197)]]
     )
-    dlg = TransportEfficiencyDialog(result)
 
     qtbot.addWidget(dlg)
     with qtbot.waitExposed(dlg):

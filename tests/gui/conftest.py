@@ -25,10 +25,11 @@ def test_locales(request):
 def random_datafile_gen():
     def random_datafile(
         size: int = 100,
+        number: int = 10,
         lam: float = 1.0,
         isotopes: list[SPCalIsotope] | None = None,
         path: Path | None = None,
-        seed: int | None = None
+        seed: int | None = None,
     ):
         if seed is not None:
             np.random.seed(seed)
@@ -41,6 +42,9 @@ def random_datafile_gen():
         assert data.dtype.names is not None
         for name in data.dtype.names:
             data[name] = np.random.poisson(lam=lam, size=size)
+            data[name][np.random.choice(size, number)] += np.random.normal(
+                lam * 20, size=number
+            )
 
         df = SPCalTextDataFile(
             path or Path(),
