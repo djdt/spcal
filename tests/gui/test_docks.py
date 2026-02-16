@@ -312,5 +312,8 @@ def test_spcal_outputs_dock(
     assert dock.table.results_model.rowCount() == 0
 
 
-# def test_spcal_toolbar(qtbot: QtBot):
-#
+def test_spcal_toolbar(qtbot: QtBot):
+    toolbar = SPCalOptionsToolBar()
+    qtbot.addWidget(toolbar)
+    with qtbot.waitExposed(toolbar):
+        toolbar.show()
