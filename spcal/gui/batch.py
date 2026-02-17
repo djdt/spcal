@@ -78,10 +78,13 @@ def process_data(
             )
 
         # === Create detections ===
+        limit_accumulation = limits[name].accumulationLimit(acc_method)
+        limit_detection = limits[name].detection_threshold
+        limit_accumulation = np.minimum(limit_accumulation, limit_detection)
         d[name], l[name], r[name] = accumulate_detections(
             data[name],
-            limits[name].accumulationLimit(acc_method),
-            limits[name].detection_threshold,
+            limit_accumulation,
+            limit_detection,
             points_required=points_req,
             prominence_required=prominence_req,
             integrate=True,
