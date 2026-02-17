@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 class FontScaledItemSample(pyqtgraph.ItemSample):
     def __init__(
         self,
-        item: QtWidgets.QGraphicsItem|None,
+        item: QtWidgets.QGraphicsItem | None,
         font_metrics: QtGui.QFontMetrics,
         brush: QtGui.QBrush | None = None,
     ):
@@ -17,7 +17,7 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
 
     def boundingRect(self):
         return QtCore.QRectF(  # vertically center
-            self.width() / 2.0, self.height() / 3.0, self.width(), self.height()
+            0, 0, self.width(), self.height()
         )
 
     def paint(  # type: ignore
@@ -215,11 +215,6 @@ class ParticleItemSample(FontScaledItemSample):
         self.lines = lines
 
         self.setFixedWidth(self.height() * 2)
-
-    def boundingRect(self):
-        return QtCore.QRectF(  # vertically center
-            self.width() / 2.0, self.height() / 3.0, self.width(), self.height()
-        )
 
     def setSibilingsVisble(
         self,
