@@ -173,9 +173,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.action_open.setShortcut(QtGui.QKeySequence.StandardKey.Open)
 
         self.action_open_recent = QtGui.QActionGroup(self)
-        self.action_open_recent.triggered.connect(
-            lambda a: self.dialogLoadFile(a.text().replace("&", ""))
-        )
+        self.action_open_recent.triggered.connect(self.openRecentFile)
 
         self.action_open_batch = create_action(
             "document-multiple",
@@ -413,10 +411,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     # Slots for signals
 
+    def openRecentFile(self, action: QtGui.QAction):
+        path = Path(action.text().replace("&", ""))
+        if not path.exists():
+            QtWidgets.QMessageBox.warning(
+                self, "File Not Found", f"The file '{path}' does not exist."
+            )
+            self.updateRecentFiles(remove_path=path)
+        else:
+            self.dialogLoadFile(path)
+
     def onDataFileAdded(self, data_file: SPCalDataFile):
         self.reprocess(data_file)
         self.updateRecentFiles(data_file)
-        # self.onDataFileChanged(data_file)
         logger.info(
             f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
         )
@@ -752,6 +759,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         else:
             path = Path(path)
 
+        if not path.exists():
+            raise FileNotFoundError(f"Path '{path}' does not exist.")
+
         dlg = get_import_dialog_for_path(
             self,
             path,
@@ -928,32 +938,40 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.isotope_options.setSignificantFigures(value)
             self.outputs.setSignificantFigures(value)
 
-    def updateRecentFiles(self, new_path: SPCalDataFile | Path | None = None):
+    def updateRecentFiles(
+        self,
+        add_path: SPCalDataFile | Path | None = None,
+        remove_path: Path | None = None,
+    ):
         MAX_RECENT_FILES = 10
         settings = QtCore.QSettings()
 
-        if isinstance(new_path, SPCalDataFile):
-            new_path = new_path.path
+        if isinstance(add_path, SPCalDataFile):
+            add_path = add_path.path
 
         paths = []
         num = settings.beginReadArray("RecentFiles")
         for i in range(num):
             settings.setArrayIndex(i)
             path = Path(settings.value("Path"))
-            if path != new_path:
+            if path != add_path:
                 paths.append(path)
         settings.endArray()
 
-        if new_path is not None:
-            paths.insert(0, new_path)
-            paths = paths[:MAX_RECENT_FILES]
+        if add_path is not None:
+            paths.insert(0, add_path)
 
-            settings.remove("RecentFiles")
-            settings.beginWriteArray("RecentFiles", len(paths))
-            for i, path in enumerate(paths):
-                settings.setArrayIndex(i)
-                settings.setValue("Path", str(path))
-            settings.endArray()
+        if remove_path is not None and remove_path in paths:
+            paths.remove(remove_path)
+
+        paths = paths[:MAX_RECENT_FILES]
+
+        settings.remove("RecentFiles")
+        settings.beginWriteArray("RecentFiles", len(paths))
+        for i, path in enumerate(paths):
+            settings.setArrayIndex(i)
+            settings.setValue("Path", str(path))
+        settings.endArray()
 
         # Clear old actions
         self.menu_recent.clear()
