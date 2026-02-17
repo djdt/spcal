@@ -79,7 +79,9 @@ class SinglePlotItem(pyqtgraph.PlotItem):
 
         self.setMenuEnabled(False)
         self.hideButtons()
-        self.addLegend(offset=(-5, 5), verSpacing=0, colCount=1, labelTextColor="black")
+        self.addLegend(
+            offset=(-10, 10), verSpacing=0, colCount=1, labelTextColor="black"
+        )
 
         if font is None:
             font = QtGui.QFont()
