@@ -216,7 +216,9 @@ class SPCalTextDataFile(SPCalDataFile):
 
         if cps:
             for name in signals.dtype.names:
-                signals[name] *= np.diff(times, append=times[-1] + (times[-1] - times[-2]))
+                signals[name] *= np.diff(
+                    times, append=times[-1] + (times[-1] - times[-2])
+                )
 
         if instrument_type is None:
             instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
@@ -254,6 +256,7 @@ class SPCalNuDataFile(SPCalDataFile):
         cycle_number: int | None,
         segment_number: int | None,
         integ_files: tuple[int, int | None],
+        autoblanking: str = "regions",
         max_mass_diff: float = 0.05,
     ):
         super().__init__(path, times, instrument_type="tof")
@@ -266,6 +269,7 @@ class SPCalNuDataFile(SPCalDataFile):
         self.cycle_number = cycle_number
         self.segment_number = segment_number
         self.max_mass_diff = max_mass_diff
+        self.autoblanking = autoblanking
         self.integ_files = integ_files
 
         self.isotope_table: dict[SPCalIsotope, int] = {}
