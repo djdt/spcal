@@ -89,9 +89,11 @@ class NuImportDialog(ImportDialogBase):
 
         max_mass_diff = 0.05
         selected = []
+        autoblanking = "regions"
         if isinstance(existing_file, SPCalNuDataFile):
             max_mass_diff = existing_file.max_mass_diff
             selected = existing_file.selected_isotopes
+            autoblanking = existing_file.autoblanking
 
         # read first integ
         data: np.ndarray | None = None
@@ -146,10 +148,26 @@ class NuImportDialog(ImportDialogBase):
         layout_integ.addWidget(self.last_integ)
 
         # todo: option to remove blanked regions?
-        # self.combo_blanking = QtWidgets.QComboBox()
-        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
-        self.checkbox_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
-        self.checkbox_blanking.setChecked(True)
+        self.combo_blanking = QtWidgets.QComboBox()
+        self.combo_blanking.addItems(["Off", "Blank Regions", "Blank All Masses"])
+        self.combo_blanking.setItemData(
+            0,
+            "Don't apply blanking, some data may be invalid.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setItemData(
+            1,
+            "Remove mass regions recorded in the auto blanking files.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setItemData(
+            2,
+            "Remove all masses when a region is blanked, regardless of their presence in the auto blanking files.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setCurrentIndex(
+            ["off", "regions", "all"].index(autoblanking)
+        )
 
         self.updateTableIsotopes()
 
@@ -188,7 +206,7 @@ class NuImportDialog(ImportDialogBase):
         self.box_options_layout.addRow("Integ files:", layout_integ)
         self.box_options_layout.addRow("Max diff m/z:", self.max_mass_diff)
         # self.box_options.layout().addRow("Max file:", self.file_number)
-        self.box_options_layout.addRow(self.checkbox_blanking)
+        self.box_options_layout.addRow("Auto blanking:", self.combo_blanking)
 
         self.table.setFocus()
         self.completeChanged()
@@ -345,7 +363,13 @@ class NuImportDialog(ImportDialogBase):
         # if not raw:
         signals /= self.info["AverageSingleIonArea"]
 
-        if self.checkbox_blanking.isChecked():
+        autoblanking = {
+            "Off": "off",
+            "Blank Regions": "regions",
+            "Blank All Masses": "all",
+        }[self.combo_blanking.currentText()]
+
+        if autoblanking != "off":
             autobs = np.concatenate(
                 nu.read_binaries_in_index(
                     self.file_path,
@@ -356,7 +380,13 @@ class NuImportDialog(ImportDialogBase):
                     seg_number=seg_number,
                 )
             )
-            signals = nu.apply_autoblanking(autobs, signals, masses, self.info)
+            signals = nu.apply_autoblanking(
+                autobs,
+                signals,
+                masses,
+                self.info,
+                blank_all_signals=autoblanking == "all",
+            )
 
         data_file = SPCalNuDataFile(
             self.file_path,
@@ -366,6 +396,7 @@ class NuImportDialog(ImportDialogBase):
             self.info,
             cycle_number=cyc_number,
             segment_number=seg_number,
+            autoblanking=autoblanking,
             integ_files=(self.first_integ.value() - 1, self.last_integ.value() - 1),
         )
         data_file.selected_isotopes = self.table.selectedIsotopes()
