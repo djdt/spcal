@@ -56,6 +56,8 @@ class ResultOutputModel(UnitsModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.results)
 
     def columnCount(
@@ -63,13 +65,16 @@ class ResultOutputModel(UnitsModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(ResultOutputModel.COLUMNS)
 
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
         flags = super().flags(index)
-        flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
+        if index.isValid():
+            flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
     def headerData(
