@@ -13,6 +13,10 @@ from spcal.gui.modelviews import (
 
 
 class UnitsModel(QtCore.QAbstractTableModel):
+    """A model that can have different units for each row or column.
+    To implement, subclass and reimplment `data` and `setData` to return valid values for
+    'BaseValueRole' and 'BasrErrorRole' and both `rowCount` and `columnCount`.
+    """
     def __init__(
         self,
         units_labels: list[str],
