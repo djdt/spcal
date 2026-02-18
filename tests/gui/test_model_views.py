@@ -4,7 +4,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 from pytestqt.modeltest import ModelTester
 
-from spcal.gui.modelviews import BaseValueRole, CurrentUnitRole, IsotopeRole, UnitsRole
+from spcal.gui.modelviews import (
+    BaseValueErrorRole,
+    BaseValueRole,
+    CurrentUnitRole,
+    IsotopeRole,
+    UnitsRole,
+    ValueErrorRole,
+)
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 from spcal.gui.modelviews.headers import CheckableHeaderView, ComboHeaderView
@@ -636,7 +643,74 @@ def test_results_output_model(
     )
 
 
-# def test_units_model(qtbot: QtBot):
+def test_units_model(qtbot: QtBot):
+    class OnesUnitModel(UnitsModel):
+        test_value = None
+
+        def rowCount(self, parent=QtCore.QModelIndex()):  # type: ignore
+            return 1
+
+        def columnCount(self, parent=QtCore.QModelIndex()):  # type: ignore
+            return 2
+
+        def setData(
+            self,
+            index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+            value,
+            role: int = QtCore.Qt.ItemDataRole.EditRole,
+        ) -> bool:
+            if role in [BaseValueRole, BaseValueErrorRole]:
+                self.test_value = value
+                return True
+            else:
+                return super().setData(index, value, role)
+
+        def data(
+            self,
+            index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
+            role: int = QtCore.Qt.ItemDataRole.EditRole,
+        ):
+            if not index.isValid():
+                return
+            if role == BaseValueRole:
+                return 1.0
+            elif role == BaseValueErrorRole:
+                return 0.2
+            return super().data(index, role)
+
+    model = OnesUnitModel(["A", "B"], ["cts", "mg"], [signal_units, mass_units])
+
+    assert model.data(model.index(0, 0), BaseValueRole) == 1.0
+    assert model.data(model.index(0, 1), BaseValueRole) == 1.0
+
+    assert model.data(model.index(0, 0)) == 1.0
+    assert np.isclose(model.data(model.index(0, 1)), 1e6)  # type: ignore
+
+    assert model.data(model.index(0, 0), BaseValueErrorRole) == 0.2
+    assert model.data(model.index(0, 1), BaseValueErrorRole) == 0.2
+
+    assert model.data(model.index(0, 0), ValueErrorRole) == 0.2
+    assert np.isclose(model.data(model.index(0, 1), ValueErrorRole), 0.2e6)  # type: ignore
+
+    with qtbot.waitSignal(model.headerDataChanged, timeout=100):
+        model.setHeaderData(1, QtCore.Qt.Orientation.Horizontal, "g", CurrentUnitRole)
+
+    assert np.isclose(model.data(model.index(0, 1)), 1e3)  # type: ignore
+
+    # set data
+    model.setData(model.index(0, 1), 2.0, BaseValueRole)
+    assert model.test_value == 2.0
+    model.setData(model.index(0, 1), 1.0)
+    assert model.test_value == 1e-3
+    model.setData(model.index(0, 1), 3.0, BaseValueErrorRole)
+    assert model.test_value == 3.0
+    model.setData(model.index(0, 1), 4.0, ValueErrorRole)
+    assert model.test_value == 4e-3
+
+    i0, i1 = model.unitStartEndIndices(0)
+    assert i0.row() == 0
+    assert i1.row() == 0
+
 
 # def test_units_header_view(qtbot: QtBot):
 
