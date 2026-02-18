@@ -40,16 +40,12 @@ def test_batch_wizard_text(
 
     assert not page.isComplete()
 
-    with pytest.raises(FileNotFoundError):
-        page.addFile(test_data_path.joinpath("tofwerk/test_tofwerk.h5"))
     page.addFile(test_data_path.joinpath("text/tofwerk_export_au.csv"))
     assert page.files.count() == 1
-    page.addFile(test_data_path.joinpath("text/tofwerk_export_au_bg.csv"))
-    assert page.files.count() == 2
 
     # Test that no valid isotopes are availabled
     page.addFile(test_data_path.joinpath("text/text_onecol.csv"))
-    assert page.files.count() == 3
+    assert page.files.count() == 2
 
     wiz.next()
 
@@ -65,15 +61,8 @@ def test_batch_wizard_text(
     page = wiz.currentPage()
     assert isinstance(page, BatchFilesWizardPage)
 
-    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
-        qtbot.mouseClick(
-            page.files.viewport(),
-            QtCore.Qt.MouseButton.LeftButton,
-            pos=page.files.visualItemRect(page.files.item(2))
-            .marginsRemoved(QtCore.QMargins(0, 0, 5, 5))
-            .bottomRight(),
-        )
-    assert page.files.count() == 2
+    page.files.model().removeRow(1)
+    assert page.files.count() == 1
 
     wiz.next()
 
@@ -109,7 +98,7 @@ def test_batch_wizard_text(
     assert isinstance(page, BatchRunWizardPage)
 
     assert page.isComplete()
-    assert page.output_files.count() == 2
+    assert page.output_files.count() == 1
 
     page.output_name.setText("%DataFile%.csv")
     page.output_dir.setText(str(tmp_path))
@@ -127,7 +116,6 @@ def test_batch_wizard_text(
     assert wait > 0
 
     assert tmp_path.joinpath("tofwerk_export_au.csv").exists()
-    assert tmp_path.joinpath("tofwerk_export_au_bg.csv").exists()
 
     wiz.close()
 
@@ -240,14 +228,8 @@ def test_batch_wizard_tofwerk(
     page = wiz.currentPage()
     assert isinstance(page, BatchFilesWizardPage)
 
-    assert not page.isComplete()
-
-    with pytest.raises(FileNotFoundError):
-        page.addFile(test_data_path.joinpath("tofwerk/test_tofwerk.h5"))
-    with pytest.raises(FileNotFoundError):
-        page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
-
     page.radio_tofwerk.click()
+    assert not page.isComplete()
     page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
     assert page.files.count() == 1
 
@@ -309,8 +291,40 @@ def test_batch_wizard_tofwerk(
     wiz.close()
 
 
-def test_batch_wizard_files_page(qtbot: QtBot):
-    raise NotImplementedError
+def test_batch_wizard_files_page(
+    qtbot: QtBot, random_datafile_gen, test_data_path: Path
+):
+    df = random_datafile_gen()
+
+    page = BatchFilesWizardPage(df)
+    qtbot.addWidget(page)
+    with qtbot.waitExposed(page):
+        page.show()
+
+    assert page.radio_text.isChecked()
+    assert not page.radio_nu.isChecked()
+    assert not page.radio_tofwerk.isChecked()
+
+    assert not page.isComplete()
+
+    with pytest.raises(FileNotFoundError):
+        page.addFile(test_data_path.joinpath("tofwerk/test_tofwerk.h5"))
+    page.addFile(test_data_path.joinpath("text/tofwerk_export_au.csv"))
+    assert page.files.count() == 1
+
+    assert page.isComplete()
+
+    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
+        qtbot.mouseClick(
+            page.files.viewport(),
+            QtCore.Qt.MouseButton.LeftButton,
+            pos=page.files.visualItemRect(page.files.item(0))
+            .marginsRemoved(QtCore.QMargins(0, 0, 5, 5))
+            .bottomRight(),
+        )
+
+    assert page.files.count() == 0
+    assert not page.isComplete()
 
 
 def test_batch_wizard_method_page(qtbot: QtBot):

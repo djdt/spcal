@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 from pytestqt.modeltest import ModelTester
 
-from spcal.gui.modelviews import IsotopeRole
+from spcal.gui.modelviews import BaseValueRole, CurrentUnitRole, IsotopeRole, UnitsRole
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
 from spcal.gui.modelviews.headers import CheckableHeaderView, ComboHeaderView
@@ -15,12 +15,23 @@ from spcal.gui.modelviews.isotope import (
 )
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
+from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-
-
 from spcal.gui.widgets.values import ValueWidget
+
+from spcal.calc import mode as modefn
+
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.siunits import (
+    number_concentration_units,
+    mass_concentration_units,
+    signal_units,
+    size_units,
+    mass_units,
+)
 from spcal.isotope import ISOTOPE_TABLE
+from spcal.processing.method import SPCalProcessingMethod
 
 
 def test_basic_table(qtbot: QtBot):
@@ -479,6 +490,150 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
     assert intensity_model.data(intensity_model.index(0, 0), IsotopeRole) == isotopes[0]
 
     qtmodeltester.check(intensity_model)
+
+
+def test_results_output_view(qtbot: QtBot):
+    view = ResultOutputView()
+
+
+def test_results_output_model(
+    qtmodeltester: ModelTester,
+    default_method: SPCalProcessingMethod,
+    random_result_generator,
+):
+    model = ResultOutputModel()
+
+    default_method.instrument_options.uptake = 1.0
+    default_method.instrument_options.efficiency = 0.1
+    default_method.isotope_options[ISOTOPE_TABLE[("Fe", 56)]] = SPCalIsotopeOptions(
+        1.0, 1.0, 1.0
+    )
+
+    results = {
+        iso: random_result_generator(default_method, iso)
+        for iso in [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Fe", 57)]]
+    }
+
+    assert model.rowCount() == 0
+    assert model.columnCount() == 7
+
+    model.beginResetModel()
+    model.results = results  # type: ignore
+    model.endResetModel()
+
+    assert model.rowCount() == 2
+    assert model.columnCount() == 7
+
+    # test headers
+    for i, col in ResultOutputModel.COLUMNS.items():
+        label = col
+        if model.current_unit[i] != "":
+            label += f" ({model.current_unit[i]})"
+        assert model.headerData(i, QtCore.Qt.Orientation.Horizontal) == label
+
+    assert model.headerData(0, QtCore.Qt.Orientation.Vertical) == "56Fe"
+    assert model.headerData(1, QtCore.Qt.Orientation.Vertical) == "57Fe"
+
+    # test units
+    assert model.headerData(0, QtCore.Qt.Orientation.Horizontal, UnitsRole) == {}
+    assert (
+        model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == number_concentration_units
+    for i in range(2, 7):
+        assert (
+            model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+        ) == signal_units
+
+    # signal results
+    for row, result in enumerate(results.values()):
+        assert model.data(model.index(row, 0), BaseValueRole) == result.number
+        assert (
+            model.data(model.index(row, 1), BaseValueRole)
+            == result.number_concentration
+        )
+        assert model.data(model.index(row, 2), BaseValueRole) == result.background
+        assert (
+            model.data(model.index(row, 3), BaseValueRole)
+            == result.limit.detection_threshold
+        )
+        assert model.data(model.index(row, 4), BaseValueRole) == np.mean(
+            result.detections
+        )
+        assert model.data(model.index(row, 5), BaseValueRole) == np.median(
+            result.detections
+        )
+        assert model.data(model.index(row, 6), BaseValueRole) == modefn(
+            result.detections
+        )
+
+        # test changing header works
+        model.setData(model.index(0, 1), "#/L", CurrentUnitRole)
+        assert model.data(model.index(row, 1)) == result.number_concentration
+        model.setData(model.index(0, 1), "#/ml", CurrentUnitRole)
+        assert model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+
+    qtmodeltester.check(model)
+
+    # test calibration
+    model.key = "mass"
+    model.current_unit = ["", "µg/L", "fg", "fg", "fg", "fg", "fg"]
+    model.units = [
+        {},
+        mass_concentration_units,
+        mass_units,
+        mass_units,
+        mass_units,
+        mass_units,
+        mass_units,
+    ]
+
+    assert (
+        model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == mass_concentration_units
+
+    for i in range(2, 7):
+        assert (
+            model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+        ) == mass_units
+        assert model.data(model.index(1, i), BaseValueRole) is None
+
+    calib = results[ISOTOPE_TABLE[("Fe", 56)]]
+
+    assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
+    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
+        calib.limit.detection_threshold, "mass"
+    )
+    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+        calib.calibrated("mass")
+    )
+
+    model.key = "size"
+    model.current_unit = ["", "#/L", "nm", "nm", "nm", "nm", "nm"]
+    model.units = [
+        {},
+        number_concentration_units,
+        size_units,
+        size_units,
+        size_units,
+        size_units,
+        size_units,
+    ]
+
+    assert (
+        model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == number_concentration_units
+    for i in range(2, 7):
+        assert (
+            model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+        ) == size_units
+        assert model.data(model.index(1, i), BaseValueRole) is None
+
+    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
+        calib.limit.detection_threshold, "size"
+    )
+    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+        calib.calibrated("size")
+    )
 
 
 # def test_units_model(qtbot: QtBot):
