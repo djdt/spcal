@@ -149,7 +149,7 @@ class NuImportDialog(ImportDialogBase):
 
         # todo: option to remove blanked regions?
         self.combo_blanking = QtWidgets.QComboBox()
-        self.combo_blanking.addItems(["Off", "Blank Regions", "Blank All Masses"])
+        self.combo_blanking.addItems(["Off", "Regions", "All"])
         self.combo_blanking.setItemData(
             0,
             "Don't apply blanking, some data may be invalid.",
@@ -165,9 +165,7 @@ class NuImportDialog(ImportDialogBase):
             "Remove all masses when a region is blanked, regardless of their presence in the auto blanking files.",
             role=QtCore.Qt.ItemDataRole.ToolTipRole,
         )
-        self.combo_blanking.setCurrentIndex(
-            ["off", "regions", "all"].index(autoblanking)
-        )
+        self.combo_blanking.setCurrentText(autoblanking.title())
 
         self.updateTableIsotopes()
 
@@ -363,12 +361,7 @@ class NuImportDialog(ImportDialogBase):
         # if not raw:
         signals /= self.info["AverageSingleIonArea"]
 
-        autoblanking = {
-            "Off": "off",
-            "Blank Regions": "regions",
-            "Blank All Masses": "all",
-        }[self.combo_blanking.currentText()]
-
+        autoblanking = self.combo_blanking.currentText().lower()
         if autoblanking != "off":
             autobs = np.concatenate(
                 nu.read_binaries_in_index(

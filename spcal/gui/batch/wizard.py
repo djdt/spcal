@@ -686,14 +686,16 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 override_event_time,
             ),
         )
-        max_mass_diff = (
-            existing_file.max_mass_diff
-            if isinstance(existing_file, SPCalNuDataFile)
-            else 0.05
-        )
+        max_mass_diff = 0.05
+        autoblanking = "regions"
+
+        if isinstance(existing_file, SPCalNuDataFile):
+            max_mass_diff = existing_file.max_mass_diff
+            autoblanking = existing_file.autoblanking
+
         self.setPage(
             NU_PAGE_ID,
-            BatchNuWizardPage(selected_isotopes, max_mass_diff),
+            BatchNuWizardPage(selected_isotopes, max_mass_diff, autoblanking),
         )
         self.setPage(
             TOFWERK_PAGE_ID,
@@ -781,7 +783,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 max_mass_diff=self.field("nu.max_mass_diff"),
                 cyc_number=cyc_number,
                 seg_number=seg_number,
-                autoblank=self.field("nu.autoblank"),
+                autoblank=self.field("nu.autoblank").lower(),
             )
 
         elif self.hasVisitedPage(TOFWERK_PAGE_ID):

@@ -168,7 +168,7 @@ def test_batch_wizard_nu(
     assert page.cycle_number.maximum() == 1
     assert page.segment_number.maximum() == 1
 
-    assert page.check_blanking.isChecked()
+    assert page.combo_blanking.currentText() == "Regions"
     assert not page.check_chunked.isChecked()
     page.check_chunked.setChecked(True)
     page.chunk_size.setValue(1)

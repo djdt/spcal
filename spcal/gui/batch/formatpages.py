@@ -21,6 +21,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self,
         isotopes: list[SPCalIsotope],
         max_mass_diff: float,
+        autoblanking: str,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -49,10 +50,26 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.chunk_size.setEnabled(False)
 
         # todo: option to remove blanked regions?
-        # self.combo_blanking = QtWidgets.QComboBox()
-        # self.combo_blanking.addItems(["Off", "Blank", "Remove"])
-        self.check_blanking = QtWidgets.QCheckBox("Apply auto-blanking.")
-        self.check_blanking.setChecked(True)
+        self.combo_blanking = QtWidgets.QComboBox()
+        self.combo_blanking.addItems(["Off", "Regions", "All"])
+        self.combo_blanking.setItemData(
+            0,
+            "Don't apply blanking, some data may be invalid.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setItemData(
+            1,
+            "Remove mass regions recorded in the auto blanking files.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setItemData(
+            2,
+            "Remove all masses when a region is blanked, regardless of their presence in the auto blanking files.",
+            role=QtCore.Qt.ItemDataRole.ToolTipRole,
+        )
+        self.combo_blanking.setCurrentIndex(
+            ["off", "regions", "all"].index(autoblanking)
+        )
 
         self.table = PeriodicTableSelector()
         self.table.isotopesChanged.connect(self.completeChanged)
@@ -69,7 +86,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         options_box_layout.addRow("Cycle:", self.cycle_number)
         options_box_layout.addRow("Segment:", self.segment_number)
         options_box_layout.addRow("Chunk size:", layout_chunk)
-        options_box_layout.addRow(self.check_blanking)
+        options_box_layout.addRow("Auto blanking:", self.combo_blanking)
         options_box.setLayout(options_box_layout)
 
         layout = QtWidgets.QVBoxLayout()
@@ -82,7 +99,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.registerField("nu.cycle_number", self.cycle_number)
         self.registerField("nu.segment_number", self.segment_number)
         self.registerField("nu.max_mass_diff", self.max_mass_diff, "value")
-        self.registerField("nu.autoblank", self.check_blanking)
+        self.registerField("nu.autoblank", self.combo_blanking, "currentText")
 
         self.registerField("nu.isotopes", self.table, "selectedIsotopesProp")
 

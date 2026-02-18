@@ -80,7 +80,7 @@ class NuBatchWorker(QtCore.QObject):
         max_mass_diff: float = 0.1,
         cyc_number: int | None = None,
         seg_number: int | None = None,
-        autoblank: bool = True,
+        autoblank: str = "regions",
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
