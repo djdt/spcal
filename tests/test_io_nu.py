@@ -78,16 +78,21 @@ def test_io_nu_import_autoblank(test_data_path: Path, tmp_path: Path):
     zp.extractall(tmp_path)
 
     masses, signals, times, info = read_directory(
-        tmp_path.joinpath("autob"), cycle=1, segment=1
+        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="regions"
     )
     # blanking region of mass idx 10-14 at 32204 - 49999
     assert np.all(np.isnan(signals[32204:49999, 0:14]))
     assert np.all(~np.isnan(signals[32204:49999, 14:]))
 
     masses, signals, times, info = read_directory(
-        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank=False
+        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="off"
     )
     assert np.all(~np.isnan(signals[32204:49999, 0:14]))
+
+    masses, signals, times, info = read_directory(
+        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="all"
+    )
+    assert np.all(np.isnan(signals[32204:49999, 0:14]))
 
 
 def test_select_nu_signals():

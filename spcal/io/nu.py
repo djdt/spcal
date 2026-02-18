@@ -172,6 +172,7 @@ def apply_autoblanking(
     signals: np.ndarray,
     masses: np.ndarray,
     info: dict,
+    blank_all_signals: bool = False,
 ) -> np.ndarray:
     """Apply the auto-blanking to the integrated data.
     There must be one cycle / segment and no missing acquisitions / data!
@@ -181,6 +182,7 @@ def apply_autoblanking(
         signals: 2d array of signals from `get_signals_from_nu_data`
         masses: 1d array of masses, from `get_masses_from_nu_data`
         info: dict of parameters, as returned by `read_nu_directory`
+        blank_all_signals: apply blanking to all data, not just specified regions
 
     Returns:
         blanked data
@@ -193,11 +195,14 @@ def apply_autoblanking(
         autob_events, num_acc, start_coef, end_coef
     )
     for region, mass_regions in zip(regions, mass_regions_list):
-        mass_idx = np.searchsorted(masses, mass_regions)
-        # There are a bunch of useless blanking regions
-        mass_idx = mass_idx[mass_idx[:, 0] != mass_idx[:, 1]]
-        for s, e in mass_idx:
-            signals[region[0] : region[1], s:e] = np.nan
+        if blank_all_signals:
+            signals[region[0] : region[1]] = np.nan
+        else:
+            mass_idx = np.searchsorted(masses, mass_regions)
+            # There are a bunch of useless blanking regions
+            mass_idx = mass_idx[mass_idx[:, 0] != mass_idx[:, 1]]
+            for s, e in mass_idx:
+                signals[region[0] : region[1], s:e] = np.nan
 
     return signals
 
@@ -356,7 +361,7 @@ def read_directory(
     path: str | Path,
     first_integ_file: int = 0,
     last_integ_file: int | None = None,
-    autoblank: bool = True,
+    autoblank: str = "regions",
     cycle: int | None = None,
     segment: int | None = None,
     raw: bool = False,
@@ -371,7 +376,8 @@ def read_directory(
         path: path to data directory
         first_integ_file: first integ to read
         last_integ_file: last integ to read, can be used as a max
-        autoblank: apply autoblanking to overrange regions
+        autoblank: apply autoblanking to overrange regions or to all masses,
+            one of 'off', 'regions', 'all'
         cycle: limit import to cycle
         segment: limit import to segment
         raw: return raw ADC counts
@@ -386,6 +392,9 @@ def read_directory(
     path = Path(path)
     if not is_nu_directory(path):  # pragma: no cover
         raise ValueError("read_nu_directory: missing 'run.info' or 'integrated.index'")
+
+    if autoblank not in ["off", "regions", "all"]:
+        raise ValueError("autoblank must be one of 'off', 'regions', 'all'")
 
     with path.joinpath("run.info").open("r") as fp:
         run_info = json.load(fp)
@@ -418,7 +427,7 @@ def read_directory(
         signals /= run_info["AverageSingleIonArea"]
 
     # Blank out overrange regions
-    if autoblank:
+    if autoblank in ["regions", "all"]:
         autobs = np.concatenate(
             read_binaries_in_index(
                 path,
@@ -429,7 +438,9 @@ def read_directory(
                 seg_number=segment,
             )
         )
-        signals = apply_autoblanking(autobs, signals, masses, run_info)
+        signals = apply_autoblanking(
+            autobs, signals, masses, run_info, blank_all_signals=autoblank == "all"
+        )
 
     # Account for any missing integ files
     return masses, signals, times, run_info
