@@ -310,7 +310,7 @@ class SPCalNuDataFile(SPCalDataFile):
         segment_number: int | None = None,
         first_integ_file: int = 0,
         last_integ_file: int | None = None,
-        autoblank: bool = True,
+        autoblank: str = "regions",
     ) -> "SPCalNuDataFile":
         if path.is_file() and path.name == "run.info":
             path = path.parent
