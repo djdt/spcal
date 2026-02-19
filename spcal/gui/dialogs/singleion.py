@@ -217,7 +217,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             path = Path(path)
         if nu.is_nu_directory(path) or nu.is_nu_run_info_file(path):
             self.masses, self.counts, _, info = nu.read_directory(
-                path, autoblank="full", raw=True
+                path, autoblank="all", raw=True
             )
             self.reported_mu = info["AverageSingleIonArea"]
         elif tofwerk.is_tofwerk_file(path):
@@ -244,7 +244,7 @@ class SingleIonDialog(QtWidgets.QDialog):
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
             self.masses, self.counts, info = nu.read_directory(
-                path, autoblank="full", raw=True
+                path, autoblank="all", raw=True
             )
             self.reported_mu = np.log(info["AverageSingleIonArea"])
 

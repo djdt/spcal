@@ -30,7 +30,6 @@ from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
-from spcal.processing.result import SPCalProcessingResult
 
 
 def test_calculator_dialog(qtbot: QtBot):
@@ -715,6 +714,9 @@ def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
     # View only
     assert not dlg.isComplete()
     assert not dlg.controls_box.isEnabled()
+
+    # test nu loads
+    dlg.loadSingleIonData(test_data_path.joinpath("nu"))
 
     dlg.loadSingleIonData(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
     assert dlg.mus.size > 0
