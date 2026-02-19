@@ -14,6 +14,7 @@ from spcal.datafile import (
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsWidget
 from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
+from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -24,7 +25,7 @@ from spcal.gui.io import (
 from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.siunits import mass_units, size_units, volume_units
@@ -337,15 +338,55 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         self.isotope_table = IsotopeOptionTable()
         self.isotope_table.isotope_model.isotope_options = method.isotope_options
 
-        top_layout = QtWidgets.QHBoxLayout()
-        top_layout.addWidget(self.instrument_options)
-        top_layout.addWidget(self.limit_options)
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(top_layout)
-        layout.addWidget(self.isotope_table)
+        self.expr_list = CalculatorExprList()
+        for expr in method.expressions:
+            self.expr_list.addExpression(expr)
+
+        self.button_expr = QtWidgets.QPushButton("Edit...")
+        self.button_expr.pressed.connect(self.dialogCalculator)
+
+        gbox_inst = QtWidgets.QGroupBox("Instrument options")
+        gbox_inst_layout = QtWidgets.QVBoxLayout()
+        gbox_inst_layout.addWidget(self.instrument_options)
+        gbox_inst.setLayout(gbox_inst_layout)
+
+        gbox_limit = QtWidgets.QGroupBox("Limit options")
+        gbox_limit_layout = QtWidgets.QVBoxLayout()
+        gbox_limit_layout.addWidget(self.limit_options)
+        gbox_limit.setLayout(gbox_limit_layout)
+
+        gbox_isotope = QtWidgets.QGroupBox("Isotope options")
+        gbox_isotope_layout = QtWidgets.QVBoxLayout()
+        gbox_isotope_layout.addWidget(self.isotope_table)
+        gbox_isotope.setLayout(gbox_isotope_layout)
+
+        gbox_expr = QtWidgets.QGroupBox("Expressions")
+        gbox_expr_layout = QtWidgets.QVBoxLayout()
+        gbox_expr_layout.addWidget(self.expr_list, 1)
+        gbox_expr_layout.addWidget(
+            self.button_expr, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        gbox_expr.setLayout(gbox_expr_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(gbox_inst, 0, 0, 1, 1)
+        layout.addWidget(gbox_limit, 0, 1, 1, 1)
+        layout.addWidget(gbox_isotope, 1, 0, 1, 1)
+        layout.addWidget(gbox_expr, 1, 1, 1, 1)
         self.setLayout(layout)
 
         self.registerField("method", self, "methodProp")
+
+    def dialogCalculator(self):
+        isotopes = list(self.isotope_table.isotope_model.isotope_options.keys())
+        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)  # type: ignore
+        dlg.expressionsChanged.connect(self.setExpressions)
+        dlg.open()
+
+    def setExpressions(self, expressions: list[SPCalIsotopeExpression]):
+        self.expr_list.clear()
+        for expr in expressions:
+            self.expr_list.addExpression(expr)
 
     def initializePage(self):
         if self.wizard().hasVisitedPage(TEXT_PAGE_ID):
@@ -367,7 +408,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         self.isotope_table.isotope_model.endResetModel()
 
     def getMethod(self) -> SPCalProcessingMethod:
-        return SPCalProcessingMethod(
+        method = SPCalProcessingMethod(
             instrument_options=self.instrument_options.instrumentOptions(),
             limit_options=self.limit_options.limitOptions(),
             isotope_options=self.isotope_table.isotope_model.isotope_options,
@@ -376,6 +417,8 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             prominence_required=self.limit_options.prominence_required,
             calibration_mode=self.instrument_options.calibration_mode.currentText().lower(),
         )
+        method.expressions = self.expr_list.expressions()
+        return method
 
     methodProp = QtCore.Property(object, getMethod)
 
