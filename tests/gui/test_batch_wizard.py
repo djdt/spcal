@@ -18,7 +18,7 @@ from spcal.gui.batch.wizard import (
     BatchRunWizardPage,
     SPCalBatchProcessingWizard,
 )
-from spcal.isotope import ISOTOPE_TABLE
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 
@@ -353,6 +353,12 @@ def test_batch_wizard_method_page(qtbot: QtBot):
         None, 1.0, 0.5
     )
 
+    method.expressions = [
+        SPCalIsotopeExpression(
+            "test", ("+", ISOTOPE_TABLE[("Au", 197)], ISOTOPE_TABLE[("Ag", 107)])
+        )
+    ]
+
     page = BatchMethodWizardPage(method)
     qtbot.addWidget(page)
 
@@ -383,5 +389,7 @@ def test_batch_wizard_method_page(qtbot: QtBot):
     assert model.data(model.index(1, 0)) is None
     assert model.data(model.index(1, 1)) == 1e-9
     assert model.data(model.index(1, 2)) == 0.5
+
+    assert page.expr_list.count() == 1
 
     page.close()
