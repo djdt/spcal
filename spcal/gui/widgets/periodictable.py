@@ -316,6 +316,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             self.blockSignals(True)
             self.setSelectedIsotopes(selected_isotopes)
             self.blockSignals(False)
+            self.findCollisions()
 
         self.isotopesChanged.connect(self.findCollisions)
         self.setLayout(layout)

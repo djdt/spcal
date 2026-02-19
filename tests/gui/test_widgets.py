@@ -38,12 +38,15 @@ def test_edlided_label(qtbot: QtBot):
 
 
 def test_periodic_table_selector(qtbot: QtBot):
-    pt = PeriodicTableSelector()
+    pt = PeriodicTableSelector(selected_isotopes=[ISOTOPE_TABLE[("Sn", 112)]])
     qtbot.addWidget(pt)
 
     # length of all isotopes in database
     assert len(pt.enabledIsotopes()) == 344
-    assert pt.selectedIsotopes() == []
+    assert len(pt.selectedIsotopes()) == 1
+    assert not pt.buttons["Cd"].icon().isNull()  # find collisions is on
+    pt.buttons["Sn"].isotope_actions[112].setChecked(False)
+    assert pt.buttons["Cd"].icon().isNull()
 
     pt.buttons["C"].isotope_actions[13].setChecked(True)
     pt.buttons["Au"].isotope_actions[197].setChecked(True)
