@@ -113,6 +113,24 @@ def main(argv: list[str] | None = None) -> int:
     logger.info(f"using numpy {importlib.metadata.version('numpy')}.")
     logger.info(f"using pyqtgraph {importlib.metadata.version('pyqtgraph')}.")
 
+    # Set the icon theme
+    scheme = app.styleHints().colorScheme()
+    if scheme == QtCore.Qt.ColorScheme.Unknown:
+        if (
+            app.palette().window().color().lightness()
+            > app.palette().windowText().color().lightness()
+        ):
+            scheme = QtCore.Qt.ColorScheme.Light
+        else:
+            scheme = QtCore.Qt.ColorScheme.Dark
+
+    if scheme == QtCore.Qt.ColorScheme.Dark:
+        QtGui.QIcon.setThemeName("spcal-dark")
+        logger.debug("Setting icon theme to 'spcal-dark'.")
+    else:
+        QtGui.QIcon.setThemeName("spcal")
+        logger.debug("Setting icon theme to 'spcal'.")
+
     window.show()
 
     if args.open:
