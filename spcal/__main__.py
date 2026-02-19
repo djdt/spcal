@@ -103,16 +103,6 @@ def main(argv: list[str] | None = None) -> int:
     app.setApplicationVersion(importlib.metadata.version("spcal"))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
-    window = SPCalMainWindow()
-
-    if not args.nohook:
-        sys.excepthook = window.exceptHook
-
-    logger.addHandler(window.log.handler)
-    logger.info(f"SPCal {app.applicationVersion()} started.")
-    logger.info(f"using numpy {importlib.metadata.version('numpy')}.")
-    logger.info(f"using pyqtgraph {importlib.metadata.version('pyqtgraph')}.")
-
     # Set the icon theme
     scheme = app.styleHints().colorScheme()
     if scheme == QtCore.Qt.ColorScheme.Unknown:
@@ -126,10 +116,18 @@ def main(argv: list[str] | None = None) -> int:
 
     if scheme == QtCore.Qt.ColorScheme.Dark:
         QtGui.QIcon.setThemeName("spcal-dark")
-        logger.debug("Setting icon theme to 'spcal-dark'.")
     else:
         QtGui.QIcon.setThemeName("spcal")
-        logger.debug("Setting icon theme to 'spcal'.")
+
+    window = SPCalMainWindow()
+
+    if not args.nohook:
+        sys.excepthook = window.exceptHook
+
+    logger.addHandler(window.log.handler)
+    logger.info(f"SPCal {app.applicationVersion()} started.")
+    logger.info(f"using numpy {importlib.metadata.version('numpy')}.")
+    logger.info(f"using pyqtgraph {importlib.metadata.version('pyqtgraph')}.")
 
     window.show()
 
