@@ -166,7 +166,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             frame,
             QtCore.Qt.AlignmentFlag.AlignLeft,
             option,
-            f"{data_file.path.stem} :: [{data_file.total_time:.0f} s]",
+            f"{data_file.path.name} :: [{data_file.total_time:.0f} s]",
             bold=True,
         )
         isotope_rect = self.drawElidedText(
