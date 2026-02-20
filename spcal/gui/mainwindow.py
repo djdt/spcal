@@ -987,14 +987,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         for url in event.mimeData().urls():
-            if is_spcal_path(url.path()):
-                event.accept()
+            if is_spcal_path(url.toLocalFile()):
+                event.acceptProposedAction()
                 return
         event.ignore()
 
     def dropEvent(self, event: QtGui.QDropEvent):
         for url in event.mimeData().urls():
-            path = Path(url.path())
+            path = Path(url.toLocalFile())
             if is_spcal_path(path):
                 self.dialogLoadFile(path)
                 event.accept()
