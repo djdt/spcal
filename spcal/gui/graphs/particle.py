@@ -173,10 +173,6 @@ class ParticleView(SinglePlotGraphicsView):
         if self.plot.legend is not None:
             fm = QtGui.QFontMetrics(self.font())
             legend = ParticleItemSample(fm, curve, scatter, [lod, mu])
-            # legend = MultipleItemSampleProxy(
-            #     pen.color(),
-            #     items=[curve, scatter],  # type: ignore , works
-            # )
             self.plot.legend.addItem(legend, label)
 
         self.setDataLimits(xMin=0.0, xMax=1.0)
