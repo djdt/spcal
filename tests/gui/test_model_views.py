@@ -643,7 +643,7 @@ def test_results_output_model(
     )
 
 
-def test_units_model(qtbot: QtBot):
+def test_units_model_and_header(qtbot: QtBot):
     class OnesUnitModel(UnitsModel):
         test_value = None
 
@@ -711,8 +711,28 @@ def test_units_model(qtbot: QtBot):
     assert i0.row() == 0
     assert i1.row() == 0
 
+    # No point in running ModelTester as is an incomplete base class
 
-# def test_units_header_view(qtbot: QtBot):
+    # Test header
+    header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
+    view = QtWidgets.QTableView()
+    view.setHorizontalHeader(header)
+    view.setModel(model)
+
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    header.showComboBox(1)
+    combo = header.findChild(QtWidgets.QComboBox)
+    assert isinstance(combo, QtWidgets.QComboBox)
+    assert combo.count() == len(mass_units)
+    assert combo.currentText() == "g"
+    combo.setCurrentText("mg")
+    assert (
+        model.headerData(1, QtCore.Qt.Orientation.Horizontal, CurrentUnitRole) == "mg"
+    )
 
 
 def test_value_widget_delegate(qtbot: QtBot):
