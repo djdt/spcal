@@ -25,16 +25,20 @@ def default_method() -> SPCalProcessingMethod:
 def test_data_path() -> Path:
     return Path(__file__).parent.joinpath("data")
 
+
 @pytest.fixture(scope="module")
 def random_result_generator():
     def random_result(
-        method: SPCalProcessingMethod, isotope: SPCalIsotope | None = None
+        method: SPCalProcessingMethod,
+        isotope: SPCalIsotope | None = None,
+        size: int = 1000,
+        number: int = 10,
     ) -> SPCalProcessingResult:
-        signals = np.random.poisson(1.0, size=1000)
-        times = np.linspace(0.001, 1, 1000)
+        signals = np.random.poisson(1.0, size=size).astype(np.float32)
+        times = np.linspace(0.001, 1, size)
 
-        detections = np.random.uniform(10.0, 50.0, 10)
-        regions = np.random.choice(800, 10)
+        detections = np.random.uniform(10.0, 50.0, number)
+        regions = np.random.choice(size - 200, number)
         signals[regions + 100] = detections
         regions = np.stack((regions + 100, regions + 101), axis=1)
 
