@@ -117,6 +117,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resultsChanged.connect(self.onResultsChanged)
 
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
+
         self.files.dataFileAdded.connect(self.onDataFileAdded)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.onDataFilesChanged)
@@ -383,9 +384,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.currentDataFile(), self.files.selectedDataFiles()
         )
 
-    def setExclusionRegions(self, regions: list[tuple[float, float]]):
-        self.currentMethod().exclusion_regions = regions
-        self.reprocess(self.files.currentDataFile())
+    def setExclusionRegions(
+        self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
+    ):
+        if data_file is None:
+            data_file = self.files.currentDataFile()
+        if data_file is None:
+            raise ValueError("cannot set exclusion regions, invalid data file")
+
+        method = self.currentMethod()
+        method.exclusion_regions = regions
+
+        self.currentMethodChanged.emit(method)
+        self.reprocess([data_file])
 
     def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
         method = self.currentMethod()
@@ -397,9 +408,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     None, response, None
                 )
             if isotope in self.isotope_options.isotopeOptions():
-                option = self.isotope_options.optionForIsotope(isotope)
-                option.response = response
-                self.isotope_options.setIsotopeOption(isotope, option)
+                self.isotope_options.setIsotopeOption(
+                    isotope, method.isotope_options[isotope]
+                )
 
     # def setClusterDistance(self, distance: float):
     #     method = self.currentMethod()
@@ -422,7 +433,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogLoadFile(path)
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
-        self.reprocess(data_file)
+        self.reprocess([data_file])
         self.updateRecentFiles(data_file)
         logger.info(
             f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
@@ -434,17 +445,22 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if current is None:
             self.isotope_options.setIsotopes([])
             self.toolbar.setIsotopes([])
-            self.outputs.setResults({})
+            self.outputs.setResults([])
             self.graph.clear()
             return
 
         # Set the options to current
-        isotopes = current.selected_isotopes + self.currentMethod().expressions
+        method: SPCalProcessingMethod = self.currentMethod()
+        isotopes = current.selected_isotopes + method.expressions
+
         # Add any missing isotopes to method and isotope options
-        self.isotope_options.setIsotopes(isotopes)
-        method = self.currentMethod()
+        isotopes = sorted(
+            isotopes,
+            key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
+        )
         self.isotope_options.blockSignals(True)
-        for isotope in isotopes:
+        self.isotope_options.setIsotopes(isotopes)
+        for isotope in current.selected_isotopes:
             if isotope not in method.isotope_options:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
             self.isotope_options.setIsotopeOption(
@@ -453,14 +469,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.blockSignals(False)
 
         # Reprocess if new isotopes exist
-        if current not in self.processing_results:
-            self.reprocess(current)
-        elif any(
+        if current not in self.processing_results or any(
             isotope not in self.processing_results[current] for isotope in isotopes
         ):
-            self.reprocess(current)
-        # otherwise remove old isotopes
-        else:
+            self.reprocess([current])
+        else:  # clean up
             removed_isotopes = [
                 isotope
                 for isotope in self.processing_results[current]
@@ -468,10 +481,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ]
             for removed in removed_isotopes:
                 self.processing_results[current].pop(removed)
-
-        self.currentMethodChanged.emit(self.currentMethod())
-
-        self.outputs.setResults(self.processing_results[current])
+            self.resultsChanged.emit(current)
 
         all_isotopes = set(isotopes)
         for file in selected:
@@ -492,15 +502,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.calibration_mode = self.instrument_options.calibrationMode().lower()
         method.cluster_distance = self.instrument_options.clusterDistance()
 
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
-        method.filterResults(self.processing_results[data_file])
-        if data_file in self.processing_clusters:
-            self.processing_clusters[data_file].clear()
-
         self.currentMethodChanged.emit(method)
-        self.resultsChanged.emit(data_file)
+        self.reprocess()
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
         data_file = self.files.currentDataFile()
@@ -511,10 +514,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         option = self.isotope_options.optionForIsotope(isotope)
         method.isotope_options[isotope] = option
 
-        method.filterResults(self.processing_results[data_file])
-        if data_file in self.processing_clusters:
-            self.processing_clusters[data_file].clear()
-        self.resultsChanged.emit(data_file)
+        self.currentMethodChanged.emit(method)
+        self.reprocess(isotopes=[isotope])
 
     def onKeyChanged(self, key: str):
         self.outputs.updateOutputsForKey(key)
@@ -529,11 +530,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.prominence_required = self.limit_options.prominenceRequired()
 
         self.currentMethodChanged.emit(method)
-        self.reprocess(self.files.currentDataFile())
+        self.reprocess()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
         if data_file == self.files.currentDataFile():
-            self.outputs.setResults(self.processing_results[data_file])
+            results = sorted(
+                self.processing_results[data_file].values(),
+                key=lambda result: int(result.isotope.isotope)
+                if isinstance(result.isotope, SPCalIsotope)
+                else 9999,
+            )
+            self.outputs.setResults(results)
             self.redraw()
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
@@ -547,12 +554,43 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             for isotope in isotopes:
                 if isotope in file.selected_isotopes:
                     file.selected_isotopes.remove(isotope)
-        self.reprocess(None)
+        self.reprocess()
 
     def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
         for data_file, results in self.processing_results.items():
             if isotope in results:
                 results.pop(isotope)
+
+    def reprocess(
+        self,
+        data_files: list[SPCalDataFile] | None = None,
+        isotopes: list[SPCalIsotopeBase] | None = None,
+    ):
+        if data_files is None:
+            data_files = self.files.dataFiles()
+
+        method = self.currentMethod()
+
+        for file in data_files:
+            if isotopes is None:
+                isotopes = file.selected_isotopes  # type: ignore
+
+            existing = self.processing_results.get(file, {})
+            existing.update(method.processDataFile(file, isotopes))
+            self.processing_results[file] = existing
+            method.filterResults(self.processing_results[file])
+            # refresh clusters
+            if file in self.processing_clusters:
+                self.processing_clusters[file].clear()
+
+            if sum(len(filters) for filters in method.index_filters) > 0:
+                keys = np.unique(
+                    [f.key for filters in method.index_filters for f in filters]
+                )
+                clusters = {key: self.clusters(file, key) for key in keys}
+                method.filterIndicies(self.processing_results[file], clusters)
+
+            self.resultsChanged.emit(file)
 
     # drawing
 
@@ -626,32 +664,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             elif view == "histogram":
                 self.graph.drawResultsHistogram(drawable, colors, names, key)
 
-    def reprocess(self, data_file: SPCalDataFile | None):
-        if not isinstance(data_file, SPCalDataFile):
-            files = self.files.dataFiles()
-        else:
-            files = [data_file]
-
-        method = self.currentMethod()
-
-        for file in files:
-            self.processing_results[file] = method.processDataFile(
-                file, file.selected_isotopes
-            )
-            method.filterResults(self.processing_results[file])
-            # refresh clusters
-            if file in self.processing_clusters:
-                self.processing_clusters[file].clear()
-
-            if sum(len(filters) for filters in method.index_filters) > 0:
-                keys = np.unique(
-                    [f.key for filters in method.index_filters for f in filters]
-                )
-                clusters = {key: self.clusters(file, key) for key in keys}
-                method.filterIndicies(self.processing_results[file], clusters)
-
-            self.resultsChanged.emit(file)
-
     # Dialogs
 
     def about(self) -> QtWidgets.QDialog:
@@ -686,7 +698,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         def set_expressions(expressions: list[SPCalIsotopeExpression]):
             method.expressions = expressions
             self.currentMethodChanged.emit(method)
-            self.reprocess(None)
+            self.reprocess()
             self.onDataFilesChanged(
                 self.files.currentDataFile(), self.files.selectedDataFiles()
             )
@@ -704,8 +716,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogExportResults(self):
-        self.reprocess(None)  # force reprocess of all data files
-
         # ensure clusters are generated
         for key in CALIBRATION_KEYS:
             for file in self.files.dataFiles():
