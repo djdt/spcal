@@ -6,6 +6,7 @@ from pytestqt.qtbot import QtBot
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ExclusionRegion, ParticleView
+from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.legends import ParticleItemSample, HistogramItemSample
 
 
@@ -56,3 +57,43 @@ def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
     assert view.exclusionRegions() == []
 
     view.clear()
+
+
+def test_graph_histogram(qtbot: QtBot, default_method, random_result_generator):
+    view = HistogramView()
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    # single
+    results = [random_result_generator(default_method, size=1000, number=100)]
+    # results[0].filter_indicies = np.arange(50)
+    view.drawResults(results, labels=["test1"])
+    view.repaint()
+
+    assert view.plot.legend is not None
+    assert len(view.plot.legend.items) == 1
+    assert len(view.data_for_export) == 4
+    item, label = view.plot.legend.items[0]
+    assert isinstance(item, HistogramItemSample)
+    assert not item.sceneBoundingRect().intersects(label.sceneBoundingRect())
+
+    view.clear()
+
+    # multi
+    results.append(random_result_generator(default_method, size=1000, number=80))
+    view.drawResults(results, labels=["test1", "test2"])
+    view.repaint()
+    view.clear()
+
+    # filtered
+    view.draw_filtered = False
+    view.drawResults(results, labels=["test1", "test2"])
+    view.repaint()
+
+    assert len(view.data_for_export) == 4
+
+    view.clear()
+
+    assert len(view.data_for_export) == 0
