@@ -113,7 +113,7 @@ def test_spcal_central_widget(
         clusters,
     )
     widget.drawResultsScatterExpr(
-        results, "107Ag + 109Ag", "197Au / 2.0", "signal", "signal"
+        list(results.values()), "107Ag + 109Ag", "197Au / 2.0", "signal", "signal"
     )
 
     views = ["particle", "histogram", "composition", "spectra", "scatter"]
@@ -256,7 +256,7 @@ def test_spcal_outputs_dock(
             ISOTOPE_TABLE[("Ni", 58)],
         ]
     )
-    results = default_method.processDataFile(df)
+    results = list(default_method.processDataFile(df).values())
 
     dock = SPCalOutputsDock()
     qtbot.addWidget(dock)

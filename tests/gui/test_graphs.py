@@ -238,3 +238,6 @@ def test_graph_spectra(qtbot: QtBot):
     view.drawDataFile(df, regions)
 
     assert len(view.data_for_export) == 2
+    view.clear()
+
+    assert len(view.data_for_export) == 0

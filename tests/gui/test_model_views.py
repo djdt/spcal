@@ -501,6 +501,7 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
 def test_results_output_view(qtbot: QtBot):
     view = ResultOutputView()
+    raise NotImplementedError
 
 
 def test_results_output_model(
@@ -516,10 +517,10 @@ def test_results_output_model(
         1.0, 1.0, 1.0
     )
 
-    results = {
-        iso: random_result_generator(default_method, iso)
+    results = [
+        random_result_generator(default_method, iso)
         for iso in [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Fe", 57)]]
-    }
+    ]
 
     assert model.rowCount() == 0
     assert model.columnCount() == 7
@@ -552,7 +553,7 @@ def test_results_output_model(
         ) == signal_units
 
     # signal results
-    for row, result in enumerate(results.values()):
+    for row, result in enumerate(results):
         assert model.data(model.index(row, 0), BaseValueRole) == result.number
         assert (
             model.data(model.index(row, 1), BaseValueRole)
@@ -604,7 +605,7 @@ def test_results_output_model(
         ) == mass_units
         assert model.data(model.index(1, i), BaseValueRole) is None
 
-    calib = results[ISOTOPE_TABLE[("Fe", 56)]]
+    calib = results[0]
 
     assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
     assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(

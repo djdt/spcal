@@ -49,7 +49,7 @@ class ResultOutputModel(UnitsModel):
 
         self.key = "signal"
 
-        self.results: dict[SPCalIsotopeBase, SPCalProcessingResult] = {}
+        self.results: list[SPCalProcessingResult] = []
 
     def rowCount(
         self,
@@ -88,9 +88,9 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.DisplayRole,
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
-                return str(list(self.results.keys())[section])
+                return str(self.results[section].isotope)
             elif role == IsotopeRole:
-                return list(self.results.keys())[section]
+                return self.results[section].isotope
         return super().headerData(section, orientation, role)
 
     def data(
@@ -101,11 +101,10 @@ class ResultOutputModel(UnitsModel):
         if not index.isValid():
             return None
 
-        isotope = list(self.results.keys())[index.row()]
         name = ResultOutputModel.COLUMNS[index.column()]
-        result = self.results[isotope]
+        result = self.results[index.row()]
         if role == IsotopeRole:
-            return isotope
+            return result.isotope
         elif role == BaseValueRole:
             if name == "Number":
                 return result.number

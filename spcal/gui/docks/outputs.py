@@ -38,7 +38,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.setWidget(self.table)
         self.updateOutputsForKey("signal")
 
-    def setResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
+    def setResults(self, results: list[SPCalProcessingResult]):
         self.table.results_model.beginResetModel()
         self.table.results_model.results = results
         self.table.results_model.endResetModel()
