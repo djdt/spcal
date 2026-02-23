@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 import numpy as np
 from PySide6 import QtCore
@@ -126,6 +127,8 @@ def test_batch_wizard_nu(
     default_method: SPCalProcessingMethod,
     qtbot: QtBot,
 ):
+    default_method.limit_options.compound_poisson_kws["alpha"] = 1e-2
+
     wiz = SPCalBatchProcessingWizard(None, default_method, [])
     qtbot.addWidget(wiz)
     with qtbot.waitExposed(wiz):
