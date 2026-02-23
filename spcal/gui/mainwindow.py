@@ -581,7 +581,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 return
 
             self.graph.drawResultsScatterExpr(
-                self.processing_results[data_file],
+                list(self.processing_results[data_file].values()),
                 self.toolbar.scatter_x.text(),
                 self.toolbar.scatter_y.text(),
                 self.toolbar.scatter_key_x.currentText(),

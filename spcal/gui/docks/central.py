@@ -17,7 +17,6 @@ from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
-from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
@@ -215,7 +214,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
     def drawResultsScatterExpr(
         self,
-        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        results: list[SPCalProcessingResult],
         text_x: str,
         text_y: str,
         key_x: str,

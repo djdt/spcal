@@ -4,7 +4,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 
-from spcal.isotope import SPCalIsotopeBase
 from spcal.pratt import Parser, ParserException, Reducer, ReducerException
 from spcal.processing.result import SPCalProcessingResult
 
@@ -139,7 +138,7 @@ class ScatterView(SinglePlotGraphicsView):
 
     def drawResultsExpr(
         self,
-        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        results: list[SPCalProcessingResult],
         text_x: str,
         text_y: str,
         key_x: str,
@@ -147,13 +146,13 @@ class ScatterView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
-        parser = Parser(variables=[str(key) for key in results.keys()])
+        parser = Parser(variables=[str(result.isotope) for result in results])
 
         def get_reduction(text: str, key: str) -> np.ndarray | None:
             reducer = Reducer()
             reducer.variables = {
-                str(iso): result.calibrateTo(result.peakValues(), key)
-                for iso, result in results.items()
+                str(result.isotope): result.calibrateTo(result.peakValues(), key)
+                for result in results
                 if result.canCalibrate(key)
             }
             try:
