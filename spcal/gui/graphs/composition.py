@@ -78,7 +78,6 @@ class CompositionView(SinglePlotGraphicsView):
 
     def clear(self):
         super().clear()
-        self.cluster_info = None
 
     def dialogDetail(self) -> QtWidgets.QDialog:
         dlg = CompositionDetailDialog(self.data_for_export, parent=self)
