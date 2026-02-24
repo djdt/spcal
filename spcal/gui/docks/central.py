@@ -202,7 +202,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         drawable = []
         brushes = []
         for result, color in zip(results, colors):
-            if result.canCalibrate(key):
+            if result.canCalibrate(key) and result.number > 1:
                 drawable.append(result)
                 color.setAlphaF(0.66)
                 brushes.append(QtGui.QBrush(color))
