@@ -91,6 +91,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options = SPCalIsotopeOptionsDock()
 
         self.files = SPCalDataFilesDock()
+        self.files.screening_method = self.processing_methods["default"]
         self.outputs = SPCalOutputsDock()
 
         self.processing_results: dict[
@@ -635,7 +636,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         elif view == "spectra":
             data_file = self.files.currentDataFile()
             isotope = self.toolbar.combo_isotope.currentIsotope()
-            if data_file is None:
+            if data_file is None or self.processing_results[data_file][isotope] is None:
                 return
 
             self.graph.drawResultsSpectra(
