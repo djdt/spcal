@@ -122,9 +122,9 @@ class ResultOutputModel(UnitsModel):
                     lod = bn.nanmean(result.limit.detection_threshold)
                     return result.calibrateTo(float(lod), self.key)
                 elif name == "Mean":
-                    return np.mean(result.calibrated(self.key))
+                    return np.nanmean(result.calibrated(self.key))
                 elif name == "Median":
-                    return np.median(result.calibrated(self.key))
+                    return np.nanmedian(result.calibrated(self.key))
                 elif name == "Mode":
                     return modefn(result.calibrated(self.key))
                 else:
@@ -139,7 +139,7 @@ class ResultOutputModel(UnitsModel):
                 if name == "Background":
                     return result.calibrateTo(float(result.background_error), self.key)
                 else:
-                    return np.std(result.calibrated(self.key))
+                    return np.nanstd(result.calibrated(self.key))
             return None
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
             if name == "LOD":
