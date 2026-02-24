@@ -64,7 +64,7 @@ def compound_poisson_lognormal_quantile_lookup(
     q0 = np.atleast_1d(zero_trunc_quantile(lam, q))
     nonzero = q0 > 0.0
 
-    qs = np.zeros_like(lam)
+    qs = np.ones_like(lam)
     qs[nonzero] = interpolate_3d(
         lam[nonzero],
         sigma[nonzero],
