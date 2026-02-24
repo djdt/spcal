@@ -34,7 +34,7 @@ from spcal.gui.io import (
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.gui.io import loadSession, saveSession
+# from spcal.io.session import loadSession, saveSession
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions

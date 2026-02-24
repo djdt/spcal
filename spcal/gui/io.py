@@ -140,11 +140,3 @@ def get_import_dialog_for_path(
 
     dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
     return dlg
-
-
-def saveSession():
-    pass
-
-
-def loadSession():
-    pass
