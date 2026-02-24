@@ -21,20 +21,6 @@ class FilterItemWidget(QtWidgets.QWidget):
         "size": "Size",
         # "volume": "Volume",
     }
-    OPERATION_LABELS = {
-        np.greater: ">",
-        np.less: "<",
-        np.greater_equal: ">=",
-        np.less_equal: "<=",
-        np.equal: "==",
-    }
-    OPERATION_PREFER_INVALID = {
-        np.greater: False,
-        np.less: True,
-        np.greater_equal: False,
-        np.less_equal: True,
-        np.equal: True,
-    }
 
     def __init__(
         self,
@@ -60,7 +46,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         self.key.currentTextChanged.connect(self.changeUnits)
 
         self.operation = QtWidgets.QComboBox()
-        for op, label in self.OPERATION_LABELS.items():
+        for label, op in SPCalValueFilter.OPERATION_LABELS.items():
             self.operation.insertItem(99, label, op)
 
         self.value = UnitsWidget(units=signal_units, base_value=0.0)
@@ -102,9 +88,7 @@ class FilterItemWidget(QtWidgets.QWidget):
         label = FilterItemWidget.KEY_LABELS[filter.key]
         self.isotopes.setCurrentIndex(index)
         self.key.setCurrentText(label)
-        self.operation.setCurrentText(
-            FilterItemWidget.OPERATION_LABELS[filter.operation]
-        )
+        self.operation.setCurrentText(filter.opString())
         self.value.setBaseValue(filter.value)
         self.value.setBestUnit()
 
@@ -114,9 +98,6 @@ class FilterItemWidget(QtWidgets.QWidget):
             self.key.itemData(self.key.currentIndex()),
             self.operation.itemData(self.operation.currentIndex()),
             self.value.baseValue() or 0.0,
-            prefer_invalid=FilterItemWidget.OPERATION_PREFER_INVALID[
-                self.operation.itemData(self.operation.currentIndex())
-            ],
         )
 
     def close(self) -> bool:

@@ -49,23 +49,47 @@ class SPCalClusterFilter(SPCalIndexFilter):
 
 
 class SPCalValueFilter(SPCalResultFilter):
+    # OPERATIONS = {
+    #     ufunc.__name__: ufunc
+    #     for ufunc in [np.greater, np.greater_equal, np.equal, np.less_equal, np.less]
+    # }
+
+    OPERATION_LABELS = {
+        ">": np.greater,
+        "<": np.less,
+        ">=": np.greater_equal,
+        "<=": np.less_equal,
+        "==": np.equal,
+    }
+
     def __init__(
         self,
         isotope: SPCalIsotopeBase,
         key: str,
         operation: Callable[[np.ndarray, float], np.ndarray],
         value: float,
-        prefer_invalid: bool = False,
+        prefer_invalid: bool | None = None,
     ):
         if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
+        if operation not in SPCalValueFilter.OPERATION_LABELS.values():
+            raise ValueError(f"invalid operation {operation}")
+
         super().__init__()
         self.isotope = isotope
         self.key = key
         self.operation = operation
         self.value = value
+        if prefer_invalid is None:
+            prefer_invalid = self.operation in [np.less, np.less_equal, np.equal]
 
         self.prefer_invalid = prefer_invalid
+
+    def opString(self) -> str:
+        for key, val in SPCalValueFilter.OPERATION_LABELS.items():
+            if val == self.operation:
+                return key
+        raise StopIteration("unable to find operation string")
 
     def preferInvalid(self) -> bool:
         return self.prefer_invalid
