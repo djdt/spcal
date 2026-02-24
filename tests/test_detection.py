@@ -46,6 +46,22 @@ def test_accumulate_detections():
     assert regions.size == 0
 
 
+def test_accumulate_detections_zeros():
+    x = np.zeros(51, dtype=np.float32)
+
+    sums, regions = detection.accumulate_detections(
+        x, 0.0, 1.0, prominence_required=0.0
+    )
+    assert len(sums) == 0
+    assert len(regions) == 0
+
+    sums, regions = detection.accumulate_detections(
+        x, 0.0, 1.0, prominence_required=0.2
+    )
+    assert len(sums) == 0
+    assert len(regions) == 0
+
+
 def test_accumulate_detections_edges():
     x = np.array([9, 1, 3, 1, 0, 2, 4, 2, 0, 4, 2, 6, 2, 1]).astype(float)
     sums, regions = detection.accumulate_detections(
