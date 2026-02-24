@@ -3,7 +3,7 @@ import pytest
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalTextDataFile
+from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile, SPCalTextDataFile
 from spcal.gui.mainwindow import SPCalMainWindow
 
 
@@ -97,6 +97,22 @@ def test_gui_single_quad_data(qtbot: QtBot, test_locales, test_data_path):
     )
     df.selected_isotopes = df.isotopes
 
-    win.files.addDataFile(df)
+    with qtbot.waitSignal(win.resultsChanged, timeout=100):
+        win.files.addDataFile(df)
+
+    _click_through_mainwindow(qtbot, win)
+
+
+def test_gui_tof_data(qtbot: QtBot, test_locales, test_data_path):
+    win = SPCalMainWindow()
+    qtbot.addWidget(win)
+    with qtbot.waitExposed(win):
+        win.show()
+
+    df = SPCalTOFWERKDataFile.load(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    df.selected_isotopes = df.isotopes[115:120]
+
+    with qtbot.waitSignal(win.resultsChanged,timeout=100):
+        win.files.addDataFile(df)
 
     _click_through_mainwindow(qtbot, win)
