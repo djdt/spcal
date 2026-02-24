@@ -114,7 +114,7 @@ class ResultOutputModel(UnitsModel):
                 else:
                     return result.number_concentration
             else:  # other column
-                if not result.canCalibrate(self.key):
+                if not result.canCalibrate(self.key) or result.number == 0:
                     return None
                 if name == "Background":
                     return result.calibrateTo(result.background, self.key)
@@ -122,9 +122,9 @@ class ResultOutputModel(UnitsModel):
                     lod = bn.nanmean(result.limit.detection_threshold)
                     return result.calibrateTo(float(lod), self.key)
                 elif name == "Mean":
-                    return np.nanmean(result.calibrated(self.key))
+                    return np.mean(result.calibrated(self.key))
                 elif name == "Median":
-                    return np.nanmedian(result.calibrated(self.key))
+                    return np.median(result.calibrated(self.key))
                 elif name == "Mode":
                     return modefn(result.calibrated(self.key))
                 else:
@@ -132,14 +132,14 @@ class ResultOutputModel(UnitsModel):
                 return
         elif role == BaseValueErrorRole:
             if name == "Number":
-                return result.number_error
+                return result.number_error if result.number_error > 0.0 else None
             elif name in ["Background", "Mean"]:
-                if not result.canCalibrate(self.key):
+                if not result.canCalibrate(self.key) or result.number == 0:
                     return None
                 if name == "Background":
                     return result.calibrateTo(float(result.background_error), self.key)
                 else:
-                    return np.nanstd(result.calibrated(self.key))
+                    return np.std(result.calibrated(self.key))
             return None
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
             if name == "LOD":
