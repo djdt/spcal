@@ -81,6 +81,10 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
         tokens.extend(isotopes)
         return cls(name, tuple(tokens))
 
+    def validForIsotopes(self, isotopes: list[SPCalIsotope]) -> bool:
+        iso_tokens = [token for token in self.tokens if isinstance(token, SPCalIsotope)]
+        return all(iso in isotopes for iso in iso_tokens)
+
 
 # class SPCalIon(object):
 #     def __init__(self, isotopes: list[SPCalIsotope], charge: int = 1):

@@ -120,7 +120,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.files.dataFileAdded.connect(self.onDataFileAdded)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
-        self.files.dataFilesChanged.connect(self.onDataFilesChanged)
+        self.files.dataFilesChanged.connect(self.updateForDataFiles)
 
         self.outputs.requestCurrentIsotope.connect(
             self.toolbar.combo_isotope.setCurrentIsotope
@@ -369,7 +369,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if expr not in method.expressions:
             method.expressions.append(expr)
             self.currentMethodChanged.emit(method)
-            self.onDataFilesChanged(
+            self.updateForDataFiles(
                 self.files.currentDataFile(), self.files.selectedDataFiles()
             )
 
@@ -380,7 +380,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 method.expressions.remove(expr)
             self.removeIsotopeFromResults(expr)
         self.currentMethodChanged.emit(method)
-        self.onDataFilesChanged(
+        self.updateForDataFiles(
             self.files.currentDataFile(), self.files.selectedDataFiles()
         )
 
@@ -439,7 +439,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
         )
 
-    def onDataFilesChanged(
+    def updateForDataFiles(
         self, current: SPCalDataFile | None, selected: list[SPCalDataFile]
     ):
         if current is None:
@@ -451,37 +451,35 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
-        isotopes = current.selected_isotopes + method.expressions
+        isotopes = current.selected_isotopes + method.validExpressions(current)
 
         # Add any missing isotopes to method and isotope options
         isotopes = sorted(
             isotopes,
             key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
         )
+
+        method_changed = False
         self.isotope_options.blockSignals(True)
         self.isotope_options.setIsotopes(isotopes)
         for isotope in current.selected_isotopes:
             if isotope not in method.isotope_options:
                 method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
+                method_changed = True
             self.isotope_options.setIsotopeOption(
                 isotope, method.isotope_options[isotope]
             )
         self.isotope_options.blockSignals(False)
+        if method_changed:
+            self.currentMethodChanged.emit(method)
 
         # Reprocess if new isotopes exist
         if current not in self.processing_results or any(
             isotope not in self.processing_results[current] for isotope in isotopes
         ):
             self.reprocess([current])
-        else:  # clean up
-            removed_isotopes = [
-                isotope
-                for isotope in self.processing_results[current]
-                if isotope not in isotopes
-            ]
-            for removed in removed_isotopes:
-                self.processing_results[current].pop(removed)
-            self.resultsChanged.emit(current)
+        else:
+            self.onResultsChanged(current)
 
         all_isotopes = set(isotopes)
         for file in selected:
@@ -533,6 +531,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
+        isotopes = data_file.selected_isotopes + self.currentMethod().expressions
+        removed = [
+            iso for iso in self.processing_results[data_file] if iso not in isotopes
+        ]
+        for isotope in removed:
+            self.processing_results[data_file].pop(isotope)
+
         if data_file == self.files.currentDataFile():
             results = sorted(
                 self.processing_results[data_file].values(),
@@ -542,6 +547,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             )
             self.outputs.setResults(results)
             self.redraw()
+
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
     # data modification
@@ -699,7 +705,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             method.expressions = expressions
             self.currentMethodChanged.emit(method)
             self.reprocess()
-            self.onDataFilesChanged(
+            self.updateForDataFiles(
                 self.files.currentDataFile(), self.files.selectedDataFiles()
             )
 

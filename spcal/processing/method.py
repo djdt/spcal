@@ -85,6 +85,15 @@ class SPCalProcessingMethod(object):
         self.result_filters = result_filters
         self.index_filters = index_filters
 
+    def validExpressions(
+        self, data_file: SPCalDataFile
+    ) -> list[SPCalIsotopeExpression]:
+        return [
+            expr
+            for expr in self.expressions
+            if expr.validForIsotopes(data_file.isotopes)
+        ]
+
     @staticmethod
     def calculate_result_for_isotope(
         method: "SPCalProcessingMethod",
@@ -148,8 +157,7 @@ class SPCalProcessingMethod(object):
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
-        # todo: append expressions, should check if valid
-        isotopes = list(isotopes) + self.expressions
+        isotopes = list(isotopes) + self.validExpressions(data_file)
 
         with ThreadPoolExecutor() as exec:
             futures = [
