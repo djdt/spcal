@@ -71,6 +71,10 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
             return False
         return all(x == y for x, y in zip(self.tokens, other.tokens))
 
+    def validForIsotopes(self, isotopes: list[SPCalIsotope]) -> bool:
+        iso_tokens = [token for token in self.tokens if isinstance(token, SPCalIsotope)]
+        return all(iso in isotopes for iso in iso_tokens)
+
     @classmethod
     def sumIsotopes(cls, isotopes: list[SPCalIsotope]) -> "SPCalIsotopeExpression":
         if all(isotope.symbol == isotopes[0].symbol for isotope in isotopes):
@@ -81,9 +85,15 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
         tokens.extend(isotopes)
         return cls(name, tuple(tokens))
 
-    def validForIsotopes(self, isotopes: list[SPCalIsotope]) -> bool:
-        iso_tokens = [token for token in self.tokens if isinstance(token, SPCalIsotope)]
-        return all(iso in isotopes for iso in iso_tokens)
+    @classmethod
+    def fromString(cls, name: str, text: str) -> "SPCalIsotopeExpression":
+        tokens: list[str | SPCalIsotope] = []
+        for token in text.split(" "):
+            try:
+                tokens.append(SPCalIsotope.fromString(token))
+            except NameError:
+                tokens.append(token)
+        return cls(name, tuple(tokens))
 
 
 # class SPCalIon(object):
