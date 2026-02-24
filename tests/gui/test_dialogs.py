@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalNuDataFile
+from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.filter import (
     BooleanItemWidget,
@@ -400,7 +400,7 @@ def test_graph_spectra_options_dialog(qtbot: QtBot):
 def test_select_isotope_dialog(
     test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
 ):
-    df = SPCalNuDataFile.load(test_data_path.joinpath("nu"))
+    df = SPCalTOFWERKDataFile.load(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
     df.selected_isotopes = [
         ISOTOPE_TABLE[("Ag", 107)],
         ISOTOPE_TABLE[("Ag", 109)],
@@ -414,18 +414,22 @@ def test_select_isotope_dialog(
 
     assert dlg.table.selectedIsotopes() == df.selected_isotopes
 
-    assert len(dlg.table.enabledIsotopes()) == 188
+    assert len(dlg.table.enabledIsotopes()) == len(df.isotopes)
 
     dlg.screenDataFile(1000000, 1000000, False)
     assert dlg.table.selectedIsotopes() == df.selected_isotopes
 
+    dlg.screenDataFile(1000, 1000000, False)
+    assert len(dlg.table.selectedIsotopes()) == 4
+
     dlg.screenDataFile(1000, 1000000, True)
-    assert len(dlg.table.selectedIsotopes()) == 21
+    assert len(dlg.table.selectedIsotopes()) == 1
 
     with qtbot.waitSignal(dlg.accepted, timeout=100):
         dlg.accept()
 
-    assert len(df.selected_isotopes) == 21
+    assert len(df.selected_isotopes) == 1
+    assert df.selected_isotopes[0] == ISOTOPE_TABLE[("Ru", 101)]
 
 
 def test_select_isotope_screening_dialog(qtbot: QtBot):
