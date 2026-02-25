@@ -23,15 +23,12 @@ logger = logging.getLogger(__name__)
 class SPCalDataFile(object):
     def __init__(
         self,
+        format: str,
         path: Path,
         times: np.ndarray,
-        instrument_type: str | None = None,
     ):
-        if instrument_type not in ["quadrupole", "tof"]:  # pragma: no cover
-            raise ValueError("instrument_type must be one of 'quadrupole', 'tof'")
-
         self.path = path
-        self.instrument_type = instrument_type
+        self.format = format
 
         self._selected_isotopes: list[SPCalIsotope] = []
 
@@ -107,7 +104,7 @@ class SPCalDataFile(object):
         return result
 
     def isTOF(self) -> bool:
-        return self.instrument_type == "tof"
+        return self.format in ["nu", "tofwerk"]
 
 
 class SPCalTextDataFile(SPCalDataFile):
@@ -122,9 +119,8 @@ class SPCalTextDataFile(SPCalDataFile):
         cps: bool = False,
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
-        instrument_type: str | None = None,
     ):
-        super().__init__(path, times=times, instrument_type=instrument_type)
+        super().__init__("text", path, times=times)
 
         if signals.dtype.names is None:  # pragma: no cover
             raise ValueError("expected `signals` to have a structured dtype")
@@ -155,6 +151,9 @@ class SPCalTextDataFile(SPCalDataFile):
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         return self.signals[self.isotope_table[isotope]]
 
+    def isTOF(self) -> bool:
+        return len(self.isotope_table) > 1
+
     @classmethod
     def load(
         cls,
@@ -165,7 +164,6 @@ class SPCalTextDataFile(SPCalDataFile):
         cps: bool = False,
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
-        instrument_type: str | None = None,
     ) -> "SPCalTextDataFile":
         signals = text.read_single_particle_file(
             path, delimiter=delimiter, skip_rows=skip_rows
@@ -220,9 +218,6 @@ class SPCalTextDataFile(SPCalDataFile):
                     times, append=times[-1] + (times[-1] - times[-2])
                 )
 
-        if instrument_type is None:
-            instrument_type = "quadrupole" if len(signals.dtype.names) == 1 else "tof"
-
         return cls(
             path,
             signals,
@@ -233,7 +228,6 @@ class SPCalTextDataFile(SPCalDataFile):
             cps=cps,
             override_event_time=override_event_time,
             drop_fields=drop_fields,
-            instrument_type=instrument_type,
         )
 
 
@@ -243,8 +237,6 @@ class SPCalNuDataFile(SPCalDataFile):
     Attributes:
         isotope_table: dict of {isotope name: (index in signals, isotope mass)}
     """
-
-    # re_isotope = re.compile("(\\d+)([A-Z][a-z]?)")
 
     def __init__(
         self,
@@ -259,7 +251,7 @@ class SPCalNuDataFile(SPCalDataFile):
         autoblanking: str = "regions",
         max_mass_diff: float = 0.05,
     ):
-        super().__init__(path, times, instrument_type="tof")
+        super().__init__("nu", path, times)
 
         self.info = info
 
@@ -344,11 +336,12 @@ class SPCalNuDataFile(SPCalDataFile):
 
 class SPCalTOFWERKDataFile(SPCalDataFile):
     re_isotope = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
+    type: str = "tofwerk"
 
     def __init__(
         self, path: Path, signals: np.ndarray, times: np.ndarray, peak_table: np.ndarray
     ):
-        super().__init__(path, times, instrument_type="tof")
+        super().__init__("tofwerk", path, times)
 
         self.signals = signals
         self.times = times
@@ -413,7 +406,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             times = (
                 times[:, :, None]
                 + np.linspace(
-                    0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False
+                    0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False  # type: ignore
                 )[None, None, :]
             ).ravel()
 
