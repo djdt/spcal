@@ -1,75 +1,132 @@
 import numpy as np
-from typing import Any, TextIO
-import tomllib
+from typing import Any
 from pathlib import Path
 
+import json
 from importlib.metadata import version
 
-# from spcal.datafile import SPCalDataFile
-from spcal.datafile import SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTextDataFile
 from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.filter import (
     SPCalClusterFilter,
-    SPCalIndexFilter,
-    SPCalResultFilter,
     SPCalValueFilter,
 )
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 
 
-def _escape(value: Any):
-    if isinstance(value, str):
-        return f'"{value}"'
-    return value
-
-
-def write_dict(fp: TextIO, x: dict, prefix: str = "", suffix: str = ""):
-    text = ", ".join(f"{k} = {_escape(v)}" for k, v in x.items())
-    fp.write(f"{prefix}{{{text}}}{suffix}")
-
-
-def write_if_not_none(fp: TextIO, name: str, value: Any, comment: str | None = None):
-    if value is None or value == "":
-        return
-
-    fp.write(f"{name} = {_escape(value)}")
-    if comment is not None:
-        fp.write(f"  # {comment}")
-    fp.write("\n")
-
-def write_data_file(fp: TextIO, data_file: SPCalDataFile):
-    fp.write(str(data_file.path.absolute()))
-
-def write_filters(
-    fp: TextIO,
-    filters: list[list[SPCalResultFilter]] | list[list[SPCalIndexFilter]],
-    pad: str = "    ",
-):
-    def filter_as_dict(f: SPCalResultFilter | SPCalIndexFilter) -> dict:
-        if isinstance(f, SPCalValueFilter):
+class SPCalJSONEncoder(json.JSONEncoder):
+    def default(self, o: Any):
+        if isinstance(o, Path):
+            return str(o.absolute())
+        if isinstance(o, SPCalIsotope):
+            return str(o)
+        if isinstance(o, SPCalIsotopeExpression):
+            return {"name": o.name, "tokens": o.tokens}
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        if isinstance(o, SPCalValueFilter):
             return {
-                "type": "value",
-                "isotope": str(f.isotope),
-                "key": f.key,
-                "operation": f.opString(),
-                "value": f.value,
+                "filter type": "value",
+                "isotope": o.isotope,
+                "key": o.key,
+                "operation": o.opString(),
+                "value": o.value,
             }
-        elif isinstance(f, SPCalClusterFilter):
-            return {"type": "cluster", "key": f.key, "index": f.index}
-        else:
-            raise ValueError("no session export for filter")
+        if isinstance(o, SPCalClusterFilter):
+            return {"filter type": "cluster", "key": o.key, "index": o.index}
+        if isinstance(o, SPCalDataFile):
+            d = {
+                "path": str(o.path.absolute()),
+                "format": o.format,
+                "selected isotopes": o.selected_isotopes,
+            }
+            if isinstance(o, SPCalTextDataFile):
+                d.update(
+                    {
+                        "isotope table": {
+                            str(k): v for k, v in o.isotope_table.items()
+                        },
+                        "delimiter": o.delimiter,
+                        "skip row": o.skip_row,
+                        "cps": o.cps,
+                        "override event time": o.override_event_time,
+                        "drop fields": o.drop_fields,
+                    }
+                )
+            elif isinstance(o, SPCalNuDataFile):
+                d.update(
+                    {
+                        "max mass diff": o.max_mass_diff,
+                        "cycle number": o.cycle_number,
+                        "segment number": o.segment_number,
+                        "integ files": o.integ_files,
+                        "autoblanking": o.autoblanking,
+                    }
+                )
+            return d
 
-    fp.write("[\n")
-    for filter_list in filters:
-        fp.write(f"{pad}[\n")
-        for filter in filter_list:
-            write_dict(fp, filter_as_dict(filter), prefix=pad + pad, suffix=",\n")
-        fp.write(f"{pad}],\n")
-    fp.write("]\n")
+        return super().default(o)
 
 
-def save_method(path: Path, method: SPCalProcessingMethod, data_files: list[SPCalDataFile]):
+def save_session_json(
+    path: Path, method: SPCalProcessingMethod, data_files: list[SPCalDataFile]
+):
+    def default(obj: object):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+
+    output = {
+        "method": {
+            "instrument options": {
+                "uptake": method.instrument_options.uptake,
+                "efficiency": method.instrument_options.efficiency,
+            },
+            "isotope options": {
+                str(k): {
+                    "density": v.density,
+                    "response": v.response,
+                    "mass fraction": v.mass_fraction,
+                    "concentraiton": v.concentration,
+                    "diameter": v.diameter,
+                    "mass response": v.mass_response,
+                }
+                for k, v in method.isotope_options.items()
+            },
+            "limit options": {
+                "method": method.limit_options.limit_method,
+                "max_iterations": method.limit_options.max_iterations,
+                "window_size": method.limit_options.window_size,
+                "default manual limit": method.limit_options.default_manual_limit,
+                "gaussian": method.limit_options.gaussian_kws,
+                "poisson": method.limit_options.poisson_kws,
+                "compound poisson": method.limit_options.compound_poisson_kws,
+                "manual limits": {
+                    str(k): v for k, v in method.limit_options.manual_limits.items()
+                },
+                "single ion": method.limit_options.single_ion_parameters,
+            },
+            "processing options": {
+                "accumulation method": method.accumulation_method,
+                "calibration mode": method.calibration_mode,
+                "cluster distance": method.cluster_distance,
+                "points required": method.points_required,
+                "prominence required": method.prominence_required,
+            },
+            "exclusion regions": method.exclusion_regions,
+            "result filters": method.result_filters,
+            "index filters": method.index_filters,
+            "expressions": method.expressions,
+        },
+        "datafiles": files,
+    }
+    fp = path.open("w")
+    json.dump(output, fp, cls=SPCalJSONEncoder, indent=4)
+
+
+def save_method(
+    path: Path, method: SPCalProcessingMethod, data_files: list[SPCalDataFile]
+):
     with path.open("w") as fp:
         fp.write(f"# SPCal {version('spcal')} method\n")
 
@@ -85,7 +142,7 @@ def save_method(path: Path, method: SPCalProcessingMethod, data_files: list[SPCa
 
         for isotope in method.isotope_options.keys():
             option = method.isotope_options[isotope]
-            fp.write(f'[isotope.{_escape(str(isotope))}]\n')
+            fp.write(f"[isotope.{_escape(str(isotope))}]\n")
             write_if_not_none(fp, "density", option.density, "kg/m3")
             write_if_not_none(fp, "response", option.response, "cts*L/kg")
             write_if_not_none(fp, "mass_fraction", option.mass_fraction)
@@ -118,7 +175,7 @@ def save_method(path: Path, method: SPCalProcessingMethod, data_files: list[SPCa
         if len(method.expressions) > 0:
             fp.write("[expressions]\n")
             for expr in method.expressions:
-                fp.write(f'{expr.name} = "{" ".join(str(x) for x in expr.tokens)}"\n')
+                write_iter(fp, expr.tokens, prefix=f"{expr.name} = ", suffix="\n")
 
         # [filters]
         if (
@@ -137,22 +194,27 @@ def save_method(path: Path, method: SPCalProcessingMethod, data_files: list[SPCa
         # [exclusions]
         if len(method.exclusion_regions) > 0:
             fp.write("[exclusions]\n")
-            fp.write("regions = [")
-            fp.write(", ".join(f"[{s}, {e}]" for s, e in method.exclusion_regions))
-            fp.write("]\n")
+            write_iter(
+                fp,
+                (f"[{s}, {e}]" for s, e in method.exclusion_regions),
+                prefix="regions = ",
+                suffix="\n",
+            )
 
         # [datafiles]
         if len(data_files) > 0:
             fp.write("[datafiles]\n")
             for data_file in data_files:
-                write_data_file(data_file)
+                write_data_file(fp, data_file)
 
 
-def load_method(
-    path: Path, method: SPCalProcessingMethod | None = None
+def load_session_json(
+    path: Path
 ) -> SPCalProcessingMethod:
-    if method is None:
-        method = SPCalProcessingMethod()
+
+    # json.load(fp, json.JSONEncoder
+
+    method = SPCalProcessingMethod()
 
     def isotope_from_str(
         text: str, method: SPCalProcessingMethod
@@ -242,6 +304,13 @@ def load_method(
 
 
 if __name__ == "__main__":
+    params = np.empty(
+        100, dtype=[("mass", np.float32), ("mu", np.float32), ("sigma", np.float32)]
+    )
+    params["mass"] = np.arange(100)
+    params["mu"] = np.random.random(100)
+    params["sigma"] = np.random.random(100)
+
     method = SPCalProcessingMethod()
     method.expressions = [SPCalIsotopeExpression("test_expr", ("+", "107Ag", "197Au"))]
     method.isotope_options[SPCalIsotope.fromString("197Au")] = SPCalIsotopeOptions(
@@ -249,6 +318,7 @@ if __name__ == "__main__":
     )
     method.isotope_options[method.expressions[0]] = SPCalIsotopeOptions(1.0, 2.0, 3.0)
     method.limit_options.manual_limits = {SPCalIsotope.fromString("107Ag"): 10.2}
+    # method.limit_options.single_ion_parameters = params
     method.result_filters = [
         [
             SPCalValueFilter(
@@ -263,5 +333,18 @@ if __name__ == "__main__":
     method.index_filters = [[SPCalClusterFilter("signal", 0)]]
     method.exclusion_regions = [(0.4, 1.0), (230.2, 276.0)]
 
-    save_method(Path("/home/tom/Downloads/test.spcal.toml"), method)
-    load_method(Path("/home/tom/Downloads/test.spcal.toml"))
+    files = [
+        SPCalNuDataFile.load(
+            Path("/home/tom/Downloads/Raw data/NT031/15-00-55 1 ppb att")
+        ),
+        SPCalTextDataFile.load(
+            Path("/home/tom/Downloads/019SMPL-48-64Ti_count.csv"),
+            skip_rows=5,
+            isotope_table={SPCalIsotope.fromString("48Ti"): "Ti48_->_64"},
+        ),
+    ]
+    files[0].selected_isotopes = [SPCalIsotope.fromString("197Au")]
+
+    # save_method(Path("/home/tom/Downloads/test.spcal.toml"), method, files)
+    save_session_json(Path("/home/tom/Downloads/test.spcal.json"), method, files)
+    # load_method(Path("/home/tom/Downloads/test.spcal.toml"))
