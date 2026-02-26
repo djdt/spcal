@@ -23,7 +23,6 @@ from spcal.processing.options import (
     SPCalIsotopeOptions,
     SPCalLimitOptions,
 )
-from importlib.metadata import version
 
 
 class SPCalJSONEncoder(json.JSONEncoder):
@@ -91,7 +90,7 @@ def save_session_json(
 
     output = {
         "version": version("spcal"),
-        "date": datetime.now().isoformat(),
+        "date": datetime.now().isoformat(timespec="seconds"),
         "method": {
             "instrument options": {
                 "uptake": method.instrument_options.uptake,

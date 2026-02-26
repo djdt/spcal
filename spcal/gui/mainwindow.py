@@ -216,14 +216,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.action_save_session = create_action(
-            "cloud-upload",
+            "cloud-download",
             "Save Session",
             "Save the current options, inputs and data to a session file.",
             self.dialogSaveSession,
         )
 
         self.action_load_session = create_action(
-            "cloud-download",
+            "cloud-upload",
             "Restore Session",
             "Restore the saved session.",
             self.dialogLoadSession,
@@ -606,7 +606,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         data_files: list[SPCalDataFile] | None = None,
         isotopes: list[SPCalIsotopeBase] | None = None,
     ):
-        print("reprocess", self.sender())
         if data_files is None:
             data_files = self.files.dataFiles()
 
@@ -616,7 +615,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if isotopes is None:
                 isotopes = file.selected_isotopes  # type: ignore
 
-            print(file)
             existing = self.processing_results.get(file, {})
             existing.update(method.processDataFile(file, isotopes))
             self.processing_results[file] = existing
