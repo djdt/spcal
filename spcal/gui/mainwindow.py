@@ -174,7 +174,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def setCurrentMethod(self, method: SPCalProcessingMethod):
         self.processing_methods["default"] = method
 
-        self.instrument_options.optionsChanged.disconnect(self.onInstrumentOptionsChanged)
+        self.instrument_options.optionsChanged.disconnect(
+            self.onInstrumentOptionsChanged
+        )
         self.instrument_options.setInstrumentOptions(
             method.instrument_options, method.calibration_mode
         )
@@ -604,7 +606,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         data_files: list[SPCalDataFile] | None = None,
         isotopes: list[SPCalIsotopeBase] | None = None,
     ):
-        print('reprocess', self.sender())
+        print("reprocess", self.sender())
         if data_files is None:
             data_files = self.files.dataFiles()
 
