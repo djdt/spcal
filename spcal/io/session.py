@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 from typing import Any
 from pathlib import Path
@@ -22,6 +23,7 @@ from spcal.processing.options import (
     SPCalIsotopeOptions,
     SPCalLimitOptions,
 )
+from importlib.metadata import version
 
 
 class SPCalJSONEncoder(json.JSONEncoder):
@@ -88,6 +90,8 @@ def save_session_json(
             return obj.tolist()
 
     output = {
+        "version": version("spcal"),
+        "date": datetime.now().isoformat(),
         "method": {
             "instrument options": {
                 "uptake": method.instrument_options.uptake,
