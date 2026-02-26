@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from pathlib import Path
@@ -28,13 +29,20 @@ from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
+    NU_FILE_FILTER,
+    TEXT_FILE_FILTER,
+    TOFWERK_FILE_FILTER,
     get_import_dialog_for_path,
     get_open_spcal_path,
     is_spcal_path,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-# from spcal.io.session import loadSession, saveSession
+from spcal.io.session import (
+    save_session_json,
+    decode_json_method,
+    decode_json_datafile,
+)
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions
@@ -161,6 +169,27 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     @QtCore.Slot()
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
+
+    @QtCore.Slot()
+    def setCurrentMethod(self, method: SPCalProcessingMethod):
+        self.processing_methods["default"] = method
+
+        self.instrument_options.optionsChanged.disconnect(self.onInstrumentOptionsChanged)
+        self.instrument_options.setInstrumentOptions(
+            method.instrument_options, method.calibration_mode
+        )
+        self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
+
+        self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
+        self.limit_options.setLimitOptions(
+            method.limit_options,
+            method.accumulation_method,
+            method.points_required,
+            method.prominence_required,
+        )
+        self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
+
+        self.currentMethodChanged.emit(method)
 
     # Menu
 
@@ -542,9 +571,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file == self.files.currentDataFile():
             results = sorted(
                 self.processing_results[data_file].values(),
-                key=lambda result: int(result.isotope.isotope)
-                if isinstance(result.isotope, SPCalIsotope)
-                else 9999,
+                key=lambda result: (
+                    int(result.isotope.isotope)
+                    if isinstance(result.isotope, SPCalIsotope)
+                    else 9999
+                ),
             )
             self.outputs.setResults(results)
             self.redraw()
@@ -573,6 +604,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         data_files: list[SPCalDataFile] | None = None,
         isotopes: list[SPCalIsotopeBase] | None = None,
     ):
+        print('reprocess', self.sender())
         if data_files is None:
             data_files = self.files.dataFiles()
 
@@ -582,6 +614,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if isotopes is None:
                 isotopes = file.selected_isotopes  # type: ignore
 
+            print(file)
             existing = self.processing_results.get(file, {})
             existing.update(method.processDataFile(file, isotopes))
             self.processing_results[file] = existing
@@ -748,6 +781,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             method = self.currentMethod()
             method.setFilters(filters, cluster_filters)
             self.currentMethodChanged.emit(method)
+            self.reprocess()
 
         method = self.currentMethod()
         dlg = FilterDialog(
@@ -758,7 +792,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         dlg.filtersChanged.connect(set_filters)
-        dlg.filtersChanged.connect(self.reprocess)
         dlg.open()
 
     def dialogIonicResponse(self) -> ResponseDialog:
@@ -832,39 +865,86 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogSaveSession(self):
-        raise NotImplementedError
-
         def onFileSelected(file: str):
-            path = Path(file).with_suffix(".spcal")
-            saveSession(path, self.options, self.sample, self.reference, self.results)
-            QtCore.QSettings().setValue("LastSession", str(path))
+            path = Path(file)
+            if path.suffixes != [".spcal", ".json"]:
+                path = Path(path.stem).with_suffix(".spcal.json")
+            save_session_json(path, self.currentMethod(), self.files.dataFiles())
 
-        dir = Path(QtCore.QSettings().value("LastSession", ""))
-        if dir.is_file():
-            dir = dir.parent
+        df = self.files.currentDataFile()
+        if df is None:
+            path = Path()
+        else:
+            path = df.path.parent
 
         # Dont use getSaveFileName as it doesn't have setDefaultSuffix
         dlg = QtWidgets.QFileDialog(
-            self, "Save Session", str(dir), "SPCal Sessions(*.spcal);;All Files(*)"
+            self,
+            "Save Session",
+            str(path),
+            "SPCal Sessions(*.spcal.json);;All Files(*)",
         )
         dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
-        dlg.setDefaultSuffix(".spcal")
+        dlg.setDefaultSuffix(".spcal.json")
 
         dlg.fileSelected.connect(onFileSelected)
         dlg.exec()
 
     def dialogLoadSession(self):
-        raise NotImplementedError
-        settings = QtCore.QSettings()
-        dir = Path(settings.value("LastSession", ""))
-        if dir.is_file():
-            dir = dir.parent
+        df = self.files.currentDataFile()
+        if df is None:
+            path = Path()
+        else:
+            path = df.path.parent
+
         file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Load Session", str(dir), "SPCal Sessions(*.spcal);;All Files(*)"
+            self,
+            "Load Session",
+            str(path),
+            "SPCal Sessions(*.spcal.json);;All Files(*)",
         )
         if file == "":
             return
-        loadSession(Path(file), self.options, self.sample, self.reference, self.results)
+        with Path(file).open() as fp:
+            session = json.load(fp)
+
+        self.setCurrentMethod(decode_json_method(session["method"]))
+
+        check_update_paths = True
+        for datafile in session["datafiles"]:
+            path = Path(datafile["path"])
+            if not path.exists():
+                if not check_update_paths:
+                    continue
+                button = QtWidgets.QMessageBox.warning(
+                    self,
+                    "Datafile Not Found",
+                    f"Cannot find datafile at '{path}'. Select a new path?",
+                    buttons=QtWidgets.QMessageBox.StandardButton.Yes
+                    | QtWidgets.QMessageBox.StandardButton.No
+                    | QtWidgets.QMessageBox.StandardButton.NoToAll,
+                )
+                if button == QtWidgets.QMessageBox.StandardButton.No:
+                    continue
+                elif button == QtWidgets.QMessageBox.StandardButton.NoToAll:
+                    check_update_paths = False
+                    continue
+                # button == Ok
+                if datafile["format"] == "text":
+                    filter = TEXT_FILE_FILTER
+                elif datafile["format"] == "nu":
+                    filter = NU_FILE_FILTER
+                elif datafile["format"] == "tofwerk":
+                    filter = TOFWERK_FILE_FILTER
+                else:
+                    raise ValueError(f"unknown datafile format '{datafile['format']}")
+                file, _ = QtWidgets.QFileDialog.getOpenFileName(
+                    self, "Select New Path", str(path.parent), filter
+                )
+                if file == "":
+                    continue
+                path = Path(file)
+            self.files.addDataFile(decode_json_datafile(datafile, path))
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
