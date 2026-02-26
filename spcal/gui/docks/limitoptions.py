@@ -507,3 +507,18 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.options_widget.poisson.setSignificantFigures(sf)
         self.options_widget.gaussian.setSignificantFigures(sf)
         self.options_widget.compound.setSignificantFigures(sf)
+
+    def setLimitOptions(
+        self,
+        options: SPCalLimitOptions,
+        accumlation_method: str | None = None,
+        points_required: int | None = None,
+        prominence_required: float | None = None,
+    ):
+        self.options_widget.setLimitOptions(options)
+        if accumlation_method is not None:
+            self.options_widget.limit_accumulation = accumlation_method
+        if points_required is not None:
+            self.options_widget.points_required = points_required
+        if prominence_required is not None:
+            self.options_widget.prominence_required = prominence_required
