@@ -47,6 +47,11 @@ class SPCalClusterFilter(SPCalIndexFilter):
         super().__init__(np.equal, index)
         self.key = key
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalClusterFilter):
+            return False
+        return self.key == other.key and self.index == other.index
+
 
 class SPCalValueFilter(SPCalResultFilter):
     # OPERATIONS = {
@@ -84,6 +89,16 @@ class SPCalValueFilter(SPCalResultFilter):
             prefer_invalid = self.operation in [np.less, np.less_equal, np.equal]
 
         self.prefer_invalid = prefer_invalid
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalValueFilter):
+            return False
+        return (
+            self.isotope == other.isotope
+            and self.key == other.key
+            and self.operation == other.operation
+            and self.value == other.value
+        )
 
     def opString(self) -> str:
         for key, val in SPCalValueFilter.OPERATION_LABELS.items():

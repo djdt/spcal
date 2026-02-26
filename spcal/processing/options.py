@@ -26,6 +26,11 @@ class SPCalInstrumentOptions(object):
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalInstrumentOptions(uptake={self.uptake}, efficiency={self.efficiency})"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalInstrumentOptions):
+            return False
+        return self.uptake == other.uptake and self.efficiency == other.efficiency
+
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
             return True
