@@ -76,7 +76,6 @@ class SPCalProcessingMethod(object):
         self.exclusion_regions: list[tuple[float, float]] = []
 
         self.expressions: list[SPCalIsotopeExpression] = []
-
     def setFilters(
         self,
         result_filters: list[list["SPCalResultFilter"]],
