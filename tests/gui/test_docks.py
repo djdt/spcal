@@ -245,41 +245,41 @@ def test_spcal_outputs_dock(
     with qtbot.waitExposed(dock):
         dock.show()
 
-    assert dock.table.results_model.rowCount() == 0
+    assert dock.view.results_model.rowCount() == 0
     dock.setResults(results)
-    assert dock.table.results_model.rowCount() == 3
+    assert dock.view.results_model.rowCount() == 3
 
     orientation = QtCore.Qt.Orientation.Horizontal
 
-    assert (dock.table.results_model.headerData(0, orientation, UnitsRole)) == {}
+    assert (dock.view.results_model.headerData(0, orientation, UnitsRole)) == {}
     assert (
-        dock.table.results_model.headerData(1, orientation, UnitsRole)
+        dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
     for i in range(2, 7):
         assert (
-            dock.table.results_model.headerData(i, orientation, UnitsRole)
+            dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == signal_units
 
     dock.updateOutputsForKey("mass")
     assert (
-        dock.table.results_model.headerData(1, orientation, UnitsRole)
+        dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == mass_concentration_units
     for i in range(2, 7):
         assert (
-            dock.table.results_model.headerData(i, orientation, UnitsRole)
+            dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == mass_units
 
     dock.updateOutputsForKey("size")
     assert (
-        dock.table.results_model.headerData(1, orientation, UnitsRole)
+        dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
     for i in range(2, 7):
         assert (
-            dock.table.results_model.headerData(i, orientation, UnitsRole)
+            dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == size_units
 
     dock.setSignificantFigures(3)
-    delegate = dock.table.itemDelegate()
+    delegate = dock.view.itemDelegate()
     assert isinstance(delegate, ValueWidgetDelegate)
     assert delegate.sigfigs == 3
 
@@ -288,10 +288,10 @@ def test_spcal_outputs_dock(
         check_params_cb=lambda iso: iso == ISOTOPE_TABLE[("Fe", 56)],
         timeout=100,
     ):
-        dock.table.onHeaderClicked(0)
+        dock.view.onHeaderClicked(0)
 
     dock.reset()
-    assert dock.table.results_model.rowCount() == 0
+    assert dock.view.results_model.rowCount() == 0
 
 
 def test_spcal_toolbar(qtbot: QtBot):
