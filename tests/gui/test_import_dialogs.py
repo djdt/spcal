@@ -10,6 +10,8 @@ from spcal.gui.dialogs.io import (
     TextImportDialog,
     TofwerkImportDialog,
 )
+from spcal.isotope import ISOTOPE_TABLE
+from spcal.processing.method import SPCalProcessingMethod
 
 
 def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
@@ -156,6 +158,22 @@ def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
         dlg.accept()
 
 
+def test_import_dialog_nu_screening(
+    test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
+):
+    path = test_data_path.joinpath("nu")
+    dlg = NuImportDialog(path)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.open()
+
+    dlg.screening_method = default_method
+    dlg.screenDataFile(100, 1000, True)
+
+    # todo: get some better test data
+    assert dlg.table.selectedIsotopes() == []
+
+
 def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalTOFWERKDataFile):
         if not str(data_file.selected_isotopes[0]) == "107Ag":
@@ -213,3 +231,18 @@ def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
+
+
+def test_import_dialog_tofwerk_screening(
+    test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
+):
+    path = test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    dlg = TofwerkImportDialog(path)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.open()
+
+    dlg.screening_method = default_method
+    dlg.screenDataFile(100, 1000, True)
+
+    assert dlg.table.selectedIsotopes() == [ISOTOPE_TABLE[("Ru", 101)]]

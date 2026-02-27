@@ -17,6 +17,10 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
+from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
+from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
@@ -29,7 +33,45 @@ from spcal.gui.dialogs.tools import (
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
+
+
+def test_advanced_poisson_dialog(qtbot: QtBot):
+    dlg = AdvancedPoissonDialog("currie", 2.1, 0.6, 1.2, 1.1)
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.poisson_formula.currentText() == "Currie"
+
+    assert dlg.currie.epsilon.value() == 0.6
+    assert dlg.currie.eta.value() == 2.1
+
+    assert dlg.formula_a.t_blank.value() == 1.1
+    assert dlg.formula_a.t_sample.value() == 1.2
+    assert dlg.formula_c.t_blank.value() == 1.1
+    assert dlg.formula_c.t_sample.value() == 1.2
+    assert dlg.stapleton.t_blank.value() == 1.1
+    assert dlg.stapleton.t_sample.value() == 1.2
+
+    assert dlg.isComplete()
+
+    dlg.currie.eta.setValue(None)
+
+    assert not dlg.isComplete()
+
+    dlg.poisson_formula.setCurrentText("Formula C")
+
+    assert dlg.isComplete()
+
+    dlg.formula_c.t_blank.setValue(2.0)
+
+    with qtbot.waitSignal(
+        dlg.optionsSelected,
+        check_params_cb=lambda f, o1, o2: f == "formula c" and o1 == 1.2 and o2 == 2.0,
+        timeout=100,
+    ):
+        dlg.accept()
 
 
 def test_calculator_dialog(qtbot: QtBot):
@@ -111,6 +153,14 @@ def test_calculator_dialog_existing_expr(qtbot: QtBot):
     ):
         dlg.accept()
 
+def test_export_dialog(qtbot: QtBot):
+    # dlg = ExportDialog([], {}, {})
+    # qtbot.addWidget(dlg)
+    # with qtbot.wait_exposed(dlg):
+    #     dlg.show()
+    raise NotImplementedError
+
+
 
 def test_filter_dialog_empty(qtbot: QtBot):
     isotopes = [
@@ -146,7 +196,6 @@ def test_filter_dialog_empty(qtbot: QtBot):
         filters: list[list[SPCalValueFilter]],
         cluster_filters: list[list[SPCalClusterFilter]],
     ) -> bool:
-        print(filters)
         if len(filters) != 2:
             return False
         if len(filters[0]) != 1:
@@ -319,9 +368,9 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
     with qtbot.wait_signal(
         dlg.optionsChanged,
         timeout=100,
-        check_params_cb=lambda widths, perc, draw: check_bin_widths(widths)
-        and perc == 90.0
-        and draw,
+        check_params_cb=lambda widths, perc, draw: (
+            check_bin_widths(widths) and perc == 90.0 and draw
+        ),
     ):
         dlg.apply()
 
@@ -331,11 +380,9 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
     with qtbot.wait_signal(
         dlg.optionsChanged,
         timeout=100,
-        check_params_cb=lambda widths, perc, draw: all(
-            x is None for x in widths.values()
-        )
-        and perc == 98.0
-        and not draw,
+        check_params_cb=lambda widths, perc, draw: (
+            all(x is None for x in widths.values()) and perc == 98.0 and not draw
+        ),
     ):
         dlg.apply()
 
@@ -397,10 +444,53 @@ def test_graph_spectra_options_dialog(qtbot: QtBot):
     dlg.accept()
 
 
+def test_peak_properties_dialog(
+    qtbot: QtBot, default_method: SPCalProcessingMethod, random_result_generator
+):
+    results = {
+        iso: random_result_generator(default_method, number=100, isotope=iso)
+        for iso in [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Cu", 63)]]
+    }
+
+    dlg = PeakPropertiesDialog(results, ISOTOPE_TABLE[("Cu", 63)])  # type: ignore
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.combo_isotope.currentText() == "63Cu"
+
+    for iso, result in results.items():
+        dlg.combo_isotope.setCurrentIsotope(iso)
+        widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
+        assert np.isclose(
+            float(dlg.model.item(0, 2).text()), np.mean(widths / 1e-6), atol=0.01
+        )
+
+
+def test_processing_options_dialog(qtbot: QtBot):
+    options = SPCalProcessingOptions()
+    dlg = ProcessingOptionsDialog(options)
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    with qtbot.assertNotEmitted(dlg.optionsChanged):
+        dlg.accept()
+
+    dlg.options.points_required.setValue(2)
+
+    with qtbot.waitSignal(dlg.optionsChanged, timeout=100):
+        dlg.accept()
+
+
 def test_select_isotope_dialog(
     test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
 ):
-    df = SPCalTOFWERKDataFile.load(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    df = SPCalTOFWERKDataFile.load(
+        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    )
     df.selected_isotopes = [
         ISOTOPE_TABLE[("Ag", 107)],
         ISOTOPE_TABLE[("Ag", 109)],
@@ -449,9 +539,9 @@ def test_select_isotope_screening_dialog(qtbot: QtBot):
 
     with qtbot.waitSignal(
         dlg.screeningOptionsSelected,
-        check_params_cb=lambda ppm, size, replace: ppm == 200
-        and size == 2000
-        and not replace,
+        check_params_cb=lambda ppm, size, replace: (
+            ppm == 200 and size == 2000 and not replace
+        ),
         timeout=100,
     ):
         dlg.accept()
