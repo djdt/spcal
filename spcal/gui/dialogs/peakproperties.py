@@ -24,6 +24,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.addIsotopes(list(results.keys()))
+        self.combo_isotope.setCurrentIsotope(current)
         self.combo_isotope.isotopeChanged.connect(self.updateValues)
 
         self.table = BasicTableView()
@@ -44,7 +45,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
         self.width_units = QtWidgets.QComboBox()
         self.width_units.addItems(list(time_units.keys()))
-        self.width_units.setCurrentText("μs")
+        self.width_units.setCurrentText("µs")
         self.width_units.currentTextChanged.connect(self.updateValues)
 
         layout = QtWidgets.QVBoxLayout()
