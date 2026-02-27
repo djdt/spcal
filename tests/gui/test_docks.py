@@ -350,4 +350,17 @@ def test_spcal_toolbar(qtbot: QtBot):
 
 
 def test_spcal_view_toolbar(qtbot: QtBot):
-    raise NotImplementedError
+    toolbar = SPCalViewToolBar()
+    qtbot.addWidget(toolbar)
+    with qtbot.waitExposed(toolbar):
+        toolbar.show()
+
+
+    assert toolbar.currentView() == "particle"
+    assert not toolbar.action_view_options.isEnabled()
+
+    with qtbot.waitSignal(toolbar.viewChanged):
+        toolbar.view_actions["histogram"].trigger()
+
+    assert toolbar.currentView() == "histogram"
+    assert toolbar.action_view_options.isEnabled()

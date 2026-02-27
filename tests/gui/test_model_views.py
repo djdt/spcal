@@ -499,9 +499,68 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
     qtmodeltester.check(intensity_model)
 
 
-def test_results_output_view(qtbot: QtBot):
+def test_results_output_view(
+    qtbot: QtBot, default_method: SPCalProcessingMethod, random_result_generator
+):
     view = ResultOutputView()
-    raise NotImplementedError
+    qtbot.addWidget(view)
+
+    default_method.instrument_options.uptake = 1.0
+    default_method.instrument_options.efficiency = 0.1
+
+    results = [random_result_generator(default_method) for _ in range(5)]
+
+    for result in results:
+        default_method.isotope_options[result.isotope] = SPCalIsotopeOptions(
+            1.0, 1.0, 1.0
+        )
+
+    view.setResults(results)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    assert view.results_model.rowCount() == 5
+
+    with qtbot.waitSignal(view.isotopeSelected, timeout=100):
+        qtbot.mouseClick(
+            view.verticalHeader().viewport(),
+            QtCore.Qt.MouseButton.LeftButton,
+            pos=QtCore.QPoint(
+                view.verticalHeader().width() // 2,
+                view.verticalHeader().sectionViewportPosition(1)
+                + view.verticalHeader().sectionSize(1) // 2,
+            ),
+        )
+
+    assert view.selectedIsotopes() == [results[1].isotope]
+
+    with qtbot.waitSignal(view.isotopeSelected, timeout=100):
+        qtbot.mouseClick(
+            view.verticalHeader().viewport(),
+            QtCore.Qt.MouseButton.LeftButton,
+            pos=QtCore.QPoint(
+                view.verticalHeader().width() // 2,
+                view.verticalHeader().sectionViewportPosition(2)
+                + view.verticalHeader().sectionSize(2) // 2,
+            ),
+            stateKey=QtCore.Qt.KeyboardModifier.ShiftModifier,
+        )
+
+    assert view.selectedIsotopes() == [results[1].isotope, results[2].isotope]
+
+    with qtbot.waitSignal(
+        view.requestAddExpression,
+        check_params_cb=lambda e: len(e.tokens) == 3,
+        timeout=100,
+    ):
+        view.sumSelectedIsotopes()
+
+    with qtbot.assertNotEmitted(view.requestRemoveExpressions):
+        view.removeSelectedExpressions()
+
+    with qtbot.waitSignal(view.requestRemoveIsotopes, timeout=100):
+        view.removeSelectedIsotopes()
 
 
 def test_results_output_model(

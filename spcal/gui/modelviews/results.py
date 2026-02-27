@@ -192,6 +192,14 @@ class ResultOutputView(BasicTableView):
             self.removeSelectedExpressions,
         )
 
+    def results(self) -> list[SPCalProcessingResult]:
+        return self.results_model.results
+
+    def setResults(self, results: list[SPCalProcessingResult]):
+        self.results_model.beginResetModel()
+        self.results_model.results = results
+        self.results_model.endResetModel()
+
     def onHeaderClicked(self, section: int):
         isotope = self.results_model.data(
             self.results_model.index(section, 0), IsotopeRole

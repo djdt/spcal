@@ -248,6 +248,7 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
             "Set options specific to the current graph.",
             self.requestViewOptionsDialog,
         )
+        self.action_view_options.setEnabled(False)
 
         action_group_views = QtGui.QActionGroup(self)
         for action in self.view_actions.values():
@@ -273,4 +274,7 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
     def onViewChanged(self):
         view = self.currentView()
+        self.action_view_options.setEnabled(
+            view in ["histogram", "composition", "spectra"]
+        )
         self.viewChanged.emit(view)
