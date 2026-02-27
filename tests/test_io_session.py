@@ -64,11 +64,12 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
     method.exclusion_regions = [(0.4, 1.0), (230.2, 276.0)]
 
     files = [
-        SPCalNuDataFile.load(Path("/home/tom/Downloads/NT032/14-37-30 1 ppb att")),
+        SPCalNuDataFile.load(test_data_path.joinpath("nu")),
         SPCalTextDataFile.load(
-            Path("/home/tom/Downloads/019SMPL-48-64Ti_count.csv"),
-            skip_rows=5,
-            isotope_table={SPCalIsotope.fromString("48Ti"): "Ti48_->_64"},
+            test_data_path.joinpath("text/agilent_au50nm.csv"), skip_rows=4
+        ),
+        SPCalTOFWERKDataFile.load(
+            test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
         ),
     ]
     files[0].selected_isotopes = [SPCalIsotope.fromString("197Au")]

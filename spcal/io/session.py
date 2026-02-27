@@ -243,7 +243,7 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
         cluster_distance=method_dict["processing options"]["cluster distance"],
     )
     method.expressions = expressions
-    method.exclusion_regions = method_dict["exclusion regions"]
+    method.exclusion_regions = [(s, e) for s, e in method_dict["exclusion regions"]]
     method.result_filters = decode_filters(method_dict["result filters"], expressions)
     method.index_filters = decode_filters(method_dict["index filters"], expressions)
     return method
