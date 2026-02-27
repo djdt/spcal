@@ -377,6 +377,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setObjectName("spcal-isotope-optinos-dock")
         self.setWindowTitle("Isotope Options")
 
         self.table = IsotopeOptionTable()

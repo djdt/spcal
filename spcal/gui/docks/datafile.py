@@ -14,6 +14,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setObjectName("spcal-datafiles-dock")
         self.setWindowTitle("Data Files")
 
         self.screening_method: SPCalProcessingMethod | None = None

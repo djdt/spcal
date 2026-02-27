@@ -75,20 +75,14 @@ class SPCalIsotopeOptions(object):
         if not isinstance(other, SPCalIsotopeOptions):  # pragma: no cover
             return False
 
-        for attr in [
-            "density",
-            "response",
-            "mass_fraction",
-            "concentration",
-            "diameter",
-            "mass_response",
-        ]:
-            a = getattr(self, attr)
-            b = getattr(other, attr)
-            if a is None and getattr(other, attr) is not None or a != b:
-                return False
-
-        return True
+        return (
+            self.density == other.density
+            and self.response == other.response
+            and self.mass_fraction == other.mass_fraction
+            and self.concentration == other.concentration
+            and self.diameter == other.diameter
+            and self.mass_response == other.mass_response
+        )
 
     def canCalibrate(self, key: str, mode: str = "efficiency") -> bool:
         if key == "signal":
@@ -149,6 +143,24 @@ class SPCalLimitOptions(object):
         self.single_ion_parameters = single_ion_parameters
         self.manual_limits: dict[SPCalIsotopeBase, float] = {}
         self.default_manual_limit = 100.0
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"SPCalLimitOptions({self.limit_method})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalLimitOptions):  # pragma: no cover
+            return False
+        return (
+            self.limit_method == other.limit_method
+            and self.gaussian_kws == other.gaussian_kws
+            and self.poisson_kws == other.poisson_kws
+            and self.compound_poisson_kws == other.compound_poisson_kws
+            and self.window_size == other.window_size
+            and self.max_iterations == other.max_iterations
+            and bool(np.all(self.single_ion_parameters == other.single_ion_parameters))
+            and self.manual_limits == other.manual_limits
+            and self.default_manual_limit == other.default_manual_limit
+        )
 
     def limitsForIsotope(
         self,
@@ -273,3 +285,55 @@ class SPCalLimitOptions(object):
                 return gaussian
         else:  # pragma: no cover
             raise ValueError(f"unknown limit method {limit_method}")
+
+
+class SPCalProcessingOptions(object):
+    def __init__(
+        self,
+        calibration_mode: str = "efficiency",
+        accumulation_method: str = "signal mean",
+        points_required: int = 1,
+        prominence_required: float = 0.2,
+        cluster_distance: float = 0.03,
+    ):
+        if accumulation_method not in [
+            "signal mean",
+            "half detection threshold",
+            "detection threshold",
+        ]:  # pragma: no cover
+            raise ValueError(
+                "accumulation method must be one of 'signal mean', 'half detection threshold', 'detection threshold'"
+            )
+        if calibration_mode not in ["efficiency", "mass response"]:  # pragma: no cover
+            raise ValueError(
+                "calibration mode must be one of 'efficiency', 'mass response'"
+            )
+        self.calibration_mode = calibration_mode
+        self.accumulation_method = accumulation_method
+        self.points_required = points_required
+        self.prominence_required = prominence_required
+        self.cluster_distance = cluster_distance
+
+    def __repr__(self) -> str:
+        return f"SPCalProcessingOptions({self.calibration_mode})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SPCalProcessingOptions):
+            return False
+        return (
+            self.calibration_mode == other.calibration_mode
+            and self.accumulation_method == other.accumulation_method
+            and self.points_required == other.points_required
+            and self.prominence_required == other.prominence_required
+            and self.cluster_distance == other.cluster_distance
+        )
+
+    def accumulationLimit(self, limit: SPCalLimit) -> float | np.ndarray:
+        if self.accumulation_method == "signal mean":
+            return limit.mean_signal
+        elif self.accumulation_method == "half detection threshold":
+            return (limit.mean_signal + limit.detection_threshold) / 2.0
+        elif self.accumulation_method == "detection threshold":
+            return limit.detection_threshold
+        else:  # pragma: no cover
+            raise ValueError(f"unknown accumulation method {self.accumulation_method}")

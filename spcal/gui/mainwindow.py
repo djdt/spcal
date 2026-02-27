@@ -15,6 +15,9 @@ from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.dialogs.response import ResponseDialog
+from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
+
 from spcal.gui.dialogs.tools import (
     MassFractionCalculatorDialog,
     ParticleDatabaseDialog,
@@ -26,6 +29,8 @@ from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
+
+# from spcal.gui.docks.processingoptions import SPCalProcessingOptionsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
@@ -45,7 +50,7 @@ from spcal.io.session import (
 )
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
-from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.result import SPCalProcessingResult
 from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
@@ -69,16 +74,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        settings = QtCore.QSettings()
-        method = SPCalProcessingMethod(
-            accumulation_method=str(
-                settings.value("Threshold/AccumulationMethod", "signal mean")
-            ),
-            points_required=int(settings.value("Threshold/PointsRequired", 1)),  # type: ignore
-            prominence_required=float(
-                settings.value("Threshold/ProminenceRequired", 0.2)  # type: ignore
-            ),
-        )
+        method = SPCalProcessingMethod()
         self.processing_methods = {"default": method}
 
         self.graph = SPCalCentralWidget()
@@ -86,16 +82,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar = SPCalOptionsToolBar()
         self.toolbar_view = SPCalViewToolBar()
 
-        self.instrument_options = SPCalInstrumentOptionsDock(
-            method.instrument_options, method.calibration_mode, method.cluster_distance
-        )
+        self.instrument_options = SPCalInstrumentOptionsDock(method.instrument_options)
+        # self.processing_options = SPCalProcessingOptionsDock(method.processing_options)
 
-        self.limit_options = SPCalLimitOptionsDock(
-            method.limit_options,
-            method.accumulation_method,
-            method.points_required,
-            method.prominence_required,
-        )
+        self.limit_options = SPCalLimitOptionsDock(method.limit_options)
         self.isotope_options = SPCalIsotopeOptionsDock()
 
         self.files = SPCalDataFilesDock()
@@ -115,6 +105,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogTransportEfficiencyCalculator
         )
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
+        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
@@ -149,8 +140,27 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.graph.dialogGraphOptions
         )
 
+        self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
+        self.addToolBar(QtCore.Qt.ToolBarArea.RightToolBarArea, self.toolbar_view)
+
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.instrument_options
+        )
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
+        )
+        # self.addDockWidget(
+        #     QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
+        # )
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.isotope_options
+        )
+
+        self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.outputs)
+
         self.setCentralWidget(self.graph)
-        self.defaultLayout()
+        self.restoreLayout()
 
         self.createMenuBar()
         self.updateRecentFiles()
@@ -177,17 +187,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.instrument_options.optionsChanged.disconnect(
             self.onInstrumentOptionsChanged
         )
-        self.instrument_options.setInstrumentOptions(
-            method.instrument_options, method.calibration_mode
-        )
+        self.instrument_options.setInstrumentOptions(method.instrument_options)
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
+
+        # self.processing_options.optionsChanged.disconnect(
+        #     self.onProcessingOptionsChanged
+        # )
+        # self.processing_options.setProcessingOptions(method.processing_options)
+        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
         self.limit_options.setLimitOptions(
             method.limit_options,
-            method.accumulation_method,
-            method.points_required,
-            method.prominence_required,
         )
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
@@ -278,6 +289,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "sample and reference.",
             self.dialogIonicResponse,
         )
+        self.action_processing_options = create_action(
+            "folder-build",
+            "Processing Options",
+            "Set processing options for the current method.",
+            self.dialogProcessingOptions,
+        )
 
         # View
         current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
@@ -351,6 +368,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuedit.addSeparator()
         menuedit.addAction(self.action_mass_fraction_calculator)
         menuedit.addAction(self.action_particle_database)
+        menuedit.addSeparator()
+        menuedit.addAction(self.action_processing_options)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -529,9 +548,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onInstrumentOptionsChanged(self):
         method = self.currentMethod()
         method.instrument_options = self.instrument_options.instrumentOptions()
-        method.calibration_mode = self.instrument_options.calibrationMode().lower()
-        method.cluster_distance = self.instrument_options.clusterDistance()
-
         self.currentMethodChanged.emit(method)
         self.reprocess()
 
@@ -555,12 +571,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def onLimitOptionsChanged(self):
         method = self.currentMethod()
         method.limit_options = self.limit_options.limitOptions()
-        method.accumulation_method = self.limit_options.accumulationMethod()
-        method.points_required = self.limit_options.pointsRequired()
-        method.prominence_required = self.limit_options.prominenceRequired()
-
         self.currentMethodChanged.emit(method)
         self.reprocess()
+
+    # def onProcessingOptionsChanged(self):
+    #     method = self.currentMethod()
+    #     # method.processing_options = self.processing_options.processingOptions()
+    #     self.currentMethodChanged.emit(method)
+    #     self.reprocess()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
         isotopes = data_file.selected_isotopes + self.currentMethod().expressions
@@ -835,8 +853,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogPeakProperties(self) -> QtWidgets.QDialog | None:
-        from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
-
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
@@ -846,6 +862,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.toolbar.combo_isotope.currentIsotope(),
         )
         dlg.exec()
+
+    def dialogProcessingOptions(self):
+        def set_processing_options(options: SPCalProcessingOptions):
+            method = self.currentMethod()
+            method.processing_options = options
+            self.currentMethodChanged.emit(method)
+            self.reprocess()
+
+        method = self.currentMethod()
+
+        dlg = ProcessingOptionsDialog(method.processing_options, parent=self)
+        dlg.optionsChanged.connect(set_processing_options)
+        dlg.open()
+        return dlg
 
     def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog | None:
         isotope = self.toolbar.combo_isotope.currentIsotope()
@@ -950,6 +980,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
 
     # UI
+    # save / restore layout
+    def restoreLayout(self):
+        settings = QtCore.QSettings()
+        if settings.contains("Window/Geometry"):
+            self.restoreGeometry(settings.value("Window/Geometry"))
+            self.restoreState(settings.value("Window/State"))
+        else:
+            self.defaultLayout()
+
+    def saveLayout(self):
+        settings = QtCore.QSettings()
+        settings.setValue("Window/Geometry", self.saveGeometry())
+        settings.setValue("Window/State", self.saveState())
 
     def defaultLayout(self):
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
@@ -960,6 +1003,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
+        )
+        self.addDockWidget(
+            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
         )
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         self.addDockWidget(
@@ -977,13 +1023,23 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.limit_options.sizeHint().width(),
         )
         self.resizeDocks(
-            [self.instrument_options, self.limit_options],
-            [left_width, left_width],
+            [self.instrument_options, self.processing_options, self.limit_options],
+            [left_width, left_width, left_width],
             QtCore.Qt.Orientation.Horizontal,
         )
         self.resizeDocks(
-            [self.instrument_options, self.limit_options, self.files],
-            [size.height() // 3, size.height() // 3, size.height() // 3],
+            [
+                self.instrument_options,
+                self.limit_options,
+                self.processing_options,
+                self.files,
+            ],
+            [
+                size.height() // 6,
+                size.height() // 3,
+                size.height() // 6,
+                size.height() // 3,
+            ],
             QtCore.Qt.Orientation.Vertical,
         )
         isotope_width = self.isotope_options.sizeHint().width() + 48
@@ -1081,6 +1137,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             action = QtGui.QAction(str(path), self)
             self.action_open_recent.addAction(action)
             self.menu_recent.addAction(action)
+
+    def closeEvent(self, event: QtGui.QCloseEvent):
+        self.saveLayout()
+        super().closeEvent(event)
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         for url in event.mimeData().urls():

@@ -4,10 +4,7 @@ from statistics import NormalDist
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.dialogs.advancedoptions import (
-    AdvancedPoissonDialog,
-    AdvancedThresholdOptions,
-)
+from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.widgets.collapsablewidget import CollapsableWidget
 from spcal.gui.widgets.values import ValueWidget
@@ -277,16 +274,9 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
     def __init__(
         self,
         limit_options: SPCalLimitOptions,
-        accumulation_method: str,
-        points_required: int,
-        prominence_required: float,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-
-        self.limit_accumulation = accumulation_method
-        self.points_required = points_required
-        self.prominence_required = prominence_required
 
         self.window_size = QtWidgets.QSpinBox()
         self.window_size.setSingleStep(100)
@@ -342,9 +332,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             )
         )
 
-        self.button_advanced_options = QtWidgets.QPushButton("Advanced Options...")
-        self.button_advanced_options.pressed.connect(self.dialogAdvancedOptions)
-
         self.gaussian = GaussianOptionsWidget(limit_options.gaussian_kws["alpha"])
         self.poisson = PoissonOptionsWidget(
             limit_options.poisson_kws["alpha"],
@@ -397,9 +384,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         layout.addWidget(poisson_collapse, 0)
         layout.addWidget(compound_collapse, 0)
 
-        layout.addWidget(
-            self.button_advanced_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
-        )
         self.setLayout(layout)
 
     def setLimitOptions(self, options: SPCalLimitOptions):
@@ -429,33 +413,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             single_ion_parameters=self.compound.single_ion_parameters,
         )
 
-    def dialogAdvancedOptions(self):
-        dlg = AdvancedThresholdOptions(
-            self.limit_accumulation.title(),
-            self.points_required,
-            self.prominence_required,
-            parent=self,
-        )
-        dlg.optionsSelected.connect(self.setAdvancedOptions)
-        dlg.open()
-
-    def advancedOptions(self) -> tuple[str, int, float]:
-        return (self.limit_accumulation, self.points_required, self.prominence_required)
-
-    def setAdvancedOptions(
-        self, accumlation_method: str, points_required: int, prominence_required: float
-    ):
-        self.limit_accumulation = accumlation_method
-        self.points_required = points_required
-        self.prominence_required = prominence_required
-
-        settings = QtCore.QSettings()
-        settings.setValue("Threshold/AccumulationMethod", accumlation_method)
-        settings.setValue("Threshold/PointsRequired", points_required)
-        settings.setValue("Threshold/ProminenceRequired", prominence_required)
-
-        self.optionsChanged.emit()
-
 
 class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
     optionsChanged = QtCore.Signal()
@@ -463,43 +420,24 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
     def __init__(
         self,
         options: SPCalLimitOptions,
-        accumulation_method: str,
-        points_required: int,
-        prominence_required: float,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
+        self.setObjectName("spcal-limit-options-dock")
         self.setWindowTitle("Limit Options")
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Ignored
         )
-        self.options_widget = SPCalLimitOptionsWidget(
-            options, accumulation_method, points_required, prominence_required
-        )
+        self.options_widget = SPCalLimitOptionsWidget(options)
         self.options_widget.optionsChanged.connect(self.optionsChanged)
         self.setWidget(self.options_widget)
 
     def limitOptions(self) -> SPCalLimitOptions:
         return self.options_widget.limitOptions()
 
-    def accumulationMethod(self) -> str:
-        return self.options_widget.limit_accumulation
-
-    def pointsRequired(self) -> int:
-        return self.options_widget.points_required
-
-    def prominenceRequired(self) -> float:
-        return self.options_widget.prominence_required
-
     def reset(self):
-        settings = QtCore.QSettings()
         self.blockSignals(True)
         self.options_widget.setLimitOptions(SPCalLimitOptions())
-        self.options_widget.setAdvancedOptions(
-            str(settings.value("Threshold/AccumulationMethod", "signal mean")),
-            int(settings.value("Threshold/PointsRequired", 1)),  # type: ignore
-            float(settings.value("Threshold/ProminenceRequired", 0.2)),  # type: ignore
-        )
         self.blockSignals(False)
         self.optionsChanged.emit()
 
@@ -516,9 +454,3 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         prominence_required: float | None = None,
     ):
         self.options_widget.setLimitOptions(options)
-        if accumlation_method is not None:
-            self.options_widget.limit_accumulation = accumlation_method
-        if points_required is not None:
-            self.options_widget.points_required = points_required
-        if prominence_required is not None:
-            self.options_widget.prominence_required = prominence_required

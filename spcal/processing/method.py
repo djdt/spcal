@@ -14,11 +14,12 @@ from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
 import logging
 
-from spcal.processing import ACCUMULATION_METHODS, CALIBRATION_KEYS
+from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import (
     SPCalInstrumentOptions,
     SPCalIsotopeOptions,
     SPCalLimitOptions,
+    SPCalProcessingOptions,
 )
 from spcal.processing.result import SPCalProcessingResult
 
@@ -38,44 +39,28 @@ class SPCalProcessingMethod(object):
         instrument_options: SPCalInstrumentOptions | None = None,
         limit_options: SPCalLimitOptions | None = None,
         isotope_options: dict[SPCalIsotopeBase, SPCalIsotopeOptions] | None = None,
-        accumulation_method: str = "signal mean",
-        points_required: int = 1,
-        prominence_required: float = 0.2,
-        calibration_mode: str = "efficiency",
-        cluster_distance: float = 0.03,
+        processing_options: SPCalProcessingOptions | None = None,
     ):
-        if accumulation_method not in ACCUMULATION_METHODS:  # pragma: no cover
-            raise ValueError(
-                f"accumulation method must be one of {', '.join(ACCUMULATION_METHODS)}"
-            )
-        if calibration_mode not in ["efficiency", "mass response"]:  # pragma: no cover
-            raise ValueError(
-                "calibration mode must be one of 'efficiency', 'mass response'"
-            )
         if instrument_options is None:
             instrument_options = SPCalInstrumentOptions(None, None)
         if limit_options is None:
             limit_options = SPCalLimitOptions()
         if isotope_options is None:
             isotope_options = {}
+        if processing_options is None:
+            processing_options = SPCalProcessingOptions()
 
         self.instrument_options = instrument_options
         self.limit_options = limit_options
         self.isotope_options = isotope_options
-
-        self.accumulation_method = accumulation_method
-        self.points_required = points_required
-        self.prominence_required = prominence_required
-
-        self.calibration_mode = calibration_mode
-
-        self.cluster_distance = cluster_distance
+        self.processing_options = processing_options
 
         self.result_filters: list[list["SPCalResultFilter"]] = [[]]
         self.index_filters: list[list["SPCalIndexFilter"]] = [[]]
         self.exclusion_regions: list[tuple[float, float]] = []
 
         self.expressions: list[SPCalIsotopeExpression] = []
+
     def setFilters(
         self,
         result_filters: list[list["SPCalResultFilter"]],
@@ -104,17 +89,7 @@ class SPCalProcessingMethod(object):
             data_file, isotope, method.exclusion_regions
         )
 
-        if method.accumulation_method == "signal mean":
-            limit_accumulation = limit.mean_signal
-        elif method.accumulation_method == "half detection threshold":
-            limit_accumulation = (limit.mean_signal + limit.detection_threshold) / 2.0
-        elif method.accumulation_method == "detection threshold":
-            limit_accumulation = limit.detection_threshold
-        else:  # pragma: no cover
-            raise ValueError(
-                f"unknown accumulation method {method.accumulation_method}"
-            )
-
+        limit_accumulation = method.processing_options.accumulationLimit(limit)
         limit_detection = limit.detection_threshold
         limit_accumulation = np.minimum(limit_accumulation, limit_detection)
 
@@ -131,8 +106,8 @@ class SPCalProcessingMethod(object):
             signals,
             limit_accumulation=limit_accumulation,
             limit_detection=limit_detection,
-            points_required=method.points_required,
-            prominence_required=method.prominence_required,
+            points_required=method.processing_options.points_required,
+            prominence_required=method.processing_options.prominence_required,
         )
 
         return SPCalProcessingResult(
@@ -258,7 +233,9 @@ class SPCalProcessingMethod(object):
 
         X, valid = prepare_results_for_clustering(list(results.values()), npeaks, key)
         clusters = np.zeros(npeaks, dtype=int)
-        clusters[valid] = agglomerative_cluster(X[valid], self.cluster_distance)
+        clusters[valid] = agglomerative_cluster(
+            X[valid], self.processing_options.cluster_distance
+        )
         return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
@@ -271,8 +248,10 @@ class SPCalProcessingMethod(object):
             return False
 
         return self.instrument_options.canCalibrate(
-            key, self.calibration_mode
-        ) and self.isotope_options[isotope].canCalibrate(key, self.calibration_mode)
+            key, self.processing_options.calibration_mode
+        ) and self.isotope_options[isotope].canCalibrate(
+            key, self.processing_options.calibration_mode
+        )
 
     def calibrateTo(
         self,
@@ -295,7 +274,7 @@ class SPCalProcessingMethod(object):
     ) -> float | np.ndarray:
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
-        if self.calibration_mode == "efficiency":
+        if self.processing_options.calibration_mode == "efficiency":
             assert self.instrument_options.uptake is not None
             assert self.instrument_options.efficiency is not None
             assert self.isotope_options[isotope].response is not None

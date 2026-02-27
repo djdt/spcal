@@ -26,6 +26,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
+        self.setObjectName("spcal-results-dock")
         self.setWindowTitle("Results")
 
         self.table = ResultOutputView()

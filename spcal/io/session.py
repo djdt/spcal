@@ -22,6 +22,7 @@ from spcal.processing.options import (
     SPCalInstrumentOptions,
     SPCalIsotopeOptions,
     SPCalLimitOptions,
+    SPCalProcessingOptions,
 )
 
 
@@ -121,11 +122,11 @@ def save_session_json(
                 "single ion": method.limit_options.single_ion_parameters,
             },
             "processing options": {
-                "accumulation method": method.accumulation_method,
-                "calibration mode": method.calibration_mode,
-                "cluster distance": method.cluster_distance,
-                "points required": method.points_required,
-                "prominence required": method.prominence_required,
+                "accumulation method": method.processing_options.accumulation_method,
+                "calibration mode": method.processing_options.calibration_mode,
+                "cluster distance": method.processing_options.cluster_distance,
+                "points required": method.processing_options.points_required,
+                "prominence required": method.processing_options.prominence_required,
             },
             "exclusion regions": method.exclusion_regions,
             "result filters": method.result_filters,
@@ -232,15 +233,19 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
         for k, v in method_dict["limit options"]["manual limits"].items()
     }
 
-    method = SPCalProcessingMethod(
-        instrument_options,
-        limit_options,
-        isotope_options,  # type: ignore
+    processing_options = SPCalProcessingOptions(
         accumulation_method=method_dict["processing options"]["accumulation method"],
         points_required=method_dict["processing options"]["points required"],
         prominence_required=method_dict["processing options"]["prominence required"],
         calibration_mode=method_dict["processing options"]["calibration mode"],
         cluster_distance=method_dict["processing options"]["cluster distance"],
+    )
+
+    method = SPCalProcessingMethod(
+        instrument_options,
+        limit_options,
+        isotope_options,  # type: ignore
+        processing_options,
     )
     method.expressions = expressions
     method.exclusion_regions = [(s, e) for s, e in method_dict["exclusion regions"]]

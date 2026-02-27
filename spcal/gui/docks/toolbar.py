@@ -74,6 +74,7 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(title, parent=parent)
+        self.setObjectName("spcal-options-toolbar")
 
         # default widgets
         self.combo_isotope = IsotopeComboBox()
@@ -227,6 +228,7 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__("View Toolbar", parent=parent)
+        self.setObjectName("spcal-view-toolbar")
 
         self.view_actions = {
             name: create_action(

@@ -1,13 +1,7 @@
-from datetime import datetime
 import numpy as np
-from typing import Any
 from pathlib import Path
 
-import json
-from importlib.metadata import version
-
 from spcal.datafile import (
-    SPCalDataFile,
     SPCalNuDataFile,
     SPCalTOFWERKDataFile,
     SPCalTextDataFile,
@@ -19,9 +13,7 @@ from spcal.processing.filter import (
 )
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import (
-    SPCalInstrumentOptions,
     SPCalIsotopeOptions,
-    SPCalLimitOptions,
 )
 from spcal.io.session import save_session_json, load_session_json
 
@@ -78,8 +70,12 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
     method2, files2 = load_session_json(tmp_path.joinpath("session.spcal.json"))
 
     assert method.instrument_options == method2.instrument_options
+    assert method.limit_options == method2.limit_options
+    assert method.isotope_options == method2.isotope_options
+
     assert method.expressions == method2.expressions
     assert method.result_filters == method2.result_filters
     assert method.index_filters == method2.index_filters
-    assert method.isotope_options == method2.isotope_options
     assert method.exclusion_regions == method2.exclusion_regions
+
+    assert method.processing_options == method2.processing_options
