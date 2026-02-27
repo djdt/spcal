@@ -29,23 +29,21 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.setObjectName("spcal-results-dock")
         self.setWindowTitle("Results")
 
-        self.table = ResultOutputView()
+        self.view = ResultOutputView()
 
-        self.table.isotopeSelected.connect(self.requestCurrentIsotope)
-        self.table.requestRemoveIsotopes.connect(self.requestRemoveIsotopes)
-        self.table.requestAddExpression.connect(self.requestAddExpression)
-        self.table.requestRemoveExpressions.connect(self.requestRemoveExpressions)
+        self.view.isotopeSelected.connect(self.requestCurrentIsotope)
+        self.view.requestRemoveIsotopes.connect(self.requestRemoveIsotopes)
+        self.view.requestAddExpression.connect(self.requestAddExpression)
+        self.view.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
-        self.setWidget(self.table)
+        self.setWidget(self.view)
         self.updateOutputsForKey("signal")
 
     def setResults(self, results: list[SPCalProcessingResult]):
-        self.table.results_model.beginResetModel()
-        self.table.results_model.results = results
-        self.table.results_model.endResetModel()
+        self.view.setResults(results)
 
     def updateOutputsForKey(self, key: str):
-        self.table.results_model.key = key
+        self.view.results_model.key = key
         units = signal_units
         default_unit = "cts"
         conc_units = number_concentration_units
@@ -65,27 +63,27 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         elif key != "signal":
             raise ValueError(f"unknown key '{key}'")
 
-        orientation = self.table.header.orientation()
-        self.table.results_model.setHeaderData(
+        orientation = self.view.header.orientation()
+        self.view.results_model.setHeaderData(
             1, orientation, conc_units, role=UnitsRole
         )
-        self.table.results_model.setHeaderData(
+        self.view.results_model.setHeaderData(
             1, orientation, default_conc_unit, role=CurrentUnitRole
         )
 
         for i in range(2, 7):
-            self.table.results_model.setHeaderData(
+            self.view.results_model.setHeaderData(
                 i, orientation, units, role=UnitsRole
             )
-            self.table.results_model.setHeaderData(
+            self.view.results_model.setHeaderData(
                 i, orientation, default_unit, role=CurrentUnitRole
             )
 
     def setSignificantFigures(self, sf: int):
-        delegate = self.table.itemDelegate()
+        delegate = self.view.itemDelegate()
         assert isinstance(delegate, ValueWidgetDelegate)
         delegate.setSigFigs(sf)
-        self.table.setItemDelegate(delegate)
+        self.view.setItemDelegate(delegate)
 
     def reset(self):
-        self.setResults({})
+        self.setResults([])
