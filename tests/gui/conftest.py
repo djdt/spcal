@@ -51,7 +51,6 @@ def random_datafile_gen():
             data,
             np.linspace(0.0, 1.0, size),
             isotope_table={isotope: str(isotope) for isotope in isotopes},
-            instrument_type="quadrupole",
         )
         df.selected_isotopes = isotopes
         return df

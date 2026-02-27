@@ -1,5 +1,4 @@
 from pathlib import Path
-import warnings
 
 import numpy as np
 from PySide6 import QtCore
@@ -335,9 +334,9 @@ def test_batch_wizard_method_page(qtbot: QtBot):
     method.instrument_options.uptake = 0.5
     method.instrument_options.efficiency = 0.1
 
-    method.accumulation_method = "detection threshold"
-    method.points_required = 2
-    method.prominence_required = 0.5
+    method.processing_options.accumulation_method = "detection threshold"
+    method.processing_options.points_required = 2
+    method.processing_options.prominence_required = 0.5
 
     method.limit_options.window_size = 100
     method.limit_options.max_iterations = 100
@@ -368,9 +367,12 @@ def test_batch_wizard_method_page(qtbot: QtBot):
     assert page.instrument_options.uptake.baseValue() == 0.5
     assert page.instrument_options.efficiency.value() == 0.1
 
-    assert page.limit_options.points_required == 2
-    assert page.limit_options.prominence_required == 0.5
-    assert page.limit_options.limit_accumulation == "detection threshold"
+    assert page.processing_options.points_required.value() == 2
+    assert page.processing_options.prominence_required.value() / 100.0 == 0.5
+    assert (
+        page.processing_options.accumulation_method.currentText().lower()
+        == "detection threshold"
+    )
 
     assert page.limit_options.check_window.isChecked()
     assert page.limit_options.window_size.value() == 100

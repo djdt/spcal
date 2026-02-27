@@ -16,7 +16,7 @@ class SPCalProcessingOptionsWidget(QtWidgets.QWidget):
 
         self.accumulation_method = QtWidgets.QComboBox()
         self.accumulation_method.addItems(
-            ["Signal Mean", "Half Detection Threshold", "Detection Treshold"]
+            ["Signal Mean", "Half Detection Threshold", "Detection Threshold"]
         )
         self.accumulation_method.setCurrentText(options.accumulation_method.title())
         self.accumulation_method.currentTextChanged.connect(self.optionsChanged)

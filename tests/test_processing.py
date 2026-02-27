@@ -108,7 +108,7 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     )
     assert limit_sia_expr.parameters["sigma"] < limit_sia.parameters["sigma"]
 
-    test_datafile.instrument_type = "quadrupole"  # fake for test
+    test_datafile.format = "text"  # fake for test
     limit = limit_options.limitsForIsotope(
         test_datafile, ISOTOPE_TABLE[("Ru", 101)], limit_method="automatic"
     )
@@ -127,7 +127,7 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
         exclusion_regions=[(10, 20)],
     )
     assert limit.mean_signal != limit_excluded.mean_signal
-    test_datafile.instrument_type = "tof"  # fake for test
+    test_datafile.format = "tofwerk"  # reset
 
 
 def test_spcal_processing_method(
@@ -161,18 +161,18 @@ def test_spcal_processing_method(
     assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 0.001
     assert method.calibrateTo(1.0, "size", ru[0], 1e-3) == np.cbrt(6.0 / np.pi * 0.001)
 
-    method.calibration_mode = "mass reponse"
+    method.processing_options.calibration_mode = "mass reponse"
     assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 1.0
 
     clusters = method.processClusters(results, "signal")
     assert np.all(clusters == [1, 5, 1, 1, 1, 2, 1, 4, 3, 2])
 
     # test other accumulation methods
-    method.accumulation_method = "half detection threshold"
+    method.processing_options.accumulation_method = "half detection threshold"
     results = method.processDataFile(test_datafile, [ru[0]])
     assert np.isclose(np.mean(results[ru[0]].detections), 267.712)
 
-    method.accumulation_method = "detection threshold"
+    method.processing_options.accumulation_method = "detection threshold"
     results = method.processDataFile(test_datafile, [ru[0]])
     assert np.isclose(np.mean(results[ru[0]].detections), 259.619)
 

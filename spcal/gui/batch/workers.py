@@ -276,7 +276,6 @@ class TextBatchWorker(QtCore.QObject):
         cps: bool = False,
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
-        instrument_type: str | None = None,
         parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
@@ -292,7 +291,6 @@ class TextBatchWorker(QtCore.QObject):
         self.cps = cps
         self.drop_fields = drop_fields
         self.override_event_time = override_event_time
-        self.instrument_type = instrument_type
 
     def openDataFile(self, path: Path) -> SPCalDataFile:
         return SPCalTextDataFile.load(
@@ -303,7 +301,6 @@ class TextBatchWorker(QtCore.QObject):
             cps=self.cps,
             drop_fields=self.drop_fields,
             override_event_time=self.override_event_time,
-            instrument_type=self.instrument_type,
         )
 
     def processFile(

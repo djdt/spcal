@@ -1004,9 +1004,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
         )
-        self.addDockWidget(
-            QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
-        )
+        # self.addDockWidget(
+        #     QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
+        # )
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.isotope_options
@@ -1023,7 +1023,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.limit_options.sizeHint().width(),
         )
         self.resizeDocks(
-            [self.instrument_options, self.processing_options, self.limit_options],
+            [self.instrument_options, self.limit_options],
             [left_width, left_width, left_width],
             QtCore.Qt.Orientation.Horizontal,
         )
@@ -1031,14 +1031,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             [
                 self.instrument_options,
                 self.limit_options,
-                self.processing_options,
+                # self.processing_options,
                 self.files,
             ],
             [
-                size.height() // 6,
-                size.height() // 3,
-                size.height() // 6,
-                size.height() // 3,
+                int(size.height() / 7 * 1),
+                int(size.height() / 7 * 3),
+                # size.height() // 6,
+                int(size.height() / 7 * 3),
             ],
             QtCore.Qt.Orientation.Vertical,
         )

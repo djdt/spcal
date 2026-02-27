@@ -3,7 +3,7 @@ import pytest
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
 from spcal.gui.mainwindow import SPCalMainWindow
 
 

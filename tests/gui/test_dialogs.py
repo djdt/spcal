@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile
+from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.filter import (
     BooleanItemWidget,

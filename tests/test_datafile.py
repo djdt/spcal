@@ -7,7 +7,7 @@ from spcal.isotope import ISOTOPE_TABLE
 
 
 def test_spcal_datafile():
-    df = datafile.SPCalDataFile(Path(), np.linspace(1, 2, 101), "quadrupole")
+    df = datafile.SPCalDataFile("text", Path(), np.linspace(1, 2, 101))
 
     assert df._event_time is None
     assert df.event_time == 0.01

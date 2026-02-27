@@ -131,25 +131,14 @@ def test_spcal_central_widget(
 
 
 def test_spcal_instrument_options_dock(qtbot: QtBot):
-    dock = SPCalInstrumentOptionsDock(
-        SPCalInstrumentOptions(None, 0.1), "efficiency", 0.04
-    )
+    dock = SPCalInstrumentOptionsDock(SPCalInstrumentOptions(None, 0.1))
     qtbot.addWidget(dock)
     with qtbot.waitExposed(dock):
         dock.show()
 
     assert dock.options_widget.uptake.baseValue() is None
     assert dock.options_widget.efficiency.value() == 0.1
-    assert dock.options_widget.calibration_mode.currentText() == "Efficiency"
-    assert dock.options_widget.cluster_distance == 0.04
     assert not dock.options_widget.action_efficiency.isEnabled()
-
-    assert dock.calibrationMode() == "efficiency"
-    assert dock.clusterDistance() == 0.04
-
-    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
-        dock.setCalibrationMode("mass response")
-    assert dock.options_widget.calibration_mode.currentText() == "Mass Response"
 
     with qtbot.waitSignal(dock.optionsChanged):
         dock.options_widget.uptake.setBaseValue(0.3)
@@ -204,18 +193,11 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
             poisson_kws={"function": "currie", "alpha": 1e-4},
             compound_poisson_kws={"alpha": 1e-5, "sigma": 0.6},
         ),
-        "signal mean",
-        2,
-        0.5,
     )
 
     qtbot.addWidget(dock)
     with qtbot.waitExposed(dock):
         dock.show()
-
-    assert dock.accumulationMethod() == "signal mean"
-    assert dock.pointsRequired() == 2
-    assert dock.prominenceRequired() == 0.5
 
     assert dock.options_widget.limit_method.currentText() == "Poisson"
     assert dock.options_widget.window_size.value() == 100
@@ -365,3 +347,7 @@ def test_spcal_toolbar(qtbot: QtBot):
         toolbar.action_filter.trigger()
 
     toolbar.reset()
+
+
+def test_spcal_view_toolbar(qtbot: QtBot):
+    raise NotImplementedError

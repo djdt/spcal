@@ -14,6 +14,7 @@ from spcal.datafile import (
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsWidget
 from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
+from spcal.gui.docks.processingoptions import SPCalProcessingOptionsWidget
 from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
 from spcal.gui.io import (
     NU_FILE_FILTER,
@@ -324,15 +325,16 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         self.setSubTitle("Processing Method")
 
         self.instrument_options = SPCalInstrumentOptionsWidget(
-            method.instrument_options, method.calibration_mode
+            method.instrument_options
         )
         self.instrument_options.button_efficiency.hide()
 
         self.limit_options = SPCalLimitOptionsWidget(
             method.limit_options,
-            method.accumulation_method,
-            method.points_required,
-            method.prominence_required,
+        )
+
+        self.processing_options = SPCalProcessingOptionsWidget(
+            method.processing_options
         )
 
         self.isotope_table = IsotopeOptionTable()
@@ -355,6 +357,11 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         gbox_limit_layout.addWidget(self.limit_options)
         gbox_limit.setLayout(gbox_limit_layout)
 
+        gbox_processing = QtWidgets.QGroupBox("Processing options")
+        gbox_processing_layout = QtWidgets.QVBoxLayout()
+        gbox_processing_layout.addWidget(self.processing_options)
+        gbox_processing.setLayout(gbox_processing_layout)
+
         gbox_isotope = QtWidgets.QGroupBox("Isotope options")
         gbox_isotope_layout = QtWidgets.QVBoxLayout()
         gbox_isotope_layout.addWidget(self.isotope_table)
@@ -368,11 +375,18 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         )
         gbox_expr.setLayout(gbox_expr_layout)
 
-        layout = QtWidgets.QGridLayout()
-        layout.addWidget(gbox_inst, 0, 0, 1, 1)
-        layout.addWidget(gbox_limit, 0, 1, 1, 1)
-        layout.addWidget(gbox_isotope, 1, 0, 1, 1)
-        layout.addWidget(gbox_expr, 1, 1, 1, 1)
+        layout_left = QtWidgets.QVBoxLayout()
+        layout_left.addWidget(gbox_inst, 0)
+        layout_left.addWidget(gbox_processing, 1)
+        layout_left.addWidget(gbox_expr)
+
+        layout_right = QtWidgets.QVBoxLayout()
+        layout_right.addWidget(gbox_limit, 1)
+        layout_right.addWidget(gbox_isotope, 1)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(layout_left,1)
+        layout.addLayout(layout_right, 1)
         self.setLayout(layout)
 
         self.registerField("method", self, "methodProp")
@@ -412,10 +426,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             instrument_options=self.instrument_options.instrumentOptions(),
             limit_options=self.limit_options.limitOptions(),
             isotope_options=self.isotope_table.isotope_model.isotope_options,
-            accumulation_method=self.limit_options.limit_accumulation,
-            points_required=self.limit_options.points_required,
-            prominence_required=self.limit_options.prominence_required,
-            calibration_mode=self.instrument_options.calibration_mode.currentText().lower(),
+            processing_options=self.processing_options.processingOptions()
         )
         method.expressions = self.expr_list.expressions()
         return method
@@ -804,7 +815,6 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
                 skip_rows=self.field("text.first_line"),
                 cps=cps,
                 override_event_time=override,
-                instrument_type=self.field("text.instrument_type").lower(),
             )
         elif self.hasVisitedPage(NU_PAGE_ID):
             isotopes: list[SPCalIsotope] = self.field("nu.isotopes")
