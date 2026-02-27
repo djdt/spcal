@@ -169,6 +169,7 @@ class ResultOutputView(BasicTableView):
         self.setHorizontalHeader(self.header)
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
         self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
+        self.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
 
         self.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
         self.setItemDelegate(ValueWidgetDelegate())

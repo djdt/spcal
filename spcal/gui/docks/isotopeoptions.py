@@ -289,6 +289,7 @@ class IsotopeOptionTable(BasicTableView):
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
+        self.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
 
         for col, name in self.isotope_model.COLUMNS.items():
             if name == "Mass Fraction":
