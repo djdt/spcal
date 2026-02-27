@@ -97,7 +97,6 @@ class BasicTableView(QtWidgets.QTableView):
                 if col != right:
                     text += "\t"
 
-            print(row)
             if row != bottom:
                 data += "</tr><tr>"
                 text += "\n"
