@@ -135,8 +135,8 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             return
         nmax = max(selected_numbers)
         colors = [viridis_32[int(n / nmax * 31)] for n in selected_numbers]
-
         self.table.setIsotopeColors(selected_isotopes, colors)
+
         if not replace_isotopes:
             selected_isotopes = set(selected_isotopes)
             selected_isotopes.update(self.table.selectedIsotopes())

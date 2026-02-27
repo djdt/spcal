@@ -23,6 +23,7 @@ class ImportDialogBase(QtWidgets.QDialog):
         self.screening_method = screening_method
         self.screening_ppm = 100
         self.screening_size = 1000000
+        self.screening_replace_isotopes = True
 
         self.file_path = Path(path)
         self.setWindowTitle(f"{title}: {self.file_path.name}")
@@ -80,11 +81,14 @@ class ImportDialogBase(QtWidgets.QDialog):
         dlg.screeningOptionsSelected.connect(self.screenDataFile)
         dlg.open()
 
-    def setScreeningParameters(self, ppm: int, size: int):
+    def setScreeningParameters(self, ppm: int, size: int, replace: bool):
         self.screening_ppm = ppm
         self.screening_size = size
+        self.screening_replace_isotopes = replace
 
-    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+    def screenDataFile(
+        self, screening_target_ppm: int, screening_size: int, replace_isotopes: bool
+    ):
         raise NotImplementedError
 
     def completeChanged(self):

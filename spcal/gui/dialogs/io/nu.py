@@ -224,7 +224,9 @@ class NuImportDialog(ImportDialogBase):
             [iso for iso, v in zip(natural_isotopes, valid) if v]
         )
 
-    def screenDataFile(self, screening_target_ppm: int, screening_size: int):
+    def screenDataFile(
+        self, screening_target_ppm: int, screening_size: int, replace_isotopes: bool
+    ):
         if self.screening_method is None:
             return
 
@@ -272,8 +274,14 @@ class NuImportDialog(ImportDialogBase):
 
         nmax = np.amax(selected_numbers)
         colors = [QtGui.QColor.fromRgbF(n / nmax, 0.0, 0.0) for n in selected_numbers]
-        self.table.setSelectedIsotopes(selected_isotopes)
         self.table.setIsotopeColors(selected_isotopes, colors)
+
+        if not replace_isotopes:
+            selected_isotopes = set(selected_isotopes)
+            selected_isotopes.update(self.table.selectedIsotopes())
+            selected_isotopes = list(selected_isotopes)
+
+        self.table.setSelectedIsotopes(selected_isotopes)
 
     def isComplete(self) -> bool:
         if self.first_integ.value() >= self.last_integ.value():
