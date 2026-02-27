@@ -146,6 +146,6 @@ class AdvancedPoissonDialog(QtWidgets.QDialog):
         options = widget.options()
 
         self.optionsSelected.emit(
-            self.poisson_formula.currentText(), options[0], options[1]
+            self.poisson_formula.currentText().lower(), options[0], options[1]
         )
         super().accept()
