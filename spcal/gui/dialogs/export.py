@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExportDialog(QtWidgets.QDialog):
-    INVALID_CHARS = '<>:"/\\|?*'
+    INVALID_CHARS = '<>:"|?*'
 
     def __init__(
         self,
