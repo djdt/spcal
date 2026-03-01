@@ -8,6 +8,7 @@ from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.widgets.collapsablewidget import CollapsableWidget
 from spcal.gui.widgets.values import ValueWidget
+from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.options import SPCalLimitOptions
 
 logger = logging.getLogger(__name__)
@@ -268,8 +269,49 @@ class PoissonOptionsWidget(LimitOptionsBaseWidget):
         return self.alpha.hasAcceptableInput()
 
 
+class ManualLimitsOptions(QtWidgets.QGroupBox):
+    optionsChanged = QtCore.Signal()
+    requestManualLimitDialog = QtCore.Signal()
+
+    def __init__(
+        self,
+        default_manual_limit: float = 100.0,
+        manual_limits: dict[SPCalIsotopeBase, float] = {},
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__("Manual", parent)
+
+        self.manual_limits = manual_limits
+
+        self.default_manual_limit = QtWidgets.QDoubleSpinBox()
+        self.default_manual_limit.setRange(0.0, 1e6)
+        self.default_manual_limit.setValue(default_manual_limit)
+        self.default_manual_limit.valueChanged.connect(self.optionsChanged)
+        self.default_manual_limit.setToolTip(
+            "Limit applied to all isotopes without a specific manual limit set."
+        )
+
+        self.button_set_limits = QtWidgets.QPushButton("Set Limits...")
+        self.button_set_limits.pressed.connect(self.requestManualLimitDialog)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addWidget(
+            self.button_set_limits, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+
+        form_layout = QtWidgets.QFormLayout()
+        form_layout.addRow("Default limit:", self.default_manual_limit)
+        form_layout.addRow(button_layout)
+        self.setLayout(form_layout)
+
+    def setManualLimits(self, limits: dict[SPCalIsotopeBase, float]):
+        self.manual_limits = limits
+        self.optionsChanged.emit()
+
+
 class SPCalLimitOptionsWidget(QtWidgets.QWidget):
     optionsChanged = QtCore.Signal()
+    requestManualLimitsDialog = QtCore.Signal()
 
     def __init__(
         self,
@@ -331,7 +373,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
                 self.limit_method.itemData(i, QtCore.Qt.ItemDataRole.ToolTipRole)
             )
         )
-
         self.gaussian = GaussianOptionsWidget(limit_options.gaussian_kws["alpha"])
         self.poisson = PoissonOptionsWidget(
             limit_options.poisson_kws["alpha"],
@@ -346,6 +387,10 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             limit_options.compound_poisson_kws["sigma"],
             limit_options.single_ion_parameters,
         )
+        self.manual = ManualLimitsOptions(
+            limit_options.default_manual_limit, limit_options.manual_limits
+        )
+        self.manual.requestManualLimitDialog.connect(self.requestManualLimitsDialog)
 
         self.window_size.valueChanged.connect(self.optionsChanged)
         self.limit_method.currentIndexChanged.connect(self.optionsChanged)
@@ -353,6 +398,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.gaussian.optionsChanged.connect(self.optionsChanged)
         self.poisson.optionsChanged.connect(self.optionsChanged)
         self.compound.optionsChanged.connect(self.optionsChanged)
+        self.manual.optionsChanged.connect(self.optionsChanged)
 
         layout_window_size = QtWidgets.QHBoxLayout()
         layout_window_size.addWidget(self.window_size, 1)
@@ -364,12 +410,11 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             self.check_iterative, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
 
-        gaussian_collapse = CollapsableWidget("Gaussian Limit Options")
-        gaussian_collapse.setWidget(self.gaussian)
-        poisson_collapse = CollapsableWidget("Poisson Limit Options")
-        poisson_collapse.setWidget(self.poisson)
-        compound_collapse = CollapsableWidget("Compound Poisson Limit Options")
-        compound_collapse.setWidget(self.compound)
+        tab_options = QtWidgets.QTabWidget()
+        tab_options.addTab(self.gaussian, "Gaussian")
+        tab_options.addTab(self.poisson, "Poisson")
+        tab_options.addTab(self.compound, "Compound")
+        tab_options.addTab(self.manual, "Manual")
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -379,29 +424,33 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         form_layout.addRow("Method:", layout_method)
 
         layout.addLayout(form_layout, 0)
-
-        layout.addWidget(gaussian_collapse, 0)
-        layout.addWidget(poisson_collapse, 0)
-        layout.addWidget(compound_collapse, 0)
+        layout.addWidget(tab_options, 1)
 
         self.setLayout(layout)
 
     def setLimitOptions(self, options: SPCalLimitOptions):
         self.blockSignals(True)
         self.limit_method.setCurrentText(options.limit_method.capitalize())
-        self.gaussian.setParameters(options.gaussian_kws)
-        self.poisson.setParameters(options.poisson_kws)
-        self.compound.setParameters(options.compound_poisson_kws)
-        self.compound.single_ion_parameters = options.single_ion_parameters
         self.check_window.setChecked(options.window_size > 0)
         if options.window_size > 0:
             self.window_size.setValue(options.window_size)
         self.check_iterative.setChecked(options.max_iterations > 1)
+
+        self.gaussian.setParameters(options.gaussian_kws)
+
+        self.poisson.setParameters(options.poisson_kws)
+
+        self.compound.setParameters(options.compound_poisson_kws)
+        self.compound.single_ion_parameters = options.single_ion_parameters
+
+        self.manual.default_manual_limit.setValue(options.default_manual_limit)
+        self.manual.setManualLimits(options.manual_limits)
+
         self.blockSignals(False)
         self.optionsChanged.emit()
 
     def limitOptions(self) -> SPCalLimitOptions:
-        return SPCalLimitOptions(
+        options = SPCalLimitOptions(
             limit_method=self.limit_method.currentText().lower(),
             gaussian_kws=self.gaussian.parameters(),
             poisson_kws=self.poisson.parameters(),
@@ -412,6 +461,9 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             max_iterations=100 if self.check_iterative.isChecked() else 1,
             single_ion_parameters=self.compound.single_ion_parameters,
         )
+        options.default_manual_limit = self.manual.default_manual_limit.value()
+        options.manual_limits = self.manual.manual_limits
+        return options
 
 
 class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
@@ -440,6 +492,9 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.options_widget.setLimitOptions(SPCalLimitOptions())
         self.blockSignals(False)
         self.optionsChanged.emit()
+
+    def setManualLimits(self, limits: dict[SPCalIsotopeBase, float]):
+        self.options_widget.manual.setManualLimits(limits)
 
     def setSignificantFigures(self, sf: int):
         self.options_widget.poisson.setSignificantFigures(sf)

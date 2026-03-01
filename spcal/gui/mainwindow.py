@@ -14,6 +14,7 @@ from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io import ImportDialogBase
+from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
@@ -30,7 +31,6 @@ from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 
-# from spcal.gui.docks.processingoptions import SPCalProcessingOptionsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs import color_schemes
 from spcal.gui.io import (
@@ -108,6 +108,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
+        self.limit_options.options_widget.requestManualLimitsDialog.connect(
+            self.dialogManualLimits
+        )
 
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         self.isotope_options.requestCurrentIsotope.connect(
@@ -230,14 +233,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "cloud-download",
             "Save Session",
             "Save the current options, inputs and data to a session file.",
-            self.dialogSaveSession,
+            self.dialogSessionSave,
         )
 
         self.action_load_session = create_action(
             "cloud-upload",
             "Restore Session",
             "Restore the saved session.",
-            self.dialogLoadSession,
+            self.dialogSessionLoad,
         )
 
         # Todo move to right click menu
@@ -842,6 +845,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.exec()
         return dlg
 
+    def dialogManualLimits(self) -> ManualLimitDialog:
+        method = self.currentMethod()
+        dlg = ManualLimitDialog(
+            method.limit_options.manual_limits,
+            list(method.isotope_options.keys()),
+            parent=self,
+        )
+        dlg.manualLimitsChanged.connect(self.limit_options.setManualLimits)
+        dlg.open()
+        return dlg
+
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
         dlg.open()
@@ -894,33 +908,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogSaveSession(self):
-        def onFileSelected(file: str):
-            path = Path(file)
-            if path.suffixes != [".spcal", ".json"]:
-                path = Path(path.stem).with_suffix(".spcal.json")
-            save_session_json(path, self.currentMethod(), self.files.dataFiles())
-
-        df = self.files.currentDataFile()
-        if df is None:
-            path = Path()
-        else:
-            path = df.path.parent
-
-        # Dont use getSaveFileName as it doesn't have setDefaultSuffix
-        dlg = QtWidgets.QFileDialog(
-            self,
-            "Save Session",
-            str(path),
-            "SPCal Sessions(*.spcal.json);;All Files(*)",
-        )
-        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
-        dlg.setDefaultSuffix(".spcal.json")
-
-        dlg.fileSelected.connect(onFileSelected)
-        dlg.exec()
-
-    def dialogLoadSession(self):
+    def dialogSessionLoad(self):
         df = self.files.currentDataFile()
         if df is None:
             path = Path()
@@ -975,6 +963,32 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     continue
                 path = Path(file)
             self.files.addDataFile(decode_json_datafile(datafile, path))
+
+    def dialogSessionSave(self):
+        def onFileSelected(file: str):
+            path = Path(file)
+            if path.suffixes != [".spcal", ".json"]:
+                path = Path(path.stem).with_suffix(".spcal.json")
+            save_session_json(path, self.currentMethod(), self.files.dataFiles())
+
+        df = self.files.currentDataFile()
+        if df is None:
+            path = Path()
+        else:
+            path = df.path.parent
+
+        # Dont use getSaveFileName as it doesn't have setDefaultSuffix
+        dlg = QtWidgets.QFileDialog(
+            self,
+            "Save Session",
+            str(path),
+            "SPCal Sessions(*.spcal.json);;All Files(*)",
+        )
+        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        dlg.setDefaultSuffix(".spcal.json")
+
+        dlg.fileSelected.connect(onFileSelected)
+        dlg.exec()
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
