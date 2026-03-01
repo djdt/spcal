@@ -782,8 +782,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             return
         # ensure clusters are generated
         for key in CALIBRATION_KEYS:
-            for file in self.files.dataFiles():
-                self.clusters(file, key)
+            self.clusters(df, key)
 
         dlg = ExportDialog(
             df,
