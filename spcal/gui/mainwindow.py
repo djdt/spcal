@@ -777,15 +777,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogExportResults(self):
+        df = self.files.currentDataFile()
+        if df is None:
+            return
         # ensure clusters are generated
         for key in CALIBRATION_KEYS:
             for file in self.files.dataFiles():
                 self.clusters(file, key)
 
         dlg = ExportDialog(
-            self.files.dataFiles(),
-            self.processing_results,
-            self.processing_clusters,
+            df,
+            self.processing_results[df],
+            self.processing_clusters[df],
             parent=self,
         )
         dlg.open()

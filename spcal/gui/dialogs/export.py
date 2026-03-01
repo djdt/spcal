@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile
+from spcal.datafile import SPCalDataFile
 from spcal.io.export import export_spcal_processing_results
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
@@ -18,9 +18,9 @@ class ExportDialog(QtWidgets.QDialog):
 
     def __init__(
         self,
-        data_files: list[SPCalDataFile],
-        results: dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]],
-        clusters: dict[SPCalDataFile, dict[str, np.ndarray]],
+        data_file: SPCalDataFile,
+        results: dict[SPCalIsotopeBase, SPCalProcessingResult],
+        clusters: dict[str, np.ndarray],
         path: Path | None = None,
         units: dict[str, tuple[str, float]] | None = None,
         parent: QtWidgets.QWidget | None = None,
@@ -28,53 +28,38 @@ class ExportDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Export Results")
 
+        self.data_file = data_file
         self.results = results
         self.clusters = clusters
 
-        self.list = QtWidgets.QListWidget()
-        for data_file in data_files:
-            item = QtWidgets.QListWidgetItem()
-            item.setText(str(data_file.path.stem))
-            item.setData(QtCore.Qt.ItemDataRole.UserRole, data_file)
-            item.setCheckState(QtCore.Qt.CheckState.Checked)
-            self.list.addItem(item)
-        self.list.itemPressed.connect(self.togglePressedItem)
-        self.list.itemChanged.connect(self.completeChanged)
-        self.list.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
-        )
+        if path is None:
+            path = data_file.path.with_name(data_file.path.stem + "_spcal_results.csv")
 
         _units = {"mass": "fg", "size": "nm", "volume": "nm³"}
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
         filename_regexp = QtCore.QRegularExpression(
-            f"(%DataFile%)?[^{ExportDialog.INVALID_CHARS}]+(%DataFile%)?"
+            f"[^{ExportDialog.INVALID_CHARS}]+.csv"
         )
 
-        self.lineedit_name = QtWidgets.QLineEdit("%DataFile%_spcal_results.csv")
-        self.lineedit_name.setMinimumWidth(300)
-        self.lineedit_name.setValidator(
+        self.lineedit_path = QtWidgets.QLineEdit(str(path))
+        self.lineedit_path.setMinimumWidth(300)
+        self.lineedit_path.setValidator(
             QtGui.QRegularExpressionValidator(filename_regexp)
         )
-        self.lineedit_name.textChanged.connect(self.completeChanged)
+        self.lineedit_path.textChanged.connect(self.completeChanged)
 
-        self.lineedit_dir = QtWidgets.QLineEdit(str(data_files[0].path.parent))
-        self.lineedit_dir.setMinimumWidth(300)
-        self.lineedit_dir.textChanged.connect(self.completeChanged)
+        self.button_path = QtWidgets.QPushButton("Select...")
+        self.button_path.clicked.connect(self.dialogExportPath)
 
-        self.button_path = QtWidgets.QPushButton("Directory")
-        self.button_path.clicked.connect(self.dialogDirectory)
-
-        file_box = QtWidgets.QGroupBox("Data files")
-        file_box_layout = QtWidgets.QGridLayout()
-        file_box_layout.addWidget(self.list, 0, 0, 1, 3)
-        file_box_layout.addWidget(QtWidgets.QLabel("File Name:"), 1, 0)
-        file_box_layout.addWidget(QtWidgets.QLabel("Directory:"), 2, 0)
-        file_box_layout.addWidget(self.lineedit_name, 1, 1)
-        file_box_layout.addWidget(self.lineedit_dir, 2, 1)
-        file_box_layout.addWidget(self.button_path, 2, 2)
-        file_box.setLayout(file_box_layout)
+        path_box = QtWidgets.QGroupBox("Export path")
+        path_box_layout = QtWidgets.QVBoxLayout()
+        path_box_layout.addWidget(self.lineedit_path)
+        path_box_layout.addWidget(
+            self.button_path, 0, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        path_box.setLayout(path_box_layout)
 
         self.mass_units = QtWidgets.QComboBox()
         self.mass_units.addItems(list(mass_units.keys()))
@@ -118,10 +103,19 @@ class ExportDialog(QtWidgets.QDialog):
         self.button_box.rejected.connect(self.reject)
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(file_box, 0, 0)
-        layout.addWidget(units_box, 0, 1)
-        layout.addWidget(switches_box, 1, 1)
-        layout.addWidget(self.button_box, 2, 0, 1, 2)
+        layout.addWidget(
+            QtWidgets.QLabel(
+                f"Exporting <b>{data_file.path.name}</b>: {len(data_file.selected_isotopes)} isotopes"
+            ),
+            0,
+            0,
+            1,
+            2,
+        )
+        layout.addWidget(path_box, 1, 0, 1, 2)
+        layout.addWidget(units_box, 2, 0)
+        layout.addWidget(switches_box, 2, 1)
+        layout.addWidget(self.button_box, 3, 0, 1, 2)
 
         self.setLayout(layout)
 
@@ -131,15 +125,9 @@ class ExportDialog(QtWidgets.QDialog):
         ).setEnabled(self.isComplete())
 
     def isComplete(self) -> bool:
-        if not self.lineedit_name.hasAcceptableInput():
+        if not self.lineedit_path.hasAcceptableInput():
             return False
-        if not Path(self.lineedit_dir.text()).exists():
-            return False
-
-        for i in range(self.list.count()):
-            if self.list.item(i).checkState() == QtCore.Qt.CheckState.Checked:
-                return True
-        return False
+        return True
 
     def togglePressedItem(self, item: QtWidgets.QListWidgetItem):
         state = QtCore.Qt.CheckState.Checked
@@ -147,13 +135,25 @@ class ExportDialog(QtWidgets.QDialog):
             state = QtCore.Qt.CheckState.Unchecked
         item.setCheckState(state)
 
-    def dialogDirectory(self):
-        dir = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", self.lineedit_dir.text()
+    def dialogExportPath(self):
+        file, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export Path",
+            self.lineedit_path.text(),
+            "CSV Documents (*.csv);;All files (*)",
         )
-        if dir == "":
-            return
-        self.lineedit_dir.setText(dir)
+
+        if any(x in file for x in ExportDialog.INVALID_CHARS):
+            QtWidgets.QMessageBox.information(
+                self,
+                "Invalid Name",
+                f"Files may not contain any of these characters: {ExportDialog.INVALID_CHARS}",
+            )
+            for char in ExportDialog.INVALID_CHARS:
+                file = file.replace(char, "")
+
+        if file != "":
+            self.lineedit_path.setText(file)
 
     def accept(self):
         units = {
@@ -172,41 +172,30 @@ class ExportDialog(QtWidgets.QDialog):
             ),
         }
 
-        for i in range(self.list.count()):
-            if self.list.item(i).checkState() != QtCore.Qt.CheckState.Checked:
-                continue
-            data_file = self.list.item(i).data(QtCore.Qt.ItemDataRole.UserRole)
+        path = Path(self.lineedit_path.text())
 
-            path = Path(self.lineedit_dir.text())
-            if not path.exists():
-                raise ValueError(f"Directory '{path}' does not exist.")
-            file_name = self.lineedit_name.text().replace(
-                "%DataFile%", data_file.path.stem
+        # Check if overwriting
+        if path.exists():
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Overwrite File?",
+                f"The file '{path.stem}' already exists, do you want to overwrite it?",
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No,
             )
-            path = path.joinpath(file_name).with_suffix(".csv")
+            if button == QtWidgets.QMessageBox.StandardButton.No:
+                return
 
-            # Check if overwriting
-            if path.exists():
-                button = QtWidgets.QMessageBox.warning(
-                    self,
-                    "Overwrite File?",
-                    f"The file '{path.name}' already exists, do you want to overwrite it?",
-                    QtWidgets.QMessageBox.StandardButton.Yes
-                    | QtWidgets.QMessageBox.StandardButton.No,
-                    QtWidgets.QMessageBox.StandardButton.No,
-                )
-                if button == QtWidgets.QMessageBox.StandardButton.No:
-                    return
-
-            export_spcal_processing_results(
-                path,
-                data_file,
-                list(self.results[data_file].values()),
-                self.clusters[data_file],
-                units=units,
-                export_options=self.check_export_inputs.isChecked(),
-                export_compositions=self.check_export_compositions.isChecked(),
-                export_arrays=self.check_export_arrays.isChecked(),
-            )
-            logger.info(f"Results for {data_file.path.stem} exported to {path}.")
+        export_spcal_processing_results(
+            path,
+            self.data_file,
+            list(self.results.values()),
+            self.clusters,
+            units=units,
+            export_options=self.check_export_inputs.isChecked(),
+            export_compositions=self.check_export_compositions.isChecked(),
+            export_arrays=self.check_export_arrays.isChecked(),
+        )
+        logger.info(f"Results for {self.data_file.path.stem} exported to {path}.")
         super().accept()
