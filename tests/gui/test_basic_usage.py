@@ -44,22 +44,33 @@ def _click_through_mainwindow(qtbot: QtBot, win: SPCalMainWindow):
     )
     assert win.limit_options.options_widget.check_iterative.isChecked()
 
+    win.limit_options.options_widget.gaussian.alpha.clear()
     qtbot.keyClicks(win.limit_options.options_widget.gaussian.alpha, "1e-3")
     assert np.isclose(win.limit_options.options_widget.gaussian.alpha.value(), 1e-3)  # type: ignore
     assert np.isclose(win.limit_options.options_widget.gaussian.sigma.value(), 3.0902)  # type: ignore
 
+    win.limit_options.options_widget.tab_options.setCurrentWidget(
+        win.limit_options.options_widget.poisson
+    )
+
+    win.limit_options.options_widget.poisson.alpha.clear()
     qtbot.keyClicks(win.limit_options.options_widget.poisson.alpha, "1e-4")
     assert np.isclose(win.limit_options.options_widget.poisson.alpha.value(), 1e-4)  # type: ignore
 
+    win.limit_options.options_widget.tab_options.setCurrentWidget(
+        win.limit_options.options_widget.compound
+    )
+    win.limit_options.options_widget.compound.alpha.clear()
     qtbot.keyClicks(win.limit_options.options_widget.compound.alpha, "1e-4")
     assert np.isclose(win.limit_options.options_widget.compound.alpha.value(), 1e-4)  # type: ignore
-    qtbot.keyClick(
-        win.limit_options.options_widget.compound.lognormal_sigma, QtCore.Qt.Key.Key_1
+
+    win.limit_options.options_widget.tab_options.setCurrentWidget(
+        win.limit_options.options_widget.manual
     )
-    assert np.isclose(
-        win.limit_options.options_widget.compound.lognormal_sigma.value(),  # type: ignore
-        1.0,
-    )
+
+    win.limit_options.options_widget.manual.default_manual_limit.clear()
+    qtbot.keyClicks(win.limit_options.options_widget.manual.default_manual_limit, "10")
+    assert win.limit_options.options_widget.manual.default_manual_limit.value() == 10.0
 
     for action in win.toolbar_view.view_actions.values():
         qtbot.mouseClick(
@@ -109,10 +120,12 @@ def test_gui_tof_data(qtbot: QtBot, test_locales, test_data_path):
     with qtbot.waitExposed(win):
         win.show()
 
-    df = SPCalTOFWERKDataFile.load(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    df = SPCalTOFWERKDataFile.load(
+        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    )
     df.selected_isotopes = df.isotopes[115:120]
 
-    with qtbot.waitSignal(win.resultsChanged,timeout=100):
+    with qtbot.waitSignal(win.resultsChanged, timeout=100):
         win.files.addDataFile(df)
 
     _click_through_mainwindow(qtbot, win)

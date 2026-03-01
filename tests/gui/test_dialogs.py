@@ -485,7 +485,7 @@ def test_manual_limits_dialog(qtbot: QtBot):
     limits = {ISOTOPE_TABLE[("Se", 80)]: 0.2, ISOTOPE_TABLE[("Sn", 112)]: 10.2}
 
     dlg = ManualLimitDialog(
-        limits,
+        limits,  # type: ignore
         [
             ISOTOPE_TABLE[("Se", 80)],
             ISOTOPE_TABLE[("Ag", 107)],
@@ -497,14 +497,14 @@ def test_manual_limits_dialog(qtbot: QtBot):
     with qtbot.waitExposed(dlg):
         dlg.show()
     for row, val in enumerate([0.2, None, 10.2]):
-        item = dlg.table.item(row, 1)
+        item = dlg.table.item(row, 0)
         assert item is not None
         assert item.data(QtCore.Qt.ItemDataRole.EditRole) == val
 
     with qtbot.assertNotEmitted(dlg.manualLimitsChanged):
         dlg.accept()
 
-    item = dlg.table.item(1, 1)
+    item = dlg.table.item(1, 0)
     assert item is not None
     item.setData(QtCore.Qt.ItemDataRole.EditRole, 2.4)
 
