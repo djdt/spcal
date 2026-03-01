@@ -224,14 +224,12 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
         single_ion_parameters=decode_single_ion(
             method_dict["limit options"]["single ion"]
         ),
+        default_manual_limit=method_dict["limit options"]["default manual limit"],
+        manual_limits={
+            decode_isotope(k, expressions): v
+            for k, v in method_dict["limit options"]["manual limits"].items()
+        },
     )
-    limit_options.default_manual_limit = method_dict["limit options"][
-        "default manual limit"
-    ]
-    limit_options.manual_limits = {
-        decode_isotope(k, expressions): v
-        for k, v in method_dict["limit options"]["manual limits"].items()
-    }
 
     processing_options = SPCalProcessingOptions(
         accumulation_method=method_dict["processing options"]["accumulation method"],

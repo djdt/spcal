@@ -476,9 +476,9 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             ),
             max_iterations=100 if self.check_iterative.isChecked() else 1,
             single_ion_parameters=self.compound.single_ion_parameters,
+            default_manual_limit=self.manual.default_manual_limit.value() or 100.0,
+            manual_limits=self.manual.manual_limits,
         )
-        options.default_manual_limit = self.manual.default_manual_limit.value() or 100.0
-        options.manual_limits = self.manual.manual_limits
         return options
 
 
