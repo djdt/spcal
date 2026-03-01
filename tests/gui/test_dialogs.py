@@ -689,6 +689,11 @@ def test_response_dialog_save(
         dlg.model_concs.index(1, 2), 2.0, QtCore.Qt.ItemDataRole.EditRole
     )
 
+    dlg.table_concs.selectRow(0)
+    for col, index in enumerate(dlg.table_intensity.selectedIndexes()):
+        assert index.row() == 0
+        assert index.column() == col
+
     path = tmp_path.joinpath("test_response_dialog.csv")
     dlg.saveToFile(path)
 
