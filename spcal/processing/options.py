@@ -117,6 +117,8 @@ class SPCalLimitOptions(object):
         compound_poisson_kws: dict | None = None,
         window_size: int = 0,
         max_iterations: int = 1,
+        default_manual_limit: float = 100.0,
+        manual_limits: dict | None = None,
         single_ion_parameters: np.ndarray | None = None,
     ):
         self.limit_method = limit_method
@@ -142,7 +144,9 @@ class SPCalLimitOptions(object):
 
         self.single_ion_parameters = single_ion_parameters
         self.manual_limits: dict[SPCalIsotopeBase, float] = {}
-        self.default_manual_limit = 100.0
+        if manual_limits is not None:
+            self.manual_limits.update(manual_limits)
+        self.default_manual_limit = default_manual_limit
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalLimitOptions({self.limit_method})"

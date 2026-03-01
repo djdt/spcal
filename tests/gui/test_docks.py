@@ -192,6 +192,8 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
             gaussian_kws={"alpha": 1e-3},
             poisson_kws={"function": "currie", "alpha": 1e-4},
             compound_poisson_kws={"alpha": 1e-5, "sigma": 0.6},
+            default_manual_limit = 10.0,
+            manual_limits = {ISOTOPE_TABLE[("Fe", 56)]: 9.0}
         ),
     )
 
@@ -208,6 +210,8 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
     assert dock.options_widget.poisson.function == "currie"
     assert dock.options_widget.compound.alpha.value() == 1e-5
     assert dock.options_widget.compound.lognormal_sigma.value() == 0.6
+    assert dock.options_widget.manual.default_manual_limit.value() == 10.0
+    assert dock.options_widget.manual.manual_limits[ISOTOPE_TABLE[("Fe", 56)]] == 9.0
 
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.options_widget.poisson.alpha.setValue(1e-3)
