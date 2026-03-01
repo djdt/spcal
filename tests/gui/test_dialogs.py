@@ -155,12 +155,39 @@ def test_calculator_dialog_existing_expr(qtbot: QtBot):
         dlg.accept()
 
 
-def test_export_dialog(qtbot: QtBot):
-    # dlg = ExportDialog([], {}, {})
-    # qtbot.addWidget(dlg)
-    # with qtbot.wait_exposed(dlg):
-    #     dlg.show()
-    raise NotImplementedError
+def test_export_dialog(
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_gen,
+    tmp_path: Path,
+):
+    df = random_datafile_gen(1000, lam=5.0)
+    results = default_method.processDataFile(df)
+    for isotope in results:
+        default_method.isotope_options[isotope] = SPCalIsotopeOptions(1.0, 1.0, 1.0)
+
+    default_method.filterResults(results)
+    clusters = {"signal": default_method.processClusters(results)}
+    dlg = ExportDialog(df, results, clusters)
+    qtbot.addWidget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.show()
+
+    assert dlg.lineedit_path.text() == str(
+        df.path.with_name(f"{df.path.stem}_spcal_results.csv")
+    )
+    assert dlg.isComplete()
+    dlg.lineedit_path.setText("/fake/path/<name>.csv")
+    assert not dlg.isComplete()
+    dlg.lineedit_path.setText("/fake/path/ok.bad")
+    assert not dlg.isComplete()
+
+    dlg.lineedit_path.setText(str(tmp_path.joinpath("export.csv")))
+
+    dlg.accept()
+
+    # the actual export is tested in test_io_export
+    assert tmp_path.joinpath("export.csv").exists()
 
 
 def test_filter_dialog_empty(qtbot: QtBot):
@@ -388,38 +415,6 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
         dlg.apply()
 
     dlg.accept()
-
-
-# def test_graph_scatter_options_dialog(qtbot: QtBot):
-#     dlg = ScatterOptionsDialog(weighting="none", draw_filtered=False)
-#     qtbot.add_widget(dlg)
-#     with qtbot.wait_exposed(dlg):
-#         dlg.show()
-#
-#     # No change, no signal
-#     with qtbot.assert_not_emitted(dlg.weightingChanged, wait=100):
-#         dlg.apply()
-#
-#     dlg.combo_weighting.setCurrentText("1/x")
-#     dlg.check_draw_filtered.setChecked(True)
-#
-#     with qtbot.wait_signals(
-#         [dlg.weightingChanged, dlg.drawFilteredChanged],
-#         timeout=100,
-#         check_params_cbs=[lambda w: w == "1/x", lambda b: b],
-#     ):
-#         dlg.apply()
-#
-#     # Reset to default values
-#     dlg.reset()
-#
-#     with qtbot.wait_signals(
-#         [dlg.weightingChanged, dlg.drawFilteredChanged],
-#         timeout=100,
-#         check_params_cbs=[lambda w: w == "none", lambda b: not b],
-#     ):
-#         dlg.apply()
-#     dlg.accept()
 
 
 def test_graph_spectra_options_dialog(qtbot: QtBot):
