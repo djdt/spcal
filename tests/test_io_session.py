@@ -39,8 +39,12 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
         1.0, 2.0, 3.0
     )
     method.isotope_options[method.expressions[0]] = SPCalIsotopeOptions(1.0, 2.0, 3.0)
+
+    method.limit_options.default_manual_limit = 123.0
     method.limit_options.manual_limits = {SPCalIsotope.fromString("107Ag"): 10.2}
+    method.limit_options.gaussian_kws["alpha"] = 1e-6
     method.limit_options.single_ion_parameters = params
+
     method.result_filters = [
         [
             SPCalValueFilter(
