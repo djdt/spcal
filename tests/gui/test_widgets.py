@@ -1,5 +1,6 @@
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
+import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.widgets.collapsablewidget import CollapsableWidget
@@ -252,6 +253,23 @@ def test_value_widget(qtbot: QtBot):
         w.setValue(None)
     with qtbot.assertNotEmitted(w.errorChanged):
         w.setError(None)
+
+
+def test_value_widget_no_none(qtbot: QtBot):
+    w = ValueWidget(value=100.0, allow_none=False)
+    qtbot.addWidget(w)
+    with qtbot.wait_exposed(w):
+        w.show()
+
+    w.lineEdit().setText("")
+
+    assert w.value() is not None
+
+    with pytest.raises(ValueError):
+        w.setValue(None)
+
+    with pytest.raises(ValueError):
+        ValueWidget(value=None, allow_none=False)
 
 
 def test_value_widget_step_function(qtbot: QtBot):

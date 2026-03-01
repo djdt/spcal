@@ -6,7 +6,6 @@ from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
-from spcal.gui.widgets.collapsablewidget import CollapsableWidget
 from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.options import SPCalLimitOptions
@@ -23,7 +22,12 @@ class LimitOptionsBaseWidget(QtWidgets.QGroupBox):
         super().__init__(parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
         self.alpha = ValueWidget(
-            alpha, min=1e-16, max=0.5, step=lambda x, s: x * 10**s, sigfigs=sf
+            alpha,
+            min=1e-16,
+            max=0.5,
+            step=lambda x, s: x * 10**s,
+            sigfigs=sf,
+            allow_none=False,
         )
         self.alpha.setToolTip("False positive error rate.")
         self.alpha.valueChanged.connect(self.optionsChanged)
@@ -64,7 +68,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.single_ion_parameters = single_ion_parameters
 
         self.lognormal_sigma = ValueWidget(
-            sigma, min=1e-9, max=10.0, step=0.05, sigfigs=sf
+            sigma, min=1e-9, max=10.0, step=0.05, sigfigs=sf, allow_none=False
         )
         self.lognormal_sigma.setToolTip(
             "Shape parameter for the log-normal approximation of the SIA. "
@@ -147,7 +151,9 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
         self.alpha.valueChanged.connect(self.updateSigma)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
-        self.sigma = ValueWidget(0.0, min=0.0, max=8.0, step=1.0, sigfigs=sf)
+        self.sigma = ValueWidget(
+            0.0, min=0.0, max=8.0, step=1.0, sigfigs=sf, allow_none=False
+        )
         self.sigma.setToolTip(
             "Type I error rate as number of standard deviations from mean."
         )
@@ -410,11 +416,11 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             self.check_iterative, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
 
-        tab_options = QtWidgets.QTabWidget()
-        tab_options.addTab(self.gaussian, "Gaussian")
-        tab_options.addTab(self.poisson, "Poisson")
-        tab_options.addTab(self.compound, "Compound")
-        tab_options.addTab(self.manual, "Manual")
+        self.tab_options = QtWidgets.QTabWidget()
+        self.tab_options.addTab(self.gaussian, "Gaussian")
+        self.tab_options.addTab(self.poisson, "Poisson")
+        self.tab_options.addTab(self.compound, "Compound")
+        self.tab_options.addTab(self.manual, "Manual")
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -424,7 +430,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         form_layout.addRow("Method:", layout_method)
 
         layout.addLayout(form_layout, 0)
-        layout.addWidget(tab_options, 1)
+        layout.addWidget(self.tab_options, 1)
 
         self.setLayout(layout)
 

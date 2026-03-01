@@ -20,6 +20,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         max: float = np.inf,
         step: float | Callable[[float, int], float] = 1.0,
         sigfigs: int = 6,
+        allow_none: bool = True,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -30,6 +31,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.step = step
 
         self.sigfigs = sigfigs
+        self.allow_none = allow_none
 
         # locale group separators break the double validator
         local = self.locale()
@@ -39,7 +41,18 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.setLocale(local)
         self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
 
-        self.lineEdit().setValidator(DoubleOrEmptyValidator(min, max, 12, parent=self))
+        if allow_none:
+            self.lineEdit().setValidator(
+                DoubleOrEmptyValidator(min, max, 12, parent=self)
+            )
+        else:
+            if value is None:
+                raise ValueError(
+                    "a value of None is not allowed when 'allow_none' is false"
+                )
+            self.lineEdit().setValidator(
+                QtGui.QDoubleValidator(min, max, 12, parent=self)
+            )
         self.lineEdit().textEdited.connect(self.valueFromText)
 
         self.valueChanged.connect(self.textFromValue)
@@ -60,6 +73,10 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
 
     def setValue(self, value: float | None):
         if value is None or np.isnan(value):
+            if not self.allow_none:
+                raise ValueError(
+                    "a value of None is not allowed when 'allow_none' is false"
+                )
             value = None
         if self._value != value:
             self._value = value
@@ -124,7 +141,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.lineEdit().setText(text)
 
     def valueFromText(self, text: str):
-        if text == "":
+        if text == "" and self.allow_none:
             self.setValue(None)
         else:
             text = self.fixup(text)
