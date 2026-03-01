@@ -2,7 +2,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import weighted_linreg
+from spcal.calc import weighted_linreg, weighted_rsq, weights_from_weighting
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ExclusionRegion
 from spcal.gui.util import create_action
@@ -29,12 +29,11 @@ class CalibrationView(SinglePlotGraphicsView):
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
             pen.setCosmetic(True)
 
-        if weighting != "none":
-            raise NotImplementedError("Weighting not yet implemented.")
         if x.size < 2 or np.all(x == x[0]):
             return
 
-        m, b, r2, err = weighted_linreg(x, y, w=None)
+        weights = weights_from_weighting(x, weighting)
+        m, b, r2, err = weighted_linreg(x, y, w=weights)
         x0, x1 = x.min(), x.max()
 
         line = pyqtgraph.PlotCurveItem([x0, x1], [m * x0 + b, m * x1 + b], pen=pen)

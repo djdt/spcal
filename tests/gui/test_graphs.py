@@ -8,6 +8,7 @@ from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalNuDataFile
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.items import BarChart, HoverableChartItem, PieChart
 from spcal.gui.graphs.particle import ExclusionRegion, ParticleView
 from spcal.gui.graphs.histogram import HistogramView
@@ -27,6 +28,19 @@ def test_graph_base(qtbot: QtBot):
     with qtbot.waitExposed(view):
         view.show()
 
+
+def test_graph_calibration(qtbot: QtBot):
+    view = CalibrationView()
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    xs = np.arange(10)
+    ys = np.arange(10) + np.random.random(10)
+
+    view.drawScatter(xs, ys)
+    view.drawTrendline(xs, ys, weighting="1/x")
 
 def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
     view = ParticleView()
