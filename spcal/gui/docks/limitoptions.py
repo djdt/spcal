@@ -289,9 +289,16 @@ class ManualLimitsOptions(QtWidgets.QGroupBox):
 
         self.manual_limits = manual_limits
 
-        self.default_manual_limit = QtWidgets.QDoubleSpinBox()
-        self.default_manual_limit.setRange(0.0, 1e6)
-        self.default_manual_limit.setValue(default_manual_limit)
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
+        self.default_manual_limit = ValueWidget(
+            default_manual_limit,
+            min=0.0,
+            max=1e6,
+            step=1.0,
+            sigfigs=sf,
+            allow_none=False,
+        )
         self.default_manual_limit.valueChanged.connect(self.optionsChanged)
         self.default_manual_limit.setToolTip(
             "Limit applied to all isotopes without a specific manual limit set."
@@ -313,6 +320,9 @@ class ManualLimitsOptions(QtWidgets.QGroupBox):
     def setManualLimits(self, limits: dict[SPCalIsotopeBase, float]):
         self.manual_limits = limits
         self.optionsChanged.emit()
+
+    def setSignificantFigures(self, sf: int):
+        self.default_manual_limit.setSigFigs(sf)
 
 
 class SPCalLimitOptionsWidget(QtWidgets.QWidget):
@@ -467,7 +477,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             max_iterations=100 if self.check_iterative.isChecked() else 1,
             single_ion_parameters=self.compound.single_ion_parameters,
         )
-        options.default_manual_limit = self.manual.default_manual_limit.value()
+        options.default_manual_limit = self.manual.default_manual_limit.value() or 100.0
         options.manual_limits = self.manual.manual_limits
         return options
 
@@ -506,6 +516,7 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.options_widget.poisson.setSignificantFigures(sf)
         self.options_widget.gaussian.setSignificantFigures(sf)
         self.options_widget.compound.setSignificantFigures(sf)
+        self.options_widget.manual.setSignificantFigures(sf)
 
     def setLimitOptions(
         self,
