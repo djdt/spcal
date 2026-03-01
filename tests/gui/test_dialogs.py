@@ -18,9 +18,10 @@ from spcal.gui.dialogs.graphoptions import (
     SpectraOptionsDialog,
 )
 from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
-from spcal.gui.dialogs.export import ExportDialog
+from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
@@ -153,13 +154,13 @@ def test_calculator_dialog_existing_expr(qtbot: QtBot):
     ):
         dlg.accept()
 
+
 def test_export_dialog(qtbot: QtBot):
     # dlg = ExportDialog([], {}, {})
     # qtbot.addWidget(dlg)
     # with qtbot.wait_exposed(dlg):
     #     dlg.show()
     raise NotImplementedError
-
 
 
 def test_filter_dialog_empty(qtbot: QtBot):
@@ -482,6 +483,41 @@ def test_processing_options_dialog(qtbot: QtBot):
     dlg.options.points_required.setValue(2)
 
     with qtbot.waitSignal(dlg.optionsChanged, timeout=100):
+        dlg.accept()
+
+
+def test_manual_limits_dialog(qtbot: QtBot):
+    limits = {ISOTOPE_TABLE[("Se", 80)]: 0.2, ISOTOPE_TABLE[("Sn", 112)]: 10.2}
+
+    dlg = ManualLimitDialog(
+        limits,
+        [
+            ISOTOPE_TABLE[("Se", 80)],
+            ISOTOPE_TABLE[("Ag", 107)],
+            ISOTOPE_TABLE[("Sn", 112)],
+        ],
+    )
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+    for row, val in enumerate([0.2, None, 10.2]):
+        item = dlg.table.item(row, 1)
+        assert item is not None
+        assert item.data(QtCore.Qt.ItemDataRole.EditRole) == val
+
+    with qtbot.assertNotEmitted(dlg.manualLimitsChanged):
+        dlg.accept()
+
+    item = dlg.table.item(1, 1)
+    assert item is not None
+    item.setData(QtCore.Qt.ItemDataRole.EditRole, 2.4)
+
+    with qtbot.waitSignal(
+        dlg.manualLimitsChanged,
+        check_params_cb=lambda d: list(d.values()) == [0.2, 2.4, 10.2],
+        timeout=100,
+    ):
         dlg.accept()
 
 
