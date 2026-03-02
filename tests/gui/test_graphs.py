@@ -2,7 +2,7 @@ from pathlib import Path
 from PySide6 import QtGui
 import numpy as np
 
-# from PySide6 import QtWidgets, QtGui
+from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 
@@ -22,11 +22,91 @@ from spcal.processing.options import SPCalIsotopeOptions
 
 
 def test_graph_base(qtbot: QtBot):
-    view = SinglePlotGraphicsView("test")
+    view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
     qtbot.addWidget(view)
 
     with qtbot.waitExposed(view):
         view.show()
+
+    assert "xxx (s)" in view.plot.xaxis.labelString()
+    assert "yyy" in view.plot.yaxis.labelString()
+
+    bounds = view.dataBounds()
+    assert np.allclose(bounds, (0, 1, 0, 1))
+
+    # test curve diff reduction                    |--------|--|--|--|--|-----|
+    item = view.drawCurve(np.arange(10), np.array([0, 1, 2, 3, 2, 3, 6, 0, 0, 0]))
+    assert item.xData is not None
+    assert item.xData.size == 7
+
+    # test hist drawing
+    item = view.drawHistogram(
+        np.array([5, 4, 2, 3, 1]), np.array([0.1, 0.3, 0.4, 0.6, 0.8, 1.0]), width=0.8
+    )
+    assert item.xData is not None and item.yData is not None
+    assert item.xData.size == 12
+    assert item.xData[0] == 0.1
+    assert item.xData[1] == 0.12
+    assert np.all(item.yData[::2] == 0)
+
+    # test line
+    item = view.drawLine(5.0, QtCore.Qt.Orientation.Horizontal)
+    assert item.xData is not None and item.yData is not None
+    assert np.all(item.yData == 5.0)
+    assert item.xData[0] == 0.0
+    assert item.xData[1] == 9.0
+
+    # test scatter
+    item = view.drawScatter(np.arange(5), np.random.random(5))
+    assert item.getData()[0].size == 5
+
+    bounds = view.dataBounds()
+    assert np.allclose(bounds, (0, 9, 0, 6))
+
+    rect = view.dataRect()
+    assert rect.width() == 9
+    assert rect.height() == 6
+
+    view.clear()
+
+
+def test_graph_base_export(qtbot: QtBot, tmp_path: Path):
+    view = SinglePlotGraphicsView("test", xlabel="x", ylabel="y", xunits="s")
+    qtbot.addWidget(view)
+
+    view.data_for_export["test1"] = np.arange(10)
+    view.data_for_export["test2"] = np.ones(5)
+
+    view.exportData(tmp_path.joinpath("plot_export.csv"))
+    view.exportData(tmp_path.joinpath("plot_export.npz"))
+
+    csv = np.genfromtxt(tmp_path.joinpath("plot_export.csv"), names=True)
+    assert np.allclose(csv["test1"], np.arange(10))
+    assert np.allclose(csv["test2"][:5], 1.0)  # padded with nans
+
+    npz = np.load(tmp_path.joinpath("plot_export.npz"))
+    assert np.allclose(npz["test1"], np.arange(10))
+    assert np.allclose(npz["test2"], 1.0)
+
+
+def test_graph_base_font_overlar(qtbot: QtBot):
+    view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    item = view.drawCurve(np.arange(10), np.random.random(10), name="curve")
+
+    assert view.plot.legend is not None
+
+    font = view.font()
+
+    for i in range(8, 32, 4):
+        font.setPointSize(i)
+        view.setFont(font)
+        for item, label in view.plot.legend.items:
+            assert not item.sceneBoundingRect().intersects(label.sceneBoundingRect())
 
 
 def test_graph_calibration(qtbot: QtBot):
@@ -41,6 +121,7 @@ def test_graph_calibration(qtbot: QtBot):
 
     view.drawScatter(xs, ys)
     view.drawTrendline(xs, ys, weighting="1/x")
+
 
 def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
     view = ParticleView()

@@ -240,7 +240,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
 
-        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
+        diffs = np.diff(y, n=2, append=np.inf, prepend=np.inf) != 0
         curve = pyqtgraph.PlotCurveItem(
             x=x[diffs],
             y=y[diffs],
@@ -467,7 +467,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if self.plot.legend is not None:
             self.plot.legend.clear()
         self.plot.clear()
-        self.scene().invalidate()
+        scene = self.scene()
+        if scene is not None:
+            scene.invalidate()
 
     def dataBounds(self) -> tuple[float, float, float, float]:
         items = [item for item in self.plot.listDataItems() if item.isVisible()]
