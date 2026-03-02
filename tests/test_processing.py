@@ -2,6 +2,7 @@ import numpy as np
 from pathlib import Path
 import pytest
 
+from spcal.limit import SPCalLimit
 from spcal.processing import options
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.datafile import SPCalTOFWERKDataFile
@@ -16,7 +17,38 @@ def test_datafile(test_data_path: Path) -> SPCalTOFWERKDataFile:
     )
 
 
-def test_spcal_procesing_instrument_options():
+def test_spcal_cluster_filter():
+    filter = SPCalClusterFilter("signal", 1)
+    clusters = np.array([1, 1, 2, 3, 2, 1, 2, 2, 3, 1])
+
+    assert np.all(filter.validPeaks(clusters) == [0, 1, 5, 9])
+    assert np.all(filter.invalidPeaks(clusters) == [2, 3, 4, 6, 7, 8])
+
+    filter.index = 2
+
+    assert np.all(filter.validPeaks(clusters) == [2, 4, 6, 7])
+    assert np.all(filter.invalidPeaks(clusters) == [0, 1, 3, 5, 8, 9])
+
+
+def test_spcal_value_filter(
+    default_method: SPCalProcessingMethod, random_result_generator
+):
+    result = random_result_generator(default_method)
+    result.peak_indicies = np.arange(result.number)
+    filter = SPCalValueFilter(result.isotope, "signal", np.greater, 35.0)
+
+    assert not filter.preferInvalid()
+
+    assert np.all(
+        filter.validPeaks(result) == np.flatnonzero(np.greater(result.detections, 35.0))
+    )
+    assert np.all(
+        filter.invalidPeaks(result)
+        == np.flatnonzero(np.less_equal(result.detections, 35.0))
+    )
+
+
+def test_spcal_instrument_options():
     empty = options.SPCalInstrumentOptions(None, None)
     assert empty.canCalibrate("signal")
     assert not empty.canCalibrate("mass")
@@ -27,7 +59,7 @@ def test_spcal_procesing_instrument_options():
     assert full.canCalibrate("mass")
 
 
-def test_spcal_processing_isotope_options():
+def test_spcal_isotope_options():
     empty = options.SPCalIsotopeOptions(None, None, None)
     assert empty.canCalibrate("signal")
     assert not empty.canCalibrate("size")
@@ -48,7 +80,7 @@ def test_spcal_processing_isotope_options():
     assert empty != full
 
 
-def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
+def test_spcal_limit_options(test_datafile: SPCalTOFWERKDataFile):
     limit_options = options.SPCalLimitOptions()
     limit_options.compound_poisson_kws["sigma"] = 0.65  # lock
     limit_options.manual_limits[ISOTOPE_TABLE[("Ru", 101)]] = 10.0
@@ -128,6 +160,20 @@ def test_spcal_processing_limit_options(test_datafile: SPCalTOFWERKDataFile):
     )
     assert limit.mean_signal != limit_excluded.mean_signal
     test_datafile.format = "tofwerk"  # reset
+
+
+def test_spcal_processing_options():
+    popts = options.SPCalProcessingOptions("mass response", "signal mean", 2, 0.5, 0.1)
+
+    limit = SPCalLimit("test", 1.0, 2.0)
+    assert popts.accumulationLimit(limit) == 1.0
+    popts.accumulation_method = "half detection threshold"
+    assert popts.accumulationLimit(limit) == 1.5
+    popts.accumulation_method = "detection threshold"
+    assert popts.accumulationLimit(limit) == 2.0
+
+    limit = SPCalLimit("test", np.ones(10), np.ones(10) * 2)
+    assert np.all(popts.accumulationLimit(limit) == 2.0)
 
 
 def test_spcal_processing_method(
