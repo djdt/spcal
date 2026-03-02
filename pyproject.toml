@@ -28,6 +28,9 @@ Publication = "https://doi.org/10.1039/D1JA00297J"
 [project.scripts]
 spcal = "spcal.__main__:main"
 
+[dependency-groups]
+dev = ["spcal[tests]"]
+
 [tool.setuptools.package-data]
 "spcal.resources" = ["*.npz"]
 
@@ -37,5 +40,10 @@ filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
     "ignore:Failed to disconnect .* from signal:RuntimeWarning",
 ]
-[dependency-groups]
-dev = ["spcal[tests]"]
+
+[tool.coverage.report]
+include = ["spcal/*"]
+omit = ["spcal/resources/*"]
+skip_empty = true
+skip_covered = true
+show_missing = true
