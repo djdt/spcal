@@ -2,7 +2,7 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import weighted_linreg, weighted_rsq, weights_from_weighting
+from spcal.calc import weighted_linreg, weights_from_weighting
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.particle import ExclusionRegion
 from spcal.gui.util import create_action
@@ -22,7 +22,7 @@ class CalibrationView(SinglePlotGraphicsView):
         self,
         x: np.ndarray,
         y: np.ndarray,
-        weighting: str = "none",
+        weighting: str = "equal",
         pen: QtGui.QPen | None = None,
     ):
         if pen is None:

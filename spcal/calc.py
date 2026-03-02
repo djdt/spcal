@@ -170,7 +170,7 @@ def weights_from_weighting(
 
     Args:
         x: 1d-array
-        weighting: weighting string {'Equal', 'x', '1/x', '1/(x^2)'}
+        weighting: weighting string {'equal', 'x', '1/x', '1/(x^2)'}
         safe: replace zeros with minimum
 
     Returns:
@@ -185,7 +185,7 @@ def weights_from_weighting(
         x = x.copy()
         x[x == 0] = np.nanmin(x[x != 0])
 
-    if weighting == "Equal":
+    if weighting == "equal":
         return np.ones_like(x)
     elif weighting == "x":
         return x

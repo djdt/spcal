@@ -76,7 +76,7 @@ def test_weighting():
     assert calc.weights_from_weighting(np.array([]), "x").size == 0
     # Test all the weights, safe return
     x = np.random.normal(loc=2, size=10)
-    assert np.all(calc.weights_from_weighting(x, "Equal") == 1.0)
+    assert np.all(calc.weights_from_weighting(x, "equal") == 1.0)
     assert np.all(calc.weights_from_weighting(x, "x") == x)
     assert np.all(calc.weights_from_weighting(x, "1/x") == 1 / x)
     assert np.all(calc.weights_from_weighting(x, "1/(x^2)") == 1 / (x * x))
