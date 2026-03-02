@@ -20,6 +20,11 @@ from spcal.gui.modelviews.isotope import (
     IsotopeNameDelegate,
     IsotopeNameValidator,
 )
+from spcal.gui.modelviews.options import IsotopeOptionModel
+from spcal.gui.modelviews.massfraction import (
+    MassFractionDelegate,
+    MassFractionValidator,
+)
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
 from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
@@ -286,6 +291,33 @@ def test_isotope_name_delegate(qtbot: QtBot):
 
     assert table.model().index(0, 0).data() == "197Au"
     assert table.model().index(0, 0).data(IsotopeRole) == ISOTOPE_TABLE[("Au", 197)]
+
+
+def test_isotope_options_model(qtmodeltester: ModelTester):
+    model = IsotopeOptionModel()
+
+    model.isotope_options = {
+        ISOTOPE_TABLE[("Ag", 107)]: SPCalIsotopeOptions(1.0, 2.0, 0.3, 4.0, 5.0, 6.0),
+        ISOTOPE_TABLE[("Au", 197)]: SPCalIsotopeOptions(19.3, None, 1.0),
+    }
+
+    assert model.rowCount() == 2
+    assert model.columnCount() == 6
+    assert not model.index(0, 5).flags() & QtCore.Qt.ItemFlag.ItemIsEditable
+    assert np.isclose(model.index(0, 0).data(BaseValueRole), 1.0)
+    assert np.isclose(model.index(0, 1).data(BaseValueRole), 2.0)
+    assert np.isclose(model.index(0, 2).data(BaseValueRole), 0.3)
+    assert np.isclose(model.index(0, 3).data(BaseValueRole), 5.0)  # conc
+    assert np.isclose(model.index(0, 4).data(BaseValueRole), 4.0)
+    assert np.isclose(model.index(0, 5).data(BaseValueRole), 6.0)
+
+
+def test_massfraction_delegate():
+    raise NotImplementedError
+
+
+def test_massfraction_validator():
+    raise NotImplementedError
 
 
 def test_numpy_recarray_table_model(qtmodeltester: ModelTester):
