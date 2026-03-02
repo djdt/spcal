@@ -48,7 +48,7 @@ class SPCalClusterFilter(SPCalIndexFilter):
         self.key = key
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalClusterFilter):
+        if not isinstance(other, SPCalClusterFilter):  # pragma: no cover
             return False
         return self.key == other.key and self.index == other.index
 
@@ -77,7 +77,7 @@ class SPCalValueFilter(SPCalResultFilter):
     ):
         if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
-        if operation not in SPCalValueFilter.OPERATION_LABELS.values():
+        if operation not in SPCalValueFilter.OPERATION_LABELS.values():  # pragma: no cover
             raise ValueError(f"invalid operation {operation}")
 
         super().__init__()
@@ -91,7 +91,7 @@ class SPCalValueFilter(SPCalResultFilter):
         self.prefer_invalid = prefer_invalid
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalValueFilter):
+        if not isinstance(other, SPCalValueFilter):  # pragma: no cover
             return False
         return (
             self.isotope == other.isotope
@@ -104,7 +104,7 @@ class SPCalValueFilter(SPCalResultFilter):
         for key, val in SPCalValueFilter.OPERATION_LABELS.items():
             if val == self.operation:
                 return key
-        raise StopIteration("unable to find operation string")
+        raise StopIteration("unable to find operation string")  # pragma: no cover
 
     def preferInvalid(self) -> bool:
         return self.prefer_invalid
@@ -130,25 +130,25 @@ class SPCalValueFilter(SPCalResultFilter):
         ]
 
 
-class SPCalTimeFilter(SPCalResultFilter):
-    def __init__(self, start: float, end: float):
-        super().__init__()
-        self.start, self.end = start, end
-
-    def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
-        if result.peak_indicies is None:  # pragma: no cover
-            raise ValueError("peak indicies have not been calculated")
-        peak_times = result.times[result.maxima]
-        return result.peak_indicies[
-            np.logical_and(peak_times >= self.start, peak_times <= self.end)
-        ]
-
-    def validPeaks(
-        self, result: SPCalProcessingResult
-    ) -> np.ndarray:  # pragma: no cover , unused
-        if result.peak_indicies is None:  # pragma: no cover
-            raise ValueError("peak indicies have not been calculated")
-        peak_times = result.times[result.maxima]
-        return result.peak_indicies[
-            np.logical_or(peak_times < self.start, peak_times > self.end)
-        ]
+# class SPCalTimeFilter(SPCalResultFilter):
+#     def __init__(self, start: float, end: float):
+#         super().__init__()
+#         self.start, self.end = start, end
+#
+#     def invalidPeaks(self, result: SPCalProcessingResult) -> np.ndarray:
+#         if result.peak_indicies is None:  # pragma: no cover
+#             raise ValueError("peak indicies have not been calculated")
+#         peak_times = result.times[result.maxima]
+#         return result.peak_indicies[
+#             np.logical_and(peak_times >= self.start, peak_times <= self.end)
+#         ]
+#
+#     def validPeaks(
+#         self, result: SPCalProcessingResult
+#     ) -> np.ndarray:  # pragma: no cover , unused
+#         if result.peak_indicies is None:  # pragma: no cover
+#             raise ValueError("peak indicies have not been calculated")
+#         peak_times = result.times[result.maxima]
+#         return result.peak_indicies[
+#             np.logical_or(peak_times < self.start, peak_times > self.end)
+#         ]

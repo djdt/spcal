@@ -6,6 +6,7 @@ from spcal.gui.docks.central import SPCalCentralWidget
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
+from spcal.gui.docks.processingoptions import SPCalProcessingOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.modelviews import UnitsRole
@@ -16,6 +17,7 @@ from spcal.processing.options import (
     SPCalInstrumentOptions,
     SPCalIsotopeOptions,
     SPCalLimitOptions,
+    SPCalProcessingOptions,
 )
 
 from spcal.siunits import (
@@ -192,8 +194,8 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
             gaussian_kws={"alpha": 1e-3},
             poisson_kws={"function": "currie", "alpha": 1e-4},
             compound_poisson_kws={"alpha": 1e-5, "sigma": 0.6},
-            default_manual_limit = 10.0,
-            manual_limits = {ISOTOPE_TABLE[("Fe", 56)]: 9.0}
+            default_manual_limit=10.0,
+            manual_limits={ISOTOPE_TABLE[("Fe", 56)]: 9.0},
         ),
     )
 
@@ -298,6 +300,49 @@ def test_spcal_outputs_dock(
     assert dock.view.results_model.rowCount() == 0
 
 
+def test_spcal_processing_dock(qtbot: QtBot):
+    options = SPCalProcessingOptions()
+    dock = SPCalProcessingOptionsDock(options)
+    qtbot.addWidget(dock)
+    with qtbot.waitExposed(dock):
+        dock.show()
+
+    assert (
+        dock.options_widget.accumulation_method.currentText().lower()
+        == options.accumulation_method
+    )
+    assert (
+        dock.options_widget.calibration_mode.currentText().lower()
+        == options.calibration_mode
+    )
+    assert dock.options_widget.points_required.value() == options.points_required
+    assert (
+        dock.options_widget.prominence_required.value()
+        == options.prominence_required * 100
+    )
+    assert (
+        dock.options_widget.cluster_distance.value() == options.cluster_distance * 100
+    )
+
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.accumulation_method.setCurrentText("Detection Threshold")
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.cluster_distance.setValue(50)
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.points_required.setValue(2)
+
+    _options = dock.processingOptions()
+    assert _options.accumulation_method == "detection threshold"
+    assert _options.cluster_distance == 0.5
+    assert _options.points_required == 2
+    
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.setProcessingOptions(options)
+    assert dock.options_widget.points_required.value() == 1
+
+    dock.reset()
+
+
 def test_spcal_toolbar(qtbot: QtBot):
     toolbar = SPCalOptionsToolBar()
     qtbot.addWidget(toolbar)
@@ -358,7 +403,6 @@ def test_spcal_view_toolbar(qtbot: QtBot):
     qtbot.addWidget(toolbar)
     with qtbot.waitExposed(toolbar):
         toolbar.show()
-
 
     assert toolbar.currentView() == "particle"
     assert not toolbar.action_view_options.isEnabled()
