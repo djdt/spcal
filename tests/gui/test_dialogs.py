@@ -1,7 +1,7 @@
 from typing import Callable
 import numpy as np
 from pathlib import Path
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalTOFWERKDataFile
@@ -87,6 +87,8 @@ def test_calculator_dialog(qtbot: QtBot):
     with qtbot.waitExposed(dlg):
         dlg.show()
 
+    assert dlg.formula.completer is not None
+
     assert dlg.combo_isotope.currentText() == "Isotopes"
     assert dlg.combo_isotope.count() == 3 + 1
     assert dlg.formula.toPlainText() == ""
@@ -99,6 +101,14 @@ def test_calculator_dialog(qtbot: QtBot):
     dlg.combo_isotope.activated.emit(2)
     assert dlg.formula.toPlainText() == "10B107Ag"
     assert not dlg.isComplete()
+
+    dlg.formula.setPlainText("10")
+    dlg.formula.completer.setCompletionPrefix("10")
+    tc = dlg.formula.textCursor()
+    tc.movePosition(QtGui.QTextCursor.MoveOperation.End)
+    dlg.formula.setTextCursor(tc)
+    dlg.formula.insertCompletion("10B")
+    assert dlg.formula.toPlainText() == "10B"
 
     dlg.formula.setText("10B + 107Ag")
     assert dlg.isComplete()
@@ -496,6 +506,7 @@ def test_manual_limits_dialog(qtbot: QtBot):
 
     with qtbot.waitExposed(dlg):
         dlg.show()
+
     for row, val in enumerate([0.2, None, 10.2]):
         item = dlg.table.item(row, 0)
         assert item is not None
@@ -504,13 +515,20 @@ def test_manual_limits_dialog(qtbot: QtBot):
     with qtbot.assertNotEmitted(dlg.manualLimitsChanged):
         dlg.accept()
 
+    item = dlg.table.item(0, 0)
+    assert item is not None
+    item.setData(QtCore.Qt.ItemDataRole.EditRole, 0.3)
+
+    with qtbot.waitSignal(dlg.manualLimitsChanged, timeout=100):
+        dlg.accept()
+
     item = dlg.table.item(1, 0)
     assert item is not None
     item.setData(QtCore.Qt.ItemDataRole.EditRole, 2.4)
 
     with qtbot.waitSignal(
         dlg.manualLimitsChanged,
-        check_params_cb=lambda d: list(d.values()) == [0.2, 2.4, 10.2],
+        check_params_cb=lambda d: list(d.values()) == [0.3, 2.4, 10.2],
         timeout=100,
     ):
         dlg.accept()

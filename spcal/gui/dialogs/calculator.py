@@ -58,7 +58,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
 
     def setCompleter(self, completer: QtWidgets.QCompleter):
         """Set the completer used."""
-        if self.completer is not None:
+        if self.completer is not None:  # pragma: no cover
             self.completer.disconnect(self)
 
         self.completer = completer
@@ -77,9 +77,10 @@ class CalculatorFormula(QtWidgets.QTextEdit):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
         if self.completer is None:
-            raise ValueError("no completor, did you not set it?")
+            raise ValueError("no completer, did you not set it?")
 
-        if self.completer.popup().isVisible():
+        popup = self.completer.popup()
+        if popup is not None and popup.isVisible():
             if event.key() in [  # Ignore keys when popup is present
                 QtCore.Qt.Key.Key_Enter,
                 QtCore.Qt.Key.Key_Return,
@@ -101,6 +102,9 @@ class CalculatorFormula(QtWidgets.QTextEdit):
         else:
             super().keyPressEvent(event)
 
+        if popup is None:
+            return
+
         eow = "~!@#$%^&*()+{}|:\"<>?,./;'[]\\-="
         tc = self.textCursor()
         tc.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
@@ -108,9 +112,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
 
         if prefix != self.completer.completionPrefix():
             self.completer.setCompletionPrefix(prefix)
-            self.completer.popup().setCurrentIndex(
-                self.completer.completionModel().index(0, 0)
-            )
+            popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
 
         if (
             len(prefix) < 2
@@ -118,12 +120,12 @@ class CalculatorFormula(QtWidgets.QTextEdit):
             or event.text()[-1] in eow
             or prefix == self.completer.currentCompletion()
         ):
-            self.completer.popup().hide()
+            popup.hide()
         else:
             rect = self.cursorRect()
             rect.setWidth(
-                self.completer.popup().sizeHintForColumn(0)
-                + self.completer.popup().verticalScrollBar().sizeHint().width()
+                popup.sizeHintForColumn(0)
+                + popup.verticalScrollBar().sizeHint().width()
             )
             self.completer.complete(rect)
 

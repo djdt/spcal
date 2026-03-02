@@ -23,7 +23,7 @@ class AdvancedPoissonOptions(QtWidgets.QWidget):
         layout.addWidget(label, 0, QtCore.Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
-    def options(self) -> tuple[float | None, float | None]:
+    def options(self) -> tuple[float | None, float | None]:  # pragma: no cover
         raise NotImplementedError
 
 
