@@ -27,7 +27,7 @@ class SPCalInstrumentOptions(object):
         return f"SPCalInstrumentOptions(uptake={self.uptake}, efficiency={self.efficiency})"
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalInstrumentOptions):
+        if not isinstance(other, SPCalInstrumentOptions):  # pragma: no cover
             return False
         return self.uptake == other.uptake and self.efficiency == other.efficiency
 
@@ -318,11 +318,11 @@ class SPCalProcessingOptions(object):
         self.prominence_required = prominence_required
         self.cluster_distance = cluster_distance
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalProcessingOptions({self.calibration_mode})"
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SPCalProcessingOptions):
+        if not isinstance(other, SPCalProcessingOptions):  # pragma: no cover
             return False
         return (
             self.calibration_mode == other.calibration_mode
