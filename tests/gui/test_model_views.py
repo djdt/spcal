@@ -312,12 +312,40 @@ def test_isotope_options_model(qtmodeltester: ModelTester):
     assert np.isclose(model.index(0, 5).data(BaseValueRole), 6.0)
 
 
-def test_massfraction_delegate():
-    raise NotImplementedError
+def test_massfraction_delegate(qtbot: QtBot):
+    table = QtWidgets.QTableWidget(1, 1)
+    qtbot.addWidget(table)
+
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem(""))
+    table.setItemDelegate(MassFractionDelegate())
+
+    with qtbot.waitExposed(table):
+        table.show()
+
+    delegate = table.itemDelegateForIndex(table.model().index(0, 0))
+    assert isinstance(delegate, MassFractionDelegate)
+    editor = delegate.createEditor(
+        table, QtWidgets.QStyleOptionViewItem(), table.model().index(0, 0)
+    )
+    assert isinstance(editor, ValueWidget)
+    assert isinstance(editor.lineEdit().validator(), MassFractionValidator)
 
 
 def test_massfraction_validator():
-    raise NotImplementedError
+    validator = MassFractionValidator(decimals=4)
+
+    assert validator.bottom() == 0.0
+    assert validator.top() == 1.0
+    assert validator.decimals() == 4
+
+    assert validator.validate("", 0)[0] == QtGui.QValidator.State.Acceptable
+    assert validator.validate("0.5", 0)[0] == QtGui.QValidator.State.Acceptable
+    assert validator.validate("1.5", 0)[0] == QtGui.QValidator.State.Intermediate
+    assert validator.validate("CO2", 0)[0] == QtGui.QValidator.State.Intermediate
+
+    assert validator.fixup("") == ""
+    assert validator.fixup("0.5") == "0.5"
+    assert validator.fixup("CO2") == "0.2729"
 
 
 def test_numpy_recarray_table_model(qtmodeltester: ModelTester):
