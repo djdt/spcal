@@ -12,6 +12,9 @@ from spcal.gui.modelviews.values import ValueWidgetDelegate
 class MassFractionValidator(DoubleOrEmptyValidator):
     regex = re.compile("([A-Z][a-z]?)([0-9\\.]*)")
 
+    def __init__(self, decimals: int = 16, parent: QtCore.QObject | None = None):
+        super().__init__(0.0, 1.0, decimals, parent)
+
     def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
         valid = super().validate(input, pos)
         if valid[0] == QtGui.QValidator.State.Invalid:
@@ -42,7 +45,7 @@ class MassFractionValidator(DoubleOrEmptyValidator):
             db["elements"]["MW"][db["elements"]["Symbol"] == matches[0][0]][0]
             * matches[0][1]
         )
-        return f"{first / mw:.12g}"
+        return f"{first / mw:.{self.decimals()}g}"
 
 
 class MassFractionDelegate(ValueWidgetDelegate):
@@ -54,7 +57,7 @@ class MassFractionDelegate(ValueWidgetDelegate):
     ) -> QtWidgets.QWidget:
         editor = super().createEditor(parent, option, index)
         assert isinstance(editor, ValueWidget)
-        editor.lineEdit().setValidator(MassFractionValidator(0.0, 1.0, 12))
+        editor.lineEdit().setValidator(MassFractionValidator(12))
         return editor
 
 
