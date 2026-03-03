@@ -9,10 +9,12 @@ parser.add_argument("--bundle", action="store_true")
 parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
+
+binaries = []
 if os.name == "nt":
-    binaries = [(os.environ["LIB"] + "/tbb12.dll", ".")]
-else:
-    binaries = []
+    binaries.append(
+        ("C:/tbb/inteltbb.redist.win/runtimes/win-x64/native/tbb12.dll", ".")
+    )
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
