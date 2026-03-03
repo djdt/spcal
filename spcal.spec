@@ -10,7 +10,7 @@ parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
 if os.name == "nt":
-    os.add_dll_direcotry(os.environ["LIB"])
+    os.add_dll_directory(os.environ["LIB"])
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
