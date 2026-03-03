@@ -13,8 +13,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
-    - name: Set up TBB
-      run: nuget install inteltbb.devel.win
+    - name: Set up TBB and add to env
+      run: |
+        nuget install inteltbb.devel.win -OutputDirectory C:\tbb -ExcludeVersion
+        echo "INCLUDE=C:\tbb\inteltbb.devel.win\build\native\include" >> $GITHUB_ENV
+        echo "LIB=C:\tbb\interltbb.devel.win\build\native\win-x64" >> $GITHUB_ENV
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip
