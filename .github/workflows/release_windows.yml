@@ -26,18 +26,20 @@ jobs:
       run: |
         pip install . -v
         python setup.py build_ext --inplace
-    - name: Build exec
-      run: |
-        pyinstaller --clean -y spcal.spec
-    - name: Set output version
-      id: set-output
-      run : |
-        echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$env:GITHUB_OUTPUT"
-    - name: Upload binary
-      id: upload
-      run: |
-        gh release upload "$env:TAG_NAME" "./dist/spcal_$env:SPCAL_VERSION.exe"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SPCAL_VERSION: ${{ steps.set-output.outputs.SPCAL_VERSION }}
-        TAG_NAME: ${{ github.event.release.tag_name }}
+    - name: Test
+      run: echo "$(python -c "import os; print(os.environ)")"
+    # - name: Build exec
+    #   run: |
+    #     pyinstaller --clean -y spcal.spec
+    # - name: Set output version
+    #   id: set-output
+    #   run : |
+    #     echo "SPCAL_VERSION=$(python -c "from importlib.metadata import version; print(version('spcal'))")" >> "$env:GITHUB_OUTPUT"
+    # - name: Upload binary
+    #   id: upload
+    #   run: |
+    #     gh release upload "$env:TAG_NAME" "./dist/spcal_$env:SPCAL_VERSION.exe"
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     SPCAL_VERSION: ${{ steps.set-output.outputs.SPCAL_VERSION }}
+    #     TAG_NAME: ${{ github.event.release.tag_name }}
