@@ -4,7 +4,7 @@ SPCal in an spICP-MS calculator with an interactive GUI.
 
 Both quadrupole and ToF data is supported, with native import from Nu Instruments and TOFWERK ICPs.
 
-<img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_2_0_3_main_window.png" width=600>
+<img src="https://github.com/djdt/djdt.github.io/blob/main/img/spcal_2.0.3_main_window.png" width=600>
 
 ## Processing
 
