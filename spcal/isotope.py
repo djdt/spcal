@@ -12,6 +12,12 @@ REGEX_ISOTOPE = re.compile("(?:(\\d+)([A-Z][a-z]?))|(?:([A-Z][a-z]?)(\\d+))")
 class SPCalIsotopeBase:
     name: str
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, SPCalIsotopeBase):
+            return self.name < other.name
+        else:
+            raise TypeError
+
 
 @dataclass(frozen=True)
 class SPCalIsotope(SPCalIsotopeBase):
@@ -32,6 +38,14 @@ class SPCalIsotope(SPCalIsotopeBase):
         if not isinstance(other, SPCalIsotope):  # pragma: no cover
             return False
         return self.name == other.name and self.isotope == other.isotope
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, SPCalIsotope):
+            return self.isotope < other.isotope
+        elif isinstance(other, SPCalIsotopeExpression):
+            return True
+        else:
+            raise TypeError
 
     @property
     def symbol(self) -> str:
@@ -69,6 +83,14 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
         if not isinstance(other, SPCalIsotopeExpression):  # pragma: no cover
             return False
         return all(x == y for x, y in zip(self.tokens, other.tokens))
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, SPCalIsotope):
+            return False
+        elif isinstance(other, SPCalIsotopeExpression):
+            return self.name < other.name
+        else:
+            raise TypeError
 
     def validForIsotopes(self, isotopes: list[SPCalIsotope]) -> bool:
         iso_tokens = [token for token in self.tokens if isinstance(token, SPCalIsotope)]
