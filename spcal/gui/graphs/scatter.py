@@ -202,51 +202,51 @@ class ScatterView(SinglePlotGraphicsView):
     #     if self.poly is not None:
     #         self.removeItem
 
-    def drawFit(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        degree: int = 1,
-        logx: bool = False,
-        logy: bool = False,
-        weighting: str = "none",
-        set_title: bool = True,
-        pen: QtGui.QPen | None = None,
-    ):
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
-            pen.setCosmetic(True)
-
-        if weighting == "none":
-            w = np.ones_like(x)
-        elif weighting == "1/x":
-            w = 1.0 / x
-        elif weighting == "1/x²":
-            w = 1.0 / (x**2)
-        elif weighting == "1/y":
-            w = 1.0 / y
-        elif weighting == "1/y²":
-            w = 1.0 / (y**2)
-        else:
-            raise ValueError(f"drawFit: unknown weighting '{weighting}'")
-
-        poly = np.polynomial.Polynomial.fit(x, y, degree, w=w / w.sum())
-        poly = poly.convert()
-
-        xmin, xmax = np.amin(x), np.amax(x)
-        sx = np.linspace(xmin, xmax, 1000)
-
-        sy = poly(sx)
-
-        if logx:
-            sx = np.log10(sx)
-        if logy:
-            sy = np.log10(sy)
-
-        curve = pyqtgraph.PlotCurveItem(
-            x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True
-        )
-        self.plot.addItem(curve)
-
-        if set_title:
-            self.plot.setTitle(f"{x.size} points; y = {poly}")
+    # def drawFit(
+    #     self,
+    #     x: np.ndarray,
+    #     y: np.ndarray,
+    #     degree: int = 1,
+    #     logx: bool = False,
+    #     logy: bool = False,
+    #     weighting: str = "none",
+    #     set_title: bool = True,
+    #     pen: QtGui.QPen | None = None,
+    # ):
+    #     if pen is None:
+    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+    #         pen.setCosmetic(True)
+    #
+    #     if weighting == "none":
+    #         w = np.ones_like(x)
+    #     elif weighting == "1/x":
+    #         w = 1.0 / x
+    #     elif weighting == "1/x²":
+    #         w = 1.0 / (x**2)
+    #     elif weighting == "1/y":
+    #         w = 1.0 / y
+    #     elif weighting == "1/y²":
+    #         w = 1.0 / (y**2)
+    #     else:
+    #         raise ValueError(f"drawFit: unknown weighting '{weighting}'")
+    #
+    #     poly = np.polynomial.Polynomial.fit(x, y, degree, w=w / w.sum())
+    #     poly = poly.convert()
+    #
+    #     xmin, xmax = np.amin(x), np.amax(x)
+    #     sx = np.linspace(xmin, xmax, 1000)
+    #
+    #     sy = poly(sx)
+    #
+    #     if logx:
+    #         sx = np.log10(sx)
+    #     if logy:
+    #         sy = np.log10(sy)
+    #
+    #     curve = pyqtgraph.PlotCurveItem(
+    #         x=sx, y=sy, pen=pen, connect="all", skipFiniteCheck=True
+    #     )
+    #     self.plot.addItem(curve)
+    #
+    #     if set_title:
+    #         self.plot.setTitle(f"{x.size} points; y = {poly}")
