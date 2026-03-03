@@ -17,13 +17,15 @@ jobs:
       run: |
         nuget install inteltbb.devel.win -OutputDirectory C:\tbb -ExcludeVersion
         $env:INCLUDE="C:\tbb\inteltbb.devel.win\build\native\include"
-        $env:LIB="C:\tbb\interltbb.devel.win\build\native\win-x64"
+        $env:LIB="C:\tbb\inteltbb.devel.win\build\native\win-x64"
+        echo ls "C:\tbb\inteltbb.devel.win"
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip
           pip install wheel pyinstaller pybind11
     - name: Install project
       run: |
+        echo "$env:INCLUDE"
         pip install . -v
         python setup.py build_ext --inplace
     - name: Build exec
