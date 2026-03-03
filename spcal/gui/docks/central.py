@@ -9,7 +9,6 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
-from spcal.gui.graphs import symbols
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.histogram import HistogramView
@@ -160,7 +159,9 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         key: str,
     ):
         for i, (result, color, name) in enumerate(zip(results, colors, names)):
-            symbol = symbols[i % len(symbols)]
+            symbol = SinglePlotGraphicsView.SYMBOLS[
+                i % len(SinglePlotGraphicsView.SYMBOLS)
+            ]
             pen = QtGui.QPen(color, 1.0)  # cant change to other than 1, slow
             pen.setCosmetic(True)
             brush = QtGui.QBrush(color)

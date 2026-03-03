@@ -8,7 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.calc import weighted_linreg
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
-from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.colors import COLOR_SCHEMES
 from spcal.gui.graphs.calibration import CalibrationView, IntensityView
 from spcal.gui.io import (
     get_import_dialog_for_path,
@@ -274,7 +274,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def updateCalibration(self):
         self.calibration.clear()
 
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
+        scheme = COLOR_SCHEMES[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
 
         concs = self.concentrations()
         intensities = self.intensities()

@@ -32,7 +32,7 @@ from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
-from spcal.gui.graphs.colors import color_schemes
+from spcal.gui.graphs.colors import COLOR_SCHEMES, scheme_icon
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -302,11 +302,25 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # View
         current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
         self.action_color_scheme = QtGui.QActionGroup(self)
-        for scheme in color_schemes.keys():
+        icon_size = self.style().pixelMetric(
+            QtWidgets.QStyle.PixelMetric.PM_SmallIconSize
+        )
+        for scheme in COLOR_SCHEMES.keys():
             action = self.action_color_scheme.addAction(scheme)
+            action.setIcon(scheme_icon(scheme, icon_size, icon_size))
             action.setCheckable(True)
             if scheme == current_scheme:
                 action.setChecked(True)
+
+        # todo: add custom colors
+        # self.action_custom_colors = create_action(
+        #     "color-select",
+        #     "Custom...",
+        #     "Set custom colors for the scheme.",
+        #     self.dialogCustomColors,
+        # )
+        # self.action_color_scheme.addAction(self.action_custom_colors)
+
         self.action_color_scheme.triggered.connect(self.setColorScheme)
 
         self.action_display_sigfigs = create_action(
@@ -639,7 +653,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def colorForIsotope(
         self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
     ) -> QtGui.QColor:
-        scheme = color_schemes[
+        scheme = COLOR_SCHEMES[
             str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
         ]
         if isinstance(isotope, SPCalIsotope):
@@ -654,7 +668,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for i in range(0, data_files.index(data_file)):
             idx += len(data_files[i].selected_isotopes)
         return scheme[idx % len(scheme)]
-
 
     def redraw(self):
         key = self.toolbar.combo_key.currentText()
@@ -776,6 +789,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.expressionsChanged.connect(set_expressions)
         dlg.open()
         return dlg
+
+    # def dialogCustomColors(self):
+    #     dlg = QtWidgets.QColorDialog(self)
+    #     dlg.setOption(QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog)
+    #     dlg.open()
 
     def dialogExportResults(self):
         df = self.files.currentDataFile()

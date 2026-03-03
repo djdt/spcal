@@ -1,9 +1,8 @@
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.gui.graphs import viridis_32
 
 
 class ScreeningOptionsDialog(QtWidgets.QDialog):
@@ -134,7 +133,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         if len(selected_numbers) == 0:
             return
         nmax = max(selected_numbers)
-        colors = [viridis_32[int(n / nmax * 31)] for n in selected_numbers]
+        colors = [QtGui.QColor.fromRgbF(n / nmax, 0.0, 0.0) for n in selected_numbers]
         self.table.setIsotopeColors(selected_isotopes, colors)
 
         if not replace_isotopes:

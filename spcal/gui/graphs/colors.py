@@ -1,6 +1,6 @@
-from PySide6 import QtGui
+from PySide6 import QtCore, QtGui
 
-color_schemes = {
+COLOR_SCHEMES = {
     "IBM Carbon": [
         QtGui.QColor("#6929c4"),  # Purple 70
         QtGui.QColor("#1192e8"),  # Cyan 50
@@ -72,7 +72,7 @@ color_schemes = {
 }
 
 # https://github.com/sjmgarnier/viridisLite/blob/master/data-raw/viridis_map.csv
-viridis_32 = [
+VIRIDIS_32 = [
     QtGui.QColor.fromRgbF(0.27602238, 0.04416723, 0.37016418),
     QtGui.QColor.fromRgbF(0.28192358, 0.08966622, 0.41241521),
     QtGui.QColor.fromRgbF(0.283072, 0.13089477, 0.44924127),
@@ -108,24 +108,18 @@ viridis_32 = [
 ]
 
 
-symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
+def scheme_icon(
+    name: str, width: int = 32, height: int = 32, max_colors: int = 4
+) -> QtGui.QIcon:
+    if name not in COLOR_SCHEMES:
+        raise ValueError(f"{name} is not a valid color scheme")
+    pixmap = QtGui.QPixmap(width, height)
+    painter = QtGui.QPainter(pixmap)
+    painter.setPen(QtGui.QPen(QtCore.Qt.PenStyle.NoPen))
 
-def colorForIsotope(
-    self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
-) -> QtGui.QColor:
-    scheme = color_schemes[
-        str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-    ]
-    if isinstance(isotope, SPCalIsotope):
-        idx = data_file.selected_isotopes.index(isotope)
-    elif isinstance(isotope, SPCalIsotopeExpression):
-        method = self.currentMethod()
-        idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
-    else:
-        raise ValueError(f"unknown isotope type '{type(isotope)}'")
+    dx = width // max_colors
+    for i, color in enumerate(COLOR_SCHEMES[name][:max_colors]):
+        painter.setBrush(QtGui.QBrush(color))
+        painter.drawRect(i * dx, 0, dx, height)
 
-    data_files = self.files.selectedDataFiles()
-    for i in range(0, data_files.index(data_file)):
-        idx += len(data_files[i].selected_isotopes)
-    return scheme[idx % len(scheme)]
-
+    return QtGui.QIcon(pixmap)
