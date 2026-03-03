@@ -2,7 +2,6 @@
 import argparse
 import importlib.metadata
 import os
-import logging
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
@@ -11,7 +10,7 @@ parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
 if os.name == "nt":
-    binaries = [(os.environ["LIB"] + "/tbb*.dll", ".")]
+    binaries = [(os.environ["LIB"] + "/tbb12.dll", ".")]
 else:
     binaries = []
 
