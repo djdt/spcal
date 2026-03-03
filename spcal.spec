@@ -10,10 +10,6 @@ parser.add_argument("--bundle", action="store_true")
 parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
-logging.info(f"name={os.name}")
-for k, v in os.environ.items():
-    logging.info(f"{k}={v}")
-
 if os.name == "nt":
     binarys = [os.environ["LIB"] + "tbb*.dll"]
 else:
