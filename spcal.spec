@@ -9,6 +9,8 @@ parser.add_argument("--bundle", action="store_true")
 parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
+print(os.name)
+print(os.environ)
 if os.name == "nt":
     os.add_dll_directory(os.environ["LIB"])
 
