@@ -32,7 +32,7 @@ from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
-from spcal.gui.graphs import color_schemes
+from spcal.gui.graphs.colors import color_schemes
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -397,25 +397,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuhelp.addAction(self.action_documentation)
         menuhelp.addAction(self.action_about)
 
-    def colorForIsotope(
-        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
-    ) -> QtGui.QColor:
-        scheme = color_schemes[
-            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-        ]
-        if isinstance(isotope, SPCalIsotope):
-            idx = data_file.selected_isotopes.index(isotope)
-        elif isinstance(isotope, SPCalIsotopeExpression):
-            method = self.currentMethod()
-            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
-        else:
-            raise ValueError(f"unknown isotope type '{type(isotope)}'")
-
-        data_files = self.files.selectedDataFiles()
-        for i in range(0, data_files.index(data_file)):
-            idx += len(data_files[i].selected_isotopes)
-        return scheme[idx % len(scheme)]
-
     # Method modification
 
     def addExpression(self, expr: SPCalIsotopeExpression):
@@ -654,6 +635,26 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.resultsChanged.emit(file)
 
     # drawing
+
+    def colorForIsotope(
+        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
+    ) -> QtGui.QColor:
+        scheme = color_schemes[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
+        if isinstance(isotope, SPCalIsotope):
+            idx = data_file.selected_isotopes.index(isotope)
+        elif isinstance(isotope, SPCalIsotopeExpression):
+            method = self.currentMethod()
+            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
+        else:
+            raise ValueError(f"unknown isotope type '{type(isotope)}'")
+
+        data_files = self.files.selectedDataFiles()
+        for i in range(0, data_files.index(data_file)):
+            idx += len(data_files[i].selected_isotopes)
+        return scheme[idx % len(scheme)]
+
 
     def redraw(self):
         key = self.toolbar.combo_key.currentText()

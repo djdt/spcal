@@ -109,3 +109,23 @@ viridis_32 = [
 
 
 symbols = ["t", "o", "s", "d", "+", "star", "t1", "x"]
+
+def colorForIsotope(
+    self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
+) -> QtGui.QColor:
+    scheme = color_schemes[
+        str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+    ]
+    if isinstance(isotope, SPCalIsotope):
+        idx = data_file.selected_isotopes.index(isotope)
+    elif isinstance(isotope, SPCalIsotopeExpression):
+        method = self.currentMethod()
+        idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
+    else:
+        raise ValueError(f"unknown isotope type '{type(isotope)}'")
+
+    data_files = self.files.selectedDataFiles()
+    for i in range(0, data_files.index(data_file)):
+        idx += len(data_files[i].selected_isotopes)
+    return scheme[idx % len(scheme)]
+
