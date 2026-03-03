@@ -15,10 +15,13 @@ for k, v in os.environ.items():
     logging.info(f"{k}={v}")
 
 if os.name == "nt":
-    os.add_dll_directory(os.environ["LIB"])
+    binarys = [os.environ["LIB"] + "tbb*.dll"]
+else:
+    binarys = []
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
+    binarys=binarys,
     datas=[
         ("spcal/resources/app.ico", "spcal/resources"),
         ("spcal/resources/npdb.npz", "spcal/resources"),
