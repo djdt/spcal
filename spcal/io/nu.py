@@ -393,7 +393,7 @@ def read_directory(
     if not is_nu_directory(path):  # pragma: no cover
         raise ValueError("read_nu_directory: missing 'run.info' or 'integrated.index'")
 
-    if autoblank not in ["off", "regions", "all"]:
+    if autoblank not in ["off", "regions", "all"]:  # pragma: no cover
         raise ValueError("autoblank must be one of 'off', 'regions', 'all'")
 
     with path.joinpath("run.info").open("r") as fp:

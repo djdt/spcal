@@ -149,7 +149,7 @@ class SPCalProcessingMethod(object):
         return results
 
     def filterResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
-        if len(results) == 0:
+        if len(results) == 0:  # pragma: no cover
             return
         # combined regions for multi-element peaks
         all_regions = combine_regions(
@@ -168,7 +168,7 @@ class SPCalProcessingMethod(object):
             group_valid = np.arange(all_regions.size)
             for filter in filter_group:
                 if isinstance(filter, SPCalValueFilter):
-                    if filter.isotope not in results:
+                    if filter.isotope not in results:  # pragma: no cover
                         continue
                     if filter.preferInvalid():
                         filter_invalid = filter.invalidPeaks(results[filter.isotope])
@@ -176,7 +176,7 @@ class SPCalProcessingMethod(object):
                     else:
                         filter_valid = filter.validPeaks(results[filter.isotope])
                         group_valid = np.intersect1d(group_valid, filter_valid)
-                else:
+                else:  # pragma: no cover
                     raise NotImplementedError(f"filter type {type(filter)}")
 
             valid_peaks = np.union1d(group_valid, valid_peaks)
@@ -191,7 +191,7 @@ class SPCalProcessingMethod(object):
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         clusters: dict[str, np.ndarray],
     ):
-        if len(results) == 0:
+        if len(results) == 0:  # pragma: no cover
             return
 
         valid_peaks = []
@@ -199,7 +199,7 @@ class SPCalProcessingMethod(object):
             group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
             for filter in filter_group:
                 if isinstance(filter, SPCalClusterFilter):
-                    if filter.key not in clusters:
+                    if filter.key not in clusters:  # pragma: no cover
                         continue
                     if filter.preferInvalid():
                         filter_invalid = filter.invalidPeaks(clusters[filter.key])
@@ -207,7 +207,7 @@ class SPCalProcessingMethod(object):
                     else:
                         filter_valid = filter.validPeaks(clusters[filter.key])
                         group_valid = np.intersect1d(group_valid, filter_valid)
-                else:
+                else:  # pragma: no cover
                     raise NotImplementedError(f"filter type {type(filter)}")
 
             valid_peaks = np.union1d(group_valid, valid_peaks)

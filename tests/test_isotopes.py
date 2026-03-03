@@ -45,6 +45,13 @@ def test_isotope_expression():
     )
     assert str(expr) == "test expr"
 
+    assert expr.validForIsotopes(
+        [isotope.ISOTOPE_TABLE[("H", 1)], isotope.ISOTOPE_TABLE[("H", 2)]]
+    )
+    assert not expr.validForIsotopes(
+        [isotope.ISOTOPE_TABLE[("H", 1)], isotope.ISOTOPE_TABLE[("H", 3)]]
+    )
+
 
 def test_isotope_expression_sum():
     expr = isotope.SPCalIsotopeExpression.sumIsotopes(
