@@ -9,7 +9,8 @@ from spcal.calc import weighted_linreg
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.io import ImportDialogBase
 from spcal.gui.graphs.colors import COLOR_SCHEMES
-from spcal.gui.graphs.calibration import CalibrationView, IntensityView
+from spcal.gui.graphs.particle import ParticleView
+from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.io import (
     get_import_dialog_for_path,
     get_open_spcal_path,
@@ -34,8 +35,8 @@ class ResponseDialog(QtWidgets.QDialog):
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
 
-        self.intensity = IntensityView()
-        self.intensity.exclusionRegionChanged.connect(self.updateExclusionRegions)
+        self.intensity = ParticleView()
+        self.intensity.exclusionRegionsChanged.connect(self.updateExclusionRegions)
 
         self.calibration = CalibrationView()
 
