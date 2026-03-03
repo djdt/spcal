@@ -2,6 +2,7 @@
 import argparse
 import importlib.metadata
 import os
+import logging
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
@@ -9,8 +10,10 @@ parser.add_argument("--bundle", action="store_true")
 parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
-print(os.name)
-print(os.environ)
+logging.info(f"name={os.name}")
+for k, v in os.environ.items():
+    logging.info(f"{k}={v}")
+
 if os.name == "nt":
     os.add_dll_directory(os.environ["LIB"])
 
