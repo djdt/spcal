@@ -11,13 +11,13 @@ parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
 
 if os.name == "nt":
-    binarys = [os.environ["LIB"] + "tbb*.dll"]
+    binaries = [(os.environ["LIB"] + "/tbb*.dll", ".")]
 else:
-    binarys = []
+    binaries = []
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
-    binarys=binarys,
+    binaries=binaries,
     datas=[
         ("spcal/resources/app.ico", "spcal/resources"),
         ("spcal/resources/npdb.npz", "spcal/resources"),
