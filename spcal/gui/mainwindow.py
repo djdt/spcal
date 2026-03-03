@@ -500,13 +500,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
-        isotopes = current.selected_isotopes + method.validExpressions(current)
-
-        # Add any missing isotopes to method and isotope options
-        isotopes = sorted(
-            isotopes,
-            key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
-        )
+        isotopes = sorted(current.selected_isotopes + method.validExpressions(current))
 
         method_changed = False
         self.isotope_options.blockSignals(True)
@@ -534,12 +528,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for file in selected:
             all_isotopes = all_isotopes.union(file.selected_isotopes)
 
-        self.toolbar.setIsotopes(
-            sorted(
-                all_isotopes,
-                key=lambda iso: iso.isotope if isinstance(iso, SPCalIsotope) else 9999,
-            )
-        )
+        self.toolbar.setIsotopes(sorted(all_isotopes))
 
         self.redraw()
 
@@ -589,11 +578,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file == self.files.currentDataFile():
             results = sorted(
                 self.processing_results[data_file].values(),
-                key=lambda result: (
-                    int(result.isotope.isotope)
-                    if isinstance(result.isotope, SPCalIsotope)
-                    else 9999
-                ),
+                key=lambda result: result.isotope,
             )
             self.outputs.setResults(results)
             self.redraw()
@@ -721,9 +706,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             drawable = []
             names, colors = [], []
             for data_file in files:
-                for isotope, result in self.processing_results[data_file].items():
-                    if isotope in isotopes:
-                        drawable.append(result)
+                for isotope in isotopes:
+                    if isotope in self.processing_results[data_file]:
+                        drawable.append(self.processing_results[data_file][isotope])
                         colors.append(self.colorForIsotope(isotope, data_file))
                         name = (
                             f"{data_file.path.stem} - {isotope}"
@@ -783,7 +768,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         all_isotopes = set(files[0].isotopes)
         for file in files[1:]:
             all_isotopes.union(file.isotopes)
-        all_isotopes = sorted(all_isotopes, key=lambda iso: iso.isotope)
+        all_isotopes = sorted(all_isotopes)
 
         dlg = CalculatorDialog(all_isotopes, method.expressions, parent=self)
         dlg.expressionsChanged.connect(set_expressions)

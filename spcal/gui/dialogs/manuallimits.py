@@ -40,12 +40,7 @@ class ManualLimitDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        for i, isotope in enumerate(
-            sorted(
-                isotopes,
-                key=lambda i: i.isotope if isinstance(i, SPCalIsotope) else 9999,
-            )
-        ):
+        for i, isotope in enumerate(sorted(isotopes)):
             item = QtWidgets.QTableWidgetItem()
             item.setData(IsotopeRole, isotope)
             if isotope in manual_limits:
