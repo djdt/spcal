@@ -29,8 +29,8 @@ jobs:
         pip install . -v
         python setup.py build_ext --inplace
       env:
-        TBB_INCLUDE: "C:\tbb\inteltbb.devel.win\build\native\include"
-        TBB_LIB: "C:\tbb\inteltbb.devel.win\build\native\win-x64"
+        TBB_INCLUDE: "C:/tbb/inteltbb.devel.win/build/native/include"
+        TBB_LIB: "C:/tbb/inteltbb.devel.win/build/native/win-x64"
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
