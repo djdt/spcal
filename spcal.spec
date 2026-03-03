@@ -1,12 +1,16 @@
 # vim: set ft=python:
 import argparse
 import importlib.metadata
+import os
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--bundle", action="store_true")
 parser.add_argument("--debug", action="store_true")
 opts = parser.parse_args()
+
+if os.name == "nt":
+    os.add_dll_direcotry(os.environ["LIB"])
 
 a = Analysis(
     [Path("spcal", "__main__.py")],
