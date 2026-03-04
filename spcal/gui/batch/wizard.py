@@ -546,11 +546,14 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         box_units_layout.addRow("Volume", self.volume_units)
         box_units.setLayout(box_units_layout)
 
-        layout = QtWidgets.QGridLayout()
-        layout.addWidget(box_output, 0, 0, 2, 1)
-        layout.addWidget(box_options, 0, 1)
-        layout.addWidget(box_units, 1, 1)
-        layout.addWidget(self.status, 2, 0, 1, 2)
+        grid_layout = QtWidgets.QGridLayout()
+        grid_layout.addWidget(box_output, 0, 0, 2, 1)
+        grid_layout.addWidget(box_options, 0, 1)
+        grid_layout.addWidget(box_units, 1, 1)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(grid_layout, 1)
+        layout.addWidget(self.status, 0)
         self.setLayout(layout)
 
         self.registerField("export.options", self.check_export_options)
