@@ -382,7 +382,7 @@ def test_spcal_toolbar(qtbot: QtBot):
         toolbar.action_all_isotopes.trigger()
     assert len(toolbar.selectedIsotopes()) == 3
 
-    with qtbot.waitSignal(toolbar.keyChanged, timeout=100):
+    with qtbot.waitSignal(toolbar.keyChanged, check_params_cb=lambda k: k == "mass", timeout=100):
         toolbar.combo_key.setCurrentIndex(1)
 
     toolbar.onViewChanged("scatter")

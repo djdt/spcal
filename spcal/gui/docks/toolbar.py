@@ -81,8 +81,8 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
 
         self.combo_key = QtWidgets.QComboBox()
-        self.combo_key.currentTextChanged.connect(self.keyChanged)
-        self.combo_key.addItems(CALIBRATION_KEYS)
+        self.combo_key.currentTextChanged.connect(self.onKeyChanged)  # to emit lower
+        self.combo_key.addItems([x.title() for x in CALIBRATION_KEYS])
 
         self.scatter_x = ScatterExprLineEdit()
         self.scatter_y = ScatterExprLineEdit()
@@ -141,6 +141,15 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.addAction(self.action_filter)
 
         self.scatter_actions.setVisible(False)
+
+    def currentKey(self) -> str:
+        return self.combo_key.currentText().lower()
+
+    def setCurrentKey(self, key: str):
+        self.combo_key.setCurrentText(key.title())
+
+    def onKeyChanged(self, _key: str):
+        self.keyChanged.emit(_key.lower())
 
     def onViewChanged(self, view: str):
         self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])

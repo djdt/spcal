@@ -655,7 +655,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return scheme[idx % len(scheme)]
 
     def redraw(self):
-        key = self.toolbar.combo_key.currentText()
+        key = self.toolbar.currentKey()
         view = self.graph.currentView()
         isotopes = self.toolbar.selectedIsotopes()
 
