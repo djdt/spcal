@@ -213,24 +213,27 @@ class TextImportDialog(ImportDialogBase):
                 if item is None:
                     continue
 
-                color_group = QtGui.QPalette.ColorGroup.Active
-                color_role = QtGui.QPalette.ColorRole.Text
+                color = self.palette().color(
+                    QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Text
+                )
                 if row != header_row:
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
                     item.setText(IsotopeNameValidator().fixup(item.text()))
                     if not REGEX_ISOTOPE.fullmatch(item.text()):
-                        color_group = QtGui.QPalette.ColorGroup.Active
-                        color_role = QtGui.QPalette.ColorRole.Accent
+                        color = QtCore.Qt.GlobalColor.red
 
                 if row < header_row or col not in self.useColumns():
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEnabled)
-                    color_group = QtGui.QPalette.ColorGroup.Disabled
+                    color = self.palette().color(
+                        QtGui.QPalette.ColorGroup.Disabled,
+                        QtGui.QPalette.ColorRole.Text,
+                    )
                 else:
                     item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsEnabled)
 
-                item.setForeground(self.palette().color(color_group, color_role))
+                item.setForeground(color)
 
     def guessIsotopesFromTable(self):
         columns = []
