@@ -1,6 +1,7 @@
 import logging
 import re
 from pathlib import Path
+import datetime
 
 import h5py
 import numpy as np
@@ -103,6 +104,16 @@ class SPCalDataFile(object):
         result[~np.isfinite(result)] = np.nan  # set all infinite to nan
         return result
 
+    def information(self) -> dict[str, str]:
+        return {
+            "path": str(self.path.resolve()),
+            "format": self.format,
+            "event time": f"{self.event_time * 1e-6} µs",
+            "total time": f"{datetime.timedelta(seconds=self.total_time)}",
+            "number events": str(self.num_events),
+            "number istopes": str(len(self.isotopes)),
+        }
+
     def isTOF(self) -> bool:
         return self.format in ["nu", "tofwerk"]
 
@@ -150,6 +161,22 @@ class SPCalTextDataFile(SPCalDataFile):
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         return self.signals[self.isotope_table[isotope]]
+
+    def information(self) -> dict[str, str]:
+        info = super().information()
+        info.update(
+            {
+                "delimiter": self.delimiter,
+                "skip rows": str(self.skip_row),
+                "intensity units": "CPS" if self.cps else "Counts",
+                "original isotope names": ",".join(self.isotope_table.values()),
+            }
+        )
+
+        if self.drop_fields is not None:
+            info["drop fields"] = ",".join(self.drop_fields)
+
+        return info
 
     def isTOF(self) -> bool:
         return len(self.isotope_table) > 1
@@ -297,6 +324,30 @@ class SPCalNuDataFile(SPCalDataFile):
             iso: idx for idx, iso, v in zip(indices, natural_isotopes, valid) if v
         }
 
+    def information(self) -> dict[str, str]:
+        info = super().information()
+        info.update(
+            {
+                "cycle number": str(self.cycle_number or "All"),
+                "segment number": str(self.segment_number or "All"),
+                "max mass diff": f"{self.max_mass_diff:.4f}",
+                "integ files used": f"{self.integ_files[0]} to {self.integ_files[1] or 'end'}",
+                "autoblanking mode": self.autoblanking,
+            }
+        )
+        for key in [
+            "AnalysisDateTime",
+            "SampleName",
+            "MethodFile",
+            "CyclesWritten",
+            "Username",
+            "AverageSingleIonArea",
+        ]:
+            if key in self.info:
+                info[f"run.info :: {key}"] = self.info[key]
+
+        return info
+
     @classmethod
     def load(
         cls,
@@ -339,13 +390,20 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     type: str = "tofwerk"
 
     def __init__(
-        self, path: Path, signals: np.ndarray, times: np.ndarray, peak_table: np.ndarray
+        self,
+        path: Path,
+        signals: np.ndarray,
+        times: np.ndarray,
+        peak_table: np.ndarray,
+        attrs: dict[str, str] | None = None,
     ):
         super().__init__("tofwerk", path, times)
 
         self.signals = signals
         self.times = times
         self.peak_table = peak_table
+
+        self.attrs = attrs
 
         self._event_time: float | None = None
 
@@ -382,6 +440,14 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
 
+    def information(self) -> dict[str, str]:
+        info = super().information()
+        for attr in ["TofDAQ Version", "Configuration File", "HDF5 File Creation Time"]:
+            if self.attrs is not None and attr in self.attrs:
+                info[f"HDF5 :: {attr}"] = self.attrs[attr]
+
+        return info
+
     @classmethod
     def load(cls, path: Path, max_size: int | None = None) -> "SPCalTOFWERKDataFile":
         with h5py.File(path) as h5:
@@ -406,8 +472,18 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             times = (
                 times[:, :, None]
                 + np.linspace(
-                    0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False  # type: ignore
+                    0.0,
+                    time_per_buf * 1e-9,
+                    h5.attrs["NbrSegments"][0],
+                    endpoint=False,  # type: ignore
                 )[None, None, :]
             ).ravel()
 
-        return cls(path, signals=peak_data, times=times, peak_table=peak_table)
+            attrs = {
+                key: val.decode() if isinstance(val, bytes) else str(val)
+                for key, val in h5.attrs.items()
+            }
+
+        return cls(
+            path, signals=peak_data, times=times, peak_table=peak_table, attrs=attrs
+        )
