@@ -3,7 +3,6 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog
 from spcal.gui.widgets.elidedlabel import ElidedLabel
 from spcal.processing.method import SPCalProcessingMethod
 
@@ -74,6 +73,8 @@ class ImportDialogBase(QtWidgets.QDialog):
             self.dialogScreening()
 
     def dialogScreening(self):
+        # local to prevent circular imports
+        from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog
         dlg = ScreeningOptionsDialog(
             self.screening_ppm, self.screening_size, parent=self
         )
