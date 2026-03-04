@@ -1,36 +1,73 @@
-Batch Processing
-================
+Batch Processing Wizard
+=======================
 
 When a large number of samples are collected in the same experiment, individually importing, processing and exporting data can be tedious.
-The **Batch Process Dialog** can be used to automate this process, using the parameters for the currently loaded sample.
-One sample file can be imported, the thresholding and calibration options set, and then these applied to the rest of the samples.
+The **Batch Process Wizard** can be used to automate this process and is started via **File -> Batch Processing**.
 
-
-.. _batch dialog:
-.. figure:: ../images/tutorial_batch.png
+.. _batch wizard files page:
+.. figure:: ../images/usage_batch_files.png
    :align: center
 
-   The **Batch Process Dialog** is used to apply the current processing paramters to new files. |c1| Button to load files, |c2| Processing file list, |c3| Output name and trim options, |c4| Export options, |c5| Current data import options, |c6| Progress bar, |c7| Start / stop processing.
+   The files page of the Batch Processing Wizard.
 
-The **Batch Process Dialog** is available via **File -> Batch Processing** once a file with at least one detection has been loaded (see :ref:`Data Import`).
-To load new files for processing, press the *Open Files* button (|c1| :numref:`batch dialog`).
-Once opened files will appear in the file list |c2| :numref:`batch dialog` and can be removed by selecting them and pressing the *delete* key.
-The batch options (|c3| :numref:`batch dialog`) can be used to change the output name and directory.
-The output directory can be changed using the *Open Directory* button, and the name via the *Output Name* text field.
-This field sets the exported data's file name, with ``%`` representing the input file name, i.e. for the *Output Name* ``%_out.csv``, ``input.csv`` will become ``input_out.csv``.
-The *Use sample left/right trim* options will apply the trims set in the **Sample Tab** to files during batch processing.
+:numref:`batch wizard files page` is the first page of the wizard, and is used to select the format of the files to be processed and their paths.
+First select the format, either *Text Exports* (.csv), *Nu Instruments* or *TOFWERK HDF5* (.h5).
+Files can then be add to the data file list using the *Add File(s)* button.
+The *Add Directory* button will recursively search the selected directory for mathcing files and add all to the data file list.
 
-The output options (|c4| :numref:`batch dialog`) are the same as described in :ref:`Data Export`.
-The import options (|c5| :numref:`batch dialog`) are the parameters used during importing the current sample file (see :ref:`Data Import`).
-These are used to import files in the file list, so *all files should have the same file format!*
+.. _batch wizard format page:
+.. figure:: ../images/usage_batch_format_nu.png
+   :align: center
 
-Once all options are set pressing the *Start Batch* (|c7| :numref:`batch dialog`) will start the processing.
+   The format page of the Batch Processing Wizard for Nu Instruments files.
 
+The layout of the format page (:numref:`batch wizard format page`) depends on the format of the data files being processed.
+Here you can specify the isotopes for processing and data file import options, see :ref:`Data Import` for details.
+For Nu Instruments files the *Chuck Size* option can be used to split large data files into chunks before processing, for memory limited systems.
 
-.. |c1| unicode:: U+2460
-.. |c2| unicode:: U+2461
-.. |c3| unicode:: U+2462
-.. |c4| unicode:: U+2463
-.. |c5| unicode:: U+2464
-.. |c6| unicode:: U+2465
-.. |c7| unicode:: U+2466
+.. _batch wizard method page:
+.. figure:: ../images/usage_batch_method.png
+   :align: center
+
+   The method page of the Batch Processing Wizard.
+
+The page in :numref:`batch wizard method page` is used to define and check the parameters of the method used to process data.
+
+.. note::
+   The values of the current method in SPCal will be used as defaults in the :ref:`batch wizard method page`.
+
+For Nu Instruments files the *Chuck Size* option can be used to split large data files into chunks before processing, for memory limited systems.
+
+.. _batch wizard run page:
+.. figure:: ../images/usage_batch_run.png
+   :align: center
+
+   The final page of the Batch Processing Wizard, where the batch processing is started.
+
+The final page (:numref:`batch wizard run page`) is used to select what kind of data is output and where.
+The directory to export to is set using the *Directory* field, with each result named using the *Filename* field. 
+The placeholder %DataFile% will be replaced with the name of the data file and is previewed in the data file list below.
+
+Options for export are defined in the :numref:`batchrunoptions` and units under *Export Units*.
+
+.. _batchrunoptions:
+.. list-table:: Export options for the batch processing wizard.
+    :header-rows: 1
+
+    * - Option
+      - Description
+    * - Instrument, limit and isotope options
+      - Outputs the parameters used for processing and calibrating data.
+    * - Particle data arrays
+      - Outputs a line for each particle with its time, signal (in cts, and calibrated units) and cluster ID (if clustering enabled).
+    * - Clustering results
+      - Outputs the counts and mean of each istope per cluster. Also enabled cluster ID in particle data arrays.
+    * - Images
+      - Output images for each file, *currently not implemented*.
+    * - Batch summary
+      - Output a summary of all data files as a flat array (File,Isotope,Name (e.g., Mean),Unit,Value).
+
+To start processing press *Start Batch*.
+The icon next to each file will change from an empty to full circle as the file is processed and an estimate of the remaining time is shown at the bottom of the page.
+Once started, the batch can be interrupted by clicking *Cancel*.
+Once finshed the batch wizard can be closed.

@@ -1,13 +1,14 @@
 Usage
 =====
 
-SPCal compartmentalise instrument options, sample and reference data, and results into four tabs.
+SPCal consists of several docks surrounding a main view area.
+The docks compartmentalise instrument and processing options, loaded files and particle results.
 Other functions such as batch processing and calculators are launched from the **File** and **Edit** menus.
 
 .. toctree::
+   window
    import
-   options
-   sample
+   limits
    calibration
    results
    export

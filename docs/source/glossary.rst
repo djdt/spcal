@@ -21,9 +21,9 @@ Glossary
         The value above which a signal is considered a detection (particle).
         This is also called the *critical value* in Poisson statistics.
 
-    dwelltime
-        The total acquisition time for a single event.
-        The dwelltime is set during data import and cannot be edited.
+    event time
+        The acquisition time of a single event, also known as the *dwell time*.
+        The eventtime is set during data import and cannot be edited.
 
     error rate
         Determines the number of false detections, i.e. background signal incorrectly identified as particles.
@@ -33,6 +33,10 @@ Glossary
         The signal produced per mass of material.
         Measured by collecting one or more ionic standards of known concentrations.
         The ionic response can be calibrated from multiple standard levels using the :ref:`Ionic Response Calculator`.
+
+    isotope expression
+        A mathmatical operation on one or more isotopes. These are usually made using the :ref:`Signal Calculator`.
+        For most purposes, these are treated as a normal isotope.
 
     mass fraction
         The amount of measured material per total particle.
@@ -45,10 +49,19 @@ Glossary
 
     molar mass
         The molecular weight of the particle material.
-        Used to calculate the intracellular concentration for single-cell ICP-MS.
+        Formally used to calculate intracellular concentrations, now depreciated.
 
     required points
         The number of points in a consecutive regions that must be above the detection threshold to be cconsidered a detection. Added in version 1.2.10.
+
+    required prominence
+        The minimum peak prominence (smallest height from the peak edge) conjoined peaks must have before being separated.
+        This is expressed as a percentage of the tallest peak.
+    
+    single ion area
+        The distribution created by single ion events for detectors unable to operate in a pulse counting mode, e.g., ToF.
+        The mean of this distribution is used to convert raw detector values into counts.
+        The distribution is mass dependent and is sampled for compound Poisson thresholding.
 
     transport efficiency
         The fraction of material that is successfully transported to the detector.

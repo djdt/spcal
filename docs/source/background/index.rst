@@ -2,7 +2,7 @@ Background and Theory
 =====================
 
 Single-particle ICP-MS is a technique to analyse particulate matter in aqueous samples.
-It is essentially the same as any time-resolved ICP-MS measurement, but with a significantly shorter acquisition or :term:`dwelltime`.
+It is essentially the same as any time-resolved ICP-MS measurement, but with a significantly shorter acquisition or :term:`event time`.
 The rapid collection of data (typically sub millisecond) allows the resolution of individual particles as they are nebulised, atomised and extracted in discrete ion clouds.
 For a comprehensive review of spICP-MS as a nano-particle analysis technique see Laborda, Bolea and Jiménez-Lamana [1]_.
 
@@ -36,5 +36,7 @@ Several other publications discussing aspects of the new ToF version are also av
 * Gonzalez De Vega, R.; Lockwood, T. E.; Paton, L.; Schlatt, L.; Clases, D. Non-Target Analysis and Characterisation of Nanoparticles in Spirits via Single Particle ICP-TOF-MS. Journal of Analytical Atomic Spectrometry 2023, 10.1039.D3JA00253E. `<https://doi.org/10.1039/D3JA00253E>`_.
 
 * Lockwood, T. E.; Gonzalez De Vega, R.; Du, Z.; Schlatt, L.; Xu, X.; Clases, D. Strategies to Enhance Figures of Merit in ICP-ToF-MS. Journal of Analytical Atomic Spectrometry 2024, 39 (1), 227–234. `<https://doi.org/10.1039/D3JA00288H>`_.
+
+* Lockwood, T. E.; Gonzalez de Vega, R.; Schaltt, L.; Clases, D. Accurate thresholding using a compound-Poisson-lognormal lookup table and parameters recovered from standard single particle ICP-TOFMS data. J. Anal. At. Spectrom. 2025, 40, 2633-2640. `<https://doi.org/10.1039/D5JA00230C>`_.
 
 .. [1] Laborda, F.; Bolea, E.; Jiménez-Lamana, J. Single Particle Inductively Coupled Plasma Mass Spectrometry: A Powerful Tool for Nanoanalysis. Anal. Chem. 2014, 86 (5), 2270–2278. https://doi.org/10.1021/ac402980q.
