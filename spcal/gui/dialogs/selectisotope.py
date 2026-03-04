@@ -1,8 +1,12 @@
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.gui.widgets.periodictable import PeriodicTableSelector
+from spcal.isotope import SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
+
+from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
 
 
 class ScreeningOptionsDialog(QtWidgets.QDialog):
@@ -71,6 +75,38 @@ class ScreeningOptionsDialog(QtWidgets.QDialog):
         super().accept()
 
 
+class SignalsPopup(QtWidgets.QDialog):
+    def __init__(
+        self,
+        signals: dict[SPCalIsotope, np.ndarray],
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Signal Inspection")
+        self.setWindowFlags(QtCore.Qt.WindowType.Popup)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(QtCore.QMargins(1, 1, 1, 1))
+
+        for isotope, signal in signals.items():
+            view = SinglePlotGraphicsView(f"{isotope}", ylabel="")
+            view.plot.xaxis.setVisible(False)
+            view.setInteractive(False)
+            view.drawCurve(np.arange(signal.size), signal)
+            layout.addWidget(view)
+
+        self.nviews = len(signals)
+
+        self.setLayout(layout)
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(
+            int(400 * self.devicePixelRatio()),
+            int(100 * self.nviews * self.devicePixelRatio()),
+        )
+
+
 class SelectIsotopesDialog(QtWidgets.QDialog):
     isotopesSelected = QtCore.Signal(SPCalDataFile)
 
@@ -82,6 +118,10 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Select Isotopes")
+        self.setWhatsThis(
+            "This dialog is used to select isotopes for processing. Select the preferred isotope (highest abundance without interferences) by left-clicking an element. Right-click allows selection of specific isotopes, while middle-click will preview the signals for an element. Holding shift while left-clicking will select all isotopes with a natural abundance over 10 %. Finally, non-target screening can be performed using the Screen button."
+        )
+        # self.setWindowFlag(QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
         self.data_file = data_file
         self.screening_method = screening_method
@@ -92,6 +132,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         self.table = PeriodicTableSelector(
             data_file.isotopes, data_file.selected_isotopes
         )
+        self.table.requestShowIsotopes.connect(self.showIsotopes)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -141,6 +182,12 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             selected_isotopes.update(self.table.selectedIsotopes())
             selected_isotopes = list(selected_isotopes)
         self.table.setSelectedIsotopes(selected_isotopes)
+
+    def showIsotopes(self, isotopes: list[SPCalIsotope]):
+        popup = SignalsPopup(
+            {isotope: self.data_file[isotope] for isotope in isotopes}, parent=self
+        )
+        popup.show()
 
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)

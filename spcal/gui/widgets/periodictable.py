@@ -119,6 +119,7 @@ ELEMENT_PERIOD_INFO: dict[str, tuple[str, int, tuple[int, int]]] = {
 
 class PeriodicTableButton(QtWidgets.QToolButton):
     isotopesChanged = QtCore.Signal()
+    requestShowIsotopes = QtCore.Signal(list)
 
     def __init__(
         self,
@@ -166,6 +167,8 @@ class PeriodicTableButton(QtWidgets.QToolButton):
             else:
                 self.selectPreferredIsotopes(not self.isChecked())
             event.accept()
+        elif event.button() == QtCore.Qt.MouseButton.MiddleButton:
+            self.requestShowIsotopes.emit(self.enabledIsotopes())
         else:
             super().mousePressEvent(event)
 
@@ -287,6 +290,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
 
 class PeriodicTableSelector(QtWidgets.QWidget):
     isotopesChanged = QtCore.Signal()
+    requestShowIsotopes = QtCore.Signal(list)
 
     def __init__(
         self,
@@ -303,6 +307,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
             isotopes = [v for k, v in ISOTOPE_TABLE.items() if k[0] == symbol]
             self.buttons[symbol] = PeriodicTableButton(isotopes)
             self.buttons[symbol].isotopesChanged.connect(self.isotopesChanged)
+            self.buttons[symbol].requestShowIsotopes.connect(self.requestShowIsotopes)
 
         layout = QtWidgets.QGridLayout()
         row = 0

@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
 from spcal.datafile import SPCalDataFile
-from spcal.gui.dialogs.io import ImportDialogBase
+from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.graphs.colors import COLOR_SCHEMES
 from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.calibration import CalibrationView

@@ -13,7 +13,7 @@ from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
-from spcal.gui.dialogs.io import ImportDialogBase
+from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog

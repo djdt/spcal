@@ -1,14 +1,10 @@
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.gui.dialogs.io import (
-    ImportDialogBase,
-    NuImportDialog,
-    TextImportDialog,
-    TofwerkImportDialog,
-)
+
 from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
@@ -23,6 +19,10 @@ NP_FILE_FILTERS = (
     + ";;All files(*)"
 )
 
+if TYPE_CHECKING:
+    from spcal.gui.dialogs.io.nu import NuImportDialog
+    from spcal.gui.dialogs.io.text import TextImportDialog
+    from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
 
 def is_spcal_path(path: str | Path) -> bool:
     path = Path(path)
@@ -123,7 +123,7 @@ def get_import_dialog_for_path(
     path: Path,
     data_file: SPCalDataFile | None = None,
     screening_method: SPCalProcessingMethod | None = None,
-) -> ImportDialogBase:
+) -> TextImportDialog | NuImportDialog | TofwerkImportDialog:
     if path.is_dir():
         if is_nu_directory(path):
             dlg = NuImportDialog(path, data_file, screening_method, parent=parent)
