@@ -3,6 +3,12 @@ spcal.io
 
 Import and export of data.
 
+spcal.io.export
+-----------
+
+.. automodule:: spcal.io.export
+   :members:
+
 spcal.io.nu
 -----------
 
