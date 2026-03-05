@@ -16,6 +16,8 @@ Some features include:
 
 * :ref:`Batch Processing` of many files.
 
+See the :ref:`Basic Overview` for an introduction to the program, the :ref:`Usage` pages for details.
+Guided examples are provided in the :ref:`Tutorials` page.
 
 .. toctree::
    :hidden:
