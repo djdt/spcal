@@ -1,6 +1,5 @@
 name: Release MacOS Exec
 on:
-  workflow_dispatch:
   release:
     types: [created, edited]
 
@@ -26,6 +25,7 @@ jobs:
       env:
        CC: gcc-15
        CXX: g++-15
+       CPPFLAGS: "-I/opt/homebrew/include"
        LDFLAGS: "-L/opt/homebrew/lib"
     - name: Set output version
       id: set-output
