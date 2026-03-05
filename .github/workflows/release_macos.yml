@@ -1,6 +1,5 @@
 name: Release MacOS Exec
 on:
-  push:
   release:
     types: [created, edited]
 
