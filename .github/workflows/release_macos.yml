@@ -26,6 +26,7 @@ jobs:
       env:
        CC: gcc-15
        CXX: g++-15
+       CFLAGS: "-L/opt/homebrew/lib"
        LDFLAGS: "-L/opt/homebrew/lib"
     - name: Set output version
       id: set-output
