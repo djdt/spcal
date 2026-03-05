@@ -1,6 +1,6 @@
 name: Release MacOS Exec
 on:
-  workflow_dispatch:
+  push:
   release:
     types: [created, edited]
 
