@@ -1,244 +1,299 @@
-"""Save and restore SPCal sessions."""
-
-import re
+from datetime import datetime
+import numpy as np
+from typing import Any
 from pathlib import Path
 
-import h5py
-import numpy as np
-from PySide6 import QtWidgets
+import json
+from importlib.metadata import version
 
-from spcal.gui.inputs import InputWidget, ReferenceWidget, SampleWidget
-from spcal.gui.options import OptionsWidget
-from spcal.gui.results import ResultsWidget
-from spcal.result import ClusterFilter, Filter
-
-
-def cast_structured_array_types(
-    x: np.ndarray, char_casts: dict[str, str]
-) -> np.ndarray:
-    fields = x.dtype.fields
-    if fields is None:
-        raise ValueError("must be structured array")
-
-    trans = str.maketrans(char_casts)
-
-    new_dtype = np.dtype(
-        {
-            "names": list(fields.keys()),
-            "formats": [field[0].str.translate(trans) for field in fields.values()],
-        }
-    )
-    return x.astype(new_dtype)
+from spcal.datafile import (
+    SPCalDataFile,
+    SPCalNuDataFile,
+    SPCalTOFWERKDataFile,
+    SPCalTextDataFile,
+)
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
+from spcal.processing.filter import (
+    SPCalClusterFilter,
+    SPCalValueFilter,
+)
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import (
+    SPCalInstrumentOptions,
+    SPCalIsotopeOptions,
+    SPCalLimitOptions,
+    SPCalProcessingOptions,
+)
 
 
-def flatten_dict(d: dict, prefix: str = "", sep: str = "/") -> dict:
-    flat = {}
-    for k, v in d.items():
-        newk = prefix + sep + k if prefix else k
-        if isinstance(v, dict):
-            flat.update(flatten_dict(v, newk, sep))
-        else:
-            flat[newk] = v
-    return flat
-
-
-def unflatten_dict(d: dict, base: dict | None = None, sep: str = "/") -> dict:
-    if base is None:
-        base = {}
-    for k, v in d.items():
-        root = base
-        if sep in k:
-            *tokens, k = k.split("/")
-            for token in tokens:
-                root.setdefault(token, {})
-                root = root[token]
-        root[k] = v
-    return base
-
-
-def sanitiseOptions(options: dict) -> dict:
-    return flatten_dict(options)
-
-
-def restoreOptions(options: dict) -> dict:
-    return unflatten_dict(options)
-
-
-def sanitiseFilters(filters: list[list[Filter]]) -> np.ndarray:
-    dtype = np.dtype(
-        [
-            ("name", "S64"),
-            ("unit", "S64"),
-            ("operation", "S2"),
-            ("value", float),
-            ("id", int),
-        ]
-    )
-
-    size = sum(len(f) for f in filters)
-    data = np.empty(size, dtype=dtype)
-    i = 0
-    for group in filters:
-        for id, filter in enumerate(group):
-            data[i] = (filter.name, filter.unit, filter.operation, filter.value, id)
-            i += 1
-    return data
-
-
-def restoreFilters(data: np.ndarray) -> list[list[Filter]]:
-    filters: list[list[Filter]] = []
-    group: list[Filter] = []
-    for x in data:
-        if x["id"] == 0:
-            if len(group) > 0:
-                filters.append(group)
-            group = []
-        group.append(
-            Filter(
-                x["name"].decode(),
-                x["unit"].decode(),
-                x["operation"].decode(),
-                x["value"],
-            )
-        )
-    if len(group) > 0:
-        filters.append(group)
-
-    return filters
-
-
-def sanitiseClusterFilters(filters: list[ClusterFilter]) -> np.ndarray:
-    data = np.empty(len(filters), dtype=[("unit", "S64"), ("index", int)])
-    data["unit"] = [filter.unit for filter in filters]
-    data["index"] = [filter.idx for filter in filters]
-    return data
-
-
-def restoreClusterFilters(data: np.ndarray) -> list[ClusterFilter]:
-    filters: list[ClusterFilter] = []
-    for x in data:
-        filters.append(ClusterFilter(unit=x["unit"].decode(), idx=x["index"]))
-    return filters
-
-
-def sanitiseImportOptions(options: dict) -> dict:
-    safe = {}
-    for key, val in options.items():
-        if isinstance(val, Path):
-            key = key + "<from Path>"
-            val = str(val)
-        elif isinstance(val, np.ndarray):
-            if val.dtype.names is not None and any(
-                "U" in x for _, x in val.dtype.descr
-            ):
-                val = cast_structured_array_types(val, {"U": "S"})
-                key = key + "<from arrayU>"
-            elif val.dtype.kind == "U":
-                val = val.astype("S")
-                key = key + "<from arrayU>"
-        elif val is None:
-            key = key + "<from None>"
-            val = "None"
-        safe[key] = val
-    return flatten_dict(safe)
-
-
-def restoreImportOptions(options: dict) -> dict:
-    re_type = re.compile("(\\w+)(?:\\<from (\\w+)\\>)?")
-
-    restored = {}
-    for key, val in unflatten_dict(options).items():
-        m = re_type.match(key)
-        if m is None:
-            raise KeyError(f"invalid type ({type(key)}) for {key}")
-        key, type_token = m.groups()
-        if type_token == "Path":
-            val = Path(val)
-        elif type_token == "arrayU":
-            if val.dtype.names is not None:
-                val = cast_structured_array_types(val, {"S": "U"})
-            else:
-                val = val.astype("U")
-        elif type_token == "None":
-            val = None
-        restored[key] = val
-    return restored
-
-
-def saveSession(
-    path: Path,
-    options: OptionsWidget,
-    sample: SampleWidget,
-    reference: ReferenceWidget,
-    results: ResultsWidget,
-) -> None:
-    with h5py.File(path, "w") as h5:
-        h5.attrs["version"] = QtWidgets.QApplication.applicationVersion()
-        options_group = h5.create_group("options")
-        for key, val in sanitiseOptions(options.state()).items():
-            options_group.attrs[key] = val
-
-        expressions_group = h5.create_group("expressions")
-        for key, val in sample.current_expr.items():
-            expressions_group.attrs[key] = val
-
-        h5.create_dataset("filters", data=sanitiseFilters(results.filters))
-        h5.create_dataset(
-            "cluster filters", data=sanitiseClusterFilters(results.cluster_filters)
-        )
-
-        input: InputWidget
-        for input_key, input in zip(["sample", "reference"], [sample, reference]):
-            if input.responses.dtype.names is not None:
-                input_group = h5.create_group(input_key)
-                dset = input_group.create_dataset(
-                    "data", data=input.responses, compression="gzip"
+class SPCalJSONEncoder(json.JSONEncoder):
+    def default(self, o: Any):
+        # normal types
+        if isinstance(o, Path):
+            return str(o.absolute())
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        # isotope
+        if isinstance(o, (SPCalIsotope, SPCalIsotopeExpression)):
+            return str(o)
+        # filter types
+        if isinstance(o, SPCalValueFilter):
+            return {
+                "filter type": "value",
+                "isotope": o.isotope,
+                "key": o.key,
+                "operation": o.opString(),
+                "value": o.value,
+            }
+        if isinstance(o, SPCalClusterFilter):
+            return {"filter type": "cluster", "key": o.key, "index": o.index}
+        # data files
+        if isinstance(o, SPCalDataFile):
+            d = {
+                "path": str(o.path.absolute()),
+                "format": o.format,
+                "selected isotopes": o.selected_isotopes,
+            }
+            if isinstance(o, SPCalTextDataFile):
+                d.update(
+                    {
+                        "isotope table": {
+                            str(k): v for k, v in o.isotope_table.items()
+                        },
+                        "delimiter": o.delimiter,
+                        "skip row": o.skip_row,
+                        "cps": o.cps,
+                        "override event time": o.override_event_time,
+                        "drop fields": o.drop_fields,
+                    }
                 )
-                dset.attrs["trim"] = input.trimRegion("")
+            elif isinstance(o, SPCalNuDataFile):
+                d.update(
+                    {
+                        "max mass diff": o.max_mass_diff,
+                        "cycle number": o.cycle_number,
+                        "segment number": o.segment_number,
+                        "integ files": o.integ_files,
+                        "autoblanking": o.autoblanking,
+                    }
+                )
+            return d
 
-                import_group = input_group.create_group("import options")
-                for key, val in sanitiseImportOptions(input.import_options).items():
-                    print(key, val, flush=True)
-                    import_group.attrs[key] = val
-
-                element_group = input_group.create_group("elements")
-                for name in input.responses.dtype.names:
-                    name_group = element_group.create_group(name)
-                    for key, val in input.io[name].state().items():
-                        name_group.attrs[key] = val
+        return super().default(o)
 
 
-def restoreSession(
-    path: Path,
-    options: OptionsWidget,
-    sample: SampleWidget,
-    reference: ReferenceWidget,
-    results: ResultsWidget,
-) -> None:
-    # Clear old session
-    options.resetInputs()
-    sample.resetInputs()
-    reference.resetInputs()
+def save_session_json(
+    path: Path, method: SPCalProcessingMethod, data_files: list[SPCalDataFile]
+):
+    def default(obj: object):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
 
-    with h5py.File(path, "r") as h5:
-        if tuple(int(x) for x in h5.attrs["version"].split(".")) < (0, 9, 14):
-            raise ValueError("Unsupported version.")  # pragma: no cover
+    output = {
+        "version": version("spcal"),
+        "date": datetime.now().isoformat(timespec="seconds"),
+        "method": {
+            "instrument options": {
+                "uptake": method.instrument_options.uptake,
+                "efficiency": method.instrument_options.efficiency,
+            },
+            "isotope options": {
+                str(k): {
+                    "density": v.density,
+                    "response": v.response,
+                    "mass fraction": v.mass_fraction,
+                    "concentration": v.concentration,
+                    "diameter": v.diameter,
+                    "mass response": v.mass_response,
+                }
+                for k, v in method.isotope_options.items()
+            },
+            "limit options": {
+                "method": method.limit_options.limit_method,
+                "max iterations": method.limit_options.max_iterations,
+                "window size": method.limit_options.window_size,
+                "default manual limit": method.limit_options.default_manual_limit,
+                "gaussian": method.limit_options.gaussian_kws,
+                "poisson": method.limit_options.poisson_kws,
+                "compound poisson": method.limit_options.compound_poisson_kws,
+                "manual limits": {
+                    str(k): v for k, v in method.limit_options.manual_limits.items()
+                },
+                "single ion": method.limit_options.single_ion_parameters,
+            },
+            "processing options": {
+                "accumulation method": method.processing_options.accumulation_method,
+                "calibration mode": method.processing_options.calibration_mode,
+                "cluster distance": method.processing_options.cluster_distance,
+                "points required": method.processing_options.points_required,
+                "prominence required": method.processing_options.prominence_required,
+            },
+            "exclusion regions": method.exclusion_regions,
+            "result filters": method.result_filters,
+            "index filters": method.index_filters,
+            "expressions": {
+                expr.name: " ".join(str(x) for x in expr.tokens)
+                for expr in method.expressions
+            },
+        },
+        "datafiles": data_files,
+    }
 
-        options.setState(restoreOptions(h5["options"].attrs))
-        for key, val in h5["expressions"].attrs.items():
-            sample.current_expr[key] = val
-            reference.current_expr[key] = val
+    with path.open("w") as fp:
+        json.dump(output, fp, cls=SPCalJSONEncoder, indent=4)
 
-        input: InputWidget
-        for key, input in zip(["sample", "reference"], [sample, reference]):
-            if key in h5:
-                data = h5[key]["data"][:]
-                import_options = restoreImportOptions(h5[key]["import options"].attrs)
-                input.loadData(data, import_options)
-                input.graph.region.setRegion(h5[key]["data"].attrs["trim"])
-                for name in h5[key]["elements"].keys():
-                    input.io[name].setState(h5[key]["elements"][name].attrs)
 
-        results.setFilters(
-            restoreFilters(h5["filters"]), restoreClusterFilters(h5["cluster filters"])
+def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
+    def decode_isotope(
+        text: str, expressions: list[SPCalIsotopeExpression]
+    ) -> SPCalIsotope | SPCalIsotopeExpression:
+        try:
+            return SPCalIsotope.fromString(text)
+        except NameError:
+            for expr in expressions:
+                if expr.name == text:
+                    return expr
+        raise NameError(f"cannot assign '{text}' to an isotope or expression")
+
+    def decode_single_ion(x: np.ndarray | None):
+        if x is None:
+            return None
+        x = np.asarray(x)
+        params = np.empty(
+            x.shape[0], dtype=[("mass", float), ("mu", float), ("sigma", float)]
         )
+        params["mass"] = x[:, 0]
+        params["mu"] = x[:, 1]
+        params["sigma"] = x[:, 2]
+        return params
+
+    def decode_filters(
+        flist: list[list[dict]], expressions: list[SPCalIsotopeExpression]
+    ):
+        filters = []
+        for filter_list in flist:
+            group = []
+            for filter in filter_list:
+                if filter["filter type"] == "value":
+                    group.append(
+                        SPCalValueFilter(
+                            isotope=decode_isotope(filter["isotope"], expressions),
+                            key=filter["key"],
+                            operation=SPCalValueFilter.OPERATION_LABELS[
+                                filter["operation"]
+                            ],
+                            value=filter["value"],
+                        )
+                    )
+                elif filter["filter type"] == "cluster":
+                    group.append(
+                        SPCalClusterFilter(key=filter["key"], index=filter["index"])
+                    )
+                else:
+                    raise ValueError(f"unknown filter type {filter['filter type']}")
+            filters.append(group)
+        return filters
+
+    expressions = [
+        SPCalIsotopeExpression.fromString(k, v)
+        for k, v in method_dict["expressions"].items()
+    ]
+
+    instrument_options = SPCalInstrumentOptions(
+        uptake=method_dict["instrument options"]["uptake"],
+        efficiency=method_dict["instrument options"]["efficiency"],
+    )
+    isotope_options = {
+        decode_isotope(k, expressions): SPCalIsotopeOptions(
+            v["density"],
+            v["response"],
+            v["mass fraction"],
+            v["concentration"],
+            v["diameter"],
+            v["mass response"],
+        )
+        for k, v in method_dict["isotope options"].items()
+    }
+    limit_options = SPCalLimitOptions(
+        method_dict["limit options"]["method"],
+        gaussian_kws=method_dict["limit options"]["gaussian"],
+        poisson_kws=method_dict["limit options"]["poisson"],
+        compound_poisson_kws=method_dict["limit options"]["compound poisson"],
+        max_iterations=method_dict["limit options"]["max iterations"],
+        window_size=method_dict["limit options"]["window size"],
+        single_ion_parameters=decode_single_ion(
+            method_dict["limit options"]["single ion"]
+        ),
+        default_manual_limit=method_dict["limit options"]["default manual limit"],
+        manual_limits={
+            decode_isotope(k, expressions): v
+            for k, v in method_dict["limit options"]["manual limits"].items()
+        },
+    )
+
+    processing_options = SPCalProcessingOptions(
+        accumulation_method=method_dict["processing options"]["accumulation method"],
+        points_required=method_dict["processing options"]["points required"],
+        prominence_required=method_dict["processing options"]["prominence required"],
+        calibration_mode=method_dict["processing options"]["calibration mode"],
+        cluster_distance=method_dict["processing options"]["cluster distance"],
+    )
+
+    method = SPCalProcessingMethod(
+        instrument_options,
+        limit_options,
+        isotope_options,  # type: ignore
+        processing_options,
+    )
+    method.expressions = expressions
+    method.exclusion_regions = [(s, e) for s, e in method_dict["exclusion regions"]]
+    method.result_filters = decode_filters(method_dict["result filters"], expressions)
+    method.index_filters = decode_filters(method_dict["index filters"], expressions)
+    return method
+
+
+def decode_json_datafile(file_dict: dict, path: Path | None = None) -> SPCalDataFile:
+    if path is None:
+        path = Path(file_dict["path"])
+    if file_dict["format"] == "text":
+        isotope_table = {
+            SPCalIsotope.fromString(k): v for k, v in file_dict["isotope table"].items()
+        }
+        df = SPCalTextDataFile.load(
+            path,
+            isotope_table,
+            delimiter=file_dict["delimiter"],
+            skip_rows=file_dict["skip row"],
+            cps=file_dict["cps"],
+            override_event_time=file_dict["override event time"],
+            drop_fields=file_dict["drop fields"],
+        )
+    elif file_dict["format"] == "nu":
+        df = SPCalNuDataFile.load(
+            path,
+            max_mass_diff=file_dict["max mass diff"],
+            cycle_number=file_dict["cycle number"],
+            segment_number=file_dict["segment number"],
+            first_integ_file=file_dict["integ files"][0],
+            last_integ_file=file_dict["integ files"][1],
+            autoblank=file_dict["autoblanking"],
+        )
+    elif file_dict["format"] == "tofwerk":
+        df = SPCalTOFWERKDataFile.load(path)
+    else:
+        raise ValueError(f"unknown data file format '{file_dict['format']}'")
+
+    df.selected_isotopes = [  # type: ignore
+        SPCalIsotope.fromString(x) for x in file_dict["selected isotopes"]
+    ]
+    return df
+
+
+def load_session_json(path: Path) -> tuple[SPCalProcessingMethod, list[SPCalDataFile]]:
+    with path.open() as fp:
+        session = json.load(fp)
+
+    method = decode_json_method(session["method"])
+    data_files = [decode_json_datafile(df) for df in session["datafiles"]]
+
+    return method, data_files

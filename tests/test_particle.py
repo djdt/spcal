@@ -93,7 +93,7 @@ def test_equations():
     assert np.isclose(
         particle.particle_mass(
             efficiency=particle.nebulisation_efficiency_from_mass(mass=5.6, **kws),
-            **kws
+            **kws,
         ),
         5.6,
     )

@@ -2,6 +2,7 @@
 
 Based on `<https://www.engr.mun.ca/~theo/Misc/pratt_parsing.html>`_.
 """
+
 import re
 
 import numpy as np
@@ -289,7 +290,7 @@ class Parser(object):
         return self._variables
 
     @variables.setter
-    def variables(self, variables: list[str]) -> None:
+    def variables(self, variables: list[str]):
         variable_token = "|".join(re.escape(v) for v in variables)
         self.regexp_tokenise = re.compile(
             f"\\s*({variable_token}|{Parser.base_tokens})\\s*"
@@ -373,7 +374,7 @@ class Reducer(object):
         return self._variables
 
     @variables.setter
-    def variables(self, variables: dict[str, float | np.ndarray]) -> None:
+    def variables(self, variables: dict[str, float | np.ndarray]):
         if any(" " in v for v in variables.keys()):
             raise ValueError("Spaces are not allowed in variable names!")
         self._variables = variables

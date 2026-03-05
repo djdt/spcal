@@ -1,79 +1,47 @@
-
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
-
-# class MarkerItem(QtWidgets.QGraphicsPathItem):
-#     def __init__(
-#         self,
-#         x: float,
-#         y: float,
-#         text: str = "",
-#         height: float = 6.0,
-#         pen: QtGui.QPen | None = None,
-#         brush: QtGui.QBrush | None = None,
-#         parent: QtWidgets.QGraphicsItem | None = None,
-#     ):
-#         if pen is None:
-#             pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-#             pen.setCosmetic(True)
-
-#         if brush is None:
-#             brush = QtGui.QBrush(QtCore.Qt.black)
-
-#         super().__init__(parent)
-#         self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations, True)
-#         self.setPos(x, y)
-
-#         width = height / np.sqrt(3.0)
-#         path = QtGui.QPainterPath()
-#         path.addPolygon(
-#             QtGui.QPolygonF(
-#                 [
-#                     QtCore.QPointF(0, 0),
-#                     QtCore.QPointF(-width, -height),
-#                     QtCore.QPointF(width, -height),
-#                 ]
-#             )
-#         )
-#         self.setPath(path)
-#         self.setPen(pen)
-#         self.setBrush(brush)
-
-#         self.text = QtWidgets.QGraphicsSimpleTextItem(text, self)
-#         # self.text.setPen(pen)
-#         # self.text.setBrush(brush)
-
-#         trect = QtGui.QFontMetrics(self.text.font()).boundingRect(self.text.text())
-#         self.text.setPos(-trect.width() / 2.0, -(height + trect.height()))
-
-#     def paint(
-#         self,
-#         painter: QtGui.QPainter,
-#         option: QtWidgets.QStyleOptionGraphicsItem,
-#         widget: QtWidgets.QWidget | None = None,
-#     ) -> None:
-#         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-#         super().paint(painter, option, widget)
 
 
 class HoverableChartItem(pyqtgraph.GraphicsObject):
     hovered = QtCore.Signal(int)
 
-    def __init__(self, parent: QtWidgets.QGraphicsItem | None = None):
+    def __init__(
+        self,
+        paths: list[QtGui.QPainterPath],
+        values: list[float] | np.ndarray,
+        label_positions: list[QtCore.QPointF],
+        labels: list[str] | None = None,
+        font: QtGui.QFont | None = None,
+        pen: QtGui.QPen | None = None,
+        brushes: list[QtGui.QBrush] | None = None,
+        parent: QtWidgets.QGraphicsItem | None = None,
+    ):
         """Item with multiple hoverable sections.
         Sections are defined by self.path and by default are highlighted on
         hover."""
         super().__init__(parent)
         self.setAcceptHoverEvents(True)
 
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+        if brushes is None:
+            brushes = [QtGui.QBrush(QtCore.Qt.GlobalColor.red)]
+
+        self.paths = paths
+        self.values = values
+        self.label_positions = label_positions
+        self.labels = labels
+
+        self.font = font
+
+        self.pen = pen
+        self.brushes = brushes
+
         self.hovered_idx = -1
 
-    @property
-    def paths(self) -> list[QtGui.QPainterPath]:
-        raise NotImplementedError
-
-    def setHoveredIdx(self, idx: int) -> None:
+    def setHoveredIdx(self, idx: int):
         if self.hovered_idx != idx:
             self.hovered_idx = idx
             self.update()
@@ -87,31 +55,51 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
                     break
 
         if hovered_idx != self.hovered_idx:
-            self.hovered.emit(hovered_idx)
+            self.hovered.emit(hovered_idx)  # type: ignore
             self.update()
         self.hovered_idx = hovered_idx
 
-    def boundingRect(self) -> QtCore.QRectF:
+    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
         raise NotImplementedError
 
-    def shape(self) -> QtGui.QPainterPath:
+    def shape(self) -> QtGui.QPainterPath:  # type: ignore
         raise NotImplementedError
 
-    def paint(
+    def paint(  # type: ignore
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.save()
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        if self.font is not None:
+            painter.setFont(self.font)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         painter.setPen(self.pen)
-        for i, (path, brush) in enumerate(zip(self.paths, self.brushes)):
+        pwidth = self.pen.widthF()
+        for i, (path, value, brush) in enumerate(
+            zip(self.paths, self.values, self.brushes)
+        ):
+            if value == 0.0 or np.isnan(value):
+                continue
             if i == self.hovered_idx:
                 brush = QtGui.QBrush(brush)
                 brush.setColor(brush.color().lighter())
             painter.setBrush(brush)
             painter.drawPath(path)
+            if i == self.hovered_idx and self.labels is not None:
+                painter.save()
+                # save position then reset the painter transform to remove scaling
+                pos = painter.transform().map(self.label_positions[i])
+                painter.setTransform(self.transform())  # type: ignore , pyqtgraph weirdness
+
+                # now draw unscaled text
+                rect = painter.fontMetrics().boundingRect(self.labels[i]).toRectF()
+                rect.moveCenter(pos)
+                rect.adjust(-pwidth, -pwidth, pwidth, pwidth)
+                painter.drawText(rect, self.labels[i])
+
+                painter.restore()
         painter.restore()
 
     def dataBounds(self, ax, frac, orthoRange=None):
@@ -139,50 +127,31 @@ class BarChart(HoverableChartItem):
         self,
         height: float,
         width: float,
-        values: list[float],
+        values: list[float] | np.ndarray,
         brushes: list[QtGui.QBrush],
-        pen: QtGui.QPen | None = None,
         labels: list[str] | None = None,
-        # label_format: str = "{:.4g}",
+        font: QtGui.QFont | None = None,
+        pen: QtGui.QPen | None = None,
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
         """Pie is centered on item.pos()."""
-        super().__init__(parent)
-
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        self.pen = pen
-        self.brushes = brushes
-
         self.height = height
         self.width = width
-        self.values = values
-        self._paths: list[QtGui.QPainterPath] = []
 
-        self.labels: list[pyqtgraph.TextItem] = []
-        # if labels is not None:
-        #     assert len(labels) == len(values)
-        #     angle = 0.0
-        #     for label in labels:
+        rect = self.boundingRect()
+        total = np.sum(values)
+        bottom = 0
+        paths = []
+        label_pos = []
+        for value in values:
+            path = QtGui.QPainterPath()
+            height = value / total * rect.height()
+            path.addRect(0, bottom, rect.width(), height)
+            paths.append(path)
+            label_pos.append(path.boundingRect().center())
+            bottom += height
 
-        # self.label_format = label_format
-
-    @property
-    def paths(self) -> list[QtGui.QPainterPath]:
-        if len(self._paths) == 0:
-            rect = self.boundingRect()
-            total = np.sum(self.values)
-            top = rect.height()
-            for value in self.values:
-                path = QtGui.QPainterPath()
-                height = value / total * rect.height()
-                path.addRect(0, top - height, rect.width(), height)
-                self._paths.append(path)
-                top -= height
-
-        return self._paths
+        super().__init__(paths, values, label_pos, labels, font, pen, brushes, parent)
 
     def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(0, 0, self.width, self.height)
@@ -197,53 +166,39 @@ class PieChart(HoverableChartItem):
     def __init__(
         self,
         radius: float,
-        values: list[float],
+        values: list[float] | np.ndarray,
         brushes: list[QtGui.QBrush],
-        pen: QtGui.QPen | None = None,
         labels: list[str] | None = None,
-        # label_format: str = "{:.4g}",
+        font: QtGui.QFont | None = None,
+        pen: QtGui.QPen | None = None,
         parent: QtWidgets.QGraphicsItem | None = None,
     ):
         """Pie is centered on item.pos()."""
-        super().__init__(parent)
-
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        self.pen = pen
-        self.brushes = brushes
-
         self.radius = radius
-        self.values = values
-        self._paths: list[QtGui.QPainterPath] = []
 
-        self.labels: list[pyqtgraph.TextItem] = []
-        # if labels is not None:
-        #     assert len(labels) == len(values)
-        #     angle = 0.0
-        #     for label in labels:
+        rect = self.boundingRect()
+        total = np.sum(values)
+        angle = 0.0
 
-        # self.label_format = label_format
-
-    @property
-    def paths(self) -> list[QtGui.QPainterPath]:
-        if len(self._paths) == 0:
-            rect = self.boundingRect()
-            total = np.sum(self.values)
-            angle = 0.0
-            for value in self.values:
-                span = 360.0 * value / total
-                path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
-                path.arcTo(rect, angle, span)
-                self._paths.append(path)
-                angle += span
-
-        return self._paths
+        paths = []
+        label_pos = []
+        for value in values:
+            span = 360.0 * value / total
+            path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
+            path.arcTo(rect, angle, span)
+            paths.append(path)
+            label_pos.append(
+                QtCore.QPointF(
+                    self.radius * 0.5 * np.cos(np.deg2rad(-angle - 0.5 * span)),
+                    self.radius * 0.5 * np.sin(np.deg2rad(-angle - 0.5 * span)),
+                )
+            )
+            angle += span
+        super().__init__(paths, values, label_pos, labels, font, pen, brushes, parent)
 
     def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(
-            -self.radius, -self.radius, self.radius * 2, self.radius * 2
+            -self.radius, -self.radius, self.radius * 2.0, self.radius * 2.0
         )
 
     def shape(self) -> QtGui.QPainterPath:
@@ -257,48 +212,16 @@ class StaticRectItemSample(pyqtgraph.GraphicsWidget):
         super().__init__()
         self.brush = brush
 
-    def boundingRect(self) -> QtCore.QRectF:
+    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
         return QtCore.QRectF(0, 0, 20, 20)
 
-    def paint(
+    def paint(  # type: ignore
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
-    ) -> None:
+    ):
         painter.save()
         painter.setBrush(self.brush)
         painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
         painter.restore()
-
-
-if __name__ == "__main__":
-    from spcal.gui.graphs import color_schemes
-
-    app = QtWidgets.QApplication()
-
-    view = pyqtgraph.PlotWidget(background="white")
-    view.setAspectLocked(1.0)
-    legend = view.addLegend(sampleType=StaticRectItemSample)
-    # item = pyqtgraph.BarGraphItem(
-    #     x=[1, 2, 3], y=[4, 5, 6], width=1.0, y1=0.0, name="eggs"
-    # )
-    # view.addItem(item)
-
-    item = PieChart(100.0, [1.0, 2.0, 3.0, 4.0], color_schemes["IBM Carbon"])
-    item.setPos(0.0, 0.0)
-    view.addItem(item)
-
-    item2 = PieChart(100.0, [23.0, 12.0, 0.0, 32.1], color_schemes["IBM Carbon"])
-    item2.setPos(300.0, 0.0)
-    view.addItem(item2)
-
-    for name, color in zip("abcd", color_schemes["IBM Carbon"]):
-        legend.addItem(StaticRectItemSample(QtGui.QBrush(color)), name)
-
-    item.hovered.connect(item2.setHoveredIdx)
-    item2.hovered.connect(item.setHoveredIdx)
-
-    view.show()
-
-    app.exec()

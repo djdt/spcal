@@ -1,23 +1,28 @@
 # Resource object code (Python 3)
 # Created by: object code
-# Created by: The Resource Compiler for Qt version 6.7.0
+# Created by: The Resource Compiler for Qt version 6.10.2
 # WARNING! All changes made in this file will be lost!
 
 from PySide6 import QtCore
 
 qt_resource_data = b"\
-\x00\x00\x019\
+\x00\x00\x01\x89\
 [\
 Icon Theme]\x0aName\
 =spcal\x0aComment=I\
 cons from KDE th\
 eme Breeze\x0aDirec\
-tories=16x16,24x\
-24,32x32,16x16@2\
-,24x24@2,32x32@2\
-\x0a\x0a[16x16]\x0aSize=1\
-6\x0aType=Fixed\x0a\x0a[1\
-6x16@2]\x0aSize=16\x0a\
+tories=16x16,22x\
+22,24x24,32x32,1\
+6x16@2,22x22@2,2\
+4x24@2,32x32@2\x0a\x0a\
+[16x16]\x0aSize=16\x0a\
+Type=Fixed\x0a\x0a[16x\
+16@2]\x0aSize=16\x0aSc\
+ale=2\x0aType=Fixed\
+\x0a\x0a[22x22]\x0aSize=2\
+2\x0aType=Fixed\x0a\x0a[2\
+2x22@2]\x0aSize=22\x0a\
 Scale=2\x0aType=Fix\
 ed\x0a\x0a[24x24]\x0aSize\
 =24\x0aType=Fixed\x0a\x0a\
@@ -28,7 +33,2349 @@ ze=32\x0aType=Fixed\
 \x0a\x0a[32x32@2]\x0aSize\
 =32\x0aScale=2\x0aType\
 =Fixed\x0a\x0a\
-\x00\x00\x04\xf7\
+\x00\x00\x04\xda\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 7.5 3 C 5.567\
+ 3 4 4.7909 4 7 \
+L 4 8 L 4 10 C 4\
+ 12.2091 5.567 1\
+4 7.5 14 C 9.433\
+ 14 11 12.2091 1\
+1 10 L 11 8 L 11\
+ 7 C 11 4.7909 9\
+.433 3 7.5 3 z M\
+ 15.5 3 C 13.567\
+ 3 12 4.7909 12 \
+7 L 12 8 L 12 10\
+ C 12 12.2091 13\
+.567 14 15.5 14 \
+C 17.433 14 19 1\
+2.2091 19 10 L 1\
+9 8 L 19 7 C 19 \
+4.7909 17.433 3 \
+15.5 3 z M 7.5 4\
+ C 8.88071 4 10 \
+5.3432 10 7 L 10\
+ 10 C 10 11.6569\
+ 8.88071 13 7.5 \
+13 C 6.11929 13 \
+5 11.6569 5 10 L\
+ 5 7 C 5 5.3432 \
+6.11929 4 7.5 4 \
+z M 15.5 4 C 16.\
+88071 4 18 5.343\
+1 18 7 L 18 10 C\
+ 18 11.6569 16.8\
+8071 13 15.5 13 \
+C 14.11929 13 13\
+ 11.6569 13 10 L\
+ 13 7 C 13 5.343\
+1 14.11929 4 15.\
+5 4 z M 3 13 L 3\
+ 14 L 4 14 L 4 1\
+3 L 3 13 z \x22\x0a   \
+  class=\x22ColorSc\
+heme-Text\x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0a     d=\x22M \
+15 15 L 15 17 L \
+13 17 L 13 18 L \
+15 18 L 15 20 L \
+16 20 L 16 18 L \
+18 18 L 18 17 L \
+16 17 L 16 15 L \
+15 15 z \x22\x0a     c\
+lass=\x22ColorSchem\
+e-Accent\x22\x0a     /\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xdd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 9 3 C 7.\
+34315 3 6 4.3431\
+ 6 6 L 6 8 L 4 8\
+ L 4 9 L 6 9 L 6\
+ 10 L 6 19 L 7 1\
+9 L 7 9 L 8 9 L \
+9 9 L 9 8 L 8 8 \
+L 7 8 L 7 6 C 7 \
+4.89543 7.89543 \
+4 9 4 L 10 4 L 1\
+0 3 L 9 3 z M 12\
+.742188 13 L 12 \
+13.732422 L 14.2\
+92969 16 L 12 18\
+.267578 L 12.742\
+188 19 L 15.0351\
+56 16.732422 L 1\
+7.257812 18.9316\
+41 L 18 18.19921\
+9 L 15.775391 16\
+ L 18 13.800781 \
+L 17.257812 13.0\
+68359 L 15.03515\
+6 15.267578 L 12\
+.742188 13 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
+\x00\x00\x02\x88\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22\x0a        \
+  d=\x22m14 11c-2.2\
+15995 0-4 1.7840\
+05-4 4s1.784005 \
+4 4 4 4-1.784005\
+ 4-4-1.784005-4-\
+4-4m0 1c1.661995\
+ 0 3 1.338005 3 \
+3s-1.338005 3-3 \
+3-3-1.338005-3-3\
+ 1.338005-3 3-3m\
+-1 1v3h2v-1h-1v-\
+2h-1m-9-10v16h6v\
+-1h-5v-14h8v4h4v\
+3h1v-4.0078125l-\
+3.992188-3.99218\
+75-0.007812 0.00\
+97656v-0.0097656\
+h-9z\x22\x0a          \
+class=\x22ColorSche\
+me-Text\x22\x0a    />\x0a\
+</svg>\x0a\
+\x00\x00\x02\x80\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 11 3 C 6\
+.568 3 3 6.568 3\
+ 11 C 3 15.432 6\
+.568 19 11 19 C \
+15.432 19 19 15.\
+432 19 11 C 19 6\
+.568 15.432 3 11\
+ 3 z M 11 4 C 14\
+.878 4 18 7.122 \
+18 11 C 18 14.87\
+8 14.878 18 11 1\
+8 C 7.122 18 4 1\
+4.878 4 11 C 4 7\
+.122 7.122 4 11 \
+4 z M 10 6 L 10 \
+8 L 12 8 L 12 6 \
+L 10 6 z M 10 9 \
+L 10 16 L 12 16 \
+L 12 9 L 10 9 z \
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a</svg>\x0a\
+\x00\x00\x06d\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+15 L 4 16 L 4 17\
+ L 3 17 L 3 18 L\
+ 4 18 L 4 19 L 5\
+ 19 L 5 18 L 19 \
+18 L 19 17 L 5 1\
+7 L 5 16 L 5.007\
+8125 16 L 6 16 L\
+ 8 16 L 8 15.992\
+188 L 8.0078125 \
+16 L 10.007812 1\
+4 L 11.599609 14\
+ L 13.599609 16 \
+L 17.099609 16 L\
+ 19 16 L 19 15 L\
+ 17.099609 15 L \
+14.013672 15 L 1\
+2.013672 13 L 12\
+ 13 L 11.007812 \
+13 L 10.599609 1\
+3 L 9.59375 13 L\
+ 7.59375 15 L 6 \
+15 L 5.0078125 1\
+5 L 5 15 L 5 11 \
+L 10 11 L 10 10.\
+992188 L 10.0078\
+12 11 L 11.00390\
+6 10.003906 L 11\
+ 10 L 10.296875 \
+9.296875 L 9.593\
+75 10 L 5 10 L 5\
+ 3 L 4 3 z M 11 \
+10 L 13 10 L 13 \
+9 L 12 9 L 12 8 \
+L 11 8 L 11 10 z\
+ M 11 4 L 11 6 L\
+ 12 6 L 12 5 L 1\
+3 5 L 13 4 L 11 \
+4 z M 15 4 L 15 \
+5 L 16 5 L 16 6 \
+L 17 6 L 17 4 L \
+15 4 z M 14 5.59\
+375 L 13.292969 \
+6.3007812 L 12.2\
+96875 7.296875 L\
+ 13.003906 8.003\
+9062 L 14 7.0078\
+125 L 14.996094 \
+8.0039062 L 15.7\
+03125 7.296875 L\
+ 14 5.59375 z M \
+16 8 L 16 9 L 15\
+ 9 L 15 10 L 17 \
+10 L 17 8 L 16 8\
+ z M 19 8 L 18 9\
+ L 19 9 L 19 8 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a <path \
+\x0a     style=\x22fil\
+l:currentColor;f\
+ill-opacity:0.5;\
+stroke:none\x22 \x0a  \
+   d=\x22M 14 7 L 1\
+2.003906 9 L 13 \
+9 L 13 10 L 11.0\
+05859 10 L 10.00\
+7812 11 L 5 11 L\
+ 5 15 L 7.599609\
+4 15 L 9.5996094\
+ 13 L 12.007812 \
+13 L 14 14.99218\
+8 L 19 15 L 19 9\
+ L 17 9 L 17 10 \
+L 15 10 L 15 9 L\
+ 16 9 L 14 7 z M\
+ 10 14 L 8 16 L \
+5 16 L 5 17 L 19\
+ 17 L 19 16 L 13\
+.599609 16 L 11.\
+599609 14 L 10 1\
+4 z \x22\x0a     class\
+=\x22ColorScheme-Te\
+xt\x22\x0a     />\x0a</sv\
+g>\x0a\
+\x00\x00\x02_\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path\x0a\
+            d=\x22m\
+6 6 10 10m-10 0 \
+10-10\x22\x0a         \
+   fill=\x22current\
+Color\x22/>\x0a       \
+ <path\x0a         \
+   d=\x22M 6,5.1523\
+437 5.1523437,6 \
+10.152344,11 5.1\
+523437,16 6,16.8\
+47656 l 5,-5 5,5\
+ L 16.847656,16 \
+l -5,-5 5,-5 L 1\
+6,5.1523437 11,1\
+0.152344 Z\x22\x0a    \
+        fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  </g>\x0a</svg>\x0a\
+\x00\x00\x04r\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 9.910156\
+2 4 L 6.5957031 \
+13.59375 L 6.472\
+6562 14 L 5 18 L\
+ 6.6582031 18 L \
+8.2832031 13.562\
+5 L 13.716797 13\
+.5625 L 15.34179\
+7 18 L 17 18 L 1\
+5.527344 14 L 15\
+.404297 13.59375\
+ L 12.089844 4 L\
+ 11.875 4 L 10.1\
+25 4 L 9.9101562\
+ 4 z M 11.015625\
+ 5.9375 L 13.195\
+312 12.28125 L 8\
+.8046875 12.2812\
+5 L 11.015625 5.\
+9375 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a \
+<path \x0a     styl\
+e=\x22fill:currentC\
+olor;fill-opacit\
+y:1;stroke:none\x22\
+ \x0a     d=\x22M 18 3\
+ C 17.44771 3 17\
+ 3.4477 17 4 C 1\
+7 4.5523 17.4477\
+1 5 18 5 C 18.55\
+228 5 19 4.5523 \
+19 4 C 19 3.4477\
+ 18.55228 3 18 3\
+ z M 18 7 C 17.4\
+4771 7 17 7.4477\
+ 17 8 C 17 8.552\
+3 17.44771 9 18 \
+9 C 18.55228 9 1\
+9 8.5523 19 8 C \
+19 7.4477 18.552\
+28 7 18 7 z M 18\
+ 11 C 17.44771 1\
+1 17 11.4477 17 \
+12 C 17 12.5523 \
+17.44771 13 18 1\
+3 C 18.55228 13 \
+19 12.5523 19 12\
+ C 19 11.4477 18\
+.55228 11 18 11 \
+z \x22\x0a     class=\x22\
+ColorScheme-Text\
+\x22\x0a     />\x0a</svg>\
+\x0a\
+\x00\x00\x03)\
+(\
+\xb5/\xfd`\x1f\x0d\xfd\x18\x00\x96ci\x1f \x93\x1e\
+\xbf\x99&\x12\x06\xfeFT\xb4\xb0\xec\xeef\xe3UF\
+\x96M&\xfb\x1aGI\x09!\x0a20e\x00a\x00\
+\x5c\x00Qr\x9e\xd9\x96\xd9\x0f\xe1\x8c\xfd(\xcf\x8e \
+{\xadq\xfe\xfb\xc8>O\x9ea\xe7p\x05\x0bc7\
+\x80\x01\x01&\xeb\xb8\x02\x06\x83]l\xd9*\x0e\xc5\xda\
+u-\x8a\x01\x06'\xd5Z\xfb\xa2\xc10 \x82sg\
+w\x86\x0c]\x01\xb4A|.\xe6a'A\x08]\xaa\
+d\x9b\x17?\xef\xf3\xf9H\x12\x81\xb3m\x16W\xd04\
+\x98\x0c\x88+\x1e\x8d\x0a\x12\x15\xdbJ\xef\x87\xf6-I\
+\xe15\xa5e/\xcby\xc7\xb7]\xed\xba6\x92\x83\xd0\
+\xda\xb6\x01W\xc86\x98\x8d\x8d\x98\xb3\xd9\xb4\xabM4\
+\x91k+\x8e$\xbb\x9a\xb6a\x9aI\xe5\xa1S\xf9&\
+\x9f@5\xfa\xbf\xe8\xd2\x15:\xc4.n\x9a\x8bYU\
+\xd6\xc8\xaa\x1bE\x11\xa4\xa3\x8ef3d\xfb\x95\xbe\x1a\
+%\xc7\xa9\xa9|\x0f\xa7G?p\xf9\xea{G\xfc\x91\
+>\x8f\x98B\x9e\xff\x93\xbf\x16\x80\xb0l\xab2\xae\x90\
+\xc96\x97\xa6\xa9\xb2\x8d+\x94D]\xe8q\xde\xdb0\
+\xfe\xb5~\x9b^;\xdd\x9e\xb2\xe5\xf5\x1a\xbb\xb2\xd7\xf5\
+S%\xa3\x15+\xa5i\x05\xdf\xdeZ\xed\xa5P\xe8\x14\
+k}\xc3\xb6O+o\x0a\x95\xd6\xb4o\xb5E\xe9\xf7\
+_\x9f\x1c\x06\x00C\xc5\xa3IT\x83\xf1X@\x14\xd4\
+_\xf5\xe7\x87\xafi\xbb\x9c\x8fR\xca]\xe5\x8b\xd3\xc0\
+aG<\xbd\xbf?(c\x02\xf18@jv\xb7\xe9\
+_\xc7\x7f.;\x9a\x5ch\xc36\x15\x89\xfa\x07e\xa6\
+\xd0'Dz\xb5N\xfc\x91[F\x1c\x0cc\xaf\x9bY\
+\x08<\xf8\xf9f\xa5\x1cg\x14q\x94\x11\xf6\x83L\xe3\
+\x0c\x80\xa7\xa01Ef\xa4.\x88$IA\xb2\x1c\x80\
+DF\xa6\xe8\xe4\x01\xf1\x80\x04\x92\x83\x9b\x18\xcf;\x01\
+{\xfd\x94\xd1\x0b\x9aOm@\xcc\xb8r(\xfc^\x9b\
+a\xca\x04!\x17\x11\x07\x93/\xe41\x94\x9d\x11\x9a\xce\
+\x97\x80\x00\xd4\xf93n\xb0\xde\x9dg\x0f\xc7i\xf6{\
+V.\xe9,/A\x00\xbc\xbcZ\xc2\xd1s\xcb\x0f\x03\
+\xa4F\xdd&\xb8f?u\x05g\xd0\xc0\xactN[\
+(R<\x93a\xb0\x17\xc2f\xf2\xba^\x96\xe6<=\
+\xd2\x05\x1a\xcd,1@\xd0\x9e\xab\x19\x033v\xf05\
+\xdfx\xe4\xa1\xb5\xc5\x0a$\xb7\xe7\xc8\xaaG\xa66+\
+\xf4\x08TN\x9b\xec\xbb\xb3\xa2\xd2)\xe0T\xd7\x13\xc9\
+\xa4\xb7\x96\xfa\xb2\x0c.iC+\x0f\xcd\xf1\x00\x80\xa3\
+$\xf4H\xabb\x05\xd8\x22\x81qw-\x09(\xfa\x94\
+\x09\x8a\x80\xdc\x04\xe0\x84\x1a\x07\x08\xf2\x19\x1al\xdc`\
+\x83!\xd0\x22\xc9\xc2\x05|\xf4,# \xc9\x81#\x14\
+i\xa2\xa5\x8fI\xcf\xec\xaaK[\x09B:\x9a\xf3\x13\
+\xedR\x9e\xdf\x5c?\xc9R\x01\xe5\xa0Vd\x8f\xd9\x91\
+,N\xc9*\xf5\xa0\xa1*\x83\x10ZZa\xb9\x11\xf2\
+/\xe3\x10\x09\x0fC$\xf4e\xe42m+\x80\x0e\xb2\
+\xc4\x03\xd6\xe1\x9a\xb3`H\x04\x07glw`n\x80\
+\xb2 \x82\x0b\x98m@/\xaf,\x02\x98\xc7\x01\xd8\xa9\
+(\x90nni\x80\x9c\x00v\x90N#\xe2\x99i\xac\
+\x0c\xd2}W\x83\xa8[\xa0\x16\x03\xd4\x19\x5c\xd8E\xc0\
+Q\xa8^\xec_\x01V\x15\
+\x00\x00\x03\xa2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 19\
+ L 19 19 L 19 3 \
+L 3 3 z M 4 4 L \
+18 4 L 18 18 L 4\
+ 18 L 4 4 z M 7.\
+5 5 C 6.115 5 5 \
+6.115 5 7.5 C 5 \
+8.885 6.115 10 7\
+.5 10 C 8.885 10\
+ 10 8.885 10 7.5\
+ C 10 6.115 8.88\
+5 5 7.5 5 z M 7.\
+5 6 C 8.331 6 9 \
+6.669 9 7.5 C 9 \
+8.331 8.331 9 7.\
+5 9 C 6.669 9 6 \
+8.331 6 7.5 C 6 \
+6.669 6.669 6 7.\
+5 6 z M 13.99414\
+1 10 L 10.648438\
+ 13.34375 L 9.30\
+66406 12 L 9.300\
+7812 12.007812 L\
+ 9.2929688 12 L \
+5 16.292969 L 5.\
+7070312 17 L 9.2\
+988281 13.408203\
+ L 9.9414062 14.\
+050781 L 10.6484\
+38 14.757812 L 1\
+1.355469 14.0507\
+81 L 14 11.40625\
+ L 16.292969 13.\
+699219 L 17 12.9\
+92188 L 14.00781\
+2 10 L 14 10.007\
+812 L 13.994141 \
+10 z \x22\x0a\x09class=\x22C\
+olorScheme-Text\x22\
+\x0a    />  \x0a</svg>\
+\x0a\
+\x00\x00\x03\x88\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a     d=\x22\
+M 11.5 3 C 10.28\
+6139 3 9.2809778\
+ 3.8559279 9.050\
+7812 5 L 3 5 L 3\
+ 6 L 9.0507812 6\
+ C 9.2809778 7.1\
+440721 10.286139\
+ 8 11.5 8 C 12.7\
+13861 8 13.71902\
+2 7.1440721 13.9\
+49219 6 L 19 6 L\
+ 19 5 L 13.94921\
+9 5 C 13.719022 \
+3.8559279 12.713\
+861 3 11.5 3 z M\
+ 5.5 14 C 4.1149\
+999 14 3 15.115 \
+3 16.5 C 3 17.88\
+5 4.1149999 19 5\
+.5 19 C 6.713860\
+4 19 7.7190223 1\
+8.144072 7.94921\
+88 17 L 19 17 L \
+19 16 L 7.949218\
+8 16 C 7.7190223\
+ 14.855928 6.713\
+8604 14 5.5 14 z\
+ M 5.5 15 C 6.33\
+10001 15 7 15.66\
+9 7 16.5 C 7 17.\
+331 6.3310001 18\
+ 5.5 18 C 4.6689\
+999 18 4 17.331 \
+4 16.5 C 4 15.66\
+9 4.6689999 15 5\
+.5 15 z \x22\x0a     c\
+lass=\x22ColorSchem\
+e-Text\x22\x0a     />\x0a\
+</svg>\x0a\
+\x00\x00\x02Z\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NeutralText\
+ {\x0a            c\
+olor:#f67400;\x0a  \
+      }\x0a    </st\
+yle>\x0a    <path c\
+lass=\x22ColorSchem\
+e-NeutralText\x22 d\
+=\x22m11.006318 3.0\
+000261a0.7272873\
+7 0.72727154 0 0\
+ 0-0.65674 0.402\
+1811l-7.2728738 \
+14.545431a0.7272\
+8737 0.72727154 \
+0 0 0 0.6509222 \
+1.052362h14.5457\
+48a0.72728737 0.\
+72727154 0 0 0 0\
+.650922-1.052362\
+l-7.272874-14.54\
+5431a0.72728737 \
+0.72727154 0 0 0\
+-0.645104-0.4021\
+811z\x22 fill=\x22curr\
+entColor\x22/>\x0a    \
+<path d=\x22m10 8v5\
+h2v-5zm0 7v2h2v-\
+2z\x22 fill=\x22#fff\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x02\x19\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 11 3 C 6\
+.6 3 3 6.6 3 11 \
+C 3 15.4 6.6 19 \
+11 19 C 15.4 19 \
+19 15.4 19 11 C \
+19 6.6 15.4 3 11\
+ 3 z M 11 4 L 11\
+ 11 L 18 11 L 18\
+ 11 C 18 14.9 14\
+.9 18 11 18 C 7.\
+122 18 4 14.9 4 \
+11 C 4 7.122 7.1\
+22 4 11 4 z \x22\x0a\x09 \
+class=\x22ColorSche\
+me-Text\x22\x0a     />\
+\x0a</svg>\x0a\
+\x00\x00\x02M\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+5 L 5 5 L 5 4 L \
+17 4 L 17 5 L 18\
+ 5 L 18 3 L 17 3\
+ L 5 3 L 4 3 z M\
+ 11 5 L 5 11.183\
+594 L 5.7929688 \
+12 L 11 6.632812\
+5 L 16.207031 12\
+ L 17 11.183594 \
+L 11 5 z M 8 13 \
+L 8 19 L 9 19 L \
+13 19 L 14 19 L \
+14 13 L 13 13 L \
+13 18 L 9 18 L 9\
+ 13 L 8 13 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
+\x00\x00\x04\xa2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 18\
+ L 3 19 L 19 19 \
+L 19 18 L 19 3 L\
+ 18 3 L 4 3 L 3 \
+3 z M 4 4 L 8 4 \
+L 8 6 L 4 6 L 4 \
+4 z M 9 4 L 13 4\
+ L 13 6 L 9 6 L \
+9 4 z M 14 4 L 1\
+8 4 L 18 6 L 15 \
+6 L 14 6 L 14 4.\
+9003906 L 14 4 z\
+ M 4 7 L 8 7 L 8\
+ 8 L 9 8 L 9 7 L\
+ 13 7 L 13 8 L 1\
+4 8 L 14 7 L 15 \
+7 L 18 7 L 18 8 \
+L 18 9 L 18 10 L\
+ 18 12 L 18 13 L\
+ 18 14 L 18 15 L\
+ 15 15 L 14 15 L\
+ 14 14 L 13 14 L\
+ 13 15 L 9 15 L \
+9 14 L 8 14 L 8 \
+15 L 4 15 L 4 14\
+ L 4 13 L 4 12 L\
+ 4 10 L 4 9 L 4 \
+8 L 4 7 z M 4 16\
+ L 7 16 L 8 16 L\
+ 8 17 L 8 18 L 4\
+ 18 L 4 16 z M 9\
+ 16 L 13 16 L 13\
+ 17 L 13 18 L 9 \
+18 L 9 17 L 9 16\
+ z M 14 16 L 15 \
+16 L 18 16 L 18 \
+18 L 14 18 L 14 \
+17 L 14 16 z \x22\x0a \
+   class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a  <path\x0a   \
+  style=\x22fill:#d\
+a4453\x22\x0a     d=\x22m\
+ 4,14 5.29297,0 \
+4,0 4,0 L 18,14 \
+18,13.29297 18,1\
+3 l -0.29297,0 -\
+4,-4 L 18,9 18,8\
+ 4,8 l 0,1 0.292\
+97,0 4,4 L 4,13 \
+4,14 m 1.70703,-\
+5 2.58594,0 4,4 \
+-2.58594,0 -4,-4\
+ m 4,0 2.58594,0\
+ 4,4 -2.58594,0 \
+-4,-4\x22 />\x0a</svg>\
+\x0a\
+\x00\x00\x02\xcf\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 3 3 L 3 \
+4 L 3 19 L 4 19 \
+L 15 19 L 12 16 \
+L 15 13 L 17 13 \
+L 16 12 L 14 10 \
+L 10 14 L 9 13 L\
+ 4.1484375 17.85\
+1562 L 4 18 L 4 \
+4 L 18 4 L 18 12\
+ L 19 12 L 19 4 \
+L 19 3 L 4 3 L 3\
+ 3 z M 7 5 C 5.8\
+92 5 5 5.892 5 7\
+ C 5 8.108 5.892\
+ 9 7 9 C 8.108 9\
+ 9 8.108 9 7 C 9\
+ 5.892 8.108 5 7\
+ 5 z M 16 14 L 1\
+6 16 L 14 16 L 1\
+4 17 L 16 17 L 1\
+6 19 L 17 19 L 1\
+7 17 L 19 17 L 1\
+9 16 L 17 16 L 1\
+7 14 L 16 14 z \x22\
+\x0a     class=\x22Col\
+orScheme-Text\x22\x0a \
+    />\x0a</svg>\x0a\
+\x00\x00\x02\xcd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 19\
+ L 19 19 L 19 3 \
+L 3 3 z M 4 7 L \
+18 7 L 18 18 L 4\
+ 18 L 4 7 z M 6 \
+8 L 6 12 L 10 12\
+ L 10 8 L 6 8 z \
+M 12 8 L 12 12 L\
+ 16 12 L 16 8 L \
+12 8 z M 7 9 L 9\
+ 9 L 9 11 L 7 11\
+ L 7 9 z M 13 9 \
+L 15 9 L 15 11 L\
+ 13 11 L 13 9 z \
+M 6 13 L 6 17 L \
+10 17 L 10 13 L \
+6 13 z M 12 13 L\
+ 12 17 L 16 17 L\
+ 16 13 L 12 13 z\
+ M 7 14 L 9 14 L\
+ 9 16 L 7 16 L 7\
+ 14 z M 13 14 L \
+15 14 L 15 16 L \
+13 16 L 13 14 z \
+\x22\x0a\x09class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a</svg>\x0a\
+\x00\x00\x01j\
+<\
+svg viewBox=\x220 0\
+ 22 22\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <path d=\x22M3.\
+707 4L3 4.707l8 \
+8 8-8L18.293 4 1\
+1 11.293zm0 5L3 \
+9.707l8 8 8-8L18\
+.293 9 11 16.293\
+z\x22 class=\x22ColorS\
+cheme-Text\x22 fill\
+=\x22currentColor\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x01\xb0\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a    \
+<defs id=\x22defs30\
+51\x22>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+       .ColorSch\
+eme-NegativeText\
+ {\x0a            c\
+olor:#da4453;\x0a  \
+      }\x0a        \
+</style>\x0a    </d\
+efs>\x0a    <path\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22 \x0a     c\
+lass=\x22ColorSchem\
+e-NegativeText\x22\x0a\
+        d=\x22M8 3v\
+2h1V4h4v1h1V3H8M\
+4 6v1h14V6H4m2 2\
+v11h10V8h-1v10H7\
+V8H6\x22/>\x0a</svg>\x0a\
+\x00\x00\x0ea\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 6.9707031 2.99\
+80469 C 6.841823\
+1 2.9980469 6.73\
+79069 3.0912044 \
+6.7167969 3.2089\
+844 L 6.5253906 \
+4.5332031 C 6.21\
+20906 4.6609731 \
+5.92178 4.825390\
+6 5.65625 5.0253\
+906 L 4.375 4.52\
+34375 C 4.25945 \
+4.4812375 4.1269\
+5 4.5230994 4.06\
+25 4.6308594 L 3\
+.0351562 6.36328\
+12 C 2.9706563 6\
+.4710512 2.99900\
+31 6.6058337 3.0\
+957031 6.6835938\
+ L 4.1796875 7.5\
+117188 C 4.15858\
+75 7.6716988 4.1\
+445312 7.83446 4\
+.1445312 8 C 4.1\
+445312 8.16444 4\
+.1596875 8.32634\
+81 4.1796875 8.4\
+863281 L 3.09570\
+31 9.3144531 C 2\
+.9979031 9.38895\
+31 2.9707164 9.5\
+247656 3.0351562\
+ 9.6347656 L 4.0\
+625 11.367188 C \
+4.127 11.474956 \
+4.25945 11.51903\
+9 4.375 11.47460\
+9 L 5.65625 10.9\
+72656 C 5.92067 \
+11.170426 6.2120\
+906 11.337074 6.\
+5253906 11.46484\
+4 L 6.7167969 12\
+.789062 C 6.7378\
+969 12.906833 6.\
+8418231 13 6.970\
+7031 13 L 9.0273\
+438 13 C 9.15622\
+36 13 9.26014 12\
+.906843 9.28125 \
+12.789062 L 9.47\
+26562 11.464844 \
+C 9.7859763 11.3\
+37074 10.076257 \
+11.172656 10.341\
+797 10.972656 L \
+11.621094 11.474\
+609 C 11.736634 \
+11.516809 11.871\
+117 11.474956 11\
+.935547 11.36718\
+8 L 12.962891 9.\
+6347656 C 13.027\
+391 9.5269956 12\
+.999144 9.392223\
+1 12.902344 9.31\
+44531 L 11.81835\
+9 8.4863281 C 11\
+.839459 8.326348\
+1 11.853516 8.16\
+554 11.853516 8 \
+C 11.853516 7.83\
+446 11.838359 7.\
+6716988 11.81835\
+9 7.5117188 L 12\
+.904297 6.683593\
+8 C 13.002097 6.\
+6090938 13.02929\
+4 6.4732813 12.9\
+64844 6.3632812 \
+L 11.9375 4.6308\
+594 C 11.873 4.5\
+230994 11.74055 \
+4.4789975 11.625\
+ 4.5234375 L 10.\
+34375 5.0253906 \
+C 10.07933 4.827\
+6206 9.7879094 4\
+.6609731 9.47460\
+94 4.5332031 L 9\
+.2832031 3.20898\
+44 C 9.2599031 3\
+.0912144 9.15511\
+37 2.9980469 9.0\
+273438 2.9980469\
+ L 6.9707031 2.9\
+980469 z M 8 6 A\
+ 2 2 0 0 1 10 8 \
+A 2 2 0 0 1 8 10\
+ A 2 2 0 0 1 6 8\
+ A 2 2 0 0 1 8 6\
+ z M 14.134766 1\
+1.005859 C 14.03\
+8766 10.981859 1\
+3.944783 11.0334\
+11 13.908203 11.\
+119141 L 13.5253\
+91 12.091797 C 1\
+3.269321 12.1306\
+97 13.022273 12.\
+203801 12.789062\
+ 12.306641 L 11.\
+927734 11.6875 C\
+ 11.848934 11.63\
+38 11.741278 11.\
+641236 11.673828\
+ 11.710938 L 10.\
+597656 12.839844\
+ C 10.530256 12.\
+909544 10.526436\
+ 13.019143 10.58\
+5938 13.095703 L\
+ 11.244141 13.92\
+5781 C 11.199541\
+ 14.043471 11.15\
+8626 14.163373 1\
+1.128906 14.2890\
+62 C 11.099206 1\
+4.414764 11.0809\
+59 14.541129 11.\
+068359 14.667969\
+ L 10.111328 15.\
+097656 C 10.0245\
+28 15.136556 9.9\
+80373 15.234088 \
+10.007812 15.330\
+078 L 10.460938 \
+16.835938 C 10.4\
+90636 16.929638 \
+10.580088 16.989\
+133 10.673828 16\
+.976562 L 11.718\
+75 16.830078 C 1\
+1.87993 17.02890\
+8 12.065051 17.2\
+10974 12.275391 \
+17.365234 L 12.1\
+81641 18.408203 \
+C 12.175641 18.5\
+00803 12.237934 \
+18.591234 12.333\
+984 18.615234 L \
+13.863281 18.994\
+141 C 13.959281 \
+19.018141 14.055\
+217 18.965389 14\
+.091797 18.88085\
+9 L 14.474609 17\
+.908203 C 14.730\
+679 17.869403 14\
+.975774 17.79619\
+9 15.208984 17.6\
+93359 L 16.07226\
+6 18.3125 C 16.1\
+51066 18.3662 16\
+.256769 18.35680\
+9 16.324219 18.2\
+87109 L 17.40234\
+4 17.158203 C 17\
+.469744 17.08740\
+3 17.473463 16.9\
+80857 17.414062 \
+16.904297 L 16.7\
+53906 16.072266 \
+C 16.798506 15.9\
+54576 16.839421 \
+15.832721 16.869\
+141 15.707031 C \
+16.898841 15.581\
+331 16.917086 15\
+.454628 16.92968\
+8 15.330078 L 17\
+.888672 14.90039\
+1 C 17.975472 14\
+.861491 18.01962\
+8 14.765912 17.9\
+92188 14.669922 \
+L 17.539062 13.1\
+62109 C 17.51046\
+4 13.069509 17.4\
+19912 13.010867 \
+17.326172 13.023\
+438 L 16.28125 1\
+3.167969 C 16.12\
+006 12.969139 15\
+.934959 12.79017\
+6 15.724609 12.6\
+34766 L 15.81835\
+9 11.589844 C 15\
+.823359 11.49614\
+4 15.762096 11.4\
+07626 15.666016 \
+11.384766 L 14.1\
+34766 11.005859 \
+z M 14 13 A 2 2 \
+0 0 1 16 15 A 2 \
+2 0 0 1 14 17 A \
+2 2 0 0 1 12 15 \
+A 2 2 0 0 1 14 1\
+3 z \x22\x0a       cla\
+ss=\x22ColorScheme-\
+Text\x22 />\x0a</svg>\x0a\
+\
+\x00\x00\x02\xf8\
+<\
+svg id=\x22svg6\x22 ve\
+rsion=\x221.1\x22 view\
+Box=\x220 0 22 22\x22 \
+xmlns=\x22http://ww\
+w.w3.org/2000/sv\
+g\x22>\x0a    <defs id\
+=\x22defs3051\x22>\x0a   \
+ <style type=\x22te\
+xt/css\x22 id=\x22curr\
+ent-color-scheme\
+\x22>\x0a        .Colo\
+rScheme-Text {  \
+          color:\
+#232629;        \
+}\x0a    </style>\x0a \
+   </defs>\x0a    <\
+path id=\x22path347\
+\x22 d=\x22m3 3v6h0.26\
+95312 1.0332032 \
+4.6972656l-2.939\
+4531-2.9394531a7\
+ 7 0 0 1 4.93945\
+31-2.0605469 7 7\
+ 0 0 1 7 7 7 7 0\
+ 0 1-7 7 7 7 0 0\
+ 1-7-7h-1a8 8 0 \
+0 0 8 8 8 8 0 0 \
+0 4.892578-1.693\
+359l3.400391 3.4\
+0039a1 1 0 0 0 1\
+.414062 0 1 1 0 \
+0 0 0-1.414062l-\
+3.40039-3.400391\
+a8 8 0 0 0 1.693\
+359-4.892578 8 8\
+ 0 0 0-8-8 8 8 0\
+ 0 0-5.6347656 2\
+.3652344l-2.3652\
+344-2.3652344z\x22 \
+class=\x22ColorSche\
+me-Text\x22 fill=\x22c\
+urrentColor\x22 str\
+oke-linecap=\x22squ\
+are\x22 stroke-widt\
+h=\x222\x22 style=\x22pai\
+nt-order:markers\
+ stroke fill\x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x01s\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-Accent {\x0a  \
+          color:\
+#3daee9;\x0a       \
+ }\x0a    </style>\x0a\
+    <rect class=\
+\x22ColorScheme-Acc\
+ent\x22 x=\x223\x22 y=\x223\x22\
+ width=\x2216\x22 heig\
+ht=\x2216\x22 rx=\x222\x22 f\
+ill=\x22currentColo\
+r\x22/>\x0a    <path d\
+=\x22m10 6v2h2v-2zm\
+0 4v6h2v-6z\x22 fil\
+l=\x22#fff\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x04\x9b\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 2 2.998046\
+9 L 2 3 L 2 4 L \
+2 19 L 3 19 L 11\
+ 19 L 11 18 L 6 \
+18 L 6 12 L 11 1\
+2 L 11 11 L 6 11\
+ L 5 11 L 5 18 L\
+ 3 18 L 3 4 L 6 \
+4 L 6 8 L 6 9 L \
+14 9 L 14 8 L 14\
+ 4 L 14.292969 4\
+ L 17 6.7070312 \
+L 17 7 L 17 10 L\
+ 18 10 L 18 7 L \
+18 6.3007812 L 1\
+7.992188 6.30078\
+12 L 18 6.291015\
+6 L 14.707031 2.\
+9980469 L 14.699\
+219 3.0078125 L \
+14.699219 2.9980\
+469 L 14 2.99804\
+69 L 2 2.9980469\
+ z M 7 4 L 10.90\
+0391 4 L 10.9003\
+91 8 L 7 8 L 7 4\
+ z M 18 11 L 17.\
+003906 11.994141\
+ L 17 11.994141 \
+L 12 16.992188 L\
+ 12.007812 17.00\
+1953 L 12.003906\
+ 18.005859 L 12 \
+18.005859 L 12 1\
+8.996094 L 12 19\
+.005859 L 14 19.\
+005859 L 14.0058\
+59 18.996094 L 1\
+4.009766 18.9960\
+94 L 14.019531 1\
+8.996094 L 14.01\
+3672 18.986328 L\
+ 15 18 L 19 14.0\
+03906 L 18.29492\
+2 13.294922 L 13\
+.304688 18.28125\
+ L 12.710938 17.\
+689453 L 17.7031\
+25 12.701172 L 1\
+8.294922 13.2949\
+22 L 19 13.99804\
+7 L 20 12.998047\
+ L 18 11 z \x22\x0a   \
+ class=\x22ColorSch\
+eme-Text\x22\x0a    />\
+  \x0a</svg>\x0a\
+\x00\x00\x03\x22\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 19 5 L 9.66796\
+88 5.0058594 L 6\
+.5 14.5 L 4.3339\
+844 11 L 3 11 L \
+3 12 L 4 12 L 6.\
+5 17 L 10.441406\
+ 6 L 19 6 L 19 5\
+ z M 14 8 C 11.7\
+90861 8 10 9.790\
+861 10 12 C 10 1\
+4.209139 11.7908\
+61 16 14 16 C 15\
+.149118 15.9982 \
+16.241964 15.502\
+302 17 14.638672\
+ L 17 16 L 18 16\
+ L 18 12 L 18 8 \
+L 17 8 L 17 9.36\
+13281 C 16.24196\
+4 8.4976979 15.1\
+49118 8.0017906 \
+14 8 z M 14 9 C \
+15.656854 9 17 1\
+0.343146 17 12 C\
+ 17 13.656854 15\
+.656854 15 14 15\
+ C 12.343146 15 \
+11 13.656854 11 \
+12 C 11 10.34314\
+6 12.343146 9 14\
+ 9 z \x22\x0a       cl\
+ass=\x22ColorScheme\
+-Text\x22 />\x0a</svg>\
+\x0a\
+\x00\x00\x02\xb3\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 11 3 A 8 3 0 0\
+ 0 3 6 L 3 16 A \
+8 3 0 0 0 11 19 \
+A 8 3 0 0 0 19 1\
+6 L 19 6 A 8 3 0\
+ 0 0 11 3 z M 11\
+ 4 A 7 2 0 0 1 1\
+8 6 A 7 2 0 0 1 \
+11 8 A 7 2 0 0 1\
+ 4 6 A 7 2 0 0 1\
+ 11 4 z M 18 7.4\
+5 L 18 11 A 7 2 \
+0 0 1 11 13 A 7 \
+2 0 0 1 4 11 L 4\
+ 7.45 A 8 3 0 0 \
+0 11 9 A 8 3 0 0\
+ 0 18 7.45 z M 1\
+8 12.45 L 18 16 \
+A 7 2 0 0 1 11 1\
+8 A 7 2 0 0 1 4 \
+16 L 4 12.45 A 8\
+ 3 0 0 0 11 14 A\
+ 8 3 0 0 0 18 12\
+.45 z \x22\x0a       c\
+lass=\x22ColorSchem\
+e-Text\x22 />\x0a</svg\
+>\x0a\
+\x00\x00\x02]\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 4 3 L 4 17\
+ L 3 17 L 3 18 L\
+ 4 18 L 4 19 L 5\
+ 19 L 5 18 L 19 \
+18 L 19 17 L 18 \
+17 L 18 16 L 17 \
+16 L 16 16 L 16 \
+15 L 15 15 L 14 \
+15 L 14 14 L 13 \
+14 L 13 15 L 12 \
+15 L 12 14 L 11 \
+14 L 11 7 L 10 7\
+ L 10 3 L 9 3 L \
+9 5 L 8 5 L 8 8 \
+L 7 8 L 7 10 L 6\
+ 10 L 6 13 L 5 1\
+3 L 5 3 L 4 3 z \
+\x22\x0a\x09class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a</svg>\x0a\
+\x00\x00\x04&\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 11 6 A 10 \
+9.999975 0 0 0 2\
+.3144531 11.0703\
+12 C 2.4995621 1\
+1.361743 2.76008\
+02 11.597238 3.0\
+664062 11.759766\
+ A 9 8.999978 0 \
+0 1 11 7 A 4 4 0\
+ 0 0 7 11 A 4 4 \
+0 0 0 11 15 A 4 \
+4 0 0 0 15 11 A \
+4 4 0 0 0 11.343\
+75 7.0175781 A 9\
+ 8.999978 0 0 1 \
+18.931641 11.761\
+719 C 19.241063 \
+11.598077 19.503\
+624 11.359298 19\
+.689453 11.06445\
+3 A 10 9.999975 \
+0 0 0 11 6 z M 1\
+1 8 A 3 3 0 0 1 \
+14 11 A 3 3 0 0 \
+1 11 14 A 3 3 0 \
+0 1 8 11 A 3 3 0\
+ 0 1 11 8 z M 11\
+ 9 C 9.892 9 9 9\
+.892 9 11 C 9 12\
+.108 9.892 13 11\
+ 13 C 12.108 13 \
+13 12.108 13 11 \
+C 13 10.79519 12\
+.960983 10.60179\
+5 12.904297 10.4\
+16016 C 12.74641\
+5 10.759733 12.4\
+04317 11 12 11 C\
+ 11.446 11 11 10\
+.554 11 10 C 11 \
+9.595683 11.2402\
+67 9.2535881 11.\
+583984 9.0957031\
+ C 11.398205 9.0\
+390231 11.20481 \
+9 11 9 z \x22\x0a\x09clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a    />  \x0a</\
+svg>\x0a\
+\x00\x00\x02q\
+<\
+svg id=\x22svg6\x22 ve\
+rsion=\x221.1\x22 view\
+Box=\x220 0 22 22\x22 \
+xmlns=\x22http://ww\
+w.w3.org/2000/sv\
+g\x22>\x0a    <style i\
+d=\x22current-color\
+-scheme\x22 type=\x22t\
+ext/css\x22>.ColorS\
+cheme-Text {\x0a   \
+         color:#\
+232629;\x0a        \
+}</style>\x0a    <p\
+ath id=\x22path4\x22 c\
+lass=\x22ColorSchem\
+e-Text\x22 d=\x22m9.30\
+0781 3-3.5 3.5 3\
+.5 3.5 0.707031-\
+0.707031-2.29296\
+9-2.292969h3.785\
+154c3.047 0 5.5 \
+2.453 5.5 5.5s-2\
+.453 5.5-5.5 5.5\
+h-1.5v1h1.5c3.60\
+1 0 6.5-2.899 6.\
+5-6.5s-2.899-6.5\
+-6.5-6.5h-3.7851\
+54l2.292969-2.29\
+2969-0.707031-0.\
+707031\x22 fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  <rect id=\x22rect\
+837\x22 class=\x22Colo\
+rScheme-Text\x22 x=\
+\x224\x22 y=\x223\x22 width=\
+\x221\x22 height=\x227\x22 f\
+ill=\x22currentColo\
+r\x22 fill-rule=\x22ev\
+enodd\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02:\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle\x0a        typ\
+e=\x22text/css\x22\x0a   \
+     id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <path \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ d=\x22M 3.6992188 \
+3 L 3 3.6992188 \
+L 10.300781 11 L\
+ 3 18.300781 C 3\
+ 18.300781 3.711\
+2147 18.993333 3\
+.6992188 19 L 11\
+ 11.699219 L 18.\
+300781 19 C 18.2\
+88781 18.9933 19\
+ 18.300781 19 18\
+.300781 L 11.699\
+219 11.001953 L \
+19 3.6992188 L 1\
+8.300781 3 L 11 \
+10.300781 L 3.69\
+92188 3 z \x22 fill\
+=\x22currentColor\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x02\x19\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+7 L 7 17 L 7 19 \
+L 17 19 L 17 10 \
+L 13 6 L 12 6 L \
+9 3 L 3 3 Z M 4 \
+4 L 8 4 L 8 6 L \
+7 6 L 7 16 L 4 1\
+6 L 4 4 Z M 8 7 \
+L 12 7 L 12 11 L\
+ 16 11 L 16 18 L\
+ 8 18 L 8 7 Z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x02S\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 4 3 L 4 19\
+ L 9 19 L 9 18 L\
+ 5 18 L 5 4 L 13\
+ 4 L 13 8 L 17 8\
+ L 17 11 L 18 11\
+ L 18 7 L 14 3 L\
+ 14 3 L 14 3 L 5\
+ 3 L 4 3 z M 10 \
+12 L 10 19 L 18 \
+19 L 18 13 L 15 \
+13 L 14 12 L 14 \
+12 L 14 12 L 10 \
+12 z M 13.1 14 L\
+ 17 14 L 17 18 L\
+ 11 18 L 11 15 L\
+ 12 15 L 13.1 14\
+ z \x22\x0a    class=\x22\
+ColorScheme-Text\
+\x22\x0a    />  \x0a</svg\
+>\x0a\
+\x00\x00\x04\xd0\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0d\x0a  <\
+defs id=\x22defs305\
+1\x22>\x0d\x0a    <style \
+type=\x22text/css\x22 \
+id=\x22current-colo\
+r-scheme\x22>\x0d\x0a    \
+  .ColorScheme-T\
+ext {\x0d\x0a        c\
+olor:#232629;\x0d\x0a \
+     }\x0d\x0a      </\
+style>\x0d\x0a  </defs\
+>\x0d\x0a <path \x0d\x0a    \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0d\x0a\x09d=\x22m7.01\
+172 3c-.57735 1-\
+.878131 1-.30078\
+1 2l3.541016 6.1\
+40625-2.058594 3\
+.527344c-.445257\
+-.411453-1.03649\
+8-.667969-1.6933\
+59-.667969-1.385\
+ 0-2.5 1.115-2.5\
+ 2.5 0 1.385 1.1\
+15 2.5 2.5 2.5 1\
+.385 0 2.5-1.115\
+ 2.5-2.5 0-.1671\
+03-.01785-.33052\
+3-.048828-.48828\
+1l1.162109-2.013\
+67c.780419-.001.\
+878798-.774603 1\
+.333985-.785156l\
+1.603515 2.78125\
+c-.033193.163037\
+-.050781.332734-\
+.050781.505859 0\
+ 1.385 1.115 2.5\
+ 2.5 2.5 1.385 0\
+ 2.5-1.115 2.5-2\
+.5 0-1.385-1.115\
+-2.5-2.5-2.5-.65\
+3333 0-1.241072.\
+254586-1.685547.\
+662109l-2.054687\
+-3.521484 3.5410\
+15-6.140625c.577\
+35-1 .276569-1-.\
+300781-2l-3.9941\
+41 6.847656-3.99\
+414-6.847656m3.9\
+88281 8c.277 0 .\
+5.223.5.5 0 .277\
+-.223.5-.5.5-.27\
+7 0-.5-.223-.5-.\
+5 0-.277.223-.5.\
+5-.5zm-4.5 4c.83\
+1 0 1.5.669 1.5 \
+1.5 0 .831-.669 \
+1.5-1.5 1.5-.831\
+ 0-1.5-.669-1.5-\
+1.5 0-.831.669-1\
+.5 1.5-1.5m9 0c.\
+831 0 1.5.669 1.\
+5 1.5 0 .831-.66\
+9 1.5-1.5 1.5-.8\
+31 0-1.5-.669-1.\
+5-1.5 0-.831.669\
+-1.5 1.5-1.5\x22\x0d\x0a \
+   class=\x22ColorS\
+cheme-Text\x22\x0d\x0a   \
+ />  \x0d\x0a</svg>\x0d\x0a\
+\x00\x00\x02\xac\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 5 3 L 4 4 \
+L 4 5 L 4 5.3046\
+875 L 9 12.36718\
+8 L 9 16 L 9 16.\
+039062 L 12.9902\
+34 19 L 13 19 L \
+13 12.367188 L 1\
+8 5.3046875 L 18\
+ 4 L 17 3 L 5 3 \
+z M 5 4 L 17 4 L\
+ 17 4.9882812 L \
+12.035156 12 L 1\
+2 12 L 12 12.048\
+828 L 12 13 L 12\
+ 17.019531 L 10 \
+15.535156 L 10 1\
+3 L 10 12.048828\
+ L 10 12 L 9.964\
+8438 12 L 5 4.98\
+82812 L 5 4 z M \
+6 5 L 8 8 L 8 6 \
+L 10 5 L 6 5 z \x22\
+\x0a\x09class=\x22ColorSc\
+heme-Text\x22\x0a    /\
+>  \x0a</svg>\x0a\
+\x00\x00\x04\xf1\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 4 3 L 4 9 L 4\
+ 10 L 4 15 L 4 1\
+6 L 4 17 L 3 17 \
+L 3 18 L 4 18 L \
+4 19 L 5 19 L 5 \
+18 L 18.292969 1\
+8 L 19 18 L 19 1\
+7.292969 L 19 17\
+ L 18.707031 17 \
+L 17.292969 17 L\
+ 5 17 L 5 15.431\
+641 L 5 15.42382\
+8 L 5 15 L 5 12.\
+423828 L 5 11.42\
+3828 L 5 11 L 5 \
+10 L 5 9 L 5 6 L\
+ 5 5.9921875 L 5\
+ 5 L 5 3 L 4 3 z\
+ M 17 3 L 17 4 L\
+ 18 4 L 18 3 L 1\
+7 3 z M 18 4 L 1\
+8 5 L 19 5 L 19 \
+4 L 18 4 z M 18 \
+5 L 17 5 L 17 6 \
+L 18 6 L 18 5 z \
+M 17 5 L 17 4 L \
+16 4 L 16 5 L 17\
+ 5 z M 6 4 L 6 5\
+ L 7 5 L 7 4 L 6\
+ 4 z M 8 4 L 8 5\
+ L 9 5 L 9 4 L 8\
+ 4 z M 6 6 L 6 7\
+ L 7 7 L 7 6 L 6\
+ 6 z M 8 6 L 8 7\
+ L 9 7 L 9 6 L 8\
+ 6 z M 11 7 L 11\
+ 8 L 12 8 L 12 7\
+ L 11 7 z M 13 7\
+ L 13 8 L 14 8 L\
+ 14 7 L 13 7 z M\
+ 11 9 L 11 10 L \
+12 10 L 12 9 L 1\
+1 9 z M 13 9 L 1\
+3 10 L 14 10 L 1\
+4 9 L 13 9 z M 7\
+ 13 L 7 14 L 8 1\
+4 L 8 13 L 7 13 \
+z M 8 14 L 8 15 \
+L 9 15 L 9 14 L \
+8 14 z M 8 15 L \
+7 15 L 7 16 L 8 \
+16 L 8 15 z M 7 \
+15 L 7 14 L 6 14\
+ L 6 15 L 7 15 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a</svg>\x0a\
+\
+\x00\x00\x02`\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 7 3 L 7 \
+5 L 5 5 L 4 5 L \
+4 19 L 5 19 L 18\
+ 19 L 18 18 L 18\
+ 5 L 17 5 L 15 5\
+ L 15 3 L 7 3 z \
+M 5 6 L 6 6 L 6 \
+8 L 16 8 L 16 6 \
+L 17 6 L 17 18 L\
+ 5 18 L 5 6 z M \
+7 9 L 7 10 L 15 \
+10 L 15 9 L 7 9 \
+z M 7 12 L 7 13 \
+L 13 13 L 13 12 \
+L 7 12 z M 7 15 \
+L 7 16 L 10 16 L\
+ 10 15 L 7 15 z \
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a</svg>\x0a\
+\x00\x00\x02F\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 11 16 L 1\
+6.293 16 L 14 18\
+.293 L 14.707 19\
+ L 18.207 15.5 L\
+ 14.707 12 L 14 \
+12.707 L 16.293 \
+15 L 11 15 L 11 \
+16 Z M 5 18 L 5 \
+4 L 13 4 L 13 8 \
+L 17 8 L 17 13 L\
+ 18 13 L 18 7 L \
+14 3 L 4 3 L 4 1\
+9 L 13 19 L 13 1\
+8 L 5 18 Z\x22/>\x0a</\
+svg>\x0a\
+\x00\x00\x02T\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 8 3 L 8 9 \
+L 9 9 L 9 4 L 13\
+ 4 L 13 9 L 14 9\
+ L 14 3 L 13 3 L\
+ 9 3 L 8 3 z M 5\
+.7929688 10 L 5 \
+10.816406 L 11 1\
+7 L 17 10.816406\
+ L 16.207031 10 \
+L 11 15.367188 L\
+ 5.7929688 10 z \
+M 4 17 L 4 19 L \
+5 19 L 17 19 L 1\
+8 19 L 18 17 L 1\
+7 17 L 17 18 L 5\
+ 18 L 5 17 L 4 1\
+7 z \x22\x0a    class=\
+\x22ColorScheme-Tex\
+t\x22\x0a    />  \x0a</sv\
+g>\x0a\
+\x00\x00\x02\x19\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+7 L 7 17 L 7 19 \
+L 17 19 L 17 10 \
+L 13 6 L 12 6 L \
+9 3 L 3 3 Z M 4 \
+4 L 8 4 L 8 6 L \
+7 6 L 7 16 L 4 1\
+6 L 4 4 Z M 8 7 \
+L 12 7 L 12 11 L\
+ 16 11 L 16 18 L\
+ 8 18 L 8 7 Z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x01\xac\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0d\x0a  <\
+defs id=\x22defs305\
+1\x22>\x0d\x0a    <style \
+type=\x22text/css\x22 \
+id=\x22current-colo\
+r-scheme\x22>\x0d\x0a    \
+  .ColorScheme-T\
+ext {\x0d\x0a        c\
+olor:#232629;\x0d\x0a \
+     }\x0d\x0a      </\
+style>\x0d\x0a  </defs\
+>\x0d\x0a <path \x0d\x0a    \
+ style=\x22fill:cur\
+rentColor;fill-o\
+pacity:1;stroke:\
+none\x22 \x0d\x0a     d=\x22\
+m5 3v1 1h-2v3h2v\
+6h-2v3h2v2h1 13v\
+-1-14-1h-14m1 1h\
+2v14h-2v-14m3 0h\
+9v14h-9v-14\x22\x0d\x0a\x09 \
+class=\x22ColorSche\
+me-Text\x22\x0d\x0a     /\
+>\x0d\x0a</svg>\x0d\x0a\
+\x00\x00\x01\xb9\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 10 4 L 10 \
+11 L 3 11 L 3 12\
+ L 10 12 L 10 19\
+ L 11 19 L 11 12\
+ L 18 12 L 18 11\
+ L 11 11 L 11 4 \
+L 10 4 z \x22\x0a    c\
+lass=\x22ColorSchem\
+e-Text\x22\x0a    />  \
+\x0a</svg>\x0a\
+\x00\x00\x01\xd7\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <rect \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ x=\x223\x22 y=\x223\x22 wid\
+th=\x2216\x22 height=\x22\
+16\x22 rx=\x222\x22 fill=\
+\x22currentColor\x22/>\
+\x0a    <path d=\x22M \
+6.414,5 5,6.414 \
+9.586,11 5,15.58\
+6 6.414,17 11,12\
+.414 15.586,17 1\
+7,15.586 12.414,\
+11 17,6.414 15.5\
+86,5 11,9.586 Z\x22\
+ fill=\x22#fff\x22/>\x0a<\
+/svg>\x0a\
+\x00\x00\x02v\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+  d=\x22M 4 3 L 4 1\
+9 L 5 19 L 13 19\
+ L 13 18 L 5 18 \
+L 5 4 L 13 4 L 1\
+3 7 L 13 8 L 17 \
+8 L 17 14 L 18 1\
+4 L 18 8.40625 L\
+ 18 7 L 18 6.992\
+1875 L 14.007812\
+ 3 L 14 3.009765\
+6 L 14 3 L 13 3 \
+L 5 3 L 4 3 z M \
+15 14 L 15 16 L \
+13 16 L 13 17 L \
+15 17 L 15 19 L \
+16 19 L 16 17 L \
+18 17 L 18 16 L \
+16 16 L 16 14 L \
+15 14 z \x22\x0a    cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a    />\x0a</\
+svg>\x0a\
+\x00\x00\x01p\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:#da4453\x22\
+\x0a       d=\x22M 10 \
+4 L 10 14 L 12 1\
+4 L 12 4 L 10 4 \
+z M 10 16 L 10 1\
+8 L 12 18 L 12 1\
+6 L 10 16 z \x22\x0a  \
+     />\x0a</svg>\x0a\
+\x00\x00\x05\x1a\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 4 3 L 4 9 L 4\
+ 10 L 4 15 L 4 1\
+6 L 4 17 L 3 17 \
+L 3 18 L 4 18 L \
+4 19 L 5 19 L 5 \
+18 L 19 18 L 19 \
+17 L 5 17 L 5 16\
+ L 5.0078125 16 \
+L 6 16 L 8 16 L \
+8 15.992188 L 8.\
+0078125 16 L 10.\
+007812 14 L 11.5\
+99609 14 L 13.59\
+9609 16 L 17.099\
+609 16 L 19 16 L\
+ 19 15 L 17.0996\
+09 15 L 14.01367\
+2 15 L 12.013672\
+ 13 L 12 13 L 11\
+.007812 13 L 10.\
+599609 13 L 9.59\
+375 13 L 7.59375\
+ 15 L 6 15 L 5.0\
+078125 15 L 5 15\
+ L 5 12 L 5 11 L\
+ 5 10 L 6 10 L 7\
+ 10 L 8.8730469 \
+10 L 8.875 10 L \
+10.875 8 L 11.70\
+3125 7.171875 L \
+12.998047 5.8769\
+531 L 15.121094 \
+8 L 15.126953 7.\
+9960938 L 15.130\
+859 8 L 17.13085\
+9 6 L 17.958984 \
+5.171875 L 19 4.\
+1308594 L 18.292\
+969 3.4238281 L \
+17.251953 4.4648\
+438 L 16.423828 \
+5.2929688 L 15.1\
+26953 6.5898438 \
+L 13 4.4648438 L\
+ 12.998047 4.466\
+7969 L 12.996094\
+ 4.4648438 L 11.\
+46875 5.9921875 \
+L 5 5.9921875 L \
+5 5 L 5 3 L 4 3 \
+z M 5 6 L 11.460\
+938 6 L 10.99609\
+4 6.4648438 L 10\
+.167969 7.292968\
+8 L 8.4609375 9 \
+L 7 9 L 6 9 L 5 \
+9 L 5 6 z \x22\x0a    \
+ class=\x22ColorSch\
+eme-Text\x22\x0a     /\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xa5\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+9 L 4 10 L 4 15 \
+L 4 16 L 4 17 L \
+3 17 L 3 18 L 4 \
+18 L 4 19 L 5 19\
+ L 5 18 L 19 18 \
+L 19 17 L 16 17 \
+L 16 8 L 15 8 L \
+12 8 L 12 17 L 1\
+0 17 L 10 7 L 10\
+ 4 L 10 3 L 6 3 \
+L 6 17 L 5 17 L \
+5 16 L 5 15 L 5 \
+12 L 5 11 L 5 10\
+ L 5 9 L 5 6 L 5\
+ 5.9921875 L 5 5\
+ L 5 3 L 4 3 z M\
+ 7 4 L 9 4 L 9 1\
+7 L 7 17 L 7 4 z\
+ M 13 9 L 15 9 L\
+ 15 17 L 13 17 L\
+ 13 9 z \x22\x0a\x09 clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a     />\x0a</s\
+vg>\x0a\
+\x00\x00\x04\xf1\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -44,72 +2391,72 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 7.5 3 C 5.5\
-67 3 4 4.7909 4 \
-7 L 4 8 L 4 10 C\
- 4 12.2091 5.567\
- 14 7.5 14 C 9.4\
-33 14 11 12.2091\
- 11 10 L 11 8 L \
-11 7 C 11 4.7909\
- 9.433 3 7.5 3 z\
- M 15.5 3 C 13.5\
-67 3 12 4.7909 1\
-2 7 L 12 8 L 12 \
-10 C 12 12.2091 \
-13.567 14 15.5 1\
-4 C 17.433 14 19\
- 12.2091 19 10 L\
- 19 8 L 19 7 C 1\
-9 4.7909 17.433 \
-3 15.5 3 z M 7.5\
- 4 C 8.88071 4 1\
-0 5.3432 10 7 L \
-10 10 C 10 11.65\
-69 8.88071 13 7.\
-5 13 C 6.11929 1\
-3 5 11.6569 5 10\
- L 5 7 C 5 5.343\
-2 6.11929 4 7.5 \
-4 z M 15.5 4 C 1\
-6.88071 4 18 5.3\
-431 18 7 L 18 10\
- C 18 11.6569 16\
-.88071 13 15.5 1\
-3 C 14.11929 13 \
-13 11.6569 13 10\
- L 13 7 C 13 5.3\
-431 14.11929 4 1\
-5.5 4 z M 3 13 L\
- 3 14 L 4 14 L 4\
- 13 L 3 13 z \x22 c\
-lass=\x22ColorSchem\
-e-Text\x22/>\x0a    <p\
-ath style=\x22fill:\
-currentColor;fil\
-l-opacity:1;stro\
-ke:none\x22 d=\x22M 15\
- 15 L 15 17 L 13\
- 17 L 13 18 L 15\
- 18 L 15 20 L 16\
- 20 L 16 18 L 18\
- 18 L 18 17 L 16\
- 17 L 16 15 L 15\
- 15 z \x22 class=\x22C\
-olorScheme-Highl\
-ight\x22/>\x0a  </g>\x0a<\
-/svg>\x0a\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 7.5 3 C 5.567 \
+3 4 4.7909 4 7 L\
+ 4 8 L 4 10 C 4 \
+12.2091 5.567 14\
+ 7.5 14 C 9.433 \
+14 11 12.2091 11\
+ 10 L 11 8 L 11 \
+7 C 11 4.7909 9.\
+433 3 7.5 3 z M \
+15.5 3 C 13.567 \
+3 12 4.7909 12 7\
+ L 12 8 L 12 10 \
+C 12 12.2091 13.\
+567 14 15.5 14 C\
+ 17.433 14 19 12\
+.2091 19 10 L 19\
+ 8 L 19 7 C 19 4\
+.7909 17.433 3 1\
+5.5 3 z M 7.5 4 \
+C 8.88071 4 10 5\
+.3432 10 7 L 10 \
+10 C 10 11.6569 \
+8.88071 13 7.5 1\
+3 C 6.11929 13 5\
+ 11.6569 5 10 L \
+5 7 C 5 5.3432 6\
+.11929 4 7.5 4 z\
+ M 15.5 4 C 16.8\
+8071 4 18 5.3431\
+ 18 7 L 18 10 C \
+18 11.6569 16.88\
+071 13 15.5 13 C\
+ 14.11929 13 13 \
+11.6569 13 10 L \
+13 7 C 13 5.3431\
+ 14.11929 4 15.5\
+ 4 z M 3 13 L 3 \
+14 L 4 14 L 4 13\
+ L 3 13 z \x22 clas\
+s=\x22ColorScheme-T\
+ext\x22/>\x0a    <path\
+ style=\x22fill:cur\
+rentColor;fill-o\
+pacity:1;stroke:\
+none\x22 d=\x22M 15 15\
+ L 15 17 L 13 17\
+ L 13 18 L 15 18\
+ L 15 20 L 16 20\
+ L 16 18 L 18 18\
+ L 18 17 L 16 17\
+ L 16 15 L 15 15\
+ z \x22 class=\x22Colo\
+rScheme-Accent\x22/\
+>\x0a  </g>\x0a</svg>\x0a\
+\
 \x00\x00\x03\x08\
 <\
 svg xmlns=\x22http:\
@@ -357,97 +2704,241 @@ L 5 17 L 19 17 L\
  class=\x22ColorSch\
 eme-Text\x22/>\x0a  </\
 g>\x0a</svg>\x0a\
-\x00\x00\x02\x14\
+\x00\x00\x02b\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <defs>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+            .Col\
+orScheme-Text {\x0a\
+                \
+color:#232629;\x0a \
+           }\x0a   \
+     </style>\x0a  \
+</defs>\x0a  <g tra\
+nsform=\x22translat\
+e(1,1)\x22>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a      <path d=\
+\x22m6 6 10 10m-10 \
+0 10-10\x22 fill=\x22c\
+urrentColor\x22/>\x0a \
+     <path d=\x22M \
+6,5.1523437 5.15\
+23437,6 10.15234\
+4,11 5.1523437,1\
+6 6,16.847656 l \
+5,-5 5,5 L 16.84\
+7656,16 l -5,-5 \
+5,-5 L 16,5.1523\
+437 11,10.152344\
+ Z\x22 fill=\x22curren\
+tColor\x22/>\x0a    </\
+g>\x0a  </g>\x0a</svg>\
+\x0a\
+\x00\x00\x04\x89\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
 0/svg\x22 viewBox=\x22\
 0 0 24 24\x22 width\
 =\x2224\x22 height=\x2224\
-\x22>\x0a  <style type\
-=\x22text/css\x22 id=\x22\
-current-color-sc\
-heme\x22>\x0a        .\
-ColorScheme-Nega\
-tiveText {\x0a     \
-       color:#da\
-4453;\x0a        }\x0a\
-    </style>\x0a  <\
-g transform=\x22tra\
-nslate(1,1)\x22>\x0a  \
-  <path d=\x22M11 3\
-a8 8 0 0 0-8 8 8\
- 8 0 0 0 8 8 8 8\
- 0 0 0 8-8 8 8 0\
- 0 0-8-8M7.707 7\
-L11 10.294l3.293\
--3.293.707.707-3\
-.293 3.293L15 14\
-.294l-.707.707L1\
-1 11.708l-3.293 \
-3.293L7 14.294l3\
-.293-3.293L7 7.7\
-08l.707-.707\x22 cl\
-ass=\x22ColorScheme\
--NegativeText\x22 f\
-ill=\x22currentColo\
-r\x22/>\x0a  </g>\x0a</sv\
-g>\x0a\
-\x00\x00\x03H\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 9.9101562\
+ 4 L 6.5957031 1\
+3.59375 L 6.4726\
+562 14 L 5 18 L \
+6.6582031 18 L 8\
+.2832031 13.5625\
+ L 13.716797 13.\
+5625 L 15.341797\
+ 18 L 17 18 L 15\
+.527344 14 L 15.\
+404297 13.59375 \
+L 12.089844 4 L \
+11.875 4 L 10.12\
+5 4 L 9.9101562 \
+4 z M 11.015625 \
+5.9375 L 13.1953\
+12 12.28125 L 8.\
+8046875 12.28125\
+ L 11.015625 5.9\
+375 z \x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 18 3 C 17\
+.44771 3 17 3.44\
+77 17 4 C 17 4.5\
+523 17.44771 5 1\
+8 5 C 18.55228 5\
+ 19 4.5523 19 4 \
+C 19 3.4477 18.5\
+5228 3 18 3 z M \
+18 7 C 17.44771 \
+7 17 7.4477 17 8\
+ C 17 8.5523 17.\
+44771 9 18 9 C 1\
+8.55228 9 19 8.5\
+523 19 8 C 19 7.\
+4477 18.55228 7 \
+18 7 z M 18 11 C\
+ 17.44771 11 17 \
+11.4477 17 12 C \
+17 12.5523 17.44\
+771 13 18 13 C 1\
+8.55228 13 19 12\
+.5523 19 12 C 19\
+ 11.4477 18.5522\
+8 11 18 11 z \x22 c\
+lass=\x22ColorSchem\
+e-Text\x22/>\x0a  </g>\
+\x0a</svg>\x0a\
+\x00\x00\x03J\
 (\
-\xb5/\xfd`\x1c\x0e\xf5\x19\x00\xc6\xa4l# m\xf5\
-\xc9\x0f\xdd@\xe5\x13\xea\xf7\xc9\x0fM\x00L\xe1\xbb\x5c\
-\x94{$\x9c|\x92\x92\xaekp\xa2\x05\x08\x87`\x11\
-h\x00b\x00^\x00\x14\xb1\x1d\xb1\x9f9\xbevrc\
-7^\x9f\xf3\xc5w\xdf\xe8?\x969\xb0\xe6\x91\x96\x0d\
-p\x80\xc0TM\xb0f\x9a$h\x1d\x97\x13\xb1\xa0\xfa\
-0\xbb\x00\x06\x97#\x92\xaa\x835\x8e\xeb\x91$\xcb\x16\
-_^f\xcd\x84B\x90T\x89b\x992\xe7l\x09\x88\
-4M\x0a\x98\xc2\xcc\xaeD\x15\xe5\x9e\xc4I$\x12E\
-)\x88\x5c\x97\x835\x16dzL6\xa2\xb0\x98\xac0\
-\xaf)\xf4~\xa6\xff@\xc9P\x84\x0f\x85\x1e\xe6\xfd\x1c\
-W\x0b\x82(\x851S\xda4\x805\x155Q\xb4m\
-\x84\xba\xacjE@\x1e*u\x22\x10U\xb5\xacK\x82\
-DD\xcf.\xa1[|\x99\xcc\xe7\xef\x9eC\xd6t\xc5\
-\xb2wA\xaa\xf48UC\xe5\xd4\xd6\x1a\xa3[\xb7\xd8\
-\xcbK\x7fJ7\x1f\xdc\xb7\xb4\x84\xeeyY<\x85\x05\
-\xdem\xffI\xe7m\xe5\xf2\xf2\xc6\xff\xc5]\x0bL\xa4\
-\xear\x1e\x03M\xd0\x02\xf5r&\xd6<*\x0a\xb2 \
-Num\xc4(Le\x7f\xb1\xd6\xe6\xf7\x95zmY\
-\xe9R;\xc2\x86\xd5\xe7k\x87B\xd0/\x0e|\xcf\x9b\
-\x8d\x96\x0e?\xads\xd2\xda\x90\xec\x0d\xfa|s\xd3\x97\
-\x8ewC\xc2'\xd2\x7f\xfa\x91\xf2\xfb\xab/\x1e\x00\x06\
-\x11\x85\xa50\x0d\x0c\x8b\x05\x86\x82t7\xfd\xf7\xd9\xb5\
-l\x87\xd1I)\xb7'toq\xee\xedn\xbb\xbc\xbf\
-;\x86/\x01aq\xc0\x98U\xbd\x96w\xfd\xde9\xec\
-\xb6\xb0\x8aK\xa2\x22\x85\xf9\x85\xdc\x95\xec\x91\xa1\xb89\
-\x97\xfd\xb7\x0d[D\x9a(T+G\xc1~tq\xca\
-}\xb1\xb5}\xf0q;^\xf9\xe2;t\xf3\x03\x80\xb0\
-\xa0\x11Mf\xa40hA\x92B\x961pFH\xa6\
-\xc8\xe4\x01r\x86\xcf\xf8\xb0\x9eX\x13\xfb\x80\xef\x06o\
-\x89M\xf3\xdaf\xd9G\x10\xd3fu\x96D_\x8c!\
-w\x82\xac\x1b\x91\x97\x13\xc6\x02\x0e\xd4=R4\x84`\
-\x0a\x86\x8a\x82\xa0#?`\x80_\x01\x8e\xf7y\xb2\xf6\
-\xf6\x88\xd2\xa9\x8a\x22K(\xb6e\x90c\x8c\x22\xb3\x22\
-B\xc8$\xae}?)[\xe0\x9c\x15Yu\xb9o\xd4\
-+\x08u\x8f\xc2\xbb\xe3\xe8y\x0a\xc7\x5c\xa6\x95?\x22\
-\x06V\x0d\x09}\xcb\x84\x8a0p\xd0\x1e\x96\xe0\x12\x13\
-\xfdB\xd3\xda\x0e\x16\x1cEL7\xc2k\xc4\x06\x18<\
-\x08|\x0e\x9b\x03\x97Y\x93\xe9\x1a\xc0\x96\x09\xd9*g\
-\xcf\x07\xa6\xbc\x0cys\x03\xb4\x0e\xe0\xf1(PV\xc9\
-\xbb\x95\xd6C\x0b0\xf5\x81\x8f\xeb:: )\x19@\
-\x1e\xd4\xb6\x00&\x22P\x22\xa7\x03\x16\x06\xd6\xc1\x1d\xf5\
-\x86m\xc4\xa7\xa2\xd7\xdb-1\xd5\x1b\x98m\x09\xd84\
-jr\x15`\x9a\xe5\x18E\x04\x18\xf8\x22\x04-&\xc0\
-t\x9a\xfb4G\xcaT\xaf\xbc\xcdHW\x82\x99\x16&\
-\xb59\xb0\x90\x98d\x92=\x0c\xb9e\x0c?\x80\x16\x1b\
-\xa7\x22\x19^\xa3\xc89h*\xe4\xceE\x19\x12\x02\xb3\
-\xaa\xbc\xb8\x0a\xe4\xcd\x84P\xb6k\x19\xf8\xecr\xd3@\
-\xc1\x09k\x05\xb0?\xc0$\x00\x81\x066\x17\xa6\xcc\x17\
-J\x06D*\x8e7\x16\x1d\x80\xbb\x87\x0e\x90w\xe0\x87\
-\xf90 `\xf2\x8d\x96=\x955k(\xfb\x03\x1f\x00\
-\xbac\x80\x02\x9a\x0f\xbd\xcf\xd8X}\x11(\xecu&\
-4#\x18\xb7\x02\x88*\
+\xb5/\xfd`\x1c\x0e\x05\x1a\x00\xc6$m\x1f \x93\x1e\
+\xbf\x99&6J\xd9\x9d\xac\xd4\x22\xc8\xcc\x8cl\x8a\x1b\
+\xae\x94l\xf8\x9a\xc1\xe42 T\x00`i\x00d\x00\
+`\x00\x9e\xea\x97\xea\x1fc\x9d\x0emW\x7f\xb1\xe5\xbd\
+\xb3>\xfc\x87?\xd3\xee\xe1\xa6\xeaj7\x88\x01\x01\x96\
+u\xdc\x84a\x97\xd5\x97\x8d\xe2hV\xae\x0c\xdd\x80\xc3\
+v\xb1\x5c\xf9\xe2\xa6\xcbV]\x9fv\x92\xec\xd8\xd1M\
+\xa0M\xe2\x93/O\xbb\xe8\xde\xeb\x18\xcd\x85\x81\x0a.\
+\x8a1\xca\xc8\x92m\xe0\xfc\xc0\xcf\xe7\x13E\x05\xce\xb6\
+]\xdc\xa4i\xb0\x0c\xa8-\x1e\xcd\x1012L\xc7T\
+\xfaG\xfc\x15\xb5\xd1\xaa\xb4\xc2V\xe5\xa4O\xb8e\xcd\
+\xb26\x91\x8b\x11c\xc7\x017e\x1bl\x83_s6\
+\x9b\x965\x8aF\x921\xc5\x99dY\xd3\xb6KC\xb1\
+|\x94\x96BIJ\xa0;\xe5\xc3)\xa9\x9b<\xd4n\
+n\x9a|UT\xe6\xc8\xa8\xfc\xde\x8b\xf8\xf3W\xbdc\
+\xe3\xbf\x16\xdeI{Jn)\xfc(Af\xe4\x02\xd2\
+_\xff\xb4P\xbe\xb6\x1d;v\xfd\x97$t\x01\xe8\xca\
+6*3p\x82\x0b\xf2Fan\xcad\x1bK\xd3P\
+\xd9\xd6\x16Cd\xc8Q\xce\x9a\xb3\xc7\xf9\x19\xcb\xec6\
+c){\xa5N\xb3\xbc\xd3)lY/QtV\xf3\
+V\xdcR\xf1q\xbe\x17\xe7\x8a\x8d\xb2\x82\xab\xf7\xe8\xf8\
+-%\xbdbiU\xf1W^Y\xfb\xfeYJ2\x80\
+\x83\xc5\xa3E\x06G\x03\xc2\x88,\xac\x84W~\x7f\x84\
+n]\xd2\x0a\xad\xb5\xed\x97\xc2)\xc9\xe8\xed\xfeZz\
+\xf9\x12F:\x15\x09\x08\x22r\xb3\xbcI\x0f}>\x94\
+\xd4\x9f\xe4B\xdb\xb5\xb1D\x86\x87\xd8n\x1be\x8dD\
+\xf0^\xa9\x7f\xb6\xd3\xc7\xb90l\xe5\xecR\xe8\xaf\xb0\
+^\xdb\xb3\xbe\xd7\x93\xce\xe80\xb6\x9d\xf5%\x85\xf7\x03\
+\x80\xb0\xa0\x11Mf\xa40hA\x92B\x961pF\
+H\xa6\xc8\xe4\x01r\x86\xcf\xf8\xb0\x9eX\x13\xfb\x80\xef\
+\x06o\x89M\xf3\xdaf\xd9G\x10\xd3fu\x96D_\
+\x8c!w\x82\xac\x1b\x91\x97\x13\xc6\x02\x0e\xd4=R4\
+\x84`\x0a\x86\x8a\x82\xa0#?`\x80_\x01\x8e\xf7y\
+\xb2\xf6\xf6\x88\xd2\xa9\x8a\x22K(\xb6e\x90c\x8c\x22\
+\xb3\x22B\xc8$\xae}?)[\xe0\x9c\x15Yu\xb9\
+o\xd4+\x08u\x8f\xc2\xbb\xe3\xe8y\x0a\xc7\x5c\xa6\x95\
+?\x22\x06V\x0d\x09}\xcb\x84\x8a0p\xd0\x1e\x96\xe0\
+\x12\x13\xfdB\xd3\xda\x0e\x16\x1cEL7\xc2k\xc4\x06\
+\x18<\x08|\x0e\x9b\x03\x97Y\x93\xe9\x1a\xc0\x96\x09\xd9\
+*g\xcf\x07\xa6\xbc\x0cys\x03\xb4\x0e\xe0\xf1(P\
+V\xc9\xbb\x95\xd6C\x0b0\xf5\x81\x8f\xeb:: )\
+\x19@\x1e\xd4\xb6\x00&\x22P\x22\xa7\x03\x16\x06\xd6\xc1\
+\x1d\xf5\x86m\xc4\xa7\xa2\xd7\xdb-1\xd5\x1b\x98m\x09\
+\xd84jr\x15`\x9a\xe5\x18E\x04\x18\xf8\x22\x04-\
+&\xc0t\x9a\xfb4G\xcaT\xaf\xbc\xcdHW\x82\x99\
+\x16&\xb59\xb0\x90\x98d\x92=\x0c\xb9e\x0c?\x80\
+\x16\x1b\xa7\x22\x19^\xa3\xc89h*\xe4\xceE\x19\x12\
+\x023U\x99\xd6\x0a\xec\xcd\x84P\xb6k\x19\xf8\xecr\
+\xd3@\xc1\x09k\x05\xb0?\xc0$\x00\x81\x066\x17\xa6\
+\xcc\x17J\x06D*\x8e7\x16\x1d\x80\xbb\x87\x0e\x90w\
+\xe0\x87\xf90 `\xf2\x8d\x96=\x955k(\xfb\x03\
+\x1f\x00\xbac\x80\x02\x9a\x0f\xbd\xcf\xd8X}\x11(\xec\
+u&4#\x18\xb7\x02\x88*\
+\x00\x00\x03\xd2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+9 L 19 19 L 19 3\
+ L 3 3 z M 4 4 L\
+ 18 4 L 18 18 L \
+4 18 L 4 4 z M 7\
+.5 5 C 6.115 5 5\
+ 6.115 5 7.5 C 5\
+ 8.885 6.115 10 \
+7.5 10 C 8.885 1\
+0 10 8.885 10 7.\
+5 C 10 6.115 8.8\
+85 5 7.5 5 z M 7\
+.5 6 C 8.331 6 9\
+ 6.669 9 7.5 C 9\
+ 8.331 8.331 9 7\
+.5 9 C 6.669 9 6\
+ 8.331 6 7.5 C 6\
+ 6.669 6.669 6 7\
+.5 6 z M 13.9941\
+41 10 L 10.64843\
+8 13.34375 L 9.3\
+066406 12 L 9.30\
+07812 12.007812 \
+L 9.2929688 12 L\
+ 5 16.292969 L 5\
+.7070312 17 L 9.\
+2988281 13.40820\
+3 L 9.9414062 14\
+.050781 L 10.648\
+438 14.757812 L \
+11.355469 14.050\
+781 L 14 11.4062\
+5 L 16.292969 13\
+.699219 L 17 12.\
+992188 L 14.0078\
+12 10 L 14 10.00\
+7812 L 13.994141\
+ 10 z \x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a  </g>\x0a</svg>\
+\x0a\
 \x00\x00\x03\xb9\
 <\
 svg xmlns=\x22http:\
@@ -510,6 +3001,50 @@ ty:1;stroke:none\
 lass=\x22ColorSchem\
 e-Text\x22/>\x0a  </g>\
 \x0a</svg>\x0a\
+\x00\x00\x02\x97\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Neutra\
+lText {\x0a        \
+    color:#f6740\
+0;\x0a        }\x0a   \
+ </style>\x0a  <g t\
+ransform=\x22transl\
+ate(1,1)\x22>\x0a    <\
+path class=\x22Colo\
+rScheme-NeutralT\
+ext\x22 d=\x22m11.0063\
+18 3.0000261a0.7\
+2728737 0.727271\
+54 0 0 0-0.65674\
+ 0.4021811l-7.27\
+28738 14.545431a\
+0.72728737 0.727\
+27154 0 0 0 0.65\
+09222 1.052362h1\
+4.545748a0.72728\
+737 0.72727154 0\
+ 0 0 0.650922-1.\
+052362l-7.272874\
+-14.545431a0.727\
+28737 0.72727154\
+ 0 0 0-0.645104-\
+0.4021811z\x22 fill\
+=\x22currentColor\x22/\
+>\x0a    <path d=\x22m\
+10 8v5h2v-5zm0 7\
+v2h2v-2z\x22 fill=\x22\
+#fff\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
 \x00\x00\x02G\
 <\
 svg xmlns=\x22http:\
@@ -591,7 +3126,7 @@ L 17 11.183594 L\
 ass=\x22ColorScheme\
 -Text\x22/>\x0a  </g>\x0a\
 </svg>\x0a\
-\x00\x00\x04\xcc\
+\x00\x00\x04\xc6\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -614,150 +3149,62 @@ me-Text {\x0a      \
 le=\x22fill:current\
 Color;fill-opaci\
 ty:1;stroke:none\
-\x22 d=\x22M 17.564453\
- 2.7558594 L 14.\
-298828 8.5742188\
- L 11.882812 7.1\
-386719 L 10.8613\
-28 8.8574219 L 1\
-6.511719 12.2167\
-97 L 17.533203 1\
-0.496094 L 15.15\
-8203 9.0839844 L\
- 18.435547 3.244\
-1406 L 17.564453\
- 2.7558594 z M 7\
- 6 A 1 1 0 0 0 6\
- 7 A 1 1 0 0 0 7\
- 8 A 1 1 0 0 0 8\
- 7 A 1 1 0 0 0 7\
- 6 z M 3.5 7 A 0\
-.5 0.5 0 0 0 3 7\
-.5 A 0.5 0.5 0 0\
- 0 3.5 8 A 0.5 0\
-.5 0 0 0 4 7.5 A\
- 0.5 0.5 0 0 0 3\
-.5 7 z M 5 9 A 1\
- 1 0 0 0 4 10 A \
-1 1 0 0 0 5 11 A\
- 1 1 0 0 0 6 10 \
-A 1 1 0 0 0 5 9 \
-z M 10 10 C 8.88\
-15125 11.564268 \
-6.8355055 12.810\
-894 3 13 L 3 14 \
-C 5.1137135 17.3\
-71692 8 19 12 19\
- L 13 19 C 14.31\
-1249 17.412805 1\
-5.357513 15.9676\
-19 16 14 L 16 13\
- L 11 10 L 10 10\
- z M 10.529297 1\
-1.101562 L 14.85\
-7422 13.699219 C\
- 14.284594 15.24\
-586 13.385404 16\
-.602833 12.27343\
-8 17.96875 C 8.9\
-999995 18 6.0527\
-68 16.540538 4.3\
-261719 13.830078\
- C 7.4443879 13.\
-51946 9.3457156 \
-12.545306 10.529\
-297 11.101562 z \
-\x22 class=\x22ColorSc\
-heme-Text\x22/>\x0a  <\
-/g>\x0a</svg>\x0a\
-\x00\x00\x05Z\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 18.292969\
- 3 L 3 18.292969\
- L 3.7070312 19 \
-L 19 3.7070312 L\
- 18.292969 3 z M\
- 11 6 A 10 9.999\
-9781 0 0 0 2.287\
-1094 11.119141 C\
- 2.4663699 11.42\
-0241 2.7209984 1\
-1.668644 3.02734\
-38 11.839844 A 9\
- 8.99998 0 0 1 1\
-1 7 A 4 4 0 0 0 \
-7 11 A 4 4 0 0 0\
- 7.3574219 12.64\
-2578 L 8.1308594\
- 11.869141 A 3 3\
- 0 0 1 8 11 A 3 \
-3 0 0 1 11 8 A 3\
- 3 0 0 1 11.8691\
-41 8.1308594 L 1\
-2.640625 7.35937\
-5 A 4 4 0 0 0 11\
-.34375 7.0175781\
- A 9 8.99998 0 0\
- 1 12.796875 7.2\
-03125 L 13.64062\
-5 6.359375 A 10 \
-9.9999781 0 0 0 \
-11 6 z M 16.4042\
-97 7.5957031 L 1\
-5.675781 8.32421\
-88 A 9 8.99998 0\
- 0 1 18.974609 1\
-1.837891 C 19.28\
-2742 11.665091 1\
-9.539718 11.4154\
-28 19.71875 11.1\
-11328 A 10 9.999\
-9781 0 0 0 16.40\
-4297 7.5957031 z\
- M 11 9 A 2 2 0 \
-0 0 9 11 L 11 9 \
-z M 14.642578 9.\
-3574219 L 13.869\
-141 10.130859 A \
-3 3 0 0 1 14 11 \
-A 3 3 0 0 1 11 1\
-4 A 3 3 0 0 1 10\
-.130859 13.86914\
-1 L 9.3574219 14\
-.642578 A 4 4 0 \
-0 0 11 15 A 4 4 \
-0 0 0 15 11 A 4 \
-4 0 0 0 14.64257\
-8 9.3574219 z M \
-13 11 L 11 13 A \
-2 2 0 0 0 13 11 \
-z M 1 13 C 0.333\
-33333 19 0.66666\
-667 16 1 13 z \x22 \
+\x22 d=\x22M 3 3 L 3 1\
+8 L 3 19 L 19 19\
+ L 19 18 L 19 3 \
+L 18 3 L 4 3 L 3\
+ 3 z M 4 4 L 8 4\
+ L 8 6 L 4 6 L 4\
+ 4 z M 9 4 L 13 \
+4 L 13 6 L 9 6 L\
+ 9 4 z M 14 4 L \
+18 4 L 18 6 L 15\
+ 6 L 14 6 L 14 4\
+.9003906 L 14 4 \
+z M 4 7 L 8 7 L \
+8 8 L 9 8 L 9 7 \
+L 13 7 L 13 8 L \
+14 8 L 14 7 L 15\
+ 7 L 18 7 L 18 8\
+ L 18 9 L 18 10 \
+L 18 12 L 18 13 \
+L 18 14 L 18 15 \
+L 15 15 L 14 15 \
+L 14 14 L 13 14 \
+L 13 15 L 9 15 L\
+ 9 14 L 8 14 L 8\
+ 15 L 4 15 L 4 1\
+4 L 4 13 L 4 12 \
+L 4 10 L 4 9 L 4\
+ 8 L 4 7 z M 4 1\
+6 L 7 16 L 8 16 \
+L 8 17 L 8 18 L \
+4 18 L 4 16 z M \
+9 16 L 13 16 L 1\
+3 17 L 13 18 L 9\
+ 18 L 9 17 L 9 1\
+6 z M 14 16 L 15\
+ 16 L 18 16 L 18\
+ 18 L 14 18 L 14\
+ 17 L 14 16 z \x22 \
 class=\x22ColorSche\
-me-Text\x22/>\x0a  </g\
->\x0a</svg>\x0a\
+me-Text\x22/>\x0a    <\
+path style=\x22fill\
+:#da4453\x22 d=\x22m 4\
+,14 5.29297,0 4,\
+0 4,0 L 18,14 18\
+,13.29297 18,13 \
+l -0.29297,0 -4,\
+-4 L 18,9 18,8 4\
+,8 l 0,1 0.29297\
+,0 4,4 L 4,13 4,\
+14 m 1.70703,-5 \
+2.58594,0 4,4 -2\
+.58594,0 -4,-4 m\
+ 4,0 2.58594,0 4\
+,4 -2.58594,0 -4\
+,-4\x22/>\x0a  </g>\x0a</\
+svg>\x0a\
 \x00\x00\x02\xfa\
 <\
 svg xmlns=\x22http:\
@@ -805,6 +3252,351 @@ C 5 8.108 5.892 \
  17 L 19 17 L 19\
  16 L 17 16 L 17\
  14 L 16 14 z \x22 \
+class=\x22ColorSche\
+me-Text\x22/>\x0a  </g\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xfd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+9 L 19 19 L 19 3\
+ L 3 3 z M 4 7 L\
+ 18 7 L 18 18 L \
+4 18 L 4 7 z M 6\
+ 8 L 6 12 L 10 1\
+2 L 10 8 L 6 8 z\
+ M 12 8 L 12 12 \
+L 16 12 L 16 8 L\
+ 12 8 z M 7 9 L \
+9 9 L 9 11 L 7 1\
+1 L 7 9 z M 13 9\
+ L 15 9 L 15 11 \
+L 13 11 L 13 9 z\
+ M 6 13 L 6 17 L\
+ 10 17 L 10 13 L\
+ 6 13 z M 12 13 \
+L 12 17 L 16 17 \
+L 16 13 L 12 13 \
+z M 7 14 L 9 14 \
+L 9 16 L 7 16 L \
+7 14 z M 13 14 L\
+ 15 14 L 15 16 L\
+ 13 16 L 13 14 z\
+ \x22 class=\x22ColorS\
+cheme-Text\x22/>\x0a  \
+</g>\x0a</svg>\x0a\
+\x00\x00\x01\x97\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <style type\
+=\x22text/css\x22 id=\x22\
+current-color-sc\
+heme\x22>\x0a        .\
+ColorScheme-Text\
+ {\x0a            c\
+olor:#232629;\x0a  \
+      }\x0a    </st\
+yle>\x0a  <g transf\
+orm=\x22translate(1\
+,1)\x22>\x0a    <path \
+d=\x22M3.707 4L3 4.\
+707l8 8 8-8L18.2\
+93 4 11 11.293zm\
+0 5L3 9.707l8 8 \
+8-8L18.293 9 11 \
+16.293z\x22 class=\x22\
+ColorScheme-Text\
+\x22 fill=\x22currentC\
+olor\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
+\x00\x00\x01\xd4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a       \
+ </style>\x0a  </de\
+fs>\x0a  <g transfo\
+rm=\x22translate(1,\
+1)\x22>\x0a    <path s\
+tyle=\x22fill:curre\
+ntColor;fill-opa\
+city:1;stroke:no\
+ne\x22 class=\x22Color\
+Scheme-NegativeT\
+ext\x22 d=\x22M8 3v2h1\
+V4h4v1h1V3H8M4 6\
+v1h14V6H4m2 2v11\
+h10V8h-1v10H7V8H\
+6\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x0e\x8a\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 6.97\
+07031 2.9980469 \
+C 6.8418231 2.99\
+80469 6.7379069 \
+3.0912044 6.7167\
+969 3.2089844 L \
+6.5253906 4.5332\
+031 C 6.2120906 \
+4.6609731 5.9217\
+8 4.8253906 5.65\
+625 5.0253906 L \
+4.375 4.5234375 \
+C 4.25945 4.4812\
+375 4.12695 4.52\
+30994 4.0625 4.6\
+308594 L 3.03515\
+62 6.3632812 C 2\
+.9706563 6.47105\
+12 2.9990031 6.6\
+058337 3.0957031\
+ 6.6835938 L 4.1\
+796875 7.5117188\
+ C 4.1585875 7.6\
+716988 4.1445312\
+ 7.83446 4.14453\
+12 8 C 4.1445312\
+ 8.16444 4.15968\
+75 8.3263481 4.1\
+796875 8.4863281\
+ L 3.0957031 9.3\
+144531 C 2.99790\
+31 9.3889531 2.9\
+707164 9.5247656\
+ 3.0351562 9.634\
+7656 L 4.0625 11\
+.367188 C 4.127 \
+11.474956 4.2594\
+5 11.519039 4.37\
+5 11.474609 L 5.\
+65625 10.972656 \
+C 5.92067 11.170\
+426 6.2120906 11\
+.337074 6.525390\
+6 11.464844 L 6.\
+7167969 12.78906\
+2 C 6.7378969 12\
+.906833 6.841823\
+1 13 6.9707031 1\
+3 L 9.0273438 13\
+ C 9.1562236 13 \
+9.26014 12.90684\
+3 9.28125 12.789\
+062 L 9.4726562 \
+11.464844 C 9.78\
+59763 11.337074 \
+10.076257 11.172\
+656 10.341797 10\
+.972656 L 11.621\
+094 11.474609 C \
+11.736634 11.516\
+809 11.871117 11\
+.474956 11.93554\
+7 11.367188 L 12\
+.962891 9.634765\
+6 C 13.027391 9.\
+5269956 12.99914\
+4 9.3922231 12.9\
+02344 9.3144531 \
+L 11.818359 8.48\
+63281 C 11.83945\
+9 8.3263481 11.8\
+53516 8.16554 11\
+.853516 8 C 11.8\
+53516 7.83446 11\
+.838359 7.671698\
+8 11.818359 7.51\
+17188 L 12.90429\
+7 6.6835938 C 13\
+.002097 6.609093\
+8 13.029294 6.47\
+32813 12.964844 \
+6.3632812 L 11.9\
+375 4.6308594 C \
+11.873 4.5230994\
+ 11.74055 4.4789\
+975 11.625 4.523\
+4375 L 10.34375 \
+5.0253906 C 10.0\
+7933 4.8276206 9\
+.7879094 4.66097\
+31 9.4746094 4.5\
+332031 L 9.28320\
+31 3.2089844 C 9\
+.2599031 3.09121\
+44 9.1551137 2.9\
+980469 9.0273438\
+ 2.9980469 L 6.9\
+707031 2.9980469\
+ z M 8 6 A 2 2 0\
+ 0 1 10 8 A 2 2 \
+0 0 1 8 10 A 2 2\
+ 0 0 1 6 8 A 2 2\
+ 0 0 1 8 6 z M 1\
+4.134766 11.0058\
+59 C 14.038766 1\
+0.981859 13.9447\
+83 11.033411 13.\
+908203 11.119141\
+ L 13.525391 12.\
+091797 C 13.2693\
+21 12.130697 13.\
+022273 12.203801\
+ 12.789062 12.30\
+6641 L 11.927734\
+ 11.6875 C 11.84\
+8934 11.6338 11.\
+741278 11.641236\
+ 11.673828 11.71\
+0938 L 10.597656\
+ 12.839844 C 10.\
+530256 12.909544\
+ 10.526436 13.01\
+9143 10.585938 1\
+3.095703 L 11.24\
+4141 13.925781 C\
+ 11.199541 14.04\
+3471 11.158626 1\
+4.163373 11.1289\
+06 14.289062 C 1\
+1.099206 14.4147\
+64 11.080959 14.\
+541129 11.068359\
+ 14.667969 L 10.\
+111328 15.097656\
+ C 10.024528 15.\
+136556 9.980373 \
+15.234088 10.007\
+812 15.330078 L \
+10.460938 16.835\
+938 C 10.490636 \
+16.929638 10.580\
+088 16.989133 10\
+.673828 16.97656\
+2 L 11.71875 16.\
+830078 C 11.8799\
+3 17.028908 12.0\
+65051 17.210974 \
+12.275391 17.365\
+234 L 12.181641 \
+18.408203 C 12.1\
+75641 18.500803 \
+12.237934 18.591\
+234 12.333984 18\
+.615234 L 13.863\
+281 18.994141 C \
+13.959281 19.018\
+141 14.055217 18\
+.965389 14.09179\
+7 18.880859 L 14\
+.474609 17.90820\
+3 C 14.730679 17\
+.869403 14.97577\
+4 17.796199 15.2\
+08984 17.693359 \
+L 16.072266 18.3\
+125 C 16.151066 \
+18.3662 16.25676\
+9 18.356809 16.3\
+24219 18.287109 \
+L 17.402344 17.1\
+58203 C 17.46974\
+4 17.087403 17.4\
+73463 16.980857 \
+17.414062 16.904\
+297 L 16.753906 \
+16.072266 C 16.7\
+98506 15.954576 \
+16.839421 15.832\
+721 16.869141 15\
+.707031 C 16.898\
+841 15.581331 16\
+.917086 15.45462\
+8 16.929688 15.3\
+30078 L 17.88867\
+2 14.900391 C 17\
+.975472 14.86149\
+1 18.019628 14.7\
+65912 17.992188 \
+14.669922 L 17.5\
+39062 13.162109 \
+C 17.510464 13.0\
+69509 17.419912 \
+13.010867 17.326\
+172 13.023438 L \
+16.28125 13.1679\
+69 C 16.12006 12\
+.969139 15.93495\
+9 12.790176 15.7\
+24609 12.634766 \
+L 15.818359 11.5\
+89844 C 15.82335\
+9 11.496144 15.7\
+62096 11.407626 \
+15.666016 11.384\
+766 L 14.134766 \
+11.005859 z M 14\
+ 13 A 2 2 0 0 1 \
+16 15 A 2 2 0 0 \
+1 14 17 A 2 2 0 \
+0 1 12 15 A 2 2 \
+0 0 1 14 13 z \x22 \
 class=\x22ColorSche\
 me-Text\x22/>\x0a  </g\
 >\x0a</svg>\x0a\
@@ -862,41 +3654,35 @@ width=\x222\x22 style=\
 kers stroke fill\
 \x22/>\x0a  </g>\x0a</svg\
 >\x0a\
-\x00\x00\x02\x05\
+\x00\x00\x01\xb0\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22opacity:1;fi\
-ll:currentColor;\
-fill-opacity:1;s\
-troke:none\x22 d=\x22M\
- 3,4 3,16 6,20 6\
-,17 6,16 19,16 1\
-9,4 3,4 Z M 4,5 \
-18,5 18,15 4,15 \
-4,5 Z m 6,1 0,1 \
-2,0 0,-1 -2,0 z \
-m 0,2 0,6 2,0 0,\
--6 -2,0 z\x22 class\
-=\x22ColorScheme-Te\
-xt\x22/>\x0a  </g>\x0a</s\
-vg>\x0a\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Accent\
+ {\x0a            c\
+olor:#3daee9;\x0a  \
+      }\x0a    </st\
+yle>\x0a  <g transf\
+orm=\x22translate(1\
+,1)\x22>\x0a    <rect \
+class=\x22ColorSche\
+me-Accent\x22 x=\x223\x22\
+ y=\x223\x22 width=\x2216\
+\x22 height=\x2216\x22 rx\
+=\x222\x22 fill=\x22curre\
+ntColor\x22/>\x0a    <\
+path d=\x22m10 6v2h\
+2v-2zm0 4v6h2v-6\
+z\x22 fill=\x22#fff\x22/>\
+\x0a  </g>\x0a</svg>\x0a\
 \x00\x00\x04\xc8\
 <\
 svg xmlns=\x22http:\
@@ -976,7 +3762,7 @@ L 15 18 L 19 14.\
 ass=\x22ColorScheme\
 -Text\x22/>\x0a  </g>\x0a\
 </svg>\x0a\
-\x00\x00\x03J\
+\x00\x00\x03K\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -990,95 +3776,95 @@ css\x22 id=\x22current\
 -color-scheme\x22>\x0a\
       .ColorSche\
 me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:currentC\
-olor\x22 d=\x22M 19 5 \
-L 9.6679688 5.00\
-58594 L 6.5 14.5\
- L 4.3339844 11 \
-L 3 11 L 3 12 L \
-4 12 L 6.5 17 L \
-10.441406 6 L 19\
- 6 L 19 5 z M 14\
- 8 C 11.790861 8\
- 10 9.790861 10 \
-12 C 10 14.20913\
-9 11.790861 16 1\
-4 16 C 15.149118\
- 15.9982 16.2419\
-64 15.502302 17 \
-14.638672 L 17 1\
-6 L 18 16 L 18 1\
-2 L 18 8 L 17 8 \
-L 17 9.3613281 C\
- 16.241964 8.497\
-6979 15.149118 8\
-.0017906 14 8 z \
-M 14 9 C 15.6568\
-54 9 17 10.34314\
-6 17 12 C 17 13.\
-656854 15.656854\
- 15 14 15 C 12.3\
-43146 15 11 13.6\
-56854 11 12 C 11\
- 10.343146 12.34\
-3146 9 14 9 z \x22 \
-class=\x22ColorSche\
-me-Text\x22/>\x0a  </g\
->\x0a</svg>\x0a\
-\x00\x00\x02\xdb\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:currentC\
-olor\x22 d=\x22M 11 3 \
-A 8 3 0 0 0 3 6 \
-L 3 16 A 8 3 0 0\
- 0 11 19 A 8 3 0\
- 0 0 19 16 L 19 \
-6 A 8 3 0 0 0 11\
- 3 z M 11 4 A 7 \
-2 0 0 1 18 6 A 7\
- 2 0 0 1 11 8 A \
-7 2 0 0 1 4 6 A \
-7 2 0 0 1 11 4 z\
- M 18 7.45 L 18 \
-11 A 7 2 0 0 1 1\
-1 13 A 7 2 0 0 1\
- 4 11 L 4 7.45 A\
- 8 3 0 0 0 11 9 \
-A 8 3 0 0 0 18 7\
-.45 z M 18 12.45\
- L 18 16 A 7 2 0\
- 0 1 11 18 A 7 2\
- 0 0 1 4 16 L 4 \
-12.45 A 8 3 0 0 \
-0 11 14 A 8 3 0 \
-0 0 18 12.45 z \x22\
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 19 5\
+ L 9.6679688 5.0\
+058594 L 6.5 14.\
+5 L 4.3339844 11\
+ L 3 11 L 3 12 L\
+ 4 12 L 6.5 17 L\
+ 10.441406 6 L 1\
+9 6 L 19 5 z M 1\
+4 8 C 11.790861 \
+8 10 9.790861 10\
+ 12 C 10 14.2091\
+39 11.790861 16 \
+14 16 C 15.14911\
+8 15.9982 16.241\
+964 15.502302 17\
+ 14.638672 L 17 \
+16 L 18 16 L 18 \
+12 L 18 8 L 17 8\
+ L 17 9.3613281 \
+C 16.241964 8.49\
+76979 15.149118 \
+8.0017906 14 8 z\
+ M 14 9 C 15.656\
+854 9 17 10.3431\
+46 17 12 C 17 13\
+.656854 15.65685\
+4 15 14 15 C 12.\
+343146 15 11 13.\
+656854 11 12 C 1\
+1 10.343146 12.3\
+43146 9 14 9 z \x22\
  class=\x22ColorSch\
 eme-Text\x22/>\x0a  </\
 g>\x0a</svg>\x0a\
+\x00\x00\x02\xdc\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 11 3\
+ A 8 3 0 0 0 3 6\
+ L 3 16 A 8 3 0 \
+0 0 11 19 A 8 3 \
+0 0 0 19 16 L 19\
+ 6 A 8 3 0 0 0 1\
+1 3 z M 11 4 A 7\
+ 2 0 0 1 18 6 A \
+7 2 0 0 1 11 8 A\
+ 7 2 0 0 1 4 6 A\
+ 7 2 0 0 1 11 4 \
+z M 18 7.45 L 18\
+ 11 A 7 2 0 0 1 \
+11 13 A 7 2 0 0 \
+1 4 11 L 4 7.45 \
+A 8 3 0 0 0 11 9\
+ A 8 3 0 0 0 18 \
+7.45 z M 18 12.4\
+5 L 18 16 A 7 2 \
+0 0 1 11 18 A 7 \
+2 0 0 1 4 16 L 4\
+ 12.45 A 8 3 0 0\
+ 0 11 14 A 8 3 0\
+ 0 0 18 12.45 z \
+\x22 class=\x22ColorSc\
+heme-Text\x22/>\x0a  <\
+/g>\x0a</svg>\x0a\
 \x00\x00\x02\x8d\
 <\
 svg xmlns=\x22http:\
@@ -1122,50 +3908,6 @@ L 4 18 L 4 19 L \
  \x22 class=\x22ColorS\
 cheme-Text\x22/>\x0a  \
 </g>\x0a</svg>\x0a\
-\x00\x00\x02\x98\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 6 \
-18 L 19 18 L 19 \
-17 L 19 8 L 18 8\
- L 18 9 L 17 9 L\
- 17 8 L 16 8 L 1\
-6 7 L 15 7 L 15 \
-8 L 14 8 L 14 6 \
-L 13 6 L 13 9 L \
-12 9 L 12 7 L 11\
- 7 L 11 5 L 10 5\
- L 10 3 L 9 3 L \
-9 4 L 8 4 L 8 5 \
-L 7 5 L 7 6 L 6 \
-6 L 6 7 L 5 7 L \
-5 3 L 4 3 z \x22 cl\
-ass=\x22ColorScheme\
--Text\x22/>\x0a  </g>\x0a\
-</svg>\x0a\
 \x00\x00\x04V\
 <\
 svg xmlns=\x22http:\
@@ -1283,35 +4025,47 @@ width=\x221\x22 height\
 ntColor\x22 fill-ru\
 le=\x22evenodd\x22/>\x0a \
  </g>\x0a</svg>\x0a\
-\x00\x00\x01\xa2\
+\x00\x00\x02g\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color\x22 class=\x22Co\
-lorScheme-Text\x22 \
-d=\x22M 3 7 L 3 9 L\
- 13 9 L 13 7 L 3\
- 7 z\x22 transform=\
-\x22translate(3 3)\x22\
-/>\x0a  </g>\x0a</svg>\
-\x0a\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Negati\
+veText {\x0a       \
+     color:#da44\
+53;\x0a        }\x0a  \
+  </style>\x0a  <g \
+transform=\x22trans\
+late(1,1)\x22>\x0a    \
+<path class=\x22Col\
+orScheme-Negativ\
+eText\x22 d=\x22M 3.69\
+92188 3 L 3 3.69\
+92188 L 10.30078\
+1 11 L 3 18.3007\
+81 C 3 18.300781\
+ 3.7112147 18.99\
+3333 3.6992188 1\
+9 L 11 11.699219\
+ L 18.300781 19 \
+C 18.288781 18.9\
+933 19 18.300781\
+ 19 18.300781 L \
+11.699219 11.001\
+953 L 19 3.69921\
+88 L 18.300781 3\
+ L 11 10.300781 \
+L 3.6992188 3 z \
+\x22 fill=\x22currentC\
+olor\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
 \x00\x00\x02P\
 <\
 !DOCTYPE svg>\x0a<s\
@@ -1475,48 +4229,6 @@ l-2.054687-3.521\
 olorScheme-Text\x22\
 />\x0a  </g>\x0a</svg>\
 \x0a\
-\x00\x00\x02y\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 19\
- 18 L 19 17 L 5 \
-17 L 5 3 L 4 3 z\
- M 17.566406 3.7\
-519531 L 13.6328\
-12 10.632812 L 6\
-.7519531 14.5664\
-06 L 7.2480469 1\
-5.433594 L 14.36\
-7188 11.367188 L\
- 18.433594 4.248\
-0469 L 17.566406\
- 3.7519531 z \x22 c\
-lass=\x22ColorSchem\
-e-Text\x22/>\x0a  </g>\
-\x0a</svg>\x0a\
 \x00\x00\x02\xdc\
 <\
 svg xmlns=\x22http:\
@@ -1565,7 +4277,7 @@ L 17 4.9882812 L\
 \x22 class=\x22ColorSc\
 heme-Text\x22/>\x0a  <\
 /g>\x0a</svg>\x0a\
-\x00\x00\x05\x1f\
+\x00\x00\x05\x1c\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -1581,74 +4293,74 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 4 3 L 4 9 L\
- 4 10 L 4 15 L 4\
- 16 L 4 17 L 3 1\
-7 L 3 18 L 4 18 \
-L 4 19 L 5 19 L \
-5 18 L 18.292969\
- 18 L 19 18 L 19\
- 17.292969 L 19 \
-17 L 18.707031 1\
-7 L 17.292969 17\
- L 5 17 L 5 15.4\
-31641 L 5 15.423\
-828 L 5 15 L 5 1\
-2.423828 L 5 11.\
-423828 L 5 11 L \
-5 10 L 5 9 L 5 6\
- L 5 5.9921875 L\
- 5 5 L 5 3 L 4 3\
- z M 17 3 L 17 4\
- L 18 4 L 18 3 L\
- 17 3 z M 18 4 L\
- 18 5 L 19 5 L 1\
-9 4 L 18 4 z M 1\
-8 5 L 17 5 L 17 \
-6 L 18 6 L 18 5 \
-z M 17 5 L 17 4 \
-L 16 4 L 16 5 L \
-17 5 z M 6 4 L 6\
- 5 L 7 5 L 7 4 L\
- 6 4 z M 8 4 L 8\
- 5 L 9 5 L 9 4 L\
- 8 4 z M 6 6 L 6\
- 7 L 7 7 L 7 6 L\
- 6 6 z M 8 6 L 8\
- 7 L 9 7 L 9 6 L\
- 8 6 z M 11 7 L \
-11 8 L 12 8 L 12\
- 7 L 11 7 z M 13\
- 7 L 13 8 L 14 8\
- L 14 7 L 13 7 z\
- M 11 9 L 11 10 \
-L 12 10 L 12 9 L\
- 11 9 z M 13 9 L\
- 13 10 L 14 10 L\
- 14 9 L 13 9 z M\
- 7 13 L 7 14 L 8\
- 14 L 8 13 L 7 1\
-3 z M 8 14 L 8 1\
-5 L 9 15 L 9 14 \
-L 8 14 z M 8 15 \
-L 7 15 L 7 16 L \
-8 16 L 8 15 z M \
-7 15 L 7 14 L 6 \
-14 L 6 15 L 7 15\
- z \x22 class=\x22Colo\
-rScheme-Text\x22/>\x0a\
-  </g>\x0a</svg>\x0a\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 4 3 L 4 9 L 4 \
+10 L 4 15 L 4 16\
+ L 4 17 L 3 17 L\
+ 3 18 L 4 18 L 4\
+ 19 L 5 19 L 5 1\
+8 L 18.292969 18\
+ L 19 18 L 19 17\
+.292969 L 19 17 \
+L 18.707031 17 L\
+ 17.292969 17 L \
+5 17 L 5 15.4316\
+41 L 5 15.423828\
+ L 5 15 L 5 12.4\
+23828 L 5 11.423\
+828 L 5 11 L 5 1\
+0 L 5 9 L 5 6 L \
+5 5.9921875 L 5 \
+5 L 5 3 L 4 3 z \
+M 17 3 L 17 4 L \
+18 4 L 18 3 L 17\
+ 3 z M 18 4 L 18\
+ 5 L 19 5 L 19 4\
+ L 18 4 z M 18 5\
+ L 17 5 L 17 6 L\
+ 18 6 L 18 5 z M\
+ 17 5 L 17 4 L 1\
+6 4 L 16 5 L 17 \
+5 z M 6 4 L 6 5 \
+L 7 5 L 7 4 L 6 \
+4 z M 8 4 L 8 5 \
+L 9 5 L 9 4 L 8 \
+4 z M 6 6 L 6 7 \
+L 7 7 L 7 6 L 6 \
+6 z M 8 6 L 8 7 \
+L 9 7 L 9 6 L 8 \
+6 z M 11 7 L 11 \
+8 L 12 8 L 12 7 \
+L 11 7 z M 13 7 \
+L 13 8 L 14 8 L \
+14 7 L 13 7 z M \
+11 9 L 11 10 L 1\
+2 10 L 12 9 L 11\
+ 9 z M 13 9 L 13\
+ 10 L 14 10 L 14\
+ 9 L 13 9 z M 7 \
+13 L 7 14 L 8 14\
+ L 8 13 L 7 13 z\
+ M 8 14 L 8 15 L\
+ 9 15 L 9 14 L 8\
+ 14 z M 8 15 L 7\
+ 15 L 7 16 L 8 1\
+6 L 8 15 z M 7 1\
+5 L 7 14 L 6 14 \
+L 6 15 L 7 15 z \
+\x22 class=\x22ColorSc\
+heme-Text\x22/>\x0a  <\
+/g>\x0a</svg>\x0a\
 \x00\x00\x02\x8b\
 <\
 svg xmlns=\x22http:\
@@ -1734,62 +4446,6 @@ L 17 8 L 17 13 L\
 9 L 13 19 L 13 1\
 8 L 5 18 Z\x22/>\x0a  \
 </g>\x0a</svg>\x0a\
-\x00\x00\x03S\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 19\
- 18 L 19 17 L 5 \
-17 L 5 3 L 4 3 z\
- M 6.4101562 3.7\
-128906 L 5.58984\
-38 4.2871094 L 1\
-1.0625 12.103516\
- L 6.7519531 14.\
-566406 L 7.24804\
-69 15.433594 L 1\
-1.638672 12.9257\
-81 L 12.685547 1\
-4.421875 L 18.84\
-1797 16.474609 L\
- 19.158203 15.52\
-5391 L 13.314453\
- 13.578125 L 12.\
-509766 12.427734\
- L 14.367188 11.\
-367188 L 18.4335\
-94 4.2480469 L 1\
-7.566406 3.75195\
-31 L 13.632812 1\
-0.632812 L 11.93\
-3594 11.603516 L\
- 6.4101562 3.712\
-8906 z \x22 class=\x22\
-ColorScheme-Text\
-\x22/>\x0a  </g>\x0a</svg\
->\x0a\
 \x00\x00\x02\x81\
 <\
 svg xmlns=\x22http:\
@@ -1903,44 +4559,6 @@ m3 0h9v14h-9v-14\
 \x22 class=\x22ColorSc\
 heme-Text\x22/>\x0a  <\
 /g>\x0a</svg>\x0a\
-\x00\x00\x029\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 version=\x22\
-1.1\x22 viewBox=\x220 \
-0 24 24\x22 width=\x22\
-24\x22 height=\x2224\x22>\
-\x0a  <style id=\x22cu\
-rrent-color-sche\
-me\x22 type=\x22text/c\
-ss\x22>\x0a        .Co\
-lorScheme-Text {\
-\x0a            col\
-or:#232629;\x0a    \
-    }\x0a    </styl\
-e>\x0a  <g transfor\
-m=\x22translate(1,1\
-)\x22>\x0a    <path cl\
-ass=\x22ColorScheme\
--Text\x22 d=\x22m7.910\
-2 3-4.9102 14h1.\
-6582l1.625-4.437\
-5h5.4336l0.89258\
- 2.4375h1.6543l-\
-4.1739-12h-2.179\
-7zm1.1055 1.9375\
- 2.1797 6.3438h-\
-4.3906zm10.277 7\
-.6758-4.5918 4.5\
-918-1.1465-1.146\
-5-0.70703 0.7070\
-3 1.8594 1.8477 \
-5.293-5.293-0.70\
-703-0.70703z\x22 st\
-yle=\x22fill:curren\
-tColor\x22/>\x0a  </g>\
-\x0a</svg>\x0a\
 \x00\x00\x01\xe6\
 <\
 svg xmlns=\x22http:\
@@ -1974,7 +4592,116 @@ ty:1;stroke:none\
 s=\x22ColorScheme-T\
 ext\x22/>\x0a  </g>\x0a</\
 svg>\x0a\
-\x00\x00\x05a\
+\x00\x00\x02\x14\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Negati\
+veText {\x0a       \
+     color:#da44\
+53;\x0a        }\x0a  \
+  </style>\x0a  <g \
+transform=\x22trans\
+late(1,1)\x22>\x0a    \
+<rect class=\x22Col\
+orScheme-Negativ\
+eText\x22 x=\x223\x22 y=\x22\
+3\x22 width=\x2216\x22 he\
+ight=\x2216\x22 rx=\x222\x22\
+ fill=\x22currentCo\
+lor\x22/>\x0a    <path\
+ d=\x22M 6.414,5 5,\
+6.414 9.586,11 5\
+,15.586 6.414,17\
+ 11,12.414 15.58\
+6,17 17,15.586 1\
+2.414,11 17,6.41\
+4 15.586,5 11,9.\
+586 Z\x22 fill=\x22#ff\
+f\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x02\xa4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 4 3 L 4 1\
+9 L 5 19 L 13 19\
+ L 13 18 L 5 18 \
+L 5 4 L 13 4 L 1\
+3 7 L 13 8 L 17 \
+8 L 17 14 L 18 1\
+4 L 18 8.40625 L\
+ 18 7 L 18 6.992\
+1875 L 14.007812\
+ 3 L 14 3.009765\
+6 L 14 3 L 13 3 \
+L 5 3 L 4 3 z M \
+15 14 L 15 16 L \
+13 16 L 13 17 L \
+15 17 L 15 19 L \
+16 19 L 16 17 L \
+18 17 L 18 16 L \
+16 16 L 16 14 L \
+15 14 z \x22 class=\
+\x22ColorScheme-Tex\
+t\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x01\x99\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:#da4453\
+\x22 d=\x22M 10 4 L 10\
+ 14 L 12 14 L 12\
+ 4 L 10 4 z M 10\
+ 16 L 10 18 L 12\
+ 18 L 12 16 L 10\
+ 16 z \x22/>\x0a  </g>\
+\x0a</svg>\x0a\
+\x00\x00\x05E\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -1990,80 +4717,78 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 4 3 L 4 9 L\
- 4 10 L 4 15 L 4\
- 16 L 4 17 L 3 1\
-7 L 3 18 L 4 18 \
-L 4 19 L 5 19 L \
-5 18 L 18.292969\
- 18 L 19 18 L 19\
- 17.292969 L 19 \
-17 L 18.707031 1\
-7 L 17.292969 17\
- L 5 17 L 5 15.4\
-31641 L 5 15.423\
-828 L 5 15 L 5 1\
-2.423828 L 5 11.\
-423828 L 5 11 L \
-5 10 L 5 9 L 5 6\
- L 5 5.9921875 L\
- 5 5 L 5 3 L 4 3\
- z M 15.048828 4\
-.2304688 A 2.218\
-6046 2.2186046 0\
- 0 0 12.830078 6\
-.4492188 A 2.218\
-6046 2.2186046 0\
- 0 0 15.048828 8\
-.6679688 A 2.218\
-6046 2.2186046 0\
- 0 0 17.267578 6\
-.4492188 A 2.218\
-6046 2.2186046 0\
- 0 0 15.048828 4\
-.2304688 z M 7.9\
-941406 7.7636719\
- A 0.8063584 0.8\
-063584 0 0 0 7.1\
-875 8.5703125 A \
-0.8063584 0.8063\
-584 0 0 0 7.9941\
-406 9.3769531 A \
-0.8063584 0.8063\
-584 0 0 0 8.7988\
-281 8.5703125 A \
-0.8063584 0.8063\
-584 0 0 0 7.9941\
-406 7.7636719 z \
-M 11.904297 11.1\
-69922 A 1.470944\
-9 1.4709449 0 0 \
-0 10.433594 12.6\
-40625 A 1.470944\
-9 1.4709449 0 0 \
-0 11.904297 14.1\
-11328 A 1.470944\
-9 1.4709449 0 0 \
-0 13.375 12.6406\
-25 A 1.4709449 1\
-.4709449 0 0 0 1\
-1.904297 11.1699\
-22 z \x22 class=\x22Co\
-lorScheme-Text\x22/\
->\x0a  </g>\x0a</svg>\x0a\
-\
-\x00\x00\x01\x98\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 4 3 L 4 9 L 4 \
+10 L 4 15 L 4 16\
+ L 4 17 L 3 17 L\
+ 3 18 L 4 18 L 4\
+ 19 L 5 19 L 5 1\
+8 L 19 18 L 19 1\
+7 L 5 17 L 5 16 \
+L 5.0078125 16 L\
+ 6 16 L 8 16 L 8\
+ 15.992188 L 8.0\
+078125 16 L 10.0\
+07812 14 L 11.59\
+9609 14 L 13.599\
+609 16 L 17.0996\
+09 16 L 19 16 L \
+19 15 L 17.09960\
+9 15 L 14.013672\
+ 15 L 12.013672 \
+13 L 12 13 L 11.\
+007812 13 L 10.5\
+99609 13 L 9.593\
+75 13 L 7.59375 \
+15 L 6 15 L 5.00\
+78125 15 L 5 15 \
+L 5 12 L 5 11 L \
+5 10 L 6 10 L 7 \
+10 L 8.8730469 1\
+0 L 8.875 10 L 1\
+0.875 8 L 11.703\
+125 7.171875 L 1\
+2.998047 5.87695\
+31 L 15.121094 8\
+ L 15.126953 7.9\
+960938 L 15.1308\
+59 8 L 17.130859\
+ 6 L 17.958984 5\
+.171875 L 19 4.1\
+308594 L 18.2929\
+69 3.4238281 L 1\
+7.251953 4.46484\
+38 L 16.423828 5\
+.2929688 L 15.12\
+6953 6.5898438 L\
+ 13 4.4648438 L \
+12.998047 4.4667\
+969 L 12.996094 \
+4.4648438 L 11.4\
+6875 5.9921875 L\
+ 5 5.9921875 L 5\
+ 5 L 5 3 L 4 3 z\
+ M 5 6 L 11.4609\
+38 6 L 10.996094\
+ 6.4648438 L 10.\
+167969 7.2929688\
+ L 8.4609375 9 L\
+ 7 9 L 6 9 L 5 9\
+ L 5 6 z \x22 class\
+=\x22ColorScheme-Te\
+xt\x22/>\x0a  </g>\x0a</s\
+vg>\x0a\
+\x00\x00\x02\xd3\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -2077,21 +4802,2383 @@ css\x22 id=\x22current\
 -color-scheme\x22>\x0a\
       .ColorSche\
 me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:#da4453\x22\
- d=\x22M 10 4 L 10 \
-14 L 12 14 L 12 \
-4 L 10 4 z M 10 \
-16 L 10 18 L 12 \
-18 L 12 16 L 10 \
-16 z \x22/>\x0a  </g>\x0a\
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 4 3 L 4 9\
+ L 4 10 L 4 15 L\
+ 4 16 L 4 17 L 3\
+ 17 L 3 18 L 4 1\
+8 L 4 19 L 5 19 \
+L 5 18 L 19 18 L\
+ 19 17 L 16 17 L\
+ 16 8 L 15 8 L 1\
+2 8 L 12 17 L 10\
+ 17 L 10 7 L 10 \
+4 L 10 3 L 6 3 L\
+ 6 17 L 5 17 L 5\
+ 16 L 5 15 L 5 1\
+2 L 5 11 L 5 10 \
+L 5 9 L 5 6 L 5 \
+5.9921875 L 5 5 \
+L 5 3 L 4 3 z M \
+7 4 L 9 4 L 9 17\
+ L 7 17 L 7 4 z \
+M 13 9 L 15 9 L \
+15 17 L 13 17 L \
+13 9 z \x22 class=\x22\
+ColorScheme-Text\
+\x22/>\x0a  </g>\x0a</svg\
+>\x0a\
+\x00\x00\x04\xda\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 7.5 3 C 5.567\
+ 3 4 4.7909 4 7 \
+L 4 8 L 4 10 C 4\
+ 12.2091 5.567 1\
+4 7.5 14 C 9.433\
+ 14 11 12.2091 1\
+1 10 L 11 8 L 11\
+ 7 C 11 4.7909 9\
+.433 3 7.5 3 z M\
+ 15.5 3 C 13.567\
+ 3 12 4.7909 12 \
+7 L 12 8 L 12 10\
+ C 12 12.2091 13\
+.567 14 15.5 14 \
+C 17.433 14 19 1\
+2.2091 19 10 L 1\
+9 8 L 19 7 C 19 \
+4.7909 17.433 3 \
+15.5 3 z M 7.5 4\
+ C 8.88071 4 10 \
+5.3432 10 7 L 10\
+ 10 C 10 11.6569\
+ 8.88071 13 7.5 \
+13 C 6.11929 13 \
+5 11.6569 5 10 L\
+ 5 7 C 5 5.3432 \
+6.11929 4 7.5 4 \
+z M 15.5 4 C 16.\
+88071 4 18 5.343\
+1 18 7 L 18 10 C\
+ 18 11.6569 16.8\
+8071 13 15.5 13 \
+C 14.11929 13 13\
+ 11.6569 13 10 L\
+ 13 7 C 13 5.343\
+1 14.11929 4 15.\
+5 4 z M 3 13 L 3\
+ 14 L 4 14 L 4 1\
+3 L 3 13 z \x22\x0a   \
+  class=\x22ColorSc\
+heme-Text\x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0a     d=\x22M \
+15 15 L 15 17 L \
+13 17 L 13 18 L \
+15 18 L 15 20 L \
+16 20 L 16 18 L \
+18 18 L 18 17 L \
+16 17 L 16 15 L \
+15 15 z \x22\x0a     c\
+lass=\x22ColorSchem\
+e-Accent\x22\x0a     /\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xdd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 9 3 C 7.\
+34315 3 6 4.3431\
+ 6 6 L 6 8 L 4 8\
+ L 4 9 L 6 9 L 6\
+ 10 L 6 19 L 7 1\
+9 L 7 9 L 8 9 L \
+9 9 L 9 8 L 8 8 \
+L 7 8 L 7 6 C 7 \
+4.89543 7.89543 \
+4 9 4 L 10 4 L 1\
+0 3 L 9 3 z M 12\
+.742188 13 L 12 \
+13.732422 L 14.2\
+92969 16 L 12 18\
+.267578 L 12.742\
+188 19 L 15.0351\
+56 16.732422 L 1\
+7.257812 18.9316\
+41 L 18 18.19921\
+9 L 15.775391 16\
+ L 18 13.800781 \
+L 17.257812 13.0\
+68359 L 15.03515\
+6 15.267578 L 12\
+.742188 13 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
+\x00\x00\x02\x88\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22\x0a        \
+  d=\x22m14 11c-2.2\
+15995 0-4 1.7840\
+05-4 4s1.784005 \
+4 4 4 4-1.784005\
+ 4-4-1.784005-4-\
+4-4m0 1c1.661995\
+ 0 3 1.338005 3 \
+3s-1.338005 3-3 \
+3-3-1.338005-3-3\
+ 1.338005-3 3-3m\
+-1 1v3h2v-1h-1v-\
+2h-1m-9-10v16h6v\
+-1h-5v-14h8v4h4v\
+3h1v-4.0078125l-\
+3.992188-3.99218\
+75-0.007812 0.00\
+97656v-0.0097656\
+h-9z\x22\x0a          \
+class=\x22ColorSche\
+me-Text\x22\x0a    />\x0a\
 </svg>\x0a\
-\x00\x00\x05\x1e\
+\x00\x00\x02\x80\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 11 3 C 6\
+.568 3 3 6.568 3\
+ 11 C 3 15.432 6\
+.568 19 11 19 C \
+15.432 19 19 15.\
+432 19 11 C 19 6\
+.568 15.432 3 11\
+ 3 z M 11 4 C 14\
+.878 4 18 7.122 \
+18 11 C 18 14.87\
+8 14.878 18 11 1\
+8 C 7.122 18 4 1\
+4.878 4 11 C 4 7\
+.122 7.122 4 11 \
+4 z M 10 6 L 10 \
+8 L 12 8 L 12 6 \
+L 10 6 z M 10 9 \
+L 10 16 L 12 16 \
+L 12 9 L 10 9 z \
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a</svg>\x0a\
+\x00\x00\x06d\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+15 L 4 16 L 4 17\
+ L 3 17 L 3 18 L\
+ 4 18 L 4 19 L 5\
+ 19 L 5 18 L 19 \
+18 L 19 17 L 5 1\
+7 L 5 16 L 5.007\
+8125 16 L 6 16 L\
+ 8 16 L 8 15.992\
+188 L 8.0078125 \
+16 L 10.007812 1\
+4 L 11.599609 14\
+ L 13.599609 16 \
+L 17.099609 16 L\
+ 19 16 L 19 15 L\
+ 17.099609 15 L \
+14.013672 15 L 1\
+2.013672 13 L 12\
+ 13 L 11.007812 \
+13 L 10.599609 1\
+3 L 9.59375 13 L\
+ 7.59375 15 L 6 \
+15 L 5.0078125 1\
+5 L 5 15 L 5 11 \
+L 10 11 L 10 10.\
+992188 L 10.0078\
+12 11 L 11.00390\
+6 10.003906 L 11\
+ 10 L 10.296875 \
+9.296875 L 9.593\
+75 10 L 5 10 L 5\
+ 3 L 4 3 z M 11 \
+10 L 13 10 L 13 \
+9 L 12 9 L 12 8 \
+L 11 8 L 11 10 z\
+ M 11 4 L 11 6 L\
+ 12 6 L 12 5 L 1\
+3 5 L 13 4 L 11 \
+4 z M 15 4 L 15 \
+5 L 16 5 L 16 6 \
+L 17 6 L 17 4 L \
+15 4 z M 14 5.59\
+375 L 13.292969 \
+6.3007812 L 12.2\
+96875 7.296875 L\
+ 13.003906 8.003\
+9062 L 14 7.0078\
+125 L 14.996094 \
+8.0039062 L 15.7\
+03125 7.296875 L\
+ 14 5.59375 z M \
+16 8 L 16 9 L 15\
+ 9 L 15 10 L 17 \
+10 L 17 8 L 16 8\
+ z M 19 8 L 18 9\
+ L 19 9 L 19 8 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a <path \
+\x0a     style=\x22fil\
+l:currentColor;f\
+ill-opacity:0.5;\
+stroke:none\x22 \x0a  \
+   d=\x22M 14 7 L 1\
+2.003906 9 L 13 \
+9 L 13 10 L 11.0\
+05859 10 L 10.00\
+7812 11 L 5 11 L\
+ 5 15 L 7.599609\
+4 15 L 9.5996094\
+ 13 L 12.007812 \
+13 L 14 14.99218\
+8 L 19 15 L 19 9\
+ L 17 9 L 17 10 \
+L 15 10 L 15 9 L\
+ 16 9 L 14 7 z M\
+ 10 14 L 8 16 L \
+5 16 L 5 17 L 19\
+ 17 L 19 16 L 13\
+.599609 16 L 11.\
+599609 14 L 10 1\
+4 z \x22\x0a     class\
+=\x22ColorScheme-Te\
+xt\x22\x0a     />\x0a</sv\
+g>\x0a\
+\x00\x00\x02_\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path\x0a\
+            d=\x22m\
+6 6 10 10m-10 0 \
+10-10\x22\x0a         \
+   fill=\x22current\
+Color\x22/>\x0a       \
+ <path\x0a         \
+   d=\x22M 6,5.1523\
+437 5.1523437,6 \
+10.152344,11 5.1\
+523437,16 6,16.8\
+47656 l 5,-5 5,5\
+ L 16.847656,16 \
+l -5,-5 5,-5 L 1\
+6,5.1523437 11,1\
+0.152344 Z\x22\x0a    \
+        fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  </g>\x0a</svg>\x0a\
+\x00\x00\x04r\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 9.910156\
+2 4 L 6.5957031 \
+13.59375 L 6.472\
+6562 14 L 5 18 L\
+ 6.6582031 18 L \
+8.2832031 13.562\
+5 L 13.716797 13\
+.5625 L 15.34179\
+7 18 L 17 18 L 1\
+5.527344 14 L 15\
+.404297 13.59375\
+ L 12.089844 4 L\
+ 11.875 4 L 10.1\
+25 4 L 9.9101562\
+ 4 z M 11.015625\
+ 5.9375 L 13.195\
+312 12.28125 L 8\
+.8046875 12.2812\
+5 L 11.015625 5.\
+9375 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a \
+<path \x0a     styl\
+e=\x22fill:currentC\
+olor;fill-opacit\
+y:1;stroke:none\x22\
+ \x0a     d=\x22M 18 3\
+ C 17.44771 3 17\
+ 3.4477 17 4 C 1\
+7 4.5523 17.4477\
+1 5 18 5 C 18.55\
+228 5 19 4.5523 \
+19 4 C 19 3.4477\
+ 18.55228 3 18 3\
+ z M 18 7 C 17.4\
+4771 7 17 7.4477\
+ 17 8 C 17 8.552\
+3 17.44771 9 18 \
+9 C 18.55228 9 1\
+9 8.5523 19 8 C \
+19 7.4477 18.552\
+28 7 18 7 z M 18\
+ 11 C 17.44771 1\
+1 17 11.4477 17 \
+12 C 17 12.5523 \
+17.44771 13 18 1\
+3 C 18.55228 13 \
+19 12.5523 19 12\
+ C 19 11.4477 18\
+.55228 11 18 11 \
+z \x22\x0a     class=\x22\
+ColorScheme-Text\
+\x22\x0a     />\x0a</svg>\
+\x0a\
+\x00\x00\x03)\
+(\
+\xb5/\xfd`\x1f\x0d\xfd\x18\x00\x96ci\x1f \x93\x1e\
+\xbf\x99&\x12\x06\xfeFT\xb4\xb0\xec\xeef\xe3UF\
+\x96M&\xfb\x1aGI\x09!\x0a20e\x00a\x00\
+\x5c\x00Qr\x9e\xd9\x96\xd9\x0f\xe1\x8c\xfd(\xcf\x8e \
+{\xadq\xfe\xfb\xc8>O\x9ea\xe7p\x05\x0bc7\
+\x80\x01\x01&\xeb\xb8\x02\x06\x83]l\xd9*\x0e\xc5\xda\
+u-\x8a\x01\x06'\xd5Z\xfb\xa2\xc10 \x82sg\
+w\x86\x0c]\x01\xb4A|.\xe6a'A\x08]\xaa\
+d\x9b\x17?\xef\xf3\xf9H\x12\x81\xb3m\x16W\xd04\
+\x98\x0c\x88+\x1e\x8d\x0a\x12\x15\xdbJ\xef\x87\xf6-I\
+\xe15\xa5e/\xcby\xc7\xb7]\xed\xba6\x92\x83\xd0\
+\xda\xb6\x01W\xc86\x98\x8d\x8d\x98\xb3\xd9\xb4\xabM4\
+\x91k+\x8e$\xbb\x9a\xb6a\x9aI\xe5\xa1S\xf9&\
+\x9f@5\xfa\xbf\xe8\xd2\x15:\xc4.n\x9a\x8bYU\
+\xd6\xc8\xaa\x1bE\x11\xa4\xa3\x8ef3d\xfb\x95\xbe\x1a\
+%\xc7\xa9\xa9|\x0f\xa7G?p\xf9\xea{G\xfc\x91\
+>\x8f\x98B\x9e\xff\x93\xbf\x16\x80\xb0l\xab2\xae\x90\
+\xc96\x97\xa6\xa9\xb2\x8d+\x94D]\xe8q\xde\xdb0\
+\xfe\xb5~\x9b^;\xdd\x9e\xb2\xe5\xf5\x1a\xbb\xb2\xd7\xf5\
+S%\xa3\x15+\xa5i\x05\xdf\xdeZ\xed\xa5P\xe8\x14\
+k}\xc3\xb6O+o\x0a\x95\xd6\xb4o\xb5E\xe9\xf7\
+_\x9f\x1c\x06\x00C\xc5\xa3IT\x83\xf1X@\x14\xd4\
+_\xf5\xe7\x87\xafi\xbb\x9c\x8fR\xca]\xe5\x8b\xd3\xc0\
+aG<\xbd\xbf?(c\x02\xf18@jv\xb7\xe9\
+_\xc7\x7f.;\x9a\x5ch\xc36\x15\x89\xfa\x07e\xa6\
+\xd0'Dz\xb5N\xfc\x91[F\x1c\x0cc\xaf\x9bY\
+\x08<\xf8\xf9f\xa5\x1cg\x14q\x94\x11\xf6\x83L\xe3\
+\x0c\x80\xa7\xa01Ef\xa4.\x88$IA\xb2\x1c\x80\
+DF\xa6\xe8\xe4\x01\xf1\x80\x04\x92\x83\x9b\x18\xcf;\x01\
+{\xfd\x94\xd1\x0b\x9aOm@\xcc\xb8r(\xfc^\x9b\
+a\xca\x04!\x17\x11\x07\x93/\xe41\x94\x9d\x11\x9a\xce\
+\x97\x80\x00\xd4\xf93n\xb0\xde\x9dg\x0f\xc7i\xf6{\
+V.\xe9,/A\x00\xbc\xbcZ\xc2\xd1s\xcb\x0f\x03\
+\xa4F\xdd&\xb8f?u\x05g\xd0\xc0\xactN[\
+(R<\x93a\xb0\x17\xc2f\xf2\xba^\x96\xe6<=\
+\xd2\x05\x1a\xcd,1@\xd0\x9e\xab\x19\x033v\xf05\
+\xdfx\xe4\xa1\xb5\xc5\x0a$\xb7\xe7\xc8\xaaG\xa66+\
+\xf4\x08TN\x9b\xec\xbb\xb3\xa2\xd2)\xe0T\xd7\x13\xc9\
+\xa4\xb7\x96\xfa\xb2\x0c.iC+\x0f\xcd\xf1\x00\x80\xa3\
+$\xf4H\xabb\x05\xd8\x22\x81qw-\x09(\xfa\x94\
+\x09\x8a\x80\xdc\x04\xe0\x84\x1a\x07\x08\xf2\x19\x1al\xdc`\
+\x83!\xd0\x22\xc9\xc2\x05|\xf4,# \xc9\x81#\x14\
+i\xa2\xa5\x8fI\xcf\xec\xaaK[\x09B:\x9a\xf3\x13\
+\xedR\x9e\xdf\x5c?\xc9R\x01\xe5\xa0Vd\x8f\xd9\x91\
+,N\xc9*\xf5\xa0\xa1*\x83\x10ZZa\xb9\x11\xf2\
+/\xe3\x10\x09\x0fC$\xf4e\xe42m+\x80\x0e\xb2\
+\xc4\x03\xd6\xe1\x9a\xb3`H\x04\x07glw`n\x80\
+\xb2 \x82\x0b\x98m@/\xaf,\x02\x98\xc7\x01\xd8\xa9\
+(\x90nni\x80\x9c\x00v\x90N#\xe2\x99i\xac\
+\x0c\xd2}W\x83\xa8[\xa0\x16\x03\xd4\x19\x5c\xd8E\xc0\
+Q\xa8^\xec_\x01V\x15\
+\x00\x00\x03\xa2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 19\
+ L 19 19 L 19 3 \
+L 3 3 z M 4 4 L \
+18 4 L 18 18 L 4\
+ 18 L 4 4 z M 7.\
+5 5 C 6.115 5 5 \
+6.115 5 7.5 C 5 \
+8.885 6.115 10 7\
+.5 10 C 8.885 10\
+ 10 8.885 10 7.5\
+ C 10 6.115 8.88\
+5 5 7.5 5 z M 7.\
+5 6 C 8.331 6 9 \
+6.669 9 7.5 C 9 \
+8.331 8.331 9 7.\
+5 9 C 6.669 9 6 \
+8.331 6 7.5 C 6 \
+6.669 6.669 6 7.\
+5 6 z M 13.99414\
+1 10 L 10.648438\
+ 13.34375 L 9.30\
+66406 12 L 9.300\
+7812 12.007812 L\
+ 9.2929688 12 L \
+5 16.292969 L 5.\
+7070312 17 L 9.2\
+988281 13.408203\
+ L 9.9414062 14.\
+050781 L 10.6484\
+38 14.757812 L 1\
+1.355469 14.0507\
+81 L 14 11.40625\
+ L 16.292969 13.\
+699219 L 17 12.9\
+92188 L 14.00781\
+2 10 L 14 10.007\
+812 L 13.994141 \
+10 z \x22\x0a\x09class=\x22C\
+olorScheme-Text\x22\
+\x0a    />  \x0a</svg>\
+\x0a\
+\x00\x00\x03\x88\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a     d=\x22\
+M 11.5 3 C 10.28\
+6139 3 9.2809778\
+ 3.8559279 9.050\
+7812 5 L 3 5 L 3\
+ 6 L 9.0507812 6\
+ C 9.2809778 7.1\
+440721 10.286139\
+ 8 11.5 8 C 12.7\
+13861 8 13.71902\
+2 7.1440721 13.9\
+49219 6 L 19 6 L\
+ 19 5 L 13.94921\
+9 5 C 13.719022 \
+3.8559279 12.713\
+861 3 11.5 3 z M\
+ 5.5 14 C 4.1149\
+999 14 3 15.115 \
+3 16.5 C 3 17.88\
+5 4.1149999 19 5\
+.5 19 C 6.713860\
+4 19 7.7190223 1\
+8.144072 7.94921\
+88 17 L 19 17 L \
+19 16 L 7.949218\
+8 16 C 7.7190223\
+ 14.855928 6.713\
+8604 14 5.5 14 z\
+ M 5.5 15 C 6.33\
+10001 15 7 15.66\
+9 7 16.5 C 7 17.\
+331 6.3310001 18\
+ 5.5 18 C 4.6689\
+999 18 4 17.331 \
+4 16.5 C 4 15.66\
+9 4.6689999 15 5\
+.5 15 z \x22\x0a     c\
+lass=\x22ColorSchem\
+e-Text\x22\x0a     />\x0a\
+</svg>\x0a\
+\x00\x00\x02Z\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NeutralText\
+ {\x0a            c\
+olor:#f67400;\x0a  \
+      }\x0a    </st\
+yle>\x0a    <path c\
+lass=\x22ColorSchem\
+e-NeutralText\x22 d\
+=\x22m11.006318 3.0\
+000261a0.7272873\
+7 0.72727154 0 0\
+ 0-0.65674 0.402\
+1811l-7.2728738 \
+14.545431a0.7272\
+8737 0.72727154 \
+0 0 0 0.6509222 \
+1.052362h14.5457\
+48a0.72728737 0.\
+72727154 0 0 0 0\
+.650922-1.052362\
+l-7.272874-14.54\
+5431a0.72728737 \
+0.72727154 0 0 0\
+-0.645104-0.4021\
+811z\x22 fill=\x22curr\
+entColor\x22/>\x0a    \
+<path d=\x22m10 8v5\
+h2v-5zm0 7v2h2v-\
+2z\x22 fill=\x22#fff\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x02\x19\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 11 3 C 6\
+.6 3 3 6.6 3 11 \
+C 3 15.4 6.6 19 \
+11 19 C 15.4 19 \
+19 15.4 19 11 C \
+19 6.6 15.4 3 11\
+ 3 z M 11 4 L 11\
+ 11 L 18 11 L 18\
+ 11 C 18 14.9 14\
+.9 18 11 18 C 7.\
+122 18 4 14.9 4 \
+11 C 4 7.122 7.1\
+22 4 11 4 z \x22\x0a\x09 \
+class=\x22ColorSche\
+me-Text\x22\x0a     />\
+\x0a</svg>\x0a\
+\x00\x00\x02M\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+5 L 5 5 L 5 4 L \
+17 4 L 17 5 L 18\
+ 5 L 18 3 L 17 3\
+ L 5 3 L 4 3 z M\
+ 11 5 L 5 11.183\
+594 L 5.7929688 \
+12 L 11 6.632812\
+5 L 16.207031 12\
+ L 17 11.183594 \
+L 11 5 z M 8 13 \
+L 8 19 L 9 19 L \
+13 19 L 14 19 L \
+14 13 L 13 13 L \
+13 18 L 9 18 L 9\
+ 13 L 8 13 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
+\x00\x00\x04\xa2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 18\
+ L 3 19 L 19 19 \
+L 19 18 L 19 3 L\
+ 18 3 L 4 3 L 3 \
+3 z M 4 4 L 8 4 \
+L 8 6 L 4 6 L 4 \
+4 z M 9 4 L 13 4\
+ L 13 6 L 9 6 L \
+9 4 z M 14 4 L 1\
+8 4 L 18 6 L 15 \
+6 L 14 6 L 14 4.\
+9003906 L 14 4 z\
+ M 4 7 L 8 7 L 8\
+ 8 L 9 8 L 9 7 L\
+ 13 7 L 13 8 L 1\
+4 8 L 14 7 L 15 \
+7 L 18 7 L 18 8 \
+L 18 9 L 18 10 L\
+ 18 12 L 18 13 L\
+ 18 14 L 18 15 L\
+ 15 15 L 14 15 L\
+ 14 14 L 13 14 L\
+ 13 15 L 9 15 L \
+9 14 L 8 14 L 8 \
+15 L 4 15 L 4 14\
+ L 4 13 L 4 12 L\
+ 4 10 L 4 9 L 4 \
+8 L 4 7 z M 4 16\
+ L 7 16 L 8 16 L\
+ 8 17 L 8 18 L 4\
+ 18 L 4 16 z M 9\
+ 16 L 13 16 L 13\
+ 17 L 13 18 L 9 \
+18 L 9 17 L 9 16\
+ z M 14 16 L 15 \
+16 L 18 16 L 18 \
+18 L 14 18 L 14 \
+17 L 14 16 z \x22\x0a \
+   class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a  <path\x0a   \
+  style=\x22fill:#d\
+a4453\x22\x0a     d=\x22m\
+ 4,14 5.29297,0 \
+4,0 4,0 L 18,14 \
+18,13.29297 18,1\
+3 l -0.29297,0 -\
+4,-4 L 18,9 18,8\
+ 4,8 l 0,1 0.292\
+97,0 4,4 L 4,13 \
+4,14 m 1.70703,-\
+5 2.58594,0 4,4 \
+-2.58594,0 -4,-4\
+ m 4,0 2.58594,0\
+ 4,4 -2.58594,0 \
+-4,-4\x22 />\x0a</svg>\
+\x0a\
+\x00\x00\x02\xcf\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 3 3 L 3 \
+4 L 3 19 L 4 19 \
+L 15 19 L 12 16 \
+L 15 13 L 17 13 \
+L 16 12 L 14 10 \
+L 10 14 L 9 13 L\
+ 4.1484375 17.85\
+1562 L 4 18 L 4 \
+4 L 18 4 L 18 12\
+ L 19 12 L 19 4 \
+L 19 3 L 4 3 L 3\
+ 3 z M 7 5 C 5.8\
+92 5 5 5.892 5 7\
+ C 5 8.108 5.892\
+ 9 7 9 C 8.108 9\
+ 9 8.108 9 7 C 9\
+ 5.892 8.108 5 7\
+ 5 z M 16 14 L 1\
+6 16 L 14 16 L 1\
+4 17 L 16 17 L 1\
+6 19 L 17 19 L 1\
+7 17 L 19 17 L 1\
+9 16 L 17 16 L 1\
+7 14 L 16 14 z \x22\
+\x0a     class=\x22Col\
+orScheme-Text\x22\x0a \
+    />\x0a</svg>\x0a\
+\x00\x00\x02\xcd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 3 3 L 3 19\
+ L 19 19 L 19 3 \
+L 3 3 z M 4 7 L \
+18 7 L 18 18 L 4\
+ 18 L 4 7 z M 6 \
+8 L 6 12 L 10 12\
+ L 10 8 L 6 8 z \
+M 12 8 L 12 12 L\
+ 16 12 L 16 8 L \
+12 8 z M 7 9 L 9\
+ 9 L 9 11 L 7 11\
+ L 7 9 z M 13 9 \
+L 15 9 L 15 11 L\
+ 13 11 L 13 9 z \
+M 6 13 L 6 17 L \
+10 17 L 10 13 L \
+6 13 z M 12 13 L\
+ 12 17 L 16 17 L\
+ 16 13 L 12 13 z\
+ M 7 14 L 9 14 L\
+ 9 16 L 7 16 L 7\
+ 14 z M 13 14 L \
+15 14 L 15 16 L \
+13 16 L 13 14 z \
+\x22\x0a\x09class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a</svg>\x0a\
+\x00\x00\x01j\
+<\
+svg viewBox=\x220 0\
+ 22 22\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <path d=\x22M3.\
+707 4L3 4.707l8 \
+8 8-8L18.293 4 1\
+1 11.293zm0 5L3 \
+9.707l8 8 8-8L18\
+.293 9 11 16.293\
+z\x22 class=\x22ColorS\
+cheme-Text\x22 fill\
+=\x22currentColor\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x01\xb0\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a    \
+<defs id=\x22defs30\
+51\x22>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+       .ColorSch\
+eme-NegativeText\
+ {\x0a            c\
+olor:#da4453;\x0a  \
+      }\x0a        \
+</style>\x0a    </d\
+efs>\x0a    <path\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22 \x0a     c\
+lass=\x22ColorSchem\
+e-NegativeText\x22\x0a\
+        d=\x22M8 3v\
+2h1V4h4v1h1V3H8M\
+4 6v1h14V6H4m2 2\
+v11h10V8h-1v10H7\
+V8H6\x22/>\x0a</svg>\x0a\
+\x00\x00\x0ea\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 6.9707031 2.99\
+80469 C 6.841823\
+1 2.9980469 6.73\
+79069 3.0912044 \
+6.7167969 3.2089\
+844 L 6.5253906 \
+4.5332031 C 6.21\
+20906 4.6609731 \
+5.92178 4.825390\
+6 5.65625 5.0253\
+906 L 4.375 4.52\
+34375 C 4.25945 \
+4.4812375 4.1269\
+5 4.5230994 4.06\
+25 4.6308594 L 3\
+.0351562 6.36328\
+12 C 2.9706563 6\
+.4710512 2.99900\
+31 6.6058337 3.0\
+957031 6.6835938\
+ L 4.1796875 7.5\
+117188 C 4.15858\
+75 7.6716988 4.1\
+445312 7.83446 4\
+.1445312 8 C 4.1\
+445312 8.16444 4\
+.1596875 8.32634\
+81 4.1796875 8.4\
+863281 L 3.09570\
+31 9.3144531 C 2\
+.9979031 9.38895\
+31 2.9707164 9.5\
+247656 3.0351562\
+ 9.6347656 L 4.0\
+625 11.367188 C \
+4.127 11.474956 \
+4.25945 11.51903\
+9 4.375 11.47460\
+9 L 5.65625 10.9\
+72656 C 5.92067 \
+11.170426 6.2120\
+906 11.337074 6.\
+5253906 11.46484\
+4 L 6.7167969 12\
+.789062 C 6.7378\
+969 12.906833 6.\
+8418231 13 6.970\
+7031 13 L 9.0273\
+438 13 C 9.15622\
+36 13 9.26014 12\
+.906843 9.28125 \
+12.789062 L 9.47\
+26562 11.464844 \
+C 9.7859763 11.3\
+37074 10.076257 \
+11.172656 10.341\
+797 10.972656 L \
+11.621094 11.474\
+609 C 11.736634 \
+11.516809 11.871\
+117 11.474956 11\
+.935547 11.36718\
+8 L 12.962891 9.\
+6347656 C 13.027\
+391 9.5269956 12\
+.999144 9.392223\
+1 12.902344 9.31\
+44531 L 11.81835\
+9 8.4863281 C 11\
+.839459 8.326348\
+1 11.853516 8.16\
+554 11.853516 8 \
+C 11.853516 7.83\
+446 11.838359 7.\
+6716988 11.81835\
+9 7.5117188 L 12\
+.904297 6.683593\
+8 C 13.002097 6.\
+6090938 13.02929\
+4 6.4732813 12.9\
+64844 6.3632812 \
+L 11.9375 4.6308\
+594 C 11.873 4.5\
+230994 11.74055 \
+4.4789975 11.625\
+ 4.5234375 L 10.\
+34375 5.0253906 \
+C 10.07933 4.827\
+6206 9.7879094 4\
+.6609731 9.47460\
+94 4.5332031 L 9\
+.2832031 3.20898\
+44 C 9.2599031 3\
+.0912144 9.15511\
+37 2.9980469 9.0\
+273438 2.9980469\
+ L 6.9707031 2.9\
+980469 z M 8 6 A\
+ 2 2 0 0 1 10 8 \
+A 2 2 0 0 1 8 10\
+ A 2 2 0 0 1 6 8\
+ A 2 2 0 0 1 8 6\
+ z M 14.134766 1\
+1.005859 C 14.03\
+8766 10.981859 1\
+3.944783 11.0334\
+11 13.908203 11.\
+119141 L 13.5253\
+91 12.091797 C 1\
+3.269321 12.1306\
+97 13.022273 12.\
+203801 12.789062\
+ 12.306641 L 11.\
+927734 11.6875 C\
+ 11.848934 11.63\
+38 11.741278 11.\
+641236 11.673828\
+ 11.710938 L 10.\
+597656 12.839844\
+ C 10.530256 12.\
+909544 10.526436\
+ 13.019143 10.58\
+5938 13.095703 L\
+ 11.244141 13.92\
+5781 C 11.199541\
+ 14.043471 11.15\
+8626 14.163373 1\
+1.128906 14.2890\
+62 C 11.099206 1\
+4.414764 11.0809\
+59 14.541129 11.\
+068359 14.667969\
+ L 10.111328 15.\
+097656 C 10.0245\
+28 15.136556 9.9\
+80373 15.234088 \
+10.007812 15.330\
+078 L 10.460938 \
+16.835938 C 10.4\
+90636 16.929638 \
+10.580088 16.989\
+133 10.673828 16\
+.976562 L 11.718\
+75 16.830078 C 1\
+1.87993 17.02890\
+8 12.065051 17.2\
+10974 12.275391 \
+17.365234 L 12.1\
+81641 18.408203 \
+C 12.175641 18.5\
+00803 12.237934 \
+18.591234 12.333\
+984 18.615234 L \
+13.863281 18.994\
+141 C 13.959281 \
+19.018141 14.055\
+217 18.965389 14\
+.091797 18.88085\
+9 L 14.474609 17\
+.908203 C 14.730\
+679 17.869403 14\
+.975774 17.79619\
+9 15.208984 17.6\
+93359 L 16.07226\
+6 18.3125 C 16.1\
+51066 18.3662 16\
+.256769 18.35680\
+9 16.324219 18.2\
+87109 L 17.40234\
+4 17.158203 C 17\
+.469744 17.08740\
+3 17.473463 16.9\
+80857 17.414062 \
+16.904297 L 16.7\
+53906 16.072266 \
+C 16.798506 15.9\
+54576 16.839421 \
+15.832721 16.869\
+141 15.707031 C \
+16.898841 15.581\
+331 16.917086 15\
+.454628 16.92968\
+8 15.330078 L 17\
+.888672 14.90039\
+1 C 17.975472 14\
+.861491 18.01962\
+8 14.765912 17.9\
+92188 14.669922 \
+L 17.539062 13.1\
+62109 C 17.51046\
+4 13.069509 17.4\
+19912 13.010867 \
+17.326172 13.023\
+438 L 16.28125 1\
+3.167969 C 16.12\
+006 12.969139 15\
+.934959 12.79017\
+6 15.724609 12.6\
+34766 L 15.81835\
+9 11.589844 C 15\
+.823359 11.49614\
+4 15.762096 11.4\
+07626 15.666016 \
+11.384766 L 14.1\
+34766 11.005859 \
+z M 14 13 A 2 2 \
+0 0 1 16 15 A 2 \
+2 0 0 1 14 17 A \
+2 2 0 0 1 12 15 \
+A 2 2 0 0 1 14 1\
+3 z \x22\x0a       cla\
+ss=\x22ColorScheme-\
+Text\x22 />\x0a</svg>\x0a\
+\
+\x00\x00\x02\xf8\
+<\
+svg id=\x22svg6\x22 ve\
+rsion=\x221.1\x22 view\
+Box=\x220 0 22 22\x22 \
+xmlns=\x22http://ww\
+w.w3.org/2000/sv\
+g\x22>\x0a    <defs id\
+=\x22defs3051\x22>\x0a   \
+ <style type=\x22te\
+xt/css\x22 id=\x22curr\
+ent-color-scheme\
+\x22>\x0a        .Colo\
+rScheme-Text {  \
+          color:\
+#232629;        \
+}\x0a    </style>\x0a \
+   </defs>\x0a    <\
+path id=\x22path347\
+\x22 d=\x22m3 3v6h0.26\
+95312 1.0332032 \
+4.6972656l-2.939\
+4531-2.9394531a7\
+ 7 0 0 1 4.93945\
+31-2.0605469 7 7\
+ 0 0 1 7 7 7 7 0\
+ 0 1-7 7 7 7 0 0\
+ 1-7-7h-1a8 8 0 \
+0 0 8 8 8 8 0 0 \
+0 4.892578-1.693\
+359l3.400391 3.4\
+0039a1 1 0 0 0 1\
+.414062 0 1 1 0 \
+0 0 0-1.414062l-\
+3.40039-3.400391\
+a8 8 0 0 0 1.693\
+359-4.892578 8 8\
+ 0 0 0-8-8 8 8 0\
+ 0 0-5.6347656 2\
+.3652344l-2.3652\
+344-2.3652344z\x22 \
+class=\x22ColorSche\
+me-Text\x22 fill=\x22c\
+urrentColor\x22 str\
+oke-linecap=\x22squ\
+are\x22 stroke-widt\
+h=\x222\x22 style=\x22pai\
+nt-order:markers\
+ stroke fill\x22/>\x0a\
+</svg>\x0a\
+\x00\x00\x01s\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-Accent {\x0a  \
+          color:\
+#3daee9;\x0a       \
+ }\x0a    </style>\x0a\
+    <rect class=\
+\x22ColorScheme-Acc\
+ent\x22 x=\x223\x22 y=\x223\x22\
+ width=\x2216\x22 heig\
+ht=\x2216\x22 rx=\x222\x22 f\
+ill=\x22currentColo\
+r\x22/>\x0a    <path d\
+=\x22m10 6v2h2v-2zm\
+0 4v6h2v-6z\x22 fil\
+l=\x22#fff\x22/>\x0a</svg\
+>\x0a\
+\x00\x00\x04\x9b\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 2 2.998046\
+9 L 2 3 L 2 4 L \
+2 19 L 3 19 L 11\
+ 19 L 11 18 L 6 \
+18 L 6 12 L 11 1\
+2 L 11 11 L 6 11\
+ L 5 11 L 5 18 L\
+ 3 18 L 3 4 L 6 \
+4 L 6 8 L 6 9 L \
+14 9 L 14 8 L 14\
+ 4 L 14.292969 4\
+ L 17 6.7070312 \
+L 17 7 L 17 10 L\
+ 18 10 L 18 7 L \
+18 6.3007812 L 1\
+7.992188 6.30078\
+12 L 18 6.291015\
+6 L 14.707031 2.\
+9980469 L 14.699\
+219 3.0078125 L \
+14.699219 2.9980\
+469 L 14 2.99804\
+69 L 2 2.9980469\
+ z M 7 4 L 10.90\
+0391 4 L 10.9003\
+91 8 L 7 8 L 7 4\
+ z M 18 11 L 17.\
+003906 11.994141\
+ L 17 11.994141 \
+L 12 16.992188 L\
+ 12.007812 17.00\
+1953 L 12.003906\
+ 18.005859 L 12 \
+18.005859 L 12 1\
+8.996094 L 12 19\
+.005859 L 14 19.\
+005859 L 14.0058\
+59 18.996094 L 1\
+4.009766 18.9960\
+94 L 14.019531 1\
+8.996094 L 14.01\
+3672 18.986328 L\
+ 15 18 L 19 14.0\
+03906 L 18.29492\
+2 13.294922 L 13\
+.304688 18.28125\
+ L 12.710938 17.\
+689453 L 17.7031\
+25 12.701172 L 1\
+8.294922 13.2949\
+22 L 19 13.99804\
+7 L 20 12.998047\
+ L 18 11 z \x22\x0a   \
+ class=\x22ColorSch\
+eme-Text\x22\x0a    />\
+  \x0a</svg>\x0a\
+\x00\x00\x03\x22\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 19 5 L 9.66796\
+88 5.0058594 L 6\
+.5 14.5 L 4.3339\
+844 11 L 3 11 L \
+3 12 L 4 12 L 6.\
+5 17 L 10.441406\
+ 6 L 19 6 L 19 5\
+ z M 14 8 C 11.7\
+90861 8 10 9.790\
+861 10 12 C 10 1\
+4.209139 11.7908\
+61 16 14 16 C 15\
+.149118 15.9982 \
+16.241964 15.502\
+302 17 14.638672\
+ L 17 16 L 18 16\
+ L 18 12 L 18 8 \
+L 17 8 L 17 9.36\
+13281 C 16.24196\
+4 8.4976979 15.1\
+49118 8.0017906 \
+14 8 z M 14 9 C \
+15.656854 9 17 1\
+0.343146 17 12 C\
+ 17 13.656854 15\
+.656854 15 14 15\
+ C 12.343146 15 \
+11 13.656854 11 \
+12 C 11 10.34314\
+6 12.343146 9 14\
+ 9 z \x22\x0a       cl\
+ass=\x22ColorScheme\
+-Text\x22 />\x0a</svg>\
+\x0a\
+\x00\x00\x02\xb3\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 11 3 A 8 3 0 0\
+ 0 3 6 L 3 16 A \
+8 3 0 0 0 11 19 \
+A 8 3 0 0 0 19 1\
+6 L 19 6 A 8 3 0\
+ 0 0 11 3 z M 11\
+ 4 A 7 2 0 0 1 1\
+8 6 A 7 2 0 0 1 \
+11 8 A 7 2 0 0 1\
+ 4 6 A 7 2 0 0 1\
+ 11 4 z M 18 7.4\
+5 L 18 11 A 7 2 \
+0 0 1 11 13 A 7 \
+2 0 0 1 4 11 L 4\
+ 7.45 A 8 3 0 0 \
+0 11 9 A 8 3 0 0\
+ 0 18 7.45 z M 1\
+8 12.45 L 18 16 \
+A 7 2 0 0 1 11 1\
+8 A 7 2 0 0 1 4 \
+16 L 4 12.45 A 8\
+ 3 0 0 0 11 14 A\
+ 8 3 0 0 0 18 12\
+.45 z \x22\x0a       c\
+lass=\x22ColorSchem\
+e-Text\x22 />\x0a</svg\
+>\x0a\
+\x00\x00\x02]\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 4 3 L 4 17\
+ L 3 17 L 3 18 L\
+ 4 18 L 4 19 L 5\
+ 19 L 5 18 L 19 \
+18 L 19 17 L 18 \
+17 L 18 16 L 17 \
+16 L 16 16 L 16 \
+15 L 15 15 L 14 \
+15 L 14 14 L 13 \
+14 L 13 15 L 12 \
+15 L 12 14 L 11 \
+14 L 11 7 L 10 7\
+ L 10 3 L 9 3 L \
+9 5 L 8 5 L 8 8 \
+L 7 8 L 7 10 L 6\
+ 10 L 6 13 L 5 1\
+3 L 5 3 L 4 3 z \
+\x22\x0a\x09class=\x22ColorS\
+cheme-Text\x22\x0a    \
+/>  \x0a</svg>\x0a\
+\x00\x00\x04&\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 11 6 A 10 \
+9.999975 0 0 0 2\
+.3144531 11.0703\
+12 C 2.4995621 1\
+1.361743 2.76008\
+02 11.597238 3.0\
+664062 11.759766\
+ A 9 8.999978 0 \
+0 1 11 7 A 4 4 0\
+ 0 0 7 11 A 4 4 \
+0 0 0 11 15 A 4 \
+4 0 0 0 15 11 A \
+4 4 0 0 0 11.343\
+75 7.0175781 A 9\
+ 8.999978 0 0 1 \
+18.931641 11.761\
+719 C 19.241063 \
+11.598077 19.503\
+624 11.359298 19\
+.689453 11.06445\
+3 A 10 9.999975 \
+0 0 0 11 6 z M 1\
+1 8 A 3 3 0 0 1 \
+14 11 A 3 3 0 0 \
+1 11 14 A 3 3 0 \
+0 1 8 11 A 3 3 0\
+ 0 1 11 8 z M 11\
+ 9 C 9.892 9 9 9\
+.892 9 11 C 9 12\
+.108 9.892 13 11\
+ 13 C 12.108 13 \
+13 12.108 13 11 \
+C 13 10.79519 12\
+.960983 10.60179\
+5 12.904297 10.4\
+16016 C 12.74641\
+5 10.759733 12.4\
+04317 11 12 11 C\
+ 11.446 11 11 10\
+.554 11 10 C 11 \
+9.595683 11.2402\
+67 9.2535881 11.\
+583984 9.0957031\
+ C 11.398205 9.0\
+390231 11.20481 \
+9 11 9 z \x22\x0a\x09clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a    />  \x0a</\
+svg>\x0a\
+\x00\x00\x02q\
+<\
+svg id=\x22svg6\x22 ve\
+rsion=\x221.1\x22 view\
+Box=\x220 0 22 22\x22 \
+xmlns=\x22http://ww\
+w.w3.org/2000/sv\
+g\x22>\x0a    <style i\
+d=\x22current-color\
+-scheme\x22 type=\x22t\
+ext/css\x22>.ColorS\
+cheme-Text {\x0a   \
+         color:#\
+232629;\x0a        \
+}</style>\x0a    <p\
+ath id=\x22path4\x22 c\
+lass=\x22ColorSchem\
+e-Text\x22 d=\x22m9.30\
+0781 3-3.5 3.5 3\
+.5 3.5 0.707031-\
+0.707031-2.29296\
+9-2.292969h3.785\
+154c3.047 0 5.5 \
+2.453 5.5 5.5s-2\
+.453 5.5-5.5 5.5\
+h-1.5v1h1.5c3.60\
+1 0 6.5-2.899 6.\
+5-6.5s-2.899-6.5\
+-6.5-6.5h-3.7851\
+54l2.292969-2.29\
+2969-0.707031-0.\
+707031\x22 fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  <rect id=\x22rect\
+837\x22 class=\x22Colo\
+rScheme-Text\x22 x=\
+\x224\x22 y=\x223\x22 width=\
+\x221\x22 height=\x227\x22 f\
+ill=\x22currentColo\
+r\x22 fill-rule=\x22ev\
+enodd\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02:\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle\x0a        typ\
+e=\x22text/css\x22\x0a   \
+     id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <path \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ d=\x22M 3.6992188 \
+3 L 3 3.6992188 \
+L 10.300781 11 L\
+ 3 18.300781 C 3\
+ 18.300781 3.711\
+2147 18.993333 3\
+.6992188 19 L 11\
+ 11.699219 L 18.\
+300781 19 C 18.2\
+88781 18.9933 19\
+ 18.300781 19 18\
+.300781 L 11.699\
+219 11.001953 L \
+19 3.6992188 L 1\
+8.300781 3 L 11 \
+10.300781 L 3.69\
+92188 3 z \x22 fill\
+=\x22currentColor\x22/\
+>\x0a</svg>\x0a\
+\x00\x00\x02\x19\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+7 L 7 17 L 7 19 \
+L 17 19 L 17 10 \
+L 13 6 L 12 6 L \
+9 3 L 3 3 Z M 4 \
+4 L 8 4 L 8 6 L \
+7 6 L 7 16 L 4 1\
+6 L 4 4 Z M 8 7 \
+L 12 7 L 12 11 L\
+ 16 11 L 16 18 L\
+ 8 18 L 8 7 Z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x02S\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 4 3 L 4 19\
+ L 9 19 L 9 18 L\
+ 5 18 L 5 4 L 13\
+ 4 L 13 8 L 17 8\
+ L 17 11 L 18 11\
+ L 18 7 L 14 3 L\
+ 14 3 L 14 3 L 5\
+ 3 L 4 3 z M 10 \
+12 L 10 19 L 18 \
+19 L 18 13 L 15 \
+13 L 14 12 L 14 \
+12 L 14 12 L 10 \
+12 z M 13.1 14 L\
+ 17 14 L 17 18 L\
+ 11 18 L 11 15 L\
+ 12 15 L 13.1 14\
+ z \x22\x0a    class=\x22\
+ColorScheme-Text\
+\x22\x0a    />  \x0a</svg\
+>\x0a\
+\x00\x00\x04\xd0\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0d\x0a  <\
+defs id=\x22defs305\
+1\x22>\x0d\x0a    <style \
+type=\x22text/css\x22 \
+id=\x22current-colo\
+r-scheme\x22>\x0d\x0a    \
+  .ColorScheme-T\
+ext {\x0d\x0a        c\
+olor:#232629;\x0d\x0a \
+     }\x0d\x0a      </\
+style>\x0d\x0a  </defs\
+>\x0d\x0a <path \x0d\x0a    \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0d\x0a\x09d=\x22m7.01\
+172 3c-.57735 1-\
+.878131 1-.30078\
+1 2l3.541016 6.1\
+40625-2.058594 3\
+.527344c-.445257\
+-.411453-1.03649\
+8-.667969-1.6933\
+59-.667969-1.385\
+ 0-2.5 1.115-2.5\
+ 2.5 0 1.385 1.1\
+15 2.5 2.5 2.5 1\
+.385 0 2.5-1.115\
+ 2.5-2.5 0-.1671\
+03-.01785-.33052\
+3-.048828-.48828\
+1l1.162109-2.013\
+67c.780419-.001.\
+878798-.774603 1\
+.333985-.785156l\
+1.603515 2.78125\
+c-.033193.163037\
+-.050781.332734-\
+.050781.505859 0\
+ 1.385 1.115 2.5\
+ 2.5 2.5 1.385 0\
+ 2.5-1.115 2.5-2\
+.5 0-1.385-1.115\
+-2.5-2.5-2.5-.65\
+3333 0-1.241072.\
+254586-1.685547.\
+662109l-2.054687\
+-3.521484 3.5410\
+15-6.140625c.577\
+35-1 .276569-1-.\
+300781-2l-3.9941\
+41 6.847656-3.99\
+414-6.847656m3.9\
+88281 8c.277 0 .\
+5.223.5.5 0 .277\
+-.223.5-.5.5-.27\
+7 0-.5-.223-.5-.\
+5 0-.277.223-.5.\
+5-.5zm-4.5 4c.83\
+1 0 1.5.669 1.5 \
+1.5 0 .831-.669 \
+1.5-1.5 1.5-.831\
+ 0-1.5-.669-1.5-\
+1.5 0-.831.669-1\
+.5 1.5-1.5m9 0c.\
+831 0 1.5.669 1.\
+5 1.5 0 .831-.66\
+9 1.5-1.5 1.5-.8\
+31 0-1.5-.669-1.\
+5-1.5 0-.831.669\
+-1.5 1.5-1.5\x22\x0d\x0a \
+   class=\x22ColorS\
+cheme-Text\x22\x0d\x0a   \
+ />  \x0d\x0a</svg>\x0d\x0a\
+\x00\x00\x02\xac\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 5 3 L 4 4 \
+L 4 5 L 4 5.3046\
+875 L 9 12.36718\
+8 L 9 16 L 9 16.\
+039062 L 12.9902\
+34 19 L 13 19 L \
+13 12.367188 L 1\
+8 5.3046875 L 18\
+ 4 L 17 3 L 5 3 \
+z M 5 4 L 17 4 L\
+ 17 4.9882812 L \
+12.035156 12 L 1\
+2 12 L 12 12.048\
+828 L 12 13 L 12\
+ 17.019531 L 10 \
+15.535156 L 10 1\
+3 L 10 12.048828\
+ L 10 12 L 9.964\
+8438 12 L 5 4.98\
+82812 L 5 4 z M \
+6 5 L 8 8 L 8 6 \
+L 10 5 L 6 5 z \x22\
+\x0a\x09class=\x22ColorSc\
+heme-Text\x22\x0a    /\
+>  \x0a</svg>\x0a\
+\x00\x00\x04\xf1\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 4 3 L 4 9 L 4\
+ 10 L 4 15 L 4 1\
+6 L 4 17 L 3 17 \
+L 3 18 L 4 18 L \
+4 19 L 5 19 L 5 \
+18 L 18.292969 1\
+8 L 19 18 L 19 1\
+7.292969 L 19 17\
+ L 18.707031 17 \
+L 17.292969 17 L\
+ 5 17 L 5 15.431\
+641 L 5 15.42382\
+8 L 5 15 L 5 12.\
+423828 L 5 11.42\
+3828 L 5 11 L 5 \
+10 L 5 9 L 5 6 L\
+ 5 5.9921875 L 5\
+ 5 L 5 3 L 4 3 z\
+ M 17 3 L 17 4 L\
+ 18 4 L 18 3 L 1\
+7 3 z M 18 4 L 1\
+8 5 L 19 5 L 19 \
+4 L 18 4 z M 18 \
+5 L 17 5 L 17 6 \
+L 18 6 L 18 5 z \
+M 17 5 L 17 4 L \
+16 4 L 16 5 L 17\
+ 5 z M 6 4 L 6 5\
+ L 7 5 L 7 4 L 6\
+ 4 z M 8 4 L 8 5\
+ L 9 5 L 9 4 L 8\
+ 4 z M 6 6 L 6 7\
+ L 7 7 L 7 6 L 6\
+ 6 z M 8 6 L 8 7\
+ L 9 7 L 9 6 L 8\
+ 6 z M 11 7 L 11\
+ 8 L 12 8 L 12 7\
+ L 11 7 z M 13 7\
+ L 13 8 L 14 8 L\
+ 14 7 L 13 7 z M\
+ 11 9 L 11 10 L \
+12 10 L 12 9 L 1\
+1 9 z M 13 9 L 1\
+3 10 L 14 10 L 1\
+4 9 L 13 9 z M 7\
+ 13 L 7 14 L 8 1\
+4 L 8 13 L 7 13 \
+z M 8 14 L 8 15 \
+L 9 15 L 9 14 L \
+8 14 z M 8 15 L \
+7 15 L 7 16 L 8 \
+16 L 8 15 z M 7 \
+15 L 7 14 L 6 14\
+ L 6 15 L 7 15 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a</svg>\x0a\
+\
+\x00\x00\x02`\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 7 3 L 7 \
+5 L 5 5 L 4 5 L \
+4 19 L 5 19 L 18\
+ 19 L 18 18 L 18\
+ 5 L 17 5 L 15 5\
+ L 15 3 L 7 3 z \
+M 5 6 L 6 6 L 6 \
+8 L 16 8 L 16 6 \
+L 17 6 L 17 18 L\
+ 5 18 L 5 6 z M \
+7 9 L 7 10 L 15 \
+10 L 15 9 L 7 9 \
+z M 7 12 L 7 13 \
+L 13 13 L 13 12 \
+L 7 12 z M 7 15 \
+L 7 16 L 10 16 L\
+ 10 15 L 7 15 z \
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a</svg>\x0a\
+\x00\x00\x02F\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 11 16 L 1\
+6.293 16 L 14 18\
+.293 L 14.707 19\
+ L 18.207 15.5 L\
+ 14.707 12 L 14 \
+12.707 L 16.293 \
+15 L 11 15 L 11 \
+16 Z M 5 18 L 5 \
+4 L 13 4 L 13 8 \
+L 17 8 L 17 13 L\
+ 18 13 L 18 7 L \
+14 3 L 4 3 L 4 1\
+9 L 13 19 L 13 1\
+8 L 5 18 Z\x22/>\x0a</\
+svg>\x0a\
+\x00\x00\x02T\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 8 3 L 8 9 \
+L 9 9 L 9 4 L 13\
+ 4 L 13 9 L 14 9\
+ L 14 3 L 13 3 L\
+ 9 3 L 8 3 z M 5\
+.7929688 10 L 5 \
+10.816406 L 11 1\
+7 L 17 10.816406\
+ L 16.207031 10 \
+L 11 15.367188 L\
+ 5.7929688 10 z \
+M 4 17 L 4 19 L \
+5 19 L 17 19 L 1\
+8 19 L 18 17 L 1\
+7 17 L 17 18 L 5\
+ 18 L 5 17 L 4 1\
+7 z \x22\x0a    class=\
+\x22ColorScheme-Tex\
+t\x22\x0a    />  \x0a</sv\
+g>\x0a\
+\x00\x00\x02\x19\
+<\
+!DOCTYPE svg>\x0a<s\
+vg viewBox=\x220 0 \
+22 22\x22 version=\x22\
+1.1\x22 xmlns=\x22http\
+://www.w3.org/20\
+00/svg\x22>\x0a    <de\
+fs>\x0a        <sty\
+le type=\x22text/cs\
+s\x22 id=\x22current-c\
+olor-scheme\x22>\x0a  \
+          .Color\
+Scheme-Text {\x0a  \
+              co\
+lor:#232629;\x0a   \
+         }\x0a     \
+   </style>\x0a    \
+</defs>\x0a    <pat\
+h class=\x22ColorSc\
+heme-Text\x22 style\
+=\x22fill:currentCo\
+lor; fill-opacit\
+y:1; stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+7 L 7 17 L 7 19 \
+L 17 19 L 17 10 \
+L 13 6 L 12 6 L \
+9 3 L 3 3 Z M 4 \
+4 L 8 4 L 8 6 L \
+7 6 L 7 16 L 4 1\
+6 L 4 4 Z M 8 7 \
+L 12 7 L 12 11 L\
+ 16 11 L 16 18 L\
+ 8 18 L 8 7 Z\x22/>\
+\x0a</svg>\x0a\
+\x00\x00\x01\xac\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0d\x0a  <\
+defs id=\x22defs305\
+1\x22>\x0d\x0a    <style \
+type=\x22text/css\x22 \
+id=\x22current-colo\
+r-scheme\x22>\x0d\x0a    \
+  .ColorScheme-T\
+ext {\x0d\x0a        c\
+olor:#232629;\x0d\x0a \
+     }\x0d\x0a      </\
+style>\x0d\x0a  </defs\
+>\x0d\x0a <path \x0d\x0a    \
+ style=\x22fill:cur\
+rentColor;fill-o\
+pacity:1;stroke:\
+none\x22 \x0d\x0a     d=\x22\
+m5 3v1 1h-2v3h2v\
+6h-2v3h2v2h1 13v\
+-1-14-1h-14m1 1h\
+2v14h-2v-14m3 0h\
+9v14h-9v-14\x22\x0d\x0a\x09 \
+class=\x22ColorSche\
+me-Text\x22\x0d\x0a     /\
+>\x0d\x0a</svg>\x0d\x0a\
+\x00\x00\x01\xb9\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+ d=\x22M 10 4 L 10 \
+11 L 3 11 L 3 12\
+ L 10 12 L 10 19\
+ L 11 19 L 11 12\
+ L 18 12 L 18 11\
+ L 11 11 L 11 4 \
+L 10 4 z \x22\x0a    c\
+lass=\x22ColorSchem\
+e-Text\x22\x0a    />  \
+\x0a</svg>\x0a\
+\x00\x00\x01\xd7\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 2\
+2 22\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <rect \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ x=\x223\x22 y=\x223\x22 wid\
+th=\x2216\x22 height=\x22\
+16\x22 rx=\x222\x22 fill=\
+\x22currentColor\x22/>\
+\x0a    <path d=\x22M \
+6.414,5 5,6.414 \
+9.586,11 5,15.58\
+6 6.414,17 11,12\
+.414 15.586,17 1\
+7,15.586 12.414,\
+11 17,6.414 15.5\
+86,5 11,9.586 Z\x22\
+ fill=\x22#fff\x22/>\x0a<\
+/svg>\x0a\
+\x00\x00\x02v\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a    style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22 \x0a   \
+  d=\x22M 4 3 L 4 1\
+9 L 5 19 L 13 19\
+ L 13 18 L 5 18 \
+L 5 4 L 13 4 L 1\
+3 7 L 13 8 L 17 \
+8 L 17 14 L 18 1\
+4 L 18 8.40625 L\
+ 18 7 L 18 6.992\
+1875 L 14.007812\
+ 3 L 14 3.009765\
+6 L 14 3 L 13 3 \
+L 5 3 L 4 3 z M \
+15 14 L 15 16 L \
+13 16 L 13 17 L \
+15 17 L 15 19 L \
+16 19 L 16 17 L \
+18 17 L 18 16 L \
+16 16 L 16 14 L \
+15 14 z \x22\x0a    cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a    />\x0a</\
+svg>\x0a\
+\x00\x00\x01p\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:#da4453\x22\
+\x0a       d=\x22M 10 \
+4 L 10 14 L 12 1\
+4 L 12 4 L 10 4 \
+z M 10 16 L 10 1\
+8 L 12 18 L 12 1\
+6 L 10 16 z \x22\x0a  \
+     />\x0a</svg>\x0a\
+\x00\x00\x05\x1a\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 4 3 L 4 9 L 4\
+ 10 L 4 15 L 4 1\
+6 L 4 17 L 3 17 \
+L 3 18 L 4 18 L \
+4 19 L 5 19 L 5 \
+18 L 19 18 L 19 \
+17 L 5 17 L 5 16\
+ L 5.0078125 16 \
+L 6 16 L 8 16 L \
+8 15.992188 L 8.\
+0078125 16 L 10.\
+007812 14 L 11.5\
+99609 14 L 13.59\
+9609 16 L 17.099\
+609 16 L 19 16 L\
+ 19 15 L 17.0996\
+09 15 L 14.01367\
+2 15 L 12.013672\
+ 13 L 12 13 L 11\
+.007812 13 L 10.\
+599609 13 L 9.59\
+375 13 L 7.59375\
+ 15 L 6 15 L 5.0\
+078125 15 L 5 15\
+ L 5 12 L 5 11 L\
+ 5 10 L 6 10 L 7\
+ 10 L 8.8730469 \
+10 L 8.875 10 L \
+10.875 8 L 11.70\
+3125 7.171875 L \
+12.998047 5.8769\
+531 L 15.121094 \
+8 L 15.126953 7.\
+9960938 L 15.130\
+859 8 L 17.13085\
+9 6 L 17.958984 \
+5.171875 L 19 4.\
+1308594 L 18.292\
+969 3.4238281 L \
+17.251953 4.4648\
+438 L 16.423828 \
+5.2929688 L 15.1\
+26953 6.5898438 \
+L 13 4.4648438 L\
+ 12.998047 4.466\
+7969 L 12.996094\
+ 4.4648438 L 11.\
+46875 5.9921875 \
+L 5 5.9921875 L \
+5 5 L 5 3 L 4 3 \
+z M 5 6 L 11.460\
+938 6 L 10.99609\
+4 6.4648438 L 10\
+.167969 7.292968\
+8 L 8.4609375 9 \
+L 7 9 L 6 9 L 5 \
+9 L 5 6 z \x22\x0a    \
+ class=\x22ColorSch\
+eme-Text\x22\x0a     /\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xa5\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 22 22\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 4 3 L 4 \
+9 L 4 10 L 4 15 \
+L 4 16 L 4 17 L \
+3 17 L 3 18 L 4 \
+18 L 4 19 L 5 19\
+ L 5 18 L 19 18 \
+L 19 17 L 16 17 \
+L 16 8 L 15 8 L \
+12 8 L 12 17 L 1\
+0 17 L 10 7 L 10\
+ 4 L 10 3 L 6 3 \
+L 6 17 L 5 17 L \
+5 16 L 5 15 L 5 \
+12 L 5 11 L 5 10\
+ L 5 9 L 5 6 L 5\
+ 5.9921875 L 5 5\
+ L 5 3 L 4 3 z M\
+ 7 4 L 9 4 L 9 1\
+7 L 7 17 L 7 4 z\
+ M 13 9 L 15 9 L\
+ 15 17 L 13 17 L\
+ 13 9 z \x22\x0a\x09 clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a     />\x0a</s\
+vg>\x0a\
+\x00\x00\x05\x1b\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22UTF\
@@ -2131,50 +7218,50 @@ e-Background {\x0a \
        color:#ef\
 f0f1;\x0a      }\x0a  \
     .ColorScheme\
--Highlight {\x0a   \
-     color:#3dae\
-e9;\x0a      }\x0a    \
-  .ColorScheme-B\
-uttonText {\x0a    \
-    color:#31363\
-b;\x0a      }\x0a     \
- .ColorScheme-Ne\
-gativeText {\x0a   \
-     color:#da44\
-53;\x0a      }\x0a  </\
-style>\x0a    <g tr\
-ansform=\x22transla\
-te(27,27) transl\
-ate(-22,-22)\x22 id\
-=\x22document-open-\
-recent\x22>\x0a    <pa\
-th id=\x22path14\x22 d\
-=\x22m 0,-3 0,28 10\
-,0 0,-1 -9,0 0,-\
-26 20,0 0,15 1,0\
- 0,-16 -22,0 z m\
- 16,16 a 6,6 0 0\
- 0 -6,6 6,6 0 0 \
-0 6,6 6,6 0 0 0 \
-6,-6 6,6 0 0 0 -\
-6,-6 z m 0,1 a 5\
-,5 0 0 1 5,5 5,5\
- 0 0 1 -5,5 5,5 \
-0 0 1 -5,-5 5,5 \
-0 0 1 5,-5 z m -\
-1,1 0,5 1,0 3,0 \
-0,-1 -3,0 0,-4 -\
-1,0 z\x22 style=\x22op\
-acity:1;fill:cur\
-rentColor\x22 class\
-=\x22ColorScheme-Te\
-xt\x22/>\x0a    <rect \
-id=\x22rect23\x22 widt\
-h=\x2232\x22 height=\x223\
-2\x22 x=\x22-5\x22 y=\x22-5\x22\
- style=\x22opacity:\
-1;fill:none\x22/>\x0a \
- </g>\x0a</svg>\x0a\
+-Accent {\x0a      \
+  color:#3daee9;\
+\x0a      }\x0a      .\
+ColorScheme-Butt\
+onText {\x0a       \
+ color:#31363b;\x0a\
+      }\x0a      .C\
+olorScheme-Negat\
+iveText {\x0a      \
+  color:#da4453;\
+\x0a      }\x0a  </sty\
+le>\x0a    <g trans\
+form=\x22translate(\
+27,27) translate\
+(-22,-22)\x22 id=\x22d\
+ocument-open-rec\
+ent\x22>\x0a    <path \
+id=\x22path14\x22 d=\x22m\
+ 0,-3 0,28 10,0 \
+0,-1 -9,0 0,-26 \
+20,0 0,15 1,0 0,\
+-16 -22,0 z m 16\
+,16 a 6,6 0 0 0 \
+-6,6 6,6 0 0 0 6\
+,6 6,6 0 0 0 6,-\
+6 6,6 0 0 0 -6,-\
+6 z m 0,1 a 5,5 \
+0 0 1 5,5 5,5 0 \
+0 1 -5,5 5,5 0 0\
+ 1 -5,-5 5,5 0 0\
+ 1 5,-5 z m -1,1\
+ 0,5 1,0 3,0 0,-\
+1 -3,0 0,-4 -1,0\
+ z\x22 style=\x22opaci\
+ty:1;fill:curren\
+tColor\x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a    <rect id=\
+\x22rect23\x22 width=\x22\
+32\x22 height=\x2232\x22 \
+x=\x22-5\x22 y=\x22-5\x22 st\
+yle=\x22opacity:1;f\
+ill:none\x22/>\x0a  </\
+g>\x0a</svg>\x0a\
 \x00\x00\x0a(\
 <\
 ?xml version=\x221.\
@@ -2340,43 +7427,46 @@ orm=\x22matrix(1 0 \
 0 1 384.57143 51\
 5.798)\x22/>\x0a </g>\x0a\
 </svg>\x0a\
-\x00\x00\x02&\
+\x00\x00\x02U\
 <\
-svg viewBox=\x220 0\
- 32 32\x22 xmlns=\x22h\
-ttp://www.w3.org\
-/2000/svg\x22>\x0a    \
-<style\x0a        t\
-ype=\x22text/css\x22\x0a \
-       id=\x22curre\
-nt-color-scheme\x22\
->\x0a        .Color\
-Scheme-NegativeT\
-ext {\x0a          \
-  color:#da4453;\
-\x0a        }\x0a    <\
-/style>\x0a    <pat\
-h d=\x22M16 4A12 12\
- 0 0 0 4 16a12 1\
-2 0 0 0 12 12 12\
- 12 0 0 0 12-12A\
-12 12 0 0 0 16 4\
-m-5.293 6L16 15.\
-293 21.293 10s.7\
-27.716.707.707L1\
-6.707 16 22 21.2\
-93s-.701.706-.70\
-7.707L16 16.707 \
-10.707 22c.001-.\
-005-.707-.707-.7\
-07-.707L15.293 1\
-6 10 10.707c.02.\
-001.707-.707.707\
--.707\x22 class=\x22Co\
-lorScheme-Negati\
-veText\x22 fill=\x22cu\
-rrentColor\x22/>\x0a</\
-svg>\x0a\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 3\
+2 32\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path \
+d=\x22m7 7 18 18m-1\
+8 0 18-18\x22\x0a     \
+         fill=\x22c\
+urrentColor\x22/>\x0a \
+       <path\x0a   \
+         d=\x22M 7,\
+6.1523437 6.1523\
+437,7 15.152344,\
+16 6.1523437,25 \
+7,25.847656 l 9,\
+-9 9,9 L 25.8476\
+56,25 l -9,-9 9,\
+-9 L 25,6.152343\
+7 16,15.152344 Z\
+\x22\x0a            fi\
+ll=\x22currentColor\
+\x22/>\x0a    </g>\x0a</s\
+vg>\x0a\
 \x00\x00\x05k\
 (\
 \xb5/\xfd`=\x1f\x0d+\x00f\xb7\xa2#\x00q\xf4\
@@ -2466,7 +7556,7 @@ k\xe6\xde\x8a\x91O\x04\xb07\xc0\x0b\x12\xdcv\xa7\xa6\
 \x0a%\xca\x8e89\xd4)\x10\x9f\x9e\x8a\xb6/>\xd3\
 \x04\x9d\x9e\x0b\xbe\xcc,\x0f\x8c\x14t,\xf5\xc2\xdfw\
 wd>H\xb8\xfa@\x91\xa9\x02\
-\x00\x00\x02\xd8\
+\x00\x00\x02\xd5\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -2481,39 +7571,39 @@ ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M18.5 6A3.5 \
-3.5 0 0 0 15.041\
-02 9H4V10H15.04A\
-3.5 3.5 0 0 0 18\
-.5 13 3.5 3.5 0 \
-0 0 21.958984 10\
-H28V9H21.961A3.5\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M18.5 6A3.5 3.5\
+ 0 0 0 15.04102 \
+9H4V10H15.04A3.5\
  3.5 0 0 0 18.5 \
-6M7.5 19A3.5 3.5\
- 0 0 0 4 22.5 3.\
-5 3.5 0 0 0 7.5 \
-26 3.5 3.5 0 0 0\
- 10.960938 23H28\
-V22H10.959A3.5 3\
-.5 0 0 0 7.5 19m\
-0 1A2.5 2.5 0 0 \
-1 10 22.5 2.5 2.\
-5 0 0 1 7.5 25 2\
-.5 2.5 0 0 1 5 2\
-2.5 2.5 2.5 0 0 \
-1 7.5 20\x22\x0a     c\
-lass=\x22ColorSchem\
-e-Text\x22\x0a     />\x0a\
-</svg>\x0a\
+13 3.5 3.5 0 0 0\
+ 21.958984 10H28\
+V9H21.961A3.5 3.\
+5 0 0 0 18.5 6M7\
+.5 19A3.5 3.5 0 \
+0 0 4 22.5 3.5 3\
+.5 0 0 0 7.5 26 \
+3.5 3.5 0 0 0 10\
+.960938 23H28V22\
+H10.959A3.5 3.5 \
+0 0 0 7.5 19m0 1\
+A2.5 2.5 0 0 1 1\
+0 22.5 2.5 2.5 0\
+ 0 1 7.5 25 2.5 \
+2.5 0 0 1 5 22.5\
+ 2.5 2.5 0 0 1 7\
+.5 20\x22\x0a     clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a     />\x0a</s\
+vg>\x0a\
 \x00\x00\x09\xce\
 <\
 svg viewBox=\x220 0\
@@ -2673,6 +7763,392 @@ c-.00605.16139-.\
 13.484375z\x22 fill\
 -opacity=\x22.14902\
 \x22/></g></svg>\
+\x00\x00\x03\x07\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 32 32\x22>\x0a  <d\
+efs\x0a     id=\x22def\
+s3051\x22>\x0a    <sty\
+le\x0a       type=\x22\
+text/css\x22\x0a      \
+ id=\x22current-col\
+or-scheme\x22>\x0a    \
+  .ColorScheme-T\
+ext {\x0a        co\
+lor:#232629;\x0a   \
+   }\x0a      </sty\
+le>\x0a  </defs>\x0a  \
+<path\x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:1;stroke:none\x22 \
+\x0a     d=\x22M 4 4 L\
+ 4 28 L 28 28 L \
+28 4 L 4 4 z M 5\
+ 9 L 27 9 L 27 2\
+7 L 5 27 L 5 9 z\
+ M 8 11 L 8 17 L\
+ 15 17 L 15 11 L\
+ 8 11 z M 17 11 \
+L 17 17 L 24 17 \
+L 24 11 L 17 11 \
+z M 9 12 L 14 12\
+ L 14 16 L 9 16 \
+L 9 12 z M 18 12\
+ L 23 12 L 23 16\
+ L 18 16 L 18 12\
+ z M 8 19 L 8 25\
+ L 15 25 L 15 19\
+ L 8 19 z M 17 1\
+9 L 17 25 L 24 2\
+5 L 24 19 L 17 1\
+9 z M 9 20 L 14 \
+20 L 14 24 L 9 2\
+4 L 9 20 z M 18 \
+20 L 23 20 L 23 \
+24 L 18 24 L 18 \
+20 z \x22\x0a     id=\x22\
+path45\x22 \x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
+\x00\x00\x01t\
+<\
+svg viewBox=\x220 0\
+ 32 32\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <path d=\x22M2.\
+707 5L2 5.707l14\
+ 14 14-14L29.293\
+ 5 16 18.293zm0 \
+7L2 12.707l14 14\
+ 14-14-.707-.707\
+L16 25.293z\x22 cla\
+ss=\x22ColorScheme-\
+Text\x22 fill=\x22curr\
+entColor\x22/>\x0a</sv\
+g>\x0a\
+\x00\x00\x13/\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 32 32\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#31363b;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
+\x0a     />\x0a <path \
+\x0a     style=\x22fil\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 16.\
+472656 10 C 16.3\
+44857 10 16.2395\
+37 10.090965 16.\
+216797 10.208984\
+ L 16.023438 11.\
+535156 C 15.7104\
+39 11.662659 15.\
+418558 11.830295\
+ 15.154297 12.02\
+7344 L 13.875 11\
+.525391 C 13.760\
+198 11.48008 13.\
+6264 11.525332 1\
+3.5625 11.632812\
+ L 12.535156 13.\
+365234 C 12.4712\
+53 13.475876 12.\
+498223 13.610727\
+ 12.595703 13.68\
+5547 L 13.679688\
+ 14.511719 C 13.\
+659117 14.671887\
+ 13.642578 14.83\
+4563 13.642578 1\
+5 C 13.642578 15\
+.165437 13.65910\
+6 15.328113 13.6\
+79688 15.488281 \
+L 12.597656 16.3\
+14453 C 12.50018\
+6 16.392431 12.4\
+73209 16.527285 \
+12.537109 16.634\
+766 L 13.564453 \
+18.367188 C 13.6\
+28352 18.47467 1\
+3.761069 18.5167\
+59 13.876953 18.\
+474609 L 15.1582\
+03 17.972656 C 1\
+5.422464 18.1718\
+13 15.712395 18.\
+337341 16.025391\
+ 18.464844 L 16.\
+21875 19.791016 \
+C 16.239327 19.9\
+07991 16.343775 \
+20 16.472656 20 \
+L 18.529297 20 C\
+ 18.658178 20 18\
+.762625 19.90903\
+5 18.783203 19.7\
+91016 L 18.97656\
+2 18.464844 C 19\
+.289559 18.33734\
+1 19.581442 18.1\
+69705 19.845703 \
+17.972656 L 21.1\
+25 18.474609 C 2\
+1.239801 18.5199\
+2 21.3736 18.474\
+67 21.4375 18.36\
+7188 L 22.464844\
+ 16.634766 C 22.\
+528746 16.524124\
+ 22.501767 16.38\
+9273 22.404297 1\
+6.314453 L 21.32\
+0312 15.488281 C\
+ 21.340884 15.32\
+8113 21.357422 1\
+5.165437 21.3574\
+22 15 C 21.35742\
+2 14.834563 21.3\
+40892 14.671887 \
+21.320312 14.511\
+719 L 22.404297 \
+13.685547 C 22.5\
+01767 13.607569 \
+22.528744 13.472\
+715 22.464844 13\
+.365234 L 21.437\
+5 11.632812 C 21\
+.373601 11.52533\
+1 21.240885 11.4\
+83241 21.125 11.\
+525391 L 19.8457\
+03 12.027344 C 1\
+9.581442 11.8281\
+87 19.289559 11.\
+662659 18.976562\
+ 11.535156 L 18.\
+783203 10.208984\
+ C 18.762625 10.\
+092019 18.658178\
+ 10 18.529297 10\
+ L 16.472656 10 \
+z M 17.498047 13\
+.25 C 18.492273 \
+13.25 19.296875 \
+14.032666 19.296\
+875 15 C 19.2968\
+75 15.967334 18.\
+492273 16.75 17.\
+498047 16.75 C 1\
+6.50382 16.75 15\
+.699219 15.96733\
+4 15.699219 15 C\
+ 15.699219 14.03\
+2666 16.50382 13\
+.25 17.498047 13\
+.25 z M 12.5625 \
+18.503906 C 12.5\
+23023 18.495039 \
+12.481454 18.499\
+894 12.443359 18\
+.521484 L 11.220\
+703 19.207031 C \
+11.143493 19.249\
+178 11.111659 19\
+.342618 11.13671\
+9 19.423828 L 11\
+.464844 20.31835\
+9 C 11.321477 20\
+.503397 11.20451\
+1 20.706203 11.1\
+13281 20.917969 \
+L 10.183594 21.0\
+27344 C 10.10037\
+9 21.037624 10.0\
+36203 21.110809 \
+10.033203 21.199\
+219 L 10 22.6289\
+06 C 9.997995 22\
+.719364 10.05936\
+8 22.794204 10.1\
+42578 22.808594 \
+L 11.066406 22.9\
+64844 C 11.10751\
+1 23.071755 11.1\
+53844 23.179376 \
+11.208984 23.283\
+203 C 11.264126 \
+23.38703 11.3274\
+08 23.484575 11.\
+392578 23.578125\
+ L 11.023438 24.\
+457031 C 10.9913\
+57 24.538242 11.\
+01956 24.631474 \
+11.09375 24.6777\
+34 L 12.283203 2\
+5.421875 C 12.35\
+7393 25.468135 1\
+2.450719 25.4495\
+26 12.505859 25.\
+384766 L 13.0996\
+09 24.644531 C 1\
+3.323181 24.6815\
+41 13.552665 24.\
+688733 13.78125 \
+24.664062 L 14.3\
+37891 25.431641 \
+C 14.389022 25.4\
+98461 14.482404 \
+25.521696 14.558\
+594 25.478516 L \
+15.78125 24.7929\
+69 C 15.85746 24\
+.750821 15.89035\
+1 24.658305 15.8\
+63281 24.578125 \
+L 15.535156 23.6\
+81641 C 15.67852\
+3 23.496603 15.7\
+95489 23.29575 1\
+5.886719 23.0839\
+84 L 16.816406 2\
+2.972656 C 16.89\
+962 22.962376 16\
+.963797 22.88919\
+1 16.966797 22.8\
+00781 L 17 21.37\
+3047 C 17.002005\
+ 21.282589 16.94\
+0632 21.207749 1\
+6.857422 21.1933\
+59 L 15.935547 2\
+1.035156 C 15.89\
+4442 20.928245 1\
+5.848109 20.8206\
+24 15.792969 20.\
+716797 C 15.7378\
+28 20.61297 15.6\
+74545 20.515425 \
+15.609375 20.421\
+875 L 15.978516 \
+19.542969 C 16.0\
+10598 19.461758 \
+15.982393 19.368\
+526 15.908203 19\
+.322266 L 14.718\
+75 18.578125 C 1\
+4.64456 18.53186\
+5 14.551234 18.5\
+50474 14.496094 \
+18.615234 L 13.9\
+02344 19.355469 \
+C 13.678773 19.3\
+18459 13.449288 \
+19.311267 13.220\
+703 19.335938 L \
+12.664062 18.568\
+359 C 12.638497 \
+18.534949 12.601\
+977 18.512774 12\
+.5625 18.503906 \
+z M 13.380859 20\
+.755859 C 13.853\
+631 20.707383 14\
+.330146 20.94550\
+5 14.572266 21.4\
+00391 C 14.89509\
+1 22.006905 14.6\
+7745 22.766644 1\
+4.085938 23.0976\
+56 C 13.494423 2\
+3.428669 12.7544\
+67 23.206122 12.\
+431641 22.599609\
+ C 12.108815 21.\
+993095 12.326456\
+ 21.233357 12.91\
+7969 20.902344 C\
+ 13.065847 20.81\
+9591 13.223269 2\
+0.772018 13.3808\
+59 20.755859 z \x22\
+\x0a     class=\x22Col\
+orScheme-Text\x22\x0a \
+    />\x0a</svg>\x0a\
 \x00\x00\x03\x00\
 <\
 svg id=\x22svg6\x22 ve\
@@ -2795,7 +8271,7 @@ L 20.300781 25.1\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
-\x00\x00\x05\x9d\
+\x00\x00\x05\x97\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -2810,84 +8286,84 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     class=\x22\
-ColorScheme-High\
-light\x22\x0a     />\x0a \
-<path \x0a     styl\
-e=\x22fill-opacity:\
-0.33;fill-rule:e\
-venodd\x22\x0a     d=\x22\
-m 2,3 0,7 9,0 L \
-13,8 30,8 30,5 1\
-6,5 14,3 2,3 Z\x22\x0a\
-     />\x0a <path \x0a\
-     style=\x22fill\
-:#ffffff;fill-op\
-acity:0.2;fill-r\
-ule:evenodd\x22\x0a   \
-  d=\x22M 14 3 L 15\
- 6 L 30 6 L 30 5\
- L 16 5 L 14 3 z\
- M 13 8 L 11 10 \
-L 1 10 L 1 11 L \
-12 11 L 13 8 z \x22\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
 \x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l-opacity:0.2;fi\
-ll-rule:evenodd\x22\
-\x0a     d=\x22M 13 8 \
-L 11 9 L 2 9 L 2\
- 10 L 11 10 L 13\
- 8 z M 1 28 L 1 \
-29 L 31 29 L 31 \
-28 L 1 28 z \x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a <path \x0a    \
- style=\x22fill:cur\
-rentColor;fill-o\
-pacity:0.6;strok\
-e:none\x22 \x0a     d=\
-\x22M 22,14 15,14.0\
-04 12.559,20.695\
- 11.004,18 h -1 \
-v 1 h 0.428 l 2.\
-133,3.693 3.02,-\
-7.693 h 6.42 z m\
- -4,2 c -1.662,0\
- -3,1.338 -3,3 0\
-,1.662 1.338,3 3\
-,3 0.773,0 1.469\
-,-0.298 2,-0.775\
- V 22 h 1 v -6 h\
- -1 v 0.775 C 19\
-.469,16.298 18.7\
-73,16 18,16 m 0,\
-1 c 1.108,0 2,0.\
-892 2,2 0,1.108 \
--0.892,2 -2,2 -1\
-.108,0 -2,-0.892\
- -2,-2 0,-1.108 \
-0.892,-2 2,-2\x22\x0a \
-    class=\x22Color\
-Scheme-Text\x22\x0a   \
-  />\x0a</svg>\x0a\
-\x00\x00\x05\xac\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 22,\
+14 15,14.004 12.\
+559,20.695 11.00\
+4,18 h -1 v 1 h \
+0.428 l 2.133,3.\
+693 3.02,-7.693 \
+h 6.42 z m -4,2 \
+c -1.662,0 -3,1.\
+338 -3,3 0,1.662\
+ 1.338,3 3,3 0.7\
+73,0 1.469,-0.29\
+8 2,-0.775 V 22 \
+h 1 v -6 h -1 v \
+0.775 C 19.469,1\
+6.298 18.773,16 \
+18,16 m 0,1 c 1.\
+108,0 2,0.892 2,\
+2 0,1.108 -0.892\
+,2 -2,2 -1.108,0\
+ -2,-0.892 -2,-2\
+ 0,-1.108 0.892,\
+-2 2,-2\x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
+\x00\x00\x05\xa6\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -2902,84 +8378,84 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     class=\x22\
-ColorScheme-High\
-light\x22\x0a     />\x0a \
-<path \x0a     styl\
-e=\x22fill-opacity:\
-0.33;fill-rule:e\
-venodd\x22\x0a     d=\x22\
-m 2,3 0,7 9,0 L \
-13,8 30,8 30,5 1\
-6,5 14,3 2,3 Z\x22\x0a\
-     />\x0a <path \x0a\
-     style=\x22fill\
-:#ffffff;fill-op\
-acity:0.2;fill-r\
-ule:evenodd\x22\x0a   \
-  d=\x22M 14 3 L 15\
- 6 L 30 6 L 30 5\
- L 16 5 L 14 3 z\
- M 13 8 L 11 10 \
-L 1 10 L 1 11 L \
-12 11 L 13 8 z \x22\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
 \x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l-opacity:0.2;fi\
-ll-rule:evenodd\x22\
-\x0a     d=\x22M 13 8 \
-L 11 9 L 2 9 L 2\
- 10 L 11 10 L 13\
- 8 z M 1 28 L 1 \
-29 L 31 29 L 31 \
-28 L 1 28 z \x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a <path \x0a    \
- style=\x22fill:cur\
-rentColor;fill-o\
-pacity:0.6;strok\
-e:none\x22 \x0a     d=\
-\x22m 16.00143,12 a\
- 6,2 0 0 0 -6,2 \
-v 8 a 6,2 0 0 0 \
-6,2 6,2 0 0 0 6,\
--2 v -8 a 6,2 0 \
-0 0 -6,-2 m 0,1 \
-a 5,1 0 0 1 5,1 \
-5,1 0 0 1 -5,1 5\
-,1 0 0 1 -5,-1 5\
-,1 0 0 1 5,-1 m \
--5,2.10156 a 6,2\
- 0 0 0 5,0.89844\
- 6,2 0 0 0 5,-0.\
-89648 v 2.896 a \
-5,1 0 0 1 -5,1 5\
-,1 0 0 1 -5,-1 z\
- m 0,4 a 6,2 0 0\
- 0 5,0.89844 6,2\
- 0 0 0 5,-0.8964\
-8 v 2.896 a 5,1 \
-0 0 1 -5,1 5,1 0\
- 0 1 -5,-1 z\x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a</svg>\x0a\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22m 16.\
+00143,12 a 6,2 0\
+ 0 0 -6,2 v 8 a \
+6,2 0 0 0 6,2 6,\
+2 0 0 0 6,-2 v -\
+8 a 6,2 0 0 0 -6\
+,-2 m 0,1 a 5,1 \
+0 0 1 5,1 5,1 0 \
+0 1 -5,1 5,1 0 0\
+ 1 -5,-1 5,1 0 0\
+ 1 5,-1 m -5,2.1\
+0156 a 6,2 0 0 0\
+ 5,0.89844 6,2 0\
+ 0 0 5,-0.89648 \
+v 2.896 a 5,1 0 \
+0 1 -5,1 5,1 0 0\
+ 1 -5,-1 z m 0,4\
+ a 6,2 0 0 0 5,0\
+.89844 6,2 0 0 0\
+ 5,-0.89648 v 2.\
+896 a 5,1 0 0 1 \
+-5,1 5,1 0 0 1 -\
+5,-1 z\x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a</\
+svg>\x0a\
 \x00\x00\x02\xc6\
 <\
 svg id=\x22svg6\x22 ve\
@@ -3168,7 +8644,134 @@ y:1; stroke:none\
 7 L 25.0859 22.5\
  L 16.9961 22.5 \
 Z\x22/>\x0a</svg>\x0a\
-\x00\x00\x04\xca\
+\x00\x00\x07\xcc\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22UTF\
+-8\x22 standalone=\x22\
+no\x22?>\x0a<svg\x0a   xm\
+lns:dc=\x22http://p\
+url.org/dc/eleme\
+nts/1.1/\x22\x0a   xml\
+ns:cc=\x22http://cr\
+eativecommons.or\
+g/ns#\x22\x0a   xmlns:\
+rdf=\x22http://www.\
+w3.org/1999/02/2\
+2-rdf-syntax-ns#\
+\x22\x0a   xmlns:svg=\x22\
+http://www.w3.or\
+g/2000/svg\x22\x0a   x\
+mlns=\x22http://www\
+.w3.org/2000/svg\
+\x22\x0a   xmlns:sodip\
+odi=\x22http://sodi\
+podi.sourceforge\
+.net/DTD/sodipod\
+i-0.dtd\x22\x0a   xmln\
+s:inkscape=\x22http\
+://www.inkscape.\
+org/namespaces/i\
+nkscape\x22\x0a   view\
+Box=\x220 0 32 32\x22\x0a\
+   id=\x22svg2\x22\x0a   \
+version=\x221.1\x22\x0a  \
+ inkscape:versio\
+n=\x220.91 r13725\x22\x0a\
+   sodipodi:docn\
+ame=\x22document-ne\
+w.svg\x22>\x0a  <metad\
+ata\x0a     id=\x22met\
+adata10\x22>\x0a    <r\
+df:RDF>\x0a      <c\
+c:Work\x0a         \
+rdf:about=\x22\x22>\x0a  \
+      <dc:format\
+>image/svg+xml</\
+dc:format>\x0a     \
+   <dc:type\x0a    \
+       rdf:resou\
+rce=\x22http://purl\
+.org/dc/dcmitype\
+/StillImage\x22 />\x0a\
+      </cc:Work>\
+\x0a    </rdf:RDF>\x0a\
+  </metadata>\x0a  \
+<sodipodi:namedv\
+iew\x0a     pagecol\
+or=\x22#ffffff\x22\x0a   \
+  bordercolor=\x22#\
+666666\x22\x0a     bor\
+deropacity=\x221\x22\x0a \
+    objecttolera\
+nce=\x2210\x22\x0a     gr\
+idtolerance=\x2210\x22\
+\x0a     guidetoler\
+ance=\x2210\x22\x0a     i\
+nkscape:pageopac\
+ity=\x220\x22\x0a     ink\
+scape:pageshadow\
+=\x222\x22\x0a     inksca\
+pe:window-width=\
+\x221920\x22\x0a     inks\
+cape:window-heig\
+ht=\x22998\x22\x0a     id\
+=\x22namedview8\x22\x0a  \
+   showgrid=\x22tru\
+e\x22\x0a     inkscape\
+:snap-bbox=\x22true\
+\x22\x0a     inkscape:\
+bbox-nodes=\x22true\
+\x22\x0a     inkscape:\
+zoom=\x2229.5\x22\x0a    \
+ inkscape:cx=\x2216\
+\x22\x0a     inkscape:\
+cy=\x2214.711864\x22\x0a \
+    inkscape:win\
+dow-x=\x220\x22\x0a     i\
+nkscape:window-y\
+=\x2224\x22\x0a     inksc\
+ape:window-maxim\
+ized=\x221\x22\x0a     in\
+kscape:current-l\
+ayer=\x22svg2\x22>\x0a   \
+ <inkscape:grid\x0a\
+       type=\x22xyg\
+rid\x22\x0a       id=\x22\
+grid4138\x22 />\x0a  <\
+/sodipodi:namedv\
+iew>\x0a  <defs\x0a   \
+  id=\x22defs3051\x22>\
+\x0a    <style\x0a    \
+   type=\x22text/cs\
+s\x22\x0a       id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a      .Colo\
+rScheme-Text {\x0a \
+       color:#23\
+2629;\x0a      }\x0a  \
+    </style>\x0a  <\
+/defs>\x0a  <path\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22\x0a     d=\
+\x22m 6,4 0,24 9,0 \
+0,-1 -8,0 0,-22 \
+11,0 0,7 7,0 0,5\
+ 1,0 0,-6 L 19,4\
+ 18,4 6,4 Z m 14\
+,13 0,5 -5,0 0,1\
+ 5,0 0,5 1,0 0,-\
+5 5,0 0,-1 -5,0 \
+0,-5 -1,0 z\x22\x0a   \
+  id=\x22path6\x22\x0a   \
+  class=\x22ColorSc\
+heme-Text\x22\x0a     \
+inkscape:connect\
+or-curvature=\x220\x22\
+ />\x0a</svg>\x0a\
+\x00\x00\x04\xc7\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -3183,71 +8786,71 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:#\
+eb0a42\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l:#eb0a42\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     />\x0a <pa\
-th \x0a     style=\x22\
-fill-opacity:0.3\
-3;fill-rule:even\
-odd\x22\x0a     d=\x22m 2\
-,3 0,7 9,0 L 13,\
-8 30,8 30,5 16,5\
- 14,3 2,3 Z\x22\x0a   \
-  />\x0a <path \x0a   \
-  style=\x22fill:#f\
-fffff;fill-opaci\
-ty:0.2;fill-rule\
-:evenodd\x22\x0a     d\
-=\x22M 14 3 L 15 6 \
-L 30 6 L 30 5 L \
-16 5 L 14 3 z M \
-13 8 L 11 10 L 1\
- 10 L 1 11 L 12 \
-11 L 13 8 z \x22\x0a  \
-   />\x0a <path \x0a  \
-   style=\x22fill-o\
-pacity:0.2;fill-\
-rule:evenodd\x22\x0a  \
-   d=\x22M 13 8 L 1\
-1 9 L 2 9 L 2 10\
- L 11 10 L 13 8 \
-z M 1 28 L 1 29 \
-L 31 29 L 31 28 \
-L 1 28 z \x22\x0a     \
-class=\x22ColorSche\
-me-Text\x22\x0a     />\
-\x0a <path \x0a     st\
-yle=\x22fill:curren\
-tColor;fill-opac\
-ity:0.6;stroke:n\
-one\x22 \x0a     d=\x22M \
-16 13 C 15.4 13 \
-15 13.4 15 14 C \
-15 14.5 15.4 20 \
-16 20 C 16.5 20 \
-17 14.5 17 14 C \
-17 13.4 16.5 13 \
-16 13 z M 16 21 \
-A 1 1 0 0 0 15 2\
-2 A 1 1 0 0 0 16\
- 23 A 1 1 0 0 0 \
-17 22 A 1 1 0 0 \
-0 16 21 z \x22\x0a    \
- class=\x22ColorSch\
-eme-Text\x22\x0a     /\
->\x0a</svg>\x0a\
-\x00\x00\x04{\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 16 \
+13 C 15.4 13 15 \
+13.4 15 14 C 15 \
+14.5 15.4 20 16 \
+20 C 16.5 20 17 \
+14.5 17 14 C 17 \
+13.4 16.5 13 16 \
+13 z M 16 21 A 1\
+ 1 0 0 0 15 22 A\
+ 1 1 0 0 0 16 23\
+ A 1 1 0 0 0 17 \
+22 A 1 1 0 0 0 1\
+6 21 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
+\x00\x00\x04u\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -3262,65 +8865,65 @@ ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a  <path\
- \x0a        style=\
-\x22fill:currentCol\
-or;fill-opacity:\
-1;stroke:none\x22\x0a \
-       d=\x22M 5.5 \
-2 C 4.119 2 3 3.\
-119 3 4.5 L 3 7.\
-5 C 3 8.881 4.11\
-9 10 5.5 10 C 6.\
-881 10 8 8.881 8\
- 7.5 L 8 4.5 C 8\
- 3.119 6.881 2 5\
-.5 2 z M 11.5 2 \
-C 10.119 2 9 3.1\
-19 9 4.5 L 9 7.5\
- C 9 8.881 10.11\
-9 10 11.5 10 C 1\
-2.881 10 14 8.88\
-1 14 7.5 L 14 4.\
-5 C 14 3.119 12.\
-881 2 11.5 2 z M\
- 5.5 3 C 6.328 3\
- 7 3.672 7 4.5 L\
- 7 7.5 C 7 8.328\
- 6.328 9 5.5 9 C\
- 4.672 9 4 8.328\
- 4 7.5 L 4 4.5 C\
- 4 3.672 4.672 3\
- 5.5 3 z M 11.5 \
-3 C 12.328 3 13 \
-3.672 13 4.5 L 1\
-3 7.5 C 13 8.328\
- 12.328 9 11.5 9\
- C 10.672 9 10 8\
-.328 10 7.5 L 10\
- 4.5 C 10 3.672 \
-10.672 3 11.5 3 \
-z M 2 9 L 2 10 L\
- 3 10 L 3 9 L 2 \
-9 z \x22\x0a        cl\
-ass=\x22ColorScheme\
--Text\x22\x0a        /\
->\x0a  <path\x0a     s\
-tyle=\x22fill:curre\
-ntColor;fill-opa\
-city:1;stroke:no\
-ne\x22\x0a     d=\x22m 11\
-,9 0,2 -2,0 0,1 \
-2,0 0,2 1,0 0,-2\
- 2,0 0,-1 -2,0 0\
-,-2 z\x22\x0a     clas\
-s=\x22ColorScheme-H\
-ighlight\x22\x0a      \
-/>\x0a</svg>\x0a\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a  <path \x0a \
+       style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22\x0a    \
+    d=\x22M 5.5 2 C\
+ 4.119 2 3 3.119\
+ 3 4.5 L 3 7.5 C\
+ 3 8.881 4.119 1\
+0 5.5 10 C 6.881\
+ 10 8 8.881 8 7.\
+5 L 8 4.5 C 8 3.\
+119 6.881 2 5.5 \
+2 z M 11.5 2 C 1\
+0.119 2 9 3.119 \
+9 4.5 L 9 7.5 C \
+9 8.881 10.119 1\
+0 11.5 10 C 12.8\
+81 10 14 8.881 1\
+4 7.5 L 14 4.5 C\
+ 14 3.119 12.881\
+ 2 11.5 2 z M 5.\
+5 3 C 6.328 3 7 \
+3.672 7 4.5 L 7 \
+7.5 C 7 8.328 6.\
+328 9 5.5 9 C 4.\
+672 9 4 8.328 4 \
+7.5 L 4 4.5 C 4 \
+3.672 4.672 3 5.\
+5 3 z M 11.5 3 C\
+ 12.328 3 13 3.6\
+72 13 4.5 L 13 7\
+.5 C 13 8.328 12\
+.328 9 11.5 9 C \
+10.672 9 10 8.32\
+8 10 7.5 L 10 4.\
+5 C 10 3.672 10.\
+672 3 11.5 3 z M\
+ 2 9 L 2 10 L 3 \
+10 L 3 9 L 2 9 z\
+ \x22\x0a        class\
+=\x22ColorScheme-Te\
+xt\x22\x0a        />\x0a \
+ <path\x0a     styl\
+e=\x22fill:currentC\
+olor;fill-opacit\
+y:1;stroke:none\x22\
+\x0a     d=\x22m 11,9 \
+0,2 -2,0 0,1 2,0\
+ 0,2 1,0 0,-2 2,\
+0 0,-1 -2,0 0,-2\
+ z\x22\x0a     class=\x22\
+ColorScheme-Acce\
+nt\x22\x0a      />\x0a</s\
+vg>\x0a\
 \x00\x00\x03\x00\
 <\
 svg xmlns=\x22http:\
@@ -3526,7 +9129,48 @@ L 8 7 L 8 8 L 6.\
  5 z \x22\x0a     clas\
 s=\x22ColorScheme-T\
 ext\x22/>\x0a</svg>\x0a\
-\x00\x00\x02r\
+\x00\x00\x02m\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path\x0a\
+            d=\x22m\
+4 4 8 8m-8 0 8-8\
+\x22\x0a            fi\
+ll=\x22currentColor\
+\x22/>\x0a        <pat\
+h\x0a            d=\
+\x22M 4,3.1523438 3\
+.1523438,4 7.152\
+3437,8 3.1523438\
+,12 4,12.847656 \
+8,8.8476563 12,1\
+2.847656 12.8476\
+56,12 8.8476563,\
+8 12.847656,4 12\
+,3.1523438 8,7.1\
+523437 Z\x22\x0a      \
+      fill=\x22curr\
+entColor\x22/>\x0a    \
+</g>\x0a</svg>\x0a\
+\x00\x00\x031\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -3540,34 +9184,46 @@ scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
-}\x0a      .ColorSc\
-heme-NegativeTex\
-t {\x0a        colo\
-r:#da4453;\x0a     \
- }\x0a      </style\
->\x0a  </defs>\x0a  <p\
-ath\x0a     style=\x22\
-fill:currentColo\
-r;fill-opacity:1\
-;stroke:none\x22 \x0a \
-    class=\x22Color\
-Scheme-NegativeT\
-ext\x22\x0a    d=\x22M 8,\
-2 A 6,6 0 0 0 2,\
-8 6,6 0 0 0 8,14\
- 6,6 0 0 0 14,8 \
-6,6 0 0 0 8,2 Z \
-M 5.70703,5 8,7.\
-29297 10.29297,5\
- 11,5.70703 8.70\
-703,8 11,10.2929\
-7 10.29297,11 8,\
-8.70703 5.70703,\
-11 5,10.29297 7.\
-29297,8 5,5.7070\
-3 5.70703,5 Z\x22\x0a \
-       />\x0a</svg>\
-\x0a\
+}\x0a      </style>\
+\x0a  </defs>\x0a  <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22m 6.39,3 -4.383\
+,11 1.357,0 1.18\
+9,-3 4.928,0 1.1\
+52,3 1.373,0 L 7\
+.754,3 Z M 7.07,\
+4.328 C 7.183,4.\
+704 7.781,6.41 8\
+.867,9.443 L 9.0\
+92,10 4.949,10 Z\
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a  <path\x0a\
+     style=\x22fill\
+:currentColor;fi\
+ll-rule:evenodd\x22\
+\x0a     d=\x22M 13 2 \
+A 1 1 0 0 0 12 3\
+ A 1 1 0 0 0 13 \
+4 A 1 1 0 0 0 14\
+ 3 A 1 1 0 0 0 1\
+3 2 z M 13 5 A 1\
+ 1 0 0 0 12 6 A \
+1 1 0 0 0 13 7 A\
+ 1 1 0 0 0 14 6 \
+A 1 1 0 0 0 13 5\
+ z M 13 8 A 1 1 \
+0 0 0 12 9 A 1 1\
+ 0 0 0 13 10 A 1\
+ 1 0 0 0 14 9 A \
+1 1 0 0 0 13 8 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a</svg>\x0a\
+\
 \x00\x00\x06\x98\
 (\
 \xb5/\xfd`\xb1#u4\x00\x9aB(\x0c(\xe0N\
@@ -3676,6 +9332,48 @@ w\x14f\xf9)\xcb\x08\xfcR\xaf\x9b\x90\xd3\xcf\xb78\
 *\xb2@\xbfp0!i4ih\x9f\xfb\x15\x97\x9f\
 \x0a1\xff\x9c\xa5\x0a\x91\xc2\xc4;\x0d+\xc7\xae.C\
 C\xba\xea\x03]\xb1\x0a\
+\x00\x00\x02}\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a       d\
+=\x22M 2 2 L 2 13.2\
+8125 L 2 14 L 14\
+ 14 L 14 13 L 14\
+ 12 L 14 11 L 14\
+ 10 L 14 2 L 2 2\
+ z M 3 3 L 13 3 \
+L 13 9 L 11 7 L \
+7.65625 10.34375\
+ L 6.3125 9 L 6.\
+28125 9 L 3 12.2\
+8125 L 3 3 z M 6\
+ 4 C 4.8954305 4\
+ 4 4.8954305 4 6\
+ C 4 7.1045695 4\
+.8954305 8 6 8 C\
+ 7.1045695 8 8 7\
+.1045695 8 6 C 8\
+ 4.8954305 7.104\
+5695 4 6 4 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
 \x00\x00\x03\xdd\
 <\
 svg xmlns=\x22http:\
@@ -3740,6 +9438,46 @@ L 14 11 L 9 11 L\
     class=\x22Color\
 Scheme-Text\x22\x0a   \
   />\x0a</svg>\x0a\
+\x00\x00\x02[\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NeutralText\
+ {\x0a            c\
+olor:#f67400;\x0a  \
+      }\x0a    </st\
+yle>\x0a    <path c\
+lass=\x22ColorSchem\
+e-NeutralText\x22 d\
+=\x22m8.0065001 2.0\
+000269a0.7500188\
+1 0.74999832 0 0\
+ 0-0.6772669 0.4\
+14749l-5.2501316\
+ 10.499976a0.750\
+01881 0.74999832\
+ 0 0 0 0.6712668\
+ 1.085248h10.500\
+264a0.75001881 0\
+.74999832 0 0 0 \
+0.671266-1.08524\
+8l-5.2501312-10.\
+499976a0.7500188\
+1 0.74999832 0 0\
+ 0-0.6652667-0.4\
+14749z\x22 fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  <path d=\x22m7 6v\
+4h2v-4zm0 5v2h2v\
+-2z\x22 fill=\x22#fff\x22\
+/>\x0a</svg>\x0a\
 \x00\x00\x02 \
 <\
 svg xmlns=\x22http:\
@@ -3813,7 +9551,7 @@ L 10 10 L 9 10 L\
     class=\x22Color\
 Scheme-Text\x22\x0a   \
   />\x0a</svg>\x0a\
-\x00\x00\x058\
+\x00\x00\x03!\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -3827,159 +9565,45 @@ scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 2.5 2 C 2.2238\
-576 2 2 2.223857\
-6 2 2.5 C 2 2.77\
-61424 2.2238576 \
-3 2.5 3 C 2.7761\
-424 3 3 2.776142\
-4 3 2.5 C 3 2.22\
-38576 2.7761424 \
-2 2.5 2 z M 5.5 \
-2 C 5.2238576 2 \
-5 2.2238576 5 2.\
-5 C 5 2.7761424 \
-5.2238576 3 5.5 \
-3 C 5.7761424 3 \
-6 2.7761424 6 2.\
-5 C 6 2.2238576 \
-5.7761424 2 5.5 \
-2 z M 13.160156 \
-2 L 9.7382812 6.\
-3105469 C 9.0627\
-65 6.0537156 8.2\
-111082 5.9824498\
- 7 6 C 5.6442244\
- 7.2930815 4.750\
-7597 7.7091991 2\
- 8 L 2 9 C 4.113\
-7135 12.371692 5\
-.4745763 14 9 14\
- L 10 14 C 11.07\
-3961 12.616195 1\
-1.627119 11.6101\
-69 12 10 L 12 9 \
-C 11.558507 8.00\
-93924 11.158004 \
-7.334604 10.6738\
-28 6.8789062 L 1\
-4 2.6601562 L 13\
-.160156 2 z M 4 \
-4 C 3.4477153 4 \
-3 4.4477153 3 5 \
-C 3 5.5522847 3.\
-4477153 6 4 6 C \
-4.5522847 6 5 5.\
-5522847 5 5 C 5 \
-4.4477153 4.5522\
-847 4 4 4 z M 7.\
-5292969 7.101562\
-5 C 9.6322903 7.\
-2655765 10.16858\
-5 8.0162663 10.8\
-57422 9.6992188 \
-C 10.284594 11.2\
-4586 10.385403 1\
-1.602833 9.27343\
-75 12.96875 C 6.\
-1355922 12.69491\
-5 5.052768 11.54\
-0538 3.3261719 8\
-.8300781 C 5.122\
-354 8.7567482 6.\
-1084274 8.104628\
-5 7.5292969 7.10\
-15625 z \x22\x0a     c\
+}\x0a      .ColorSc\
+heme-NegativeTex\
+t {\x0a        colo\
+r:#da4453;\x0a     \
+ }\x0a      </style\
+>\x0a  </defs>\x0a <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 14,2 2,2 2,14\
+ 14,14 14,3 Z m \
+-1,1 0,10 -3,0 0\
+,-2 -1,0 0,2 -2,\
+0 0,-2 -1,0 0,2 \
+-3,0 0,-10 3,0 0\
+,2 1,0 0,-2 2,0 \
+0,2 1,0 0,-2 z\x22\x0a\
+     class=\x22Colo\
+rScheme-Text\x22\x0a  \
+   /> \x0a <path\x0a  \
+     d=\x22M 13,5 3\
+,5 3,6.719 6.281\
+,10 3,10 l 0,1 1\
+0,0 0,-1 -1.281,\
+0 -4,-4 2.563,0 \
+2.719,2.719 0,-1\
+.438 L 11.72,6 1\
+3.001,6 Z m -2.7\
+19,5 -2.563,0 -4\
+,-4 2.563,0 z\x22\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22 \x0a     c\
 lass=\x22ColorSchem\
-e-Text\x22\x0a     />\x0a\
-</svg>\x0a\
-\x00\x00\x04\xe7\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 13.314453 2 L \
-2 13.294922 L 2.\
-7148438 14 L 14 \
-2.6972656 L 13.3\
-14453 2 z M 8 3 \
-A 8.9999916 9.00\
-0003 0 0 0 0.123\
-04688 7.6679688 \
-C 0.25199187 8.0\
-317035 0.4804856\
-2 8.3445563 0.77\
-929688 8.5761719\
- A 7.9999926 8.0\
-000028 0 0 1 8 4\
- A 3.9999993 4.0\
-000007 0 0 0 4 8\
- A 3.9999993 4.0\
-000007 0 0 0 4.1\
-054688 8.8945312\
- L 5 8 A 2.99999\
-93 3.0000005 0 0\
- 1 8 5 L 8.89257\
-81 4.1074219 A 3\
-.9999993 4.00000\
-07 0 0 0 8.34960\
-94 4.0175781 A 7\
-.9999926 8.00000\
-28 0 0 1 8.92773\
-44 4.0722656 L 9\
-.8066406 3.19335\
-94 A 8.9999916 9\
-.000003 0 0 0 8 \
-3 z M 13.835938 \
-5.1640625 L 13.1\
-21094 5.8789062 \
-A 7.9999926 8.00\
-00028 0 0 1 15.2\
-20703 8.5761719 \
-C 15.522218 8.34\
-24607 15.752612 \
-8.0261216 15.880\
-859 7.6582031 A \
-8.9999916 9.0000\
-03 0 0 0 13.8359\
-38 5.1640625 z M\
- 11.894531 7.105\
-4688 L 11 8 A 2.\
-9999993 3.000000\
-5 0 0 1 8 11 L 7\
-.1074219 11.8925\
-78 A 3.9999993 4\
-.0000007 0 0 0 8\
- 12 A 3.9999993 \
-4.0000007 0 0 0 \
-12 8 A 3.9999993\
- 4.0000007 0 0 0\
- 11.894531 7.105\
-4688 z \x22\x0a     cl\
-ass=\x22ColorScheme\
--Text\x22\x0a     />\x0a<\
-/svg>\x0a\
+e-NegativeText\x22\x0a\
+      />\x0a</svg>\x0a\
+\
 \x00\x00\x02\xbe\
 <\
 svg xmlns=\x22http:\
@@ -4026,6 +9650,366 @@ L 11 11 L 9 11 L\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
+\x00\x00\x02d\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a       d\
+=\x22M 2 2 L 2 5 L \
+2 14 L 3 14 L 14\
+ 14 L 14 13 L 14\
+ 2 L 3 2 L 2 2 z\
+ M 3 5 L 13 5 L \
+13 13 L 3 13 L 3\
+ 5 z M 4 6 L 4 8\
+ L 6 8 L 6 6 L 4\
+ 6 z M 7 6 L 7 8\
+ L 9 8 L 9 6 L 7\
+ 6 z M 10 6 L 10\
+ 8 L 12 8 L 12 6\
+ L 10 6 z M 4 10\
+ L 4 12 L 6 12 L\
+ 6 10 L 4 10 z M\
+ 7 10 L 7 12 L 9\
+ 12 L 9 10 L 7 1\
+0 z \x22\x0a     class\
+=\x22ColorScheme-Te\
+xt\x22\x0a     />\x0a</sv\
+g>\x0a\
+\x00\x00\x01\xa2\
+<\
+svg viewBox=\x220 0\
+ 16 16\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <g class=\x22Co\
+lorScheme-Text\x22 \
+fill=\x22currentCol\
+or\x22>\x0a        <pa\
+th d=\x22M8 9.707l-\
+6-6L2.707 3 8 8.\
+293 13.293 3l.70\
+7.707z\x22/>\x0a      \
+  <path d=\x22M8 13\
+.707l-6-6L2.707 \
+7 8 12.293 13.29\
+3 7l.707.707z\x22/>\
+\x0a    </g>\x0a</svg>\
+\x0a\
+\x00\x00\x01\xa1\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Nega\
+tiveText {\x0a     \
+   color:#da4453\
+;\x0a      }\x0a      \
+</style>\x0a  </def\
+s>\x0a  <path\x0a     \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0a     class\
+=\x22ColorScheme-Ne\
+gativeText\x22\x0a    \
+ d=\x22m5 2v2h1v-1h\
+4v1h1v-2h-5zm-3 \
+3v1h2v8h8v-8h2v-\
+1zm3 1h6v7h-6z\x22 \
+\x0a     />\x0a</svg>\x0a\
+\
+\x00\x00\x10'\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 4.5722656 1 C \
+4.4562656 1 4.36\
+275 1.0834531 4.\
+34375 1.1894531 \
+L 4.171875 2.382\
+8125 C 3.889875 \
+2.4978125 3.6276\
+719 2.6442187 3.\
+3886719 2.824218\
+8 L 2.2363281 2.\
+3730469 C 2.1323\
+281 2.3350469 2.\
+0130781 2.373703\
+1 1.9550781 2.47\
+07031 L 1.029296\
+9 4.0292969 C 0.\
+97129684 4.12629\
+69 0.9989375 4.2\
+464062 1.0859375\
+ 4.3164062 L 2.0\
+605469 5.0625 C \
+2.0415469 5.2065\
+ 2.0292969 5.352\
+9531 2.0292969 5\
+.5019531 C 2.029\
+2969 5.6499531 2\
+.0425469 5.79545\
+31 2.0605469 5.9\
+394531 L 1.08593\
+75 6.6855469 C 0\
+.9979375 6.75254\
+69 0.97129686 6.\
+8736563 1.029296\
+9 6.9726562 L 1.\
+9550781 8.53125 \
+C 2.0130781 8.62\
+825 2.1323281 8.\
+6689063 2.236328\
+1 8.6289062 L 3.\
+3886719 8.177734\
+4 C 3.6266719 8.\
+3557344 3.889875\
+ 8.5041406 4.171\
+875 8.6191406 L \
+4.34375 9.8125 C\
+ 4.36275 9.9185 \
+4.4562656 10.001\
+953 4.5722656 10\
+.001953 L 6.4238\
+281 10.001953 C \
+6.5398281 10.001\
+953 6.6333437 9.\
+9185 6.6523438 9\
+.8125 L 6.824218\
+8 8.6191406 C 7.\
+1062188 8.504140\
+6 7.3684219 8.35\
+77344 7.6074219 \
+8.1777344 L 8.75\
+97656 8.6289062 \
+C 8.8637656 8.66\
+69064 8.9830156 \
+8.62825 9.041015\
+6 8.53125 L 9.96\
+67969 6.9726562 \
+C 10.024797 6.87\
+56563 9.9971563 \
+6.7555469 9.9101\
+562 6.6855469 L \
+8.9355469 5.9394\
+531 C 8.9545469 \
+5.7954531 8.9667\
+969 5.6509531 8.\
+9667969 5.501953\
+1 C 8.9667969 5.\
+3529531 8.953546\
+9 5.2065 8.93554\
+69 5.0625 L 9.91\
+21094 4.3164062 \
+C 10.000109 4.24\
+94062 10.02675 4\
+.1282969 9.96875\
+ 4.0292969 L 9.0\
+429688 2.4707031\
+ C 8.9849688 2.3\
+737031 8.8657187\
+ 2.3330469 8.761\
+7188 2.3730469 L\
+ 7.609375 2.8242\
+188 C 7.371375 2\
+.6462186 7.10817\
+19 2.4978125 6.8\
+261719 2.3828125\
+ L 6.6542969 1.1\
+894531 C 6.63329\
+69 1.0834531 6.5\
+388281 1 6.42382\
+81 1 L 4.5722656\
+ 1 z M 5.4980469\
+ 3.9257812 C 6.3\
+930469 3.9257812\
+ 7.1171875 4.630\
+9531 7.1171875 5\
+.5019531 C 7.117\
+1875 6.3729531 6\
+.3930469 7.07617\
+19 5.4980469 7.0\
+761719 C 4.60304\
+69 7.0761719 3.8\
+808594 6.3729531\
+ 3.8808594 5.501\
+9531 C 3.8808594\
+ 4.6309531 4.603\
+0469 3.9257812 5\
+.4980469 3.92578\
+12 z M 10.619141\
+ 8.0058594 C 10.\
+535141 7.9848594\
+ 10.451922 8.030\
+4688 10.419922 8\
+.1054688 L 10.08\
+5938 8.9550781 C\
+ 9.861937 8.9890\
+781 9.6454063 9.\
+0545312 9.441406\
+2 9.1445312 L 8.\
+6875 8.6035156 C\
+ 8.6185 8.556515\
+6 8.5257969 8.56\
+20469 8.4667969 \
+8.6230469 L 7.52\
+34375 9.6113281 \
+C 7.4644375 9.67\
+23281 7.4616719 \
+9.7689375 7.5136\
+719 9.8359375 L \
+8.0898438 10.560\
+547 C 8.0508438 \
+10.663547 8.0162\
+344 10.770859 7.\
+9902344 10.88085\
+9 C 7.9642344 10\
+.990859 7.9485 1\
+1.099936 7.9375 \
+11.210938 L 7.09\
+96094 11.587891 \
+C 7.0236094 11.6\
+21891 6.9857656 \
+11.705064 7.0097\
+656 11.789062 L \
+7.4042969 13.109\
+375 C 7.4302969 \
+13.191375 7.5097\
+969 13.241469 7.\
+5917969 13.23046\
+9 L 8.5058594 13\
+.103516 C 8.6468\
+594 13.277516 8.\
+8081875 13.43531\
+4 8.9921875 13.5\
+70312 L 8.910156\
+2 14.484375 C 8.\
+9051563 14.56537\
+5 8.9589688 14.6\
+43064 9.0429688 \
+14.664062 L 10.3\
+82812 14.996094 \
+C 10.466812 15.0\
+17094 10.548078 \
+14.972437 10.580\
+078 14.898438 L \
+10.916016 14.046\
+875 C 11.140016 \
+14.012875 11.354\
+594 13.949375 11\
+.558594 13.85937\
+5 L 12.3125 14.4\
+00391 C 12.3815 \
+14.447391 12.474\
+203 14.439906 12\
+.533203 14.37890\
+6 L 13.476562 13\
+.390625 C 13.535\
+563 13.328625 13\
+.538328 13.23496\
+9 13.486328 13.1\
+67969 L 12.91015\
+6 12.439453 C 12\
+.949156 12.33645\
+3 12.983766 12.2\
+31094 13.009766 \
+12.121094 C 13.0\
+35766 12.011094 \
+13.0515 11.90001\
+6 13.0625 11.791\
+016 L 13.902344 \
+11.414062 C 13.9\
+78344 11.380063 \
+14.016188 11.296\
+891 13.992188 11\
+.212891 L 13.597\
+656 9.8925781 C \
+13.572656 9.8115\
+781 13.492156 9.\
+7604844 13.41015\
+6 9.7714844 L 12\
+.496094 9.898437\
+5 C 12.355094 9.\
+7244375 12.19376\
+6 9.5676406 12.0\
+09766 9.4316406 \
+L 12.091797 8.51\
+75781 C 12.09579\
+7 8.4355781 12.0\
+41031 8.3578906 \
+11.957031 8.3378\
+906 L 10.619141 \
+8.0058594 z M 10\
+.296875 10.31445\
+3 C 10.451047 10\
+.290234 10.61339\
+1 10.295938 10.7\
+75391 10.335938 \
+C 11.423391 10.4\
+95938 11.823875 \
+11.145064 11.671\
+875 11.789062 C \
+11.518875 12.433\
+064 10.870656 12\
+.824063 10.22265\
+6 12.664062 C 9.\
+5746564 12.50406\
+4 9.1741719 11.8\
+54936 9.3261719 \
+11.210938 C 9.44\
+09219 10.727937 \
+9.8343594 10.387\
+109 10.296875 10\
+.314453 z \x22\x0a    \
+   class=\x22ColorS\
+cheme-Text\x22 />\x0a<\
+/svg>\x0a\
 \x00\x00\x02\xe4\
 <\
 svg id=\x22svg859\x22 \
@@ -4075,42 +10059,32 @@ paint-order:mark\
 ers stroke fill\x22\
 />\x0a    </g>\x0a</sv\
 g>\x0a\
-\x00\x00\x02\x11\
+\x00\x00\x01r\
 <\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a    <\
-path \x0a        st\
-yle=\x22fill:curren\
-tColor;fill-opac\
-ity:1;stroke:non\
-e\x22 \x0a          d=\
-\x22M 2 2 L 2 12 L \
-5 15 L 5 12 L 14\
- 12 L 14 2 L 2 2\
- z M 3 3 L 13 3 \
-L 13 11 L 3 11 L\
- 3 3 z M 7 4 L 7\
- 5 L 9 5 L 9 4 L\
- 7 4 z M 7 6 L 7\
- 10 L 9 10 L 9 6\
- L 7 6 z \x22\x0a     \
-     id=\x22rect416\
-3\x22 \x0a          cl\
-ass=\x22ColorScheme\
--Text\x22/>\x0a</svg>\x0a\
-\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-Accent {\x0a  \
+          color:\
+#3daee9;\x0a       \
+ }\x0a    </style>\x0a\
+    <rect class=\
+\x22ColorScheme-Acc\
+ent\x22 x=\x222\x22 y=\x222\x22\
+ width=\x2212\x22 heig\
+ht=\x2212\x22 rx=\x222\x22 f\
+ill=\x22currentColo\
+r\x22/>\x0a    <path d\
+=\x22m7 4v2h2v-2zm0\
+ 3v5h2v-5z\x22 fill\
+=\x22#fff\x22/>\x0a</svg>\
+\x0a\
 \x00\x00\x03\x95\
 <\
 svg xmlns=\x22http:\
@@ -4171,7 +10145,7 @@ L 10.59375 11.96\
 s=\x22ColorScheme-T\
 ext\x22\x0a     />\x0a</s\
 vg>\x0a\
-\x00\x00\x04\xa6\
+\x00\x00\x04\xa7\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -4184,71 +10158,71 @@ pe=\x22text/css\x22 id\
 scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
-:#232629\x0a      }\
-\x0a      </style>\x0a\
-  </defs>\x0a    <p\
-ath\x0a       style\
-=\x22fill:currentCo\
-lor\x22\x0a       d=\x22M\
- 13.996094 3.654\
-2969 L 6.9960938\
- 3.6582031 L 4.5\
-546875 10.349609\
- L 3 7.6542969 L\
- 2 7.6542969 L 2\
- 8.6542969 L 2.4\
-277344 8.6542969\
- L 4.5605469 12.\
-347656 L 7.58007\
-81 4.6542969 L 1\
-4.001953 4.65429\
-69 L 13.996094 3\
-.6542969 z M 9.9\
-960938 5.6542969\
- C 8.3340937 5.6\
-542969 6.9960938\
- 6.9922969 6.996\
-0938 8.6542969 C\
- 6.9960938 10.31\
-6297 8.3340938 1\
-1.654297 9.99609\
-38 11.654297 C 1\
-0.769094 11.6542\
-97 11.465094 11.\
-355906 11.996094\
- 10.878906 L 11.\
-996094 11.654297\
- L 12.996094 11.\
-654297 L 12.9960\
-94 5.6542969 L 1\
-1.996094 5.65429\
-69 L 11.996094 6\
-.4296875 C 11.46\
-5094 5.9526875 1\
-0.769094 5.65429\
-69 9.9960938 5.6\
-542969 z M 9.996\
-0938 6.6542969 C\
- 11.104094 6.654\
-2969 11.996094 7\
-.5462969 11.9960\
-94 8.6542969 C 1\
-1.996094 9.76229\
-69 11.104094 10.\
-654297 9.9960938\
- 10.654297 C 8.8\
-880937 10.654297\
- 7.9960938 9.762\
-2969 7.9960938 8\
-.6542969 C 7.996\
-0938 7.5462969 8\
-.8880937 6.65429\
-69 9.9960938 6.6\
-542969 z \x22\x0a     \
-  class=\x22ColorSc\
-heme-Text\x22 />\x0a</\
-svg>\x0a\
-\x00\x00\x02\xbe\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 13.996094 3.65\
+42969 L 6.996093\
+8 3.6582031 L 4.\
+5546875 10.34960\
+9 L 3 7.6542969 \
+L 2 7.6542969 L \
+2 8.6542969 L 2.\
+4277344 8.654296\
+9 L 4.5605469 12\
+.347656 L 7.5800\
+781 4.6542969 L \
+14.001953 4.6542\
+969 L 13.996094 \
+3.6542969 z M 9.\
+9960938 5.654296\
+9 C 8.3340937 5.\
+6542969 6.996093\
+8 6.9922969 6.99\
+60938 8.6542969 \
+C 6.9960938 10.3\
+16297 8.3340938 \
+11.654297 9.9960\
+938 11.654297 C \
+10.769094 11.654\
+297 11.465094 11\
+.355906 11.99609\
+4 10.878906 L 11\
+.996094 11.65429\
+7 L 12.996094 11\
+.654297 L 12.996\
+094 5.6542969 L \
+11.996094 5.6542\
+969 L 11.996094 \
+6.4296875 C 11.4\
+65094 5.9526875 \
+10.769094 5.6542\
+969 9.9960938 5.\
+6542969 z M 9.99\
+60938 6.6542969 \
+C 11.104094 6.65\
+42969 11.996094 \
+7.5462969 11.996\
+094 8.6542969 C \
+11.996094 9.7622\
+969 11.104094 10\
+.654297 9.996093\
+8 10.654297 C 8.\
+8880937 10.65429\
+7 7.9960938 9.76\
+22969 7.9960938 \
+8.6542969 C 7.99\
+60938 7.5462969 \
+8.8880937 6.6542\
+969 9.9960938 6.\
+6542969 z \x22\x0a    \
+   class=\x22ColorS\
+cheme-Text\x22 />\x0a<\
+/svg>\x0a\
+\x00\x00\x02\xbf\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -4261,39 +10235,39 @@ pe=\x22text/css\x22 id\
 scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
-:#232629\x0a      }\
-\x0a      </style>\x0a\
-  </defs>\x0a    <p\
-ath\x0a       style\
-=\x22fill:currentCo\
-lor\x22\x0a       d=\x22M\
- 8 2 A 6 2 0 0 0\
- 2 4 L 2 12 A 6 \
-2 0 0 0 8 14 A 6\
- 2 0 0 0 14 12 L\
- 14 4 A 6 2 0 0 \
-0 8 2 z M 8 3 A \
-5 1 0 0 1 13 4 A\
- 5 1 0 0 1 8 5 A\
- 5 1 0 0 1 3 4 A\
- 5 1 0 0 1 8 3 z\
- M 3 5.1015625 A\
- 6 2 0 0 0 8 6 A\
- 6 2 0 0 0 13 5.\
-1035156 L 13 8 A\
- 5 1 0 0 1 8 9 A\
- 5 1 0 0 1 3 8 L\
- 3 5.1015625 z M\
- 3 9.1015625 A 6\
- 2 0 0 0 8 10 A \
-6 2 0 0 0 13 9.1\
-035156 L 13 12 A\
- 5 1 0 0 1 8 13 \
-A 5 1 0 0 1 3 12\
- L 3 9.1015625 z\
- \x22\x0a       class=\
-\x22ColorScheme-Tex\
-t\x22 />\x0a</svg>\x0a\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 8 2 A 6 2 0 0 \
+0 2 4 L 2 12 A 6\
+ 2 0 0 0 8 14 A \
+6 2 0 0 0 14 12 \
+L 14 4 A 6 2 0 0\
+ 0 8 2 z M 8 3 A\
+ 5 1 0 0 1 13 4 \
+A 5 1 0 0 1 8 5 \
+A 5 1 0 0 1 3 4 \
+A 5 1 0 0 1 8 3 \
+z M 3 5.1015625 \
+A 6 2 0 0 0 8 6 \
+A 6 2 0 0 0 13 5\
+.1035156 L 13 8 \
+A 5 1 0 0 1 8 9 \
+A 5 1 0 0 1 3 8 \
+L 3 5.1015625 z \
+M 3 9.1015625 A \
+6 2 0 0 0 8 10 A\
+ 6 2 0 0 0 13 9.\
+1035156 L 13 12 \
+A 5 1 0 0 1 8 13\
+ A 5 1 0 0 1 3 1\
+2 L 3 9.1015625 \
+z \x22\x0a       class\
+=\x22ColorScheme-Te\
+xt\x22 />\x0a</svg>\x0a\
 \x00\x00\x01\xd7\
 <\
 svg xmlns=\x22http:\
@@ -4326,42 +10300,6 @@ opacity:1;stroke\
 ass=\x22ColorScheme\
 -Text\x22\x0a     />\x0a<\
 /svg>\x0a\
-\x00\x00\x02\x13\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a       d\
-=\x22M 2 2 L 2 14 L\
- 3 14 L 14 14 L \
-14 13 L 13 13 L \
-13 11 L 13 8 L 1\
-2 8 L 12 6 L 11 \
-6 L 11 9 L 10 9 \
-L 10 7 L 9 7 L 9\
- 5 L 8 5 L 8 2 L\
- 7 2 L 7 4 L 6 4\
- L 6 6 L 5 6 L 5\
- 7 L 4 7 L 4 8 L\
- 3 8 L 3 2 L 2 2\
- z \x22\x0a     class=\
-\x22ColorScheme-Tex\
-t\x22\x0a     />\x0a</svg\
->\x0a\
 \x00\x00\x05\xa7\
 <\
 svg xmlns=\x22http:\
@@ -4497,31 +10435,41 @@ ht=\x227\x22 fill=\x22cur\
 rentColor\x22 fill-\
 rule=\x22evenodd\x22/>\
 \x0a</svg>\x0a\
-\x00\x00\x01i\
+\x00\x00\x02\x0e\
 <\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 3,7 3,9 13,9 1\
-3,7 3,7 Z\x22\x0a     \
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle\x0a        typ\
+e=\x22text/css\x22\x0a   \
+     id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <path \
 class=\x22ColorSche\
-me-Text\x22\x0a     />\
-\x0a</svg>\x0a\
+me-NegativeText\x22\
+ d=\x22M 2.6992188,\
+2 2,2.6992188 7.\
+3007812,8 2,13.3\
+00781 C 2,13.300\
+781 2.7082187,13\
+.995 2.6992188,1\
+4 L 8,8.6992188 \
+13.300781,14 C 1\
+3.291781,13.995 \
+14,13.300781 14,\
+13.300781 L 8.69\
+92188,8 14,2.699\
+2188 13.300781,2\
+ 8,7.3007812 Z\x22 \
+fill=\x22currentCol\
+or\x22/>\x0a</svg>\x0a\
 \x00\x00\x02\x16\
 <\
 !DOCTYPE svg>\x0a<s\
@@ -4995,39 +10943,6 @@ L 13 3 L 13 13 L\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
-\x00\x00\x01\xee\
-<\
-svg version=\x221.1\
-\x22 viewBox=\x220 0 1\
-6 16\x22 xmlns=\x22htt\
-p://www.w3.org/2\
-000/svg\x22>\x0a    <s\
-tyle id=\x22current\
--color-scheme\x22 t\
-ype=\x22text/css\x22>\x0a\
-        .ColorSc\
-heme-Text {\x0a    \
-        color:#2\
-32629;\x0a        }\
-\x0a    </style>\x0a  \
-  <path class=\x22C\
-olorScheme-Text\x22\
- d=\x22m6.3828 2-4.\
-3828 11h1.3574l1\
-.1895-3h6.3262l-\
-3.1875-8h-1.3027\
-zm0.62305 1.3281\
- 2.1211 5.6719h-\
-4.1855l2.0645-5.\
-6719zm7.6836 5.4\
-355-3.3574 3.779\
-3-1.625-1.625-0.\
-70703 0.70703 2.\
-375 2.375 4.0234\
--4.5273-0.70898-\
-0.70898z\x22 style=\
-\x22fill:currentCol\
-or\x22/>\x0a</svg>\x0a\
 \x00\x00\x01\xea\
 <\
 svg xmlns=\x22http:\
@@ -5061,6 +10976,75 @@ L 13 8.9980469 L\
  class=\x22ColorSch\
 eme-Text\x22\x0a     /\
 >\x0a</svg>\x0a\
+\x00\x00\x01\xd1\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <rect \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ x=\x222\x22 y=\x222\x22 wid\
+th=\x2212\x22 height=\x22\
+12\x22 rx=\x222\x22 fill=\
+\x22currentColor\x22/>\
+\x0a    <path d=\x22M \
+5.414,4 4,5.414 \
+6.586,8 4,10.586\
+ 5.414,12 8,9.41\
+4 10.586,12 12,1\
+0.586 9.414,8 12\
+,5.414 10.586,4 \
+8,6.586 Z\x22 fill=\
+\x22#fff\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\x22\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a  <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 3 2 L 3 14 L \
+8 14 L 8 13 L 4 \
+13 L 4 3 L 9 3 L\
+ 9 6 L 12 6 L 12\
+ 9 L 13 9 L 13 6\
+ L 13 5 L 10 2 L\
+ 9 2 L 3 2 z M 1\
+0 9 L 10 11 L 8 \
+11 L 8 12 L 10 1\
+2 L 10 14 L 11 1\
+4 L 11 12 L 13 1\
+2 L 13 11 L 11 1\
+1 L 11 9 L 10 9 \
+z \x22\x0a     class=\x22\
+ColorScheme-Text\
+\x22\x0a     />\x0a</svg>\
+\x0a\
 \x00\x00\x01R\
 <\
 svg xmlns=\x22http:\
@@ -5085,7 +11069,114 @@ h \x0a       style=\
 0 0,-2 -2,0 z\x22 \x0a\
        />\x0a</svg>\
 \x0a\
-\x00\x00\x04\xf7\
+\x00\x00\x04_\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 2 2 L 2 \
+4.9960938 L 1.00\
+78125 4.9960938 \
+L 1.0078125 5.00\
+58594 L 2 5.0058\
+594 L 2 14 L 14 \
+14 L 14 13 L 3 1\
+3 L 3 5.0058594 \
+L 7.46875 5.0058\
+594 L 4.46875 8.\
+0058594 L 3.0078\
+125 8.0058594 L \
+3.0078125 9.0058\
+594 L 4.8828125 \
+9.0058594 L 9.00\
+58594 4.8828125 \
+L 11.128906 7.00\
+58594 L 11.13476\
+6 7.0019531 L 11\
+.138672 7.005859\
+4 L 13.966797 4.\
+1777344 C 13.969\
+797 4.1827344 13\
+.259766 3.470703\
+1 13.259766 3.47\
+07031 L 11.13476\
+6 5.5957031 L 9.\
+0078125 3.470703\
+1 L 9.0058594 3.\
+4726562 L 9.0039\
+062 3.4707031 L \
+7.4765625 4.9960\
+938 L 3 4.996093\
+8 L 3 2 L 2 2 z \
+M 7.5996094 9 L \
+5.5996094 11 L 3\
+.0058594 11 L 3.\
+0058594 12 L 6.0\
+058594 12 L 6.00\
+58594 11.992188 \
+L 6.0136719 12 L\
+ 8.0136719 10 L \
+9.6054688 10 L 1\
+1.605469 12 L 14\
+.005859 12 L 14.\
+005859 11 L 12.0\
+19531 11 L 10.01\
+9531 9 L 8.60546\
+88 9 L 7.5996094\
+ 9 z \x22\x0a     clas\
+s=\x22ColorScheme-T\
+ext\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\x01\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 2 2 L 2 \
+14 L 14 14 L 14 \
+13 L 13 13 L 13 \
+8 L 9 8 L 9 13 L\
+ 8 13 L 8 2 L 4 \
+2 L 4 13 L 3 13 \
+L 3 2 L 2 2 z M \
+5 3 L 7 3 L 7 13\
+ L 5 13 L 5 3 z \
+M 10 9 L 12 9 L \
+12 13 L 10 13 L \
+10 9 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x04\xf1\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -5101,72 +11192,72 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 7.5 3 C 5.5\
-67 3 4 4.7909 4 \
-7 L 4 8 L 4 10 C\
- 4 12.2091 5.567\
- 14 7.5 14 C 9.4\
-33 14 11 12.2091\
- 11 10 L 11 8 L \
-11 7 C 11 4.7909\
- 9.433 3 7.5 3 z\
- M 15.5 3 C 13.5\
-67 3 12 4.7909 1\
-2 7 L 12 8 L 12 \
-10 C 12 12.2091 \
-13.567 14 15.5 1\
-4 C 17.433 14 19\
- 12.2091 19 10 L\
- 19 8 L 19 7 C 1\
-9 4.7909 17.433 \
-3 15.5 3 z M 7.5\
- 4 C 8.88071 4 1\
-0 5.3432 10 7 L \
-10 10 C 10 11.65\
-69 8.88071 13 7.\
-5 13 C 6.11929 1\
-3 5 11.6569 5 10\
- L 5 7 C 5 5.343\
-2 6.11929 4 7.5 \
-4 z M 15.5 4 C 1\
-6.88071 4 18 5.3\
-431 18 7 L 18 10\
- C 18 11.6569 16\
-.88071 13 15.5 1\
-3 C 14.11929 13 \
-13 11.6569 13 10\
- L 13 7 C 13 5.3\
-431 14.11929 4 1\
-5.5 4 z M 3 13 L\
- 3 14 L 4 14 L 4\
- 13 L 3 13 z \x22 c\
-lass=\x22ColorSchem\
-e-Text\x22/>\x0a    <p\
-ath style=\x22fill:\
-currentColor;fil\
-l-opacity:1;stro\
-ke:none\x22 d=\x22M 15\
- 15 L 15 17 L 13\
- 17 L 13 18 L 15\
- 18 L 15 20 L 16\
- 20 L 16 18 L 18\
- 18 L 18 17 L 16\
- 17 L 16 15 L 15\
- 15 z \x22 class=\x22C\
-olorScheme-Highl\
-ight\x22/>\x0a  </g>\x0a<\
-/svg>\x0a\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 7.5 3 C 5.567 \
+3 4 4.7909 4 7 L\
+ 4 8 L 4 10 C 4 \
+12.2091 5.567 14\
+ 7.5 14 C 9.433 \
+14 11 12.2091 11\
+ 10 L 11 8 L 11 \
+7 C 11 4.7909 9.\
+433 3 7.5 3 z M \
+15.5 3 C 13.567 \
+3 12 4.7909 12 7\
+ L 12 8 L 12 10 \
+C 12 12.2091 13.\
+567 14 15.5 14 C\
+ 17.433 14 19 12\
+.2091 19 10 L 19\
+ 8 L 19 7 C 19 4\
+.7909 17.433 3 1\
+5.5 3 z M 7.5 4 \
+C 8.88071 4 10 5\
+.3432 10 7 L 10 \
+10 C 10 11.6569 \
+8.88071 13 7.5 1\
+3 C 6.11929 13 5\
+ 11.6569 5 10 L \
+5 7 C 5 5.3432 6\
+.11929 4 7.5 4 z\
+ M 15.5 4 C 16.8\
+8071 4 18 5.3431\
+ 18 7 L 18 10 C \
+18 11.6569 16.88\
+071 13 15.5 13 C\
+ 14.11929 13 13 \
+11.6569 13 10 L \
+13 7 C 13 5.3431\
+ 14.11929 4 15.5\
+ 4 z M 3 13 L 3 \
+14 L 4 14 L 4 13\
+ L 3 13 z \x22 clas\
+s=\x22ColorScheme-T\
+ext\x22/>\x0a    <path\
+ style=\x22fill:cur\
+rentColor;fill-o\
+pacity:1;stroke:\
+none\x22 d=\x22M 15 15\
+ L 15 17 L 13 17\
+ L 13 18 L 15 18\
+ L 15 20 L 16 20\
+ L 16 18 L 18 18\
+ L 18 17 L 16 17\
+ L 16 15 L 15 15\
+ z \x22 class=\x22Colo\
+rScheme-Accent\x22/\
+>\x0a  </g>\x0a</svg>\x0a\
+\
 \x00\x00\x03\x08\
 <\
 svg xmlns=\x22http:\
@@ -5414,97 +11505,241 @@ L 5 17 L 19 17 L\
  class=\x22ColorSch\
 eme-Text\x22/>\x0a  </\
 g>\x0a</svg>\x0a\
-\x00\x00\x02\x14\
+\x00\x00\x02b\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <defs>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+            .Col\
+orScheme-Text {\x0a\
+                \
+color:#232629;\x0a \
+           }\x0a   \
+     </style>\x0a  \
+</defs>\x0a  <g tra\
+nsform=\x22translat\
+e(1,1)\x22>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a      <path d=\
+\x22m6 6 10 10m-10 \
+0 10-10\x22 fill=\x22c\
+urrentColor\x22/>\x0a \
+     <path d=\x22M \
+6,5.1523437 5.15\
+23437,6 10.15234\
+4,11 5.1523437,1\
+6 6,16.847656 l \
+5,-5 5,5 L 16.84\
+7656,16 l -5,-5 \
+5,-5 L 16,5.1523\
+437 11,10.152344\
+ Z\x22 fill=\x22curren\
+tColor\x22/>\x0a    </\
+g>\x0a  </g>\x0a</svg>\
+\x0a\
+\x00\x00\x04\x89\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
 0/svg\x22 viewBox=\x22\
 0 0 24 24\x22 width\
 =\x2224\x22 height=\x2224\
-\x22>\x0a  <style type\
-=\x22text/css\x22 id=\x22\
-current-color-sc\
-heme\x22>\x0a        .\
-ColorScheme-Nega\
-tiveText {\x0a     \
-       color:#da\
-4453;\x0a        }\x0a\
-    </style>\x0a  <\
-g transform=\x22tra\
-nslate(1,1)\x22>\x0a  \
-  <path d=\x22M11 3\
-a8 8 0 0 0-8 8 8\
- 8 0 0 0 8 8 8 8\
- 0 0 0 8-8 8 8 0\
- 0 0-8-8M7.707 7\
-L11 10.294l3.293\
--3.293.707.707-3\
-.293 3.293L15 14\
-.294l-.707.707L1\
-1 11.708l-3.293 \
-3.293L7 14.294l3\
-.293-3.293L7 7.7\
-08l.707-.707\x22 cl\
-ass=\x22ColorScheme\
--NegativeText\x22 f\
-ill=\x22currentColo\
-r\x22/>\x0a  </g>\x0a</sv\
-g>\x0a\
-\x00\x00\x03H\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 9.9101562\
+ 4 L 6.5957031 1\
+3.59375 L 6.4726\
+562 14 L 5 18 L \
+6.6582031 18 L 8\
+.2832031 13.5625\
+ L 13.716797 13.\
+5625 L 15.341797\
+ 18 L 17 18 L 15\
+.527344 14 L 15.\
+404297 13.59375 \
+L 12.089844 4 L \
+11.875 4 L 10.12\
+5 4 L 9.9101562 \
+4 z M 11.015625 \
+5.9375 L 13.1953\
+12 12.28125 L 8.\
+8046875 12.28125\
+ L 11.015625 5.9\
+375 z \x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 18 3 C 17\
+.44771 3 17 3.44\
+77 17 4 C 17 4.5\
+523 17.44771 5 1\
+8 5 C 18.55228 5\
+ 19 4.5523 19 4 \
+C 19 3.4477 18.5\
+5228 3 18 3 z M \
+18 7 C 17.44771 \
+7 17 7.4477 17 8\
+ C 17 8.5523 17.\
+44771 9 18 9 C 1\
+8.55228 9 19 8.5\
+523 19 8 C 19 7.\
+4477 18.55228 7 \
+18 7 z M 18 11 C\
+ 17.44771 11 17 \
+11.4477 17 12 C \
+17 12.5523 17.44\
+771 13 18 13 C 1\
+8.55228 13 19 12\
+.5523 19 12 C 19\
+ 11.4477 18.5522\
+8 11 18 11 z \x22 c\
+lass=\x22ColorSchem\
+e-Text\x22/>\x0a  </g>\
+\x0a</svg>\x0a\
+\x00\x00\x03J\
 (\
-\xb5/\xfd`\x1c\x0e\xf5\x19\x00\xc6\xa4l# m\xf5\
-\xc9\x0f\xdd@\xe5\x13\xea\xf7\xc9\x0fM\x00L\xe1\xbb\x5c\
-\x94{$\x9c|\x92\x92\xaekp\xa2\x05\x08\x87`\x11\
-h\x00b\x00^\x00\x14\xb1\x1d\xb1\x9f9\xbevrc\
-7^\x9f\xf3\xc5w\xdf\xe8?\x969\xb0\xe6\x91\x96\x0d\
-p\x80\xc0TM\xb0f\x9a$h\x1d\x97\x13\xb1\xa0\xfa\
-0\xbb\x00\x06\x97#\x92\xaa\x835\x8e\xeb\x91$\xcb\x16\
-_^f\xcd\x84B\x90T\x89b\x992\xe7l\x09\x88\
-4M\x0a\x98\xc2\xcc\xaeD\x15\xe5\x9e\xc4I$\x12E\
-)\x88\x5c\x97\x835\x16dzL6\xa2\xb0\x98\xac0\
-\xaf)\xf4~\xa6\xff@\xc9P\x84\x0f\x85\x1e\xe6\xfd\x1c\
-W\x0b\x82(\x851S\xda4\x805\x155Q\xb4m\
-\x84\xba\xacjE@\x1e*u\x22\x10U\xb5\xacK\x82\
-DD\xcf.\xa1[|\x99\xcc\xe7\xef\x9eC\xd6t\xc5\
-\xb2wA\xaa\xf48UC\xe5\xd4\xd6\x1a\xa3[\xb7\xd8\
-\xcbK\x7fJ7\x1f\xdc\xb7\xb4\x84\xeeyY<\x85\x05\
-\xdem\xffI\xe7m\xe5\xf2\xf2\xc6\xff\xc5]\x0bL\xa4\
-\xear\x1e\x03M\xd0\x02\xf5r&\xd6<*\x0a\xb2 \
-Num\xc4(Le\x7f\xb1\xd6\xe6\xf7\x95zmY\
-\xe9R;\xc2\x86\xd5\xe7k\x87B\xd0/\x0e|\xcf\x9b\
-\x8d\x96\x0e?\xads\xd2\xda\x90\xec\x0d\xfa|s\xd3\x97\
-\x8ewC\xc2'\xd2\x7f\xfa\x91\xf2\xfb\xab/\x1e\x00\x06\
-\x11\x85\xa50\x0d\x0c\x8b\x05\x86\x82t7\xfd\xf7\xd9\xb5\
-l\x87\xd1I)\xb7'toq\xee\xedn\xbb\xbc\xbf\
-;\x86/\x01aq\xc0\x98U\xbd\x96w\xfd\xde9\xec\
-\xb6\xb0\x8aK\xa2\x22\x85\xf9\x85\xdc\x95\xec\x91\xa1\xb89\
-\x97\xfd\xb7\x0d[D\x9a(T+G\xc1~tq\xca\
-}\xb1\xb5}\xf0q;^\xf9\xe2;t\xf3\x03\x80\xb0\
-\xa0\x11Mf\xa40hA\x92B\x961pFH\xa6\
-\xc8\xe4\x01r\x86\xcf\xf8\xb0\x9eX\x13\xfb\x80\xef\x06o\
-\x89M\xf3\xdaf\xd9G\x10\xd3fu\x96D_\x8c!\
-w\x82\xac\x1b\x91\x97\x13\xc6\x02\x0e\xd4=R4\x84`\
-\x0a\x86\x8a\x82\xa0#?`\x80_\x01\x8e\xf7y\xb2\xf6\
-\xf6\x88\xd2\xa9\x8a\x22K(\xb6e\x90c\x8c\x22\xb3\x22\
-B\xc8$\xae}?)[\xe0\x9c\x15Yu\xb9o\xd4\
-+\x08u\x8f\xc2\xbb\xe3\xe8y\x0a\xc7\x5c\xa6\x95?\x22\
-\x06V\x0d\x09}\xcb\x84\x8a0p\xd0\x1e\x96\xe0\x12\x13\
-\xfdB\xd3\xda\x0e\x16\x1cEL7\xc2k\xc4\x06\x18<\
-\x08|\x0e\x9b\x03\x97Y\x93\xe9\x1a\xc0\x96\x09\xd9*g\
-\xcf\x07\xa6\xbc\x0cys\x03\xb4\x0e\xe0\xf1(PV\xc9\
-\xbb\x95\xd6C\x0b0\xf5\x81\x8f\xeb:: )\x19@\
-\x1e\xd4\xb6\x00&\x22P\x22\xa7\x03\x16\x06\xd6\xc1\x1d\xf5\
-\x86m\xc4\xa7\xa2\xd7\xdb-1\xd5\x1b\x98m\x09\xd84\
-jr\x15`\x9a\xe5\x18E\x04\x18\xf8\x22\x04-&\xc0\
-t\x9a\xfb4G\xcaT\xaf\xbc\xcdHW\x82\x99\x16&\
-\xb59\xb0\x90\x98d\x92=\x0c\xb9e\x0c?\x80\x16\x1b\
-\xa7\x22\x19^\xa3\xc89h*\xe4\xceE\x19\x12\x02\xb3\
-\xaa\xbc\xb8\x0a\xe4\xcd\x84P\xb6k\x19\xf8\xecr\xd3@\
-\xc1\x09k\x05\xb0?\xc0$\x00\x81\x066\x17\xa6\xcc\x17\
-J\x06D*\x8e7\x16\x1d\x80\xbb\x87\x0e\x90w\xe0\x87\
-\xf90 `\xf2\x8d\x96=\x955k(\xfb\x03\x1f\x00\
-\xbac\x80\x02\x9a\x0f\xbd\xcf\xd8X}\x11(\xecu&\
-4#\x18\xb7\x02\x88*\
+\xb5/\xfd`\x1c\x0e\x05\x1a\x00\xc6$m\x1f \x93\x1e\
+\xbf\x99&6J\xd9\x9d\xac\xd4\x22\xc8\xcc\x8cl\x8a\x1b\
+\xae\x94l\xf8\x9a\xc1\xe42 T\x00`i\x00d\x00\
+`\x00\x9e\xea\x97\xea\x1fc\x9d\x0emW\x7f\xb1\xe5\xbd\
+\xb3>\xfc\x87?\xd3\xee\xe1\xa6\xeaj7\x88\x01\x01\x96\
+u\xdc\x84a\x97\xd5\x97\x8d\xe2hV\xae\x0c\xdd\x80\xc3\
+v\xb1\x5c\xf9\xe2\xa6\xcbV]\x9fv\x92\xec\xd8\xd1M\
+\xa0M\xe2\x93/O\xbb\xe8\xde\xeb\x18\xcd\x85\x81\x0a.\
+\x8a1\xca\xc8\x92m\xe0\xfc\xc0\xcf\xe7\x13E\x05\xce\xb6\
+]\xdc\xa4i\xb0\x0c\xa8-\x1e\xcd\x1012L\xc7T\
+\xfaG\xfc\x15\xb5\xd1\xaa\xb4\xc2V\xe5\xa4O\xb8e\xcd\
+\xb26\x91\x8b\x11c\xc7\x017e\x1bl\x83_s6\
+\x9b\x965\x8aF\x921\xc5\x99dY\xd3\xb6KC\xb1\
+|\x94\x96BIJ\xa0;\xe5\xc3)\xa9\x9b<\xd4n\
+n\x9a|UT\xe6\xc8\xa8\xfc\xde\x8b\xf8\xf3W\xbdc\
+\xe3\xbf\x16\xdeI{Jn)\xfc(Af\xe4\x02\xd2\
+_\xff\xb4P\xbe\xb6\x1d;v\xfd\x97$t\x01\xe8\xca\
+6*3p\x82\x0b\xf2Fan\xcad\x1bK\xd3P\
+\xd9\xd6\x16Cd\xc8Q\xce\x9a\xb3\xc7\xf9\x19\xcb\xec6\
+c){\xa5N\xb3\xbc\xd3)lY/QtV\xf3\
+V\xdcR\xf1q\xbe\x17\xe7\x8a\x8d\xb2\x82\xab\xf7\xe8\xf8\
+-%\xbdbiU\xf1W^Y\xfb\xfeYJ2\x80\
+\x83\xc5\xa3E\x06G\x03\xc2\x88,\xac\x84W~\x7f\x84\
+n]\xd2\x0a\xad\xb5\xed\x97\xc2)\xc9\xe8\xed\xfeZz\
+\xf9\x12F:\x15\x09\x08\x22r\xb3\xbcI\x0f}>\x94\
+\xd4\x9f\xe4B\xdb\xb5\xb1D\x86\x87\xd8n\x1be\x8dD\
+\xf0^\xa9\x7f\xb6\xd3\xc7\xb90l\xe5\xecR\xe8\xaf\xb0\
+^\xdb\xb3\xbe\xd7\x93\xce\xe80\xb6\x9d\xf5%\x85\xf7\x03\
+\x80\xb0\xa0\x11Mf\xa40hA\x92B\x961pF\
+H\xa6\xc8\xe4\x01r\x86\xcf\xf8\xb0\x9eX\x13\xfb\x80\xef\
+\x06o\x89M\xf3\xdaf\xd9G\x10\xd3fu\x96D_\
+\x8c!w\x82\xac\x1b\x91\x97\x13\xc6\x02\x0e\xd4=R4\
+\x84`\x0a\x86\x8a\x82\xa0#?`\x80_\x01\x8e\xf7y\
+\xb2\xf6\xf6\x88\xd2\xa9\x8a\x22K(\xb6e\x90c\x8c\x22\
+\xb3\x22B\xc8$\xae}?)[\xe0\x9c\x15Yu\xb9\
+o\xd4+\x08u\x8f\xc2\xbb\xe3\xe8y\x0a\xc7\x5c\xa6\x95\
+?\x22\x06V\x0d\x09}\xcb\x84\x8a0p\xd0\x1e\x96\xe0\
+\x12\x13\xfdB\xd3\xda\x0e\x16\x1cEL7\xc2k\xc4\x06\
+\x18<\x08|\x0e\x9b\x03\x97Y\x93\xe9\x1a\xc0\x96\x09\xd9\
+*g\xcf\x07\xa6\xbc\x0cys\x03\xb4\x0e\xe0\xf1(P\
+V\xc9\xbb\x95\xd6C\x0b0\xf5\x81\x8f\xeb:: )\
+\x19@\x1e\xd4\xb6\x00&\x22P\x22\xa7\x03\x16\x06\xd6\xc1\
+\x1d\xf5\x86m\xc4\xa7\xa2\xd7\xdb-1\xd5\x1b\x98m\x09\
+\xd84jr\x15`\x9a\xe5\x18E\x04\x18\xf8\x22\x04-\
+&\xc0t\x9a\xfb4G\xcaT\xaf\xbc\xcdHW\x82\x99\
+\x16&\xb59\xb0\x90\x98d\x92=\x0c\xb9e\x0c?\x80\
+\x16\x1b\xa7\x22\x19^\xa3\xc89h*\xe4\xceE\x19\x12\
+\x023U\x99\xd6\x0a\xec\xcd\x84P\xb6k\x19\xf8\xecr\
+\xd3@\xc1\x09k\x05\xb0?\xc0$\x00\x81\x066\x17\xa6\
+\xcc\x17J\x06D*\x8e7\x16\x1d\x80\xbb\x87\x0e\x90w\
+\xe0\x87\xf90 `\xf2\x8d\x96=\x955k(\xfb\x03\
+\x1f\x00\xbac\x80\x02\x9a\x0f\xbd\xcf\xd8X}\x11(\xec\
+u&4#\x18\xb7\x02\x88*\
+\x00\x00\x03\xd2\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+9 L 19 19 L 19 3\
+ L 3 3 z M 4 4 L\
+ 18 4 L 18 18 L \
+4 18 L 4 4 z M 7\
+.5 5 C 6.115 5 5\
+ 6.115 5 7.5 C 5\
+ 8.885 6.115 10 \
+7.5 10 C 8.885 1\
+0 10 8.885 10 7.\
+5 C 10 6.115 8.8\
+85 5 7.5 5 z M 7\
+.5 6 C 8.331 6 9\
+ 6.669 9 7.5 C 9\
+ 8.331 8.331 9 7\
+.5 9 C 6.669 9 6\
+ 8.331 6 7.5 C 6\
+ 6.669 6.669 6 7\
+.5 6 z M 13.9941\
+41 10 L 10.64843\
+8 13.34375 L 9.3\
+066406 12 L 9.30\
+07812 12.007812 \
+L 9.2929688 12 L\
+ 5 16.292969 L 5\
+.7070312 17 L 9.\
+2988281 13.40820\
+3 L 9.9414062 14\
+.050781 L 10.648\
+438 14.757812 L \
+11.355469 14.050\
+781 L 14 11.4062\
+5 L 16.292969 13\
+.699219 L 17 12.\
+992188 L 14.0078\
+12 10 L 14 10.00\
+7812 L 13.994141\
+ 10 z \x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a  </g>\x0a</svg>\
+\x0a\
 \x00\x00\x03\xb9\
 <\
 svg xmlns=\x22http:\
@@ -5567,6 +11802,50 @@ ty:1;stroke:none\
 lass=\x22ColorSchem\
 e-Text\x22/>\x0a  </g>\
 \x0a</svg>\x0a\
+\x00\x00\x02\x97\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Neutra\
+lText {\x0a        \
+    color:#f6740\
+0;\x0a        }\x0a   \
+ </style>\x0a  <g t\
+ransform=\x22transl\
+ate(1,1)\x22>\x0a    <\
+path class=\x22Colo\
+rScheme-NeutralT\
+ext\x22 d=\x22m11.0063\
+18 3.0000261a0.7\
+2728737 0.727271\
+54 0 0 0-0.65674\
+ 0.4021811l-7.27\
+28738 14.545431a\
+0.72728737 0.727\
+27154 0 0 0 0.65\
+09222 1.052362h1\
+4.545748a0.72728\
+737 0.72727154 0\
+ 0 0 0.650922-1.\
+052362l-7.272874\
+-14.545431a0.727\
+28737 0.72727154\
+ 0 0 0-0.645104-\
+0.4021811z\x22 fill\
+=\x22currentColor\x22/\
+>\x0a    <path d=\x22m\
+10 8v5h2v-5zm0 7\
+v2h2v-2z\x22 fill=\x22\
+#fff\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
 \x00\x00\x02G\
 <\
 svg xmlns=\x22http:\
@@ -5648,7 +11927,7 @@ L 17 11.183594 L\
 ass=\x22ColorScheme\
 -Text\x22/>\x0a  </g>\x0a\
 </svg>\x0a\
-\x00\x00\x04\xcc\
+\x00\x00\x04\xc6\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -5671,150 +11950,62 @@ me-Text {\x0a      \
 le=\x22fill:current\
 Color;fill-opaci\
 ty:1;stroke:none\
-\x22 d=\x22M 17.564453\
- 2.7558594 L 14.\
-298828 8.5742188\
- L 11.882812 7.1\
-386719 L 10.8613\
-28 8.8574219 L 1\
-6.511719 12.2167\
-97 L 17.533203 1\
-0.496094 L 15.15\
-8203 9.0839844 L\
- 18.435547 3.244\
-1406 L 17.564453\
- 2.7558594 z M 7\
- 6 A 1 1 0 0 0 6\
- 7 A 1 1 0 0 0 7\
- 8 A 1 1 0 0 0 8\
- 7 A 1 1 0 0 0 7\
- 6 z M 3.5 7 A 0\
-.5 0.5 0 0 0 3 7\
-.5 A 0.5 0.5 0 0\
- 0 3.5 8 A 0.5 0\
-.5 0 0 0 4 7.5 A\
- 0.5 0.5 0 0 0 3\
-.5 7 z M 5 9 A 1\
- 1 0 0 0 4 10 A \
-1 1 0 0 0 5 11 A\
- 1 1 0 0 0 6 10 \
-A 1 1 0 0 0 5 9 \
-z M 10 10 C 8.88\
-15125 11.564268 \
-6.8355055 12.810\
-894 3 13 L 3 14 \
-C 5.1137135 17.3\
-71692 8 19 12 19\
- L 13 19 C 14.31\
-1249 17.412805 1\
-5.357513 15.9676\
-19 16 14 L 16 13\
- L 11 10 L 10 10\
- z M 10.529297 1\
-1.101562 L 14.85\
-7422 13.699219 C\
- 14.284594 15.24\
-586 13.385404 16\
-.602833 12.27343\
-8 17.96875 C 8.9\
-999995 18 6.0527\
-68 16.540538 4.3\
-261719 13.830078\
- C 7.4443879 13.\
-51946 9.3457156 \
-12.545306 10.529\
-297 11.101562 z \
-\x22 class=\x22ColorSc\
-heme-Text\x22/>\x0a  <\
-/g>\x0a</svg>\x0a\
-\x00\x00\x05Z\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 18.292969\
- 3 L 3 18.292969\
- L 3.7070312 19 \
-L 19 3.7070312 L\
- 18.292969 3 z M\
- 11 6 A 10 9.999\
-9781 0 0 0 2.287\
-1094 11.119141 C\
- 2.4663699 11.42\
-0241 2.7209984 1\
-1.668644 3.02734\
-38 11.839844 A 9\
- 8.99998 0 0 1 1\
-1 7 A 4 4 0 0 0 \
-7 11 A 4 4 0 0 0\
- 7.3574219 12.64\
-2578 L 8.1308594\
- 11.869141 A 3 3\
- 0 0 1 8 11 A 3 \
-3 0 0 1 11 8 A 3\
- 3 0 0 1 11.8691\
-41 8.1308594 L 1\
-2.640625 7.35937\
-5 A 4 4 0 0 0 11\
-.34375 7.0175781\
- A 9 8.99998 0 0\
- 1 12.796875 7.2\
-03125 L 13.64062\
-5 6.359375 A 10 \
-9.9999781 0 0 0 \
-11 6 z M 16.4042\
-97 7.5957031 L 1\
-5.675781 8.32421\
-88 A 9 8.99998 0\
- 0 1 18.974609 1\
-1.837891 C 19.28\
-2742 11.665091 1\
-9.539718 11.4154\
-28 19.71875 11.1\
-11328 A 10 9.999\
-9781 0 0 0 16.40\
-4297 7.5957031 z\
- M 11 9 A 2 2 0 \
-0 0 9 11 L 11 9 \
-z M 14.642578 9.\
-3574219 L 13.869\
-141 10.130859 A \
-3 3 0 0 1 14 11 \
-A 3 3 0 0 1 11 1\
-4 A 3 3 0 0 1 10\
-.130859 13.86914\
-1 L 9.3574219 14\
-.642578 A 4 4 0 \
-0 0 11 15 A 4 4 \
-0 0 0 15 11 A 4 \
-4 0 0 0 14.64257\
-8 9.3574219 z M \
-13 11 L 11 13 A \
-2 2 0 0 0 13 11 \
-z M 1 13 C 0.333\
-33333 19 0.66666\
-667 16 1 13 z \x22 \
+\x22 d=\x22M 3 3 L 3 1\
+8 L 3 19 L 19 19\
+ L 19 18 L 19 3 \
+L 18 3 L 4 3 L 3\
+ 3 z M 4 4 L 8 4\
+ L 8 6 L 4 6 L 4\
+ 4 z M 9 4 L 13 \
+4 L 13 6 L 9 6 L\
+ 9 4 z M 14 4 L \
+18 4 L 18 6 L 15\
+ 6 L 14 6 L 14 4\
+.9003906 L 14 4 \
+z M 4 7 L 8 7 L \
+8 8 L 9 8 L 9 7 \
+L 13 7 L 13 8 L \
+14 8 L 14 7 L 15\
+ 7 L 18 7 L 18 8\
+ L 18 9 L 18 10 \
+L 18 12 L 18 13 \
+L 18 14 L 18 15 \
+L 15 15 L 14 15 \
+L 14 14 L 13 14 \
+L 13 15 L 9 15 L\
+ 9 14 L 8 14 L 8\
+ 15 L 4 15 L 4 1\
+4 L 4 13 L 4 12 \
+L 4 10 L 4 9 L 4\
+ 8 L 4 7 z M 4 1\
+6 L 7 16 L 8 16 \
+L 8 17 L 8 18 L \
+4 18 L 4 16 z M \
+9 16 L 13 16 L 1\
+3 17 L 13 18 L 9\
+ 18 L 9 17 L 9 1\
+6 z M 14 16 L 15\
+ 16 L 18 16 L 18\
+ 18 L 14 18 L 14\
+ 17 L 14 16 z \x22 \
 class=\x22ColorSche\
-me-Text\x22/>\x0a  </g\
->\x0a</svg>\x0a\
+me-Text\x22/>\x0a    <\
+path style=\x22fill\
+:#da4453\x22 d=\x22m 4\
+,14 5.29297,0 4,\
+0 4,0 L 18,14 18\
+,13.29297 18,13 \
+l -0.29297,0 -4,\
+-4 L 18,9 18,8 4\
+,8 l 0,1 0.29297\
+,0 4,4 L 4,13 4,\
+14 m 1.70703,-5 \
+2.58594,0 4,4 -2\
+.58594,0 -4,-4 m\
+ 4,0 2.58594,0 4\
+,4 -2.58594,0 -4\
+,-4\x22/>\x0a  </g>\x0a</\
+svg>\x0a\
 \x00\x00\x02\xfa\
 <\
 svg xmlns=\x22http:\
@@ -5862,6 +12053,351 @@ C 5 8.108 5.892 \
  17 L 19 17 L 19\
  16 L 17 16 L 17\
  14 L 16 14 z \x22 \
+class=\x22ColorSche\
+me-Text\x22/>\x0a  </g\
+>\x0a</svg>\x0a\
+\x00\x00\x02\xfd\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 3 3 L 3 1\
+9 L 19 19 L 19 3\
+ L 3 3 z M 4 7 L\
+ 18 7 L 18 18 L \
+4 18 L 4 7 z M 6\
+ 8 L 6 12 L 10 1\
+2 L 10 8 L 6 8 z\
+ M 12 8 L 12 12 \
+L 16 12 L 16 8 L\
+ 12 8 z M 7 9 L \
+9 9 L 9 11 L 7 1\
+1 L 7 9 z M 13 9\
+ L 15 9 L 15 11 \
+L 13 11 L 13 9 z\
+ M 6 13 L 6 17 L\
+ 10 17 L 10 13 L\
+ 6 13 z M 12 13 \
+L 12 17 L 16 17 \
+L 16 13 L 12 13 \
+z M 7 14 L 9 14 \
+L 9 16 L 7 16 L \
+7 14 z M 13 14 L\
+ 15 14 L 15 16 L\
+ 13 16 L 13 14 z\
+ \x22 class=\x22ColorS\
+cheme-Text\x22/>\x0a  \
+</g>\x0a</svg>\x0a\
+\x00\x00\x01\x97\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <style type\
+=\x22text/css\x22 id=\x22\
+current-color-sc\
+heme\x22>\x0a        .\
+ColorScheme-Text\
+ {\x0a            c\
+olor:#232629;\x0a  \
+      }\x0a    </st\
+yle>\x0a  <g transf\
+orm=\x22translate(1\
+,1)\x22>\x0a    <path \
+d=\x22M3.707 4L3 4.\
+707l8 8 8-8L18.2\
+93 4 11 11.293zm\
+0 5L3 9.707l8 8 \
+8-8L18.293 9 11 \
+16.293z\x22 class=\x22\
+ColorScheme-Text\
+\x22 fill=\x22currentC\
+olor\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
+\x00\x00\x01\xd4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a       \
+ </style>\x0a  </de\
+fs>\x0a  <g transfo\
+rm=\x22translate(1,\
+1)\x22>\x0a    <path s\
+tyle=\x22fill:curre\
+ntColor;fill-opa\
+city:1;stroke:no\
+ne\x22 class=\x22Color\
+Scheme-NegativeT\
+ext\x22 d=\x22M8 3v2h1\
+V4h4v1h1V3H8M4 6\
+v1h14V6H4m2 2v11\
+h10V8h-1v10H7V8H\
+6\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x0e\x8a\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 6.97\
+07031 2.9980469 \
+C 6.8418231 2.99\
+80469 6.7379069 \
+3.0912044 6.7167\
+969 3.2089844 L \
+6.5253906 4.5332\
+031 C 6.2120906 \
+4.6609731 5.9217\
+8 4.8253906 5.65\
+625 5.0253906 L \
+4.375 4.5234375 \
+C 4.25945 4.4812\
+375 4.12695 4.52\
+30994 4.0625 4.6\
+308594 L 3.03515\
+62 6.3632812 C 2\
+.9706563 6.47105\
+12 2.9990031 6.6\
+058337 3.0957031\
+ 6.6835938 L 4.1\
+796875 7.5117188\
+ C 4.1585875 7.6\
+716988 4.1445312\
+ 7.83446 4.14453\
+12 8 C 4.1445312\
+ 8.16444 4.15968\
+75 8.3263481 4.1\
+796875 8.4863281\
+ L 3.0957031 9.3\
+144531 C 2.99790\
+31 9.3889531 2.9\
+707164 9.5247656\
+ 3.0351562 9.634\
+7656 L 4.0625 11\
+.367188 C 4.127 \
+11.474956 4.2594\
+5 11.519039 4.37\
+5 11.474609 L 5.\
+65625 10.972656 \
+C 5.92067 11.170\
+426 6.2120906 11\
+.337074 6.525390\
+6 11.464844 L 6.\
+7167969 12.78906\
+2 C 6.7378969 12\
+.906833 6.841823\
+1 13 6.9707031 1\
+3 L 9.0273438 13\
+ C 9.1562236 13 \
+9.26014 12.90684\
+3 9.28125 12.789\
+062 L 9.4726562 \
+11.464844 C 9.78\
+59763 11.337074 \
+10.076257 11.172\
+656 10.341797 10\
+.972656 L 11.621\
+094 11.474609 C \
+11.736634 11.516\
+809 11.871117 11\
+.474956 11.93554\
+7 11.367188 L 12\
+.962891 9.634765\
+6 C 13.027391 9.\
+5269956 12.99914\
+4 9.3922231 12.9\
+02344 9.3144531 \
+L 11.818359 8.48\
+63281 C 11.83945\
+9 8.3263481 11.8\
+53516 8.16554 11\
+.853516 8 C 11.8\
+53516 7.83446 11\
+.838359 7.671698\
+8 11.818359 7.51\
+17188 L 12.90429\
+7 6.6835938 C 13\
+.002097 6.609093\
+8 13.029294 6.47\
+32813 12.964844 \
+6.3632812 L 11.9\
+375 4.6308594 C \
+11.873 4.5230994\
+ 11.74055 4.4789\
+975 11.625 4.523\
+4375 L 10.34375 \
+5.0253906 C 10.0\
+7933 4.8276206 9\
+.7879094 4.66097\
+31 9.4746094 4.5\
+332031 L 9.28320\
+31 3.2089844 C 9\
+.2599031 3.09121\
+44 9.1551137 2.9\
+980469 9.0273438\
+ 2.9980469 L 6.9\
+707031 2.9980469\
+ z M 8 6 A 2 2 0\
+ 0 1 10 8 A 2 2 \
+0 0 1 8 10 A 2 2\
+ 0 0 1 6 8 A 2 2\
+ 0 0 1 8 6 z M 1\
+4.134766 11.0058\
+59 C 14.038766 1\
+0.981859 13.9447\
+83 11.033411 13.\
+908203 11.119141\
+ L 13.525391 12.\
+091797 C 13.2693\
+21 12.130697 13.\
+022273 12.203801\
+ 12.789062 12.30\
+6641 L 11.927734\
+ 11.6875 C 11.84\
+8934 11.6338 11.\
+741278 11.641236\
+ 11.673828 11.71\
+0938 L 10.597656\
+ 12.839844 C 10.\
+530256 12.909544\
+ 10.526436 13.01\
+9143 10.585938 1\
+3.095703 L 11.24\
+4141 13.925781 C\
+ 11.199541 14.04\
+3471 11.158626 1\
+4.163373 11.1289\
+06 14.289062 C 1\
+1.099206 14.4147\
+64 11.080959 14.\
+541129 11.068359\
+ 14.667969 L 10.\
+111328 15.097656\
+ C 10.024528 15.\
+136556 9.980373 \
+15.234088 10.007\
+812 15.330078 L \
+10.460938 16.835\
+938 C 10.490636 \
+16.929638 10.580\
+088 16.989133 10\
+.673828 16.97656\
+2 L 11.71875 16.\
+830078 C 11.8799\
+3 17.028908 12.0\
+65051 17.210974 \
+12.275391 17.365\
+234 L 12.181641 \
+18.408203 C 12.1\
+75641 18.500803 \
+12.237934 18.591\
+234 12.333984 18\
+.615234 L 13.863\
+281 18.994141 C \
+13.959281 19.018\
+141 14.055217 18\
+.965389 14.09179\
+7 18.880859 L 14\
+.474609 17.90820\
+3 C 14.730679 17\
+.869403 14.97577\
+4 17.796199 15.2\
+08984 17.693359 \
+L 16.072266 18.3\
+125 C 16.151066 \
+18.3662 16.25676\
+9 18.356809 16.3\
+24219 18.287109 \
+L 17.402344 17.1\
+58203 C 17.46974\
+4 17.087403 17.4\
+73463 16.980857 \
+17.414062 16.904\
+297 L 16.753906 \
+16.072266 C 16.7\
+98506 15.954576 \
+16.839421 15.832\
+721 16.869141 15\
+.707031 C 16.898\
+841 15.581331 16\
+.917086 15.45462\
+8 16.929688 15.3\
+30078 L 17.88867\
+2 14.900391 C 17\
+.975472 14.86149\
+1 18.019628 14.7\
+65912 17.992188 \
+14.669922 L 17.5\
+39062 13.162109 \
+C 17.510464 13.0\
+69509 17.419912 \
+13.010867 17.326\
+172 13.023438 L \
+16.28125 13.1679\
+69 C 16.12006 12\
+.969139 15.93495\
+9 12.790176 15.7\
+24609 12.634766 \
+L 15.818359 11.5\
+89844 C 15.82335\
+9 11.496144 15.7\
+62096 11.407626 \
+15.666016 11.384\
+766 L 14.134766 \
+11.005859 z M 14\
+ 13 A 2 2 0 0 1 \
+16 15 A 2 2 0 0 \
+1 14 17 A 2 2 0 \
+0 1 12 15 A 2 2 \
+0 0 1 14 13 z \x22 \
 class=\x22ColorSche\
 me-Text\x22/>\x0a  </g\
 >\x0a</svg>\x0a\
@@ -5919,41 +12455,35 @@ width=\x222\x22 style=\
 kers stroke fill\
 \x22/>\x0a  </g>\x0a</svg\
 >\x0a\
-\x00\x00\x02\x05\
+\x00\x00\x01\xb0\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22opacity:1;fi\
-ll:currentColor;\
-fill-opacity:1;s\
-troke:none\x22 d=\x22M\
- 3,4 3,16 6,20 6\
-,17 6,16 19,16 1\
-9,4 3,4 Z M 4,5 \
-18,5 18,15 4,15 \
-4,5 Z m 6,1 0,1 \
-2,0 0,-1 -2,0 z \
-m 0,2 0,6 2,0 0,\
--6 -2,0 z\x22 class\
-=\x22ColorScheme-Te\
-xt\x22/>\x0a  </g>\x0a</s\
-vg>\x0a\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Accent\
+ {\x0a            c\
+olor:#3daee9;\x0a  \
+      }\x0a    </st\
+yle>\x0a  <g transf\
+orm=\x22translate(1\
+,1)\x22>\x0a    <rect \
+class=\x22ColorSche\
+me-Accent\x22 x=\x223\x22\
+ y=\x223\x22 width=\x2216\
+\x22 height=\x2216\x22 rx\
+=\x222\x22 fill=\x22curre\
+ntColor\x22/>\x0a    <\
+path d=\x22m10 6v2h\
+2v-2zm0 4v6h2v-6\
+z\x22 fill=\x22#fff\x22/>\
+\x0a  </g>\x0a</svg>\x0a\
 \x00\x00\x04\xc8\
 <\
 svg xmlns=\x22http:\
@@ -6033,7 +12563,7 @@ L 15 18 L 19 14.\
 ass=\x22ColorScheme\
 -Text\x22/>\x0a  </g>\x0a\
 </svg>\x0a\
-\x00\x00\x03J\
+\x00\x00\x03K\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -6047,95 +12577,95 @@ css\x22 id=\x22current\
 -color-scheme\x22>\x0a\
       .ColorSche\
 me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:currentC\
-olor\x22 d=\x22M 19 5 \
-L 9.6679688 5.00\
-58594 L 6.5 14.5\
- L 4.3339844 11 \
-L 3 11 L 3 12 L \
-4 12 L 6.5 17 L \
-10.441406 6 L 19\
- 6 L 19 5 z M 14\
- 8 C 11.790861 8\
- 10 9.790861 10 \
-12 C 10 14.20913\
-9 11.790861 16 1\
-4 16 C 15.149118\
- 15.9982 16.2419\
-64 15.502302 17 \
-14.638672 L 17 1\
-6 L 18 16 L 18 1\
-2 L 18 8 L 17 8 \
-L 17 9.3613281 C\
- 16.241964 8.497\
-6979 15.149118 8\
-.0017906 14 8 z \
-M 14 9 C 15.6568\
-54 9 17 10.34314\
-6 17 12 C 17 13.\
-656854 15.656854\
- 15 14 15 C 12.3\
-43146 15 11 13.6\
-56854 11 12 C 11\
- 10.343146 12.34\
-3146 9 14 9 z \x22 \
-class=\x22ColorSche\
-me-Text\x22/>\x0a  </g\
->\x0a</svg>\x0a\
-\x00\x00\x02\xdb\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:currentC\
-olor\x22 d=\x22M 11 3 \
-A 8 3 0 0 0 3 6 \
-L 3 16 A 8 3 0 0\
- 0 11 19 A 8 3 0\
- 0 0 19 16 L 19 \
-6 A 8 3 0 0 0 11\
- 3 z M 11 4 A 7 \
-2 0 0 1 18 6 A 7\
- 2 0 0 1 11 8 A \
-7 2 0 0 1 4 6 A \
-7 2 0 0 1 11 4 z\
- M 18 7.45 L 18 \
-11 A 7 2 0 0 1 1\
-1 13 A 7 2 0 0 1\
- 4 11 L 4 7.45 A\
- 8 3 0 0 0 11 9 \
-A 8 3 0 0 0 18 7\
-.45 z M 18 12.45\
- L 18 16 A 7 2 0\
- 0 1 11 18 A 7 2\
- 0 0 1 4 16 L 4 \
-12.45 A 8 3 0 0 \
-0 11 14 A 8 3 0 \
-0 0 18 12.45 z \x22\
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 19 5\
+ L 9.6679688 5.0\
+058594 L 6.5 14.\
+5 L 4.3339844 11\
+ L 3 11 L 3 12 L\
+ 4 12 L 6.5 17 L\
+ 10.441406 6 L 1\
+9 6 L 19 5 z M 1\
+4 8 C 11.790861 \
+8 10 9.790861 10\
+ 12 C 10 14.2091\
+39 11.790861 16 \
+14 16 C 15.14911\
+8 15.9982 16.241\
+964 15.502302 17\
+ 14.638672 L 17 \
+16 L 18 16 L 18 \
+12 L 18 8 L 17 8\
+ L 17 9.3613281 \
+C 16.241964 8.49\
+76979 15.149118 \
+8.0017906 14 8 z\
+ M 14 9 C 15.656\
+854 9 17 10.3431\
+46 17 12 C 17 13\
+.656854 15.65685\
+4 15 14 15 C 12.\
+343146 15 11 13.\
+656854 11 12 C 1\
+1 10.343146 12.3\
+43146 9 14 9 z \x22\
  class=\x22ColorSch\
 eme-Text\x22/>\x0a  </\
 g>\x0a</svg>\x0a\
+\x00\x00\x02\xdc\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color\x22 d=\x22M 11 3\
+ A 8 3 0 0 0 3 6\
+ L 3 16 A 8 3 0 \
+0 0 11 19 A 8 3 \
+0 0 0 19 16 L 19\
+ 6 A 8 3 0 0 0 1\
+1 3 z M 11 4 A 7\
+ 2 0 0 1 18 6 A \
+7 2 0 0 1 11 8 A\
+ 7 2 0 0 1 4 6 A\
+ 7 2 0 0 1 11 4 \
+z M 18 7.45 L 18\
+ 11 A 7 2 0 0 1 \
+11 13 A 7 2 0 0 \
+1 4 11 L 4 7.45 \
+A 8 3 0 0 0 11 9\
+ A 8 3 0 0 0 18 \
+7.45 z M 18 12.4\
+5 L 18 16 A 7 2 \
+0 0 1 11 18 A 7 \
+2 0 0 1 4 16 L 4\
+ 12.45 A 8 3 0 0\
+ 0 11 14 A 8 3 0\
+ 0 0 18 12.45 z \
+\x22 class=\x22ColorSc\
+heme-Text\x22/>\x0a  <\
+/g>\x0a</svg>\x0a\
 \x00\x00\x02\x8d\
 <\
 svg xmlns=\x22http:\
@@ -6179,50 +12709,6 @@ L 4 18 L 4 19 L \
  \x22 class=\x22ColorS\
 cheme-Text\x22/>\x0a  \
 </g>\x0a</svg>\x0a\
-\x00\x00\x02\x98\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 6 \
-18 L 19 18 L 19 \
-17 L 19 8 L 18 8\
- L 18 9 L 17 9 L\
- 17 8 L 16 8 L 1\
-6 7 L 15 7 L 15 \
-8 L 14 8 L 14 6 \
-L 13 6 L 13 9 L \
-12 9 L 12 7 L 11\
- 7 L 11 5 L 10 5\
- L 10 3 L 9 3 L \
-9 4 L 8 4 L 8 5 \
-L 7 5 L 7 6 L 6 \
-6 L 6 7 L 5 7 L \
-5 3 L 4 3 z \x22 cl\
-ass=\x22ColorScheme\
--Text\x22/>\x0a  </g>\x0a\
-</svg>\x0a\
 \x00\x00\x04V\
 <\
 svg xmlns=\x22http:\
@@ -6340,35 +12826,47 @@ width=\x221\x22 height\
 ntColor\x22 fill-ru\
 le=\x22evenodd\x22/>\x0a \
  </g>\x0a</svg>\x0a\
-\x00\x00\x01\xa2\
+\x00\x00\x02g\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color\x22 class=\x22Co\
-lorScheme-Text\x22 \
-d=\x22M 3 7 L 3 9 L\
- 13 9 L 13 7 L 3\
- 7 z\x22 transform=\
-\x22translate(3 3)\x22\
-/>\x0a  </g>\x0a</svg>\
-\x0a\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Negati\
+veText {\x0a       \
+     color:#da44\
+53;\x0a        }\x0a  \
+  </style>\x0a  <g \
+transform=\x22trans\
+late(1,1)\x22>\x0a    \
+<path class=\x22Col\
+orScheme-Negativ\
+eText\x22 d=\x22M 3.69\
+92188 3 L 3 3.69\
+92188 L 10.30078\
+1 11 L 3 18.3007\
+81 C 3 18.300781\
+ 3.7112147 18.99\
+3333 3.6992188 1\
+9 L 11 11.699219\
+ L 18.300781 19 \
+C 18.288781 18.9\
+933 19 18.300781\
+ 19 18.300781 L \
+11.699219 11.001\
+953 L 19 3.69921\
+88 L 18.300781 3\
+ L 11 10.300781 \
+L 3.6992188 3 z \
+\x22 fill=\x22currentC\
+olor\x22/>\x0a  </g>\x0a<\
+/svg>\x0a\
 \x00\x00\x02P\
 <\
 !DOCTYPE svg>\x0a<s\
@@ -6532,48 +13030,6 @@ l-2.054687-3.521\
 olorScheme-Text\x22\
 />\x0a  </g>\x0a</svg>\
 \x0a\
-\x00\x00\x02y\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 19\
- 18 L 19 17 L 5 \
-17 L 5 3 L 4 3 z\
- M 17.566406 3.7\
-519531 L 13.6328\
-12 10.632812 L 6\
-.7519531 14.5664\
-06 L 7.2480469 1\
-5.433594 L 14.36\
-7188 11.367188 L\
- 18.433594 4.248\
-0469 L 17.566406\
- 3.7519531 z \x22 c\
-lass=\x22ColorSchem\
-e-Text\x22/>\x0a  </g>\
-\x0a</svg>\x0a\
 \x00\x00\x02\xdc\
 <\
 svg xmlns=\x22http:\
@@ -6622,7 +13078,7 @@ L 17 4.9882812 L\
 \x22 class=\x22ColorSc\
 heme-Text\x22/>\x0a  <\
 /g>\x0a</svg>\x0a\
-\x00\x00\x05\x1f\
+\x00\x00\x05\x1c\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -6638,74 +13094,74 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 4 3 L 4 9 L\
- 4 10 L 4 15 L 4\
- 16 L 4 17 L 3 1\
-7 L 3 18 L 4 18 \
-L 4 19 L 5 19 L \
-5 18 L 18.292969\
- 18 L 19 18 L 19\
- 17.292969 L 19 \
-17 L 18.707031 1\
-7 L 17.292969 17\
- L 5 17 L 5 15.4\
-31641 L 5 15.423\
-828 L 5 15 L 5 1\
-2.423828 L 5 11.\
-423828 L 5 11 L \
-5 10 L 5 9 L 5 6\
- L 5 5.9921875 L\
- 5 5 L 5 3 L 4 3\
- z M 17 3 L 17 4\
- L 18 4 L 18 3 L\
- 17 3 z M 18 4 L\
- 18 5 L 19 5 L 1\
-9 4 L 18 4 z M 1\
-8 5 L 17 5 L 17 \
-6 L 18 6 L 18 5 \
-z M 17 5 L 17 4 \
-L 16 4 L 16 5 L \
-17 5 z M 6 4 L 6\
- 5 L 7 5 L 7 4 L\
- 6 4 z M 8 4 L 8\
- 5 L 9 5 L 9 4 L\
- 8 4 z M 6 6 L 6\
- 7 L 7 7 L 7 6 L\
- 6 6 z M 8 6 L 8\
- 7 L 9 7 L 9 6 L\
- 8 6 z M 11 7 L \
-11 8 L 12 8 L 12\
- 7 L 11 7 z M 13\
- 7 L 13 8 L 14 8\
- L 14 7 L 13 7 z\
- M 11 9 L 11 10 \
-L 12 10 L 12 9 L\
- 11 9 z M 13 9 L\
- 13 10 L 14 10 L\
- 14 9 L 13 9 z M\
- 7 13 L 7 14 L 8\
- 14 L 8 13 L 7 1\
-3 z M 8 14 L 8 1\
-5 L 9 15 L 9 14 \
-L 8 14 z M 8 15 \
-L 7 15 L 7 16 L \
-8 16 L 8 15 z M \
-7 15 L 7 14 L 6 \
-14 L 6 15 L 7 15\
- z \x22 class=\x22Colo\
-rScheme-Text\x22/>\x0a\
-  </g>\x0a</svg>\x0a\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 4 3 L 4 9 L 4 \
+10 L 4 15 L 4 16\
+ L 4 17 L 3 17 L\
+ 3 18 L 4 18 L 4\
+ 19 L 5 19 L 5 1\
+8 L 18.292969 18\
+ L 19 18 L 19 17\
+.292969 L 19 17 \
+L 18.707031 17 L\
+ 17.292969 17 L \
+5 17 L 5 15.4316\
+41 L 5 15.423828\
+ L 5 15 L 5 12.4\
+23828 L 5 11.423\
+828 L 5 11 L 5 1\
+0 L 5 9 L 5 6 L \
+5 5.9921875 L 5 \
+5 L 5 3 L 4 3 z \
+M 17 3 L 17 4 L \
+18 4 L 18 3 L 17\
+ 3 z M 18 4 L 18\
+ 5 L 19 5 L 19 4\
+ L 18 4 z M 18 5\
+ L 17 5 L 17 6 L\
+ 18 6 L 18 5 z M\
+ 17 5 L 17 4 L 1\
+6 4 L 16 5 L 17 \
+5 z M 6 4 L 6 5 \
+L 7 5 L 7 4 L 6 \
+4 z M 8 4 L 8 5 \
+L 9 5 L 9 4 L 8 \
+4 z M 6 6 L 6 7 \
+L 7 7 L 7 6 L 6 \
+6 z M 8 6 L 8 7 \
+L 9 7 L 9 6 L 8 \
+6 z M 11 7 L 11 \
+8 L 12 8 L 12 7 \
+L 11 7 z M 13 7 \
+L 13 8 L 14 8 L \
+14 7 L 13 7 z M \
+11 9 L 11 10 L 1\
+2 10 L 12 9 L 11\
+ 9 z M 13 9 L 13\
+ 10 L 14 10 L 14\
+ 9 L 13 9 z M 7 \
+13 L 7 14 L 8 14\
+ L 8 13 L 7 13 z\
+ M 8 14 L 8 15 L\
+ 9 15 L 9 14 L 8\
+ 14 z M 8 15 L 7\
+ 15 L 7 16 L 8 1\
+6 L 8 15 z M 7 1\
+5 L 7 14 L 6 14 \
+L 6 15 L 7 15 z \
+\x22 class=\x22ColorSc\
+heme-Text\x22/>\x0a  <\
+/g>\x0a</svg>\x0a\
 \x00\x00\x02\x8b\
 <\
 svg xmlns=\x22http:\
@@ -6791,62 +13247,6 @@ L 17 8 L 17 13 L\
 9 L 13 19 L 13 1\
 8 L 5 18 Z\x22/>\x0a  \
 </g>\x0a</svg>\x0a\
-\x00\x00\x03S\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 24 24\x22 width\
-=\x2224\x22 height=\x2224\
-\x22>\x0a  <defs id=\x22d\
-efs3051\x22>\x0a    <s\
-tyle type=\x22text/\
-css\x22 id=\x22current\
--color-scheme\x22>\x0a\
-      .ColorSche\
-me-Text {\x0a      \
-  color:#232629;\
-\x0a      }\x0a      <\
-/style>\x0a  </defs\
->\x0a  <g transform\
-=\x22translate(1,1)\
-\x22>\x0a    <path sty\
-le=\x22fill:current\
-Color;fill-opaci\
-ty:1;stroke:none\
-\x22 d=\x22M 4 3 L 4 1\
-7 L 3 17 L 3 18 \
-L 4 18 L 4 19 L \
-5 19 L 5 18 L 19\
- 18 L 19 17 L 5 \
-17 L 5 3 L 4 3 z\
- M 6.4101562 3.7\
-128906 L 5.58984\
-38 4.2871094 L 1\
-1.0625 12.103516\
- L 6.7519531 14.\
-566406 L 7.24804\
-69 15.433594 L 1\
-1.638672 12.9257\
-81 L 12.685547 1\
-4.421875 L 18.84\
-1797 16.474609 L\
- 19.158203 15.52\
-5391 L 13.314453\
- 13.578125 L 12.\
-509766 12.427734\
- L 14.367188 11.\
-367188 L 18.4335\
-94 4.2480469 L 1\
-7.566406 3.75195\
-31 L 13.632812 1\
-0.632812 L 11.93\
-3594 11.603516 L\
- 6.4101562 3.712\
-8906 z \x22 class=\x22\
-ColorScheme-Text\
-\x22/>\x0a  </g>\x0a</svg\
->\x0a\
 \x00\x00\x02\x81\
 <\
 svg xmlns=\x22http:\
@@ -6960,44 +13360,6 @@ m3 0h9v14h-9v-14\
 \x22 class=\x22ColorSc\
 heme-Text\x22/>\x0a  <\
 /g>\x0a</svg>\x0a\
-\x00\x00\x029\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 version=\x22\
-1.1\x22 viewBox=\x220 \
-0 24 24\x22 width=\x22\
-24\x22 height=\x2224\x22>\
-\x0a  <style id=\x22cu\
-rrent-color-sche\
-me\x22 type=\x22text/c\
-ss\x22>\x0a        .Co\
-lorScheme-Text {\
-\x0a            col\
-or:#232629;\x0a    \
-    }\x0a    </styl\
-e>\x0a  <g transfor\
-m=\x22translate(1,1\
-)\x22>\x0a    <path cl\
-ass=\x22ColorScheme\
--Text\x22 d=\x22m7.910\
-2 3-4.9102 14h1.\
-6582l1.625-4.437\
-5h5.4336l0.89258\
- 2.4375h1.6543l-\
-4.1739-12h-2.179\
-7zm1.1055 1.9375\
- 2.1797 6.3438h-\
-4.3906zm10.277 7\
-.6758-4.5918 4.5\
-918-1.1465-1.146\
-5-0.70703 0.7070\
-3 1.8594 1.8477 \
-5.293-5.293-0.70\
-703-0.70703z\x22 st\
-yle=\x22fill:curren\
-tColor\x22/>\x0a  </g>\
-\x0a</svg>\x0a\
 \x00\x00\x01\xe6\
 <\
 svg xmlns=\x22http:\
@@ -7031,7 +13393,116 @@ ty:1;stroke:none\
 s=\x22ColorScheme-T\
 ext\x22/>\x0a  </g>\x0a</\
 svg>\x0a\
-\x00\x00\x05a\
+\x00\x00\x02\x14\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 version=\x22\
+1.1\x22 viewBox=\x220 \
+0 24 24\x22 width=\x22\
+24\x22 height=\x2224\x22>\
+\x0a  <style type=\x22\
+text/css\x22 id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a        .Co\
+lorScheme-Negati\
+veText {\x0a       \
+     color:#da44\
+53;\x0a        }\x0a  \
+  </style>\x0a  <g \
+transform=\x22trans\
+late(1,1)\x22>\x0a    \
+<rect class=\x22Col\
+orScheme-Negativ\
+eText\x22 x=\x223\x22 y=\x22\
+3\x22 width=\x2216\x22 he\
+ight=\x2216\x22 rx=\x222\x22\
+ fill=\x22currentCo\
+lor\x22/>\x0a    <path\
+ d=\x22M 6.414,5 5,\
+6.414 9.586,11 5\
+,15.586 6.414,17\
+ 11,12.414 15.58\
+6,17 17,15.586 1\
+2.414,11 17,6.41\
+4 15.586,5 11,9.\
+586 Z\x22 fill=\x22#ff\
+f\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x02\xa4\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 4 3 L 4 1\
+9 L 5 19 L 13 19\
+ L 13 18 L 5 18 \
+L 5 4 L 13 4 L 1\
+3 7 L 13 8 L 17 \
+8 L 17 14 L 18 1\
+4 L 18 8.40625 L\
+ 18 7 L 18 6.992\
+1875 L 14.007812\
+ 3 L 14 3.009765\
+6 L 14 3 L 13 3 \
+L 5 3 L 4 3 z M \
+15 14 L 15 16 L \
+13 16 L 13 17 L \
+15 17 L 15 19 L \
+16 19 L 16 17 L \
+18 17 L 18 16 L \
+16 16 L 16 14 L \
+15 14 z \x22 class=\
+\x22ColorScheme-Tex\
+t\x22/>\x0a  </g>\x0a</sv\
+g>\x0a\
+\x00\x00\x01\x99\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 24 24\x22 width\
+=\x2224\x22 height=\x2224\
+\x22>\x0a  <defs id=\x22d\
+efs3051\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+      .ColorSche\
+me-Text {\x0a      \
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:#da4453\
+\x22 d=\x22M 10 4 L 10\
+ 14 L 12 14 L 12\
+ 4 L 10 4 z M 10\
+ 16 L 10 18 L 12\
+ 18 L 12 16 L 10\
+ 16 z \x22/>\x0a  </g>\
+\x0a</svg>\x0a\
+\x00\x00\x05E\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -7047,80 +13518,78 @@ css\x22 id=\x22current\
 me-Text {\x0a      \
   color:#232629;\
 \x0a      }\x0a      .\
-ColorScheme-High\
-light {\x0a        \
-color:#3daee9;\x0a \
-     }\x0a      </s\
-tyle>\x0a  </defs>\x0a\
-  <g transform=\x22\
-translate(1,1)\x22>\
-\x0a    <path style\
-=\x22fill:currentCo\
-lor;fill-opacity\
-:1;stroke:none\x22 \
-d=\x22M 4 3 L 4 9 L\
- 4 10 L 4 15 L 4\
- 16 L 4 17 L 3 1\
-7 L 3 18 L 4 18 \
-L 4 19 L 5 19 L \
-5 18 L 18.292969\
- 18 L 19 18 L 19\
- 17.292969 L 19 \
-17 L 18.707031 1\
-7 L 17.292969 17\
- L 5 17 L 5 15.4\
-31641 L 5 15.423\
-828 L 5 15 L 5 1\
-2.423828 L 5 11.\
-423828 L 5 11 L \
-5 10 L 5 9 L 5 6\
- L 5 5.9921875 L\
- 5 5 L 5 3 L 4 3\
- z M 15.048828 4\
-.2304688 A 2.218\
-6046 2.2186046 0\
- 0 0 12.830078 6\
-.4492188 A 2.218\
-6046 2.2186046 0\
- 0 0 15.048828 8\
-.6679688 A 2.218\
-6046 2.2186046 0\
- 0 0 17.267578 6\
-.4492188 A 2.218\
-6046 2.2186046 0\
- 0 0 15.048828 4\
-.2304688 z M 7.9\
-941406 7.7636719\
- A 0.8063584 0.8\
-063584 0 0 0 7.1\
-875 8.5703125 A \
-0.8063584 0.8063\
-584 0 0 0 7.9941\
-406 9.3769531 A \
-0.8063584 0.8063\
-584 0 0 0 8.7988\
-281 8.5703125 A \
-0.8063584 0.8063\
-584 0 0 0 7.9941\
-406 7.7636719 z \
-M 11.904297 11.1\
-69922 A 1.470944\
-9 1.4709449 0 0 \
-0 10.433594 12.6\
-40625 A 1.470944\
-9 1.4709449 0 0 \
-0 11.904297 14.1\
-11328 A 1.470944\
-9 1.4709449 0 0 \
-0 13.375 12.6406\
-25 A 1.4709449 1\
-.4709449 0 0 0 1\
-1.904297 11.1699\
-22 z \x22 class=\x22Co\
-lorScheme-Text\x22/\
->\x0a  </g>\x0a</svg>\x0a\
-\
-\x00\x00\x01\x98\
+ColorScheme-Acce\
+nt {\x0a        col\
+or:#3daee9;\x0a    \
+  }\x0a      </styl\
+e>\x0a  </defs>\x0a  <\
+g transform=\x22tra\
+nslate(1,1)\x22>\x0a  \
+  <path style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 d=\x22\
+M 4 3 L 4 9 L 4 \
+10 L 4 15 L 4 16\
+ L 4 17 L 3 17 L\
+ 3 18 L 4 18 L 4\
+ 19 L 5 19 L 5 1\
+8 L 19 18 L 19 1\
+7 L 5 17 L 5 16 \
+L 5.0078125 16 L\
+ 6 16 L 8 16 L 8\
+ 15.992188 L 8.0\
+078125 16 L 10.0\
+07812 14 L 11.59\
+9609 14 L 13.599\
+609 16 L 17.0996\
+09 16 L 19 16 L \
+19 15 L 17.09960\
+9 15 L 14.013672\
+ 15 L 12.013672 \
+13 L 12 13 L 11.\
+007812 13 L 10.5\
+99609 13 L 9.593\
+75 13 L 7.59375 \
+15 L 6 15 L 5.00\
+78125 15 L 5 15 \
+L 5 12 L 5 11 L \
+5 10 L 6 10 L 7 \
+10 L 8.8730469 1\
+0 L 8.875 10 L 1\
+0.875 8 L 11.703\
+125 7.171875 L 1\
+2.998047 5.87695\
+31 L 15.121094 8\
+ L 15.126953 7.9\
+960938 L 15.1308\
+59 8 L 17.130859\
+ 6 L 17.958984 5\
+.171875 L 19 4.1\
+308594 L 18.2929\
+69 3.4238281 L 1\
+7.251953 4.46484\
+38 L 16.423828 5\
+.2929688 L 15.12\
+6953 6.5898438 L\
+ 13 4.4648438 L \
+12.998047 4.4667\
+969 L 12.996094 \
+4.4648438 L 11.4\
+6875 5.9921875 L\
+ 5 5.9921875 L 5\
+ 5 L 5 3 L 4 3 z\
+ M 5 6 L 11.4609\
+38 6 L 10.996094\
+ 6.4648438 L 10.\
+167969 7.2929688\
+ L 8.4609375 9 L\
+ 7 9 L 6 9 L 5 9\
+ L 5 6 z \x22 class\
+=\x22ColorScheme-Te\
+xt\x22/>\x0a  </g>\x0a</s\
+vg>\x0a\
+\x00\x00\x02\xd3\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -7134,21 +13603,41 @@ css\x22 id=\x22current\
 -color-scheme\x22>\x0a\
       .ColorSche\
 me-Text {\x0a      \
-  color:#232629\x0a\
-      }\x0a      </\
-style>\x0a  </defs>\
-\x0a  <g transform=\
-\x22translate(1,1)\x22\
->\x0a    <path styl\
-e=\x22fill:#da4453\x22\
- d=\x22M 10 4 L 10 \
-14 L 12 14 L 12 \
-4 L 10 4 z M 10 \
-16 L 10 18 L 12 \
-18 L 12 16 L 10 \
-16 z \x22/>\x0a  </g>\x0a\
-</svg>\x0a\
-\x00\x00\x04{\
+  color:#232629;\
+\x0a      }\x0a      <\
+/style>\x0a  </defs\
+>\x0a  <g transform\
+=\x22translate(1,1)\
+\x22>\x0a    <path sty\
+le=\x22fill:current\
+Color;fill-opaci\
+ty:1;stroke:none\
+\x22 d=\x22M 4 3 L 4 9\
+ L 4 10 L 4 15 L\
+ 4 16 L 4 17 L 3\
+ 17 L 3 18 L 4 1\
+8 L 4 19 L 5 19 \
+L 5 18 L 19 18 L\
+ 19 17 L 16 17 L\
+ 16 8 L 15 8 L 1\
+2 8 L 12 17 L 10\
+ 17 L 10 7 L 10 \
+4 L 10 3 L 6 3 L\
+ 6 17 L 5 17 L 5\
+ 16 L 5 15 L 5 1\
+2 L 5 11 L 5 10 \
+L 5 9 L 5 6 L 5 \
+5.9921875 L 5 5 \
+L 5 3 L 4 3 z M \
+7 4 L 9 4 L 9 17\
+ L 7 17 L 7 4 z \
+M 13 9 L 15 9 L \
+15 17 L 13 17 L \
+13 9 z \x22 class=\x22\
+ColorScheme-Text\
+\x22/>\x0a  </g>\x0a</svg\
+>\x0a\
+\x00\x00\x04u\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -7163,65 +13652,65 @@ ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a  <path\
- \x0a        style=\
-\x22fill:currentCol\
-or;fill-opacity:\
-1;stroke:none\x22\x0a \
-       d=\x22M 5.5 \
-2 C 4.119 2 3 3.\
-119 3 4.5 L 3 7.\
-5 C 3 8.881 4.11\
-9 10 5.5 10 C 6.\
-881 10 8 8.881 8\
- 7.5 L 8 4.5 C 8\
- 3.119 6.881 2 5\
-.5 2 z M 11.5 2 \
-C 10.119 2 9 3.1\
-19 9 4.5 L 9 7.5\
- C 9 8.881 10.11\
-9 10 11.5 10 C 1\
-2.881 10 14 8.88\
-1 14 7.5 L 14 4.\
-5 C 14 3.119 12.\
-881 2 11.5 2 z M\
- 5.5 3 C 6.328 3\
- 7 3.672 7 4.5 L\
- 7 7.5 C 7 8.328\
- 6.328 9 5.5 9 C\
- 4.672 9 4 8.328\
- 4 7.5 L 4 4.5 C\
- 4 3.672 4.672 3\
- 5.5 3 z M 11.5 \
-3 C 12.328 3 13 \
-3.672 13 4.5 L 1\
-3 7.5 C 13 8.328\
- 12.328 9 11.5 9\
- C 10.672 9 10 8\
-.328 10 7.5 L 10\
- 4.5 C 10 3.672 \
-10.672 3 11.5 3 \
-z M 2 9 L 2 10 L\
- 3 10 L 3 9 L 2 \
-9 z \x22\x0a        cl\
-ass=\x22ColorScheme\
--Text\x22\x0a        /\
->\x0a  <path\x0a     s\
-tyle=\x22fill:curre\
-ntColor;fill-opa\
-city:1;stroke:no\
-ne\x22\x0a     d=\x22m 11\
-,9 0,2 -2,0 0,1 \
-2,0 0,2 1,0 0,-2\
- 2,0 0,-1 -2,0 0\
-,-2 z\x22\x0a     clas\
-s=\x22ColorScheme-H\
-ighlight\x22\x0a      \
-/>\x0a</svg>\x0a\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a  <path \x0a \
+       style=\x22fi\
+ll:currentColor;\
+fill-opacity:1;s\
+troke:none\x22\x0a    \
+    d=\x22M 5.5 2 C\
+ 4.119 2 3 3.119\
+ 3 4.5 L 3 7.5 C\
+ 3 8.881 4.119 1\
+0 5.5 10 C 6.881\
+ 10 8 8.881 8 7.\
+5 L 8 4.5 C 8 3.\
+119 6.881 2 5.5 \
+2 z M 11.5 2 C 1\
+0.119 2 9 3.119 \
+9 4.5 L 9 7.5 C \
+9 8.881 10.119 1\
+0 11.5 10 C 12.8\
+81 10 14 8.881 1\
+4 7.5 L 14 4.5 C\
+ 14 3.119 12.881\
+ 2 11.5 2 z M 5.\
+5 3 C 6.328 3 7 \
+3.672 7 4.5 L 7 \
+7.5 C 7 8.328 6.\
+328 9 5.5 9 C 4.\
+672 9 4 8.328 4 \
+7.5 L 4 4.5 C 4 \
+3.672 4.672 3 5.\
+5 3 z M 11.5 3 C\
+ 12.328 3 13 3.6\
+72 13 4.5 L 13 7\
+.5 C 13 8.328 12\
+.328 9 11.5 9 C \
+10.672 9 10 8.32\
+8 10 7.5 L 10 4.\
+5 C 10 3.672 10.\
+672 3 11.5 3 z M\
+ 2 9 L 2 10 L 3 \
+10 L 3 9 L 2 9 z\
+ \x22\x0a        class\
+=\x22ColorScheme-Te\
+xt\x22\x0a        />\x0a \
+ <path\x0a     styl\
+e=\x22fill:currentC\
+olor;fill-opacit\
+y:1;stroke:none\x22\
+\x0a     d=\x22m 11,9 \
+0,2 -2,0 0,1 2,0\
+ 0,2 1,0 0,-2 2,\
+0 0,-1 -2,0 0,-2\
+ z\x22\x0a     class=\x22\
+ColorScheme-Acce\
+nt\x22\x0a      />\x0a</s\
+vg>\x0a\
 \x00\x00\x03\x00\
 <\
 svg xmlns=\x22http:\
@@ -7427,7 +13916,48 @@ L 8 7 L 8 8 L 6.\
  5 z \x22\x0a     clas\
 s=\x22ColorScheme-T\
 ext\x22/>\x0a</svg>\x0a\
-\x00\x00\x02r\
+\x00\x00\x02m\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path\x0a\
+            d=\x22m\
+4 4 8 8m-8 0 8-8\
+\x22\x0a            fi\
+ll=\x22currentColor\
+\x22/>\x0a        <pat\
+h\x0a            d=\
+\x22M 4,3.1523438 3\
+.1523438,4 7.152\
+3437,8 3.1523438\
+,12 4,12.847656 \
+8,8.8476563 12,1\
+2.847656 12.8476\
+56,12 8.8476563,\
+8 12.847656,4 12\
+,3.1523438 8,7.1\
+523437 Z\x22\x0a      \
+      fill=\x22curr\
+entColor\x22/>\x0a    \
+</g>\x0a</svg>\x0a\
+\x00\x00\x031\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -7441,34 +13971,46 @@ scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
-}\x0a      .ColorSc\
-heme-NegativeTex\
-t {\x0a        colo\
-r:#da4453;\x0a     \
- }\x0a      </style\
->\x0a  </defs>\x0a  <p\
-ath\x0a     style=\x22\
-fill:currentColo\
-r;fill-opacity:1\
-;stroke:none\x22 \x0a \
-    class=\x22Color\
-Scheme-NegativeT\
-ext\x22\x0a    d=\x22M 8,\
-2 A 6,6 0 0 0 2,\
-8 6,6 0 0 0 8,14\
- 6,6 0 0 0 14,8 \
-6,6 0 0 0 8,2 Z \
-M 5.70703,5 8,7.\
-29297 10.29297,5\
- 11,5.70703 8.70\
-703,8 11,10.2929\
-7 10.29297,11 8,\
-8.70703 5.70703,\
-11 5,10.29297 7.\
-29297,8 5,5.7070\
-3 5.70703,5 Z\x22\x0a \
-       />\x0a</svg>\
-\x0a\
+}\x0a      </style>\
+\x0a  </defs>\x0a  <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22m 6.39,3 -4.383\
+,11 1.357,0 1.18\
+9,-3 4.928,0 1.1\
+52,3 1.373,0 L 7\
+.754,3 Z M 7.07,\
+4.328 C 7.183,4.\
+704 7.781,6.41 8\
+.867,9.443 L 9.0\
+92,10 4.949,10 Z\
+\x22\x0a     class=\x22Co\
+lorScheme-Text\x22\x0a\
+     />\x0a  <path\x0a\
+     style=\x22fill\
+:currentColor;fi\
+ll-rule:evenodd\x22\
+\x0a     d=\x22M 13 2 \
+A 1 1 0 0 0 12 3\
+ A 1 1 0 0 0 13 \
+4 A 1 1 0 0 0 14\
+ 3 A 1 1 0 0 0 1\
+3 2 z M 13 5 A 1\
+ 1 0 0 0 12 6 A \
+1 1 0 0 0 13 7 A\
+ 1 1 0 0 0 14 6 \
+A 1 1 0 0 0 13 5\
+ z M 13 8 A 1 1 \
+0 0 0 12 9 A 1 1\
+ 0 0 0 13 10 A 1\
+ 1 0 0 0 14 9 A \
+1 1 0 0 0 13 8 z\
+ \x22\x0a     class=\x22C\
+olorScheme-Text\x22\
+\x0a     />\x0a</svg>\x0a\
+\
 \x00\x00\x06\x98\
 (\
 \xb5/\xfd`\xb1#u4\x00\x9aB(\x0c(\xe0N\
@@ -7577,6 +14119,48 @@ w\x14f\xf9)\xcb\x08\xfcR\xaf\x9b\x90\xd3\xcf\xb78\
 *\xb2@\xbfp0!i4ih\x9f\xfb\x15\x97\x9f\
 \x0a1\xff\x9c\xa5\x0a\x91\xc2\xc4;\x0d+\xc7\xae.C\
 C\xba\xea\x03]\xb1\x0a\
+\x00\x00\x02}\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a       d\
+=\x22M 2 2 L 2 13.2\
+8125 L 2 14 L 14\
+ 14 L 14 13 L 14\
+ 12 L 14 11 L 14\
+ 10 L 14 2 L 2 2\
+ z M 3 3 L 13 3 \
+L 13 9 L 11 7 L \
+7.65625 10.34375\
+ L 6.3125 9 L 6.\
+28125 9 L 3 12.2\
+8125 L 3 3 z M 6\
+ 4 C 4.8954305 4\
+ 4 4.8954305 4 6\
+ C 4 7.1045695 4\
+.8954305 8 6 8 C\
+ 7.1045695 8 8 7\
+.1045695 8 6 C 8\
+ 4.8954305 7.104\
+5695 4 6 4 z \x22\x0a \
+    class=\x22Color\
+Scheme-Text\x22\x0a   \
+  />\x0a</svg>\x0a\
 \x00\x00\x03\xdd\
 <\
 svg xmlns=\x22http:\
@@ -7641,6 +14225,46 @@ L 14 11 L 9 11 L\
     class=\x22Color\
 Scheme-Text\x22\x0a   \
   />\x0a</svg>\x0a\
+\x00\x00\x02[\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NeutralText\
+ {\x0a            c\
+olor:#f67400;\x0a  \
+      }\x0a    </st\
+yle>\x0a    <path c\
+lass=\x22ColorSchem\
+e-NeutralText\x22 d\
+=\x22m8.0065001 2.0\
+000269a0.7500188\
+1 0.74999832 0 0\
+ 0-0.6772669 0.4\
+14749l-5.2501316\
+ 10.499976a0.750\
+01881 0.74999832\
+ 0 0 0 0.6712668\
+ 1.085248h10.500\
+264a0.75001881 0\
+.74999832 0 0 0 \
+0.671266-1.08524\
+8l-5.2501312-10.\
+499976a0.7500188\
+1 0.74999832 0 0\
+ 0-0.6652667-0.4\
+14749z\x22 fill=\x22cu\
+rrentColor\x22/>\x0a  \
+  <path d=\x22m7 6v\
+4h2v-4zm0 5v2h2v\
+-2z\x22 fill=\x22#fff\x22\
+/>\x0a</svg>\x0a\
 \x00\x00\x02 \
 <\
 svg xmlns=\x22http:\
@@ -7714,7 +14338,7 @@ L 10 10 L 9 10 L\
     class=\x22Color\
 Scheme-Text\x22\x0a   \
   />\x0a</svg>\x0a\
-\x00\x00\x058\
+\x00\x00\x03!\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -7728,159 +14352,45 @@ scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 2.5 2 C 2.2238\
-576 2 2 2.223857\
-6 2 2.5 C 2 2.77\
-61424 2.2238576 \
-3 2.5 3 C 2.7761\
-424 3 3 2.776142\
-4 3 2.5 C 3 2.22\
-38576 2.7761424 \
-2 2.5 2 z M 5.5 \
-2 C 5.2238576 2 \
-5 2.2238576 5 2.\
-5 C 5 2.7761424 \
-5.2238576 3 5.5 \
-3 C 5.7761424 3 \
-6 2.7761424 6 2.\
-5 C 6 2.2238576 \
-5.7761424 2 5.5 \
-2 z M 13.160156 \
-2 L 9.7382812 6.\
-3105469 C 9.0627\
-65 6.0537156 8.2\
-111082 5.9824498\
- 7 6 C 5.6442244\
- 7.2930815 4.750\
-7597 7.7091991 2\
- 8 L 2 9 C 4.113\
-7135 12.371692 5\
-.4745763 14 9 14\
- L 10 14 C 11.07\
-3961 12.616195 1\
-1.627119 11.6101\
-69 12 10 L 12 9 \
-C 11.558507 8.00\
-93924 11.158004 \
-7.334604 10.6738\
-28 6.8789062 L 1\
-4 2.6601562 L 13\
-.160156 2 z M 4 \
-4 C 3.4477153 4 \
-3 4.4477153 3 5 \
-C 3 5.5522847 3.\
-4477153 6 4 6 C \
-4.5522847 6 5 5.\
-5522847 5 5 C 5 \
-4.4477153 4.5522\
-847 4 4 4 z M 7.\
-5292969 7.101562\
-5 C 9.6322903 7.\
-2655765 10.16858\
-5 8.0162663 10.8\
-57422 9.6992188 \
-C 10.284594 11.2\
-4586 10.385403 1\
-1.602833 9.27343\
-75 12.96875 C 6.\
-1355922 12.69491\
-5 5.052768 11.54\
-0538 3.3261719 8\
-.8300781 C 5.122\
-354 8.7567482 6.\
-1084274 8.104628\
-5 7.5292969 7.10\
-15625 z \x22\x0a     c\
+}\x0a      .ColorSc\
+heme-NegativeTex\
+t {\x0a        colo\
+r:#da4453;\x0a     \
+ }\x0a      </style\
+>\x0a  </defs>\x0a <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 14,2 2,2 2,14\
+ 14,14 14,3 Z m \
+-1,1 0,10 -3,0 0\
+,-2 -1,0 0,2 -2,\
+0 0,-2 -1,0 0,2 \
+-3,0 0,-10 3,0 0\
+,2 1,0 0,-2 2,0 \
+0,2 1,0 0,-2 z\x22\x0a\
+     class=\x22Colo\
+rScheme-Text\x22\x0a  \
+   /> \x0a <path\x0a  \
+     d=\x22M 13,5 3\
+,5 3,6.719 6.281\
+,10 3,10 l 0,1 1\
+0,0 0,-1 -1.281,\
+0 -4,-4 2.563,0 \
+2.719,2.719 0,-1\
+.438 L 11.72,6 1\
+3.001,6 Z m -2.7\
+19,5 -2.563,0 -4\
+,-4 2.563,0 z\x22\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22 \x0a     c\
 lass=\x22ColorSchem\
-e-Text\x22\x0a     />\x0a\
-</svg>\x0a\
-\x00\x00\x04\xe7\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 13.314453 2 L \
-2 13.294922 L 2.\
-7148438 14 L 14 \
-2.6972656 L 13.3\
-14453 2 z M 8 3 \
-A 8.9999916 9.00\
-0003 0 0 0 0.123\
-04688 7.6679688 \
-C 0.25199187 8.0\
-317035 0.4804856\
-2 8.3445563 0.77\
-929688 8.5761719\
- A 7.9999926 8.0\
-000028 0 0 1 8 4\
- A 3.9999993 4.0\
-000007 0 0 0 4 8\
- A 3.9999993 4.0\
-000007 0 0 0 4.1\
-054688 8.8945312\
- L 5 8 A 2.99999\
-93 3.0000005 0 0\
- 1 8 5 L 8.89257\
-81 4.1074219 A 3\
-.9999993 4.00000\
-07 0 0 0 8.34960\
-94 4.0175781 A 7\
-.9999926 8.00000\
-28 0 0 1 8.92773\
-44 4.0722656 L 9\
-.8066406 3.19335\
-94 A 8.9999916 9\
-.000003 0 0 0 8 \
-3 z M 13.835938 \
-5.1640625 L 13.1\
-21094 5.8789062 \
-A 7.9999926 8.00\
-00028 0 0 1 15.2\
-20703 8.5761719 \
-C 15.522218 8.34\
-24607 15.752612 \
-8.0261216 15.880\
-859 7.6582031 A \
-8.9999916 9.0000\
-03 0 0 0 13.8359\
-38 5.1640625 z M\
- 11.894531 7.105\
-4688 L 11 8 A 2.\
-9999993 3.000000\
-5 0 0 1 8 11 L 7\
-.1074219 11.8925\
-78 A 3.9999993 4\
-.0000007 0 0 0 8\
- 12 A 3.9999993 \
-4.0000007 0 0 0 \
-12 8 A 3.9999993\
- 4.0000007 0 0 0\
- 11.894531 7.105\
-4688 z \x22\x0a     cl\
-ass=\x22ColorScheme\
--Text\x22\x0a     />\x0a<\
-/svg>\x0a\
+e-NegativeText\x22\x0a\
+      />\x0a</svg>\x0a\
+\
 \x00\x00\x02\xbe\
 <\
 svg xmlns=\x22http:\
@@ -7927,6 +14437,366 @@ L 11 11 L 9 11 L\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
+\x00\x00\x02d\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h style=\x22fill:cu\
+rrentColor;fill-\
+opacity:1;stroke\
+:none\x22 \x0a       d\
+=\x22M 2 2 L 2 5 L \
+2 14 L 3 14 L 14\
+ 14 L 14 13 L 14\
+ 2 L 3 2 L 2 2 z\
+ M 3 5 L 13 5 L \
+13 13 L 3 13 L 3\
+ 5 z M 4 6 L 4 8\
+ L 6 8 L 6 6 L 4\
+ 6 z M 7 6 L 7 8\
+ L 9 8 L 9 6 L 7\
+ 6 z M 10 6 L 10\
+ 8 L 12 8 L 12 6\
+ L 10 6 z M 4 10\
+ L 4 12 L 6 12 L\
+ 6 10 L 4 10 z M\
+ 7 10 L 7 12 L 9\
+ 12 L 9 10 L 7 1\
+0 z \x22\x0a     class\
+=\x22ColorScheme-Te\
+xt\x22\x0a     />\x0a</sv\
+g>\x0a\
+\x00\x00\x01\xa2\
+<\
+svg viewBox=\x220 0\
+ 16 16\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <g class=\x22Co\
+lorScheme-Text\x22 \
+fill=\x22currentCol\
+or\x22>\x0a        <pa\
+th d=\x22M8 9.707l-\
+6-6L2.707 3 8 8.\
+293 13.293 3l.70\
+7.707z\x22/>\x0a      \
+  <path d=\x22M8 13\
+.707l-6-6L2.707 \
+7 8 12.293 13.29\
+3 7l.707.707z\x22/>\
+\x0a    </g>\x0a</svg>\
+\x0a\
+\x00\x00\x01\xa1\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Nega\
+tiveText {\x0a     \
+   color:#da4453\
+;\x0a      }\x0a      \
+</style>\x0a  </def\
+s>\x0a  <path\x0a     \
+style=\x22fill:curr\
+entColor;fill-op\
+acity:1;stroke:n\
+one\x22 \x0a     class\
+=\x22ColorScheme-Ne\
+gativeText\x22\x0a    \
+ d=\x22m5 2v2h1v-1h\
+4v1h1v-2h-5zm-3 \
+3v1h2v8h8v-8h2v-\
+1zm3 1h6v7h-6z\x22 \
+\x0a     />\x0a</svg>\x0a\
+\
+\x00\x00\x10'\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 4.5722656 1 C \
+4.4562656 1 4.36\
+275 1.0834531 4.\
+34375 1.1894531 \
+L 4.171875 2.382\
+8125 C 3.889875 \
+2.4978125 3.6276\
+719 2.6442187 3.\
+3886719 2.824218\
+8 L 2.2363281 2.\
+3730469 C 2.1323\
+281 2.3350469 2.\
+0130781 2.373703\
+1 1.9550781 2.47\
+07031 L 1.029296\
+9 4.0292969 C 0.\
+97129684 4.12629\
+69 0.9989375 4.2\
+464062 1.0859375\
+ 4.3164062 L 2.0\
+605469 5.0625 C \
+2.0415469 5.2065\
+ 2.0292969 5.352\
+9531 2.0292969 5\
+.5019531 C 2.029\
+2969 5.6499531 2\
+.0425469 5.79545\
+31 2.0605469 5.9\
+394531 L 1.08593\
+75 6.6855469 C 0\
+.9979375 6.75254\
+69 0.97129686 6.\
+8736563 1.029296\
+9 6.9726562 L 1.\
+9550781 8.53125 \
+C 2.0130781 8.62\
+825 2.1323281 8.\
+6689063 2.236328\
+1 8.6289062 L 3.\
+3886719 8.177734\
+4 C 3.6266719 8.\
+3557344 3.889875\
+ 8.5041406 4.171\
+875 8.6191406 L \
+4.34375 9.8125 C\
+ 4.36275 9.9185 \
+4.4562656 10.001\
+953 4.5722656 10\
+.001953 L 6.4238\
+281 10.001953 C \
+6.5398281 10.001\
+953 6.6333437 9.\
+9185 6.6523438 9\
+.8125 L 6.824218\
+8 8.6191406 C 7.\
+1062188 8.504140\
+6 7.3684219 8.35\
+77344 7.6074219 \
+8.1777344 L 8.75\
+97656 8.6289062 \
+C 8.8637656 8.66\
+69064 8.9830156 \
+8.62825 9.041015\
+6 8.53125 L 9.96\
+67969 6.9726562 \
+C 10.024797 6.87\
+56563 9.9971563 \
+6.7555469 9.9101\
+562 6.6855469 L \
+8.9355469 5.9394\
+531 C 8.9545469 \
+5.7954531 8.9667\
+969 5.6509531 8.\
+9667969 5.501953\
+1 C 8.9667969 5.\
+3529531 8.953546\
+9 5.2065 8.93554\
+69 5.0625 L 9.91\
+21094 4.3164062 \
+C 10.000109 4.24\
+94062 10.02675 4\
+.1282969 9.96875\
+ 4.0292969 L 9.0\
+429688 2.4707031\
+ C 8.9849688 2.3\
+737031 8.8657187\
+ 2.3330469 8.761\
+7188 2.3730469 L\
+ 7.609375 2.8242\
+188 C 7.371375 2\
+.6462186 7.10817\
+19 2.4978125 6.8\
+261719 2.3828125\
+ L 6.6542969 1.1\
+894531 C 6.63329\
+69 1.0834531 6.5\
+388281 1 6.42382\
+81 1 L 4.5722656\
+ 1 z M 5.4980469\
+ 3.9257812 C 6.3\
+930469 3.9257812\
+ 7.1171875 4.630\
+9531 7.1171875 5\
+.5019531 C 7.117\
+1875 6.3729531 6\
+.3930469 7.07617\
+19 5.4980469 7.0\
+761719 C 4.60304\
+69 7.0761719 3.8\
+808594 6.3729531\
+ 3.8808594 5.501\
+9531 C 3.8808594\
+ 4.6309531 4.603\
+0469 3.9257812 5\
+.4980469 3.92578\
+12 z M 10.619141\
+ 8.0058594 C 10.\
+535141 7.9848594\
+ 10.451922 8.030\
+4688 10.419922 8\
+.1054688 L 10.08\
+5938 8.9550781 C\
+ 9.861937 8.9890\
+781 9.6454063 9.\
+0545312 9.441406\
+2 9.1445312 L 8.\
+6875 8.6035156 C\
+ 8.6185 8.556515\
+6 8.5257969 8.56\
+20469 8.4667969 \
+8.6230469 L 7.52\
+34375 9.6113281 \
+C 7.4644375 9.67\
+23281 7.4616719 \
+9.7689375 7.5136\
+719 9.8359375 L \
+8.0898438 10.560\
+547 C 8.0508438 \
+10.663547 8.0162\
+344 10.770859 7.\
+9902344 10.88085\
+9 C 7.9642344 10\
+.990859 7.9485 1\
+1.099936 7.9375 \
+11.210938 L 7.09\
+96094 11.587891 \
+C 7.0236094 11.6\
+21891 6.9857656 \
+11.705064 7.0097\
+656 11.789062 L \
+7.4042969 13.109\
+375 C 7.4302969 \
+13.191375 7.5097\
+969 13.241469 7.\
+5917969 13.23046\
+9 L 8.5058594 13\
+.103516 C 8.6468\
+594 13.277516 8.\
+8081875 13.43531\
+4 8.9921875 13.5\
+70312 L 8.910156\
+2 14.484375 C 8.\
+9051563 14.56537\
+5 8.9589688 14.6\
+43064 9.0429688 \
+14.664062 L 10.3\
+82812 14.996094 \
+C 10.466812 15.0\
+17094 10.548078 \
+14.972437 10.580\
+078 14.898438 L \
+10.916016 14.046\
+875 C 11.140016 \
+14.012875 11.354\
+594 13.949375 11\
+.558594 13.85937\
+5 L 12.3125 14.4\
+00391 C 12.3815 \
+14.447391 12.474\
+203 14.439906 12\
+.533203 14.37890\
+6 L 13.476562 13\
+.390625 C 13.535\
+563 13.328625 13\
+.538328 13.23496\
+9 13.486328 13.1\
+67969 L 12.91015\
+6 12.439453 C 12\
+.949156 12.33645\
+3 12.983766 12.2\
+31094 13.009766 \
+12.121094 C 13.0\
+35766 12.011094 \
+13.0515 11.90001\
+6 13.0625 11.791\
+016 L 13.902344 \
+11.414062 C 13.9\
+78344 11.380063 \
+14.016188 11.296\
+891 13.992188 11\
+.212891 L 13.597\
+656 9.8925781 C \
+13.572656 9.8115\
+781 13.492156 9.\
+7604844 13.41015\
+6 9.7714844 L 12\
+.496094 9.898437\
+5 C 12.355094 9.\
+7244375 12.19376\
+6 9.5676406 12.0\
+09766 9.4316406 \
+L 12.091797 8.51\
+75781 C 12.09579\
+7 8.4355781 12.0\
+41031 8.3578906 \
+11.957031 8.3378\
+906 L 10.619141 \
+8.0058594 z M 10\
+.296875 10.31445\
+3 C 10.451047 10\
+.290234 10.61339\
+1 10.295938 10.7\
+75391 10.335938 \
+C 11.423391 10.4\
+95938 11.823875 \
+11.145064 11.671\
+875 11.789062 C \
+11.518875 12.433\
+064 10.870656 12\
+.824063 10.22265\
+6 12.664062 C 9.\
+5746564 12.50406\
+4 9.1741719 11.8\
+54936 9.3261719 \
+11.210938 C 9.44\
+09219 10.727937 \
+9.8343594 10.387\
+109 10.296875 10\
+.314453 z \x22\x0a    \
+   class=\x22ColorS\
+cheme-Text\x22 />\x0a<\
+/svg>\x0a\
 \x00\x00\x02\xe4\
 <\
 svg id=\x22svg859\x22 \
@@ -7976,42 +14846,32 @@ paint-order:mark\
 ers stroke fill\x22\
 />\x0a    </g>\x0a</sv\
 g>\x0a\
-\x00\x00\x02\x11\
+\x00\x00\x01r\
 <\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a    <\
-path \x0a        st\
-yle=\x22fill:curren\
-tColor;fill-opac\
-ity:1;stroke:non\
-e\x22 \x0a          d=\
-\x22M 2 2 L 2 12 L \
-5 15 L 5 12 L 14\
- 12 L 14 2 L 2 2\
- z M 3 3 L 13 3 \
-L 13 11 L 3 11 L\
- 3 3 z M 7 4 L 7\
- 5 L 9 5 L 9 4 L\
- 7 4 z M 7 6 L 7\
- 10 L 9 10 L 9 6\
- L 7 6 z \x22\x0a     \
-     id=\x22rect416\
-3\x22 \x0a          cl\
-ass=\x22ColorScheme\
--Text\x22/>\x0a</svg>\x0a\
-\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-Accent {\x0a  \
+          color:\
+#3daee9;\x0a       \
+ }\x0a    </style>\x0a\
+    <rect class=\
+\x22ColorScheme-Acc\
+ent\x22 x=\x222\x22 y=\x222\x22\
+ width=\x2212\x22 heig\
+ht=\x2212\x22 rx=\x222\x22 f\
+ill=\x22currentColo\
+r\x22/>\x0a    <path d\
+=\x22m7 4v2h2v-2zm0\
+ 3v5h2v-5z\x22 fill\
+=\x22#fff\x22/>\x0a</svg>\
+\x0a\
 \x00\x00\x03\x95\
 <\
 svg xmlns=\x22http:\
@@ -8072,7 +14932,7 @@ L 10.59375 11.96\
 s=\x22ColorScheme-T\
 ext\x22\x0a     />\x0a</s\
 vg>\x0a\
-\x00\x00\x04\xa6\
+\x00\x00\x04\xa7\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -8085,71 +14945,71 @@ pe=\x22text/css\x22 id\
 scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
-:#232629\x0a      }\
-\x0a      </style>\x0a\
-  </defs>\x0a    <p\
-ath\x0a       style\
-=\x22fill:currentCo\
-lor\x22\x0a       d=\x22M\
- 13.996094 3.654\
-2969 L 6.9960938\
- 3.6582031 L 4.5\
-546875 10.349609\
- L 3 7.6542969 L\
- 2 7.6542969 L 2\
- 8.6542969 L 2.4\
-277344 8.6542969\
- L 4.5605469 12.\
-347656 L 7.58007\
-81 4.6542969 L 1\
-4.001953 4.65429\
-69 L 13.996094 3\
-.6542969 z M 9.9\
-960938 5.6542969\
- C 8.3340937 5.6\
-542969 6.9960938\
- 6.9922969 6.996\
-0938 8.6542969 C\
- 6.9960938 10.31\
-6297 8.3340938 1\
-1.654297 9.99609\
-38 11.654297 C 1\
-0.769094 11.6542\
-97 11.465094 11.\
-355906 11.996094\
- 10.878906 L 11.\
-996094 11.654297\
- L 12.996094 11.\
-654297 L 12.9960\
-94 5.6542969 L 1\
-1.996094 5.65429\
-69 L 11.996094 6\
-.4296875 C 11.46\
-5094 5.9526875 1\
-0.769094 5.65429\
-69 9.9960938 5.6\
-542969 z M 9.996\
-0938 6.6542969 C\
- 11.104094 6.654\
-2969 11.996094 7\
-.5462969 11.9960\
-94 8.6542969 C 1\
-1.996094 9.76229\
-69 11.104094 10.\
-654297 9.9960938\
- 10.654297 C 8.8\
-880937 10.654297\
- 7.9960938 9.762\
-2969 7.9960938 8\
-.6542969 C 7.996\
-0938 7.5462969 8\
-.8880937 6.65429\
-69 9.9960938 6.6\
-542969 z \x22\x0a     \
-  class=\x22ColorSc\
-heme-Text\x22 />\x0a</\
-svg>\x0a\
-\x00\x00\x02\xbe\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 13.996094 3.65\
+42969 L 6.996093\
+8 3.6582031 L 4.\
+5546875 10.34960\
+9 L 3 7.6542969 \
+L 2 7.6542969 L \
+2 8.6542969 L 2.\
+4277344 8.654296\
+9 L 4.5605469 12\
+.347656 L 7.5800\
+781 4.6542969 L \
+14.001953 4.6542\
+969 L 13.996094 \
+3.6542969 z M 9.\
+9960938 5.654296\
+9 C 8.3340937 5.\
+6542969 6.996093\
+8 6.9922969 6.99\
+60938 8.6542969 \
+C 6.9960938 10.3\
+16297 8.3340938 \
+11.654297 9.9960\
+938 11.654297 C \
+10.769094 11.654\
+297 11.465094 11\
+.355906 11.99609\
+4 10.878906 L 11\
+.996094 11.65429\
+7 L 12.996094 11\
+.654297 L 12.996\
+094 5.6542969 L \
+11.996094 5.6542\
+969 L 11.996094 \
+6.4296875 C 11.4\
+65094 5.9526875 \
+10.769094 5.6542\
+969 9.9960938 5.\
+6542969 z M 9.99\
+60938 6.6542969 \
+C 11.104094 6.65\
+42969 11.996094 \
+7.5462969 11.996\
+094 8.6542969 C \
+11.996094 9.7622\
+969 11.104094 10\
+.654297 9.996093\
+8 10.654297 C 8.\
+8880937 10.65429\
+7 7.9960938 9.76\
+22969 7.9960938 \
+8.6542969 C 7.99\
+60938 7.5462969 \
+8.8880937 6.6542\
+969 9.9960938 6.\
+6542969 z \x22\x0a    \
+   class=\x22ColorS\
+cheme-Text\x22 />\x0a<\
+/svg>\x0a\
+\x00\x00\x02\xbf\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -8162,39 +15022,39 @@ pe=\x22text/css\x22 id\
 scheme\x22>\x0a      .\
 ColorScheme-Text\
  {\x0a        color\
-:#232629\x0a      }\
-\x0a      </style>\x0a\
-  </defs>\x0a    <p\
-ath\x0a       style\
-=\x22fill:currentCo\
-lor\x22\x0a       d=\x22M\
- 8 2 A 6 2 0 0 0\
- 2 4 L 2 12 A 6 \
-2 0 0 0 8 14 A 6\
- 2 0 0 0 14 12 L\
- 14 4 A 6 2 0 0 \
-0 8 2 z M 8 3 A \
-5 1 0 0 1 13 4 A\
- 5 1 0 0 1 8 5 A\
- 5 1 0 0 1 3 4 A\
- 5 1 0 0 1 8 3 z\
- M 3 5.1015625 A\
- 6 2 0 0 0 8 6 A\
- 6 2 0 0 0 13 5.\
-1035156 L 13 8 A\
- 5 1 0 0 1 8 9 A\
- 5 1 0 0 1 3 8 L\
- 3 5.1015625 z M\
- 3 9.1015625 A 6\
- 2 0 0 0 8 10 A \
-6 2 0 0 0 13 9.1\
-035156 L 13 12 A\
- 5 1 0 0 1 8 13 \
-A 5 1 0 0 1 3 12\
- L 3 9.1015625 z\
- \x22\x0a       class=\
-\x22ColorScheme-Tex\
-t\x22 />\x0a</svg>\x0a\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a    <\
+path\x0a       styl\
+e=\x22fill:currentC\
+olor\x22\x0a       d=\x22\
+M 8 2 A 6 2 0 0 \
+0 2 4 L 2 12 A 6\
+ 2 0 0 0 8 14 A \
+6 2 0 0 0 14 12 \
+L 14 4 A 6 2 0 0\
+ 0 8 2 z M 8 3 A\
+ 5 1 0 0 1 13 4 \
+A 5 1 0 0 1 8 5 \
+A 5 1 0 0 1 3 4 \
+A 5 1 0 0 1 8 3 \
+z M 3 5.1015625 \
+A 6 2 0 0 0 8 6 \
+A 6 2 0 0 0 13 5\
+.1035156 L 13 8 \
+A 5 1 0 0 1 8 9 \
+A 5 1 0 0 1 3 8 \
+L 3 5.1015625 z \
+M 3 9.1015625 A \
+6 2 0 0 0 8 10 A\
+ 6 2 0 0 0 13 9.\
+1035156 L 13 12 \
+A 5 1 0 0 1 8 13\
+ A 5 1 0 0 1 3 1\
+2 L 3 9.1015625 \
+z \x22\x0a       class\
+=\x22ColorScheme-Te\
+xt\x22 />\x0a</svg>\x0a\
 \x00\x00\x01\xd7\
 <\
 svg xmlns=\x22http:\
@@ -8227,42 +15087,6 @@ opacity:1;stroke\
 ass=\x22ColorScheme\
 -Text\x22\x0a     />\x0a<\
 /svg>\x0a\
-\x00\x00\x02\x13\
-<\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a       d\
-=\x22M 2 2 L 2 14 L\
- 3 14 L 14 14 L \
-14 13 L 13 13 L \
-13 11 L 13 8 L 1\
-2 8 L 12 6 L 11 \
-6 L 11 9 L 10 9 \
-L 10 7 L 9 7 L 9\
- 5 L 8 5 L 8 2 L\
- 7 2 L 7 4 L 6 4\
- L 6 6 L 5 6 L 5\
- 7 L 4 7 L 4 8 L\
- 3 8 L 3 2 L 2 2\
- z \x22\x0a     class=\
-\x22ColorScheme-Tex\
-t\x22\x0a     />\x0a</svg\
->\x0a\
 \x00\x00\x05\xa7\
 <\
 svg xmlns=\x22http:\
@@ -8398,31 +15222,41 @@ ht=\x227\x22 fill=\x22cur\
 rentColor\x22 fill-\
 rule=\x22evenodd\x22/>\
 \x0a</svg>\x0a\
-\x00\x00\x01i\
+\x00\x00\x02\x0e\
 <\
-svg xmlns=\x22http:\
-//www.w3.org/200\
-0/svg\x22 viewBox=\x22\
-0 0 16 16\x22>\x0a  <d\
-efs id=\x22defs3051\
-\x22>\x0a    <style ty\
-pe=\x22text/css\x22 id\
-=\x22current-color-\
-scheme\x22>\x0a      .\
-ColorScheme-Text\
- {\x0a        color\
-:#232629;\x0a      \
-}\x0a      </style>\
-\x0a  </defs>\x0a <pat\
-h style=\x22fill:cu\
-rrentColor;fill-\
-opacity:1;stroke\
-:none\x22 \x0a     d=\x22\
-M 3,7 3,9 13,9 1\
-3,7 3,7 Z\x22\x0a     \
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle\x0a        typ\
+e=\x22text/css\x22\x0a   \
+     id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <path \
 class=\x22ColorSche\
-me-Text\x22\x0a     />\
-\x0a</svg>\x0a\
+me-NegativeText\x22\
+ d=\x22M 2.6992188,\
+2 2,2.6992188 7.\
+3007812,8 2,13.3\
+00781 C 2,13.300\
+781 2.7082187,13\
+.995 2.6992188,1\
+4 L 8,8.6992188 \
+13.300781,14 C 1\
+3.291781,13.995 \
+14,13.300781 14,\
+13.300781 L 8.69\
+92188,8 14,2.699\
+2188 13.300781,2\
+ 8,7.3007812 Z\x22 \
+fill=\x22currentCol\
+or\x22/>\x0a</svg>\x0a\
 \x00\x00\x02\x16\
 <\
 !DOCTYPE svg>\x0a<s\
@@ -8896,39 +15730,6 @@ L 13 3 L 13 13 L\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
-\x00\x00\x01\xee\
-<\
-svg version=\x221.1\
-\x22 viewBox=\x220 0 1\
-6 16\x22 xmlns=\x22htt\
-p://www.w3.org/2\
-000/svg\x22>\x0a    <s\
-tyle id=\x22current\
--color-scheme\x22 t\
-ype=\x22text/css\x22>\x0a\
-        .ColorSc\
-heme-Text {\x0a    \
-        color:#2\
-32629;\x0a        }\
-\x0a    </style>\x0a  \
-  <path class=\x22C\
-olorScheme-Text\x22\
- d=\x22m6.3828 2-4.\
-3828 11h1.3574l1\
-.1895-3h6.3262l-\
-3.1875-8h-1.3027\
-zm0.62305 1.3281\
- 2.1211 5.6719h-\
-4.1855l2.0645-5.\
-6719zm7.6836 5.4\
-355-3.3574 3.779\
-3-1.625-1.625-0.\
-70703 0.70703 2.\
-375 2.375 4.0234\
--4.5273-0.70898-\
-0.70898z\x22 style=\
-\x22fill:currentCol\
-or\x22/>\x0a</svg>\x0a\
 \x00\x00\x01\xea\
 <\
 svg xmlns=\x22http:\
@@ -8962,6 +15763,75 @@ L 13 8.9980469 L\
  class=\x22ColorSch\
 eme-Text\x22\x0a     /\
 >\x0a</svg>\x0a\
+\x00\x00\x01\xd1\
+<\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 1\
+6 16\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <s\
+tyle type=\x22text/\
+css\x22 id=\x22current\
+-color-scheme\x22>\x0a\
+        .ColorSc\
+heme-NegativeTex\
+t {\x0a            \
+color:#da4453;\x0a \
+       }\x0a    </s\
+tyle>\x0a    <rect \
+class=\x22ColorSche\
+me-NegativeText\x22\
+ x=\x222\x22 y=\x222\x22 wid\
+th=\x2212\x22 height=\x22\
+12\x22 rx=\x222\x22 fill=\
+\x22currentColor\x22/>\
+\x0a    <path d=\x22M \
+5.414,4 4,5.414 \
+6.586,8 4,10.586\
+ 5.414,12 8,9.41\
+4 10.586,12 12,1\
+0.586 9.414,8 12\
+,5.414 10.586,4 \
+8,6.586 Z\x22 fill=\
+\x22#fff\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x02\x22\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a  <pa\
+th style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 3 2 L 3 14 L \
+8 14 L 8 13 L 4 \
+13 L 4 3 L 9 3 L\
+ 9 6 L 12 6 L 12\
+ 9 L 13 9 L 13 6\
+ L 13 5 L 10 2 L\
+ 9 2 L 3 2 z M 1\
+0 9 L 10 11 L 8 \
+11 L 8 12 L 10 1\
+2 L 10 14 L 11 1\
+4 L 11 12 L 13 1\
+2 L 13 11 L 11 1\
+1 L 11 9 L 10 9 \
+z \x22\x0a     class=\x22\
+ColorScheme-Text\
+\x22\x0a     />\x0a</svg>\
+\x0a\
 \x00\x00\x01R\
 <\
 svg xmlns=\x22http:\
@@ -8986,7 +15856,114 @@ h \x0a       style=\
 0 0,-2 -2,0 z\x22 \x0a\
        />\x0a</svg>\
 \x0a\
-\x00\x00\x05\x1e\
+\x00\x00\x04_\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 2 2 L 2 \
+4.9960938 L 1.00\
+78125 4.9960938 \
+L 1.0078125 5.00\
+58594 L 2 5.0058\
+594 L 2 14 L 14 \
+14 L 14 13 L 3 1\
+3 L 3 5.0058594 \
+L 7.46875 5.0058\
+594 L 4.46875 8.\
+0058594 L 3.0078\
+125 8.0058594 L \
+3.0078125 9.0058\
+594 L 4.8828125 \
+9.0058594 L 9.00\
+58594 4.8828125 \
+L 11.128906 7.00\
+58594 L 11.13476\
+6 7.0019531 L 11\
+.138672 7.005859\
+4 L 13.966797 4.\
+1777344 C 13.969\
+797 4.1827344 13\
+.259766 3.470703\
+1 13.259766 3.47\
+07031 L 11.13476\
+6 5.5957031 L 9.\
+0078125 3.470703\
+1 L 9.0058594 3.\
+4726562 L 9.0039\
+062 3.4707031 L \
+7.4765625 4.9960\
+938 L 3 4.996093\
+8 L 3 2 L 2 2 z \
+M 7.5996094 9 L \
+5.5996094 11 L 3\
+.0058594 11 L 3.\
+0058594 12 L 6.0\
+058594 12 L 6.00\
+58594 11.992188 \
+L 6.0136719 12 L\
+ 8.0136719 10 L \
+9.6054688 10 L 1\
+1.605469 12 L 14\
+.005859 12 L 14.\
+005859 11 L 12.0\
+19531 11 L 10.01\
+9531 9 L 8.60546\
+88 9 L 7.5996094\
+ 9 z \x22\x0a     clas\
+s=\x22ColorScheme-T\
+ext\x22/>\x0a</svg>\x0a\
+\x00\x00\x02\x01\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 16 16\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#232629;\x0a      \
+}\x0a      </style>\
+\x0a  </defs>\x0a <pat\
+h \x0a     style=\x22f\
+ill:currentColor\
+;fill-opacity:1;\
+stroke:none\x22 \x0a  \
+   d=\x22M 2 2 L 2 \
+14 L 14 14 L 14 \
+13 L 13 13 L 13 \
+8 L 9 8 L 9 13 L\
+ 8 13 L 8 2 L 4 \
+2 L 4 13 L 3 13 \
+L 3 2 L 2 2 z M \
+5 3 L 7 3 L 7 13\
+ L 5 13 L 5 3 z \
+M 10 9 L 12 9 L \
+12 13 L 10 13 L \
+10 9 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22/>\x0a</svg>\x0a\
+\
+\x00\x00\x05\x1b\
 <\
 ?xml version=\x221.\
 0\x22 encoding=\x22UTF\
@@ -9026,50 +16003,50 @@ e-Background {\x0a \
        color:#ef\
 f0f1;\x0a      }\x0a  \
     .ColorScheme\
--Highlight {\x0a   \
-     color:#3dae\
-e9;\x0a      }\x0a    \
-  .ColorScheme-B\
-uttonText {\x0a    \
-    color:#31363\
-b;\x0a      }\x0a     \
- .ColorScheme-Ne\
-gativeText {\x0a   \
-     color:#da44\
-53;\x0a      }\x0a  </\
-style>\x0a    <g tr\
-ansform=\x22transla\
-te(27,27) transl\
-ate(-22,-22)\x22 id\
-=\x22document-open-\
-recent\x22>\x0a    <pa\
-th id=\x22path14\x22 d\
-=\x22m 0,-3 0,28 10\
-,0 0,-1 -9,0 0,-\
-26 20,0 0,15 1,0\
- 0,-16 -22,0 z m\
- 16,16 a 6,6 0 0\
- 0 -6,6 6,6 0 0 \
-0 6,6 6,6 0 0 0 \
-6,-6 6,6 0 0 0 -\
-6,-6 z m 0,1 a 5\
-,5 0 0 1 5,5 5,5\
- 0 0 1 -5,5 5,5 \
-0 0 1 -5,-5 5,5 \
-0 0 1 5,-5 z m -\
-1,1 0,5 1,0 3,0 \
-0,-1 -3,0 0,-4 -\
-1,0 z\x22 style=\x22op\
-acity:1;fill:cur\
-rentColor\x22 class\
-=\x22ColorScheme-Te\
-xt\x22/>\x0a    <rect \
-id=\x22rect23\x22 widt\
-h=\x2232\x22 height=\x223\
-2\x22 x=\x22-5\x22 y=\x22-5\x22\
- style=\x22opacity:\
-1;fill:none\x22/>\x0a \
- </g>\x0a</svg>\x0a\
+-Accent {\x0a      \
+  color:#3daee9;\
+\x0a      }\x0a      .\
+ColorScheme-Butt\
+onText {\x0a       \
+ color:#31363b;\x0a\
+      }\x0a      .C\
+olorScheme-Negat\
+iveText {\x0a      \
+  color:#da4453;\
+\x0a      }\x0a  </sty\
+le>\x0a    <g trans\
+form=\x22translate(\
+27,27) translate\
+(-22,-22)\x22 id=\x22d\
+ocument-open-rec\
+ent\x22>\x0a    <path \
+id=\x22path14\x22 d=\x22m\
+ 0,-3 0,28 10,0 \
+0,-1 -9,0 0,-26 \
+20,0 0,15 1,0 0,\
+-16 -22,0 z m 16\
+,16 a 6,6 0 0 0 \
+-6,6 6,6 0 0 0 6\
+,6 6,6 0 0 0 6,-\
+6 6,6 0 0 0 -6,-\
+6 z m 0,1 a 5,5 \
+0 0 1 5,5 5,5 0 \
+0 1 -5,5 5,5 0 0\
+ 1 -5,-5 5,5 0 0\
+ 1 5,-5 z m -1,1\
+ 0,5 1,0 3,0 0,-\
+1 -3,0 0,-4 -1,0\
+ z\x22 style=\x22opaci\
+ty:1;fill:curren\
+tColor\x22 class=\x22C\
+olorScheme-Text\x22\
+/>\x0a    <rect id=\
+\x22rect23\x22 width=\x22\
+32\x22 height=\x2232\x22 \
+x=\x22-5\x22 y=\x22-5\x22 st\
+yle=\x22opacity:1;f\
+ill:none\x22/>\x0a  </\
+g>\x0a</svg>\x0a\
 \x00\x00\x0a(\
 <\
 ?xml version=\x221.\
@@ -9235,43 +16212,46 @@ orm=\x22matrix(1 0 \
 0 1 384.57143 51\
 5.798)\x22/>\x0a </g>\x0a\
 </svg>\x0a\
-\x00\x00\x02&\
+\x00\x00\x02U\
 <\
-svg viewBox=\x220 0\
- 32 32\x22 xmlns=\x22h\
-ttp://www.w3.org\
-/2000/svg\x22>\x0a    \
-<style\x0a        t\
-ype=\x22text/css\x22\x0a \
-       id=\x22curre\
-nt-color-scheme\x22\
->\x0a        .Color\
-Scheme-NegativeT\
-ext {\x0a          \
-  color:#da4453;\
-\x0a        }\x0a    <\
-/style>\x0a    <pat\
-h d=\x22M16 4A12 12\
- 0 0 0 4 16a12 1\
-2 0 0 0 12 12 12\
- 12 0 0 0 12-12A\
-12 12 0 0 0 16 4\
-m-5.293 6L16 15.\
-293 21.293 10s.7\
-27.716.707.707L1\
-6.707 16 22 21.2\
-93s-.701.706-.70\
-7.707L16 16.707 \
-10.707 22c.001-.\
-005-.707-.707-.7\
-07-.707L15.293 1\
-6 10 10.707c.02.\
-001.707-.707.707\
--.707\x22 class=\x22Co\
-lorScheme-Negati\
-veText\x22 fill=\x22cu\
-rrentColor\x22/>\x0a</\
-svg>\x0a\
+svg version=\x221.1\
+\x22 viewBox=\x220 0 3\
+2 32\x22 xmlns=\x22htt\
+p://www.w3.org/2\
+000/svg\x22>\x0a    <d\
+efs>\x0a        <st\
+yle type=\x22text/c\
+ss\x22 id=\x22current-\
+color-scheme\x22>\x0a \
+           .Colo\
+rScheme-Text {\x0a \
+               c\
+olor:#232629;\x0a  \
+          }\x0a    \
+    </style>\x0a   \
+ </defs>\x0a    <g \
+class=\x22ColorSche\
+me-Text\x22 stroke-\
+linecap=\x22square\x22\
+>\x0a        <path \
+d=\x22m7 7 18 18m-1\
+8 0 18-18\x22\x0a     \
+         fill=\x22c\
+urrentColor\x22/>\x0a \
+       <path\x0a   \
+         d=\x22M 7,\
+6.1523437 6.1523\
+437,7 15.152344,\
+16 6.1523437,25 \
+7,25.847656 l 9,\
+-9 9,9 L 25.8476\
+56,25 l -9,-9 9,\
+-9 L 25,6.152343\
+7 16,15.152344 Z\
+\x22\x0a            fi\
+ll=\x22currentColor\
+\x22/>\x0a    </g>\x0a</s\
+vg>\x0a\
 \x00\x00\x05k\
 (\
 \xb5/\xfd`=\x1f\x0d+\x00f\xb7\xa2#\x00q\xf4\
@@ -9361,7 +16341,7 @@ k\xe6\xde\x8a\x91O\x04\xb07\xc0\x0b\x12\xdcv\xa7\xa6\
 \x0a%\xca\x8e89\xd4)\x10\x9f\x9e\x8a\xb6/>\xd3\
 \x04\x9d\x9e\x0b\xbe\xcc,\x0f\x8c\x14t,\xf5\xc2\xdfw\
 wd>H\xb8\xfa@\x91\xa9\x02\
-\x00\x00\x02\xd8\
+\x00\x00\x02\xd5\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -9376,39 +16356,39 @@ ColorScheme-Text\
  {\x0a        color\
 :#232629;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M18.5 6A3.5 \
-3.5 0 0 0 15.041\
-02 9H4V10H15.04A\
-3.5 3.5 0 0 0 18\
-.5 13 3.5 3.5 0 \
-0 0 21.958984 10\
-H28V9H21.961A3.5\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M18.5 6A3.5 3.5\
+ 0 0 0 15.04102 \
+9H4V10H15.04A3.5\
  3.5 0 0 0 18.5 \
-6M7.5 19A3.5 3.5\
- 0 0 0 4 22.5 3.\
-5 3.5 0 0 0 7.5 \
-26 3.5 3.5 0 0 0\
- 10.960938 23H28\
-V22H10.959A3.5 3\
-.5 0 0 0 7.5 19m\
-0 1A2.5 2.5 0 0 \
-1 10 22.5 2.5 2.\
-5 0 0 1 7.5 25 2\
-.5 2.5 0 0 1 5 2\
-2.5 2.5 2.5 0 0 \
-1 7.5 20\x22\x0a     c\
-lass=\x22ColorSchem\
-e-Text\x22\x0a     />\x0a\
-</svg>\x0a\
+13 3.5 3.5 0 0 0\
+ 21.958984 10H28\
+V9H21.961A3.5 3.\
+5 0 0 0 18.5 6M7\
+.5 19A3.5 3.5 0 \
+0 0 4 22.5 3.5 3\
+.5 0 0 0 7.5 26 \
+3.5 3.5 0 0 0 10\
+.960938 23H28V22\
+H10.959A3.5 3.5 \
+0 0 0 7.5 19m0 1\
+A2.5 2.5 0 0 1 1\
+0 22.5 2.5 2.5 0\
+ 0 1 7.5 25 2.5 \
+2.5 0 0 1 5 22.5\
+ 2.5 2.5 0 0 1 7\
+.5 20\x22\x0a     clas\
+s=\x22ColorScheme-T\
+ext\x22\x0a     />\x0a</s\
+vg>\x0a\
 \x00\x00\x09\xce\
 <\
 svg viewBox=\x220 0\
@@ -9568,6 +16548,392 @@ c-.00605.16139-.\
 13.484375z\x22 fill\
 -opacity=\x22.14902\
 \x22/></g></svg>\
+\x00\x00\x03\x07\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 32 32\x22>\x0a  <d\
+efs\x0a     id=\x22def\
+s3051\x22>\x0a    <sty\
+le\x0a       type=\x22\
+text/css\x22\x0a      \
+ id=\x22current-col\
+or-scheme\x22>\x0a    \
+  .ColorScheme-T\
+ext {\x0a        co\
+lor:#232629;\x0a   \
+   }\x0a      </sty\
+le>\x0a  </defs>\x0a  \
+<path\x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:1;stroke:none\x22 \
+\x0a     d=\x22M 4 4 L\
+ 4 28 L 28 28 L \
+28 4 L 4 4 z M 5\
+ 9 L 27 9 L 27 2\
+7 L 5 27 L 5 9 z\
+ M 8 11 L 8 17 L\
+ 15 17 L 15 11 L\
+ 8 11 z M 17 11 \
+L 17 17 L 24 17 \
+L 24 11 L 17 11 \
+z M 9 12 L 14 12\
+ L 14 16 L 9 16 \
+L 9 12 z M 18 12\
+ L 23 12 L 23 16\
+ L 18 16 L 18 12\
+ z M 8 19 L 8 25\
+ L 15 25 L 15 19\
+ L 8 19 z M 17 1\
+9 L 17 25 L 24 2\
+5 L 24 19 L 17 1\
+9 z M 9 20 L 14 \
+20 L 14 24 L 9 2\
+4 L 9 20 z M 18 \
+20 L 23 20 L 23 \
+24 L 18 24 L 18 \
+20 z \x22\x0a     id=\x22\
+path45\x22 \x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
+\x00\x00\x01t\
+<\
+svg viewBox=\x220 0\
+ 32 32\x22 xmlns=\x22h\
+ttp://www.w3.org\
+/2000/svg\x22>\x0a    \
+<style\x0a        t\
+ype=\x22text/css\x22\x0a \
+       id=\x22curre\
+nt-color-scheme\x22\
+>\x0a        .Color\
+Scheme-Text {\x0a  \
+          color:\
+#232629;\x0a       \
+ }\x0a    </style>\x0a\
+    <path d=\x22M2.\
+707 5L2 5.707l14\
+ 14 14-14L29.293\
+ 5 16 18.293zm0 \
+7L2 12.707l14 14\
+ 14-14-.707-.707\
+L16 25.293z\x22 cla\
+ss=\x22ColorScheme-\
+Text\x22 fill=\x22curr\
+entColor\x22/>\x0a</sv\
+g>\x0a\
+\x00\x00\x13/\
+<\
+svg xmlns=\x22http:\
+//www.w3.org/200\
+0/svg\x22 viewBox=\x22\
+0 0 32 32\x22>\x0a  <d\
+efs id=\x22defs3051\
+\x22>\x0a    <style ty\
+pe=\x22text/css\x22 id\
+=\x22current-color-\
+scheme\x22>\x0a      .\
+ColorScheme-Text\
+ {\x0a        color\
+:#31363b;\x0a      \
+}\x0a      .ColorSc\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
+\x0a     />\x0a <path \
+\x0a     style=\x22fil\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 16.\
+472656 10 C 16.3\
+44857 10 16.2395\
+37 10.090965 16.\
+216797 10.208984\
+ L 16.023438 11.\
+535156 C 15.7104\
+39 11.662659 15.\
+418558 11.830295\
+ 15.154297 12.02\
+7344 L 13.875 11\
+.525391 C 13.760\
+198 11.48008 13.\
+6264 11.525332 1\
+3.5625 11.632812\
+ L 12.535156 13.\
+365234 C 12.4712\
+53 13.475876 12.\
+498223 13.610727\
+ 12.595703 13.68\
+5547 L 13.679688\
+ 14.511719 C 13.\
+659117 14.671887\
+ 13.642578 14.83\
+4563 13.642578 1\
+5 C 13.642578 15\
+.165437 13.65910\
+6 15.328113 13.6\
+79688 15.488281 \
+L 12.597656 16.3\
+14453 C 12.50018\
+6 16.392431 12.4\
+73209 16.527285 \
+12.537109 16.634\
+766 L 13.564453 \
+18.367188 C 13.6\
+28352 18.47467 1\
+3.761069 18.5167\
+59 13.876953 18.\
+474609 L 15.1582\
+03 17.972656 C 1\
+5.422464 18.1718\
+13 15.712395 18.\
+337341 16.025391\
+ 18.464844 L 16.\
+21875 19.791016 \
+C 16.239327 19.9\
+07991 16.343775 \
+20 16.472656 20 \
+L 18.529297 20 C\
+ 18.658178 20 18\
+.762625 19.90903\
+5 18.783203 19.7\
+91016 L 18.97656\
+2 18.464844 C 19\
+.289559 18.33734\
+1 19.581442 18.1\
+69705 19.845703 \
+17.972656 L 21.1\
+25 18.474609 C 2\
+1.239801 18.5199\
+2 21.3736 18.474\
+67 21.4375 18.36\
+7188 L 22.464844\
+ 16.634766 C 22.\
+528746 16.524124\
+ 22.501767 16.38\
+9273 22.404297 1\
+6.314453 L 21.32\
+0312 15.488281 C\
+ 21.340884 15.32\
+8113 21.357422 1\
+5.165437 21.3574\
+22 15 C 21.35742\
+2 14.834563 21.3\
+40892 14.671887 \
+21.320312 14.511\
+719 L 22.404297 \
+13.685547 C 22.5\
+01767 13.607569 \
+22.528744 13.472\
+715 22.464844 13\
+.365234 L 21.437\
+5 11.632812 C 21\
+.373601 11.52533\
+1 21.240885 11.4\
+83241 21.125 11.\
+525391 L 19.8457\
+03 12.027344 C 1\
+9.581442 11.8281\
+87 19.289559 11.\
+662659 18.976562\
+ 11.535156 L 18.\
+783203 10.208984\
+ C 18.762625 10.\
+092019 18.658178\
+ 10 18.529297 10\
+ L 16.472656 10 \
+z M 17.498047 13\
+.25 C 18.492273 \
+13.25 19.296875 \
+14.032666 19.296\
+875 15 C 19.2968\
+75 15.967334 18.\
+492273 16.75 17.\
+498047 16.75 C 1\
+6.50382 16.75 15\
+.699219 15.96733\
+4 15.699219 15 C\
+ 15.699219 14.03\
+2666 16.50382 13\
+.25 17.498047 13\
+.25 z M 12.5625 \
+18.503906 C 12.5\
+23023 18.495039 \
+12.481454 18.499\
+894 12.443359 18\
+.521484 L 11.220\
+703 19.207031 C \
+11.143493 19.249\
+178 11.111659 19\
+.342618 11.13671\
+9 19.423828 L 11\
+.464844 20.31835\
+9 C 11.321477 20\
+.503397 11.20451\
+1 20.706203 11.1\
+13281 20.917969 \
+L 10.183594 21.0\
+27344 C 10.10037\
+9 21.037624 10.0\
+36203 21.110809 \
+10.033203 21.199\
+219 L 10 22.6289\
+06 C 9.997995 22\
+.719364 10.05936\
+8 22.794204 10.1\
+42578 22.808594 \
+L 11.066406 22.9\
+64844 C 11.10751\
+1 23.071755 11.1\
+53844 23.179376 \
+11.208984 23.283\
+203 C 11.264126 \
+23.38703 11.3274\
+08 23.484575 11.\
+392578 23.578125\
+ L 11.023438 24.\
+457031 C 10.9913\
+57 24.538242 11.\
+01956 24.631474 \
+11.09375 24.6777\
+34 L 12.283203 2\
+5.421875 C 12.35\
+7393 25.468135 1\
+2.450719 25.4495\
+26 12.505859 25.\
+384766 L 13.0996\
+09 24.644531 C 1\
+3.323181 24.6815\
+41 13.552665 24.\
+688733 13.78125 \
+24.664062 L 14.3\
+37891 25.431641 \
+C 14.389022 25.4\
+98461 14.482404 \
+25.521696 14.558\
+594 25.478516 L \
+15.78125 24.7929\
+69 C 15.85746 24\
+.750821 15.89035\
+1 24.658305 15.8\
+63281 24.578125 \
+L 15.535156 23.6\
+81641 C 15.67852\
+3 23.496603 15.7\
+95489 23.29575 1\
+5.886719 23.0839\
+84 L 16.816406 2\
+2.972656 C 16.89\
+962 22.962376 16\
+.963797 22.88919\
+1 16.966797 22.8\
+00781 L 17 21.37\
+3047 C 17.002005\
+ 21.282589 16.94\
+0632 21.207749 1\
+6.857422 21.1933\
+59 L 15.935547 2\
+1.035156 C 15.89\
+4442 20.928245 1\
+5.848109 20.8206\
+24 15.792969 20.\
+716797 C 15.7378\
+28 20.61297 15.6\
+74545 20.515425 \
+15.609375 20.421\
+875 L 15.978516 \
+19.542969 C 16.0\
+10598 19.461758 \
+15.982393 19.368\
+526 15.908203 19\
+.322266 L 14.718\
+75 18.578125 C 1\
+4.64456 18.53186\
+5 14.551234 18.5\
+50474 14.496094 \
+18.615234 L 13.9\
+02344 19.355469 \
+C 13.678773 19.3\
+18459 13.449288 \
+19.311267 13.220\
+703 19.335938 L \
+12.664062 18.568\
+359 C 12.638497 \
+18.534949 12.601\
+977 18.512774 12\
+.5625 18.503906 \
+z M 13.380859 20\
+.755859 C 13.853\
+631 20.707383 14\
+.330146 20.94550\
+5 14.572266 21.4\
+00391 C 14.89509\
+1 22.006905 14.6\
+7745 22.766644 1\
+4.085938 23.0976\
+56 C 13.494423 2\
+3.428669 12.7544\
+67 23.206122 12.\
+431641 22.599609\
+ C 12.108815 21.\
+993095 12.326456\
+ 21.233357 12.91\
+7969 20.902344 C\
+ 13.065847 20.81\
+9591 13.223269 2\
+0.772018 13.3808\
+59 20.755859 z \x22\
+\x0a     class=\x22Col\
+orScheme-Text\x22\x0a \
+    />\x0a</svg>\x0a\
 \x00\x00\x03\x00\
 <\
 svg id=\x22svg6\x22 ve\
@@ -9690,7 +17056,7 @@ L 20.300781 25.1\
      class=\x22Colo\
 rScheme-Text\x22\x0a  \
    />\x0a</svg>\x0a\
-\x00\x00\x05\x9d\
+\x00\x00\x05\x97\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -9705,84 +17071,84 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     class=\x22\
-ColorScheme-High\
-light\x22\x0a     />\x0a \
-<path \x0a     styl\
-e=\x22fill-opacity:\
-0.33;fill-rule:e\
-venodd\x22\x0a     d=\x22\
-m 2,3 0,7 9,0 L \
-13,8 30,8 30,5 1\
-6,5 14,3 2,3 Z\x22\x0a\
-     />\x0a <path \x0a\
-     style=\x22fill\
-:#ffffff;fill-op\
-acity:0.2;fill-r\
-ule:evenodd\x22\x0a   \
-  d=\x22M 14 3 L 15\
- 6 L 30 6 L 30 5\
- L 16 5 L 14 3 z\
- M 13 8 L 11 10 \
-L 1 10 L 1 11 L \
-12 11 L 13 8 z \x22\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
 \x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l-opacity:0.2;fi\
-ll-rule:evenodd\x22\
-\x0a     d=\x22M 13 8 \
-L 11 9 L 2 9 L 2\
- 10 L 11 10 L 13\
- 8 z M 1 28 L 1 \
-29 L 31 29 L 31 \
-28 L 1 28 z \x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a <path \x0a    \
- style=\x22fill:cur\
-rentColor;fill-o\
-pacity:0.6;strok\
-e:none\x22 \x0a     d=\
-\x22M 22,14 15,14.0\
-04 12.559,20.695\
- 11.004,18 h -1 \
-v 1 h 0.428 l 2.\
-133,3.693 3.02,-\
-7.693 h 6.42 z m\
- -4,2 c -1.662,0\
- -3,1.338 -3,3 0\
-,1.662 1.338,3 3\
-,3 0.773,0 1.469\
-,-0.298 2,-0.775\
- V 22 h 1 v -6 h\
- -1 v 0.775 C 19\
-.469,16.298 18.7\
-73,16 18,16 m 0,\
-1 c 1.108,0 2,0.\
-892 2,2 0,1.108 \
--0.892,2 -2,2 -1\
-.108,0 -2,-0.892\
- -2,-2 0,-1.108 \
-0.892,-2 2,-2\x22\x0a \
-    class=\x22Color\
-Scheme-Text\x22\x0a   \
-  />\x0a</svg>\x0a\
-\x00\x00\x05\xac\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 22,\
+14 15,14.004 12.\
+559,20.695 11.00\
+4,18 h -1 v 1 h \
+0.428 l 2.133,3.\
+693 3.02,-7.693 \
+h 6.42 z m -4,2 \
+c -1.662,0 -3,1.\
+338 -3,3 0,1.662\
+ 1.338,3 3,3 0.7\
+73,0 1.469,-0.29\
+8 2,-0.775 V 22 \
+h 1 v -6 h -1 v \
+0.775 C 19.469,1\
+6.298 18.773,16 \
+18,16 m 0,1 c 1.\
+108,0 2,0.892 2,\
+2 0,1.108 -0.892\
+,2 -2,2 -1.108,0\
+ -2,-0.892 -2,-2\
+ 0,-1.108 0.892,\
+-2 2,-2\x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
+\x00\x00\x05\xa6\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -9797,84 +17163,84 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
-\x0a     style=\x22fil\
-l:currentColor;f\
-ill-opacity:1;st\
-roke:none\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     class=\x22\
-ColorScheme-High\
-light\x22\x0a     />\x0a \
-<path \x0a     styl\
-e=\x22fill-opacity:\
-0.33;fill-rule:e\
-venodd\x22\x0a     d=\x22\
-m 2,3 0,7 9,0 L \
-13,8 30,8 30,5 1\
-6,5 14,3 2,3 Z\x22\x0a\
-     />\x0a <path \x0a\
-     style=\x22fill\
-:#ffffff;fill-op\
-acity:0.2;fill-r\
-ule:evenodd\x22\x0a   \
-  d=\x22M 14 3 L 15\
- 6 L 30 6 L 30 5\
- L 16 5 L 14 3 z\
- M 13 8 L 11 10 \
-L 1 10 L 1 11 L \
-12 11 L 13 8 z \x22\
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:c\
+urrentColor;fill\
+-opacity:1;strok\
+e:none\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     class=\x22Col\
+orScheme-Accent\x22\
 \x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l-opacity:0.2;fi\
-ll-rule:evenodd\x22\
-\x0a     d=\x22M 13 8 \
-L 11 9 L 2 9 L 2\
- 10 L 11 10 L 13\
- 8 z M 1 28 L 1 \
-29 L 31 29 L 31 \
-28 L 1 28 z \x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a <path \x0a    \
- style=\x22fill:cur\
-rentColor;fill-o\
-pacity:0.6;strok\
-e:none\x22 \x0a     d=\
-\x22m 16.00143,12 a\
- 6,2 0 0 0 -6,2 \
-v 8 a 6,2 0 0 0 \
-6,2 6,2 0 0 0 6,\
--2 v -8 a 6,2 0 \
-0 0 -6,-2 m 0,1 \
-a 5,1 0 0 1 5,1 \
-5,1 0 0 1 -5,1 5\
-,1 0 0 1 -5,-1 5\
-,1 0 0 1 5,-1 m \
--5,2.10156 a 6,2\
- 0 0 0 5,0.89844\
- 6,2 0 0 0 5,-0.\
-89648 v 2.896 a \
-5,1 0 0 1 -5,1 5\
-,1 0 0 1 -5,-1 z\
- m 0,4 a 6,2 0 0\
- 0 5,0.89844 6,2\
- 0 0 0 5,-0.8964\
-8 v 2.896 a 5,1 \
-0 0 1 -5,1 5,1 0\
- 0 1 -5,-1 z\x22\x0a  \
-   class=\x22ColorS\
-cheme-Text\x22\x0a    \
- />\x0a</svg>\x0a\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22m 16.\
+00143,12 a 6,2 0\
+ 0 0 -6,2 v 8 a \
+6,2 0 0 0 6,2 6,\
+2 0 0 0 6,-2 v -\
+8 a 6,2 0 0 0 -6\
+,-2 m 0,1 a 5,1 \
+0 0 1 5,1 5,1 0 \
+0 1 -5,1 5,1 0 0\
+ 1 -5,-1 5,1 0 0\
+ 1 5,-1 m -5,2.1\
+0156 a 6,2 0 0 0\
+ 5,0.89844 6,2 0\
+ 0 0 5,-0.89648 \
+v 2.896 a 5,1 0 \
+0 1 -5,1 5,1 0 0\
+ 1 -5,-1 z m 0,4\
+ a 6,2 0 0 0 5,0\
+.89844 6,2 0 0 0\
+ 5,-0.89648 v 2.\
+896 a 5,1 0 0 1 \
+-5,1 5,1 0 0 1 -\
+5,-1 z\x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a</\
+svg>\x0a\
 \x00\x00\x02\xc6\
 <\
 svg id=\x22svg6\x22 ve\
@@ -10063,7 +17429,134 @@ y:1; stroke:none\
 7 L 25.0859 22.5\
  L 16.9961 22.5 \
 Z\x22/>\x0a</svg>\x0a\
-\x00\x00\x04\xca\
+\x00\x00\x07\xcc\
+<\
+?xml version=\x221.\
+0\x22 encoding=\x22UTF\
+-8\x22 standalone=\x22\
+no\x22?>\x0a<svg\x0a   xm\
+lns:dc=\x22http://p\
+url.org/dc/eleme\
+nts/1.1/\x22\x0a   xml\
+ns:cc=\x22http://cr\
+eativecommons.or\
+g/ns#\x22\x0a   xmlns:\
+rdf=\x22http://www.\
+w3.org/1999/02/2\
+2-rdf-syntax-ns#\
+\x22\x0a   xmlns:svg=\x22\
+http://www.w3.or\
+g/2000/svg\x22\x0a   x\
+mlns=\x22http://www\
+.w3.org/2000/svg\
+\x22\x0a   xmlns:sodip\
+odi=\x22http://sodi\
+podi.sourceforge\
+.net/DTD/sodipod\
+i-0.dtd\x22\x0a   xmln\
+s:inkscape=\x22http\
+://www.inkscape.\
+org/namespaces/i\
+nkscape\x22\x0a   view\
+Box=\x220 0 32 32\x22\x0a\
+   id=\x22svg2\x22\x0a   \
+version=\x221.1\x22\x0a  \
+ inkscape:versio\
+n=\x220.91 r13725\x22\x0a\
+   sodipodi:docn\
+ame=\x22document-ne\
+w.svg\x22>\x0a  <metad\
+ata\x0a     id=\x22met\
+adata10\x22>\x0a    <r\
+df:RDF>\x0a      <c\
+c:Work\x0a         \
+rdf:about=\x22\x22>\x0a  \
+      <dc:format\
+>image/svg+xml</\
+dc:format>\x0a     \
+   <dc:type\x0a    \
+       rdf:resou\
+rce=\x22http://purl\
+.org/dc/dcmitype\
+/StillImage\x22 />\x0a\
+      </cc:Work>\
+\x0a    </rdf:RDF>\x0a\
+  </metadata>\x0a  \
+<sodipodi:namedv\
+iew\x0a     pagecol\
+or=\x22#ffffff\x22\x0a   \
+  bordercolor=\x22#\
+666666\x22\x0a     bor\
+deropacity=\x221\x22\x0a \
+    objecttolera\
+nce=\x2210\x22\x0a     gr\
+idtolerance=\x2210\x22\
+\x0a     guidetoler\
+ance=\x2210\x22\x0a     i\
+nkscape:pageopac\
+ity=\x220\x22\x0a     ink\
+scape:pageshadow\
+=\x222\x22\x0a     inksca\
+pe:window-width=\
+\x221920\x22\x0a     inks\
+cape:window-heig\
+ht=\x22998\x22\x0a     id\
+=\x22namedview8\x22\x0a  \
+   showgrid=\x22tru\
+e\x22\x0a     inkscape\
+:snap-bbox=\x22true\
+\x22\x0a     inkscape:\
+bbox-nodes=\x22true\
+\x22\x0a     inkscape:\
+zoom=\x2229.5\x22\x0a    \
+ inkscape:cx=\x2216\
+\x22\x0a     inkscape:\
+cy=\x2214.711864\x22\x0a \
+    inkscape:win\
+dow-x=\x220\x22\x0a     i\
+nkscape:window-y\
+=\x2224\x22\x0a     inksc\
+ape:window-maxim\
+ized=\x221\x22\x0a     in\
+kscape:current-l\
+ayer=\x22svg2\x22>\x0a   \
+ <inkscape:grid\x0a\
+       type=\x22xyg\
+rid\x22\x0a       id=\x22\
+grid4138\x22 />\x0a  <\
+/sodipodi:namedv\
+iew>\x0a  <defs\x0a   \
+  id=\x22defs3051\x22>\
+\x0a    <style\x0a    \
+   type=\x22text/cs\
+s\x22\x0a       id=\x22cu\
+rrent-color-sche\
+me\x22>\x0a      .Colo\
+rScheme-Text {\x0a \
+       color:#23\
+2629;\x0a      }\x0a  \
+    </style>\x0a  <\
+/defs>\x0a  <path\x0a \
+    style=\x22fill:\
+currentColor;fil\
+l-opacity:1;stro\
+ke:none\x22\x0a     d=\
+\x22m 6,4 0,24 9,0 \
+0,-1 -8,0 0,-22 \
+11,0 0,7 7,0 0,5\
+ 1,0 0,-6 L 19,4\
+ 18,4 6,4 Z m 14\
+,13 0,5 -5,0 0,1\
+ 5,0 0,5 1,0 0,-\
+5 5,0 0,-1 -5,0 \
+0,-5 -1,0 z\x22\x0a   \
+  id=\x22path6\x22\x0a   \
+  class=\x22ColorSc\
+heme-Text\x22\x0a     \
+inkscape:connect\
+or-curvature=\x220\x22\
+ />\x0a</svg>\x0a\
+\x00\x00\x04\xc7\
 <\
 svg xmlns=\x22http:\
 //www.w3.org/200\
@@ -10078,70 +17571,70 @@ ColorScheme-Text\
  {\x0a        color\
 :#31363b;\x0a      \
 }\x0a      .ColorSc\
-heme-Highlight {\
-\x0a        color:#\
-3daee9;\x0a      }\x0a\
-      </style>\x0a \
- </defs>\x0a <path \
+heme-Accent {\x0a  \
+      color:#3da\
+ee9;\x0a      }\x0a   \
+   </style>\x0a  </\
+defs>\x0a <path \x0a  \
+   style=\x22fill:#\
+eb0a42\x22 \x0a     d=\
+\x22M 2 3 L 2 10 L \
+1 10 L 1 29 L 12\
+ 29 L 13 29 L 31\
+ 29 L 31 8 L 30 \
+8 L 30 5 L 16 5 \
+L 14 3 L 2 3 z \x22\
+\x0a     />\x0a <path \
 \x0a     style=\x22fil\
-l:#eb0a42\x22 \x0a    \
- d=\x22M 2 3 L 2 10\
- L 1 10 L 1 29 L\
- 12 29 L 13 29 L\
- 31 29 L 31 8 L \
-30 8 L 30 5 L 16\
- 5 L 14 3 L 2 3 \
-z \x22\x0a     />\x0a <pa\
-th \x0a     style=\x22\
-fill-opacity:0.3\
-3;fill-rule:even\
-odd\x22\x0a     d=\x22m 2\
-,3 0,7 9,0 L 13,\
-8 30,8 30,5 16,5\
- 14,3 2,3 Z\x22\x0a   \
-  />\x0a <path \x0a   \
-  style=\x22fill:#f\
-fffff;fill-opaci\
-ty:0.2;fill-rule\
-:evenodd\x22\x0a     d\
-=\x22M 14 3 L 15 6 \
-L 30 6 L 30 5 L \
-16 5 L 14 3 z M \
-13 8 L 11 10 L 1\
- 10 L 1 11 L 12 \
-11 L 13 8 z \x22\x0a  \
-   />\x0a <path \x0a  \
-   style=\x22fill-o\
-pacity:0.2;fill-\
-rule:evenodd\x22\x0a  \
-   d=\x22M 13 8 L 1\
-1 9 L 2 9 L 2 10\
- L 11 10 L 13 8 \
-z M 1 28 L 1 29 \
-L 31 29 L 31 28 \
-L 1 28 z \x22\x0a     \
-class=\x22ColorSche\
-me-Text\x22\x0a     />\
-\x0a <path \x0a     st\
-yle=\x22fill:curren\
-tColor;fill-opac\
-ity:0.6;stroke:n\
-one\x22 \x0a     d=\x22M \
-16 13 C 15.4 13 \
-15 13.4 15 14 C \
-15 14.5 15.4 20 \
-16 20 C 16.5 20 \
-17 14.5 17 14 C \
-17 13.4 16.5 13 \
-16 13 z M 16 21 \
-A 1 1 0 0 0 15 2\
-2 A 1 1 0 0 0 16\
- 23 A 1 1 0 0 0 \
-17 22 A 1 1 0 0 \
-0 16 21 z \x22\x0a    \
- class=\x22ColorSch\
-eme-Text\x22\x0a     /\
->\x0a</svg>\x0a\
+l-opacity:0.33;f\
+ill-rule:evenodd\
+\x22\x0a     d=\x22m 2,3 \
+0,7 9,0 L 13,8 3\
+0,8 30,5 16,5 14\
+,3 2,3 Z\x22\x0a     /\
+>\x0a <path \x0a     s\
+tyle=\x22fill:#ffff\
+ff;fill-opacity:\
+0.2;fill-rule:ev\
+enodd\x22\x0a     d=\x22M\
+ 14 3 L 15 6 L 3\
+0 6 L 30 5 L 16 \
+5 L 14 3 z M 13 \
+8 L 11 10 L 1 10\
+ L 1 11 L 12 11 \
+L 13 8 z \x22\x0a     \
+/>\x0a <path \x0a     \
+style=\x22fill-opac\
+ity:0.2;fill-rul\
+e:evenodd\x22\x0a     \
+d=\x22M 13 8 L 11 9\
+ L 2 9 L 2 10 L \
+11 10 L 13 8 z M\
+ 1 28 L 1 29 L 3\
+1 29 L 31 28 L 1\
+ 28 z \x22\x0a     cla\
+ss=\x22ColorScheme-\
+Text\x22\x0a     />\x0a <\
+path \x0a     style\
+=\x22fill:currentCo\
+lor;fill-opacity\
+:0.6;stroke:none\
+\x22 \x0a     d=\x22M 16 \
+13 C 15.4 13 15 \
+13.4 15 14 C 15 \
+14.5 15.4 20 16 \
+20 C 16.5 20 17 \
+14.5 17 14 C 17 \
+13.4 16.5 13 16 \
+13 z M 16 21 A 1\
+ 1 0 0 0 15 22 A\
+ 1 1 0 0 0 16 23\
+ A 1 1 0 0 0 17 \
+22 A 1 1 0 0 0 1\
+6 21 z \x22\x0a     cl\
+ass=\x22ColorScheme\
+-Text\x22\x0a     />\x0a<\
+/svg>\x0a\
 "
 
 qt_resource_name = b"\
@@ -10173,6 +17666,10 @@ qt_resource_name = b"\
 \x006\x9bb\
 \x003\
 \x002\x00x\x003\x002\
+\x00\x07\
+\x05\x9bVR\
+\x002\
+\x002\x00x\x002\x002\x00@\x002\
 \x00\x0b\
 \x0b\xba\x81\xb5\
 \x00i\
@@ -10181,6 +17678,10 @@ qt_resource_name = b"\
 \x05\xbbXR\
 \x002\
 \x004\x00x\x002\x004\x00@\x002\
+\x00\x05\
+\x005\x9bR\
+\x002\
+\x002\x00x\x002\x002\
 \x00\x19\
 \x0f#W\x87\
 \x00f\
@@ -10210,15 +17711,28 @@ qt_resource_name = b"\
 \x00G\xaf\x87\
 \x00w\
 \x00i\x00n\x00d\x00o\x00w\x00-\x00c\x00l\x00o\x00s\x00e\x00.\x00s\x00v\x00g\
+\x00\x13\
+\x0d\x9a\x9b\x07\
+\x00g\
+\x00t\x00k\x00-\x00s\x00e\x00l\x00e\x00c\x00t\x00-\x00f\x00o\x00n\x00t\x00.\x00s\
+\x00v\x00g\
 \x00\x14\
 \x04\x01oG\
 \x00c\
 \x00o\x00l\x00o\x00r\x00-\x00m\x00a\x00n\x00a\x00g\x00e\x00m\x00e\x00n\x00t\x00.\
 \x00s\x00v\x00g\
 \x00\x0d\
+\x0e1\x9bG\
+\x00v\
+\x00i\x00e\x00w\x00i\x00m\x00a\x00g\x00e\x00.\x00s\x00v\x00g\
+\x00\x0d\
 \x08Q\xc4\xa7\
 \x00c\
 \x00o\x00n\x00f\x00i\x00g\x00u\x00r\x00e\x00.\x00s\x00v\x00g\
+\x00\x10\
+\x08\xcb\xea\xc7\
+\x00d\
+\x00a\x00t\x00a\x00-\x00w\x00a\x00r\x00n\x00i\x00n\x00g\x00.\x00s\x00v\x00g\
 \x00\x14\
 \x06\x1b\x1eG\
 \x00o\
@@ -10228,19 +17742,31 @@ qt_resource_name = b"\
 \x03\x84Y\x07\
 \x00c\
 \x00l\x00o\x00u\x00d\x00-\x00u\x00p\x00l\x00o\x00a\x00d\x00.\x00s\x00v\x00g\
-\x00\x16\
-\x00;9\x87\
-\x00e\
-\x00d\x00i\x00t\x00-\x00c\x00l\x00e\x00a\x00r\x00-\x00h\x00i\x00s\x00t\x00o\x00r\
-\x00y\x00.\x00s\x00v\x00g\
-\x00\x0f\
-\x04\x07vg\
-\x00v\
-\x00i\x00e\x00w\x00-\x00h\x00i\x00d\x00d\x00e\x00n\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x04\xa2\xd3\xc7\
+\x00r\
+\x00e\x00m\x00o\x00v\x00e\x00c\x00e\x00l\x00l\x00.\x00s\x00v\x00g\
 \x00\x10\
 \x0e\xe64\xc7\
 \x00i\
 \x00n\x00s\x00e\x00r\x00t\x00-\x00i\x00m\x00a\x00g\x00e\x00.\x00s\x00v\x00g\
+\x00\x0e\
+\x09W8\xc7\
+\x00v\
+\x00i\x00e\x00w\x00-\x00g\x00r\x00o\x00u\x00p\x00.\x00s\x00v\x00g\
+\x00\x15\
+\x08\xac\x9e'\
+\x00a\
+\x00r\x00r\x00o\x00w\x00-\x00d\x00o\x00w\x00n\x00-\x00d\x00o\x00u\x00b\x00l\x00e\
+\x00.\x00s\x00v\x00g\
+\x00\x10\
+\x0f<\x1cg\
+\x00e\
+\x00n\x00t\x00r\x00y\x00-\x00d\x00e\x00l\x00e\x00t\x00e\x00.\x00s\x00v\x00g\
+\x00\x10\
+\x0d\xb6q\x07\
+\x00f\
+\x00o\x00l\x00d\x00e\x00r\x00-\x00b\x00u\x00i\x00l\x00d\x00.\x00s\x00v\x00g\
 \x00\x11\
 \x0e\xab>\xc7\
 \x00z\
@@ -10271,12 +17797,6 @@ qt_resource_name = b"\
 \x00v\
 \x00i\x00e\x00w\x00-\x00o\x00b\x00j\x00e\x00c\x00t\x00-\x00h\x00i\x00s\x00t\x00o\
 \x00g\x00r\x00a\x00m\x00-\x00l\x00i\x00n\x00e\x00a\x00r\x00.\x00s\x00v\x00g\
-\x00%\
-\x0el\x0a\xe7\
-\x00v\
-\x00i\x00e\x00w\x00-\x00o\x00b\x00j\x00e\x00c\x00t\x00-\x00h\x00i\x00s\x00t\x00o\
-\x00g\x00r\x00a\x00m\x00-\x00l\x00o\x00g\x00a\x00r\x00i\x00t\x00h\x00m\x00i\x00c\
-\x00.\x00s\x00v\x00g\
 \x00\x10\
 \x0d\xa5v\x07\
 \x00v\
@@ -10302,11 +17822,6 @@ qt_resource_name = b"\
 \x07\xb1T\xa7\
 \x00e\
 \x00d\x00i\x00t\x00-\x00c\x00u\x00t\x00.\x00s\x00v\x00g\
-\x00\x1d\
-\x0e.\x06g\
-\x00l\
-\x00a\x00b\x00p\x00l\x00o\x00t\x00-\x00x\x00y\x00-\x00c\x00u\x00r\x00v\x00e\x00-\
-\x00s\x00e\x00g\x00m\x00e\x00n\x00t\x00s\x00.\x00s\x00v\x00g\
 \x00\x0f\
 \x03\x83)G\
 \x00v\
@@ -10325,11 +17840,6 @@ qt_resource_name = b"\
 \x00d\
 \x00o\x00c\x00u\x00m\x00e\x00n\x00t\x00-\x00e\x00x\x00p\x00o\x00r\x00t\x00.\x00s\
 \x00v\x00g\
-\x00\x14\
-\x0el\xcf\xa7\
-\x00l\
-\x00a\x00b\x00p\x00l\x00o\x00t\x00-\x00x\x00y\x00-\x00c\x00u\x00r\x00v\x00e\x00.\
-\x00s\x00v\x00g\
 \x00\x12\
 \x08\x97=G\
 \x00c\
@@ -10345,23 +17855,32 @@ qt_resource_name = b"\
 \x00d\
 \x00o\x00c\x00u\x00m\x00e\x00n\x00t\x00a\x00t\x00i\x00o\x00n\x00.\x00s\x00v\x00g\
 \
-\x00\x0f\
-\x03\xc3g\xa7\
-\x00f\
-\x00o\x00n\x00t\x00-\x00e\x00n\x00a\x00b\x00l\x00e\x00.\x00s\x00v\x00g\
 \x00\x0c\
 \x09\xc6\x14\xa7\
 \x00l\
 \x00i\x00s\x00t\x00-\x00a\x00d\x00d\x00.\x00s\x00v\x00g\
-\x00\x14\
-\x0dQ*\xe7\
-\x00s\
-\x00k\x00g\x00-\x00c\x00h\x00a\x00r\x00t\x00-\x00b\x00u\x00b\x00b\x00l\x00e\x00.\
-\x00s\x00v\x00g\
+\x00\x0e\
+\x08-9G\
+\x00d\
+\x00a\x00t\x00a\x00-\x00e\x00r\x00r\x00o\x00r\x00.\x00s\x00v\x00g\
+\x00\x10\
+\x0c\xbc#\xe7\
+\x00d\
+\x00o\x00c\x00u\x00m\x00e\x00n\x00t\x00-\x00n\x00e\x00w\x00.\x00s\x00v\x00g\
 \x00\x14\
 \x00r\xab\xe7\
 \x00f\
 \x00o\x00l\x00d\x00e\x00r\x00-\x00i\x00m\x00p\x00o\x00r\x00t\x00a\x00n\x00t\x00.\
+\x00s\x00v\x00g\
+\x00\x1d\
+\x09\xb2\x9c\xc7\
+\x00o\
+\x00f\x00f\x00i\x00c\x00e\x00-\x00c\x00h\x00a\x00r\x00t\x00-\x00l\x00i\x00n\x00e\
+\x00-\x00s\x00t\x00a\x00c\x00k\x00e\x00d\x00.\x00s\x00v\x00g\
+\x00\x14\
+\x08j\x1e\xa7\
+\x00o\
+\x00f\x00f\x00i\x00c\x00e\x00-\x00c\x00h\x00a\x00r\x00t\x00-\x00b\x00a\x00r\x00.\
 \x00s\x00v\x00g\
 "
 
@@ -10370,382 +17889,630 @@ qt_resource_struct = b"\
 \x00\x00\x00\x00\x00\x00\x00\x00\
 \x00\x00\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x02\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00\x10\x00\x02\x00\x00\x00\x07\x00\x00\x00\x03\
+\x00\x00\x00\x10\x00\x02\x00\x00\x00\x09\x00\x00\x00\x03\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x004\x00\x02\x00\x00\x00$\x00\x00\x00\x9a\
+\x00\x00\x004\x00\x02\x00\x00\x00,\x00\x00\x01\x0e\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00D\x00\x02\x00\x00\x00'\x00\x00\x00s\
+\x00\x00\x00\xbc\x00\x02\x00\x00\x00,\x00\x00\x00\xe2\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00h\x00\x02\x00\x00\x00\x0f\x00\x00\x00d\
+\x00\x00\x00D\x00\x02\x00\x00\x00,\x00\x00\x00\xb6\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00T\x00\x02\x00\x00\x00$\x00\x00\x00@\
+\x00\x00\x00h\x00\x02\x00\x00\x00\x13\x00\x00\x00\xa3\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00\x94\x00\x02\x00\x00\x00'\x00\x00\x00\x19\
+\x00\x00\x00T\x00\x02\x00\x00\x00,\x00\x00\x00w\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00 \x00\x02\x00\x00\x00\x0f\x00\x00\x00\x0a\
+\x00\x00\x00x\x00\x02\x00\x00\x00,\x00\x00\x00K\
 \x00\x00\x00\x00\x00\x00\x00\x00\
-\x00\x00\x00x\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\
-\x00\x00\x01\x90f\xa5\x0f\x8b\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x02)\xe9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x02\x5c\x0f\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x02\x1a\x9b\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x02Y\xae\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x02S\xb1\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x02E\x96\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x02Vv\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x02,\x13\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x024^\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x021\x82\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x02K7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x02A4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x02\x1f\xbd\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x02>0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x02P\xe7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x8a\x00\x00\x00\x00\x00\x01\x00\x00#\x04\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x00\x15\x1c\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x00{2\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x00\x09D\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x00e%\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xea\x00\x00\x00\x00\x00\x01\x00\x00NH\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01r\x00\x00\x00\x00\x00\x01\x00\x00\x0e\x9d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x00P\x9c\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x00:<\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x00L\xa2\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x00Z\x93\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02d\x00\x00\x00\x00\x00\x01\x00\x00 \x88\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xe8\x00\x00\x00\x00\x00\x01\x00\x00q\xa6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x00\x174\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x00'\xd4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x00\x068\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x90\x00\x00\x00\x00\x00\x01\x00\x00m\x82\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x00\x1e=\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x052\x00\x00\x00\x00\x00\x01\x00\x00S \
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x00\x1a\x80\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06f\x00\x00\x00\x00\x00\x01\x00\x00j\xfd\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07\x0c\x00\x00\x00\x00\x00\x01\x00\x00s\xe3\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x00=\x8a\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xc0\x00\x00\x00\x00\x00\x01\x00\x00o\xd6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x005p\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03.\x00\x00\x00\x00\x00\x01\x00\x003g\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xea\x00\x00\x00\x00\x00\x01\x00\x00b\x96\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x00u\xcd\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04~\x00\x00\x00\x00\x00\x01\x00\x00E\x96\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05P\x00\x00\x00\x00\x00\x01\x00\x00X\x16\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xb4\x00\x00\x00\x00\x00\x01\x00\x00]s\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x00B\xfa\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x068\x00\x00\x00\x00\x00\x01\x00\x00g\xa6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x00\x0b\xee\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x0000\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xe0\x00\x00\x00\x00\x00\x01\x00\x00-2\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xa8\x00\x00\x00\x00\x00\x01\x00\x00\x01=\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x00I\xf0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xe8\x00\x00\x00\x00\x00\x01\x00\x00@i\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x8a\x00\x00\x00\x00\x00\x01\x00\x00\xe52\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x00\xd3\xea\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x01/\xb7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x00\xca\x93\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x01\x22\xf3\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xea\x00\x00\x00\x00\x00\x01\x00\x01\x0f\xa4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01r\x00\x00\x00\x00\x00\x01\x00\x00\xcf\x07\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x01\x11\xbe\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x00\xfa\xb1\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x01\x0e7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x01\x1a}\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02d\x00\x00\x00\x00\x00\x01\x00\x00\xe3\x01\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xe8\x00\x00\x00\x00\x00\x01\x00\x01+\xd7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x00\xd6`\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xean\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x00\xc7\x8f\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x90\x00\x00\x00\x00\x00\x01\x00\x01'\xab\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x00\xe0\xdd\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x052\x00\x00\x00\x00\x00\x01\x00\x01\x13\xd0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x00\xdc\xfc\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06f\x00\x00\x00\x00\x00\x01\x00\x01%J\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07\x0c\x00\x00\x00\x00\x00\x01\x00\x01-\xc9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xff[\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xc0\x00\x00\x00\x00\x00\x01\x00\x01)\xc5\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x00\xf7\x18\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03.\x00\x00\x00\x00\x00\x01\x00\x00\xf5\x03\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xea\x00\x00\x00\x00\x00\x01\x00\x01 \x8b\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04~\x00\x00\x00\x00\x00\x01\x00\x01\x06\x0f\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xb4\x00\x00\x00\x00\x00\x01\x00\x01\x1c\xc0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x01\x03\xf8\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x00\xcd\x14\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x00\xf2\x1b\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xe0\x00\x00\x00\x00\x00\x01\x00\x00\xefY\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xa8\x00\x00\x00\x00\x00\x01\x00\x00\xc3\x10\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x01\x0b\xba\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xe8\x00\x00\x00\x00\x00\x01\x00\x01\x02\x1d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x00\x8c\x1c\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x00\xbeB\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x00|\xce\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x00\xbb\xe1\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x00\xb5\xe4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x00\xa7\xc9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x00\xb8\xa9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x00\x8eF\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x00\x96\x91\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x00\x93\xb5\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xadj\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x00\xa3g\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x00\x81\xf0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x00\xa0c\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x00\xb3\x1a\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x8a\x00\x00\x00\x00\x00\x01\x00\x01R\xd4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x01D\xec\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x01\xab\x02\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x019\x14\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x01\x94\xf5\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xea\x00\x00\x00\x00\x00\x01\x00\x01~\x18\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01r\x00\x00\x00\x00\x00\x01\x00\x01>m\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x01\x80l\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x01j\x0c\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x01|r\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x01\x8ac\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02d\x00\x00\x00\x00\x00\x01\x00\x01PX\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xe8\x00\x00\x00\x00\x00\x01\x00\x01\xa1v\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x01G\x04\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x01W\xa4\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x016\x08\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x90\x00\x00\x00\x00\x00\x01\x00\x01\x9dR\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x01N\x0d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x052\x00\x00\x00\x00\x00\x01\x00\x01\x82\xf0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x01JP\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06f\x00\x00\x00\x00\x00\x01\x00\x01\x9a\xcd\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07\x0c\x00\x00\x00\x00\x00\x01\x00\x01\xa3\xb3\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x01mZ\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xc0\x00\x00\x00\x00\x00\x01\x00\x01\x9f\xa6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x01e@\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03.\x00\x00\x00\x00\x00\x01\x00\x01c7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xea\x00\x00\x00\x00\x00\x01\x00\x01\x92f\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x01\xa5\x9d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04~\x00\x00\x00\x00\x00\x01\x00\x01uf\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05P\x00\x00\x00\x00\x00\x01\x00\x01\x87\xe6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xb4\x00\x00\x00\x00\x00\x01\x00\x01\x8dC\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x01r\xca\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x068\x00\x00\x00\x00\x00\x01\x00\x01\x97v\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x01;\xbe\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x01`\x00\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xe0\x00\x00\x00\x00\x00\x01\x00\x01]\x02\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xa8\x00\x00\x00\x00\x00\x01\x00\x011\x0d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x01y\xc0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xe8\x00\x00\x00\x00\x00\x01\x00\x01p9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x8a\x00\x00\x00\x00\x00\x01\x00\x01\xce\xc0\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xc2\x00\x00\x00\x00\x00\x01\x00\x01\xbdx\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07X\x00\x00\x00\x00\x00\x01\x00\x02\x19E\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\x1a\x00\x00\x00\x00\x00\x01\x00\x01\xb4!\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x0c\x00\x00\x00\x00\x00\x01\x00\x02\x0c\x81\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xea\x00\x00\x00\x00\x00\x01\x00\x01\xf92\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01r\x00\x00\x00\x00\x00\x01\x00\x01\xb8\x95\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x0a\x00\x00\x00\x00\x00\x01\x00\x01\xfbL\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x8e\x00\x00\x00\x00\x00\x01\x00\x01\xe4?\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xc6\x00\x00\x00\x00\x00\x01\x00\x01\xf7\xc5\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\x90\x00\x00\x00\x00\x00\x01\x00\x02\x04\x0b\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02d\x00\x00\x00\x00\x00\x01\x00\x01\xcc\x8f\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xe8\x00\x00\x00\x00\x00\x01\x00\x02\x15e\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01\xe8\x00\x04\x00\x00\x00\x01\x00\x01\xbf\xee\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xbc\x00\x00\x00\x00\x00\x01\x00\x01\xd3\xfc\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xe0\x00\x00\x00\x00\x00\x01\x00\x01\xb1\x1d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\x90\x00\x00\x00\x00\x00\x01\x00\x02\x119\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x026\x00\x00\x00\x00\x00\x01\x00\x01\xcak\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x052\x00\x00\x00\x00\x00\x01\x00\x01\xfd^\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\x16\x00\x00\x00\x00\x00\x01\x00\x01\xc6\x8a\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06f\x00\x00\x00\x00\x00\x01\x00\x02\x0e\xd8\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x07\x0c\x00\x00\x00\x00\x00\x01\x00\x02\x17W\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xbc\x00\x00\x00\x00\x00\x01\x00\x01\xe8\xe9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x06\xc0\x00\x00\x00\x00\x00\x01\x00\x02\x13S\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03`\x00\x00\x00\x00\x00\x01\x00\x01\xe0\xa6\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03.\x00\x00\x00\x00\x00\x01\x00\x01\xde\x91\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xea\x00\x00\x00\x00\x00\x01\x00\x02\x0a\x19\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04~\x00\x00\x00\x00\x00\x01\x00\x01\xef\x9d\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x05\xb4\x00\x00\x00\x00\x00\x01\x00\x02\x06N\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x01\xed\x86\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x01P\x00\x00\x00\x00\x00\x01\x00\x01\xb6\xa2\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\x06\x00\x00\x00\x00\x00\x01\x00\x01\xdb\xa9\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x02\xe0\x00\x00\x00\x00\x00\x01\x00\x01\xd8\xe7\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x00\xa8\x00\x00\x00\x00\x00\x01\x00\x01\xac\x9e\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x04\xa4\x00\x00\x00\x00\x00\x01\x00\x01\xf5H\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
-\x00\x00\x03\xe8\x00\x00\x00\x00\x00\x01\x00\x01\xeb\xab\
-\x00\x00\x01\x8e\xb8\xc7\xf9(\
+\x00\x00\x00\xa8\x00\x02\x00\x00\x00,\x00\x00\x00\x1f\
+\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00 \x00\x02\x00\x00\x00\x13\x00\x00\x00\x0c\
+\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x8c\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\
+\x00\x00\x01\x9c\xb4}\x07Q\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x03\xcd:\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x04\x1f\x06\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x03\xbd\xef\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x04\x14\xd5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x04\x0e\xd8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x04\x00\xc9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x04\x11\x9d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x03\xcf\x93\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x03\xd7\xdb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x03\xd5\x02\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x03\xe4\xb8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x03\xe1\xad\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x04\x06d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x03\xfcg\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x04\x176\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x03\xe60\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x03\xc3\x0e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x03\xf9c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x04\x0c\x0e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x00\xa1\xac\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x01\x17\xcb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x00\x95\xd4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x01\x07\xf7\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x00\xf3\x9a\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x00\x9b-\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x00\xf5\xee\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x00\xe1c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x00\xf1/\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x00\xfdh\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x00\xb8f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x00\xa8\x9f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x00\x92\xc8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x00\xba\xe2\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x01\x0c\xfd\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x00\xb6\x1b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x00\xf8r\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x01\x13\x0b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x00\xaf\xc3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x01\x1e\xb1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x01\x0ax\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x00\xc5\xab\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x00\xb3\x80\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x00\xc2\xaa\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x01\x19h\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x01\x11!\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x00\xe4\xb2\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x01\x0fQ\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x00\xdc\x97\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x00\xda\xe3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x01\x05h\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x01\x15#\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x00\xa4\x12\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x00\xea#\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x00\xc9\x1e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x00\xab\xed\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x01\x00H\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x00\x98~\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x00\xd7\xac\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x00\xbf\xac\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x00\x8d\xd3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x00\xc7F\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x00\xee}\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x00\xe7\x92\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x014\xbf\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x01\xa4\x93\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x01)G\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x01\x96\x12\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x01\x82\xc1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x01.W\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x01\x84\xde\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x01q\xa6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x01\x80\x83\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x01\x8c\x09\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x01Jr\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x01;\x98\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x01&f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x01L\xc3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x01\x9a\xb4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x01HU\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x01\x875\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x01\xa0>\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x01Bk\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x01\xab%\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x01\x98\x5c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x01W\x0d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x01E\xf7\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x01T<\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x01\xa6\x07\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x01\x9e\x81\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x01t\xcc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x01\x9c\xd1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x01m\x07\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x01k\x90\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x01\x93\xae\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x01\xa2\x19\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x017\x22\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x01y\xe4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x01Z/\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x01>\xc5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x01\x8e\xb9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x01+\xd3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x01h\x94\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x01Qi\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x01!\x88\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x01X{\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x01~\x0e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x01w\x83\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x02$\x84\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x02\x977\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x02\x1b-\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x02\x88j\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x02u\x1b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x02\x1f\xa1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x02w5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x02a\x98\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x02s\x09\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x02\x7f\xf4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x02;\xab\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x02**\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x02\x18)\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x02=\xdc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x02\x8d\x22\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x029\x87\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x02yG\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x02\x93<\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x023G\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x02\x9c\xf0\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x02\x8a\xc1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x02F+\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x027(\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x02C\xc3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x02\x98\x8d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x02\x91N\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x02fC\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x02\x8f<\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x02]\xff\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x02\x5c\x89\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x02\x86\x02\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x02\x95\x11\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x02&\xf5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x02j\xe1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x02Iv\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x020\xc6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x02\x827\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x02\x1d\xae\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x02Y\xa1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x02A\x01\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x02\x13\xb0\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x02G\xd1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x02p\x8c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x02i\x06\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x01\xbd\x19\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x02\x0e\xe5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x01\xad\xce\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x02\x04\xb4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x01\xfe\xb7\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x01\xf0\xa8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x02\x01|\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x01\xbfr\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x01\xc7\xba\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x01\xc4\xe1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x01\xd4\x97\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x01\xd1\x8c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x01\xf6C\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x01\xecF\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x02\x07\x15\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x01\xd6\x0f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x01\xb2\xed\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x01\xe9B\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x01\xfb\xed\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x02\xb2\xce\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x03(\xed\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x02\xa6\xf6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x03\x19\x19\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x03\x04\xbc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x02\xacO\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x03\x07\x10\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x02\xf2\x85\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x03\x02Q\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x03\x0e\x8a\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x02\xc9\x88\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x02\xb9\xc1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x02\xa3\xea\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x02\xcc\x04\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x03\x1e\x1f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x02\xc7=\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x03\x09\x94\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x03$-\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x02\xc0\xe5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x03/\xd3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x03\x1b\x9a\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x02\xd6\xcd\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x02\xc4\xa2\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x02\xd3\xcc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x03*\x8a\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x03\x22C\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x02\xf5\xd4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x03 s\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x02\xed\xb9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x02\xec\x05\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x03\x16\x8a\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x03&E\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x02\xb54\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x02\xfbE\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x02\xda@\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x02\xbd\x0f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x03\x11j\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x02\xa9\xa0\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x02\xe8\xce\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x02\xd0\xce\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x02\x9e\xf5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x02\xd8h\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x02\xff\x9f\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x02\xf8\xb4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x00\x14\xc4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x00\x84\x98\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x00\x09L\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x00v\x17\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x00b\xc6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x00\x0e\x5c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x00d\xe3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x00Q\xab\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x00`\x88\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x00l\x0e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x00*w\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x00\x1b\x9d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x00\x06k\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x00,\xc8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x00z\xb9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x00(Z\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x00g:\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x00\x80C\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x00\x22p\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x00\x8b*\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x00xa\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x007\x12\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x00%\xfc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x004A\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x00\x86\x0c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x00~\x86\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x00T\xd1\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x00|\xd6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x00M\x0c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x00K\x95\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x00s\xb3\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x00\x82\x1e\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x00\x17'\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x00Y\xe9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x00:4\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x00\x1e\xca\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x00n\xbe\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x00\x0b\xd8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x00H\x99\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x001n\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x00\x01\x8d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x008\x80\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x00^\x13\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x00W\x88\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\xe6\x00\x00\x00\x00\x00\x01\x00\x03C~\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x90\x00\x00\x00\x00\x00\x01\x00\x03\xb61\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01>\x00\x00\x00\x00\x00\x01\x00\x03:'\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06|\x00\x00\x00\x00\x00\x01\x00\x03\xa7d\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\x9a\x00\x00\x00\x00\x00\x01\x00\x03\x94\x15\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x96\x00\x00\x00\x00\x00\x01\x00\x03>\x9b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xba\x00\x00\x00\x00\x00\x01\x00\x03\x96/\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x8e\x00\x00\x00\x00\x00\x01\x00\x03\x80\x92\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05v\x00\x00\x00\x00\x00\x01\x00\x03\x92\x03\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\x00\x00\x00\x00\x00\x00\x01\x00\x03\x9e\xee\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xfa\x00\x00\x00\x00\x00\x01\x00\x03Z\xa5\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x028\x00\x04\x00\x00\x00\x01\x00\x03I$\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01\x04\x00\x00\x00\x00\x00\x01\x00\x037#\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03 \x00\x00\x00\x00\x00\x01\x00\x03\x5c\xd6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xd2\x00\x00\x00\x00\x00\x01\x00\x03\xac\x1c\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xcc\x00\x00\x00\x00\x00\x01\x00\x03X\x81\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05\xe2\x00\x00\x00\x00\x00\x01\x00\x03\x98A\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07H\x00\x00\x00\x00\x00\x01\x00\x03\xb26\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x86\x00\x00\x00\x00\x00\x01\x00\x03RA\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xfe\x00\x00\x00\x00\x00\x01\x00\x03\xbb\xea\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06\xa8\x00\x00\x00\x00\x00\x01\x00\x03\xa9\xbb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\x8a\x00\x00\x00\x00\x00\x01\x00\x03e%\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\xa6\x00\x00\x00\x00\x00\x01\x00\x03V\x22\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03h\x00\x00\x00\x00\x00\x01\x00\x03b\xbd\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\xbe\x00\x00\x00\x00\x00\x01\x00\x03\xb7\x87\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07*\x00\x00\x00\x00\x00\x01\x00\x03\xb0H\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xbc\x00\x00\x00\x00\x00\x01\x00\x03\x85=\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07\x02\x00\x00\x00\x00\x00\x01\x00\x03\xae6\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04`\x00\x00\x00\x00\x00\x01\x00\x03|\xf9\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04.\x00\x00\x00\x00\x00\x01\x00\x03{\x83\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06Z\x00\x00\x00\x00\x00\x01\x00\x03\xa4\xfc\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x07j\x00\x00\x00\x00\x00\x01\x00\x03\xb4\x0b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02\x0c\x00\x00\x00\x00\x00\x01\x00\x03E\xef\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05.\x00\x00\x00\x00\x00\x01\x00\x03\x89\xdb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xe0\x00\x00\x00\x00\x00\x01\x00\x03hp\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x02f\x00\x00\x00\x00\x00\x01\x00\x03O\xc0\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x06$\x00\x00\x00\x00\x00\x01\x00\x03\xa11\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x01t\x00\x00\x00\x00\x00\x01\x00\x03<\xa8\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\x06\x00\x00\x00\x00\x00\x01\x00\x03x\x9b\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03B\x00\x00\x00\x00\x00\x01\x00\x03_\xfb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x00\xcc\x00\x00\x00\x00\x00\x01\x00\x032\xaa\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x03\xba\x00\x00\x00\x00\x00\x01\x00\x03f\xcb\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x05T\x00\x00\x00\x00\x00\x01\x00\x03\x8f\x86\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
+\x00\x00\x04\xe8\x00\x00\x00\x00\x00\x01\x00\x03\x88\x00\
+\x00\x00\x01\x9c\x5c\xac\xfd\xd8\
 "
 
 def qInitResources():

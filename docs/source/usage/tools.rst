@@ -9,13 +9,13 @@ Density Database
 
 The **Density Database** is a library containing the :term:`density` for elements [1]_, common inorganic materials [2]_ and polymers [3]_.
 The database is searchable using the formula, name or CAS number of a compound.
-If started from the **Sample Tab** :term:`density` field, double-clicking a compound or selecting and pressing *Ok* will populate that field with the selected value.
+If started from the :ref:`Isotope Options` dock :term:`density` field, double-clicking a compound or selecting and pressing *Ok* will populate that field with the selected value.
 
 Ionic Response Calculator
 -------------------------
 
 .. _ionic response example:
-.. figure:: ../images/tools_ionic_response_example.png
+.. figure:: ../images/tools_response_dialog.png
     :align: center
 
     Measurement of a dissolved standard, the mean of the signal (red line) can be used to determine the :term:`ionic response`.
@@ -28,18 +28,12 @@ Ideally a blank and several dissolved standards are analysed, covering the range
 In practice, a blank and one standard are usually sufficient.
 As the :term:`ionic response` will change day-to-day with instrument conditions so should be determined every run.
 
-.. _ionic response dialog:
-.. figure:: ../images/tools_ionic_response_dialog.png
-   :align: center
-
-   The **Ionic Response Calculator**. |c1| The currently loaded data and mean (red), |c2| Calibration curve, |c3| Concentration table, |c4| Import data for new level, |c5| Concentration units.
-
 The **Ionic Response Calculator** is used to calculate the :term:`ionic response` using one or more data files.
-To use the calculator import one or more data files (|c4| :numref:`ionic response dialog`) and set their corresponding concentrations in the concentration table (|c3| :numref:`ionic response dialog`).
+To use the calculator import one or more data files and set their corresponding concentrations in the *Concentrations* table .
 For information on importing data see :ref:`Data Import`.
 
 Once all levels are imported the :term:`ionic response` (the calibration slope) and calibrations can be exported using the *Save* button.
-If the **Ionic Response Calculator** was started from an :term:`ionic response` field in the **Sample** or **Reference Tab** then pressing *Ok* will automatically fill that field.
+After pressing *Ok*, all isotope :term:`ionic response` values will then be added to the processing method and the :ref:`Isotope Options` dock.
 
 
 Mass Fraction Calculator
@@ -51,9 +45,9 @@ Mass Fraction Calculator
    The **Mass Fraction Calculator** calculates the :term:`molar mass` (here MW=215.8 g/mol) and the :term:`mass fraction` from an input formula.
    The element for which the :term:`mass fraction` will be returned is highlight in bold.
 
-This calculator computes the :term:`molar mass` and the :term:`mass fraction` of the first element from a given formula.
+This calculator computes the :term:`mass fraction` of the first element from a given formula.
 For example, the formula ``FeMoO4`` will give the :term:`mass fraction` for iron and ``MoFeO4`` the :term:`mass fraction` for molybdenum.
-When started from the *Molar mass* or *Mass fraction* fields on the **Sample Tab** and **Reference Tab**, the corresponding field will be filled.
+When started from the  :term:`mass fraction` field of the :ref:`Isotope Options` dock, the corresponding field will be filled.
 
 
 .. |c1| unicode:: U+2460
@@ -66,19 +60,20 @@ When started from the *Molar mass* or *Mass fraction* fields on the **Sample Tab
 Signal Calculator
 -----------------
 
-Simple arithmetic operations can be performed on signal data using the calculator found at ** **Edit -> Signal Caluclator**. 
+Simple arithmetic operations can be performed on signal data using the calculator found at **Edit -> Signal Caluclator**. 
 One example is the recovery of sensitivity for multi-isotopic elements, where the total elemental signal is split across multiple masses.
 Some of this lost sensitivity can be recovered by summing the individual isotopic signals [4]_.
 
 .. _results calculator:
-.. figure:: ../images/tools_calculator.png
+.. figure:: ../images/tools_signal_calculator.png
    :align: center
 
    The Signal Calculator can be used to perform arithmetic operations on one or more element.
 
 To start a calculation, enter a mathematical formula in the *Formula* box, using the current element names and the ``+ - ^ * /`` operators.
-For example, given data names in the format ``Ag10x``, the sum of silver isotopes can be calculated using ``Ag107 + Ag109``.
-The default name of the output result will be the formula enclosed by curly braces, e.g. ``{Ag107+Ag109}``.
+For example, given data names in the format ``10xAg``, the sum of silver isotopes can be calculated using ``107Ag + 109Ag``.
+If no name is given then the default name of the output result will be the parsed expression enclosed by parenthesis, e.g. ``( + 107Ag 109Ag)``.
+The result is a new isotope like signal called a :term:`isotope expression`.
 
 .. [1] National Library of Medicine PubChem Periodic Table of Elements. https://pubchem.ncbi.nlm.nih.gov/periodic-table/
 .. [2] Kholodovych, V.; Welsh, W. J. Densities of Amorphous and Crystalline Polymers. In Physical Properties of Polymers Handbook; Mark, J. E., Ed.; Springer New York: New York, NY, 2007; pp 611–617. https://doi.org/10.1007/978-0-387-69002-5_37.

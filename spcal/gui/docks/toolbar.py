@@ -1,0 +1,289 @@
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from spcal.gui.modelviews.isotope import IsotopeComboBox
+from spcal.gui.util import create_action
+from spcal.isotope import SPCalIsotopeBase
+from spcal.processing import CALIBRATION_KEYS
+
+
+class ScatterExprLineEdit(QtWidgets.QLineEdit):
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__(parent)
+
+        self._completer = QtWidgets.QCompleter()
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Fixed
+        )
+
+    def insertCompletion(self, completion: str):
+        prefix = self._completer.completionPrefix()
+        self.setText(self.text()[: self.cursorPosition() - len(prefix)] + completion)
+
+    def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+        self._completer = QtWidgets.QCompleter([str(isotope) for isotope in isotopes])
+        self._completer.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
+        self._completer.setWidget(self)
+        self._completer.activated.connect(self.insertCompletion)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        if self._completer.popup().isVisible():
+            if event.key() in [  # Ignore keys when popup is present
+                QtCore.Qt.Key.Key_Enter,
+                QtCore.Qt.Key.Key_Return,
+                QtCore.Qt.Key.Key_Escape,
+                QtCore.Qt.Key.Key_Tab,
+                QtCore.Qt.Key.Key_Down,
+                QtCore.Qt.Key.Key_Up,
+            ]:
+                event.ignore()
+                return
+
+        super().keyPressEvent(event)
+
+        eow = "~!@#$%^&*()+{}|:\"<>?,./;'[]\\-= "
+
+        current_word = self.text()[
+            max(self.text()[: self.cursorPosition()].rfind(char) for char in eow)
+            + 1 : self.cursorPosition()
+        ]
+        if len(current_word) < 2 or current_word == self._completer.currentCompletion():
+            self._completer.popup().hide()
+        else:
+            self._completer.setCompletionPrefix(current_word)
+            self._completer.popup().setCurrentIndex(
+                self._completer.completionModel().index(0, 0)
+            )
+            rect = self.cursorRect()
+            rect.setWidth(
+                self._completer.popup().sizeHintForColumn(0)
+                + self._completer.popup().verticalScrollBar().sizeHint().width()
+            )
+            self._completer.complete(rect)
+
+
+class SPCalOptionsToolBar(QtWidgets.QToolBar):
+    isotopeChanged = QtCore.Signal(SPCalIsotopeBase)
+    keyChanged = QtCore.Signal(str)
+    scatterOptionsChanged = QtCore.Signal()
+
+    requestFilterDialog = QtCore.Signal()
+
+    def __init__(
+        self,
+        title: str = "SPCal Options Toolbar",
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(title, parent=parent)
+        self.setObjectName("spcal-options-toolbar")
+
+        # default widgets
+        self.combo_isotope = IsotopeComboBox()
+        self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
+
+        self.combo_key = QtWidgets.QComboBox()
+        self.combo_key.currentTextChanged.connect(self.onKeyChanged)  # to emit lower
+        self.combo_key.addItems([x.title() for x in CALIBRATION_KEYS])
+
+        self.scatter_x = ScatterExprLineEdit()
+        self.scatter_y = ScatterExprLineEdit()
+
+        self.scatter_key_x = QtWidgets.QComboBox()
+        self.scatter_key_y = QtWidgets.QComboBox()
+        self.scatter_key_x.addItems(CALIBRATION_KEYS)
+        self.scatter_key_y.addItems(CALIBRATION_KEYS)
+
+        self.scatter_x.editingFinished.connect(self.scatterOptionsChanged)
+        self.scatter_y.editingFinished.connect(self.scatterOptionsChanged)
+        self.scatter_key_x.activated.connect(self.scatterOptionsChanged)
+        self.scatter_key_y.activated.connect(self.scatterOptionsChanged)
+
+        self.action_all_isotopes = create_action(
+            "office-chart-line-stacked",
+            "Overlay Isotopes",
+            "Plot all isotope signals.",
+            self.overlayOptionChanged,
+            checkable=True,
+        )
+
+        self.action_filter = create_action(
+            "view-filter",
+            "Filter Detections",
+            "Filter detections based on element compositions.",
+            self.requestFilterDialog,
+        )
+
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+
+        self.addWidget(spacer)
+
+        self.addAction(self.action_all_isotopes)
+
+        self.isotope_action = self.addWidget(self.combo_isotope)
+
+        self.key_action = self.addWidget(self.combo_key)
+
+        scatter_y_action = self.addWidget(self.scatter_y)
+        scatter_key_y_action = self.addWidget(self.scatter_key_y)
+        scatter_x_action = self.addWidget(self.scatter_x)
+        scatter_key_x_action = self.addWidget(self.scatter_key_x)
+
+        self.scatter_actions = QtGui.QActionGroup(self)
+        self.scatter_actions.addAction(scatter_y_action)
+        self.scatter_actions.addAction(scatter_key_y_action)
+        self.scatter_actions.addAction(scatter_x_action)
+        self.scatter_actions.addAction(scatter_key_x_action)
+
+        self.addSeparator()
+        self.addAction(self.action_filter)
+
+        self.scatter_actions.setVisible(False)
+
+    def currentKey(self) -> str:
+        return self.combo_key.currentText().lower()
+
+    def setCurrentKey(self, key: str):
+        self.combo_key.setCurrentText(key.title())
+
+    def onKeyChanged(self, _key: str):
+        self.keyChanged.emit(_key.lower())
+
+    def onViewChanged(self, view: str):
+        self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])
+        self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
+
+        self.key_action.setVisible(view not in ["scatter"])
+        self.scatter_actions.setVisible(view in ["scatter"])
+
+    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
+        if (
+            self.action_all_isotopes.isVisible()
+            and self.action_all_isotopes.isChecked()
+        ):
+            return [
+                self.combo_isotope.isotope(i) for i in range(self.combo_isotope.count())
+            ]
+        else:
+            isotope = self.combo_isotope.currentIsotope()
+            if isotope is not None:
+                return [isotope]
+        return []
+
+    def overlayOptionChanged(self, checked: bool):
+        self.combo_isotope.setEnabled(not checked)
+        self.isotopeChanged.emit(None)
+
+    def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+        for combo in [self.combo_isotope]:
+            current = combo.currentIsotope()
+            combo.blockSignals(True)
+
+            combo.clear()
+            combo.addIsotopes(isotopes)
+
+            if current is not None:
+                combo.setCurrentIsotope(current)
+
+            if combo.currentIndex() == -1:
+                combo.setCurrentIndex(0)
+
+            combo.blockSignals(False)
+
+        self.scatter_x.setIsotopes(isotopes)
+        self.scatter_y.setIsotopes(isotopes)
+        if len(isotopes) >= 2:
+            self.scatter_x.setText(str(isotopes[0]))
+            self.scatter_y.setText(str(isotopes[1]))
+
+        self.action_all_isotopes.setEnabled(len(isotopes) > 1)
+
+    def reset(self):
+        for combo in [self.combo_isotope]:
+            combo.blockSignals(True)
+            combo.clear()
+            combo.blockSignals(False)
+
+
+class SPCalViewToolBar(QtWidgets.QToolBar):
+    viewChanged = QtCore.Signal(str)
+
+    requestViewOptionsDialog = QtCore.Signal()
+
+    VIEWS = {
+        "particle": (
+            "office-chart-line-stacked",
+            "Show signals and detected peaks.",
+        ),  # icon: "office-chart-line-stacked"
+        "histogram": (
+            "view-object-histogram-linear",
+            "Show results as signal, mass and size histograms.",
+        ),  # icon: "view-object-histogram-linear"
+        "composition": (
+            "office-chart-pie",
+            "Plot particle compositions.",
+        ),  # icon: "office-chart-pie"
+        "spectra": (
+            "office-chart-bar",
+            "Plot the mass spectra of selected peaks.",
+        ),  # icon: "office-chart-bar"
+        "scatter": (
+            "office-chart-scatter",
+            "Plot the signal, mass or size of two isotopes.",
+        ),  # icon: "office-chart-scatter"
+    }
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None):
+        super().__init__("View Toolbar", parent=parent)
+        self.setObjectName("spcal-view-toolbar")
+
+        self.view_actions = {
+            name: create_action(
+                icon,
+                f"{name.capitalize()} View",
+                tip,
+                self.onViewChanged,
+                checkable=True,
+            )
+            for name, (icon, tip) in SPCalViewToolBar.VIEWS.items()
+        }
+        next(iter(self.view_actions.values())).setChecked(True)
+
+        self.action_view_options = create_action(
+            "configure",
+            "Graph Options",
+            "Set options specific to the current graph.",
+            self.requestViewOptionsDialog,
+        )
+        self.action_view_options.setEnabled(False)
+
+        action_group_views = QtGui.QActionGroup(self)
+        for action in self.view_actions.values():
+            action_group_views.addAction(action)
+            self.addAction(action)
+
+        self.addSeparator()
+        self.addAction(self.action_view_options)
+
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Expanding,
+        )
+
+        self.addWidget(spacer)
+
+    def currentView(self) -> str:
+        for name, action in self.view_actions.items():
+            if action.isChecked():
+                return name
+        raise StopIteration
+
+    def onViewChanged(self):
+        view = self.currentView()
+        self.action_view_options.setEnabled(
+            view in ["histogram", "composition", "spectra"]
+        )
+        self.viewChanged.emit(view)

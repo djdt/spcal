@@ -1,21 +1,44 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
+class ContextMenuRedirectFilter(QtCore.QObject):
+    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if event.type() == QtCore.QEvent.Type.ContextMenu:
+            parent = self.parent()
+            if isinstance(parent, QtWidgets.QWidget) and isinstance(
+                event, QtGui.QContextMenuEvent
+            ):
+                parent.contextMenuEvent(event)
+                return True
+        return super().eventFilter(obj, event)
+
+
 class DragDropRedirectFilter(QtCore.QObject):
     """Redirects drag/drop events to parent."""
 
     def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
-        if event.type() == QtCore.QEvent.DragEnter:
-            self.parent().dragEnterEvent(event)
+        parent = self.parent()
+        if not isinstance(parent, QtWidgets.QWidget):
+            return False
+        if event.type() == QtCore.QEvent.Type.DragEnter and isinstance(
+            event, QtGui.QDragEnterEvent
+        ):
+            parent.dragEnterEvent(event)
             return True
-        elif event.type() == QtCore.QEvent.DragLeave:
-            self.parent().dragLeaveEvent(event)
+        elif event.type() == QtCore.QEvent.Type.DragLeave and isinstance(
+            event, QtGui.QDragLeaveEvent
+        ):
+            parent.dragLeaveEvent(event)
             return True
-        elif event.type() == QtCore.QEvent.DragMove:
-            self.parent().dragMoveEvent(event)
+        elif event.type() == QtCore.QEvent.Type.DragMove and isinstance(
+            event, QtGui.QDragMoveEvent
+        ):
+            parent.dragMoveEvent(event)
             return True
-        elif event.type() == QtCore.QEvent.Drop:
-            self.parent().dropEvent(event)
+        elif event.type() == QtCore.QEvent.Type.Drop and isinstance(
+            event, QtGui.QDropEvent
+        ):
+            parent.dropEvent(event)
             return True
         return bool(super().eventFilter(obj, event))
 

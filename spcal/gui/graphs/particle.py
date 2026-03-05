@@ -3,12 +3,48 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.legends import MultipleItemSampleProxy
+from spcal.gui.graphs.legends import ParticleItemSample
 from spcal.gui.util import create_action
+from spcal.processing.result import SPCalProcessingResult
+
+
+class ExclusionRegion(pyqtgraph.LinearRegionItem):
+    requestRemoval = QtCore.Signal()
+
+    def __init__(self, start: float, end: float):
+        super().__init__(
+            values=(start, end),
+            pen="grey",
+            hoverPen="red",
+            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
+            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
+            swapMode="block",
+        )
+        self.lines[0].addMarker("|>", 0.9)
+        self.lines[1].addMarker("<|", 0.9)
+
+    @property
+    def start(self) -> float:
+        return float(self.lines[0].value())
+
+    @property
+    def end(self) -> float:
+        return float(self.lines[1].value())
+
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        close_action = create_action(
+            "window-close",
+            "Remove Exclusion",
+            "Stop blocking processin in this area.",
+            self.requestRemoval,
+        )
+        menu = QtWidgets.QMenu()
+        menu.addAction(close_action)
+        menu.exec(event.screenPos())
 
 
 class ParticleView(SinglePlotGraphicsView):
-    regionChanged = QtCore.Signal()
+    exclusionRegionsChanged = QtCore.Signal(list)
     requestPeakProperties = QtCore.Signal()
 
     def __init__(
@@ -25,33 +61,12 @@ class ParticleView(SinglePlotGraphicsView):
             font=font,
             parent=parent,
         )
-        self.has_image_export = True
-        self.xaxis.setScale(xscale)
-        self.xaxis.enableAutoSIPrefix(False)
+        self.plot.xaxis.setScale(xscale)
+        self.plot.xaxis.enableAutoSIPrefix(False)
 
-        self.raw_signals: dict[str, np.ndarray] = {}  # for export
-
-        self.plot.setLimits(yMin=0.0)
-        self.setAutoScaleY(True)
-
-        self.legend_items: dict[str, MultipleItemSampleProxy] = {}
-        self.limit_items: list[pyqtgraph.PlotCurveItem] = []
-
-        region_pen = QtGui.QPen(QtCore.Qt.red, 1.0)
-        region_pen.setCosmetic(True)
-
-        self.region = pyqtgraph.LinearRegionItem(
-            pen="grey",
-            hoverPen="red",
-            brush=QtGui.QBrush(QtCore.Qt.NoBrush),
-            hoverBrush=QtGui.QBrush(QtCore.Qt.NoBrush),
-            swapMode="block",
-        )
-        self.region.sigRegionChangeFinished.connect(self.regionChanged)
-        self.region.movable = False  # prevent moving of region, but not lines
-        self.region.lines[0].addMarker("|>", 0.9)
-        self.region.lines[1].addMarker("<|", 0.9)
-        self.plot.addItem(self.region)
+        assert self.plot.vb is not None
+        self.plot.vb.setLimits(xMin=0.0, xMax=1.0, yMin=0.0)
+        self.setAxisAutoScale("y", True)
 
         self.action_peak_properties = create_action(
             "office-chart-area-focus-peak-node",
@@ -61,109 +76,103 @@ class ParticleView(SinglePlotGraphicsView):
         )
         self.context_menu_actions.append(self.action_peak_properties)
 
-    @property
-    def region_start(self) -> int:
-        return int(self.region.lines[0].value())  # type: ignore
-
-    @property
-    def region_end(self) -> int:
-        return int(self.region.lines[1].value())  # type: ignore
-
-    def dataForExport(self) -> dict[str, np.ndarray]:
-        start, end = self.region_start, self.region_end
-        return {k: v[start:end] for k, v in self.export_data.items()}
-
-    def clear(self) -> None:
-        self.legend_items.clear()
-        super().clear()
-
-    def clearScatters(self) -> None:
-        for item in self.plot.listDataItems():
-            if isinstance(item, pyqtgraph.ScatterPlotItem):
-                self.plot.removeItem(item)
-
-    def clearLimits(self) -> None:
-        for limit in self.limit_items:
-            self.plot.removeItem(limit)
-        self.limit_items.clear()
-
-    def drawSignal(
-        self,
-        name: str,
-        x: np.ndarray,
-        y: np.ndarray,
-        pen: QtGui.QPen | None = None,
-    ) -> None:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
-            pen.setCosmetic(True)
-
-        # optimise by removing points with 0 change in gradient
-        diffs = np.diff(y, n=2, append=0, prepend=0) != 0
-        curve = pyqtgraph.PlotCurveItem(
-            x=x[diffs], y=y[diffs], pen=pen, connect="all", skipFiniteCheck=True
+        self.action_exclusion_region = create_action(
+            "removecell",
+            "Add Exclusion Region",
+            "Prevent analysis in a region of the data.",
+            self.addExclusionRegion,
         )
+        self.action_exclusion_region.triggered.connect(self.onRegionsChanged)
+        self.context_menu_actions.append(self.action_exclusion_region)
 
-        self.legend_items[name] = MultipleItemSampleProxy(pen.color(), items=[curve])
+    def onRegionsChanged(self):
+        self.exclusionRegionsChanged.emit(self.exclusionRegions())
 
-        self.plot.addItem(curve)
-        self.plot.legend.addItem(self.legend_items[name], name)
+    def exclusionRegions(self) -> list[tuple[float, float]]:
+        regions = []
+        for item in self.plot.items:
+            if isinstance(item, ExclusionRegion):
+                regions.append((item.start, item.end))
+        return regions
 
-        if self.region not in self.plot.items:
-            self.plot.addItem(self.region)
+    def addExclusionRegion(self, start: float | None = None, end: float | None = None):
+        if self.plot.vb is None:
+            return
+        x0, x1 = self.plot.vb.state["limits"]["xLimits"]
+        if start is None or end is None:
+            pos = self.plot.vb.mapSceneToView(self.mapFromGlobal(self.cursor().pos()))
+            start = pos.x() - (x1 - x0) * 0.05
+            end = pos.x() + (x1 - x0) * 0.05
+        region = ExclusionRegion(start, end)  # type: ignore not None, see above
+        region.sigRegionChangeFinished.connect(self.onRegionsChanged)
+        region.requestRemoval.connect(self.removeExclusionRegion)
+        region.setBounds((x0, x1))
+        self.plot.addItem(region)
 
-        self.export_data[name] = y
+    def removeExclusionRegion(self):
+        region = self.sender()
+        if not isinstance(region, ExclusionRegion):
+            return
+        self.plot.removeItem(region)
+        self.onRegionsChanged()
 
-    def drawMaxima(
+    def drawResult(
         self,
-        name: str,
-        x: np.ndarray,
-        y: np.ndarray,
+        result: SPCalProcessingResult,
+        pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-        symbol: str = "t",
-        size: float = 6.0,
-    ) -> None:
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.red)
-
-        scatter = pyqtgraph.ScatterPlotItem(
-            x=x, y=y, size=size, symbol=symbol, pen=None, brush=brush
-        )
-        self.plot.addItem(scatter)
-
-        self.legend_items[name].addItem(scatter)
-
-    def drawLimits(
-        self,
-        x: np.ndarray,
-        mean: float | np.ndarray,
-        limit: float | np.ndarray,
-        pen: QtGui.QPen | None = None,
-    ) -> None:
+        label: str | None = None,
+        scatter_size: float = 6.0,
+        scatter_symbol: str = "t",
+    ):
         if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.black, 1.0)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+        if label is None:
+            label = str(result.isotope)
 
-        for val, name, style in zip(
-            [limit, mean],
-            ["Detection Threshold", "Mean"],
-            [QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.SolidLine],
-        ):
-            if isinstance(val, float) or val.size == 1:
-                nx, y = [x[0], x[-1]], [val, val]
-            else:
-                diffs = np.diff(val, n=2, append=0, prepend=0) != 0
-                nx, y = x[diffs], val[diffs]
+        curve = self.drawCurve(result.times, result.signals, pen)
 
-            pen.setStyle(style)
+        scatter = self.drawScatter(
+            result.times[result.maxima[result.filter_indicies]],
+            result.signals[result.maxima[result.filter_indicies]],
+            pen=None,
+            brush=brush,
+            size=scatter_size,
+            symbol=scatter_symbol,
+        )
 
-            curve = pyqtgraph.PlotCurveItem(
-                x=nx,
-                y=y,
-                name=name,
-                pen=pen,
-                connect="all",
-                skipFiniteCheck=True,
+        self.data_for_export[str(result.isotope) + "_x"] = result.times  # type: ignore , just set
+        self.data_for_export[str(result.isotope) + "_y"] = result.signals  # type: ignore , just set
+        self.data_for_export[str(result.isotope) + "_particle_x"] = scatter.getData()[0]
+        self.data_for_export[str(result.isotope) + "_particle_y"] = scatter.getData()[1]
+
+        pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+        if isinstance(result.limit.detection_threshold, np.ndarray):
+            lod = self.drawCurve(
+                result.times, result.limit.detection_threshold, pen=pen
             )
-            self.limit_items.append(curve)
-            self.plot.addItem(curve)
+        else:
+            lod = self.drawLine(
+                float(result.limit.detection_threshold),
+                QtCore.Qt.Orientation.Horizontal,
+                pen=pen,
+            )
+        pen.setStyle(QtCore.Qt.PenStyle.DotLine)
+        if isinstance(result.limit.mean_signal, np.ndarray):
+            mu = self.drawCurve(result.times, result.limit.mean_signal, pen=pen)
+        else:
+            mu = self.drawLine(
+                float(result.limit.mean_signal),
+                QtCore.Qt.Orientation.Horizontal,
+                pen=pen,
+            )
+
+        if self.plot.legend is not None:
+            fm = QtGui.QFontMetrics(self.font())
+            legend = ParticleItemSample(fm, curve, scatter, [lod, mu])
+            self.plot.legend.addItem(legend, label)
+
+        self.setDataLimits(xMin=0.0, xMax=1.0)

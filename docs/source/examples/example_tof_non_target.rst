@@ -6,9 +6,8 @@ The simultaneous acquisition of the full elemental mass range makes ICP-ToF an e
 In this example, elements of interest in a soil extract are automatically selected using parameters set during import.
 A full description of the non-target screening tool is available at :ref:`Non-target Screening`.
 
-
 #. Download the required data file.
-    The ``tof_non_target.csv`` file can be found in the `example_3_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_3_data.zip>`_ archive.
+    The ``tof_non_target`` Nu directory can be found in the `example_3_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_3_data.zip>`_ archive.
 
 #. Import the sample file.
     Open the sample file to start the :ref:`Data Import` wizard.
@@ -17,11 +16,11 @@ A full description of the non-target screening tool is available at :ref:`Non-ta
 
 #. Verify element selection.
     .. _nontarget_dialog:
-    .. figure:: ../images/example_tof_non_target_dialog.png
+    .. figure:: ../images/tutorial_tof_nontarget.png
        :width: 60%
        :align: center
        
-       Elements selected during the screening are colour coded using the *viridis* colour scale to show the relative number of detected particles.
+       Elements selected during the screening are colour coded from black (low) to red (high) to show the relative number of detected particles.
 
     The non-target screening will automatically select all elements with detection counts above the given *Screening ppm* value, in this case Fe, La and Ce.
     Press *Ok* to import the data.

@@ -104,7 +104,6 @@ if __name__ == "__main__":
     np.savez_compressed(
         "../spcal/resources/npdb.npz",
         elements=make_elements(args.dir.joinpath("elements.csv")),
-        isotopes=make_isotopes(args.dir.joinpath("isotopes.csv")),
         inorganic=make_inorganic(args.dir.joinpath("inorganic.csv")),
         polymer=make_polymer(args.dir.joinpath("polymer.csv")),
         # refs=make_refs(args.dir.joinpath("refs.csv")),

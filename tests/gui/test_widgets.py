@@ -1,171 +1,287 @@
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
+import pytest
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.widgets.checkablecombobox import CheckableComboBox
-from spcal.gui.widgets.editablecombobox import EditableComboBox
-from spcal.gui.widgets.rangeslider import RangeSlider
-from spcal.gui.widgets.validcolorle import ValidColorLineEdit
+from spcal.gui.widgets.collapsablewidget import CollapsableWidget
+from spcal.gui.widgets.elidedlabel import ElidedLabel
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
+from spcal.gui.widgets.units import UnitsWidget
+from spcal.gui.widgets.values import ValueWidget
+from spcal.isotope import ISOTOPE_TABLE
 
 
-def test_checkable_combo_box(qtbot: QtBot):
-    cb = CheckableComboBox()
-    qtbot.add_widget(cb)
-    with qtbot.wait_exposed(cb):
-        cb.show()
+def test_collapsable_widget(qtbot: QtBot):
+    widget = CollapsableWidget("Test")
+    label = QtWidgets.QLabel("Label")
+    widget.setWidget(label)
 
-    cb.addItems(["a", "b", "c"])
-    assert cb.count() == 3
-    item = cb.model().item(0)
-    assert item.isCheckable()
+    qtbot.addWidget(widget)
 
-    cb.setCheckedItems(["b"])
-    assert cb.checkedItems() == ["b"]
+    with qtbot.waitExposed(widget):
+        widget.show()
 
-    cb.setCheckedItems(["b", "c"])
-    assert cb.checkedItems() == ["b", "c"]
-
-    # cannot test delegates with click
+    assert not label.isVisible()
+    qtbot.mouseClick(widget.button, QtCore.Qt.MouseButton.LeftButton)
+    assert label.isVisible()
 
 
-def test_editable_combo_box(qtbot: QtBot):
-    cb = EditableComboBox()
-    qtbot.add_widget(cb)
-    with qtbot.wait_exposed(cb):
-        cb.show()
+def test_edlided_label(qtbot: QtBot):
+    label = ElidedLabel("a very long line of text that should be elided")
+    label.setFixedWidth(50)
 
-    cb.addItems(["a", "b", "c", "d", "e"])
+    qtbot.addWidget(label)
 
-    with qtbot.wait_signal(cb.textsEdited):
-        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Backspace)
-        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Z)
-        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Enter)
+    with qtbot.waitExposed(label):
+        label.show()
 
-    items = [cb.itemText(i) for i in range(cb.count())]
-    assert items == ["z", "b", "c", "d", "e"]
+    label.setText("short text")
 
-    with qtbot.assertNotEmitted(cb.textsEdited):
-        qtbot.keyClick(cb, QtCore.Qt.Key.Key_Backspace)
-        qtbot.keyClick(cb, QtCore.Qt.Key.Key_A)
-        cb.setCurrentIndex(1)
 
-    dlg = cb.openEnableDialog()
-    dlg.texts.item(1).setCheckState(QtCore.Qt.CheckState.Unchecked)
-    dlg.accept()
-    assert not QtCore.Qt.ItemFlags.ItemIsEnabled & cb.model().flags(
+def test_periodic_table_selector(qtbot: QtBot):
+    pt = PeriodicTableSelector(selected_isotopes=[ISOTOPE_TABLE[("Sn", 112)]])
+    qtbot.addWidget(pt)
 
-        cb.model().index(1, 0)
+    # length of all isotopes in database
+    assert len(pt.enabledIsotopes()) == 344
+    assert len(pt.selectedIsotopes()) == 1
+    assert not pt.buttons["Cd"].icon().isNull()  # find collisions is on
+    pt.buttons["Sn"].isotope_actions[112].setChecked(False)
+    assert pt.buttons["Cd"].icon().isNull()
+
+    pt.buttons["C"].isotope_actions[13].setChecked(True)
+    pt.buttons["Au"].isotope_actions[197].setChecked(True)
+
+    selected = pt.selectedIsotopes()
+    assert selected is not None
+    assert len(selected) == 2
+
+    # unselect C
+    qtbot.mouseClick(pt.buttons["C"], QtCore.Qt.MouseButton.LeftButton)
+    selected = pt.selectedIsotopes()
+    assert selected is not None
+    assert len(selected) == 1
+
+    # reselect C, default isotope
+    qtbot.mouseClick(pt.buttons["C"], QtCore.Qt.MouseButton.LeftButton)
+    selected = pt.selectedIsotopes()
+    assert selected is not None
+    assert len(selected) == 2
+    assert selected[0].isotope == 12
+
+    # Select 3 isotopes, remove other selected
+    enabled = pt.enabledIsotopes()
+    pt.setSelectedIsotopes([enabled[x] for x in [50, 60, 70]])
+    selected = pt.selectedIsotopes()
+    assert selected is not None
+    assert len(selected) == 3
+    assert all(s.symbol == x for s, x in zip(selected, ["Ti", "Cr", "Ni"]))
+
+    pt.setIsotopeColors(
+        [enabled[50], enabled[60]],
+        [QtGui.QColor.fromRgb(255, 0, 0), QtGui.QColor.fromRgb(0, 255, 0)],
     )
+    assert pt.buttons["Ti"].indicator is not None
+    assert pt.buttons["Ti"].indicator.red() == 255
+    assert pt.buttons["Cr"].indicator is not None
+    assert pt.buttons["Cr"].indicator.green() == 255
 
+    with qtbot.waitExposed(pt):
+        pt.show()
 
-def test_range_slider(qtbot: QtBot):
-    slider = RangeSlider()
-    qtbot.add_widget(slider)
-    with qtbot.wait_exposed(slider):
-        slider.show()
+    # Remove color
+    pt.setIsotopeColors([enabled[50]], [QtGui.QColor.fromRgb(255, 0, 0)])
+    assert pt.buttons["Cr"].indicator is None
 
-    slider.setValues(0, 100)
+    # Select all Tin
+    pt.buttons["Sn"].selectAllIsotopes(0.1)
+    assert len(pt.buttons["Sn"].selectedIsotopes()) == 3
 
-    option = QtWidgets.QStyleOptionSlider()
-    slider.initStyleOption(option)
-    groove = slider.style().subControlRect(
-        QtWidgets.QStyle.CC_Slider, option, QtWidgets.QStyle.SC_SliderGroove, slider
+    # Only enable 3, 2 selected
+    pt.setEnabledIsotopes(
+        [
+            ISOTOPE_TABLE[("Sn", 116)],
+            ISOTOPE_TABLE[("Sn", 117)],
+            ISOTOPE_TABLE[("Sn", 118)],
+        ]
     )
-    handle = slider.style().subControlRect(
-        QtWidgets.QStyle.CC_Slider, option, QtWidgets.QStyle.SC_SliderHandle, slider
-    )
-
-    qtbot.mousePress(
-        slider,
-        QtCore.Qt.LeftButton,
-        QtCore.Qt.NoModifier,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), slider.value2(), groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    qtbot.mouseMove(
-        slider,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), 60, groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    qtbot.mouseRelease(
-        slider,
-        QtCore.Qt.LeftButton,
-        QtCore.Qt.NoModifier,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), 60, groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    assert slider.values() == (0, 60)
-    assert slider.left() == 0
-    assert slider.right() == 60
-
-    qtbot.mousePress(
-        slider,
-        QtCore.Qt.LeftButton,
-        QtCore.Qt.NoModifier,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), slider.value(), groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    qtbot.mouseMove(
-        slider,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), 74, groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    qtbot.mouseRelease(
-        slider,
-        QtCore.Qt.LeftButton,
-        QtCore.Qt.NoModifier,
-        QtCore.QPoint(
-            slider.style().sliderPositionFromValue(
-                slider.minimum(), slider.maximum(), 74, groove.width()
-            ),
-            handle.center().y(),
-        ),
-    )
-    # Changed in a Qt update, not worth testing
-    # assert slider.values() == (80, 60)  # QRangeSlider value is +7 ?
-    # assert slider.left() == 60
-    # assert slider.right() == 80
-
-    slider.setLeft(10)
-    assert slider.values()[1] == 10
-    slider.setRight(90)
-    assert slider.values()[0] == 90
+    assert len(pt.enabledIsotopes()) == 3
+    assert len(pt.selectedIsotopes()) == 2
 
 
-def test_valid_color_line_edit(qtbot: QtBot):
-    le = ValidColorLineEdit("")
-    qtbot.add_widget(le)
-    with qtbot.wait_exposed(le):
-        le.show()
+def test_units_widget(qtbot: QtBot):
+    w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, default_unit="c")
+    qtbot.addWidget(w)
 
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
-    le.setValidator(QtGui.QIntValidator(0, 100))
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_invalid
-    le.setText("5")
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
-    le.setText("a")
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_invalid
-    le.setActive(False)
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
-    le.setActive(True)
-    le.setEnabled(False)
-    assert le.palette().color(QtGui.QPalette.Base) == le.color_valid
+    assert w.baseValue() is None
+    assert w.value() is None
+    assert w.baseError() is None
+    assert w.error() is None
+    assert w.unit() == "c"
+    assert w.hasAcceptableInput()
+
+    with qtbot.waitSignal(w.baseValueChanged, timeout=100):
+        w.setValue(1.0)
+    assert w.baseValue() == 0.01
+
+    with qtbot.assertNotEmitted(w.baseValueChanged):
+        w.setBaseValue(0.01)
+
+    w.setUnit("b")
+    assert w.baseValue() == 0.01
+    assert np.isclose(w.value(), 0.1)  # type: ignore
+
+    w.setBaseValue(10.0)
+    assert w.value() == 100.0
+
+    w.setBestUnit()
+    assert w.unit() == "c"
+
+    w.setReadOnly(True)
+    assert w._value.isReadOnly()
+
+    assert w.isEnabled()
+    w.setEnabled(False)
+    assert not w._value.isEnabled()
+    assert not w.combo.isEnabled()
+    assert not w.isEnabled()
+
+    w.setToolTip("tip")
+    assert w._value.toolTip() == "tip"
+    assert w.combo.toolTip() == "tip"
+
+    # Make sure this does not cause a RecursionError
+    with qtbot.waitSignal(w.baseValueChanged, timeout=100):
+        w.setValue(np.nan)
+    with qtbot.assertNotEmitted(w.baseValueChanged):
+        w.setValue(None)
+
+
+def test_units_widget_error(qtbot: QtBot):
+    w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, base_value=50.0)
+    qtbot.addWidget(w)
+
+    assert w.baseError() is None
+    with qtbot.waitSignal(w.baseErrorChanged, timeout=100):
+        w.setBaseError(10.0)
+    assert w.error() == 10.0
+
+    with qtbot.assertNotEmitted(w.baseErrorChanged):
+        w.setError(10.0)
+
+    w.setUnit("b")
+    assert w.error() == 100.0
+
+    w.setBaseError(1.0)
+    assert w.error() == 10.0
+
+    w.setError(1.0)
+    assert w.baseError() == 0.1
+
+    # Make sure this does not cause a RecursionError
+    with qtbot.waitSignal(w.baseErrorChanged, timeout=100):
+        w.setError(np.nan)
+    with qtbot.assertNotEmitted(w.baseErrorChanged):
+        w.setError(None)
+
+
+def test_value_widget(qtbot: QtBot):
+    w = ValueWidget()
+    qtbot.addWidget(w)
+    with qtbot.wait_exposed(w):
+        w.show()
+
+    assert w.value() is None
+    assert w.error() is None
+    assert w.text() == ""
+    assert w.hasAcceptableInput()
+
+    with qtbot.waitSignal(w.valueChanged, timeout=100):
+        w.setValue(0.123456789)
+    assert w.value() == 0.123456789
+
+    with qtbot.assertNotEmitted(w.valueChanged):
+        w.setValue(0.123456789)
+
+    w.clearFocus()
+    assert w.text() == "0.123457"
+    w.setFocus()
+    qtbot.wait(100)  # test sometimes fails without wait
+    assert w.text() == "0.123456789"
+    w.clearFocus()
+
+    # Value should not change
+    assert w.value() == 0.123456789
+
+    w.setFocus()
+    qtbot.keyClicks(w, "1.23212321")
+    assert w.text() == "1.23212321"
+    assert w.value() == 1.23212321
+    w.clearFocus()
+    assert w.text() == "1.23212"
+
+    w.setSigFigs(8)
+    assert w.text() == "1.2321232"
+
+    with qtbot.waitSignal(w.errorChanged, timeout=100):
+        w.setError(0.123456789)
+
+    with qtbot.assertNotEmitted(w.errorChanged):
+        w.setError(0.123456789)
+
+    # Don't know how to test the paint event
+    assert w.error() == 0.123456789
+    w.repaint()
+
+    # Range cuts value
+    w.setValue(10.1)
+    w.setRange(4.0, 6.0)
+    assert w.value() == 6.0
+    w.stepDown()
+    assert w.value() == 5.0
+    w.stepDown()
+    assert w.value() == 4.0
+    w.stepDown()  # reached min
+    assert w.value() == 4.0
+
+    with qtbot.waitSignal(w.valueChanged):
+        w.setValue(None)
+    with qtbot.waitSignal(w.errorChanged):
+        w.setError(None)
+
+    with qtbot.assertNotEmitted(w.valueChanged):
+        w.setValue(None)
+    with qtbot.assertNotEmitted(w.errorChanged):
+        w.setError(None)
+
+
+def test_value_widget_no_none(qtbot: QtBot):
+    w = ValueWidget(value=100.0, allow_none=False)
+    qtbot.addWidget(w)
+    with qtbot.wait_exposed(w):
+        w.show()
+
+    w.lineEdit().setText("")
+
+    assert w.value() is not None
+
+    with pytest.raises(ValueError):
+        w.setValue(None)
+
+    with pytest.raises(ValueError):
+        ValueWidget(value=None, allow_none=False)
+
+
+def test_value_widget_step_function(qtbot: QtBot):
+    w = ValueWidget(value=100.0, step=lambda v, i: v + (v * i * 0.1))
+    qtbot.addWidget(w)
+    with qtbot.wait_exposed(w):
+        w.show()
+
+    assert w.value() == 100.0
+    w.stepDown()
+    assert w.value() == 90.0
+    w.stepDown()
+    assert w.value() == 81.0
+    w.stepBy(2)
+    assert w.value() == 97.2

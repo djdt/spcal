@@ -8,6 +8,7 @@ At the very low counting rates often seen in spICP-MS work, the typical Gaussian
 Instead Poisson statistics should be used to determine the *critical value*, the threshold above which a signal is considered to be a detected particle [1]_ .
 Confusingly, most Poisson statistics will also define a :term:`detection threshold`, but this should not be used to determine the detection of signal.
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
+In general, the Currie method with an ε value of 0.5 works well and is recommended.
 
 spICP-ToF: Compound-Poisson
 ---------------------------
@@ -21,7 +22,7 @@ spICP-ToF: Compound-Poisson
 The Poisson thresholding typically used for spICP-MS is not valid for spICP-ToF, as is easily established by looking at spICP-ToF data.
 Unlike data from a quadrupole instrument, this data is non-integer.
 To achieve sufficient resolution a time-of-flight instrument cannot be operated in pulse-counting mode, where the electron pulses from individual ions are counted as discrete (integer) events [2]_ .
-Instead, the detectors in TOFs use the raw output of fast analogue-to-digital converters and this exposes the variation in current produced by an electron multiplier for a single ion, known as the pulse-height distribution (PHD) or single-ion area (SIA) [3]_ .
+Instead, the detectors in TOFs use the raw output of fast analogue-to-digital converters and this exposes the variation in current produced by an electron multiplier for a single ion, known as the pulse-height distribution (PHD) or :term:`single ion area` (SIA) [3]_ .
 The result of multiple ions striking the detector is therefore a Poisson sampling of the PHD, where each ion may produce a range of values.
 
 .. _sia:
@@ -29,7 +30,7 @@ The result of multiple ions striking the detector is therefore a Poisson samplin
     :width: 640px
     :align: center
 
-    The single-ion areas of two ICP-ToF instruments, and log-normal fits.
+    The :term:`single ion area` of two ICP-ToF instruments, and log-normal fits.
 
 To convert these values into counts the detector is calibrated to determine the SIA, typically by analysing a very low concentration sample, i.e. one that is likely to only produce single-ion events.
 Multiple acquisitions of raw data from the detector are summed and then normalised to approximate the signal produced for 1 ion (count) by dividing by the mean of the recorded SIA.
@@ -53,12 +54,12 @@ The log-normal approximation works by closely approximating the SIA with a log-n
 Since the cumulative density and quantile functions of a log-normal are known, we can then predict the resulting :term:`detection threshold` for the sum of log-normal distributions.
 In the case of the log-normal approximation only the shape parameter (:math:`\sigma`) of the log-normal fit to the SIA is required.
 
+.. warning::
+   The log-normal approximation method is depreciated and no longer used in spcal versions 2.0.0 and above.f
+
 Lookup Table
 ^^^^^^^^^^^^
 Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA can be approximated using a log-normal distribution. The lookup table is a 3-dimensional array of quantiles calculated for a zero-truncated compound-Poisson-log-normal distribution. Each quantile comes from a simulation of :math:`10^{10}` values using the parameters in the table below, using the computational facilities of the UTS eResearch High Performance Computer Cluster. Values between simulated points are interpolated at a sub 0.2 % error.
-
-
-
 
 .. list-table:: Parameters in the lookup table.
    :header-rows: 1

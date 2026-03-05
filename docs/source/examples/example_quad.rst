@@ -3,7 +3,7 @@ Calibrating Quadrupole ICP-MS Data
 
 This example will guide you through importing, calibrating and exporting single-particle data collected on a quadrupole ICP-MS.
 A 15 nm gold NP is used as a sample, with a 50 nm gold NP as a reference.
-A sample is loaded and then calibrated using the *Reference Particle* method described in :ref:`Calibration`.
+A sample is loaded and then calibrated using the :ref:`Reference Particle` method described in :ref:`Calibration`.
 
 .. _table parameters:
 .. list-table:: Parameters used in this example.
@@ -13,73 +13,66 @@ A sample is loaded and then calibrated using the *Reference Particle* method des
       - Location
       - Value
     * - Uptake
-      - Options
+      - Instrument Options
       - 0.35 ml/min
     * - Density
-      - Sample 
+      - Isotope Options 
       - 19.3 g/cm3 (Au)
     * - Ionic response
-      - Sample
-      - 17.5 counts/ug
-    * - Density
-      - Reference 
-      - 19.3 g/cm3 (Au)
-    * - Ionic response
-      - Reference
-      - 17.5 counts/ug
+      - Isotope Options
+      - 17.5 counts/ug (Au)
+    * - Mass Fraction
+      - Isotope Options
+      - 1.0 (Au)
     * - Diameter
-      - Reference
+      - Transport Efficiency Calculator
       - 50 nm
 
 
 #. Download the required sample and reference data files.
     The ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv`` files are available as a Zip archive `example_1_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_1_data.zip>`_ on the GitHub. 
+    Download and extract the files.
 
-#. Enter the instrument parameters.
-    In the **Options Tab**, enter the :term:`uptake` from :numref:`table parameters`.
-
-#. Import the sample file.
-    The ``quad_sample_15nm.csv`` file can be opened using **File -> Open Sample File**, then switch to the **Sample Tab**.
+#. Import the sample file and reference files.
+    The ``quad_sample_15nm.csv`` and ``quad_reference_50nm.csv`` files can be opened using **File -> Open Sample File**.
     Enter the sample parameters listed in :numref:`table parameters`.
     A detailed guide on the :ref:`Data Import` wizard is available.
 
-    .. _quad sample tab:
-    .. figure:: ../images/example_quad_sample_tab.png
+    .. _tutorial quad options:
+    .. figure:: ../images/tutorial_quad_options.png
        :width: 60%
        :align: center
 
        The sample tab after importing ``quad_sample_15nm.csv`` and entering the sample parameters.
 
-    Your sample tab should look like :numref:`quad sample tab`.
+    SPCal should look like :numref:`tutorial quad options`.
 
-#. Set the :term:`transport efficiency` method.
-    In the **Options Tab** to *Reference Particle*.
-    This enables the **Reference Tab**.
+#. Enter the experiment parameters.
+    In the **Instrument Options Dock**, enter the :term:`uptake` from :numref:`table parameters`.
+    Enter the :term:`density`, :term:`ionic response` and :term:`mass fraction` into the **Isotope Options Dock**.
+    The button next to *Trans. Efficiency* should now be active.
 
-#. Import the reference file.
-    Open ``quad_reference_50nm.csv`` using **File -> Open Reference File**, and switch to the **Reference Tab**.
-    Enter the reference parameters listed in :numref:`table parameters`.
-    A detailed guide on the :ref:`Data Import` wizard is available.
+#. Calculate the :term:`transport efficiency`.
+    *Ensure that the reference data file is currently selected* in the **Data Files Dock**!
+    Press to button next to the *Trans. Eddiciency* field to open the **Transport Efficiency Calculator**.
+    Most values should be pre-filled from the existing method.
+    Enter the reference particle diameter listed in :numref:`table parameters`.
+    The calculated efficiency should be close to 0.0185.
 
-    .. _quad reference tab:
-    .. figure:: ../images/example_quad_reference_tab.png
+#. Check results and size histograms
+   *Switch to the sample file* in the **Data Files Dock**.
+   Set the current *Key* from *Signal* to *Size* using the controls in the top toolbar.
+   The median and mean size listed in the **Results Dock** should be close to 15 nm.
+
+    .. _tutorial quad results:
+    .. figure:: ../images/tutorial_quad_results.png
        :width: 60%
        :align: center
 
-       The reference tab after importing ``quad_reference_50nm.csv`` and entering the reference parameters.
+       SPCal histogram view after importing ``quad_sample_15nm.csv`` and calibrating into sizes.
 
-    Your reference tab should look like :numref:`quad reference tab` and the :term:`transport efficiency` calculated as ~0.01897.
+   The side toolbar can be used to show a histogram of the particle sizes, as in :numref:`tutorial quad results`.
 
-#. Switch to the **Results Tab**.
-    .. _quad results tab:
-    .. figure:: ../images/example_quad_results_tab.png
-       :width: 60%
-       :align: center
-
-       The results tab showing the sample size distribution, available after calibrating.
-
-    The calculated results for the loaded sample are shown as in :numref:`quad results tab`.
-    Switch to *Size* mode, the median size should be around 15 nm.
 
 #. Export the results.
-    Press the *Export Results* button to save the results to a file.
+    Press **File -> Export Results** button to save the results to a file.

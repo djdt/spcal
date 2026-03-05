@@ -8,39 +8,34 @@ The :term:`transport efficiency` is the fraction of sample that makes it through
 With the exception of total-consumption nebulisers (100% efficiency) it is typically 0.02 - 0.1 (2 - 10%).
 The :term:`transport efficiency` (:math:`\eta`) can be entered manually if known (see Pace et al. [1]_ for examples), or calculated based on the response of a well characterised reference particle.
 
+The method used in SPCal can be selected in the **Edit -> Processing Options** dialog.
 A full description of the calibration methods used in SPCal is available in a previous publication [2]_ .
 
 Reference Particle
 ------------------
 
-.. _calibrate reference tab:
-.. figure:: ../images/tutorial_cal_reference.png
+.. _transport efficiency calculator:
+.. figure:: ../images/usage_te_calculator.png
    :align: center
 
-   The Reference tab is used to calculate the transport efficiency.
-   This is required to calibrate data from signal into mass and size.
+   The Transport Efficiency Calculator is enabled once particles are detected and a instrument iptake rate is input.
 
-To use a reference particle select *Reference Particle* as the :term:`transport efficiency` option in the **Options Tab**.
-This enables the **Reference Tab**, where data for the reference particle can be loaded via drag-and-drop or **File -> Open Reference File**.
-See :ref:`Data Import` for details on importing data.
+To calculate :term:`transport efficiency` using a reference particle first load the data into SPCal, see :ref:`Data Import`.
+Then input the instrument :term:`uptake` to enable the efficiency calculator button, next to the *Trans. Efficiency* input.
+Clicking this button opens the calculator in :numref:`transport efficiency calculator` using the currently selected data file and isotope.
 
-To correctly calibrate, the particle :term:`diameter`, :term:`density` and :term:`ionic response` must be entered in the **Reference Tab** and the instrument :term:`uptake` in the **Options Tab**.
+To correctly calibrate, the particle :term:`density`, :term:`ionic response`, :term:`diameter` must be entered into the calculator.
 Ideally a particle of a single element is used, if one containing multiple is used then the :term:`mass fraction` of the measured element must be entered.
-If the concentration of the reference particle solution is known then the accuracy of the calculation will be greater.
-Once all parameters are input, the calculated efficiency is shown in the **Reference Tab** outputs section.
+If the mass concentration of the reference particle solution is known then the accuracy of the calculation will be greater.
+Once all parameters are input, click *OK* to apply the efficiency top the instrument method.
 
 The :term:`transport efficiency` is usually assumed to be independent of mass and a single element can be used to calibrate the entire mass range.
-Selecting the *Calibrate for all elements* will use the currently selected element in the **Reference Tab** to determine the :term:`transport efficiency`.
-If not selected, each element will *only calibrate data with the same element name* in the **Sample Tab**.
-
 
 Mass Response
 -------------
 
 Limited calibration can also occur with the :term:`transport efficiency` by determining the :term:`mass response` from a reference particle.
-After selecting *Mass Response* as the :term:`transport efficiency` option in the **Options Tab** the calibration proceeds as above in the `Reference Particle`_ section.
 Using the :term:`mass response` eliminates the need for instrument :term:`uptake` and :term:`ionic response` but can only calibrate signals into masses.
-
 
 .. [1] Pace, H. E.; Rogers, N. J.; Jarolimek, C.; Coleman, V. A.; Higgins, C. P.; Ranville, J. F. Determining Transport Efficiency for the Purpose of Counting and Sizing Nanoparticles via Single Particle Inductively Coupled Plasma Mass Spectrometry. Anal. Chem. 2011, 83 (24), 9361–9369. https://doi.org/10.1021/ac201952t.
 

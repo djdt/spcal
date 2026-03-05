@@ -3,96 +3,95 @@ Data Import
 
 The first step to performing any data processing is to load the data into SPCal.
 SPCal supports import of delimited text files, which can be exported from instrument vendor software, and the raw data of Nu Instruments and TOFWERKs ICP-ToFs.
-Data files can be loaded from the **File -> Open Sample File** or by drag-and-drop of files into the **Sample Tab**.
-
+Data files can be loaded from the **File -> Open Sample File** or by drag-and-drop of files into the program.
 
 Text Files
 ----------
 
-
-.. _text import wizard:
-.. figure:: ../images/tutorial_data_text_importer.png
+.. _text import dialog:
+.. figure:: ../images/usage_import_text.png
    :align: center
 
-   The import wizard for delimited text files.
+   The import dialog for delimited text files.
 
-Opening a text file will start the text import wizard. This wizard allows you to select which columns in the file to import and skip any non-data rows.
-The wizard will attempt to guess the correct options when the file is loaded, a description of each option is shown in :numref:`tabtextoptions`.
-The wizard displays the first 10 lines from the file (:numref:`text import wizard`) and is used to identify and remove non-data rows and columns before import.
-In the example in :numref:`text import wizard`, there are 0 header rows so import proceed from row 1, and column 1 consists of non-particle data.
+Opening a text file will start the text import dialog. This dialog allows you to select which columns in the file to import and skip any non-data rows.
+The dialog will attempt to guess the correct options when the file is loaded, a description of each option is shown in :numref:`tabtextoptions`.
+The dialog displays the first 10 lines from the file (:numref:`text import dialog`) and is used to identify and remove non-data rows and columns before import.
+In the example in :numref:`text import dialog`, there are 3 header rows so import proceed from row 4, and column 1 consists of non-particle data (times).
 The first non-header row should contain the names of each column and can be edited by double-clicking the name.
+**Import can only proceed once all names are valid isotopes** e.g., 197Au or Au197. Invalid names are shown in red.
 Columns can be selected or ignore using their corresponding checkboxes, to quickly select one column click it while holding the *Shift* key.
 
 .. _tabtextoptions:
-.. list-table:: Options for the text import wizard.
+.. list-table:: Options for the text import dialog.
     :header-rows: 1
 
     * - Option
       - Description
-    * - :term:`dwelltime`
-      - The instrument event acquisition time. Calculated from data when a column with ``time`` in the title is included.
+    * - :term:`event time`
+      - The instrument event acquisition time. Calculated from data when a column with ``time`` in the title is included, otherwise must be provided.
     * - Intensity Units
       - Selects if data is in *counts* or *counts-per-second (CPS)*. Defaults to counts unless *CPS* is included in the file header.
     * - Delimiter
-      - The delimiter character.
+      - The delimiter character, e.g. ','.
     * - Import From Row
       - Skips the first *x* rows of the file (the header). The first non-skipped row should be the column names.
 
 .. warning::
-   The :term:`dwelltime` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
+   The :term:`event time` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
 
 ToF Data
 --------
 
-.. _tof import wizard:
-.. figure:: ../images/tutorial_data_tof_importer.png
+.. _tof import dialog:
+.. figure:: ../images/usage_import_nu.png
    :align: center
 
-   The import wizard for Nu Instruments and TOFWERKs ToF data.
+   The import dialog for Nu Instruments and TOFWERKs ToF data. Colors show the relative abundance of peaks following non-target screening.
+   The ! icon shows elements with possible isobaric interferences.
 
 
 SPCal supports import of ICP-ToF data from both Nu Instruments and TOFWERK instruments.
+A periodic table is displayed showing recorded isotopes (calculated from masses for Nu Instruments). **Left-click** an element will add the preferred isotope (most abundant with low interferences). **Right-click** will allow selection of individual isotopes. Holding **Shift** while clicking will add all isotopes with a natural abundance greater than 10 %.
 
 Nu Instruments data is stored in a single directory consisting of a number of ``.integ`` files with an index file (``integrated.index``) and  ``run.info`` file that stores run parameters.
-To load Nu Instruments data, either drag-and-drop the directory into the **Sample Tab**, or select the ``run.info`` file via **File -> Open Sample File**.
-This starts the ToF import wizard, where you can select which elements / isotopes to import. Options for the ToF import wizard are summarised below in :numref:`table tof options`.
+To load Nu Instruments data, either drag-and-drop the directory into the program, or select the ``run.info`` file via **File -> Open Sample File**.
+This starts the ToF import dialog, where you can select which elements / isotopes to import. Options for the ToF import dialog are summarised below in :numref:`table tof options`.
 
 TOFWERKs data and parameters are stored in HDF5 archives.
 To load this data either drag-and-drop or load the ``.h5`` archive via **File -> Open Sample File**.
-This starts the ToF import wizard, where you can select which elements / isotopes to import. Options for the ToF import wizard are summarised below in :numref:`table tof options`.
+This starts the ToF import dialog, where you can select which elements / isotopes to import.
+The TOFWERK importer has no additional options.
 
 .. _table tof options:
-.. list-table:: Options for the ToF data import wizard.
+.. list-table:: Options for the ToF data import dialog.
     :header-rows: 1
 
     * - Option
       - Description
-    * - :term:`dwelltime`
-      - The instrument event acquisition time, read from data on load.
     * - Cycle (Nu Instruments)
-      - ToF cycle to load, defaults to 1.
+      - ToF cycle to load, defaults to 'All'.
     * - Segment (Nu Instruments)
-      - ToF segment to load, defaults to 1.
+      - ToF segment to load, defaults to 'All'.
+    * - Integ files (Nu instruments)
+      - Choose which integ files to load, defaults to all data.
+    * - Max diff m/z (Nu instruments)
+      - Maximum difference in mass an isotope can be from the recorded mass
     * - Apply Auto-Blanking (Nu Instruments)
-      - Blank out sections of data with over-range signal. These sections are replaced with NaN values.
-    * - Additional Peaks (TOFWERKs)
-      - Non-element peaks to import, e.g. ArH+.
-    * - Force Peak Integration (TOFWERKs)
-      - Re-integrate raw data, even if integrated data exists.
-
+      - Blank out sections of data with over-range signal. These sections are replaced with NaN values when 'Regions' is selected, or all masses when 'All' is selected.
 
 Non-target Screening
 --------------------
 
 .. _non target screen:
-.. figure:: ../images/tutorial_data_nontarget.png
+.. figure:: ../images/usage_nontarget.png
    :align: center
 
-   The non-target screening options available for the text and ToF importers.
+   The non-target screening options available for the ToF importers.
 
 
-Both the text and ToF import wizards (:numref:`text import wizard`, :numref:`tof import wizard`) have the option to screen data for elements of interest, by pressing the **Non-targetted screening** button.
-This will search the first *Minimum no. events* events of the imported data file for elements / isotopes with greater than *Screening ppm* detections per million events.
+Both the Nu and TOFWERK ToF import dialogs (:numref:`tof import dialog`) have the option to screen data for elements of interest, by pressing the **Screen** button in the bottom left corner.
+This will search the first *Minimum no. events* events of the imported data file for elements / isotopes with greater than *Screening ppm* detections per million events. If *Replace isotopes* is selected then all previous selections are discarded, otherwise screened isotopes are selected in addition to existing selections.
 
 See Gonzalez de Vega et al. [1]_ for an example of using SPCal for screening.
 

@@ -1,4 +1,5 @@
 """Loading data from TOFWERK ICP-ToF."""
+
 from pathlib import Path
 
 import h5py

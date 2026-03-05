@@ -15,13 +15,13 @@ class ElidedLabel(QtWidgets.QWidget):
     def elide(self) -> QtCore.Qt.TextElideMode:  # pragma: no cover
         return self._elide
 
-    def setElide(self, elide: QtCore.Qt.TextElideMode) -> None:  # pragma: no cover
+    def setElide(self, elide: QtCore.Qt.TextElideMode):  # pragma: no cover
         self._elide = elide
 
     def text(self) -> str:
         return self._text
 
-    def setText(self, text: str) -> None:
+    def setText(self, text: str):
         self._text = text
         self.updateGeometry()
 
@@ -29,7 +29,7 @@ class ElidedLabel(QtWidgets.QWidget):
         fm = self.fontMetrics()
         return fm.boundingRect(self._text).size()
 
-    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, event: QtGui.QPaintEvent):
         painter = QtGui.QPainter(self)
         fm = painter.fontMetrics()
 
@@ -37,8 +37,8 @@ class ElidedLabel(QtWidgets.QWidget):
         elided = fm.elidedText(self._text, self._elide, self.width() + 1)
         painter.drawText(
             self.contentsRect(),
-            QtCore.Qt.AlignVCenter
-            | QtCore.Qt.TextSingleLine
-            | QtCore.Qt.TextShowMnemonic,
+            QtCore.Qt.AlignmentFlag.AlignVCenter
+            | QtCore.Qt.TextFlag.TextSingleLine
+            | QtCore.Qt.TextFlag.TextShowMnemonic,
             elided,
         )

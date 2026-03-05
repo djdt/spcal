@@ -3,62 +3,66 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
-import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg
-from spcal.gui.dialogs._import import _ImportDialogBase
-from spcal.gui.graphs import color_schemes
+from spcal.datafile import SPCalDataFile
+from spcal.gui.dialogs.io.base import ImportDialogBase
+from spcal.gui.graphs.colors import COLOR_SCHEMES
+from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.calibration import CalibrationView
-from spcal.gui.graphs.response import ResponseView
-from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
-from spcal.gui.models import NumpyRecArrayTableModel
+from spcal.gui.io import (
+    get_import_dialog_for_path,
+    get_open_spcal_path,
+    get_save_spcal_path,
+    is_spcal_path,
+)
+from spcal.gui.modelviews import DataFileRole, IsotopeRole
+from spcal.gui.modelviews.basic import BasicTableView
+from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
+from spcal.gui.modelviews.values import ValueWidgetDelegate
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
 
 
 class ResponseDialog(QtWidgets.QDialog):
-    responsesSelected = QtCore.Signal(dict)
+    responsesSelected = QtCore.Signal(object)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
 
-        self.data = np.array([])
-        self.import_options: dict | None = None
+        self.intensity = ParticleView()
+        self.intensity.exclusionRegionsChanged.connect(self.updateExclusionRegions)
 
-        self.button_open_file = QtWidgets.QPushButton("Open File")
-        self.button_open_file.pressed.connect(self.dialogLoadFile)
+        self.calibration = CalibrationView()
 
-        self.graph = ResponseView()
-        self.graph.region.sigRegionChangeFinished.connect(self.updateResponses)
+        self.model_concs = ConcentrationModel()
+        self.model_intensity = IntensityModel()
 
-        self.graph_cal = CalibrationView()
-        self.graph_cal.sizeHint = lambda: QtCore.QSize(300, 300)
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        data = np.array([], dtype=[("<element>", np.float64)])
-        self.model = NumpyRecArrayTableModel(
-            data, orientation=QtCore.Qt.Orientation.Horizontal
-        )
-        self.responses = np.array([], dtype=[("<element>", np.float64)])
+        self.table_concs = BasicTableView()
+        self.table_concs.setModel(self.model_concs)
 
-        self.table = QtWidgets.QTableView()
-        self.table.setModel(self.model)
+        self.table_intensity = BasicTableView()
+        self.table_intensity.setModel(self.model_intensity)
 
-        self.table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
-        )
-        self.table.setHorizontalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
-        self.table.setVerticalScrollBarPolicy(
-            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        for table in [self.table_concs, self.table_intensity]:
+            table.setItemDelegate(ValueWidgetDelegate(sigfigs=sf))
+            table.selectionModel().selectionChanged.connect(self.tableSelectionChanged)
 
-        self.model.dataChanged.connect(self.completeChanged)
-        self.model.dataChanged.connect(self.updateCalibration)
+            table.setSizeAdjustPolicy(
+                QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
+            )
+
+        self.model_intensity.dataChanged.connect(self.updateCalibration)
+
+        self.model_concs.dataChanged.connect(self.completeChanged)
+        self.model_concs.dataChanged.connect(self.updateCalibration)
 
         self.button_add_level = QtWidgets.QPushButton("Add Level")
         self.button_add_level.setIcon(QtGui.QIcon.fromTheme("list-add"))
@@ -66,24 +70,23 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.combo_unit = QtWidgets.QComboBox()
         self.combo_unit.addItems(list(mass_concentration_units.keys()))
-        self.combo_unit.setCurrentText("μg/L")
+        self.combo_unit.setCurrentText("µg/L")
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.StandardButton.Open
-            | QtWidgets.QDialogButtonBox.StandardButton.Save
+            QtWidgets.QDialogButtonBox.StandardButton.Save
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
         )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(False)
-        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(False)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            False
+        )
+        self.button_box.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+        ).setEnabled(False)
 
         self.button_box.clicked.connect(self.buttonClicked)
         self.button_box.rejected.connect(self.reject)
-
-        box_concs = QtWidgets.QGroupBox("Concentrations")
-        box_concs.setLayout(QtWidgets.QVBoxLayout())
-        box_concs.layout().addWidget(self.table, 1)
 
         layout_conc_bar = QtWidgets.QHBoxLayout()
         layout_conc_bar.addStretch(1)
@@ -93,35 +96,235 @@ class ResponseDialog(QtWidgets.QDialog):
         layout_conc_bar.addWidget(
             self.combo_unit, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
-        box_concs.layout().addLayout(layout_conc_bar, 0)
+
+        box_concs = QtWidgets.QGroupBox("Concentrations")
+        box_concs_layout = QtWidgets.QVBoxLayout()
+        box_concs_layout.addWidget(self.table_concs, 1)
+        box_concs_layout.addLayout(layout_conc_bar, 0)
+        box_concs.setLayout(box_concs_layout)
+
+        box_intensity = QtWidgets.QGroupBox("Intensities")
+        box_intensity_layout = QtWidgets.QVBoxLayout()
+        box_intensity_layout.addWidget(self.table_intensity, 1)
+        box_intensity.setLayout(box_intensity_layout)
+
+        table_layout = QtWidgets.QHBoxLayout()
+        table_layout.addWidget(box_concs)
+        table_layout.addWidget(box_intensity)
 
         layout_graphs = QtWidgets.QHBoxLayout()
-        layout_graphs.addWidget(self.graph, 3)
-        layout_graphs.addWidget(self.graph_cal, 2)
+        layout_graphs.addWidget(self.intensity, 3)
+        layout_graphs.addWidget(self.calibration, 2)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(layout_graphs, 3)
-        layout.addWidget(box_concs, 2)
+        layout.addLayout(table_layout, 2)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
     def isComplete(self) -> bool:
-        if self.model.array.dtype.names is None:
+        if self.model_concs.rowCount() == 0:
             return False
-        for name in self.model.array.dtype.names:
-            if np.count_nonzero(~np.isnan(self.model.array[name])) > 0:
-                return True
-        return False
 
-    def completeChanged(self) -> None:
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(
-            self.isComplete()
-        )
-        self.button_box.button(QtWidgets.QDialogButtonBox.Save).setEnabled(
-            self.isComplete()
+        return any(
+            np.count_nonzero(~np.isnan(concs)) > 0
+            for concs in self.concentrations().values()
         )
 
-    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+    def completeChanged(self):
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            self.isComplete()
+        )
+        self.button_box.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Save
+        ).setEnabled(self.isComplete())
+
+    def concentrations(self) -> dict[SPCalIsotopeBase, np.ndarray]:
+        concs = {}
+        for col, isotope in enumerate(self.model_concs.isotopes):
+            concs[isotope] = np.array(
+                [
+                    self.model_concs.data(self.model_concs.index(row, col))
+                    for row in range(self.model_concs.rowCount())
+                ],
+                dtype=float,
+            )
+        return concs
+
+    def intensities(self) -> dict[SPCalIsotopeBase, np.ndarray]:
+        intensity = {}
+        for col, isotope in enumerate(self.model_intensity.isotopes):
+            intensity[isotope] = np.array(
+                [
+                    self.model_intensity.data(self.model_intensity.index(row, col))
+                    for row in range(self.model_intensity.rowCount())
+                ],
+                dtype=float,
+            )
+        return intensity
+
+    def tableSelectionChanged(
+        self, selected: QtCore.QItemSelection, deselected: QtCore.QItemSelection
+    ):
+        self.table_concs.selectionModel().selectionChanged.disconnect(
+            self.tableSelectionChanged
+        )
+        self.table_intensity.selectionModel().selectionChanged.disconnect(
+            self.tableSelectionChanged
+        )
+
+        self.table_concs.selectionModel().select(
+            selected, QtCore.QItemSelectionModel.SelectionFlag.Select
+        )
+        self.table_concs.selectionModel().select(
+            deselected, QtCore.QItemSelectionModel.SelectionFlag.Deselect
+        )
+
+        self.table_intensity.selectionModel().select(
+            selected, QtCore.QItemSelectionModel.SelectionFlag.Select
+        )
+        self.table_intensity.selectionModel().select(
+            deselected, QtCore.QItemSelectionModel.SelectionFlag.Deselect
+        )
+
+        self.table_concs.selectionModel().selectionChanged.connect(
+            self.tableSelectionChanged
+        )
+        self.table_intensity.selectionModel().selectionChanged.connect(
+            self.tableSelectionChanged
+        )
+        if len(selected.indexes()) > 0:
+            self.drawDataFile(selected.indexes()[0])
+
+    def updateExclusionRegions(self):
+        index = self.table_concs.currentIndex()
+        data_file = index.data(DataFileRole)
+        regions = self.intensity.exclusionRegions()
+
+        self.model_intensity.exclusion_regions[data_file] = regions
+        self.model_intensity.intensities[data_file] = {}
+        self.model_intensity.dataChanged.emit(
+            self.model_intensity.index(index.row(), 0),
+            self.model_intensity.index(
+                index.row(), self.model_intensity.columnCount() - 1
+            ),
+        )
+
+    def drawDataFile(self, index: QtCore.QModelIndex):
+        self.intensity.clear()
+        if not index.isValid():
+            return
+
+        data_file = index.data(DataFileRole)
+        isotope = index.data(IsotopeRole)
+
+        # Draw the trace
+        self.intensity.drawCurve(data_file.times, data_file[isotope])
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+        pen.setCosmetic(True)
+
+        # Draw mean line
+        self.intensity.drawLine(
+            np.nanmean(data_file[isotope]), QtCore.Qt.Orientation.Horizontal, pen=pen
+        )
+        # Rescale
+        self.intensity.setDataLimits(0.0, 1.0)
+
+        for start, end in self.model_intensity.exclusion_regions.get(data_file, []):
+            self.intensity.addExclusionRegion(start, end)
+
+    def dialogLoadFile(self, path: str | Path | None = None) -> ImportDialogBase | None:
+        if path is None:
+            path = get_open_spcal_path(self)
+            if path is None:
+                return None
+        else:
+            path = Path(path)
+
+        existing = (
+            None
+            if len(self.model_concs.concentrations) == 0
+            else list(self.model_concs.concentrations.keys())[-1]
+        )
+        dlg = get_import_dialog_for_path(self, path, existing)
+        dlg.dataImported.connect(self.addDataFile)
+
+        dlg.open()
+
+        return dlg
+
+    @QtCore.Slot()
+    def addDataFile(self, data_file: SPCalDataFile):
+        new_isotopes = set(self.model_concs.isotopes)
+        new_isotopes = new_isotopes.union(data_file.selected_isotopes)
+        new_isotopes = sorted(
+            new_isotopes,
+            key=lambda i: i.isotope if isinstance(i, SPCalIsotope) else 9999,
+        )
+
+        self.model_concs.beginResetModel()
+        self.model_concs.concentrations[data_file] = {}
+        self.model_concs.isotopes = new_isotopes
+        self.model_concs.endResetModel()
+        self.model_intensity.beginResetModel()
+        self.model_intensity.intensities[data_file] = {}
+        self.model_intensity.isotopes = new_isotopes
+        self.model_intensity.endResetModel()
+
+    def updateCalibration(self):
+        self.calibration.clear()
+
+        scheme = COLOR_SCHEMES[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
+
+        concs = self.concentrations()
+        intensities = self.intensities()
+
+        for i, isotope in enumerate(concs.keys()):
+            nans = np.logical_or(
+                np.isnan(concs[isotope]), np.isnan(intensities[isotope])
+            )
+            x, y = concs[isotope][~nans], intensities[isotope][~nans]
+            if x.size == 0:
+                continue
+            elif x.size == 1:
+                x = np.concatenate(([0.0], x))
+                y = np.concatenate(([0.0], y))
+
+            brush = QtGui.QBrush(scheme[i % len(scheme)])
+
+            self.calibration.drawScatter(
+                x, y, size=6.0 * self.devicePixelRatio(), brush=brush, name=str(isotope)
+            )
+
+            pen = QtGui.QPen(scheme[i % len(scheme)], 1.0 * self.devicePixelRatio())
+            pen.setCosmetic(True)
+            self.calibration.drawTrendline(x, y, pen=pen)
+
+    def calibrationResult(
+        self, x: np.ndarray, y: np.ndarray
+    ) -> tuple[float | None, float | None, float | None, float | None]:
+        factor = mass_concentration_units[self.combo_unit.currentText()]
+
+        nans = np.logical_or(np.isnan(x), np.isnan(y))
+        x, y = x[~nans] * factor, y[~nans]
+        if x.size == 0:
+            return None, None, None, None
+        elif x.size == 1:  # single point, force 0
+            return y[0] / x[0], 0.0, None, None
+        else:
+            return weighted_linreg(x, y)
+
+    def buttonClicked(self, button: QtWidgets.QAbstractButton):
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
+            self.dialogSaveToFile()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.reset()
+
+    def dropEvent(self, event: QtGui.QDropEvent):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
                 path = Path(url.toLocalFile())
@@ -134,250 +337,78 @@ class ResponseDialog(QtWidgets.QDialog):
         else:
             super().dropEvent(event)
 
-    def dialogLoadFile(
-        self, path: str | Path | None = None
-    ) -> _ImportDialogBase | None:
-        if path is None:
-            path = get_open_spcal_path(self)
-            if path is None:
-                return None
-        else:
-            path = Path(path)
-
-        dlg = get_import_dialog_for_path(self, path)  # import_options managed below
-        dlg.dataImported.connect(self.loadData)
-
-        if self.import_options is None:
-            dlg.open()
-        else:
-            try:
-                dlg.setImportOptions(self.import_options)
-                dlg.accept()
-            except Exception:
-                self.import_options = None
-                logger.warning("dialogLoadFile: unable to set import options.")
-                dlg.open()
-        return dlg
-
-    def loadData(self, data: np.ndarray, options: dict) -> None:
-        # Check the new data is compatible with current loaded
-        if self.model.array.size == 0:
-            self.model.beginResetModel()
-            self.model.array = np.full(1, np.nan, dtype=data.dtype)
-            self.model.endResetModel()
-            self.responses = self.model.array.copy()
-
-        elif (
-            data.dtype.names != self.model.array.dtype.names
-        ):  # pragma: no cover, can't test msgbox
-            button = QtWidgets.QMessageBox.question(
-                self, "Warning", "New data does not match current, overwrite?"
-            )
-            if button == QtWidgets.QMessageBox.StandardButton.Yes:
-                self.model.beginResetModel()
-                self.model.array = np.full(1, np.nan, dtype=data.dtype)
-                self.model.endResetModel()
-                self.responses = self.model.array.copy()
-            else:
-                return
-        else:
-            self.model.insertColumn(self.model.columnCount())
-            self.responses = np.append(
-                self.responses, np.full(1, np.nan, self.responses.dtype)
-            )
-
-        if self.import_options is None:
-            self.import_options = options
-
-        old_size = self.data.size
-        self.data = data
-        tic = np.sum([data[name] for name in data.dtype.names], axis=0)
-        xs = np.arange(tic.size)
-
-        self.graph.clear()
-        self.graph.plot.setTitle(f"TIC: {options['path'].name}")
-        self.graph.drawData(xs, tic)
-        if old_size != data.size:
-            self.graph.region.blockSignals(True)
-            self.graph.region.setRegion((xs[0], xs[-1]))
-            self.graph.region.blockSignals(False)
-        self.graph.updateMean()
-
-        self.updateResponses()
-
-    def updateResponses(self) -> None:
-        if self.responses.dtype.names is None:  # pragma: no cover
-            return
-
-        for name in self.responses.dtype.names:
-            self.responses[name][-1] = np.mean(
-                self.data[name][self.graph.region_start : self.graph.region_end]
-            )
-
-        self.updateCalibration()
-
-    def updateCalibration(self) -> None:
-        self.graph_cal.clear()
-        if self.responses.dtype.names is None:  # pragma: no cover
-            return
-
-        scheme = color_schemes[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
-
-        for i, name in enumerate(self.responses.dtype.names):
-            x = self.model.array[name]
-            y = self.responses[name][~np.isnan(x)]
-            x = x[~np.isnan(x)]
-            if x.size == 0:
-                continue
-            brush = QtGui.QBrush(scheme[i % len(scheme)])
-            self.graph_cal.drawPoints(x, y, name=name, draw_trendline=True, brush=brush)
-
-    def dialogSaveToFile(self) -> None:
-        assert self.import_options is not None
-        dir = self.import_options["path"].parent
-        file, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-        )
-        if file == "":
-            return
-        self.saveToFile(Path(file))
-
-    def saveToFile(self, path: Path) -> None:
-        assert self.responses.dtype.names is not None
-        names = [  # remove any unpopulated names
-            name
-            for name in self.responses.dtype.names
-            if np.any(~np.isnan(self.model.array[name]))
-        ]
-        nlevels = len(self.model.array)
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-
-        def write_cal_levels(fp, name: str) -> None:
-            fp.write(name + "," + ",".join(str(i) for i in range(len(xs))) + "\n")
-
-        with path.open("w") as fp:
-            fp.write(f"#SPCal Calibration {version('spcal')}\n")
-            fp.write(",Slope,Intercept,r2,Error\n")
-            for name in names:
-                m, b, r2, err = self.calibrationResult(name)
-                fp.write(f"{name},{m},{b},{r2 or ''},{err or ''},\n")
-
-            fp.write(
-                "#Concentrations (kg/L),"
-                + ",".join(str(i) for i in range(nlevels))
-                + "\n"
-            )
-            for name in names:
-                xs = self.model.array[name] * factor
-                fp.write(
-                    f"{name},"
-                    + ",".join("" if np.isnan(x) else str(x) for x in xs)
-                    + "\n"
-                )
-            fp.write(
-                "#Responses (counts)," + ",".join(str(i) for i in range(nlevels)) + "\n"
-            )
-            for name in names:
-                ys = self.responses[name]
-                fp.write(
-                    f"{name},"
-                    + ",".join("" if np.isnan(y) else str(y) for y in ys)
-                    + "\n"
-                )
-
-    def dialogLoadFromFile(self) -> None:
-        if self.import_options is not None:
-            dir = self.import_options["path"].parent
-        else:
-            dir = ""
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Load Calibration", str(dir), "CSV Documents(*.csv);;All Files(*)"
-        )
-        if file == "":
-            return
-        self.loadFromFile(Path(file))
-
-    def loadFromFile(self, path: Path) -> None:
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-
-        concs = {}
+    def accept(self):
         responses = {}
-
-        with path.open("r") as fp:
-            line = fp.readline()
-            if not line.startswith("#SPCal Calibration"):
-                raise ValueError("file is not valid SPCal calibration")
-            while not line.startswith("#Concentrations"):
-                line = fp.readline()
-            line = fp.readline()
-            while not line.startswith("#Responses"):
-                name, *xs = line.split(",")
-                concs[name] = (
-                    np.array([float(x) if x != "" else np.nan for x in xs]) / factor
-                )
-                line = fp.readline().strip()
-            line = fp.readline()
-            while line:
-                name, *ys = line.split(",")
-                responses[name] = np.array(
-                    [float(y) if y != "" else np.nan for y in ys]
-                )
-                line = fp.readline().strip()
-
-        array = np.stack(list(responses.values()), axis=1)
-        self.responses = rfn.unstructured_to_structured(array, names=responses.keys())
-        self.model.beginResetModel()
-
-        array = np.stack(list(concs.values()), axis=1)
-        self.model.array = rfn.unstructured_to_structured(array, names=concs.keys())
-        self.model.endResetModel()
-        self.updateCalibration()
-
-    def calibrationResult(
-        self, name: str
-    ) -> tuple[float | None, float | None, float | None, float | None]:
-        factor = mass_concentration_units[self.combo_unit.currentText()]
-        x = self.model.array[name]
-        y = self.responses[name][~np.isnan(x)]
-        x = x[~np.isnan(x)] * factor
-        if x.size == 0:
-            return None, None, None, None
-        elif x.size == 1:  # single point, force 0
-            return y[0] / x[0], 0.0, None, None
-        else:
-            return weighted_linreg(x, y)
-
-    def buttonClicked(self, button: QtWidgets.QAbstractButton) -> None:
-        sb = self.button_box.standardButton(button)
-        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
-            self.accept()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
-            self.dialogSaveToFile()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
-            self.dialogLoadFromFile()
-        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
-            self.reset()
-
-    def accept(self) -> None:
-        assert self.responses.dtype.names is not None
-
-        responses = {}
-        for name in self.responses.dtype.names:
-            m, _, _, _ = self.calibrationResult(name)
-            if m is not None:
-                responses[name] = m
+        concs = self.concentrations()
+        intensities = self.intensities()
+        for isotope in concs.keys():
+            response, _, _, _ = self.calibrationResult(
+                concs[isotope], intensities[isotope]
+            )
+            if response is not None:
+                responses[isotope] = response
 
         if len(responses) > 0:
             self.responsesSelected.emit(responses)
         super().accept()
 
-    def reset(self) -> None:
-        data = np.array([], dtype=[("<element>", np.float64)])
-        self.model.beginResetModel()
-        self.model.array = np.full(1, np.nan, dtype=data.dtype)
-        self.model.endResetModel()
-        self.responses = self.model.array.copy()
+    def reset(self):
+        self.model_concs.beginResetModel()
+        self.model_concs.isotopes.clear()
+        self.model_concs.concentrations.clear()
+        self.model_concs.endResetModel()
 
-        self.import_options = None
-        self.graph.clear()
-        self.graph_cal.clear()
+        self.model_intensity.beginResetModel()
+        self.model_intensity.isotopes.clear()
+        self.model_intensity.intensities.clear()
+        self.model_intensity.exclusion_regions.clear()
+        self.model_intensity.endResetModel()
+
+    def dialogSaveToFile(self):
+        if len(self.model_concs.concentrations) == 0:
+            return
+        path = next(iter(self.model_concs.concentrations.keys())).path.parent.joinpath(
+            "responses.csv"
+        )
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")], path=path)
+        if path is None:
+            return
+        self.saveToFile(path)
+
+    def saveToFile(self, path: Path):
+        concs = self.concentrations()
+        intensities = self.intensities()
+        factor = mass_concentration_units[self.combo_unit.currentText()]
+
+        with path.open("w") as fp:
+            fp.write(f"#SPCal Calibration {version('spcal')}\n")
+            fp.write("Isotope,Slope,Intercept,r2,Error\n")
+            for isotope in concs.keys():
+                m, b, r2, err = self.calibrationResult(
+                    concs[isotope] * factor, intensities[isotope]
+                )
+                fp.write(f"{isotope},{m or ''},{b or ''},{r2 or ''},{err or ''},\n")
+
+            fp.write(
+                "#Concentrations (kg/L),"
+                + ",".join(str(i) for i in range(len(concs)))
+                + "\n"
+            )
+            for isotope, vals in concs.items():
+                scaled = vals * factor
+                fp.write(
+                    f"{isotope},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in scaled)
+                    + "\n"
+                )
+            fp.write(
+                "#Intensities (cts),"
+                + ",".join(str(i) for i in range(len(intensities)))
+                + "\n"
+            )
+            for isotope, vals in intensities.items():
+                fp.write(
+                    f"{isotope},"
+                    + ",".join("" if np.isnan(x) else str(x) for x in vals)
+                    + "\n"
+                )

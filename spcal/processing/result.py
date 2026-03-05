@@ -1,0 +1,140 @@
+import numpy as np
+
+from spcal import particle
+from spcal.detection import background_mask, detection_maxima
+from spcal.isotope import SPCalIsotopeBase
+from spcal.limit import SPCalLimit
+
+import typing
+
+if typing.TYPE_CHECKING:
+    from spcal.processing.method import SPCalProcessingMethod
+
+
+class SPCalProcessingResult(object):
+    def __init__(
+        self,
+        isotope: SPCalIsotopeBase,
+        limit: SPCalLimit,
+        method: "SPCalProcessingMethod",
+        event_time: float,
+        signals: np.ndarray,
+        times: np.ndarray,
+        detections: np.ndarray,
+        regions: np.ndarray,
+        indicies: np.ndarray | None = None,
+    ):
+        self.isotope = isotope
+        self.limit = limit
+        self.method = method
+
+        self.signals = signals
+        self.times = times
+
+        self.detections = detections
+        self.maxima = detection_maxima(signals, regions)
+        self.regions = regions
+
+        self.peak_indicies = indicies
+        self.number_peak_indicies = 0
+        self.filter_indicies = np.arange(detections.size)
+
+        mask = background_mask(regions, signals.size)
+
+        self.background = float(np.nanmean(signals[mask]))
+        self.background_error = float(np.nanstd(signals[mask], mean=self.background))
+
+        self.event_time = event_time
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"SPCalProcessingResult(number={self.number})"
+
+    @property
+    def num_events(self) -> int:
+        return int(np.count_nonzero(np.isfinite(self.signals)))
+
+    @property
+    def total_time(self) -> float:
+        return self.event_time * self.num_events
+
+    @property
+    def valid_events(self) -> int:
+        """Number of valid (non nan) events."""
+        return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
+
+    @property
+    def ionic_background(self) -> float | None:
+        """Background in kg/L.
+
+        Requires 'response' input.
+        """
+        if self.isotope not in self.method.isotope_options:
+            return None
+        response = self.method.isotope_options[self.isotope].response
+        if response is None:  # pragma: no cover
+            return None
+        return float(self.background / response)
+
+    @property
+    def number(self) -> int:
+        """Number of non-zero detections."""
+        return self.filter_indicies.size
+
+    @property
+    def number_error(self) -> int:
+        """Sqrt of ``number``."""
+        return np.sqrt(self.number)
+
+    @property
+    def number_concentration(self) -> float | None:
+        if not self.method.instrument_options.canCalibrate("mass", "efficiency"):  # pragma: no cover
+            return None
+        else:
+            return np.around(
+                particle.particle_number_concentration(
+                    self.number,
+                    self.method.instrument_options.efficiency,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                    self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                    self.event_time,
+                )
+            )
+
+    @property
+    def mass_concentration(self) -> float | None:
+        if not self.canCalibrate("mass"):  # pragma: no cover
+            return None
+        masses = self.calibrated("mass")
+
+        return particle.particle_total_concentration(
+            masses,
+            self.method.instrument_options.efficiency,  # type: ignore , checked via calibrate('mass')
+            self.method.instrument_options.uptake,  # type: ignore , checked via calibrate('mass')
+            self.total_time,
+        )
+
+    def peakValues(self) -> np.ndarray:
+        if self.peak_indicies is None:  # pragma: no cover
+            raise ValueError("peak_indicies not generated")
+        values = np.zeros(self.number_peak_indicies, dtype=self.detections.dtype)
+        np.add.at(
+            values,
+            self.peak_indicies[self.filter_indicies],
+            self.detections[self.filter_indicies],
+        )
+        return values
+
+    def canCalibrate(self, key: str) -> bool:  # pragma: no cover, tested in method
+        return self.method.canCalibrate(key, self.isotope)
+
+    def calibrated(self, key: str, filtered: bool = True) -> np.ndarray:
+        values = self.detections
+        if filtered:
+            values = values[self.filter_indicies]
+        result = self.method.calibrateTo(values, key, self.isotope, self.event_time)
+        assert isinstance(result, np.ndarray)
+        return result
+
+    def calibrateTo(
+        self, value: float | np.ndarray, key: str
+    ) -> float | np.ndarray:  # pragma: no cover, tested in method
+        return self.method.calibrateTo(value, key, self.isotope, self.event_time)

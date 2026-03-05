@@ -8,12 +8,16 @@ Some features include:
 
 * :ref:`Thresholding<Thresholding Options>` using Gaussian, Poisson and Compound-Poisson statistics.
 
+* :ref:`Recovery of compound-Poisson-lognormal parameters` used in thresholding ICP-TOF data.
+
 * Multiple :ref:`Calibration` pathways.
 
 * Compositional :ref:`filtering<Filtering>` and :ref:`clustering<Compositions>`.
 
 * :ref:`Batch Processing` of many files.
 
+See the :ref:`Basic Overview` for an introduction to the program, the :ref:`Usage` pages for details.
+Guided examples are provided in the :ref:`Tutorials` page.
 
 .. toctree::
    :hidden:

@@ -13,13 +13,11 @@ from spcal.io.tofwerk import (
     read_tofwerk_file,
 )
 
-path = Path(__file__).parent.joinpath("data/tofwerk/tofwerk_au_50nm.h5")
 
-
-def test_is_tofwerk_file():
-    assert is_tofwerk_file(path)
-    assert not is_tofwerk_file(path.parent.parent.joinpath("text/text_normal.csv"))
-    assert not is_tofwerk_file(path.parent.joinpath("non_existant.h5"))
+def test_is_tofwerk_file(test_data_path: Path):
+    assert is_tofwerk_file(test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5"))
+    assert not is_tofwerk_file(test_data_path.joinpath("text/text_normal.csv"))
+    assert not is_tofwerk_file(test_data_path.joinpath("tofwerk/non_existant.h5"))
 
 
 def test_calibration_modes():
@@ -36,9 +34,10 @@ def test_calibration_modes():
             calibrate_mass_to_index(x, mode, [1.0, -2.0, 3.0])
 
 
-def test_calibration():
+def test_calibration(test_data_path: Path):
+    path = test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     with h5py.File(path, "r") as h5:
-        mass = h5["FullSpectra"]["MassAxis"][:]
+        mass: np.ndarray = h5["FullSpectra"]["MassAxis"][:]  # type: ignore , h5
     idx = np.arange(mass.size)
 
     # From file, unable to test other modes
@@ -52,11 +51,12 @@ def test_calibration():
     assert np.allclose(idx_to_mass, mass)
 
 
-def test_integrate():
+def test_integrate(test_data_path: Path):
+    path = test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     with h5py.File(path, "r") as h5:
         data = integrate_tof_data(h5)
-        data_ar = integrate_tof_data(h5, idx=[45])
-        peak_data = h5["PeakData"]["PeakData"][:]
+        data_ar = integrate_tof_data(h5, idx=[45])  # type: ignore
+        peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]  # type: ignore , h5
 
     assert data.shape[-1] == 315
     assert data_ar.shape[-1] == 1
@@ -65,16 +65,19 @@ def test_integrate():
     assert np.allclose(data_ar[..., 0], peak_data[..., 45])
 
 
-def test_factor_extraction_to_acquisition():
+def test_factor_extraction_to_acquisition(test_data_path: Path):
+    path = test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     with h5py.File(path, "r") as h5:
         factor = factor_extraction_to_acquisition(h5)
     assert factor == 33
 
 
-def test_read_tofwerk_file():
+def test_read_tofwerk_file(test_data_path: Path):
+    path = test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     data, info, dwell = read_tofwerk_file(path)
 
     assert data.shape == (200,)
+    assert data.dtype.names is not None
     assert len(data.dtype.names) == 315
     assert np.all(data["[6Li]+"] == 0.0)
     assert np.isclose(data["[40Ar]+"].mean(), 565.63306)

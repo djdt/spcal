@@ -3,9 +3,26 @@ from typing import Generator
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
-from spcal.gui.widgets import ValidColorLineEdit
+from spcal.datafile import SPCalDataFile
+from spcal.isotope import SPCalIsotopeBase
+from spcal.particle import (
+    nebulisation_efficiency_from_concentration,
+    nebulisation_efficiency_from_mass,
+    reference_particle_mass,
+)
+from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
+from spcal.gui.widgets.values import ValueWidget
+from spcal.gui.widgets.units import UnitsWidget
 from spcal.npdb import db
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.processing.result import SPCalProcessingResult
+from spcal.siunits import (
+    density_units,
+    mass_units,
+    mass_concentration_units,
+    size_units,
+    response_units,
+)
 
 
 class FormulaValidator(QtGui.QValidator):
@@ -18,16 +35,16 @@ class FormulaValidator(QtGui.QValidator):
     def validate(self, input: str, _: int) -> QtGui.QValidator.State:
         iter = self.regex.globalMatch(input)
         if len(input) == 0:
-            return QtGui.QValidator.Acceptable
+            return QtGui.QValidator.State.Acceptable
         if not str.isalnum(input.replace(".", "")):
-            return QtGui.QValidator.Invalid
+            return QtGui.QValidator.State.Invalid
         if not iter.hasNext():  # no match
-            return QtGui.QValidator.Intermediate
+            return QtGui.QValidator.State.Intermediate
         while iter.hasNext():
             match = iter.next()
             if match.captured(1) not in db["elements"]["Symbol"]:
-                return QtGui.QValidator.Intermediate
-        return QtGui.QValidator.Acceptable
+                return QtGui.QValidator.State.Intermediate
+        return QtGui.QValidator.State.Acceptable
 
 
 class MassFractionCalculatorDialog(QtWidgets.QDialog):
@@ -44,7 +61,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.ratios: dict[str, float] = {}
         self.mw = 0.0
 
-        self.lineedit_formula = ValidColorLineEdit(formula)
+        self.lineedit_formula = QtWidgets.QLineEdit(formula)
         self.lineedit_formula.setPlaceholderText("Molecular Formula")
         self.lineedit_formula.setValidator(FormulaValidator(self.regex))
         self.lineedit_formula.textChanged.connect(self.recalculate)
@@ -56,7 +73,8 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.textedit_ratios.setFont(QtGui.QFont("Courier"))
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
 
         self.ratiosChanged.connect(self.updateLabels)
@@ -73,21 +91,23 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.completeChanged()
 
-    def accept(self) -> None:
+    def accept(self):
         # dict order messed up during signal, send as list of tuples
         ratios = [(k, v) for k, v in self.ratios.items()]
         self.ratiosSelected.emit(ratios)
         self.molarMassSelected.emit(self.mw)
         super().accept()
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
 
     def isComplete(self) -> bool:
         return len(self.ratios) > 0
 
-    def recalculate(self) -> None:
+    def recalculate(self):
         """Calculates the mass fraction of each valid element in the formula."""
         self.ratios = {}
         elements = db["elements"]
@@ -107,7 +127,7 @@ class MassFractionCalculatorDialog(QtWidgets.QDialog):
             match = iter.next()
             yield match.captured(1), float(match.captured(2) or 1.0)
 
-    def updateLabels(self) -> None:
+    def updateLabels(self):
         self.textedit_ratios.setPlainText("")
         if len(self.ratios) == 0:
             return
@@ -138,7 +158,8 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.lineedit_search = QtWidgets.QLineEdit(formula)
 
         self.button_box = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -155,14 +176,20 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
             QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
         )
         self.table.setSizeAdjustPolicy(
-            QtWidgets.QAbstractScrollArea.AdjustToContentsOnFirstShow
+            QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow
         )
-        self.table.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.table.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.Stretch
+            QtWidgets.QHeaderView.ResizeMode.Stretch
         )
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.table.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.table.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.SingleSelection
+        )
         self.table.setModel(self.proxy)
         self.table.setColumnHidden(4, True)
 
@@ -182,18 +209,198 @@ class ParticleDatabaseDialog(QtWidgets.QDialog):
         self.setLayout(layout)
         self.completeChanged()
 
-    def searchDatabase(self, string: str) -> None:
+    def searchDatabase(self, string: str):
         self.proxy.setSearchString(string)
 
     def isComplete(self) -> bool:
         return len(self.table.selectedIndexes()) > 0
 
-    def completeChanged(self) -> None:
+    def completeChanged(self):
         complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setEnabled(complete)
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
 
-    def accept(self) -> None:
+    def accept(self):
         idx = self.table.selectedIndexes()
-        self.densitySelected.emit(float(self.proxy.data(idx[3])))
+        self.densitySelected.emit(1000.0 * float(self.proxy.data(idx[3])))
         self.formulaSelected.emit(self.proxy.data(idx[0]))
+        super().accept()
+
+
+class TransportEfficiencyDialog(QtWidgets.QDialog):
+    efficencyChanged = QtCore.Signal(object)
+    massResponseChanged = QtCore.Signal(object)
+    efficiencySelected = QtCore.Signal(object)
+    massResponseSelected = QtCore.Signal(object)
+
+    isotopeOptionsChanged = QtCore.Signal(SPCalIsotopeBase, SPCalIsotopeOptions)
+
+    def __init__(
+        self,
+        data_file: SPCalDataFile,
+        isotope: SPCalIsotopeBase,
+        result: SPCalProcessingResult,
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Transport Efficiency Calculator")
+        self.setMinimumWidth(600)
+
+        if result.number == 0:
+            raise ValueError("unable to calculate efficiency, no particles detected")
+
+        self.proc_result = result
+        options = result.method.isotope_options[result.isotope]
+
+        sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
+
+        self.diameter = UnitsWidget(size_units, "nm", options.diameter, sigfigs=sf)
+        self.density = UnitsWidget(density_units, "g/cm³", options.density, sigfigs=sf)
+        self.concentration = UnitsWidget(
+            mass_concentration_units, "µg/L", options.concentration, sigfigs=sf
+        )
+        self.response = UnitsWidget(
+            response_units, "L/µg", options.response, sigfigs=sf
+        )
+        self.mass_fraction = ValueWidget(
+            options.mass_fraction, step=0.1, max=1.0, sigfigs=sf
+        )
+
+        self.diameter.baseValueChanged.connect(self.onOptionChanged)
+        self.density.baseValueChanged.connect(self.onOptionChanged)
+        self.concentration.baseValueChanged.connect(self.onOptionChanged)
+        self.response.baseValueChanged.connect(self.onOptionChanged)
+        self.mass_fraction.valueChanged.connect(self.onOptionChanged)
+
+        self.efficiency = ValueWidget(sigfigs=sf)
+        self.efficiency.setReadOnly(True)
+        self.mass_response = UnitsWidget(mass_units, "ag", sigfigs=sf)
+        self.mass_response.setReadOnly(True)
+
+        self.efficencyChanged.connect(self.efficiency.setValue)
+        self.massResponseChanged.connect(self.mass_response.setValue)
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+
+        gbox_info = QtWidgets.QGroupBox("Data file")
+        gbox_info_layout = QtWidgets.QFormLayout()
+        gbox_info_layout.addRow("Name:", QtWidgets.QLabel(str(data_file.path.name)))
+        gbox_info_layout.addRow("Isotope:", QtWidgets.QLabel(str(isotope)))
+        gbox_info_layout.addRow("No events:", QtWidgets.QLabel(str(result.number)))
+        gbox_info.setLayout(gbox_info_layout)
+
+        gbox_mass = QtWidgets.QGroupBox("Reference properties")
+        gbox_mass_layout = QtWidgets.QFormLayout()
+        gbox_mass_layout.addRow("Density", self.density)
+        gbox_mass_layout.addRow("Response", self.response)
+        gbox_mass_layout.addRow("Mass Fraction", self.mass_fraction)
+        gbox_mass_layout.addRow("Diameter", self.diameter)
+        gbox_mass.setLayout(gbox_mass_layout)
+
+        gbox_conc = QtWidgets.QGroupBox("")
+        gbox_conc_layout = QtWidgets.QFormLayout()
+        gbox_conc_layout.addRow("Concentration", self.concentration)
+        gbox_conc.setLayout(gbox_conc_layout)
+
+        gbox_output = QtWidgets.QGroupBox("Calculated")
+        gbox_ouput_layout = QtWidgets.QFormLayout()
+        gbox_ouput_layout.addRow("Efficiency", self.efficiency)
+        gbox_ouput_layout.addRow("Mass Response", self.mass_response)
+        gbox_output.setLayout(gbox_ouput_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(gbox_info, 0, 0, 1, 2)
+        layout.addWidget(gbox_mass, 1, 0, 1, 1)
+        layout.addWidget(gbox_conc, 2, 0, 1, 1)
+        layout.addWidget(gbox_output, 1, 1, 2, 1)
+        layout.addWidget(self.button_box, 3, 0, 1, 2)
+
+        self.setLayout(layout)
+        self.onOptionChanged()
+
+    def onOptionChanged(self):
+        self.updateEfficiency()
+        self.completeChanged()
+
+    def updateEfficiency(self):
+        density = self.density.baseValue()
+        diameter = self.diameter.baseValue()
+        mass_fraction = self.mass_fraction.value()
+
+        if density is None or diameter is None or mass_fraction is None:
+            self.massResponseChanged.emit(None)
+            self.efficencyChanged.emit(None)
+            return
+
+        reference_mass = reference_particle_mass(density, diameter)
+        mass_response = float(
+            reference_mass
+            * mass_fraction
+            / np.mean(self.proc_result.calibrated("signal"))
+        )
+        self.massResponseChanged.emit(mass_response)
+
+        concentration = self.concentration.baseValue()
+        uptake = self.proc_result.method.instrument_options.uptake
+        response = self.response.baseValue()
+
+        if concentration is not None and uptake is not None:
+            eff = nebulisation_efficiency_from_concentration(
+                self.proc_result.number,
+                concentration=concentration,
+                mass=reference_mass,
+                flow_rate=uptake,
+                time=self.proc_result.total_time,
+            )
+        elif mass_fraction is not None and response is not None and uptake is not None:
+            eff = nebulisation_efficiency_from_mass(
+                self.proc_result.calibrated("signal"),
+                dwell=self.proc_result.event_time,
+                mass=reference_mass,
+                flow_rate=uptake,
+                response_factor=response,
+                mass_fraction=mass_fraction,
+            )
+        else:
+            eff = None
+        self.efficencyChanged.emit(eff)
+
+    def isComplete(self) -> bool:
+        return (
+            self.efficiency.value() is not None
+            or self.mass_response.baseValue() is not None
+        )
+
+    def completeChanged(self):
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
+
+    def accept(self):
+        self.efficiencySelected.emit(self.efficiency.value())
+        self.massResponseSelected.emit(self.mass_response.baseValue())
+
+        # Set any changed
+        options = self.proc_result.method.isotope_options[self.proc_result.isotope]
+        new_options = SPCalIsotopeOptions(
+            self.density.baseValue(),
+            self.response.baseValue(),
+            self.mass_fraction.value(),
+            self.concentration.baseValue(),
+            self.diameter.baseValue(),
+            self.mass_response.baseValue(),
+        )
+        if options != new_options:
+            self.proc_result.method.isotope_options[self.proc_result.isotope] = (
+                new_options
+            )
+            self.isotopeOptionsChanged.emit(self.proc_result.isotope, new_options)
+
         super().accept()

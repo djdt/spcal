@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from scipy import stats
 from scipy.special import erf as erf_sp
@@ -80,7 +82,7 @@ def test_dist_poisson():
 
     qs = np.arange(0.1, 1.0, 0.01)
     for q in qs:
-        assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))
+        assert np.isclose(poisson.quantile(q, lam), stats.poisson.ppf(q, lam))  # type: ignore
 
 
 def test_compound_poisson_lognormal_quantile_approximation():
@@ -92,9 +94,46 @@ def test_compound_poisson_lognormal_quantile_approximation():
         for sigma in sigmas:
             for q in qs:
                 mu = np.log(1.0) - 0.5 * sigma**2
-                qtrue = util.compound_poisson_lognormal_quantile_lookup(q, lam, mu, sigma)
+                qtrue = util.compound_poisson_lognormal_quantile_lookup(
+                    q, lam, mu, sigma
+                )
                 qaprx = util.compound_poisson_lognormal_quantile_approximation(
                     q, lam, mu, sigma
                 )
                 # within 5 %
                 assert np.isclose(qaprx, qtrue, rtol=0.05)
+
+
+def test_compound_poisson_lognormal_quantile_approximation_zero_trunc():
+    q = util.compound_poisson_lognormal_quantile_approximation(0.1, 0.001, 1.0, 0.5)
+    assert q == 0
+
+
+def test_extract_compound_poisson_lognormal_parameters():
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        predicted = util.extract_compound_poisson_lognormal_parameters(data[file])
+        assert np.allclose(params, predicted, atol=0.01)
+
+
+def test_extract_compound_poisson_lognormal_parameters_iterative():
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        x = data[file]
+
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(
+            x, alpha=1e-4, iter_eps=1e-3
+        )
+        assert np.allclose(params, predicted, atol=0.02)
+
+    data = np.load(Path(__file__).parent.joinpath("data/cpln_simulations_peaks.npz"))
+    for file in data:
+        params = [float(x) for x in file.split(",")]
+        x = data[file]
+
+        predicted = util.extract_compound_poisson_lognormal_parameters_iterative(
+            x, alpha=1e-4, iter_eps=1e-3
+        )
+        assert np.allclose(params, predicted, atol=0.02)

@@ -4,12 +4,17 @@ from PySide6 import QtCore, QtGui
 
 
 def create_action(
-    icon: str, label: str, status: str, func: Callable, checkable: bool = False
+    icon: str,
+    label: str,
+    status: str,
+    func: Callable | QtCore.SignalInstance | None = None,
+    checkable: bool = False,
 ) -> QtGui.QAction:
     action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label)
     action.setStatusTip(status)
     action.setToolTip(status)
-    action.triggered.connect(func)
+    if func is not None:
+        action.triggered.connect(func)
     action.setCheckable(checkable)
     return action
 
@@ -34,7 +39,7 @@ class Worker(QtCore.QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-    def run(self) -> None:
+    def run(self):
         try:
             result = self.func(*self.args, **self.kwargs)
         except Exception as e:

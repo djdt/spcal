@@ -81,7 +81,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    with tempfile.TemporaryDirectory() as tmp_dir, tempfile.NamedTemporaryFile() as qrc_tmp:
+    with (
+        tempfile.TemporaryDirectory() as tmp_dir,
+        tempfile.NamedTemporaryFile() as qrc_tmp,
+    ):
         images = create_formula_images(Path(tmp_dir))
 
         write_qrc(Path(qrc_tmp.name), images)

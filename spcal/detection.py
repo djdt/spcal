@@ -12,7 +12,7 @@ def accumulate_detections(
     points_required: int = 1,
     prominence_required: float = 0.2,
     integrate: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
     Peak prominence is calculated for all points above the ``limit_detection``,
@@ -31,36 +31,31 @@ def accumulate_detections(
 
     Returns:
         summed detection regions
-        labels of regions
         regions [starts, ends]
     """
-
-    def local_maxima(x: np.ndarray):
-        return np.logical_and(
-            np.r_[True, x[1:] >= x[:-1]], np.r_[x[:-1] >= x[1:], True]
-        )
 
     if np.any(limit_accumulation > limit_detection):
         raise ValueError("accumulate_detections: limit_accumulation > limit_detection.")
     if points_required < 1:
         raise ValueError("accumulate_detections: minimum size must be >= 1")
-    if prominence_required < 0.0 or prominence_required > 1.0:
+    if prominence_required < 0.0 or prominence_required > 1.0:  # pragma: no cover
         raise ValueError(
             "accumulate_detections: prominence_required must be in the range (0.0, 1.0)"
         )
 
-    possible_detections = np.flatnonzero(
-        np.logical_and(y > limit_detection, local_maxima(y))
-    )
+    above = np.greater_equal(y, limit_detection)
+
+    possible_detections = np.flatnonzero(np.logical_and(above, ext.local_maxima(y)))
 
     prominence, lefts, rights = ext.peak_prominence(
         y, possible_detections, min_base=limit_accumulation
     )
 
-    # First we remove any peaks lower than the lod - base
     min_prominence = limit_detection - limit_accumulation
+
+    # First we remove any peaks lower than the lod - base
     if isinstance(min_prominence, np.ndarray):
-        detected = prominence >= min_prominence[lefts + (rights - lefts) // 2]
+        detected = prominence >= min_prominence[possible_detections]
     else:
         detected = prominence >= min_prominence
     prominence, lefts, rights = (
@@ -69,106 +64,54 @@ def accumulate_detections(
         rights[detected],
     )
 
-    # Overlapping peaks have the same left or right edge
-    _, idx, inv = np.unique(rights, return_index=True, return_inverse=True)
-    max_prominence = np.maximum.reduceat(prominence, idx)[inv]
-    detected = prominence >= max_prominence * prominence_required
-
-    _, idx, inv = np.unique(lefts[detected], return_index=True, return_inverse=True)
-    max_prominence = np.maximum.reduceat(prominence[detected], idx)[inv]
-    new_detected = prominence[detected] >= max_prominence * prominence_required
-
-    # update detections with logical and
-    detected[detected] &= new_detected
-    prominence, lefts, rights = (
-        prominence[detected],
-        lefts[detected],
-        rights[detected],
-    )
-
-    # split any overlapped peaks, prefering most prominent
-    right_larger = prominence[:-1] < prominence[1:]
-    lefts[1:][right_larger] = np.maximum(
-        lefts[1:][right_larger], rights[:-1][right_larger]
-    )
-    rights[:-1][~right_larger] = np.minimum(
-        lefts[1:][~right_larger], rights[:-1][~right_larger]
-    )
-
-    # convert to pairs of left and right edge
+    lefts, rights = ext.split_peaks(prominence, lefts, rights, prominence_required)
     regions = np.stack((lefts, rights), axis=1)
 
-    indicies = regions.ravel()
-    if indicies.size > 0 and indicies[-1] == y.size:
-        indicies = indicies[:-1]
-
     # Get number above limit in each region
-    num_detections = np.add.reduceat(y > limit_detection, indicies)[::2]
+    num_detections = np.add.reduceat(above, regions.flat)[::2]
     # Remove regions without minimum_size values above detection limit
     regions = regions[num_detections >= points_required]
 
     indicies = regions.ravel()
-    if indicies.size > 0 and indicies[-1] == y.size:
-        indicies = indicies[:-1]
 
     # Sum regions
     if integrate:
-        sums = np.add.reduceat(np.clip(y - limit_accumulation, 0.0, None), indicies)[
-            ::2
-        ]
+        base = y - limit_accumulation
+        base[base < 0.0] = 0.0
+        sums = np.add.reduceat(base, indicies)[::2]
     else:
         sums = np.add.reduceat(y, indicies)[::2]
 
-    # Create a label array of detections
-    labels = ext.label_regions(regions, y.size)
-
-    return sums, labels, regions
+    return sums, regions
 
 
-def combine_detections(
-    sums: dict[str, np.ndarray],
-    labels: dict[str, np.ndarray],
-    regions: dict[str, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Computes the relative fraction of each element in each detection.
-    Recalculates the start and end point of each peak from *all* element data.
-    Regions that overlap will be combined into a single region. Fractions are calculated
-    as the sum of all regions contained within each of the reclaculated regions.
-    Each argument must have the same dictionaty keys.
+def background_mask(regions: np.ndarray, size: int) -> np.ndarray:
+    """Create a mask to select background data using ``regions``.
 
     Args:
-        sums: dict of detection counts, sizes, mass, ...
-        labels: dict of labels from `accumulate_detections`
-        regions: dict of regions from `accumulate_detections`
+        regions: regions from ``accumulate_detections``
+        size: size of underlying array, e.g. signals
 
     Returns:
-        dict of total sum per peak
-        combined labels
-        combined regions
-
+        mask of signal background
     """
-    if not all(k in regions.keys() for k in sums.keys()):  # pragma: no cover
-        raise ValueError(
-            "detection_element_combined: labels and regions must have all of sums keys."
-        )
-    names = list(sums.keys())
+    labels = ext.label_regions(regions, size)
+    return labels == 0
 
-    # Get regions from all elements
-    all_regions = ext.combine_regions(list(regions.values()), 2)
 
-    any_label = ext.label_regions(all_regions, next(iter(labels.values())).size)
+def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
+    """Combine regions with an optional allowed overlap.
 
-    # Init to zero, summed later
-    combined = np.zeros(
-        all_regions.shape[0], dtype=[(name, np.float64) for name in sums]
-    )
-    # region_used = np.zeros(all_regions.shape[0])
-    for name in names:
-        idx = np.searchsorted(all_regions[:, 0], regions[name][:, 1], side="left") - 1
-        # np.add.at(region_used, idx, 1)
-        np.add.at(combined[name], idx, sums[name])
+    Regions in ``regions`` that overlap by more than ``overlap`` are merged.
 
-    return combined, any_label, all_regions
+    Args:
+        regions: list of regions from ``accumulate_detections``
+        overlap: maximum allowed overlap
+
+    Returns:
+        merged regions
+    """
+    return ext.combine_regions(regions, overlap)  # pragma: no cover, covered in ext
 
 
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
@@ -178,11 +121,11 @@ def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
 
     Args:
         y: array
-        regions: regions from `accumulate_detections`
+        regions: regions from ``accumulate_detections``
 
     Returns:
         idx of maxima
     """
 
-    idx = ext.maxima(y, regions)
+    idx = ext.maxima_between(y, regions)
     return idx

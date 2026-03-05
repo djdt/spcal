@@ -4,11 +4,21 @@ import logging
 import sys
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal.resources  # import to load
-from spcal.gui.main import SPCalWindow
+import spcal.resources  # noqa: F401
+from spcal.datafile import (
+    SPCalNuDataFile,
+    SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
+)
+from spcal.gui.mainwindow import SPCalMainWindow
+from spcal.io.nu import is_nu_directory, is_nu_run_info_file
+from spcal.io.text import guess_text_parameters, is_text_file
+from spcal.io.tofwerk import is_tofwerk_file
+from spcal.isotope import SPCalIsotope
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")
@@ -16,11 +26,41 @@ logger.setLevel(logging.INFO)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    def existing_file(file: str) -> Path:
-        path = Path(file)
-        if not path.exists():
-            raise argparse.ArgumentTypeError(f"file {file} does not exist")
-        return path
+    class DataFileAction(argparse.Action):
+        def __call__(
+            self,
+            parser: argparse.ArgumentParser,
+            namespace: argparse.Namespace,
+            values: Any | list[Any],
+            option_string: str | None = None,
+        ):
+            if isinstance(values, list):
+                path = Path(values[0])
+            else:
+                path = Path(values)
+
+            if not path.exists():
+                parser.error(f"{path} does not exist")
+
+            if is_nu_directory(path) or is_nu_run_info_file(path):
+                data_file = SPCalNuDataFile.load(path)
+            elif is_tofwerk_file(path):
+                data_file = SPCalTOFWERKDataFile.load(path)
+            elif is_text_file(path):
+                delim, skip_rows, _ = guess_text_parameters(path.open().readlines(2048))
+                data_file = SPCalTextDataFile.load(
+                    path, delimiter=delim, skip_rows=skip_rows
+                )
+            else:
+                parser.error(f"{path} is not a valid single particle file")
+
+            if isinstance(values, list):
+                isotopes = [SPCalIsotope.fromString(value) for value in values[1:]]
+                data_file.selected_isotopes = isotopes
+
+            data_files = getattr(namespace, "open") or []
+            data_files.append(data_file)
+            setattr(namespace, "open", data_files)
 
     parser = argparse.ArgumentParser(
         prog="spcal",
@@ -28,13 +68,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--sample", type=existing_file, help="open file as sample on startup"
-    )
-    parser.add_argument(
-        "--reference", type=existing_file, help="open file as reference on startup"
-    )
-    parser.add_argument(
-        "--auto-yes", action="store_true", help="answer yes to all prompts"
+        "--open",
+        nargs="+",
+        metavar=("PATH", "ISOTOPES"),
+        type=str,
+        action=DataFileAction,
+        help="open sample file and optionally select isotopes",
     )
     parser.add_argument(
         "--nohook", action="store_true", help="don't install the execption hook"
@@ -64,7 +103,23 @@ def main(argv: list[str] | None = None) -> int:
     app.setApplicationVersion(importlib.metadata.version("spcal"))
     app.setWindowIcon(QtGui.QIcon(str(files("spcal.resources").joinpath("app.ico"))))
 
-    window = SPCalWindow()
+    # Set the icon theme
+    scheme = app.styleHints().colorScheme()
+    if scheme == QtCore.Qt.ColorScheme.Unknown:
+        if (
+            app.palette().window().color().lightness()
+            > app.palette().windowText().color().lightness()
+        ):
+            scheme = QtCore.Qt.ColorScheme.Light
+        else:
+            scheme = QtCore.Qt.ColorScheme.Dark
+
+    if scheme == QtCore.Qt.ColorScheme.Dark:
+        QtGui.QIcon.setThemeName("spcal-dark")
+    else:
+        QtGui.QIcon.setThemeName("spcal")
+
+    window = SPCalMainWindow()
 
     if not args.nohook:
         sys.excepthook = window.exceptHook
@@ -76,14 +131,9 @@ def main(argv: list[str] | None = None) -> int:
 
     window.show()
 
-    if args.sample:
-        dlg = window.sample.dialogLoadFile(args.sample)
-        if args.auto_yes:
-            dlg.accept()
-    if args.reference:
-        dlg = window.reference.dialogLoadFile(args.reference)
-        if args.auto_yes:
-            dlg.accept()
+    if args.open:
+        for data_file in args.open:
+            window.files.addDataFile(data_file)
 
     # Keep event loop active with timer
     timer = QtCore.QTimer()

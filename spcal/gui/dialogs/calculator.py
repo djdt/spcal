@@ -1,42 +1,40 @@
 import numpy as np
-import numpy.lib.recfunctions as rfn
 from PySide6 import QtCore, QtGui, QtWidgets
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
+from spcal.gui.modelviews.isotope import IsotopeComboBox
 
-from spcal.gui.widgets import CollapsableWidget
 from spcal.pratt import (
     BinaryFunction,
     Parser,
     ParserException,
-    Reducer,
-    ReducerException,
     UnaryFunction,
 )
 
 
 class CalculatorFormula(QtWidgets.QTextEdit):
-    """Input for the calculator.
-
-    Parsers input using a `:class:pewpew.lib.pratt.Parser` and
-    colors input red when invalid. Implements completion when `completer` is set.
-    """
+    requestSubmit = QtCore.Signal()
 
     def __init__(
         self,
         text: str,
         variables: list[str],
-        parent: QtWidgets.QWidget = None,
+        parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(text, parent)
-        self.base_color = self.palette().color(QtGui.QPalette.Base)
+        self.base_color = self.palette().color(QtGui.QPalette.ColorRole.Base)
 
-        self.completer: QtWidgets.QCompleter = None
+        self.completer: QtWidgets.QCompleter | None = None
 
         self.textChanged.connect(self.calculate)
 
         self.parser = Parser(variables)
         self.expr = ""
 
-    def calculate(self) -> None:
+    def sizeHint(self) -> QtCore.QSize:
+        size = super().sizeHint()
+        return QtCore.QSize(size.width(), self.fontMetrics().height() * 5)
+
+    def calculate(self):
         try:
             self.expr = self.parser.parse(self.toPlainText())
         except ParserException:
@@ -44,61 +42,77 @@ class CalculatorFormula(QtWidgets.QTextEdit):
         self.revalidate()
 
     def hasAcceptableInput(self) -> bool:
-        return self.expr != ""
+        return self.expr != "" and any(x in self.expr for x in self.parser.variables)
 
-    def revalidate(self) -> None:
+    def revalidate(self):
         self.setValid(self.hasAcceptableInput())
 
-    def setValid(self, valid: bool) -> None:
+    def setValid(self, valid: bool):
         palette = self.palette()
         if valid:
             color = self.base_color
         else:
             color = QtGui.QColor.fromRgb(255, 172, 172)
-        palette.setColor(QtGui.QPalette.Base, color)
+        palette.setColor(QtGui.QPalette.ColorRole.Base, color)
         self.setPalette(palette)
 
-    def setCompleter(self, completer: QtWidgets.QCompleter) -> None:
+    def setCompleter(self, completer: QtWidgets.QCompleter):
         """Set the completer used."""
-        if self.completer is not None:
+        if self.completer is not None:  # pragma: no cover
             self.completer.disconnect(self)
 
         self.completer = completer
         self.completer.setWidget(self)
-        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.completer.setCaseSensitivity(QtCore.Qt.CaseSensitivity.CaseInsensitive)
         self.completer.activated.connect(self.insertCompletion)
 
-    def insertCompletion(self, completion: str) -> None:
+    def insertCompletion(self, completion: str):
+        if self.completer is None:
+            return
         tc = self.textCursor()
         for _ in range(len(self.completer.completionPrefix())):
             tc.deletePreviousChar()
         tc.insertText(completion)
         self.setTextCursor(tc)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        if self.completer is not None and self.completer.popup().isVisible():
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        if self.completer is None:
+            raise ValueError("no completer, did you not set it?")
+
+        popup = self.completer.popup()
+        if popup is not None and popup.isVisible():
             if event.key() in [  # Ignore keys when popup is present
-                QtCore.Qt.Key_Enter,
-                QtCore.Qt.Key_Return,
-                QtCore.Qt.Key_Escape,
-                QtCore.Qt.Key_Tab,
-                QtCore.Qt.Key_Down,
-                QtCore.Qt.Key_Up,
+                QtCore.Qt.Key.Key_Enter,
+                QtCore.Qt.Key.Key_Return,
+                QtCore.Qt.Key.Key_Escape,
+                QtCore.Qt.Key.Key_Tab,
+                QtCore.Qt.Key.Key_Down,
+                QtCore.Qt.Key.Key_Up,
             ]:
                 event.ignore()
                 return
 
-        super().keyPressEvent(event)
+        if event.key() in [QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return]:
+            if self.hasAcceptableInput():
+                self.requestSubmit.emit()
+                event.accept()
+            else:
+                event.ignore()
+            return
+        else:
+            super().keyPressEvent(event)
+
+        if popup is None:
+            return
 
         eow = "~!@#$%^&*()+{}|:\"<>?,./;'[]\\-="
         tc = self.textCursor()
-        tc.select(QtGui.QTextCursor.WordUnderCursor)
+        tc.select(QtGui.QTextCursor.SelectionType.WordUnderCursor)
         prefix = tc.selectedText()
+
         if prefix != self.completer.completionPrefix():
             self.completer.setCompletionPrefix(prefix)
-            self.completer.popup().setCurrentIndex(
-                self.completer.completionModel().index(0, 0)
-            )
+            popup.setCurrentIndex(self.completer.completionModel().index(0, 0))
 
         if (
             len(prefix) < 2
@@ -106,29 +120,42 @@ class CalculatorFormula(QtWidgets.QTextEdit):
             or event.text()[-1] in eow
             or prefix == self.completer.currentCompletion()
         ):
-            self.completer.popup().hide()
+            popup.hide()
         else:
             rect = self.cursorRect()
             rect.setWidth(
-                self.completer.popup().sizeHintForColumn(0)
-                + self.completer.popup().verticalScrollBar().sizeHint().width()
+                popup.sizeHintForColumn(0)
+                + popup.verticalScrollBar().sizeHint().width()
             )
             self.completer.complete(rect)
 
 
 class CalculatorExprList(QtWidgets.QListWidget):
-    exprRemoved = QtCore.Signal(str)
+    expressionRemoved = QtCore.Signal(SPCalIsotopeExpression)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
-        if event.matches(QtGui.QKeySequence.StandardKey.Backspace) or event.matches(
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        if event.key() == QtCore.Qt.Key.Key_Backspace or event.matches(
             QtGui.QKeySequence.StandardKey.Delete
         ):
             for index in self.selectedIndexes():
                 item = self.takeItem(index.row())
-                self.exprRemoved.emit(item.text())
+                self.expressionRemoved.emit(item.data(QtCore.Qt.ItemDataRole.UserRole))
                 del item
 
         super().keyPressEvent(event)
+
+    def addExpression(self, expr: SPCalIsotopeExpression):
+        item = QtWidgets.QListWidgetItem()
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, expr)
+        item.setText(f"{expr.name}: " + " ".join(str(x) for x in expr.tokens))
+        self.addItem(item)
+
+    def expressions(self) -> list[SPCalIsotopeExpression]:
+        exprs = []
+        for i in range(self.count()):
+            expr = self.item(i).data(QtCore.Qt.ItemDataRole.UserRole)
+            exprs.append(expr)
+        return exprs
 
 
 class CalculatorDialog(QtWidgets.QDialog):
@@ -165,26 +192,28 @@ class CalculatorDialog(QtWidgets.QDialog):
         ),
     }
 
-    expressionAdded = QtCore.Signal(str, str)
-    expressionRemoved = QtCore.Signal(str)
+    expressionsChanged = QtCore.Signal(list)
 
     def __init__(
         self,
-        names: list[str],
-        current_expr: dict[str, str],
+        isotopes: list[SPCalIsotope],
+        expressions: list[SPCalIsotopeExpression],
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
         self.setWindowTitle("Calculator")
 
-        self.names = names
-        self.current_expr = current_expr
+        self.isotope_table: dict[str, SPCalIsotope] = {
+            str(isotope): isotope
+            for isotope in isotopes
+            if isinstance(isotope, SPCalIsotope)
+        }
+        self.old_expressions = expressions
 
-        self.output = QtWidgets.QLineEdit("Result")
-        self.output.setEnabled(False)
-
-        self.combo_element = QtWidgets.QComboBox()
-        self.combo_element.activated.connect(self.insertVariable)
+        self.combo_isotope = IsotopeComboBox()
+        self.combo_isotope.addItem("Isotopes")
+        self.combo_isotope.addIsotopes(isotopes)  # type: ignore
+        self.combo_isotope.activated.connect(self.insertIsotope)
 
         functions = [k + v[0][1] for k, v in self.functions.items()]
         tooltips = [v[0][2] for v in self.functions.values()]
@@ -192,30 +221,51 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.combo_function.addItem("Functions")
         self.combo_function.addItems(functions)
         for i in range(0, len(tooltips)):
-            self.combo_function.setItemData(i + 1, tooltips[i], QtCore.Qt.ToolTipRole)
+            self.combo_function.setItemData(
+                i + 1, tooltips[i], QtCore.Qt.ItemDataRole.ToolTipRole
+            )
         self.combo_function.activated.connect(self.insertFunction)
 
-        self.reducer = Reducer({})
-        self.formula = CalculatorFormula("", variables=[])
-        self.formula.textChanged.connect(self.completeChanged)
-        # self.formula.textChanged.connect(self.refresh)
-
-        self.reducer.operations.update({k: v[1] for k, v in self.functions.items()})
+        self.formula = CalculatorFormula("", variables=list(self.isotope_table.keys()))
         self.formula.parser.nulls.update(
             {k: v[0][0] for k, v in self.functions.items()}
         )
+        self.formula.setCompleter(
+            QtWidgets.QCompleter(
+                list(self.isotope_table.keys())
+                + [k + "(" for k in self.functions.keys()]
+            )
+        )
+        self.formula.requestSubmit.connect(self.reformAndAddExpression)
+        self.formula.textChanged.connect(self.completeChanged)
+
+        self.button_add = QtWidgets.QToolButton()
+        self.button_add.setIcon(QtGui.QIcon.fromTheme("list-add"))
+        self.button_add.setText("Add Expression")
+        self.button_add.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.button_add.setEnabled(False)
+        self.button_add.pressed.connect(self.reformAndAddExpression)
+
+        self.name = QtWidgets.QLineEdit()
+        self.name.textChanged.connect(self.completeChanged)
+
+        self.expressions = CalculatorExprList()
+        for expr in expressions:
+            self.expressions.addExpression(expr)
 
         layout_combos = QtWidgets.QHBoxLayout()
-        layout_combos.addWidget(self.combo_element)
+        layout_combos.addWidget(self.combo_isotope)
         layout_combos.addWidget(self.combo_function)
+
+        layout_name = QtWidgets.QHBoxLayout()
+        layout_name.addWidget(self.name, 1)
+        layout_name.addWidget(self.button_add, 0, QtCore.Qt.AlignmentFlag.AlignRight)
 
         layout_controls = QtWidgets.QFormLayout()
         layout_controls.addRow("Insert:", layout_combos)
         layout_controls.addRow("Formula:", self.formula)
-        layout_controls.addRow("Result:", self.output)
-
-        self.expressions = CalculatorExprList()
-        self.expressions.exprRemoved.connect(self.removeExpr)
+        layout_controls.addRow("Name:", layout_name)
+        layout_controls.addRow("Current:", self.expressions)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -224,75 +274,59 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-        # CollapsableWidget needs layout to be defined
         layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(layout_controls, 1)
+        layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
-        expr_layout = QtWidgets.QVBoxLayout()
-        expr_layout.addWidget(self.expressions, 1)
-        collapse = CollapsableWidget("Current Expressions", parent=self)
-        collapse.area.setLayout(expr_layout)
+    def reformAndAddExpression(self):
+        expr = self.formula.expr
+        tokens = expr.split(" ")
+        name = self.name.text()
+        if name == "":
+            name = f"({expr})"
 
-        layout.addLayout(layout_controls, 1)
-        layout.addWidget(collapse, 0)
-        layout.addWidget(self.button_box, 0)
-
-        self.initialise()  # refreshes
+        expr = SPCalIsotopeExpression(
+            name=name,
+            tokens=tuple([self.isotope_table.get(token, token) for token in tokens]),
+        )
+        self.expressions.addExpression(expr)
+        self.formula.clear()
 
     def isComplete(self) -> bool:
         if not self.formula.hasAcceptableInput():
             return False
-        if len(self.formula.expr.split(" ")) < 2:
+        name = self.name.text()
+        if name == "":
+            return True
+
+        if any(name == x for x in self.isotope_table.keys()):
             return False
-        if self.formula.expr in self.current_expr.values():
+        if any(name == x.name for x in self.expressions.expressions()):
             return False
         return True
 
-    def completeChanged(self) -> None:
-        complete = self.isComplete()
-        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
-            complete
-        )
+    def completeChanged(self):
+        self.button_add.setEnabled(self.isComplete())
 
-    def removeExpr(self, expr: str) -> None:
-        name = next(k for k, v in self.current_expr.items() if v == expr)
-        self.current_expr.pop(name)
-        self.expressionRemoved.emit(name)
+    def insertIsotope(self, index: int):
+        if index == 0:
+            return
+        isotope = self.combo_isotope.isotope(index)
+        self.combo_isotope.setCurrentIndex(0)
+        self.formula.insertPlainText(str(isotope))
+        self.formula.setFocus()
 
-    def accept(self) -> None:
-        new_name = (
-            "{"
-            + self.formula.toPlainText().translate(str.maketrans("", "", " \n\t"))
-            + "}"
-        )
+    def accept(self):
+        if self.formula.hasAcceptableInput():
+            self.reformAndAddExpression()
 
-        self.current_expr[new_name] = self.formula.expr
-        self.expressionAdded.emit(new_name, self.formula.expr)
+        expressions = self.expressions.expressions()
+        if set(expressions) != set(self.old_expressions):
+            self.expressionsChanged.emit(expressions)
+        super().accept()
 
-        self.expressions.addItem(self.formula.expr)
-        self.completeChanged()
-        # super().accept()
-
-    def initialise(self) -> None:
-        self.combo_element.clear()
-        self.combo_element.addItem("Elements")
-        self.combo_element.addItems(self.names)
-
-        self.formula.parser.variables = list(self.names)
-        self.formula.setCompleter(
-            QtWidgets.QCompleter(
-                list(self.formula.parser.variables)
-                + [k + "(" for k in self.functions.keys()]
-            )
-        )
-        self.formula.valid = True
-        self.formula.setText(self.names[0])  # refreshes
-
-        self.expressions.clear()
-        for name, expr in self.current_expr.items():
-            self.expressions.addItem(expr)
-
-    def insertFunction(self, index: int) -> None:
+    def insertFunction(self, index: int):
         if index == 0:
             return
         function = self.combo_function.itemText(index)
@@ -300,41 +334,3 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.formula.insertPlainText(function)
         self.combo_function.setCurrentIndex(0)
         self.formula.setFocus()
-
-    def insertVariable(self, index: int) -> None:
-        if index == 0:
-            return
-        self.formula.insertPlainText(self.combo_element.itemText(index))
-        self.combo_element.setCurrentIndex(0)
-        self.formula.setFocus()
-
-    # def refresh(self) -> None:
-    #     self.reducer.variables = {
-    #         name: self.sample.responses[name] for name in self.sample.names
-    #     }
-    #     try:
-    #         result = self.reducer.reduce(self.formula.expr)
-    #         if np.isscalar(result):
-    #             self.output.setText(f"{result:.6g}")  # type: ignore
-    #         elif isinstance(result, np.ndarray):
-    #             self.output.setText(f"Events: {result.size}, mean: {result.mean():.6g}")
-    #     except (ReducerException, ValueError) as e:
-    #         self.output.setText(str(e))
-
-    @staticmethod
-    def reduceForData(data: np.ndarray, expressions: dict[str, str]) -> np.ndarray:
-        reducer = Reducer(variables={name: data[name] for name in data.dtype.names})
-        new_names = []
-        new_datas = []
-        for name, expr in expressions.items():
-            if name in data.dtype.names:
-                continue  # already calculated
-            try:
-                new_datas.append(reducer.reduce(expr))
-                new_names.append(name)
-            except ReducerException:
-                pass
-
-        if len(new_datas) > 0:
-            data = rfn.append_fields(data, new_names, new_datas, usemask=False)
-        return data
