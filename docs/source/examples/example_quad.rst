@@ -39,7 +39,7 @@ A sample is loaded and then calibrated using the :ref:`Reference Particle` metho
     A detailed guide on the :ref:`Data Import` wizard is available.
 
     .. _tutorial quad options:
-    .. figure:: ../images/example_quad_options.png
+    .. figure:: ../images/tutorial_quad_options.png
        :width: 60%
        :align: center
 
@@ -49,11 +49,11 @@ A sample is loaded and then calibrated using the :ref:`Reference Particle` metho
 
 #. Enter the experiment parameters.
     In the **Instrument Options Dock**, enter the :term:`uptake` from :numref:`table parameters`.
-    Enter the :term:`density`, :term:`response` and :term:`mass fraction` into the **Isotope Options Dock**.
+    Enter the :term:`density`, :term:`ionic response` and :term:`mass fraction` into the **Isotope Options Dock**.
     The button next to *Trans. Efficiency* should now be active.
 
 #. Calculate the :term:`transport efficiency`.
-   *Ensure that the reference data file is currently selected* in the **Data Files Dock**!
+    *Ensure that the reference data file is currently selected* in the **Data Files Dock**!
     Press to button next to the *Trans. Eddiciency* field to open the **Transport Efficiency Calculator**.
     Most values should be pre-filled from the existing method.
     Enter the reference particle diameter listed in :numref:`table parameters`.
@@ -71,7 +71,7 @@ A sample is loaded and then calibrated using the :ref:`Reference Particle` metho
 
        SPCal histogram view after importing ``quad_sample_15nm.csv`` and calibrating into sizes.
 
-   The side toolbar can be used to show a histogram of the particle sizes, as in :numref:`_tutorial quad results`.
+   The side toolbar can be used to show a histogram of the particle sizes, as in :numref:`tutorial quad results`.
 
 
 #. Export the results.

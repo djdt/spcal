@@ -13,29 +13,24 @@ In this example a mixture of gold, silver and gold-silver core-shell particles a
     In this example we are only interested in the gold and silver isotopes (Ag107, Ag109 and Au197).
     Using the :ref:`Data Import` wizard, filter out the unused isoptes (transition metals) by unchecking their columns.
 
-    .. _tof2 sample tab:
-    .. figure:: ../images/tutorial_tof_cluster_import.png
-       :width: 60%
-       :align: center
-
-       The sample tab after importing the gold and silver isotope data.
-
 #. Select the :ref:`Compositions` view.
     A detailed description of the view can be found in the :ref:`Processing Results` section.
     In :numref:`tof cluster results 1` we can see two clusters, representing pure gold and pure silever particles.
     The core-shell are fewer in number that the default cutoff (5% of the maximum cluster) so are hidden.
 
-    .. _tof2 results pre:
-    .. figure:: ../images/example_tof_cluster_results_1.png
+    .. _tof cluster results 1:
+    .. figure:: ../images/tutorial_tof_cluster_results_1.png
        :align: center
+
+       Composition clusters, only two are visible.
 
 #. Lower the minimum cluster size.
     The default parameters limit the minmum cluster size to 5% of the total particle count.
     In this example the number of AuAg core-shell aprticles is small so we need to decrease it.
     In the graph options dialog, set the *Minimum cluster size* to 100.
 
-    .. _tof2 results post:
-    .. figure:: ../images/example_tof_cluster_results_2.png
+    .. _tof cluster results 2:
+    .. figure:: ../images/tutorial_tof_cluster_results_2.png
        :align: center
 
        Three particle compositions are visible, gold, silver and gold-silver core-shell.
@@ -43,16 +38,16 @@ In this example a mixture of gold, silver and gold-silver core-shell particles a
 #. Filter results to include only pure gold particles.
     We can use the clustering results to limit our analysis to a single particle type.
     Open the **Filter Dialog** and add a cluter filter for cluster index 2 (gold particles), see :ref:`Filtering` for details.
-    The cluster index for each cluster can be found below the pie in the Composition View, as in :numref:`tof2 results post`.
+    The cluster index for each cluster can be found below the pie in the Composition View, as in :numref:`tof cluster results 2`.
 
     .. note::
         A similar result could be obtained by filtering for particles that contain no silver (Ag signal == 0).
         
 
-#. Switch to the :ref:`Histogram` view.
+#. Switch to the :ref:`Histograms` view.
     The displayed histogram for gold is now free of interfering signals from core-shell particles.
 
-    .. _tof2 filtered:
+    .. _tof cluster filtered:
     .. figure:: ../images/tutorial_tof_cluster_filtered.png
        :align: center
 

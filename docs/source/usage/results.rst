@@ -15,9 +15,16 @@ A description of each view is below.
 Time Resolved Signals
 ---------------------
 
+.. _results particle:
+.. figure:: ../images/usage_results_particle_view.png
+   :align: center
+
+   A view of the time resolved single particle signals. Detections are highlighted with scatter points.
+   An exclusion region has been added to this view, preventing processing in a certain region.
+
 The **Particle View** displays one or all of the isotopes of the currently selected data file.
 Signals are plotted as lines and detections as scatter points at peak maxima.
-*Right-clicking* the view opens some options such as adding an *exclusion region* to prevent processing in a certain region of the file, as in :numref:`results particle view`.
+*Right-clicking* the view opens some options such as adding an *exclusion region* to prevent processing in a certain region of the file, as in :numref:`results particle`.
 
 This view has no graph options.
 

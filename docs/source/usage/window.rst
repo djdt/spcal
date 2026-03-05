@@ -7,7 +7,7 @@ Basic Overview
 
    The main SPCal window with a TOF data file loaded. |c1| Instrument specific options. |c2| Limit (thresholding) options. |c3| Currently loaded data files. |c4| Isotope specific options. |c5| Results summary. |c6| The main toolbar. |c7| The view toolbar. |c8| The main view, showing particle data.
 
-The SPCal GUI consists of a main window where data is plotted (:nuref:`overview` |c8|) with several moveable docks (:numref:`overview` |c1| to |c5|) and two toolbars (:numref:`overview` |c6| and |c7|).
+The SPCal GUI consists of a main window where data is plotted (:numref:`overview` |c8|) with several moveable docks (:numref:`overview` |c1| to |c5|) and two toolbars (:numref:`overview` |c6| and |c7|).
 Docks can be reorganised or hidden to make a layout thats suits you. This layout is saved on exit and restored when SPCal starts.
 To restore hidden docks use **View -> Show/hide dock widgets** and to restore the default layout **View -> Restore Default Layout**.
 

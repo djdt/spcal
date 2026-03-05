@@ -1,5 +1,5 @@
-Batch Processing Wizard
-=======================
+Batch Processing
+================
 
 When a large number of samples are collected in the same experiment, individually importing, processing and exporting data can be tedious.
 The **Batch Process Wizard** can be used to automate this process and is started via **File -> Batch Processing**.

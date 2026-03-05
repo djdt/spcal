@@ -38,7 +38,7 @@ Columns can be selected or ignore using their corresponding checkboxes, to quick
       - Skips the first *x* rows of the file (the header). The first non-skipped row should be the column names.
 
 .. warning::
-   The :term:`dwelltime` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
+   The :term:`event time` and choice of intensity units (*counts* or *CPS*) cannot be chaged after import.
 
 ToF Data
 --------

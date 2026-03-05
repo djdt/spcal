@@ -23,6 +23,8 @@ In the SPCal GUI we can determine SIA values for each mass by loading a low conc
        :width: 60%
        :align: center
 
+       The single ion dialog.
+
    The dialog should now look like :numref:`tutorial single ion`, with a histogram of all signals shown on the left and calcualated shapes on the right.
 
 #. Check the calculated shape values for anomalies.

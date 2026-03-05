@@ -1,5 +1,5 @@
-Guided Examples
-===============
+Tutorials
+=========
 
 These tutorials will guide you through various aspects of spICP-MS data analysis using SPCal.
 Data files used in the tutorials is available at `<https://github.com/djdt/djdt.github.io/tree/main/spcal_example_data>`_.

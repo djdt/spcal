@@ -72,7 +72,7 @@ Here a low level (1 - 10 ppb) ionic standard can be loaded and used to determine
 Single Ion Distribution Dialog
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: ../image/usage_sia_dialog.png
+.. figure:: ../images/usage_sia_dialog.png
    :align: center
 
    The SIA dialog is used to determine per-mass SIA shapes for compoun Poisson thresholding.
