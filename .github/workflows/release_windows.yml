@@ -25,8 +25,6 @@ jobs:
       run: |
         pip install . -v
         python setup.py build_ext --inplace
-    - name: Test
-      run: echo "$(python -c "import os; print(os.environ)")"
     - name: Build exec
       run: |
         pyinstaller --clean -y spcal.spec
