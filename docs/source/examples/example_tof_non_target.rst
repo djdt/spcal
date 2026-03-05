@@ -7,7 +7,7 @@ In this example, elements of interest in a soil extract are automatically select
 A full description of the non-target screening tool is available at :ref:`Non-target Screening`.
 
 #. Download the required data file.
-    The ``tof_non_target.csv`` file can be found in the `example_3_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_3_data.zip>`_ archive.
+    The ``tof_non_target`` Nu directory can be found in the `example_3_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_3_data.zip>`_ archive.
 
 #. Import the sample file.
     Open the sample file to start the :ref:`Data Import` wizard.

@@ -13,3 +13,4 @@ Examples
    example_quad
    example_tof_cluster
    example_tof_non_target
+   example_tof_single_ion
