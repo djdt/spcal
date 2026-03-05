@@ -84,13 +84,13 @@ Non-target Screening
 --------------------
 
 .. _non target screen:
-.. figure:: ../images/usage_import_screen.png
+.. figure:: ../images/usage_nontarget.png
    :align: center
 
-   The non-target screening options available for the text and ToF importers.
+   The non-target screening options available for the ToF importers.
 
 
-Both the text and ToF import dialogs (:numref:`text import dialog`, :numref:`tof import dialog`) have the option to screen data for elements of interest, by pressing the **Screen** button in the bottom left corner.
+Both the Nu and TOFWERK ToF import dialogs (:numref:`tof import dialog`) have the option to screen data for elements of interest, by pressing the **Screen** button in the bottom left corner.
 This will search the first *Minimum no. events* events of the imported data file for elements / isotopes with greater than *Screening ppm* detections per million events. If *Replace isotopes* is selected then all previous selections are discarded, otherwise screened isotopes are selected in addition to existing selections.
 
 See Gonzalez de Vega et al. [1]_ for an example of using SPCal for screening.
