@@ -5,11 +5,9 @@ from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile, SPCalTextDataFile
-from spcal.gui.dialogs.io import (
-    NuImportDialog,
-    TextImportDialog,
-    TofwerkImportDialog,
-)
+from spcal.gui.dialogs.io.nu import NuImportDialog
+from spcal.gui.dialogs.io.text import TextImportDialog
+from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
 
