@@ -1,1 +1,1 @@
-CALIBRATION_KEYS = ["signal", "mass", "size"]  # , "volume"] :: scaled mass
+CALIBRATION_KEYS = ["signal", "mass", "size"]

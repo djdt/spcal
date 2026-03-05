@@ -149,7 +149,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         "signal": ("Signal (cts)", None, 1.0),
         "mass": ("Mass", "g", 1e3),  # kg -> g
         "size": ("Size", "m", 1.0),
-        "volume": ("Volume", "L", 1.0),
     }
 
     def __init__(

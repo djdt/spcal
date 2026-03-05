@@ -14,7 +14,6 @@ from spcal.siunits import (
     number_concentration_units,
     signal_units,
     size_units,
-    volume_units,
 )
 
 
@@ -57,9 +56,6 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         elif key == "size":
             units = size_units
             default_unit = "nm"
-        elif key == "volume":
-            units = volume_units
-            default_unit = "µm³"
         elif key != "signal":
             raise ValueError(f"unknown key '{key}'")
 

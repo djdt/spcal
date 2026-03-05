@@ -29,7 +29,7 @@ from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
-from spcal.siunits import mass_units, size_units, volume_units
+from spcal.siunits import mass_units, size_units
 
 from spcal.gui.batch import (
     FILE_PAGE_ID,
@@ -473,7 +473,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             "Instrument, limit and isotope options"
         )
         self.check_export_options.setChecked(True)
-        self.check_export_clusters = QtWidgets.QCheckBox("Clustering results")
+        self.check_export_clusters = QtWidgets.QCheckBox("Particle compositions")
         self.check_export_arrays = QtWidgets.QCheckBox("Particle data arrays")
         self.check_export_arrays.setChecked(True)
         self.check_export_summary = QtWidgets.QCheckBox("Batch summary")
@@ -498,10 +498,6 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(list(size_units.keys()))
         self.size_units.setCurrentText("nm")
-
-        self.volume_units = QtWidgets.QComboBox()
-        self.volume_units.addItems(list(volume_units.keys()))
-        self.volume_units.setCurrentText("nm³")
 
         self.status = QtWidgets.QLabel("")
 
@@ -543,7 +539,6 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         box_units_layout = QtWidgets.QFormLayout()
         box_units_layout.addRow("Mass", self.mass_units)
         box_units_layout.addRow("Size", self.size_units)
-        box_units_layout.addRow("Volume", self.volume_units)
         box_units.setLayout(box_units_layout)
 
         grid_layout = QtWidgets.QGridLayout()
@@ -567,12 +562,10 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
     def units(self) -> dict[str, tuple[str, float]]:
         mass = self.mass_units.currentText()
         size = self.size_units.currentText()
-        volume = self.volume_units.currentText()
         return {
             "signal": ("cts", 1.0),
             "mass": (mass, mass_units[mass]),
             "size": (size, size_units[size]),
-            "volume": (volume, volume_units[volume]),
         }
 
     def isComplete(self) -> bool:

@@ -8,7 +8,7 @@ from spcal.datafile import SPCalDataFile
 from spcal.io.export import export_spcal_processing_results
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
-from spcal.siunits import mass_units, size_units, volume_units
+from spcal.siunits import mass_units, size_units
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class ExportDialog(QtWidgets.QDialog):
         if path is None:
             path = data_file.path.with_name(data_file.path.stem + "_spcal_results.csv")
 
-        _units = {"mass": "fg", "size": "nm", "volume": "nm³"}
+        _units = {"mass": "fg", "size": "nm"}
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
@@ -67,26 +67,20 @@ class ExportDialog(QtWidgets.QDialog):
         self.size_units = QtWidgets.QComboBox()
         self.size_units.addItems(list(size_units.keys()))
         self.size_units.setCurrentText(_units["size"])
-        self.volume_units = QtWidgets.QComboBox()
-        self.volume_units.addItems(list(volume_units.keys()))
-        self.volume_units.setCurrentText(_units["volume"])
 
         units_box = QtWidgets.QGroupBox("Units")
         units_box_layout = QtWidgets.QFormLayout()
         units_box_layout.addRow("Mass units", self.mass_units)
         units_box_layout.addRow("Size units", self.size_units)
-        units_box_layout.addRow("Volume units", self.volume_units)
         units_box.setLayout(units_box_layout)
 
-        self.check_export_inputs = QtWidgets.QCheckBox("Export options and inputs.")
+        self.check_export_inputs = QtWidgets.QCheckBox(
+            "Instrument, limit and isotope options"
+        )
         self.check_export_inputs.setChecked(True)
-        self.check_export_arrays = QtWidgets.QCheckBox(
-            "Export particle detection data arrays."
-        )
+        self.check_export_arrays = QtWidgets.QCheckBox("Particle data arrays")
         self.check_export_arrays.setChecked(True)
-        self.check_export_compositions = QtWidgets.QCheckBox(
-            "Export peak compositions."
-        )
+        self.check_export_compositions = QtWidgets.QCheckBox("Particle compositions")
 
         switches_box = QtWidgets.QGroupBox("Export options")
         switches_box_layout = QtWidgets.QVBoxLayout()
@@ -165,10 +159,6 @@ class ExportDialog(QtWidgets.QDialog):
             "size": (
                 self.size_units.currentText(),
                 size_units[self.size_units.currentText()],
-            ),
-            "volume": (
-                self.volume_units.currentText(),
-                volume_units[self.volume_units.currentText()],
             ),
         }
 

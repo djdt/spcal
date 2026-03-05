@@ -80,7 +80,6 @@ def draw_histogram_view(
             "signal": None,
             "mass": None,
             "size": None,
-            "volume": None,
         },
         "percentile": 95.0,
     }
@@ -180,7 +179,7 @@ def draw_histogram_view(
             limits["LOD"] = lod * modifier
 
         # Auto SI prefix does not work with squared (or cubed) units
-        graph.xaxis.enableAutoSIPrefix(key not in ["signal", "volume"])
+        graph.xaxis.enableAutoSIPrefix(key != "signal")
         graph.xaxis.setLabel(text=label, units=unit)
 
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, scale)

@@ -1,4 +1,3 @@
-import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
@@ -9,7 +8,7 @@ from spcal.processing.filter import (
     SPCalClusterFilter,
     SPCalValueFilter,
 )
-from spcal.siunits import mass_units, signal_units, size_units, volume_units
+from spcal.siunits import mass_units, signal_units, size_units
 
 
 class FilterItemWidget(QtWidgets.QWidget):
@@ -19,7 +18,6 @@ class FilterItemWidget(QtWidgets.QWidget):
         "signal": "Intensity",
         "mass": "Mass",
         "size": "Size",
-        # "volume": "Volume",
     }
 
     def __init__(
@@ -111,8 +109,6 @@ class FilterItemWidget(QtWidgets.QWidget):
             units = mass_units
         elif key == "Size":
             units = size_units
-        elif key == "Volime":
-            units = volume_units
         else:
             raise ValueError("changeUnits: unknown unit")
 

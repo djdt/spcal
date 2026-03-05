@@ -102,7 +102,7 @@ class SPCalIsotopeOptions(object):
 
         if key == "mass":
             return mass_ok
-        elif key in ["size", "volume"]:
+        elif key == "size":
             return mass_ok and self.density is not None and self.density > 0.0
         else:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")

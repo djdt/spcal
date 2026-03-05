@@ -372,7 +372,6 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
             "signal": None,
             "mass": None,
             "size": None,
-            "volume": None,
         },
         percentile=98.0,
         draw_filtered=False,
@@ -388,7 +387,6 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
     dlg.width_signal.setBaseValue(100.0)
     dlg.width_mass.setBaseValue(1e-19)
     dlg.width_size.setBaseValue(1e-9)
-    dlg.width_volume.setBaseValue(1e-6)
     dlg.spinbox_percentile.setValue(90)
     dlg.check_draw_filtered.setChecked(True)
 
@@ -398,8 +396,6 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
         if widths["mass"] != 1e-19:
             return False
         if widths["size"] != 1e-9:
-            return False
-        if widths["volume"] != 1e-6:
             return False
         return True
 

@@ -6,7 +6,6 @@ from spcal.siunits import (
     mass_units,
     signal_units,
     size_units,
-    volume_units,
 )
 
 
@@ -114,17 +113,11 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             base_value=self.bin_widths.get("size", None),
             sigfigs=sf,
         )
-        self.width_volume = UnitsWidget(
-            volume_units,
-            base_value=self.bin_widths.get("volume", None),
-            sigfigs=sf,
-        )
 
         for widget in [
             self.width_signal,
             self.width_mass,
             self.width_size,
-            self.width_volume,
         ]:
             widget.setBestUnit()
             widget._value.lineEdit().setPlaceholderText("auto")
@@ -144,7 +137,6 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         box_widths_layout.addRow("Signal:", self.width_signal)
         box_widths_layout.addRow("Mass:", self.width_mass)
         box_widths_layout.addRow("Size:", self.width_size)
-        box_widths_layout.addRow("Volume:", self.width_volume)
         box_widths.setLayout(box_widths_layout)
 
         box_max = QtWidgets.QGroupBox("Highest Bin")
@@ -186,7 +178,6 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             "signal": self.width_signal.baseValue(),
             "mass": self.width_mass.baseValue(),
             "size": self.width_size.baseValue(),
-            "volume": self.width_volume.baseValue(),
         }
 
         percentile = self.spinbox_percentile.value()
@@ -210,7 +201,6 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
             self.width_signal,
             self.width_mass,
             self.width_size,
-            self.width_volume,
         ]:
             widget.setBaseValue(None)
         self.spinbox_percentile.setValue(98.0)

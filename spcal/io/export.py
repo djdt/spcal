@@ -269,7 +269,6 @@ def export_spcal_processing_results(
             "signal": ("cts", 1.0),
             "mass": ("kg", 1.0),
             "size": ("m", 1.0),
-            "volume": ("L", 1.0),
         }
 
     path = Path(path)
