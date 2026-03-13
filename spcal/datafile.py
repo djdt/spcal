@@ -184,7 +184,7 @@ class SPCalTextDataFile(SPCalDataFile):
     @classmethod
     def load(
         cls,
-        path: Path,
+        path: Path | str,
         isotope_table: dict[SPCalIsotope, str] | None = None,
         delimiter: str = ",",
         skip_rows: int = 1,
@@ -192,6 +192,9 @@ class SPCalTextDataFile(SPCalDataFile):
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
     ) -> "SPCalTextDataFile":
+        if isinstance(path, str):
+            path = Path(path)
+
         signals = text.read_single_particle_file(
             path, delimiter=delimiter, skip_rows=skip_rows
         )
@@ -351,7 +354,7 @@ class SPCalNuDataFile(SPCalDataFile):
     @classmethod
     def load(
         cls,
-        path: Path,
+        path: Path | str,
         max_mass_diff: float = 0.05,
         cycle_number: int | None = None,
         segment_number: int | None = None,
@@ -359,6 +362,9 @@ class SPCalNuDataFile(SPCalDataFile):
         last_integ_file: int | None = None,
         autoblank: str = "regions",
     ) -> "SPCalNuDataFile":
+        if isinstance(path, str):
+            path = Path(path)
+
         if path.is_file() and path.name == "run.info":
             path = path.parent
 
@@ -449,7 +455,12 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         return info
 
     @classmethod
-    def load(cls, path: Path, max_size: int | None = None) -> "SPCalTOFWERKDataFile":
+    def load(
+        cls, path: Path | str, max_size: int | None = None
+    ) -> "SPCalTOFWERKDataFile":
+        if isinstance(path, str):
+            path = Path(path)
+
         with h5py.File(path) as h5:
             if "PeakData" in h5["PeakData"]:  # type: ignore , supported
                 peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]  # type: ignore , returns numpy array
