@@ -536,7 +536,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ):
         if path is None:
-            dir = QtCore.QSettings().value("RecentFiles/1/path", None)
+            dir = most_recent_spcal_path()
             dir = str(Path(str(dir)).parent) if dir is not None else ""
             path, filter = QtWidgets.QFileDialog.getSaveFileName(
                 self,
@@ -566,7 +566,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             if hasattr(item, "_exportOpts"):
                 item._exportOpts = {}
 
-        self.scene().prepareForPaint()
         self.scene().render(
             painter,
             QtCore.QRectF(image.rect()),
