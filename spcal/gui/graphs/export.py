@@ -10,6 +10,7 @@ def export_histograms_for_results(
     results: list[SPCalProcessingResult],
     output_dir: Path,
     file_name: str,
+    size: QtCore.QSize | None = None,
     keys: list[str] | None = None,
     max_percentile: float = 98.0,
     pen: QtGui.QPen | None = None,
@@ -26,6 +27,8 @@ def export_histograms_for_results(
         pen.setCosmetic(True)
 
     view = SinglePlotGraphicsView("", xlabel="Signal", ylabel="Count")
+    if size is not None:
+        view.plot.resize(size)
 
     for key in keys:
         for result in results:
@@ -38,4 +41,4 @@ def export_histograms_for_results(
             counts, edges = np.histogram(x, range=(0.0, top), bins="fd")
             view.plot.drawHistogram(counts, edges, width=1.0)
             path = output_dir.joinpath(f"{file_name}_{key}_{result.isotope}.png")
-            view.exportImage(path, background=background)
+            view.exportImage(path, size=size, background=background)

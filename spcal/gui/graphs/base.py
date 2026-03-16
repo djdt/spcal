@@ -533,6 +533,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def exportImage(
         self,
         path: Path | str | None,
+        size: QtCore.QSize | None = None,
         background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ):
         if path is None:
@@ -553,7 +554,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if background is None:
             background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
 
-        size = self.viewport().size()
+        if size is None:
+            size = self.viewport().size()
+
         image = QtGui.QImage(size, QtGui.QImage.Format.Format_ARGB32)
         image.fill(background)
 
@@ -569,7 +572,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         self.scene().render(
             painter,
             QtCore.QRectF(image.rect()),
-            self.viewRect(),
+            self.plot.sceneBoundingRect(),
             QtCore.Qt.AspectRatioMode.KeepAspectRatio,
         )
         painter.end()
