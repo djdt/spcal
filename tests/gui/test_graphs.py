@@ -35,12 +35,12 @@ def test_graph_base(qtbot: QtBot):
     assert np.allclose(bounds, (0, 1, 0, 1))
 
     # test curve diff reduction                    |--------|--|--|--|--|-----|
-    item = view.drawCurve(np.arange(10), np.array([0, 1, 2, 3, 2, 3, 6, 0, 0, 0]))
+    item = view.plot.drawCurve(np.arange(10), np.array([0, 1, 2, 3, 2, 3, 6, 0, 0, 0]))
     assert item.xData is not None
     assert item.xData.size == 7
 
     # test hist drawing
-    item = view.drawHistogram(
+    item = view.plot.drawHistogram(
         np.array([5, 4, 2, 3, 1]), np.array([0.1, 0.3, 0.4, 0.6, 0.8, 1.0]), width=0.8
     )
     assert item.xData is not None and item.yData is not None
@@ -50,14 +50,14 @@ def test_graph_base(qtbot: QtBot):
     assert np.all(item.yData[::2] == 0)
 
     # test line
-    item = view.drawLine(5.0, QtCore.Qt.Orientation.Horizontal)
+    item = view.plot.drawLine(5.0, QtCore.Qt.Orientation.Horizontal)
     assert item.xData is not None and item.yData is not None
     assert np.all(item.yData == 5.0)
     assert item.xData[0] == 0.0
     assert item.xData[1] == 9.0
 
     # test scatter
-    item = view.drawScatter(np.arange(5), np.random.random(5))
+    item = view.plot.drawScatter(np.arange(5), np.random.random(5))
     assert item.getData()[0].size == 5
 
     bounds = view.dataBounds()
@@ -96,7 +96,7 @@ def test_graph_base_font_overlar(qtbot: QtBot):
     with qtbot.waitExposed(view):
         view.show()
 
-    item = view.drawCurve(np.arange(10), np.random.random(10), name="curve")
+    item = view.plot.drawCurve(np.arange(10), np.random.random(10), name="curve")
 
     assert view.plot.legend is not None
 
@@ -119,7 +119,7 @@ def test_graph_calibration(qtbot: QtBot):
     xs = np.arange(10)
     ys = np.arange(10) + np.random.random(10)
 
-    view.drawScatter(xs, ys)
+    view.plot.drawScatter(xs, ys)
     view.drawTrendline(xs, ys, weighting="1/x")
 
 

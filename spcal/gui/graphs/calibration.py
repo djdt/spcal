@@ -4,8 +4,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import weighted_linreg, weights_from_weighting
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.particle import ExclusionRegion
-from spcal.gui.util import create_action
 
 
 class CalibrationView(SinglePlotGraphicsView):

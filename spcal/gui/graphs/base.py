@@ -90,6 +90,21 @@ class SinglePlotItem(pyqtgraph.PlotItem):
     def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):  # type: ignore
         self.requestContextMenu.emit(event.pos().toPoint())  # type: ignore
 
+    def dataBounds(self) -> tuple[float, float, float, float]:
+        items = [item for item in self.listDataItems() if item.isVisible()]
+        bx = np.array([item.dataBounds(0) for item in items], dtype=float)
+        by = np.array([item.dataBounds(1) for item in items], dtype=float)
+        bx, by = np.nan_to_num(bx), np.nan_to_num(by)
+        # Just in case
+        if len(bx) == 0 or len(by) == 0:
+            return (0, 1, 0, 1)
+        return (
+            np.amin(bx[:, 0]),
+            np.amax(bx[:, 1]),
+            np.amin(by[:, 0]),
+            np.amax(by[:, 1]),
+        )
+
     def setFont(self, font: QtGui.QFont):  # type: ignore , pyqtgraph qt versions
         super().setFont(font)  # type: ignore
 
@@ -141,6 +156,116 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         # fix broken geometry calculations
         geometry = self.legend.geometry()
         self.legend.setGeometry(geometry.x(), geometry.y(), geometry.width(), height)
+
+    def drawCurve(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+        connect: str = "all",
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        diffs = np.diff(y, n=2, append=np.inf, prepend=np.inf) != 0
+        curve = pyqtgraph.PlotCurveItem(
+            x=x[diffs],
+            y=y[diffs],
+            pen=pen,
+            connect=connect,
+            name=name,
+            skipFiniteCheck=True,
+        )
+        self.addItem(curve)
+        return curve
+
+    def drawHistogram(
+        self,
+        counts: np.ndarray,
+        edges: np.ndarray,
+        width: float = 0.5,
+        offset: float = 0.0,
+        pen: QtGui.QPen | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+
+        assert width > 0.0 and width <= 1.0
+        assert offset >= 0.0 and offset < 1.0
+
+        widths = np.diff(edges)
+
+        x = np.repeat(edges, 2)
+
+        # Calculate bar start and end points for width / offset
+        x[1:-1:2] += widths * ((1.0 - width) / 2.0 + offset)
+        x[2::2] -= widths * ((1.0 - width) / 2.0 - offset)
+
+        y = np.zeros(counts.size * 2 + 1, dtype=counts.dtype)
+        y[1:-1:2] = counts
+
+        curve = pyqtgraph.PlotCurveItem(
+            x=x,
+            y=y,
+            stepMode="center",
+            fillLevel=0,
+            fillOutline=True,
+            pen=pen,
+            brush=brush,
+            skipFiniteCheck=True,
+        )
+
+        self.addItem(curve)
+        return curve
+
+    def drawLine(
+        self,
+        y: float,
+        orientation: QtCore.Qt.Orientation,
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+        connect: str = "all",
+    ) -> pyqtgraph.PlotCurveItem:
+        if pen is None:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+            pen.setCosmetic(True)
+
+        x0, x1 = self.dataBounds()[:2]
+        return self.drawCurve(
+            x=np.array([x0, x1]), y=np.array([y, y]), pen=pen, name=name, connect="all"
+        )
+
+    def drawScatter(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        size: float = 6.0,
+        symbol: str = "o",
+        pen: QtGui.QPen | None = None,
+        name: str | None = None,
+        brush: QtGui.QBrush | None = None,
+    ) -> pyqtgraph.ScatterPlotItem:
+        if brush is None:
+            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+
+        scatter = pyqtgraph.ScatterPlotItem(
+            x=x,
+            y=y,
+            size=size,
+            symbol=symbol,
+            pen=pen,
+            brush=brush,
+            name=name,
+        )
+        self.addItem(scatter)
+        return scatter
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
@@ -227,116 +352,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def setFont(self, font: QtGui.QFont):  # type: ignore
         self.plot.setFont(font)
-
-    def drawCurve(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        pen: QtGui.QPen | None = None,
-        name: str | None = None,
-        connect: str = "all",
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-
-        diffs = np.diff(y, n=2, append=np.inf, prepend=np.inf) != 0
-        curve = pyqtgraph.PlotCurveItem(
-            x=x[diffs],
-            y=y[diffs],
-            pen=pen,
-            connect=connect,
-            name=name,
-            skipFiniteCheck=True,
-        )
-        self.plot.addItem(curve)
-        return curve
-
-    def drawHistogram(
-        self,
-        counts: np.ndarray,
-        edges: np.ndarray,
-        width: float = 0.5,
-        offset: float = 0.0,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
-
-        assert width > 0.0 and width <= 1.0
-        assert offset >= 0.0 and offset < 1.0
-
-        widths = np.diff(edges)
-
-        x = np.repeat(edges, 2)
-
-        # Calculate bar start and end points for width / offset
-        x[1:-1:2] += widths * ((1.0 - width) / 2.0 + offset)
-        x[2::2] -= widths * ((1.0 - width) / 2.0 - offset)
-
-        y = np.zeros(counts.size * 2 + 1, dtype=counts.dtype)
-        y[1:-1:2] = counts
-
-        curve = pyqtgraph.PlotCurveItem(
-            x=x,
-            y=y,
-            stepMode="center",
-            fillLevel=0,
-            fillOutline=True,
-            pen=pen,
-            brush=brush,
-            skipFiniteCheck=True,
-        )
-
-        self.plot.addItem(curve)
-        return curve
-
-    def drawLine(
-        self,
-        y: float,
-        orientation: QtCore.Qt.Orientation,
-        pen: QtGui.QPen | None = None,
-        name: str | None = None,
-        connect: str = "all",
-    ) -> pyqtgraph.PlotCurveItem:
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-
-        x0, x1 = self.dataBounds()[:2]
-        return self.drawCurve(
-            x=np.array([x0, x1]), y=np.array([y, y]), pen=pen, name=name, connect="all"
-        )
-
-    def drawScatter(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        size: float = 6.0,
-        symbol: str = "o",
-        pen: QtGui.QPen | None = None,
-        name: str | None = None,
-        brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.ScatterPlotItem:
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
-
-        scatter = pyqtgraph.ScatterPlotItem(
-            x=x,
-            y=y,
-            size=size,
-            symbol=symbol,
-            pen=pen,
-            brush=brush,
-            name=name,
-        )
-        self.plot.addItem(scatter)
-        return scatter
 
     def axisMenu(self, axis: str = "x") -> QtWidgets.QMenu:
         assert self.plot.vb is not None
@@ -472,19 +487,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             scene.invalidate()
 
     def dataBounds(self) -> tuple[float, float, float, float]:
-        items = [item for item in self.plot.listDataItems() if item.isVisible()]
-        bx = np.array([item.dataBounds(0) for item in items], dtype=float)
-        by = np.array([item.dataBounds(1) for item in items], dtype=float)
-        bx, by = np.nan_to_num(bx), np.nan_to_num(by)
-        # Just in case
-        if len(bx) == 0 or len(by) == 0:
-            return (0, 1, 0, 1)
-        return (
-            np.amin(bx[:, 0]),
-            np.amax(bx[:, 1]),
-            np.amin(by[:, 0]),
-            np.amax(by[:, 1]),
-        )
+        return self.plot.dataBounds()
 
     def dataRect(self) -> QtCore.QRectF:
         x0, x1, y0, y1 = self.dataBounds()
