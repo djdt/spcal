@@ -544,6 +544,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             if path == "":
                 return
         path = Path(path)
+        if len(path.suffixes) == 0 or path.suffixes[-1].lower() != ".png":
+            path = path.with_name(path.name + ".png")
 
         if background is None:
             background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
