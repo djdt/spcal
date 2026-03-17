@@ -277,7 +277,6 @@ class SPCalProcessingMethod(object):
         if self.processing_options.calibration_mode == "efficiency":
             assert self.instrument_options.uptake is not None
             assert self.instrument_options.efficiency is not None
-            assert self.isotope_options[isotope].response is not None
             response = self.isotope_options[isotope].response
             assert response is not None
 
