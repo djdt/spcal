@@ -87,7 +87,9 @@ class SPCalProcessingResult(object):
 
     @property
     def number_concentration(self) -> float | None:
-        if not self.method.instrument_options.canCalibrate("mass", "efficiency"):  # pragma: no cover
+        if not self.method.instrument_options.canCalibrate(
+            "mass", "efficiency"
+        ):  # pragma: no cover
             return None
         else:
             return np.around(
@@ -95,7 +97,7 @@ class SPCalProcessingResult(object):
                     self.number,
                     self.method.instrument_options.efficiency,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
                     self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
-                    self.event_time,
+                    self.total_time,
                 )
             )
 

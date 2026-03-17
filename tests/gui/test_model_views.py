@@ -529,8 +529,8 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     conc_model = ConcentrationModel()
     conc_model.beginResetModel()
-    conc_model.isotopes = isotopes  # type: ignore
-    conc_model.concentrations = concs  # type: ignore
+    conc_model.isotopes = isotopes
+    conc_model.concentrations = concs
     conc_model.endResetModel()
 
     assert (
@@ -544,7 +544,7 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     intensity_model = IntensityModel()
     intensity_model.beginResetModel()
-    intensity_model.isotopes = isotopes  # type: ignore
+    intensity_model.isotopes = isotopes
     intensity_model.intensities = intensities
     intensity_model.endResetModel()
 
@@ -642,14 +642,14 @@ def test_results_output_model(
     ]
 
     assert model.rowCount() == 0
-    assert model.columnCount() == 7
+    assert model.columnCount() == 8
 
     model.beginResetModel()
-    model.results = results  # type: ignore
+    model.results = results
     model.endResetModel()
 
     assert model.rowCount() == 2
-    assert model.columnCount() == 7
+    assert model.columnCount() == 8
 
     # test headers
     for i, col in ResultOutputModel.COLUMNS.items():
@@ -666,7 +666,11 @@ def test_results_output_model(
     assert (
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    assert (
+        model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == mass_concentration_units
+
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == signal_units
@@ -678,18 +682,19 @@ def test_results_output_model(
             model.data(model.index(row, 1), BaseValueRole)
             == result.number_concentration
         )
-        assert model.data(model.index(row, 2), BaseValueRole) == result.background
+        assert model.data(model.index(row, 2), BaseValueRole) == result.ionic_background
+        assert model.data(model.index(row, 3), BaseValueRole) == result.background
         assert (
-            model.data(model.index(row, 3), BaseValueRole)
-            == result.limit.detection_threshold
+            model.data(model.index(row, 4), BaseValueRole)
+            == result.limit.limitOfDetection()
         )
-        assert model.data(model.index(row, 4), BaseValueRole) == np.mean(
+        assert model.data(model.index(row, 5), BaseValueRole) == np.mean(
             result.detections
         )
-        assert model.data(model.index(row, 5), BaseValueRole) == np.median(
+        assert model.data(model.index(row, 6), BaseValueRole) == np.median(
             result.detections
         )
-        assert model.data(model.index(row, 6), BaseValueRole) == modefn(
+        assert model.data(model.index(row, 7), BaseValueRole) == modefn(
             result.detections
         )
 
@@ -703,9 +708,10 @@ def test_results_output_model(
 
     # test calibration
     model.key = "mass"
-    model.current_unit = ["", "µg/L", "fg", "fg", "fg", "fg", "fg"]
+    model.current_unit = ["", "µg/L", "µg/L", "fg", "fg", "fg", "fg", "fg"]
     model.units = [
         {},
+        mass_concentration_units,
         mass_concentration_units,
         mass_units,
         mass_units,
@@ -718,7 +724,7 @@ def test_results_output_model(
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == mass_concentration_units
 
-    for i in range(2, 7):
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == mass_units
@@ -727,18 +733,19 @@ def test_results_output_model(
     calib = results[0]
 
     assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
-    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
-        calib.limit.detection_threshold, "mass"
+    assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(
+        calib.limit.limitOfDetection(), "mass"
     )
-    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+    assert model.data(model.index(0, 5), BaseValueRole) == np.mean(
         calib.calibrated("mass")
     )
 
     model.key = "size"
-    model.current_unit = ["", "#/L", "nm", "nm", "nm", "nm", "nm"]
+    model.current_unit = ["", "#/L", "µg/L", "nm", "nm", "nm", "nm", "nm"]
     model.units = [
         {},
         number_concentration_units,
+        mass_concentration_units,
         size_units,
         size_units,
         size_units,
@@ -749,16 +756,19 @@ def test_results_output_model(
     assert (
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    assert (
+        model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == mass_concentration_units
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == size_units
         assert model.data(model.index(1, i), BaseValueRole) is None
 
-    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
-        calib.limit.detection_threshold, "size"
+    assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(
+        calib.limit.detection_threshold - calib.limit.mean_signal, "size"
     )
-    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+    assert model.data(model.index(0, 5), BaseValueRole) == np.mean(
         calib.calibrated("size")
     )
 
@@ -767,10 +777,10 @@ def test_units_model_and_header(qtbot: QtBot):
     class OnesUnitModel(UnitsModel):
         test_value = None
 
-        def rowCount(self, parent=QtCore.QModelIndex()):  # type: ignore
+        def rowCount(self, parent=QtCore.QModelIndex()):
             return 1
 
-        def columnCount(self, parent=QtCore.QModelIndex()):  # type: ignore
+        def columnCount(self, parent=QtCore.QModelIndex()):
             return 2
 
         def setData(
@@ -804,18 +814,18 @@ def test_units_model_and_header(qtbot: QtBot):
     assert model.data(model.index(0, 1), BaseValueRole) == 1.0
 
     assert model.data(model.index(0, 0)) == 1.0
-    assert np.isclose(model.data(model.index(0, 1)), 1e6)  # type: ignore
+    assert np.isclose(model.data(model.index(0, 1)), 1e6)
 
     assert model.data(model.index(0, 0), BaseValueErrorRole) == 0.2
     assert model.data(model.index(0, 1), BaseValueErrorRole) == 0.2
 
     assert model.data(model.index(0, 0), ValueErrorRole) == 0.2
-    assert np.isclose(model.data(model.index(0, 1), ValueErrorRole), 0.2e6)  # type: ignore
+    assert np.isclose(model.data(model.index(0, 1), ValueErrorRole), 0.2e6)
 
     with qtbot.waitSignal(model.headerDataChanged, timeout=100):
         model.setHeaderData(1, QtCore.Qt.Orientation.Horizontal, "g", CurrentUnitRole)
 
-    assert np.isclose(model.data(model.index(0, 1)), 1e3)  # type: ignore
+    assert np.isclose(model.data(model.index(0, 1)), 1e3)
 
     # set data
     model.setData(model.index(0, 1), 2.0, BaseValueRole)

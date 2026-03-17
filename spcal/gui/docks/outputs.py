@@ -67,10 +67,8 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             1, orientation, default_conc_unit, role=CurrentUnitRole
         )
 
-        for i in range(2, 7):
-            self.view.results_model.setHeaderData(
-                i, orientation, units, role=UnitsRole
-            )
+        for i in range(3, 7):
+            self.view.results_model.setHeaderData(i, orientation, units, role=UnitsRole)
             self.view.results_model.setHeaderData(
                 i, orientation, default_unit, role=CurrentUnitRole
             )

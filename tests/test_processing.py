@@ -1,11 +1,13 @@
+from spcal.processing.options import SPCalIsotopeOptions
 import numpy as np
 from pathlib import Path
 import pytest
 
 from spcal.limit import SPCalLimit
+from spcal import particle
 from spcal.processing import options
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.datafile import SPCalTOFWERKDataFile
+from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 
@@ -331,9 +333,53 @@ def test_spcal_processing_results(
     assert results[ru[0]].valid_events == results[ru[0]].num_events
     assert results[ru[0]].number == 8
 
+    assert results[ru[0]].number_concentration is None
+
     method.filterResults(results)
 
     assert np.all(results[ru[0]].filter_indicies == [0, 1, 2, 3, 5, 7])
     assert np.all(results[ru[0]].peak_indicies == [0, 1, 2, 3, 4, 6, 7, 8])
     assert results[ru[0]].number == 6
     assert results[ru[0]].peakValues().size == 10
+
+
+def test_spcal_processing_results_standard_file(
+    default_method: SPCalProcessingMethod, test_data_path: Path
+):
+    # data from 20230317, 7900
+    df = SPCalTextDataFile.load(
+        test_data_path.joinpath("text/agilent_au50nm.csv"), delimiter=",", skip_rows=4
+    )
+    df.selected_isotopes = df.isotopes
+
+    method = default_method
+    method.limit_options.poisson_kws["alpha"] = 1e-6
+    method.instrument_options.uptake = 5.0746e-6
+    method.instrument_options.efficiency = 0.08312
+    method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(
+        19.32e3, 8.15e9, 1.0
+    )
+    result = method.processDataFile(df)[ISOTOPE_TABLE[("Au", 197)]]
+
+    assert result.number == 189
+    assert result.number_concentration is not None
+    assert np.isclose(
+        result.number_concentration,
+        particle.particle_number_concentration(
+            result.number,
+            method.instrument_options.efficiency,
+            method.instrument_options.uptake,
+            result.total_time,
+        ),
+    )
+    assert result.mass_concentration is not None
+    assert np.isclose(
+        result.mass_concentration,
+        particle.particle_total_concentration(
+            result.calibrated("mass"),
+            method.instrument_options.efficiency,
+            method.instrument_options.uptake,
+            result.total_time,
+        ),
+    )
+    assert np.isclose(np.mean(result.calibrated("size")), 50.0e-9, atol=1e-9)

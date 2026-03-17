@@ -51,6 +51,9 @@ class SPCalLimit(object):
     def parameters(self) -> dict:  # pragma: no cover
         return {}
 
+    def limitOfDetection(self) -> float | np.ndarray:
+        return self.detection_threshold - self.mean_signal
+
     def thresholdFunction(
         self, signals: np.ndarray
     ) -> tuple[float, float]:  # pragma: no cover
