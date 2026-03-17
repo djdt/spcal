@@ -17,6 +17,7 @@ def pytest_sessionstart(session):
 def default_method() -> SPCalProcessingMethod:
     method = SPCalProcessingMethod()
     method.limit_options.poisson_kws["function"] = "currie"
+    method.limit_options.poisson_kws["alpha"] = 1e-3
     method.limit_options.compound_poisson_kws["sigma"] = 0.65
     return method
 

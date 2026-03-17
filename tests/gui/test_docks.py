@@ -89,7 +89,7 @@ def test_spcal_central_widget(
     )
 
     default_method.limit_options.limit_method = "poisson"
-    default_method.limit_options.poisson_kws["alpha"] = 1e-3
+    default_method.limit_options.poisson_kws["alpha"] = 1e-6
 
     results = default_method.processDataFile(df)
     default_method.filterResults(results)
@@ -209,7 +209,6 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
     assert dock.options_widget.check_iterative.isChecked()
     assert dock.options_widget.gaussian.alpha.value() == 1e-3
     assert dock.options_widget.poisson.alpha.value() == 1e-4
-    assert dock.options_widget.poisson.function == "currie"
     assert dock.options_widget.compound.alpha.value() == 1e-5
     assert dock.options_widget.compound.lognormal_sigma.value() == 0.6
     assert dock.options_widget.manual.default_manual_limit.value() == 10.0

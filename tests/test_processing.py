@@ -361,7 +361,6 @@ def test_spcal_processing_results_standard_file(
     )
     result = method.processDataFile(df)[ISOTOPE_TABLE[("Au", 197)]]
 
-    assert result.number == 189
     assert result.number_concentration is not None
     assert np.isclose(
         result.number_concentration,

@@ -4,7 +4,6 @@ from statistics import NormalDist
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import SPCalIsotopeBase
@@ -193,86 +192,62 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
 class PoissonOptionsWidget(LimitOptionsBaseWidget):
     def __init__(
         self,
-        alpha: float = 0.001,
-        function: str = "currie",
-        eta: float = 2.0,
-        epsilon: float = 0.5,
-        t_sample: float = 1.0,
-        t_blank: float = 1.0,
+        alpha: float = 1e-6,
+        eta: float = 1.0,
+        epsilon: float = 1.0,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__("Poisson", alpha, parent=parent)
-        self.button_advanced = QtWidgets.QPushButton("Advanced Options...")
-        self.button_advanced.pressed.connect(self.dialogAdvancedOptions)
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(
-            self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
-        )
-        layout = self.layout()
-        assert isinstance(layout, QtWidgets.QFormLayout)
-        layout.addRow(button_layout)
+        # self.button_advanced = QtWidgets.QPushButton("Advanced Options...")
+        # self.button_advanced.pressed.connect(self.dialogAdvancedOptions)
+        # button_layout = QtWidgets.QHBoxLayout()
+        # button_layout.addWidget(
+        #     self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        # )
+        # layout = self.layout()
+        # assert isinstance(layout, QtWidgets.QFormLayout)
+        # layout.addRow(button_layout)
 
-        self.function = function
         self.eta = eta
         self.epsilon = epsilon
-        self.t_sample = t_sample
-        self.t_blank = t_blank
-
-    def parameters(self) -> dict:
-        return {
-            "alpha": self.alpha.value(),
-            "beta": 0.05,
-            "t_sample": self.t_sample,
-            "t_blank": self.t_blank,
-            "eta": self.eta,
-            "epsilon": self.epsilon,
-            "function": self.function,
-        }
-
-    def setParameters(self, state: dict):
-        self.blockSignals(True)
-        if "alpha" in state:
-            self.alpha.setValue(state["alpha"])
-        if "formula" in state:
-            self.function = state["formula"].title()
-        if "params" in state:
-            if "eta" in state["params"]:
-                self.eta = state["params"]["eta"]
-            if "epsilon" in state["params"]:
-                self.epsilon = state["params"]["epsilon"]
-            if "t_sample" in state["params"]:
-                self.t_sample = state["params"]["t_sample"]
-            if "t_blank" in state["params"]:
-                self.t_blank = state["params"]["t_blank"]
-        self.blockSignals(False)
-        self.optionsChanged.emit()
-
-    def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
-        dlg = AdvancedPoissonDialog(
-            self.function.capitalize(),
-            self.eta,
-            self.epsilon,
-            self.t_sample,
-            self.t_blank,
-            parent=self,
-        )
-        dlg.optionsSelected.connect(self.setOptions)
-        dlg.open()
-        return dlg
-
-    def setOptions(self, formula: str, opt1: float, opt2: float):
-        self.function = formula.lower()
-        if formula == "currie":
-            self.eta = opt1 or 2.0
-            self.epsilon = opt2 or 0.5
-        else:
-            self.t_sample = opt1 or 1.0
-            self.t_blank = opt2 or 1.0
-
-        self.optionsChanged.emit()
 
     def isComplete(self) -> bool:
         return self.alpha.hasAcceptableInput()
+
+    # def parameters(self) -> dict:
+    #     return {
+    #         "alpha": self.alpha.value(),
+    #         "beta": 0.05,
+    #         "eta": self.eta,
+    #         "epsilon": self.epsilon,
+    #     }
+    #
+    # def setParameters(self, state: dict):
+    #     self.blockSignals(True)
+    #     if "alpha" in state:
+    #         self.alpha.setValue(state["alpha"])
+    #     if "params" in state:
+    #         if "eta" in state["params"]:
+    #             self.eta = state["params"]["eta"]
+    #         if "epsilon" in state["params"]:
+    #             self.epsilon = state["params"]["epsilon"]
+    #     self.blockSignals(False)
+    #     self.optionsChanged.emit()
+
+    # def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
+    #     dlg = AdvancedPoissonDialog(
+    #         self.eta,
+    #         self.epsilon,
+    #         parent=self,
+    #     )
+    #     dlg.optionsSelected.connect(self.setOptions)
+    #     dlg.open()
+    #     return dlg
+    #
+    # def setOptions(self, formula: str, eta: float, epsilon: float):
+    #     self.eta = eta
+    #     self.epsilon = epsilon
+    #     self.optionsChanged.emit()
 
 
 class ManualLimitsOptions(QtWidgets.QGroupBox):
@@ -390,14 +365,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             )
         )
         self.gaussian = GaussianOptionsWidget(limit_options.gaussian_kws["alpha"])
-        self.poisson = PoissonOptionsWidget(
-            limit_options.poisson_kws["alpha"],
-            limit_options.poisson_kws["function"],
-            limit_options.poisson_kws.get("eta", 2.0),
-            limit_options.poisson_kws.get("epsilon", 0.5),
-            limit_options.poisson_kws.get("t_sample", 1.0),
-            limit_options.poisson_kws.get("t_blank", 1.0),
-        )
+        self.poisson = PoissonOptionsWidget(limit_options.poisson_kws["alpha"])
         self.compound = CompoundPoissonOptionsWidget(
             limit_options.compound_poisson_kws["alpha"],
             limit_options.compound_poisson_kws["sigma"],

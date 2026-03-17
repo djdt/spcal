@@ -17,7 +17,7 @@ def currie(
     ub: float | np.ndarray,
     alpha: float = 0.05,
     beta: float = 0.05,
-    eta: float = 2.0,
+    eta: float = 1.0,
     epsilon: float = 0.0,
 ) -> tuple[float | np.ndarray, float | np.ndarray]:
     """Calculates Sc and Sd for mean background 'ub'.

@@ -32,23 +32,23 @@ def test_limit_poisson(poisson_data: np.ndarray):
     mean = np.mean(poisson_data)
 
     lim = SPCalPoissonLimit(
-        poisson_data, alpha=0.001, max_iterations=1, epsilon=0.5, function="currie"
+        poisson_data, alpha=1e-6, max_iterations=1, epsilon=1.0, function="currie"
     )  # ld ~= 87
 
     assert lim.name == "Poisson"
-    assert lim.alpha == 0.001
-    assert lim.eta == 2.0
-    assert lim.epsilon == 0.5
+    assert lim.alpha == 1e-6
+    assert lim.eta == 1.0
+    assert lim.epsilon == 1.0
 
     assert lim.parameters == {
         "function": "currie",
-        "alpha": 0.001,
+        "alpha": 1e-6,
         "beta": 0.05,
-        "eta": 2.0,
-        "epsilon": 0.5,
+        "eta": 1.0,
+        "epsilon": 1.0,
     }
 
-    limit = poisson.currie(mean, alpha=0.001, epsilon=0.5)[0] + mean  # type: ignore
+    limit = poisson.currie(mean, alpha=1e-6, epsilon=1.0)[0] + mean
     if UPPER_INTEGER:
         limit = np.ceil(limit)
     assert lim.mean_signal == mean
@@ -65,7 +65,7 @@ def test_limit_poisson(poisson_data: np.ndarray):
         lim = SPCalPoissonLimit(
             poisson_data, alpha=0.001, max_iterations=1, function=name
         )
-        limit = func(mean, alpha=0.001)[0] + mean  # type: ignore
+        limit = func(mean, alpha=0.001)[0] + mean
         if UPPER_INTEGER:
             limit = np.ceil(limit)
         assert lim.parameters["t_sample"] == 1.0
