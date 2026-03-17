@@ -50,6 +50,11 @@ def append_results_summary(
             fp.write(
                 f"{data_file.path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
             )
+        if result.ionic_background is not None:
+            unit, factor = units["mass"]
+            fp.write(
+                f"{data_file.path},{result.isotope},Ionic Background,{unit}/L,{_scaled(result.ionic_background, factor)}\n"
+            )
         for key in CALIBRATION_KEYS:
             if not result.canCalibrate(key):  # pragma: no cover
                 continue
@@ -134,6 +139,11 @@ def export_spcal_result_outputs(
         fp.write(
             f"# {result.isotope},{result.number},{result.number_error},"
             f"{_value(result.number_concentration)},{_scaled(result.mass_concentration, mass_factor)}\n"
+        )
+    fp.write(f"# Outputs (ionic),Ionic Background({mass_unit}/L)\n")
+    for result in results:
+        fp.write(
+            f"# {result.isotope},{_scaled(result.ionic_background, mass_factor)}\n"
         )
 
     for key in CALIBRATION_KEYS:

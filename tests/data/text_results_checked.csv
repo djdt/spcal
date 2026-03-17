@@ -1,5 +1,5 @@
 # SPCal Export 2.0.3
-# Date,Tue 17 Mar 2026 12:10:54
+# Date,Tue 17 Mar 2026 12:37:48
 # File,/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv
 # Acquisition events,999
 # Acquisition time,0.08280711621046066
@@ -22,6 +22,10 @@
 # 107Ag,4,2.0,144915078.0,1.2069106e+09
 # 109Ag,4,2.0,144915078.0,6.067469e+08
 # 197Au,2,1.4142135623730951,72457539.0,3.2784483e+08
+# Outputs (ionic),Ionic Background(fg/L)
+# 107Ag,555951297.2831725
+# 109Ag,277230381.9656372
+# 197Au,25263088.44486872
 # Outputs (signal),Background (cts),Background Error (cts),LOD (cts),Mean (cts),Std (cts),Median (cts),Mode (cts)
 # 107Ag,0.5559512972831726,1.0058014392852783,20.187791787684926,301.4259,157.63959,281.17642,182.80057
 # 109Ag,0.5544607639312744,1.0676957368850708,19.822821370527688,257.67017,151.068,237.59724,141.25789

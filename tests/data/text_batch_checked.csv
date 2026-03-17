@@ -3,6 +3,7 @@ Data File,Isotope,Name,Unit,Value
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number Error,#,2.0
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number,#/L,144915078.0
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Number,fg/L,1.2069106e+09
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Ionic Background,fg/L,555951297.2831725
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background,cts,0.5559512972831726
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,Background Error,cts,1.0058014392852783
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,107Ag,LOD,cts,20.187791787684926
@@ -28,6 +29,7 @@ Data File,Isotope,Name,Unit,Value
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number Error,#,2.0
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number,#/L,144915078.0
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Number,fg/L,6.067469e+08
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Ionic Background,fg/L,277230381.9656372
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background,cts,0.5544607639312744
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,Background Error,cts,1.0676957368850708
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,109Ag,LOD,cts,19.822821370527688
@@ -53,6 +55,7 @@ Data File,Isotope,Name,Unit,Value
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number Error,#,1.4142135623730951
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number,#/L,72457539.0
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Number,fg/L,3.2784483e+08
+/home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Ionic Background,fg/L,25263088.44486872
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background,cts,0.07578926533460617
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,Background Error,cts,0.32269471883773804
 /home/tom/Documents/python/spcal/tests/data/text/tof_mix_au_ag_auag.csv,197Au,LOD,cts,18.601339795467318

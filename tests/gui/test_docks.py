@@ -261,7 +261,10 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    assert (
+        dock.view.results_model.headerData(2, orientation, UnitsRole)
+    ) == mass_concentration_units
+    for i in range(3, 7):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == signal_units
@@ -270,7 +273,7 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == mass_concentration_units
-    for i in range(2, 7):
+    for i in range(3, 7):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == mass_units
@@ -279,7 +282,7 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    for i in range(3, 7):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == size_units
@@ -335,7 +338,7 @@ def test_spcal_processing_dock(qtbot: QtBot):
     assert _options.accumulation_method == "detection threshold"
     assert _options.cluster_distance == 0.5
     assert _options.points_required == 2
-    
+
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.setProcessingOptions(options)
     assert dock.options_widget.points_required.value() == 1
@@ -382,7 +385,9 @@ def test_spcal_toolbar(qtbot: QtBot):
         toolbar.action_all_isotopes.trigger()
     assert len(toolbar.selectedIsotopes()) == 3
 
-    with qtbot.waitSignal(toolbar.keyChanged, check_params_cb=lambda k: k == "mass", timeout=100):
+    with qtbot.waitSignal(
+        toolbar.keyChanged, check_params_cb=lambda k: k == "mass", timeout=100
+    ):
         toolbar.combo_key.setCurrentIndex(1)
 
     toolbar.onViewChanged("scatter")

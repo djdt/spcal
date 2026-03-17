@@ -642,14 +642,14 @@ def test_results_output_model(
     ]
 
     assert model.rowCount() == 0
-    assert model.columnCount() == 7
+    assert model.columnCount() == 8
 
     model.beginResetModel()
     model.results = results
     model.endResetModel()
 
     assert model.rowCount() == 2
-    assert model.columnCount() == 7
+    assert model.columnCount() == 8
 
     # test headers
     for i, col in ResultOutputModel.COLUMNS.items():
@@ -666,7 +666,11 @@ def test_results_output_model(
     assert (
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    assert (
+        model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == mass_concentration_units
+
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == signal_units
@@ -678,18 +682,19 @@ def test_results_output_model(
             model.data(model.index(row, 1), BaseValueRole)
             == result.number_concentration
         )
-        assert model.data(model.index(row, 2), BaseValueRole) == result.background
+        assert model.data(model.index(row, 2), BaseValueRole) == result.ionic_background
+        assert model.data(model.index(row, 3), BaseValueRole) == result.background
         assert (
-            model.data(model.index(row, 3), BaseValueRole)
-            == result.limit.detection_threshold - result.limit.mean_signal
+            model.data(model.index(row, 4), BaseValueRole)
+            == result.limit.limitOfDetection()
         )
-        assert model.data(model.index(row, 4), BaseValueRole) == np.mean(
+        assert model.data(model.index(row, 5), BaseValueRole) == np.mean(
             result.detections
         )
-        assert model.data(model.index(row, 5), BaseValueRole) == np.median(
+        assert model.data(model.index(row, 6), BaseValueRole) == np.median(
             result.detections
         )
-        assert model.data(model.index(row, 6), BaseValueRole) == modefn(
+        assert model.data(model.index(row, 7), BaseValueRole) == modefn(
             result.detections
         )
 
@@ -703,9 +708,10 @@ def test_results_output_model(
 
     # test calibration
     model.key = "mass"
-    model.current_unit = ["", "µg/L", "fg", "fg", "fg", "fg", "fg"]
+    model.current_unit = ["", "µg/L", "µg/L", "fg", "fg", "fg", "fg", "fg"]
     model.units = [
         {},
+        mass_concentration_units,
         mass_concentration_units,
         mass_units,
         mass_units,
@@ -718,7 +724,7 @@ def test_results_output_model(
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == mass_concentration_units
 
-    for i in range(2, 7):
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == mass_units
@@ -727,18 +733,19 @@ def test_results_output_model(
     calib = results[0]
 
     assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
-    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
-        calib.limit.detection_threshold - calib.limit.mean_signal, "mass"
+    assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(
+        calib.limit.limitOfDetection(), "mass"
     )
-    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+    assert model.data(model.index(0, 5), BaseValueRole) == np.mean(
         calib.calibrated("mass")
     )
 
     model.key = "size"
-    model.current_unit = ["", "#/L", "nm", "nm", "nm", "nm", "nm"]
+    model.current_unit = ["", "#/L", "µg/L", "nm", "nm", "nm", "nm", "nm"]
     model.units = [
         {},
         number_concentration_units,
+        mass_concentration_units,
         size_units,
         size_units,
         size_units,
@@ -749,16 +756,19 @@ def test_results_output_model(
     assert (
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == number_concentration_units
-    for i in range(2, 7):
+    assert (
+        model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
+    ) == mass_concentration_units
+    for i in range(3, 7):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == size_units
         assert model.data(model.index(1, i), BaseValueRole) is None
 
-    assert model.data(model.index(0, 3), BaseValueRole) == calib.calibrateTo(
+    assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(
         calib.limit.detection_threshold - calib.limit.mean_signal, "size"
     )
-    assert model.data(model.index(0, 4), BaseValueRole) == np.mean(
+    assert model.data(model.index(0, 5), BaseValueRole) == np.mean(
         calib.calibrated("size")
     )
 
