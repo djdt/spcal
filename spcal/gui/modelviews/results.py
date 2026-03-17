@@ -144,7 +144,7 @@ class ResultOutputModel(UnitsModel):
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
             if name == "LOD":
                 return f"{result.limit.name}: " + ", ".join(
-                    f"{k}={v:.4g}" for k, v in result.limit.parameters.items()
+                    f"{k}={v}" for k, v in result.limit.parameters.items()
                 )
         else:
             return super().data(index, role)
@@ -169,7 +169,9 @@ class ResultOutputView(BasicTableView):
         self.setHorizontalHeader(self.header)
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
         self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
-        self.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.Fixed
+        )
 
         self.setEditTriggers(QtWidgets.QTableView.EditTrigger.NoEditTriggers)
         self.setItemDelegate(ValueWidgetDelegate())
