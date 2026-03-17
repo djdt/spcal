@@ -119,7 +119,9 @@ class ResultOutputModel(UnitsModel):
                 if name == "Background":
                     return result.calibrateTo(result.background, self.key)
                 elif name == "LOD":
-                    lod = bn.nanmean(result.limit.detection_threshold)
+                    lod = bn.nanmean(
+                        result.limit.detection_threshold - result.limit.mean_signal
+                    )
                     return result.calibrateTo(float(lod), self.key)
                 elif name == "Mean":
                     return np.mean(result.calibrated(self.key))
