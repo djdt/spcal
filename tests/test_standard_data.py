@@ -5,8 +5,8 @@ import numpy as np
 from spcal import cluster, detection, particle, poisson
 
 
-def test_standard_sizes():
-    data = np.load(Path(__file__).parent.joinpath("data/agilent_au_data.npz"))
+def test_standard_sizes(test_data_path: Path):
+    data = np.load(test_data_path.joinpath("agilent_au_data.npz"))
     # Data for 15 and 50 nm standards,
     # Reported error is approx. +- 10 %, test is 1% and 0.5 nm from mean and median
 
@@ -27,6 +27,8 @@ def test_standard_sizes():
         yc, _ = poisson.formula_c(ub, alpha=0.05)
         detections, _ = detection.accumulate_detections(x, ub, yc + ub)
 
+        import matplotlib.pyplot as plt
+        plt.plot(x)
         masses = particle.particle_mass(
             detections,
             dwell=dwelltime,
@@ -41,11 +43,13 @@ def test_standard_sizes():
         assert np.isclose(np.mean(sizes), expected, rtol=0.0, atol=1e-9)
         assert np.isclose(np.median(sizes), expected, rtol=0.0, atol=1e-9)
 
+    plt.show()
 
-def test_standard_compositions():
+
+def test_standard_compositions(test_data_path: Path):
     """Test data from DOI: 10.1039/d2ja00116k and supp info"""
 
-    npz = np.load(Path(__file__).parent.joinpath("data/compositions.npz"))
+    npz = np.load(test_data_path.joinpath("compositions.npz"))
 
     molar_mass = {
         "Fe": 55.845,
