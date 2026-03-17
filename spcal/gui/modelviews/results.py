@@ -17,27 +17,33 @@ from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing.result import SPCalProcessingResult
-from spcal.siunits import number_concentration_units, signal_units
+from spcal.siunits import (
+    number_concentration_units,
+    signal_units,
+    mass_concentration_units,
+)
 
 
 class ResultOutputModel(UnitsModel):
     COLUMNS = {
         0: "Number",
         1: "Concentration",
-        2: "Background",
-        3: "LOD",
-        4: "Mean",
-        5: "Median",
-        6: "Mode",
+        2: "Ionic Background",
+        3: "Background",
+        4: "LOD",
+        5: "Mean",
+        6: "Median",
+        7: "Mode",
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(
             list(ResultOutputModel.COLUMNS.values()),
-            ["", "#/L", "cts", "cts", "cts", "cts", "cts"],
+            ["", "#/L", "µg/L", "cts", "cts", "cts", "cts", "cts"],
             [
                 {},
                 number_concentration_units,
+                mass_concentration_units,
                 signal_units,
                 signal_units,
                 signal_units,
@@ -113,6 +119,8 @@ class ResultOutputModel(UnitsModel):
                     return result.mass_concentration
                 else:
                     return result.number_concentration
+            elif name == "Ionic Background":
+                return result.ionic_background
             else:  # other column
                 if not result.canCalibrate(self.key) or result.number == 0:
                     return None
