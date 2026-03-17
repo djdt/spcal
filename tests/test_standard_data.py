@@ -27,8 +27,6 @@ def test_standard_sizes(test_data_path: Path):
         yc, _ = poisson.formula_c(ub, alpha=0.05)
         detections, _ = detection.accumulate_detections(x, ub, yc + ub)
 
-        import matplotlib.pyplot as plt
-        plt.plot(x)
         masses = particle.particle_mass(
             detections,
             dwell=dwelltime,
@@ -42,8 +40,6 @@ def test_standard_sizes(test_data_path: Path):
         # within 1.0 nm
         assert np.isclose(np.mean(sizes), expected, rtol=0.0, atol=1e-9)
         assert np.isclose(np.median(sizes), expected, rtol=0.0, atol=1e-9)
-
-    plt.show()
 
 
 def test_standard_compositions(test_data_path: Path):
