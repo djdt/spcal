@@ -61,7 +61,7 @@ def append_results_summary(
                 (
                     "LOD",
                     np.nanmean(
-                        result.calibrateTo(result.limit.detection_threshold, key)
+                        result.calibrateTo(result.limit.limitOfDetection(), key)
                     ),
                 ),
                 ("Mean", np.mean(detections)),
@@ -152,7 +152,7 @@ def export_spcal_result_outputs(
             values = [
                 result.calibrateTo(result.background, key),
                 result.calibrateTo(result.background_error, key),
-                np.nanmean(result.calibrateTo(result.limit.detection_threshold, key)),
+                np.nanmean(result.calibrateTo(result.limit.limitOfDetection(), key)),
                 np.mean(detections),
                 np.std(detections),
                 np.median(detections),
