@@ -529,8 +529,8 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     conc_model = ConcentrationModel()
     conc_model.beginResetModel()
-    conc_model.isotopes = isotopes  # type: ignore
-    conc_model.concentrations = concs  # type: ignore
+    conc_model.isotopes = isotopes
+    conc_model.concentrations = concs
     conc_model.endResetModel()
 
     assert (
@@ -544,7 +544,7 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     intensity_model = IntensityModel()
     intensity_model.beginResetModel()
-    intensity_model.isotopes = isotopes  # type: ignore
+    intensity_model.isotopes = isotopes
     intensity_model.intensities = intensities
     intensity_model.endResetModel()
 
