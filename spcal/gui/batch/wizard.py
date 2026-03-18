@@ -16,6 +16,7 @@ from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
 from spcal.gui.docks.processingoptions import SPCalProcessingOptionsWidget
 from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
+from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -385,7 +386,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         layout_right.addWidget(gbox_isotope, 1)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(layout_left,1)
+        layout.addLayout(layout_left, 1)
         layout.addLayout(layout_right, 1)
         self.setLayout(layout)
 
@@ -393,7 +394,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
 
     def dialogCalculator(self):
         isotopes = list(self.isotope_table.isotope_model.isotope_options.keys())
-        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)  # type: ignore
+        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)
         dlg.expressionsChanged.connect(self.setExpressions)
         dlg.open()
 
@@ -426,7 +427,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             instrument_options=self.instrument_options.instrumentOptions(),
             limit_options=self.limit_options.limitOptions(),
             isotope_options=self.isotope_table.isotope_model.isotope_options,
-            processing_options=self.processing_options.processingOptions()
+            processing_options=self.processing_options.processingOptions(),
         )
         method.expressions = self.expr_list.expressions()
         return method
@@ -485,9 +486,19 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.summary_filename.setEnabled(False)
         self.summary_filename.textChanged.connect(self.completeChanged)
 
+        # image options
+        self.image_export_options = {
+            "size": QtCore.QSize(800, 600),
+            "dpi": 96,
+            "color": QtGui.QColor(128, 128, 128),
+            "font": self.font(),
+            "font color": QtGui.QColor(0, 0, 0),
+            "background color": QtGui.QColor(255, 255, 255),
+            "background transparent": False,
+        }
+
         self.check_export_images = QtWidgets.QCheckBox("Images")
         self.button_image_options = QtWidgets.QPushButton("Options...")
-        self.check_export_images.setEnabled(False)
 
         # units
 
@@ -632,6 +643,34 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         )
         if dir != "":
             self.output_dir.setText(dir)
+
+    def dialogImageExportOptions(self):
+        dlg = ImageExportDialog(
+            self.image_export_options["size"],
+            self.image_export_options["dpi"],
+            self.image_export_options["color"],
+            self.image_export_options["font"],
+            self.image_export_options["font color"],
+            self.image_export_options["transparent"],
+        )
+        dlg.imageOptionsSelected.connect(self.setImageExportOptions)
+        dlg.open()
+
+    def setImageExportOptions(
+        self,
+        size: QtCore.QSize,
+        dpi: int,
+        color: QtGui.QColor,
+        font: QtGui.QFont,
+        font_color: QtGui.QFont,
+        transparent: bool,
+    ):
+        self.image_export_options["size"] = size
+        self.image_export_options["dpi"] = dpi
+        self.image_export_options["color"] = color
+        self.image_export_options["font"] = font
+        self.image_export_options["font color"] = font_color
+        self.image_export_options["transparent"] = transparent
 
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()

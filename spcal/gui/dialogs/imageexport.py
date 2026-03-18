@@ -1,3 +1,4 @@
+from spcal.isotope import SPCalIsotopeBase, ISOTOPE_TABLE
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
@@ -14,17 +15,42 @@ def color_icon(color: QtGui.QColor) -> QtGui.QIcon:
     return QtGui.QIcon(pixmap)
 
 
+def color_button(color: QtGui.QColor) -> QtWidgets.QToolButton:
+    button = QtWidgets.QToolButton()
+    button.setText("Color")
+    button.setIcon(QtGui.QIcon.fromTheme("color-picker"))
+    button.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly)
+
+    effect = QtWidgets.QGraphicsColorizeEffect(button)
+    effect.setColor(color)
+    button.setGraphicsEffect(effect)
+
+    def set_color():
+        effect = button.graphicsEffect()
+        if not isinstance(effect, QtWidgets.QGraphicsColorizeEffect):
+            raise ValueError("effect has no color")
+        color = QtWidgets.QColorDialog.getColor(effect.color())
+        if color.isValid():
+            effect.setColor(color)
+
+    button.pressed.connect(set_color)
+
+    return button
+
+
 class ImageExportDialog(QtWidgets.QDialog):
-    exportSettingsSelected = QtCore.Signal(QtCore.QSize, int, object)  # object for dict
+    imageOptionsSelected = QtCore.Signal(
+        QtCore.QSize, int, QtGui.QColor, QtGui.QFont, QtGui.QColor, bool
+    )
 
     def __init__(
         self,
         size: QtCore.QSize | None = None,
-        font: QtGui.QFont | None = None,
         dpi: int = 96,
         color: QtGui.QColor | None = None,
+        font: QtGui.QFont | None = None,
         font_color: QtGui.QColor | None = None,
-        options: dict[str, bool] | None = None,
+        background_transparent: bool = False,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -37,50 +63,51 @@ class ImageExportDialog(QtWidgets.QDialog):
             font = QtGui.QFont()
 
         if color is None:
-            color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
-
+            color = QtGui.QColor(QtCore.Qt.GlobalColor.red)
         if font_color is None:
-            font_color = QtGui.QColor(QtCore.Qt.GlobalColor.white)
+            font_color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
 
-        self.spinbox_size_x = QtWidgets.QSpinBox()
-        self.spinbox_size_x.setRange(100, 10000)
-        self.spinbox_size_x.setValue(size.width())
+        self.size_x = QtWidgets.QSpinBox()
+        self.size_x.setRange(100, 10000)
+        self.size_x.setValue(size.width())
 
-        self.spinbox_size_y = QtWidgets.QSpinBox()
-        self.spinbox_size_y.setRange(100, 10000)
-        self.spinbox_size_y.setValue(size.height())
+        self.size_y = QtWidgets.QSpinBox()
+        self.size_y.setRange(100, 10000)
+        self.size_y.setValue(size.height())
 
         size_layout = QtWidgets.QHBoxLayout()
-        size_layout.addWidget(self.spinbox_size_x, 1)
+        size_layout.addWidget(self.size_x, 1)
         size_layout.addWidget(QtWidgets.QLabel("×"), 0)
-        size_layout.addWidget(self.spinbox_size_y, 1)
+        size_layout.addWidget(self.size_y, 1)
 
-        self.spinbox_dpi = QtWidgets.QSpinBox()
-        self.spinbox_dpi.setRange(96, 1200)
-        self.spinbox_dpi.setValue(dpi)
+        self.dpi = QtWidgets.QSpinBox()
+        self.dpi.setRange(96, 1200)
+        self.dpi.setValue(dpi)
 
-        self.button_font = QtWidgets.QFontComboBox()
-        self.button_font.setCurrentFont(font)
+        self.button_color = color_button(color)
 
-        self.button_color = QtWidgets.QPushButton("Select Color...")
-        self.button_color.setIcon(color_icon(color))
-        self.button_color.pressed.connect(self.selectColor)
+        self.combo_font = QtWidgets.QFontComboBox()
+        self.combo_font.setCurrentFont(font)
 
-        self.button_font_color = QtWidgets.QPushButton("Select Color...")
-        self.button_font_color.setIcon(color_icon(font_color))
+        self.button_font_color = color_button(font_color)
+
+        self.check_transparent = QtWidgets.QCheckBox("Transparent background")
+        self.check_transparent.setChecked(background_transparent)
 
         gbox = QtWidgets.QGroupBox("Image options")
         gbox_layout = QtWidgets.QFormLayout()
         gbox_layout.addRow("Size", size_layout)
+        gbox_layout.addRow("DPI", self.dpi)
         gbox_layout.addRow("Color", self.button_color)
+        gbox_layout.addRow(self.check_transparent)
         gbox.setLayout(gbox_layout)
 
         gbox_font = QtWidgets.QGroupBox("Font options")
         gbox_font_layout = QtWidgets.QFormLayout()
-        gbox_font_layout.addRow("Font", self.button_font)
+        gbox_font_layout.addRow("Font", self.combo_font)
         gbox_font_layout.addRow("Color", self.button_font_color)
-        gbox_font_layout.addRow("DPI", self.spinbox_dpi)
         gbox_font.setLayout(gbox_font_layout)
+
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -93,17 +120,25 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout = QtWidgets.QGridLayout()
 
         layout.addWidget(gbox, 0, 0, 1, 1)
-        layout.addWidget(gbox_font, 0, 1, 1, 1)
-        layout.addWidget(self.button_box, 1, 0, 1, 2)
+        layout.addWidget(gbox_font, 1, 0, 1, 2)
+        layout.addWidget(self.button_box, 2, 0, 1, 2)
         self.setLayout(layout)
 
-    def selectColor(self, color: QtGui.QColor) -> QtGui.QColor | None:
-        color = QtWidgets.QColorDialog.getColor(color, parent=self)
-        if not color.isValid():
-            return None
-        return color
-
     def accept(self):
+        effect = self.button_color.graphicsEffect()
+        assert isinstance(effect, QtWidgets.QGraphicsColorizeEffect)
+
+        effect_font = self.button_font_color.graphicsEffect()
+        assert isinstance(effect_font, QtWidgets.QGraphicsColorizeEffect)
+
+        self.imageOptionsSelected.emit(
+            QtCore.QSize(self.size_x.value(), self.size_y.value()),
+            self.dpi.value(),
+            effect.color(),
+            self.combo_font.currentFont(),
+            effect_font.color(),
+            self.check_transparent.isChecked(),
+        )
         super().accept()
 
 

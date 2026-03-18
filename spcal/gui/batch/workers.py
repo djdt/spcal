@@ -11,6 +11,7 @@ from spcal.datafile import (
     SPCalTextDataFile,
 )
 from spcal.isotope import SPCalIsotope
+from spcal.gui.graphs.export import export_histograms_for_results
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
 
@@ -47,6 +48,7 @@ def _batch_export_results(
     results: list[SPCalProcessingResult],
     clusters: dict[str, np.ndarray],
     export_options: dict,
+    image_export_options: dict | None,
     summary_fp: TextIO | None,
 ):
     export_spcal_processing_results(
@@ -60,6 +62,9 @@ def _batch_export_results(
         export_arrays=export_options["arrays"],
         export_compositions=export_options["clusters"],
     )
+    # if image_export_options is not None:
+    #     export_histograms_for_results(results,)
+
     if summary_fp is not None:
         append_results_summary(summary_fp, data_file, results, export_options["units"])
 
