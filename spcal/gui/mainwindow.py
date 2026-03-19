@@ -194,8 +194,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
 
         self.isotope_options.optionChanged.disconnect(self.onIsotopeOptionChanged)
+        current_isotopes = self.isotope_options.isotopes()
         for isotope, option in method.isotope_options.items():
-            self.isotope_options.setIsotopeOption(isotope, option)
+            if isotope in current_isotopes:
+                self.isotope_options.setIsotopeOption(isotope, option)
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         # self.processing_options.optionsChanged.disconnect(
         #     self.onProcessingOptionsChanged

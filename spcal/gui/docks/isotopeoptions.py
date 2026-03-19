@@ -37,7 +37,9 @@ class IsotopeOptionTable(BasicTableView):
             QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
-        self.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+        self.verticalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.Fixed
+        )
 
         for col, name in self.isotope_model.COLUMNS.items():
             if name == "Mass Fraction":
@@ -147,6 +149,9 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
+
+    def isotopes(self) -> list[SPCalIsotopeBase]:
+        return list(self.table.isotope_model.isotope_options.keys())
 
     def setIsotopes(self, isotopes: Sequence[SPCalIsotopeBase]):
         self.table.isotope_model.dataChanged.disconnect(self.onDataChanged)
