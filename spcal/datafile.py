@@ -109,7 +109,7 @@ class SPCalDataFile(object):
             "path": str(self.path.resolve()),
             "format": self.format,
             "event time": f"{self.event_time * 1e-6} µs",
-            "total time": f"{datetime.timedelta(seconds=self.total_time)}",
+            "total time": f"{datetime.timedelta(seconds=float(self.total_time))}",
             "number events": str(self.num_events),
             "number istopes": str(len(self.isotopes)),
         }
