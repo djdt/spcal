@@ -212,6 +212,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
         self.currentMethodChanged.emit(method)
+        self.reprocess()
 
     # Menu
 
@@ -451,7 +452,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.exclusion_regions = regions
 
         self.currentMethodChanged.emit(method)
-        self.reprocess([data_file])
+        self.reprocess()
 
     def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
         method = self.currentMethod()
@@ -1092,8 +1093,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def setGraphFont(self):
         settings = QtCore.QSettings()
-        current = QtGui.QFont(
-            settings.value("GraphFont/Family", "SansSerif"),  # type: ignore
+        current = QtGui.QFont(  # type: ignore
+            settings.value("GraphFont/Family", "SansSerif"),
             pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 
