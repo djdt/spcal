@@ -240,10 +240,7 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
     )
 
     method = SPCalProcessingMethod(
-        instrument_options,
-        limit_options,
-        isotope_options,  # type: ignore
-        processing_options,
+        instrument_options, limit_options, isotope_options, processing_options
     )
     method.expressions = expressions
     method.exclusion_regions = [(s, e) for s, e in method_dict["exclusion regions"]]
