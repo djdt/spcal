@@ -264,7 +264,7 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(2, orientation, UnitsRole)
     ) == mass_concentration_units
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == signal_units
@@ -273,7 +273,7 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == mass_concentration_units
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == mass_units
@@ -282,7 +282,7 @@ def test_spcal_outputs_dock(
     assert (
         dock.view.results_model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             dock.view.results_model.headerData(i, orientation, UnitsRole)
         ) == size_units
