@@ -17,7 +17,6 @@ from spcal.gui.dialogs.graphoptions import (
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
-from spcal.gui.dialogs.advancedoptions import AdvancedPoissonDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
@@ -35,44 +34,6 @@ from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
-
-
-def test_advanced_poisson_dialog(qtbot: QtBot):
-    dlg = AdvancedPoissonDialog("currie", 2.1, 0.6, 1.2, 1.1)
-    qtbot.addWidget(dlg)
-    with qtbot.waitExposed(dlg):
-        dlg.show()
-
-    assert dlg.poisson_formula.currentText() == "Currie"
-
-    assert dlg.currie.epsilon.value() == 0.6
-    assert dlg.currie.eta.value() == 2.1
-
-    assert dlg.formula_a.t_blank.value() == 1.1
-    assert dlg.formula_a.t_sample.value() == 1.2
-    assert dlg.formula_c.t_blank.value() == 1.1
-    assert dlg.formula_c.t_sample.value() == 1.2
-    assert dlg.stapleton.t_blank.value() == 1.1
-    assert dlg.stapleton.t_sample.value() == 1.2
-
-    assert dlg.isComplete()
-
-    dlg.currie.eta.setValue(None)
-
-    assert not dlg.isComplete()
-
-    dlg.poisson_formula.setCurrentText("Formula C")
-
-    assert dlg.isComplete()
-
-    dlg.formula_c.t_blank.setValue(2.0)
-
-    with qtbot.waitSignal(
-        dlg.optionsSelected,
-        check_params_cb=lambda f, o1, o2: f == "formula c" and o1 == 1.2 and o2 == 2.0,
-        timeout=100,
-    ):
-        dlg.accept()
 
 
 def test_calculator_dialog(qtbot: QtBot):
