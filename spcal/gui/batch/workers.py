@@ -34,8 +34,7 @@ def _batch_process_data_file(
     method.filterResults(results)
     if process_clusters:
         clusters = {
-            key: method.processClusters(results, key)
-            for key in CALIBRATION_KEYS
+            key: method.processClusters(results, key) for key in CALIBRATION_KEYS
         }
     else:
         clusters = {}
@@ -43,12 +42,11 @@ def _batch_process_data_file(
 
 
 def _batch_export_results(
-    data_file: SPCalDataFile,
     outpath: Path,
+    data_file: SPCalDataFile,
     results: list[SPCalProcessingResult],
     clusters: dict[str, np.ndarray],
     export_options: dict,
-    image_export_options: dict | None,
     summary_fp: TextIO | None,
 ):
     export_spcal_processing_results(
@@ -62,8 +60,20 @@ def _batch_export_results(
         export_arrays=export_options["arrays"],
         export_compositions=export_options["clusters"],
     )
-    # if image_export_options is not None:
-    #     export_histograms_for_results(results,)
+    if export_options["images"]:
+        image_outpath = outpath.parent.joinpath("images")
+        image_outpath.mkdir(exist_ok=True)
+        export_histograms_for_results(
+            results,
+            image_outpath,
+            str(outpath.stem),
+            size=export_options["image options"]["size"],
+            dpi=export_options["image options"]["dpi"],
+            brush=(export_options["image options"]["brush"]),
+            font=export_options["image options"]["font"],
+            font_pen=export_options["image options"]["font pen"],
+            background_color=export_options["image options"]["background color"],
+        )
 
     if summary_fp is not None:
         append_results_summary(summary_fp, data_file, results, export_options["units"])
@@ -157,8 +167,8 @@ class NuBatchWorker(QtCore.QObject):
                 return
 
             _batch_export_results(
-                data_file,
                 new_output,
+                data_file,
                 results,
                 clusters,
                 self.export_options,
@@ -225,21 +235,15 @@ class TOFWERKBatchWorker(QtCore.QObject):
         )
         if self.thread().isInterruptionRequested():
             return
-        export_spcal_processing_results(
+
+        _batch_export_results(
             outpath,
             data_file,
             results,
             clusters,
-            units=self.export_options["units"],
-            export_options=self.export_options["options"],
-            export_results=self.export_options["results"],
-            export_arrays=self.export_options["arrays"],
-            export_compositions=self.export_options["clusters"],
+            self.export_options,
+            summary_fp,
         )
-        if summary_fp is not None:
-            append_results_summary(
-                summary_fp, data_file, results, self.export_options["units"]
-            )
         self.progress.emit(index, 1.0)
 
     @QtCore.Slot()
@@ -321,21 +325,14 @@ class TextBatchWorker(QtCore.QObject):
         )
         if self.thread().isInterruptionRequested():
             return
-        export_spcal_processing_results(
+        _batch_export_results(
             outpath,
             data_file,
             results,
             clusters,
-            units=self.export_options["units"],
-            export_options=self.export_options["options"],
-            export_results=self.export_options["results"],
-            export_arrays=self.export_options["arrays"],
-            export_compositions=self.export_options["clusters"],
+            self.export_options,
+            summary_fp,
         )
-        if summary_fp is not None:
-            append_results_summary(
-                summary_fp, data_file, results, self.export_options["units"]
-            )
         self.progress.emit(index, 1.0)
 
     @QtCore.Slot()

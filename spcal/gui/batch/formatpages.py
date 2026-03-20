@@ -353,7 +353,10 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             if item is not None and item.checkState() == QtCore.Qt.CheckState.Checked:
                 item = self.table_isotopes.item(i, 1)
                 if item is not None and item.text() != "":
-                    selected.append(SPCalIsotope.fromString(item.text()))
+                    try:
+                        selected.append(SPCalIsotope.fromString(item.text()))
+                    except NameError:
+                        pass
         return selected
 
     def onOverrideChecked(self, checked: QtCore.Qt.CheckState):

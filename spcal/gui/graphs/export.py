@@ -12,11 +12,13 @@ def export_histograms_for_results(
     output_dir: Path,
     file_name: str,
     size: QtCore.QSize | None = None,
-    font: QtGui.QFont | None = None,
     dpi: int = 96,
     pen: QtGui.QPen | None = None,
     brush: QtGui.QBrush | None = None,
-    background: QtGui.QColor | QtCore.Qt.GlobalColor = QtCore.Qt.GlobalColor.white,
+    font: QtGui.QFont | None = None,
+    font_pen: QtGui.QPen | None = None,
+    background_color: QtGui.QColor
+    | QtCore.Qt.GlobalColor = QtCore.Qt.GlobalColor.white,
 ):
     if not output_dir.is_dir():
         raise FileNotFoundError("output_dir must be a directory")
@@ -28,6 +30,9 @@ def export_histograms_for_results(
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
         pen.setCosmetic(True)
 
+    if font_pen is None:
+        font_pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+
     if brush is None:
         brush = QtGui.QBrush(QtCore.Qt.GlobalColor.darkGray)
 
@@ -35,6 +40,13 @@ def export_histograms_for_results(
     font.setPointSizeF(font.pointSize() * font_scale)
 
     view = SinglePlotGraphicsView("", xlabel="Signal", ylabel="Count", font=font)
+    font_pen.setCosmetic(True)
+    for axis in [view.plot.xaxis, view.plot.yaxis]:
+        axis.setTextPen(font_pen)
+        axis.setPen(font_pen)
+        axis.setTickPen(font_pen)
+        if axis.label is not None:
+            axis.label.setDefaultTextColor(font_pen.color())
 
     if size is not None:
         view.plot.resize(size)
@@ -52,4 +64,4 @@ def export_histograms_for_results(
             view.plot.drawHistogram(counts, edges, width=1.0, pen=pen, brush=brush)
 
             path = output_dir.joinpath(f"{file_name}_{key}_{result.isotope}.png")
-            view.exportImage(path, size=size, background=background)
+            view.exportImage(path, size=size, background=background_color)

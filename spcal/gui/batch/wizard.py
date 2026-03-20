@@ -494,11 +494,11 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             "font": self.font(),
             "font color": QtGui.QColor(0, 0, 0),
             "background color": QtGui.QColor(255, 255, 255),
-            "background transparent": False,
         }
 
         self.check_export_images = QtWidgets.QCheckBox("Images")
         self.button_image_options = QtWidgets.QPushButton("Options...")
+        self.button_image_options.pressed.connect(self.dialogImageExportOptions)
 
         # units
 
@@ -570,6 +570,9 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.registerField("export.summary.name", self.summary_filename)
         self.registerField("export.units", self, "unitsProp")
 
+        self.registerField("export.image", self.check_export_images)
+        self.registerField("export.image.options", self, "imageExportOptionsProp")
+
     def units(self) -> dict[str, tuple[str, float]]:
         mass = self.mass_units.currentText()
         size = self.size_units.currentText()
@@ -577,6 +580,16 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             "signal": ("cts", 1.0),
             "mass": (mass, mass_units[mass]),
             "size": (size, size_units[size]),
+        }
+
+    def imageExportOptions(self) -> dict:
+        return {
+            "size": self.image_export_options["size"],
+            "dpi": self.image_export_options["dpi"],
+            "brush": QtGui.QBrush(self.image_export_options["color"]),
+            "font": self.image_export_options["font"],
+            "font pen": QtGui.QPen(self.image_export_options["font color"]),
+            "background color": self.image_export_options["background color"],
         }
 
     def isComplete(self) -> bool:
@@ -645,13 +658,16 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             self.output_dir.setText(dir)
 
     def dialogImageExportOptions(self):
+        bg_color: QtGui.QColor = self.image_export_options["background color"]  # type: ignore
+
         dlg = ImageExportDialog(
-            self.image_export_options["size"],
-            self.image_export_options["dpi"],
-            self.image_export_options["color"],
-            self.image_export_options["font"],
-            self.image_export_options["font color"],
-            self.image_export_options["transparent"],
+            self.image_export_options["size"],  # type: ignore
+            self.image_export_options["dpi"],  # type: ignore
+            self.image_export_options["color"],  # type: ignore
+            self.image_export_options["font"],  # type: ignore
+            self.image_export_options["font color"],  # type: ignore
+            bg_color.alpha() != 255,
+            parent=self,
         )
         dlg.imageOptionsSelected.connect(self.setImageExportOptions)
         dlg.open()
@@ -662,7 +678,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         dpi: int,
         color: QtGui.QColor,
         font: QtGui.QFont,
-        font_color: QtGui.QFont,
+        font_color: QtGui.QColor,
         transparent: bool,
     ):
         self.image_export_options["size"] = size
@@ -670,7 +686,14 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.image_export_options["color"] = color
         self.image_export_options["font"] = font
         self.image_export_options["font color"] = font_color
-        self.image_export_options["transparent"] = transparent
+        bg_color = QtGui.QColor(
+            QtCore.Qt.GlobalColor.black
+            if font_color.value() > 127
+            else QtCore.Qt.GlobalColor.white
+        )
+        if transparent:
+            bg_color.setAlpha(0)
+        self.image_export_options["background color"] = bg_color
 
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()
@@ -734,6 +757,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.updateOutputNames()
 
     unitsProp = QtCore.Property(dict, units)
+    imageExportOptionsProp = QtCore.Property(dict, imageExportOptions)
 
 
 class SPCalBatchProcessingWizard(QtWidgets.QWizard):
@@ -823,6 +847,8 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             "clusters": self.field("export.clusters"),
             "summary": summary_path,
             "units": self.field("export.units"),
+            "images": self.field("export.image"),
+            "image options": self.field("export.image.options"),
         }
 
         if self.hasVisitedPage(TEXT_PAGE_ID):
