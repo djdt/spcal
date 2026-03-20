@@ -60,6 +60,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
 
     def sizeHint(self) -> QtCore.QSize:
         size = self.lineEdit().sizeHint()
+        size.setWidth(self.fontMetrics().horizontalAdvance("00000000"))
         option = QtWidgets.QStyleOptionSpinBox()
         self.initStyleOption(option)
         return self.style().sizeFromContents(
