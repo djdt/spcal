@@ -16,6 +16,7 @@ from spcal.gui.io import (
     get_open_spcal_path,
     get_save_spcal_path,
     is_spcal_path,
+    most_recent_spcal_path,
 )
 from spcal.gui.modelviews import DataFileRole, IsotopeRole
 from spcal.gui.modelviews.basic import BasicTableView
@@ -74,6 +75,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Save
+            | QtWidgets.QDialogButtonBox.StandardButton.Open
             | QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Reset
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel,
@@ -275,7 +277,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def updateCalibration(self):
         self.calibration.clear()
 
-        scheme = COLOR_SCHEMES[QtCore.QSettings().value("colorscheme", "IBM Carbon")]  # type: ignore
+        scheme = COLOR_SCHEMES[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
 
         concs = self.concentrations()
         intensities = self.intensities()
@@ -308,10 +310,10 @@ class ResponseDialog(QtWidgets.QDialog):
 
         nans = np.logical_or(np.isnan(x), np.isnan(y))
         x, y = x[~nans] * factor, y[~nans]
-        if x.size == 0:
-            return None, None, None, None
-        elif x.size == 1:  # single point, force 0
+        if x.size == 1:  # single point, force 0
             return y[0] / x[0], 0.0, None, None
+        elif x.size == 0 or np.all(x == x[0]):
+            return None, None, None, None
         else:
             return weighted_linreg(x, y)
 
@@ -321,6 +323,8 @@ class ResponseDialog(QtWidgets.QDialog):
             self.accept()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Save:
             self.dialogSaveToFile()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Open:
+            self.dialogLoadFromFile()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
@@ -375,35 +379,43 @@ class ResponseDialog(QtWidgets.QDialog):
             return
         self.saveToFile(path)
 
+    def dialogLoadFromFile(self):
+        dir = str(most_recent_spcal_path() or "")
+        file, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Load Calibration", dir=dir, filter="CSV Documents(*.csv)"
+        )
+        if file == "":
+            return
+
+        self.loadFromFile(Path(file))
+
     def saveToFile(self, path: Path):
         concs = self.concentrations()
         intensities = self.intensities()
-        factor = mass_concentration_units[self.combo_unit.currentText()]
 
         with path.open("w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
             fp.write("Isotope,Slope,Intercept,r2,Error\n")
             for isotope in concs.keys():
                 m, b, r2, err = self.calibrationResult(
-                    concs[isotope] * factor, intensities[isotope]
+                    concs[isotope], intensities[isotope]
                 )
-                fp.write(f"{isotope},{m or ''},{b or ''},{r2 or ''},{err or ''},\n")
+                fp.write(f"{isotope},{m or ''},{b or ''},{r2 or ''},{err or ''}\n")
 
             fp.write(
-                "#Concentrations (kg/L),"
-                + ",".join(str(i) for i in range(len(concs)))
+                f"#Concentrations ({self.combo_unit.currentText()}/L),"
+                + ",".join(str(i + 1) for i in range(self.model_concs.rowCount()))
                 + "\n"
             )
             for isotope, vals in concs.items():
-                scaled = vals * factor
                 fp.write(
                     f"{isotope},"
-                    + ",".join("" if np.isnan(x) else str(x) for x in scaled)
+                    + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
             fp.write(
                 "#Intensities (cts),"
-                + ",".join(str(i) for i in range(len(intensities)))
+                + ",".join(str(i + 1) for i in range(self.model_intensity.rowCount()))
                 + "\n"
             )
             for isotope, vals in intensities.items():
@@ -412,3 +424,32 @@ class ResponseDialog(QtWidgets.QDialog):
                     + ",".join("" if np.isnan(x) else str(x) for x in vals)
                     + "\n"
                 )
+
+    def loadFromFile(self, path: Path):
+        responses = {}
+
+        with path.open("r") as fp:
+            header = fp.readline()
+            if not header.strip("#").startswith("SPCal Calibration"):
+                QtWidgets.QMessageBox.warning(
+                    self, "Invalid File", "This file is not an SPCal Calibration."
+                )
+                return
+
+            fp.readline()
+            line = fp.readline()
+            while not line.startswith("#"):
+                isotope, slope, _, _, _ = line.strip().split(",")
+                try:
+                    responses[SPCalIsotope.fromString(isotope)] = float(slope)
+                except (NameError, ValueError):
+                    logger.warning("could not read {isotope}")
+                line = fp.readline()
+
+        if len(responses) > 0:
+            self.responsesSelected.emit(responses)
+            super().accept()
+        else:
+            QtWidgets.QMessageBox.information(
+                self, "No Responses", "No responses could be read from the file."
+            )

@@ -671,7 +671,8 @@ def test_response_dialog_save(
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
-        ]
+        ],
+        lam=1.0,
     )
 
     dlg.addDataFile(df)
@@ -681,7 +682,8 @@ def test_response_dialog_save(
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
             ISOTOPE_TABLE[("Zn", 66)],
-        ]
+        ],
+        lam=2.0,
     )
 
     dlg.addDataFile(df2)
@@ -708,10 +710,31 @@ def test_response_dialog_save(
         assert index.row() == 0
         assert index.column() == col
 
+    def check_responses(responses: dict) -> bool:
+        if len(responses) != 2:
+            return False
+        slope = (
+            df2[ISOTOPE_TABLE[("Fe", 56)]].mean() - df[ISOTOPE_TABLE[("Fe", 56)]].mean()
+        ) * 1e9
+        if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], slope):
+            return False
+        slope = df[ISOTOPE_TABLE[("Cu", 63)]].mean() * 1e9
+        if not np.isclose(responses[ISOTOPE_TABLE[("Cu", 63)]], slope):
+            return False
+        return True
+
+    with qtbot.wait_signal(
+        dlg.responsesSelected, check_params_cb=check_responses, timeout=100
+    ):
+        dlg.accept()
+
     path = tmp_path.joinpath("test_response_dialog.csv")
     dlg.saveToFile(path)
 
-    # todo: test output, may change
+    with qtbot.wait_signal(
+        dlg.responsesSelected, check_params_cb=check_responses, timeout=100
+    ):
+        dlg.loadFromFile(path)
 
 
 def test_mass_fraction_calculator(qtbot: QtBot):
