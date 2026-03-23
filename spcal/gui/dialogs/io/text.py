@@ -52,7 +52,6 @@ class TextImportDialog(ImportDialogBase):
             override = existing_file.override_event_time
 
         self.table = QtWidgets.QTableWidget()
-        self.table.verticalHeader().setMaximumSectionSize(self.logicalDpiX() * 2)
         self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
@@ -62,6 +61,7 @@ class TextImportDialog(ImportDialogBase):
         self.table.setItemDelegate(IsotopeNameDelegate())
 
         self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.table_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
