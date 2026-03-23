@@ -109,8 +109,10 @@ def read_single_particle_file(
         peek = fp.readline()
         if "00:" in peek:  # we are dealing with a thremo iCap export
             converters = {1: lambda s: iso_time_to_float_seconds(s)}
-        fp.seek(data_start_pos)
+        else:
+            converters = {}
 
+        fp.seek(data_start_pos)
         gen = replace_comma_decimal(fp, len(usecols), delimiter)
 
         # todo: protential speed-up by trying loadtxt
@@ -119,6 +121,7 @@ def read_single_particle_file(
             data = np.genfromtxt(
                 gen,
                 delimiter=delimiter,
+                converters=converters,
                 names=header,
                 dtype=np.float32,
                 deletechars="",
@@ -132,4 +135,8 @@ def read_single_particle_file(
 
 
 if __name__ == "__main__":
-    print(read_single_particle_file("/home/tom/Downloads/STD1_AuNPs 50 nm_38.csv", skip_rows=1)[-10:])
+    print(
+        read_single_particle_file(
+            "/home/tom/Downloads/STD1_AuNPs 50 nm_38.csv", skip_rows=1
+        )[-10:]
+    )
