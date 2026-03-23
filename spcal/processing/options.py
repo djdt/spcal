@@ -125,7 +125,7 @@ class SPCalLimitOptions(object):
 
         # deafult kws
         _gaussian_kws = {"alpha": 2.867e-7}
-        _poisson_kws = {"alpha": 1e-3, "function": "currie"}
+        _poisson_kws = {"alpha": 1e-6}
         _compound_poisson_kws = {"alpha": 1e-6, "sigma": 0.5}
 
         if gaussian_kws is not None:  # pragma: no cover

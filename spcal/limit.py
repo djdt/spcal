@@ -156,18 +156,22 @@ class SPCalPoissonLimit(SPCalLimit):
         self,
         signals: np.ndarray,
         function: str = "currie",
-        alpha: float = 1e-3,
+        alpha: float = 1e-6,
         beta: float = 0.05,
         t_sample: float = 1.0,
         t_blank: float = 1.0,
-        eta: float = 2.0,
-        epsilon: float = 0.5,
+        eta: float = 1.0,
+        epsilon: float = 1.0,
         window_size: int = 0,
         max_iterations: int = 1,
     ):
         if function not in SPCalPoissonLimit.FUNCTIONS.keys():  # pragma: no cover
             raise ValueError(
                 "fomula must be one of", ", ".join(SPCalPoissonLimit.FUNCTIONS.keys())
+            )
+        elif function != "currie":
+            logger.warning(
+                "Currie is the reccomended function for single particle ICP-MS"
             )
 
         self.function = function
