@@ -61,7 +61,9 @@ class TextImportDialog(ImportDialogBase):
         self.table.setItemDelegate(IsotopeNameDelegate())
 
         self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
-        self.table_header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+        self.table_header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
@@ -70,7 +72,9 @@ class TextImportDialog(ImportDialogBase):
         )
 
         self.event_time = UnitsWidget(
-            time_units, base_value=event_time, default_unit="ms"
+            time_units,
+            base_value=event_time,
+            default_unit="ms",
         )
         self.event_time.baseValueChanged.connect(self.completeChanged)
         self.event_time.setEnabled(False)
@@ -116,9 +120,7 @@ class TextImportDialog(ImportDialogBase):
         self.layout_body.addWidget(self.table)
 
     def isComplete(self) -> bool:
-        if self.event_time.isEnabled() and (
-            not self.event_time.hasAcceptableInput() or self.event_time.value() is None
-        ):
+        if self.event_time.value() is None:
             return False
 
         try:
@@ -179,8 +181,8 @@ class TextImportDialog(ImportDialogBase):
 
     def fillTable(self):
         lines = []
-        for line in self.file_lines[:self.HEADER_LINE_COUNT]:
-            lines.append([x for x in line.strip().split(self.delimiter()) if x !=""])
+        for line in self.file_lines[: self.HEADER_LINE_COUNT]:
+            lines.append([x for x in line.strip().split(self.delimiter()) if x != ""])
         col_count = max(len(line) for line in lines)
         self.table.setColumnCount(col_count)
 
