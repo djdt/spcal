@@ -66,6 +66,8 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
 
 def replace_comma_decimal(fp, delimiter: str = ","):
     for line in fp:
+        if delimiter not in line:
+            continue
         if delimiter != ",":
             yield line.replace(",", ".")
         else:
@@ -100,7 +102,8 @@ def read_single_particle_file(
             fp.readline()
 
         header = fp.readline().strip().split(delimiter)
-        converters = {i: lambda s: float(s or np.nan) for i in range(len(header))}
+        usecols = [i for i, x in enumerate(header) if x != ""]
+        header = [x for x in header if x != ""]
 
         data_start_pos = fp.tell()
         peek = fp.readline()
@@ -113,14 +116,14 @@ def read_single_particle_file(
         # todo: protential speed-up by trying loadtxt
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", category=ConversionWarning)
-            data = np.genfromtxt(  # type: ignore
+            data = np.genfromtxt(
                 gen,
                 delimiter=delimiter,
                 names=header,
                 dtype=np.float32,
-                deletechars="",  # todo: see if this causes any issue with calculator or saving
-                converters=converters,  # type: ignore , works
+                deletechars="",
                 invalid_raise=False,
+                usecols=usecols,
                 loose=True,
             )
 

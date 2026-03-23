@@ -178,10 +178,9 @@ class TextImportDialog(ImportDialogBase):
         return [SPCalIsotope.fromString(name) for name in self.selectedNames()]
 
     def fillTable(self):
-        lines = [
-            line.split(self.delimiter())
-            for line in self.file_lines[: self.HEADER_LINE_COUNT]
-        ]
+        lines = []
+        for line in self.file_lines[:self.HEADER_LINE_COUNT]:
+            lines.append([x for x in line.strip().split(self.delimiter()) if x !=""])
         col_count = max(len(line) for line in lines)
         self.table.setColumnCount(col_count)
 
@@ -242,7 +241,10 @@ class TextImportDialog(ImportDialogBase):
             item = self.table.item(header_row, col)
             if item is None:
                 raise ValueError(f"missing item at {header_row}, {col}")
-            if not any(x in item.text().lower() for x in ["time", "index", "number"]):
+            if (
+                not any(x in item.text().lower() for x in ["time", "index", "number"])
+                and item.text() != ""
+            ):
                 m = REGEX_ISOTOPE.search(item.text())
                 if m is not None and m.group(1) is not None and m.group(2) is not None:
                     item.setToolTip(f"Original: '{item.text()}'")
