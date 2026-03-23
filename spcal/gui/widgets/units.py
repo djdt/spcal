@@ -24,6 +24,7 @@ class UnitsWidget(QtWidgets.QWidget):
         base_value_max: float = np.inf,
         step: float | Callable[[float, int], float] = 1.0,
         sigfigs: int = 6,
+        allow_none: bool = True,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -39,6 +40,7 @@ class UnitsWidget(QtWidgets.QWidget):
             max=base_value_max,
             step=step,
             sigfigs=sigfigs,
+            allow_none=allow_none,
             parent=self,
         )
 
@@ -160,8 +162,5 @@ class UnitsWidget(QtWidgets.QWidget):
         self.combo.setToolTip(text)
 
     baseValueProp = QtCore.Property(
-        object,
-        baseValue,
-        setBaseValue,
-        notify=baseValueChanged,  # type: ignore
+        object, baseValue, setBaseValue, notify=baseValueChanged
     )
