@@ -216,7 +216,7 @@ def test_batch_wizard_tofwerk(
     qtbot: QtBot,
 ):
     default_method.limit_options.limit_method = "compound poisson"
-    default_method.prominence_required = 0.5
+    default_method.processing_options.prominence_required = 0.5
     default_method.isotope_options[ISOTOPE_TABLE[("Ru", 101)]] = SPCalIsotopeOptions(
         None, 1.0, 1.0
     )
@@ -289,6 +289,59 @@ def test_batch_wizard_tofwerk(
     assert wait > 0
 
     assert tmp_path.joinpath(page.output_name.text()).exists()
+
+    wiz.close()
+
+
+def test_batch_wiard_image_export(
+    tmp_path: Path,
+    test_data_path: Path,
+    default_method: SPCalProcessingMethod,
+    qtbot: QtBot,
+):
+    wiz = SPCalBatchProcessingWizard(None, default_method, [])
+    qtbot.addWidget(wiz)
+    with qtbot.waitExposed(wiz):
+        wiz.show()
+
+    # Data file page
+    page = wiz.currentPage()
+    assert isinstance(page, BatchFilesWizardPage)
+
+    page.radio_tofwerk.click()
+    page.addFile(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    wiz.next()
+
+    # TOFWERK Options page
+    page = wiz.currentPage()
+    assert isinstance(page, BatchTOFWERKWizardPage)
+    page.table.setSelectedIsotopes(
+        [ISOTOPE_TABLE[("Ru", 101)], ISOTOPE_TABLE[("Ru", 102)]]
+    )
+    assert page.isComplete()
+    wiz.next()
+
+    wiz.next()
+
+    page = wiz.currentPage()
+    assert isinstance(page, BatchRunWizardPage)
+    page.check_export_images.setChecked(True)
+    page.output_dir.setText(str(tmp_path))
+    page.output_name.setText("test.csv")
+
+    wiz.accept()
+
+    wait = 100  # up to one second
+    while wait > 0:
+        wait -= 1
+        if page.status.text() == "Processing complete!":
+            break
+        qtbot.wait(10)
+    assert wait > 0
+
+    assert tmp_path.joinpath("images").exists()
+    assert tmp_path.joinpath("images/test_signal_101Ru.png").exists()
+    assert tmp_path.joinpath("images/test_signal_102Ru.png").exists()
 
     wiz.close()
 

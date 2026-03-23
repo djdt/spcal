@@ -65,9 +65,6 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.ExtendedSelection)
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
-        self.list.selectionModel().currentChanged.connect(
-            self.onCurrentOrSelectionChanged
-        )
         self.list.selectionModel().selectionChanged.connect(
             self.onCurrentOrSelectionChanged
         )

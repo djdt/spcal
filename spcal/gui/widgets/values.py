@@ -58,6 +58,15 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.valueChanged.connect(self.textFromValue)
         self.errorChanged.connect(self.textFromValue)
 
+    def sizeHint(self) -> QtCore.QSize:
+        size = self.lineEdit().sizeHint()
+        size.setWidth(self.fontMetrics().horizontalAdvance("00000000"))
+        option = QtWidgets.QStyleOptionSpinBox()
+        self.initStyleOption(option)
+        return self.style().sizeFromContents(
+            QtWidgets.QStyle.ContentsType.CT_SpinBox, option, size, self
+        )
+
     def error(self) -> float | None:
         return self._error
 

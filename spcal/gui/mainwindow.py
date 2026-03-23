@@ -193,6 +193,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.instrument_options.setInstrumentOptions(method.instrument_options)
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
 
+        self.isotope_options.optionChanged.disconnect(self.onIsotopeOptionChanged)
+        current_isotopes = self.isotope_options.isotopes()
+        for isotope, option in method.isotope_options.items():
+            if isotope in current_isotopes:
+                self.isotope_options.setIsotopeOption(isotope, option)
+        self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
         # self.processing_options.optionsChanged.disconnect(
         #     self.onProcessingOptionsChanged
         # )
@@ -206,6 +212,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
         self.currentMethodChanged.emit(method)
+        self.reprocess()
 
     # Menu
 
@@ -445,7 +452,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.exclusion_regions = regions
 
         self.currentMethodChanged.emit(method)
-        self.reprocess([data_file])
+        self.reprocess()
 
     def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
         method = self.currentMethod()
@@ -1086,8 +1093,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def setGraphFont(self):
         settings = QtCore.QSettings()
-        current = QtGui.QFont(
-            settings.value("GraphFont/Family", "SansSerif"),  # type: ignore
+        current = QtGui.QFont(  # type: ignore
+            settings.value("GraphFont/Family", "SansSerif"),
             pointSize=int(settings.value("GraphFont/PointSize", 10)),  # type: ignore
         )
 

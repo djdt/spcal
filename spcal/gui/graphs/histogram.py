@@ -87,7 +87,7 @@ class HistogramView(SinglePlotGraphicsView):
         self.data_for_export[str(result.isotope) + "_counts"] = counts
         self.data_for_export[str(result.isotope) + "_edges"] = edges
 
-        curve = self.drawHistogram(
+        curve = self.plot.drawHistogram(
             counts, edges, width=width, offset=offset, pen=pen, brush=brush
         )
 
@@ -105,7 +105,7 @@ class HistogramView(SinglePlotGraphicsView):
             filtered_brush = QtGui.QBrush(brush)
             filtered_brush.setColor(QtCore.Qt.GlobalColor.gray)
 
-            curve = self.drawHistogram(
+            curve = self.plot.drawHistogram(
                 counts, edges, width=width, offset=offset, pen=pen, brush=filtered_brush
             )
 

@@ -200,9 +200,6 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.first_line.setValue(skip_rows)
         self.first_line.valueChanged.connect(self.updateIsotopes)
 
-        self.instrument_type = QtWidgets.QComboBox()
-        self.instrument_type.addItems(["Quadrupole", "TOF"])
-
         self.table_isotopes = QtWidgets.QTableWidget()
         self.table_isotopes.setColumnCount(2)
         self.table_isotopes.setHorizontalHeaderLabels(["Column Name", "Isotope"])
@@ -221,7 +218,6 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         options_box_layout.addRow("Intensity units:", self.combo_intensity_units)
         options_box_layout.addRow("Delimiter:", self.combo_delimiter)
         options_box_layout.addRow("Import from row:", self.first_line)
-        options_box_layout.addRow("Instrument type:", self.instrument_type)
         options_box.setLayout(options_box_layout)
 
         layout = QtWidgets.QVBoxLayout()
@@ -234,7 +230,6 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.registerField("text.cps", self.combo_intensity_units, "currentText")
         self.registerField("text.event_time", self.event_time, "baseValueProp")
         self.registerField("text.event_time.override", self.override_event_time)
-        self.registerField("text.instrument_type", self.instrument_type, "currentText")
 
         self.registerField("text.isotopes", self, "isotopesProp")
         self.registerField("text.isotopes.table", self, "isotopesTableProp")
@@ -351,12 +346,6 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
             self.table_isotopes.setItem(row, 1, iso_item)
 
-        self.instrument_type.setEnabled(isotope_count > 1)
-        if isotope_count == 1:
-            self.instrument_type.setCurrentText("Quadrupole")
-        else:
-            self.instrument_type.setCurrentText("TOF")
-
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         selected = []
         for i in range(self.table_isotopes.rowCount()):
@@ -364,7 +353,10 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             if item is not None and item.checkState() == QtCore.Qt.CheckState.Checked:
                 item = self.table_isotopes.item(i, 1)
                 if item is not None and item.text() != "":
-                    selected.append(SPCalIsotope.fromString(item.text()))
+                    try:
+                        selected.append(SPCalIsotope.fromString(item.text()))
+                    except NameError:
+                        pass
         return selected
 
     def onOverrideChecked(self, checked: QtCore.Qt.CheckState):

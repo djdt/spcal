@@ -670,7 +670,7 @@ def test_results_output_model(
         model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == mass_concentration_units
 
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == signal_units
@@ -724,7 +724,7 @@ def test_results_output_model(
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == mass_concentration_units
 
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == mass_units
@@ -759,7 +759,7 @@ def test_results_output_model(
     assert (
         model.headerData(2, QtCore.Qt.Orientation.Horizontal, UnitsRole)
     ) == mass_concentration_units
-    for i in range(3, 7):
+    for i in range(3, 8):
         assert (
             model.headerData(i, QtCore.Qt.Orientation.Horizontal, UnitsRole)
         ) == size_units

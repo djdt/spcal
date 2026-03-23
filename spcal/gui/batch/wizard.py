@@ -16,6 +16,7 @@ from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
 from spcal.gui.docks.processingoptions import SPCalProcessingOptionsWidget
 from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
+from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -385,7 +386,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         layout_right.addWidget(gbox_isotope, 1)
 
         layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(layout_left,1)
+        layout.addLayout(layout_left, 1)
         layout.addLayout(layout_right, 1)
         self.setLayout(layout)
 
@@ -393,7 +394,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
 
     def dialogCalculator(self):
         isotopes = list(self.isotope_table.isotope_model.isotope_options.keys())
-        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)  # type: ignore
+        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)
         dlg.expressionsChanged.connect(self.setExpressions)
         dlg.open()
 
@@ -426,7 +427,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             instrument_options=self.instrument_options.instrumentOptions(),
             limit_options=self.limit_options.limitOptions(),
             isotope_options=self.isotope_table.isotope_model.isotope_options,
-            processing_options=self.processing_options.processingOptions()
+            processing_options=self.processing_options.processingOptions(),
         )
         method.expressions = self.expr_list.expressions()
         return method
@@ -485,9 +486,19 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.summary_filename.setEnabled(False)
         self.summary_filename.textChanged.connect(self.completeChanged)
 
+        # image options
+        self.image_export_options = {
+            "size": QtCore.QSize(800, 600),
+            "dpi": 96,
+            "color": QtGui.QColor(128, 128, 128),
+            "font": self.font(),
+            "font color": QtGui.QColor(0, 0, 0),
+            "background color": QtGui.QColor(255, 255, 255),
+        }
+
         self.check_export_images = QtWidgets.QCheckBox("Images")
         self.button_image_options = QtWidgets.QPushButton("Options...")
-        self.check_export_images.setEnabled(False)
+        self.button_image_options.pressed.connect(self.dialogImageExportOptions)
 
         # units
 
@@ -559,6 +570,9 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.registerField("export.summary.name", self.summary_filename)
         self.registerField("export.units", self, "unitsProp")
 
+        self.registerField("export.image", self.check_export_images)
+        self.registerField("export.image.options", self, "imageExportOptionsProp")
+
     def units(self) -> dict[str, tuple[str, float]]:
         mass = self.mass_units.currentText()
         size = self.size_units.currentText()
@@ -566,6 +580,16 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             "signal": ("cts", 1.0),
             "mass": (mass, mass_units[mass]),
             "size": (size, size_units[size]),
+        }
+
+    def imageExportOptions(self) -> dict:
+        return {
+            "size": self.image_export_options["size"],
+            "dpi": self.image_export_options["dpi"],
+            "brush": QtGui.QBrush(self.image_export_options["color"]),
+            "font": self.image_export_options["font"],
+            "font pen": QtGui.QPen(self.image_export_options["font color"]),
+            "background color": self.image_export_options["background color"],
         }
 
     def isComplete(self) -> bool:
@@ -633,6 +657,44 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         if dir != "":
             self.output_dir.setText(dir)
 
+    def dialogImageExportOptions(self):
+        bg_color: QtGui.QColor = self.image_export_options["background color"]  # type: ignore
+
+        dlg = ImageExportDialog(
+            self.image_export_options["size"],  # type: ignore
+            self.image_export_options["dpi"],  # type: ignore
+            self.image_export_options["color"],  # type: ignore
+            self.image_export_options["font"],  # type: ignore
+            self.image_export_options["font color"],  # type: ignore
+            bg_color.alpha() != 255,
+            parent=self,
+        )
+        dlg.imageOptionsSelected.connect(self.setImageExportOptions)
+        dlg.open()
+
+    def setImageExportOptions(
+        self,
+        size: QtCore.QSize,
+        dpi: int,
+        color: QtGui.QColor,
+        font: QtGui.QFont,
+        font_color: QtGui.QColor,
+        transparent: bool,
+    ):
+        self.image_export_options["size"] = size
+        self.image_export_options["dpi"] = dpi
+        self.image_export_options["color"] = color
+        self.image_export_options["font"] = font
+        self.image_export_options["font color"] = font_color
+        bg_color = QtGui.QColor(
+            QtCore.Qt.GlobalColor.black
+            if font_color.value() > 127
+            else QtCore.Qt.GlobalColor.white
+        )
+        if transparent:
+            bg_color.setAlpha(0)
+        self.image_export_options["background color"] = bg_color
+
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()
         item.setText(str(path))
@@ -695,6 +757,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.updateOutputNames()
 
     unitsProp = QtCore.Property(dict, units)
+    imageExportOptionsProp = QtCore.Property(dict, imageExportOptions)
 
 
 class SPCalBatchProcessingWizard(QtWidgets.QWizard):
@@ -784,6 +847,8 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             "clusters": self.field("export.clusters"),
             "summary": summary_path,
             "units": self.field("export.units"),
+            "images": self.field("export.image"),
+            "image options": self.field("export.image.options"),
         }
 
         if self.hasVisitedPage(TEXT_PAGE_ID):
