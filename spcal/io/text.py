@@ -64,9 +64,9 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
     return delimiter, skip_rows, column_count
 
 
-def replace_comma_decimal(fp, delimiter: str = ","):
+def replace_comma_decimal(fp, ncols: int, delimiter: str = ","):
     for line in fp:
-        if delimiter not in line:
+        if line.count(delimiter) < ncols - 1:
             continue
         if delimiter != ",":
             yield line.replace(",", ".")
@@ -111,7 +111,7 @@ def read_single_particle_file(
             converters = {1: lambda s: iso_time_to_float_seconds(s)}
         fp.seek(data_start_pos)
 
-        gen = replace_comma_decimal(fp, delimiter)
+        gen = replace_comma_decimal(fp, len(usecols), delimiter)
 
         # todo: protential speed-up by trying loadtxt
         with warnings.catch_warnings():
@@ -129,3 +129,7 @@ def read_single_particle_file(
 
     assert data.dtype.names is not None
     return data
+
+
+if __name__ == "__main__":
+    print(read_single_particle_file("/home/tom/Downloads/STD1_AuNPs 50 nm_38.csv", skip_rows=1)[-10:])
