@@ -52,7 +52,6 @@ class TextImportDialog(ImportDialogBase):
             override = existing_file.override_event_time
 
         self.table = QtWidgets.QTableWidget()
-        self.table.verticalHeader().setMaximumSectionSize(self.logicalDpiX() * 2)
         self.table.itemChanged.connect(self.completeChanged)
         self.table.setMinimumSize(800, 400)
         self.table.setColumnCount(column_count)
@@ -62,6 +61,9 @@ class TextImportDialog(ImportDialogBase):
         self.table.setItemDelegate(IsotopeNameDelegate())
 
         self.table_header = CheckableHeaderView(QtCore.Qt.Orientation.Horizontal)
+        self.table_header.setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.setHorizontalHeader(self.table_header)
         self.table_header.checkStateChanged.connect(self.updateTableUseColumns)
 
@@ -70,7 +72,9 @@ class TextImportDialog(ImportDialogBase):
         )
 
         self.event_time = UnitsWidget(
-            time_units, base_value=event_time, default_unit="ms"
+            time_units,
+            base_value=event_time,
+            default_unit="ms",
         )
         self.event_time.baseValueChanged.connect(self.completeChanged)
         self.event_time.setEnabled(False)
@@ -116,9 +120,7 @@ class TextImportDialog(ImportDialogBase):
         self.layout_body.addWidget(self.table)
 
     def isComplete(self) -> bool:
-        if self.event_time.isEnabled() and (
-            not self.event_time.hasAcceptableInput() or self.event_time.value() is None
-        ):
+        if self.event_time.value() is None:
             return False
 
         try:
@@ -178,10 +180,9 @@ class TextImportDialog(ImportDialogBase):
         return [SPCalIsotope.fromString(name) for name in self.selectedNames()]
 
     def fillTable(self):
-        lines = [
-            line.split(self.delimiter())
-            for line in self.file_lines[: self.HEADER_LINE_COUNT]
-        ]
+        lines = []
+        for line in self.file_lines[: self.HEADER_LINE_COUNT]:
+            lines.append([x for x in line.strip().split(self.delimiter()) if x != ""])
         col_count = max(len(line) for line in lines)
         self.table.setColumnCount(col_count)
 
@@ -242,7 +243,10 @@ class TextImportDialog(ImportDialogBase):
             item = self.table.item(header_row, col)
             if item is None:
                 raise ValueError(f"missing item at {header_row}, {col}")
-            if not any(x in item.text().lower() for x in ["time", "index", "number"]):
+            if (
+                not any(x in item.text().lower() for x in ["time", "index", "number"])
+                and item.text() != ""
+            ):
                 m = REGEX_ISOTOPE.search(item.text())
                 if m is not None and m.group(1) is not None and m.group(2) is not None:
                     item.setToolTip(f"Original: '{item.text()}'")

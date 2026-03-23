@@ -64,8 +64,10 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
     return delimiter, skip_rows, column_count
 
 
-def replace_comma_decimal(fp, delimiter: str = ","):
+def replace_comma_decimal(fp, ncols: int, delimiter: str = ","):
     for line in fp:
+        if line.count(delimiter) < ncols - 1:
+            continue
         if delimiter != ",":
             yield line.replace(",", ".")
         else:
@@ -100,29 +102,41 @@ def read_single_particle_file(
             fp.readline()
 
         header = fp.readline().strip().split(delimiter)
-        converters = {i: lambda s: float(s or np.nan) for i in range(len(header))}
+        usecols = [i for i, x in enumerate(header) if x != ""]
+        header = [x for x in header if x != ""]
 
         data_start_pos = fp.tell()
         peek = fp.readline()
         if "00:" in peek:  # we are dealing with a thremo iCap export
             converters = {1: lambda s: iso_time_to_float_seconds(s)}
-        fp.seek(data_start_pos)
+        else:
+            converters = {}
 
-        gen = replace_comma_decimal(fp, delimiter)
+        fp.seek(data_start_pos)
+        gen = replace_comma_decimal(fp, len(usecols), delimiter)
 
         # todo: protential speed-up by trying loadtxt
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", category=ConversionWarning)
-            data = np.genfromtxt(  # type: ignore
+            data = np.genfromtxt(
                 gen,
                 delimiter=delimiter,
+                converters=converters,
                 names=header,
                 dtype=np.float32,
-                deletechars="",  # todo: see if this causes any issue with calculator or saving
-                converters=converters,  # type: ignore , works
+                deletechars="",
                 invalid_raise=False,
+                usecols=usecols,
                 loose=True,
             )
 
     assert data.dtype.names is not None
     return data
+
+
+if __name__ == "__main__":
+    print(
+        read_single_particle_file(
+            "/home/tom/Downloads/STD1_AuNPs 50 nm_38.csv", skip_rows=1
+        )[-10:]
+    )
