@@ -133,9 +133,9 @@ class ParticleView(SinglePlotGraphicsView):
         if label is None:
             label = str(result.isotope)
 
-        curve = self.drawCurve(result.times, result.signals, pen)
+        curve = self.plot.drawCurve(result.times, result.signals, pen)
 
-        scatter = self.drawScatter(
+        scatter = self.plot.drawScatter(
             result.times[result.maxima[result.filter_indicies]],
             result.signals[result.maxima[result.filter_indicies]],
             pen=None,
@@ -151,20 +151,20 @@ class ParticleView(SinglePlotGraphicsView):
 
         pen.setStyle(QtCore.Qt.PenStyle.DashLine)
         if isinstance(result.limit.detection_threshold, np.ndarray):
-            lod = self.drawCurve(
+            lod = self.plot.drawCurve(
                 result.times, result.limit.detection_threshold, pen=pen
             )
         else:
-            lod = self.drawLine(
+            lod = self.plot.drawLine(
                 float(result.limit.detection_threshold),
                 QtCore.Qt.Orientation.Horizontal,
                 pen=pen,
             )
         pen.setStyle(QtCore.Qt.PenStyle.DotLine)
         if isinstance(result.limit.mean_signal, np.ndarray):
-            mu = self.drawCurve(result.times, result.limit.mean_signal, pen=pen)
+            mu = self.plot.drawCurve(result.times, result.limit.mean_signal, pen=pen)
         else:
-            mu = self.drawLine(
+            mu = self.plot.drawLine(
                 float(result.limit.mean_signal),
                 QtCore.Qt.Orientation.Horizontal,
                 pen=pen,

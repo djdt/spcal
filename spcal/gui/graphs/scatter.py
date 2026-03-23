@@ -102,7 +102,7 @@ class ScatterView(SinglePlotGraphicsView):
         self.data_for_export[f"x_{label_x}"] = x[valid]
         self.data_for_export[f"y_{label_y}"] = y[valid]
 
-        self.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
+        self.plot.drawScatter(x[valid], y[valid], pen=pen, brush=brush)
 
         self.plot.xaxis.setLabel(label_x, unit_x)
         self.plot.yaxis.setLabel(label_y, unit_y)

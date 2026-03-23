@@ -221,13 +221,13 @@ class ResponseDialog(QtWidgets.QDialog):
         isotope = index.data(IsotopeRole)
 
         # Draw the trace
-        self.intensity.drawCurve(data_file.times, data_file[isotope])
+        self.intensity.plot.drawCurve(data_file.times, data_file[isotope])
 
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         pen.setCosmetic(True)
 
         # Draw mean line
-        self.intensity.drawLine(
+        self.intensity.plot.drawLine(
             np.nanmean(data_file[isotope]), QtCore.Qt.Orientation.Horizontal, pen=pen
         )
         # Rescale
@@ -295,7 +295,7 @@ class ResponseDialog(QtWidgets.QDialog):
 
             brush = QtGui.QBrush(scheme[i % len(scheme)])
 
-            self.calibration.drawScatter(
+            self.calibration.plot.drawScatter(
                 x, y, size=6.0 * self.devicePixelRatio(), brush=brush, name=str(isotope)
             )
 
