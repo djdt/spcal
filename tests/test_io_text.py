@@ -46,6 +46,12 @@ def test_io_text_import_agilent(test_data_path: Path):
     assert np.isclose(data["Au197"].mean(), 6.2062)
 
 
+def test_io_text_import_perkin_elmer(test_data_path: Path):
+    path = test_data_path.joinpath("text/perkin_elmer.csv")
+    data = read_single_particle_file(path, delimiter=",", skip_rows=1)
+    assert np.all(data["Au"] == np.arange(10))
+
+
 def test_guess_text_parameters_agilent():
     agilent_header = [
         "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
