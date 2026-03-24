@@ -148,9 +148,11 @@ class SPCalProcessingMethod(object):
 
         return results
 
-    def filterResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
+    def filterResults(
+        self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
+    ) -> np.ndarray:
         if len(results) == 0:  # pragma: no cover
-            return
+            return np.empty((0, 2), dtype=int)
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
@@ -185,6 +187,8 @@ class SPCalProcessingMethod(object):
             result.filter_indicies = np.flatnonzero(
                 np.isin(result.peak_indicies, valid_peaks)  # type: ignore , set above
             )
+
+        return all_regions
 
     def filterIndicies(
         self,
