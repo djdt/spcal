@@ -916,6 +916,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.efficiencySelected.connect(
             self.instrument_options.options_widget.efficiency.setValue
         )
+        dlg.uptakeChanged.connect(
+            self.instrument_options.options_widget.uptake.setBaseValue
+        )
         dlg.isotopeOptionsChanged.connect(self.isotope_options.setIsotopeOption)
         dlg.isotopeOptionsChanged.connect(self.onIsotopeOptionChanged)
         dlg.open()
