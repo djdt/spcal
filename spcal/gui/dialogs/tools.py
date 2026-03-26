@@ -22,6 +22,7 @@ from spcal.siunits import (
     mass_concentration_units,
     size_units,
     response_units,
+    flowrate_units,
 )
 
 
@@ -234,6 +235,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
     efficiencySelected = QtCore.Signal(object)
     massResponseSelected = QtCore.Signal(object)
 
+    uptakeChanged = QtCore.Signal(object)
     isotopeOptionsChanged = QtCore.Signal(SPCalIsotopeBase, SPCalIsotopeOptions)
 
     def __init__(
@@ -255,6 +257,13 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
+        self.uptake = UnitsWidget(
+            flowrate_units,
+            "ml/min",
+            self.proc_result.method.instrument_options.uptake,
+            sigfigs=sf,
+        )
+
         self.diameter = UnitsWidget(size_units, "nm", options.diameter, sigfigs=sf)
         self.density = UnitsWidget(density_units, "g/cm³", options.density, sigfigs=sf)
         self.concentration = UnitsWidget(
@@ -272,6 +281,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.concentration.baseValueChanged.connect(self.onOptionChanged)
         self.response.baseValueChanged.connect(self.onOptionChanged)
         self.mass_fraction.valueChanged.connect(self.onOptionChanged)
+        self.uptake.baseValueChanged.connect(self.onOptionChanged)
 
         self.efficiency = ValueWidget(sigfigs=sf)
         self.efficiency.setReadOnly(True)
@@ -279,7 +289,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.mass_response.setReadOnly(True)
 
         self.efficencyChanged.connect(self.efficiency.setValue)
-        self.massResponseChanged.connect(self.mass_response.setValue)
+        self.massResponseChanged.connect(self.mass_response.setBaseValue)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -294,6 +304,11 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         gbox_info_layout.addRow("Isotope:", QtWidgets.QLabel(str(isotope)))
         gbox_info_layout.addRow("No events:", QtWidgets.QLabel(str(result.number)))
         gbox_info.setLayout(gbox_info_layout)
+
+        gbox_inst = QtWidgets.QGroupBox("Instrument options")
+        gbox_inst_layout = QtWidgets.QFormLayout()
+        gbox_inst_layout.addRow("Uptake", self.uptake)
+        gbox_inst.setLayout(gbox_inst_layout)
 
         gbox_mass = QtWidgets.QGroupBox("Reference properties")
         gbox_mass_layout = QtWidgets.QFormLayout()
@@ -316,10 +331,11 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(gbox_info, 0, 0, 1, 2)
-        layout.addWidget(gbox_mass, 1, 0, 1, 1)
-        layout.addWidget(gbox_conc, 2, 0, 1, 1)
-        layout.addWidget(gbox_output, 1, 1, 2, 1)
-        layout.addWidget(self.button_box, 3, 0, 1, 2)
+        layout.addWidget(gbox_inst, 1, 0, 1, 2)
+        layout.addWidget(gbox_mass, 2, 0, 1, 1)
+        layout.addWidget(gbox_conc, 3, 0, 1, 1)
+        layout.addWidget(gbox_output, 2, 1, 2, 1)
+        layout.addWidget(self.button_box, 4, 0, 1, 2)
 
         self.setLayout(layout)
         self.onOptionChanged()
@@ -347,7 +363,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.massResponseChanged.emit(mass_response)
 
         concentration = self.concentration.baseValue()
-        uptake = self.proc_result.method.instrument_options.uptake
+        uptake = self.uptake.baseValue()
         response = self.response.baseValue()
 
         if concentration is not None and uptake is not None:
@@ -402,5 +418,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
                 new_options
             )
             self.isotopeOptionsChanged.emit(self.proc_result.isotope, new_options)
+        if self.uptake.baseValue() != self.proc_result.method.instrument_options.uptake:
+            self.uptakeChanged.emit(self.uptake.baseValue())
 
         super().accept()

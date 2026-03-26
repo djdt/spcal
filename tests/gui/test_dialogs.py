@@ -827,6 +827,33 @@ def test_transport_efficiency_dialog(
         dlg.accept()
 
 
+def test_transport_efficiency_dialog_mass_response(
+    qtbot: QtBot,
+    random_datafile_gen,
+    default_method: SPCalProcessingMethod,
+):
+    default_method.instrument_options.uptake = 1.0
+    default_method.isotope_options[ISOTOPE_TABLE[("C", 13)]] = SPCalIsotopeOptions(
+        1000.0, None, 1.0, diameter=3.0e-6
+    )
+    df = random_datafile_gen(
+        isotopes=[ISOTOPE_TABLE[("C", 13)]], lam=1.0, number=0, size=100
+    )
+    result = default_method.processDataFile(df)[ISOTOPE_TABLE[("C", 13)]]
+    result.filter_indicies = np.arange(100)
+    result.detections = np.random.normal(1315.82, 1.0, size=100)
+
+    dlg = TransportEfficiencyDialog(df, ISOTOPE_TABLE[("C", 13)], result)
+
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    mass_response = dlg.mass_response.value()
+    assert mass_response is not None
+    assert np.isclose(mass_response, 1.074e4, rtol=1e-3)
+
+
 def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
     params = np.empty(100, dtype=[("mass", float), ("mu", float), ("sigma", float)])
     params["mass"] = np.random.uniform(-0.001, 0.001, size=100) + np.arange(30, 130)

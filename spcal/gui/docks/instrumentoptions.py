@@ -39,7 +39,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
             "Open a dialog for calculating transport efficiency using the current file and isotope.",
             self.efficiencyDialogRequested,
         )
-        self.action_efficiency.setEnabled(False)
 
         self.button_efficiency = QtWidgets.QToolButton()
         self.button_efficiency.setDefaultAction(self.action_efficiency)
@@ -47,7 +46,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         # Complete Changed
         self.uptake.baseValueChanged.connect(self.optionsChanged)
         self.efficiency.valueChanged.connect(self.optionsChanged)
-        self.uptake.baseValueChanged.connect(self.onUptakeChanged)
 
         layout_eff = QtWidgets.QHBoxLayout()
         layout_eff.addWidget(self.efficiency, 1)
@@ -73,9 +71,6 @@ class SPCalInstrumentOptionsWidget(QtWidgets.QWidget):
         self.efficiency.setValue(instrument_options.efficiency)
         self.blockSignals(False)
         self.optionsChanged.emit()
-
-    def onUptakeChanged(self):
-        self.action_efficiency.setEnabled(self.uptake.baseValue() is not None)
 
 
 class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):

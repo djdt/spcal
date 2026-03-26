@@ -140,12 +140,10 @@ def test_spcal_instrument_options_dock(qtbot: QtBot):
 
     assert dock.options_widget.uptake.baseValue() is None
     assert dock.options_widget.efficiency.value() == 0.1
-    assert not dock.options_widget.action_efficiency.isEnabled()
 
     with qtbot.waitSignal(dock.optionsChanged):
         dock.options_widget.uptake.setBaseValue(0.3)
 
-    assert dock.options_widget.action_efficiency.isEnabled()
     with qtbot.waitSignal(dock.efficiencyDialogRequested):
         dock.options_widget.button_efficiency.click()
 
