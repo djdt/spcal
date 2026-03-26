@@ -701,8 +701,12 @@ def test_results_output_model(
         # test changing header works
         model.setData(model.index(0, 1), "#/L", CurrentUnitRole)
         assert model.data(model.index(row, 1)) == result.number_concentration
+
         model.setData(model.index(0, 1), "#/ml", CurrentUnitRole)
-        assert model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+        if result.number_concentration is not None:
+            assert model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+        else:
+            assert model.data(model.index(row, 1)) is None
 
     qtmodeltester.check(model)
 

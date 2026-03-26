@@ -90,6 +90,7 @@ class SPCalProcessingResult(object):
         if (
             not self.canCalibrate("mass")
             or self.method.instrument_options.efficiency is None
+            or self.method.instrument_options.uptake is None
         ):  # pragma: no cover
             return None
 
@@ -97,7 +98,7 @@ class SPCalProcessingResult(object):
             particle.particle_number_concentration(
                 self.number,
                 self.method.instrument_options.efficiency,
-                self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                self.method.instrument_options.uptake,
                 self.total_time,
             )
         )
@@ -107,6 +108,7 @@ class SPCalProcessingResult(object):
         if (
             not self.canCalibrate("mass")
             or self.method.instrument_options.efficiency is None
+            or self.method.instrument_options.uptake is None
         ):  # pragma: no cover
             return None
         masses = self.calibrated("mass")
@@ -114,7 +116,7 @@ class SPCalProcessingResult(object):
         return particle.particle_total_concentration(
             masses,
             self.method.instrument_options.efficiency,
-            self.method.instrument_options.uptake,  # type: ignore , checked via calibrate('mass')
+            self.method.instrument_options.uptake,
             self.total_time,
         )
 
