@@ -279,7 +279,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.mass_response.setReadOnly(True)
 
         self.efficencyChanged.connect(self.efficiency.setValue)
-        self.massResponseChanged.connect(self.mass_response.setValue)
+        self.massResponseChanged.connect(self.mass_response.setBaseValue)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok

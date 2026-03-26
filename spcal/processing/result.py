@@ -87,29 +87,33 @@ class SPCalProcessingResult(object):
 
     @property
     def number_concentration(self) -> float | None:
-        if not self.method.instrument_options.canCalibrate(
-            "mass", "efficiency"
+        if (
+            not self.canCalibrate("mass")
+            or self.method.instrument_options.efficiency is None
         ):  # pragma: no cover
             return None
-        else:
-            return np.around(
-                particle.particle_number_concentration(
-                    self.number,
-                    self.method.instrument_options.efficiency,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
-                    self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
-                    self.total_time,
-                )
+
+        return np.around(
+            particle.particle_number_concentration(
+                self.number,
+                self.method.instrument_options.efficiency,
+                self.method.instrument_options.uptake,  # type: ignore , checked via canCalibrate('mass', 'efficiency')
+                self.total_time,
             )
+        )
 
     @property
     def mass_concentration(self) -> float | None:
-        if not self.canCalibrate("mass"):  # pragma: no cover
+        if (
+            not self.canCalibrate("mass")
+            or self.method.instrument_options.efficiency is None
+        ):  # pragma: no cover
             return None
         masses = self.calibrated("mass")
 
         return particle.particle_total_concentration(
             masses,
-            self.method.instrument_options.efficiency,  # type: ignore , checked via calibrate('mass')
+            self.method.instrument_options.efficiency,
             self.method.instrument_options.uptake,  # type: ignore , checked via calibrate('mass')
             self.total_time,
         )
