@@ -302,7 +302,7 @@ class TextImportDialog(ImportDialogBase):
             delimiter=self.delimiter(),
             skip_rows=self.spinbox_first_line.value(),
             cps=self.combo_intensity_units.currentText() == "CPS",
-            override_event_time=self.event_time.value()
+            override_event_time=self.event_time.baseValue()
             if self.override_event_time.isChecked()
             else None,
         )
