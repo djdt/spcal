@@ -696,7 +696,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         elif view == "spectra":
             data_file = self.files.currentDataFile()
             isotope = self.toolbar.combo_isotope.currentIsotope()
-            if data_file is None or self.processing_results[data_file][isotope] is None:
+            if (
+                data_file is None
+                or self.processing_results[data_file].get(isotope, None) is None
+            ):
                 return
 
             self.graph.drawResultsSpectra(
