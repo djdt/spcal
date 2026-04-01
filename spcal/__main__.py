@@ -114,6 +114,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             scheme = QtCore.Qt.ColorScheme.Dark
 
+    if app.platformName() == "windows" and "-style" not in args.qtargs:
+        app.setStyle("fusion")
+
     if scheme == QtCore.Qt.ColorScheme.Dark:
         QtGui.QIcon.setThemeName("spcal-dark")
     else:

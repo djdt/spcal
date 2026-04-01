@@ -770,9 +770,12 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Batch Processing")
-        self.resize(1024, 800)
+        # set the style to modern if not on MacOS, otherwise dark schemes look odd
+        if self.wizardStyle() != QtWidgets.QWizard.WizardStyle.MacStyle:
+            self.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
         self.setButtonText(QtWidgets.QWizard.WizardButton.FinishButton, "Start Batch")
         self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
+        self.resize(1024, 800)
 
         self.process_thread = QtCore.QThread()
         self.process_timer = QtCore.QElapsedTimer()
