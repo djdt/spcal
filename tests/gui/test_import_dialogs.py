@@ -14,18 +14,18 @@ from spcal.processing.method import SPCalProcessingMethod
 
 def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalTextDataFile):
-        if not str(data_file.selected_isotopes[0]) == "107Ag":
+        if str(data_file.selected_isotopes[0]) != "107Ag":
             return False
-        if not str(data_file.selected_isotopes[1]) == "197Au":
+        if str(data_file.selected_isotopes[1]) != "197Au":
             return False
-        if not data_file.num_events == 999:
+        if data_file.num_events != 999:
             return False
-        if not list(data_file.isotope_table.values()) == [
+        if list(data_file.isotope_table.values()) != [
             "106.905_-_seg_Full_mass_spectrum_att_1",
             "196.967_-_seg_Full_mass_spectrum_att_1",
         ]:
             return False
-        if not data_file.event_time != 1e-5:
+        if data_file.event_time != 1e-5:
             return False
         return True
 
