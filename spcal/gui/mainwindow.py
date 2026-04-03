@@ -44,6 +44,7 @@ from spcal.gui.io import (
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.io.session import (
+    SPCalJSONEncoder,
     save_session_json,
     decode_json_method,
     decode_json_datafile,
@@ -74,7 +75,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        method = SPCalProcessingMethod()
+        method = self.restoreDefaultMethod()
+
         self.processing_methods = {"default": method}
 
         self.graph = SPCalCentralWidget()
@@ -83,7 +85,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar_view = SPCalViewToolBar()
 
         self.instrument_options = SPCalInstrumentOptionsDock(method.instrument_options)
-        # self.processing_options = SPCalProcessingOptionsDock(method.processing_options)
 
         self.limit_options = SPCalLimitOptionsDock(method.limit_options)
         self.isotope_options = SPCalIsotopeOptionsDock()
@@ -105,7 +106,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogTransportEfficiencyCalculator
         )
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
-        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
         self.limit_options.options_widget.requestManualLimitsDialog.connect(
@@ -152,9 +152,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
         )
-        # self.addDockWidget(
-        #     QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
-        # )
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.isotope_options
@@ -167,6 +164,24 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.createMenuBar()
         self.updateRecentFiles()
+
+    def restoreDefaultMethod(self) -> SPCalProcessingMethod:
+        settings = QtCore.QSettings()
+        if settings.contains("DefaultMethod/JSON"):
+            mdict = json.loads(settings.value("DefaultMethod/JSON"))
+            return decode_json_method(mdict)
+        return SPCalProcessingMethod()
+
+    def saveDefaultMethod(self):
+        settings = QtCore.QSettings()
+        settings.setValue(
+            "DefaultMethod/JSON",
+            json.dumps(
+                self.processing_methods["default"],
+                cls=SPCalJSONEncoder,
+                separators=(",", ":"),
+            ),
+        )
 
     # Access
 
@@ -199,11 +214,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if isotope in current_isotopes:
                 self.isotope_options.setIsotopeOption(isotope, option)
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
-        # self.processing_options.optionsChanged.disconnect(
-        #     self.onProcessingOptionsChanged
-        # )
-        # self.processing_options.setProcessingOptions(method.processing_options)
-        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
         self.limit_options.setLimitOptions(
@@ -305,6 +315,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "Set processing options for the current method.",
             self.dialogProcessingOptions,
         )
+        self.action_save_default_method = create_action(
+            "document-save",
+            "Set Default Method",
+            "Set the current method as the default, restored when starting SPCal.",
+            self.saveDefaultMethod,
+        )
 
         # View
         current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
@@ -394,6 +410,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuedit.addAction(self.action_particle_database)
         menuedit.addSeparator()
         menuedit.addAction(self.action_processing_options)
+        menuedit.addSeparator()
+        menuedit.addAction(self.action_save_default_method)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -467,14 +485,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.isotope_options.setIsotopeOption(
                     isotope, method.isotope_options[isotope]
                 )
-
-    # def setClusterDistance(self, distance: float):
-    #     method = self.currentMethod()
-    #     if not np.isclose(method.cluster_distance, distance):
-    #         method.cluster_distance = distance
-    #
-    #         self.currentMethodChanged.emit(method)
-    #         self.reprocess(self.files.currentDataFile())
 
     # Slots for signals
 
@@ -567,12 +577,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.limit_options = self.limit_options.limitOptions()
         self.currentMethodChanged.emit(method)
         self.reprocess()
-
-    # def onProcessingOptionsChanged(self):
-    #     method = self.currentMethod()
-    #     # method.processing_options = self.processing_options.processingOptions()
-    #     self.currentMethodChanged.emit(method)
-    #     self.reprocess()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
         isotopes = data_file.selected_isotopes + self.currentMethod().expressions

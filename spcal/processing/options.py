@@ -1,3 +1,4 @@
+from typing import Any
 import logging
 
 import numpy as np
@@ -135,9 +136,9 @@ class SPCalLimitOptions(object):
         if compound_poisson_kws is not None:  # pragma: no cover
             _compound_poisson_kws.update(compound_poisson_kws)
 
-        self.gaussian_kws = _gaussian_kws
-        self.poisson_kws = _poisson_kws
-        self.compound_poisson_kws = _compound_poisson_kws
+        self.gaussian_kws: dict[str, Any] = _gaussian_kws
+        self.poisson_kws: dict[str, Any] = _poisson_kws
+        self.compound_poisson_kws: dict[str, Any] = _compound_poisson_kws
 
         self.window_size = window_size
         self.max_iterations = max_iterations
@@ -257,7 +258,7 @@ class SPCalLimitOptions(object):
             return SPCalCompoundPoissonLimit(
                 signals,
                 alpha=self.compound_poisson_kws["alpha"],
-                sigma=sigma,  # type: ignore , sigma bound when method==compound poisson
+                sigma=sigma,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
@@ -272,7 +273,7 @@ class SPCalLimitOptions(object):
                 poisson = SPCalCompoundPoissonLimit(
                     signals,
                     alpha=self.compound_poisson_kws["alpha"],
-                    sigma=sigma,  # type: ignore , sigma bound when method==highest and istof
+                    sigma=sigma,
                     window_size=self.window_size,
                     max_iterations=self.max_iterations,
                 )
@@ -297,7 +298,7 @@ class SPCalProcessingOptions(object):
         calibration_mode: str = "efficiency",
         accumulation_method: str = "signal mean",
         points_required: int = 1,
-        prominence_required: float = 0.2,
+        prominence_required: float = 0.5,
         cluster_distance: float = 0.03,
     ):
         if accumulation_method not in [
