@@ -1,3 +1,1 @@
-from . import icons
-from . import darkicons
-from . import images
+__all__ = ["icons", "darkicons"]
