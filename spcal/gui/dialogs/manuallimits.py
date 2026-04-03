@@ -3,7 +3,7 @@ from PySide6 import QtCore, QtWidgets
 import numpy as np
 
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotopeBase
 
 from spcal.gui.modelviews import IsotopeRole
 

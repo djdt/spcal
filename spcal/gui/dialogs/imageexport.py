@@ -1,4 +1,3 @@
-from spcal.isotope import SPCalIsotopeBase, ISOTOPE_TABLE
 from PySide6 import QtCore, QtGui, QtWidgets
 
 

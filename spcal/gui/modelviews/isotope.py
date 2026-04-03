@@ -1,4 +1,3 @@
-from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 

@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 import sympy
-from PIL import Image
 
 currie = "$$S_C = z_{1-\\alpha} \\sqrt{\\eta b + \\epsilon}$$"
 

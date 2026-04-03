@@ -4,7 +4,6 @@ from pytestqt.qtbot import QtBot
 from spcal.gui.objects import (
     ContextMenuRedirectFilter,
     DragDropRedirectFilter,
-    KeepMenuOpenFilter,
     DoubleOrEmptyValidator,
     DoubleOrPercentValidator,
 )

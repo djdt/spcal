@@ -1,5 +1,4 @@
 import numpy as np
-import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
