@@ -50,7 +50,7 @@ for csv in csvs:
             data[name], yc + ub, yd + ub
         )
 
-    d, l, r = detection.combine_detections(detections, labels, regions)
+    d, _, _ = detection.combine_detections(detections, labels, regions)
     datas[csv.stem] = d
 
 np.savez_compressed("fractions.npz", **datas)
