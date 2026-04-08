@@ -40,7 +40,7 @@ class SingleIonSignalsPopup(QtWidgets.QDialog):
         self.setWindowTitle("Single Ion Inspection")
         self.setWindowFlags(QtCore.Qt.WindowType.Popup)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.view.drawCurve(np.arange(y.size), y)
+        self.view.plot.drawCurve(np.arange(y.size), y)
 
         layout = QtWidgets.QHBoxLayout()
         layout.setContentsMargins(QtCore.QMargins(1, 1, 1, 1))
