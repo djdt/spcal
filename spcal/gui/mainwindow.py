@@ -43,11 +43,7 @@ from spcal.gui.io import (
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import (
-    save_session_json,
-    decode_json_method,
-    decode_json_datafile,
-)
+from spcal.io.session import save_session_json, decode_json_method, decode_json_datafile
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
@@ -74,7 +70,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        method = SPCalProcessingMethod()
+        method = self.restoreDefaultMethod()
+
         self.processing_methods = {"default": method}
 
         self.graph = SPCalCentralWidget()
@@ -83,7 +80,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.toolbar_view = SPCalViewToolBar()
 
         self.instrument_options = SPCalInstrumentOptionsDock(method.instrument_options)
-        # self.processing_options = SPCalProcessingOptionsDock(method.processing_options)
 
         self.limit_options = SPCalLimitOptionsDock(method.limit_options)
         self.isotope_options = SPCalIsotopeOptionsDock()
@@ -105,7 +101,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogTransportEfficiencyCalculator
         )
         self.instrument_options.optionsChanged.connect(self.onInstrumentOptionsChanged)
-        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
         self.limit_options.options_widget.requestManualLimitsDialog.connect(
@@ -152,9 +147,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.limit_options
         )
-        # self.addDockWidget(
-        #     QtCore.Qt.DockWidgetArea.LeftDockWidgetArea, self.processing_options
-        # )
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.files)
         self.addDockWidget(
             QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.isotope_options
@@ -168,6 +160,133 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
+    def restoreDefaultMethod(self) -> SPCalProcessingMethod:
+        settings = QtCore.QSettings()
+        method = SPCalProcessingMethod()
+        if settings.contains("DefaultMethod/Instrument/Uptake"):
+            method.instrument_options.uptake = settings.value(
+                "DefaultMethod/Instrument/Uptake", None, float
+            )
+        if settings.contains("DefaultMethod/Instrument/Efficiency"):
+            method.instrument_options.efficiency = settings.value(
+                "DefaultMethod/Instrument/Efficiency", None, float
+            )
+
+        method.limit_options.gaussian_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/Gaussian/Alpha",
+            method.limit_options.gaussian_kws["alpha"],
+            float,
+        )
+        method.limit_options.poisson_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/Poisson/Alpha",
+            method.limit_options.poisson_kws["alpha"],
+            float,
+        )
+        method.limit_options.compound_poisson_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/CompoundPoisson/Alpha",
+            method.limit_options.compound_poisson_kws["alpha"],
+            float,
+        )
+        method.limit_options.compound_poisson_kws["sigma"] = settings.value(
+            "DefaultMethod/Limits/CompoundPoisson/Sigma",
+            method.limit_options.compound_poisson_kws["sigma"],
+            float,
+        )
+        method.limit_options.max_iterations = settings.value(
+            "DefaultMethod/Limits/Iterative", method.limit_options.max_iterations, int
+        )
+        method.limit_options.window_size = settings.value(
+            "DefaultMethod/Limits/WindowSize", method.limit_options.window_size, int
+        )
+
+        method.processing_options.calibration_mode = settings.value(
+            "DefaultMethod/Processing/CalibrationMode",
+            method.processing_options.calibration_mode,
+        )
+        method.processing_options.accumulation_method = settings.value(
+            "DefaultMethod/Processing/AccumulationMethod",
+            method.processing_options.accumulation_method,
+        )
+        method.processing_options.points_required = settings.value(
+            "DefaultMethod/Processing/PointsRequired",
+            method.processing_options.points_required,
+            int,
+        )
+        method.processing_options.prominence_required = settings.value(
+            "DefaultMethod/Processing/ProminenceRequired",
+            method.processing_options.prominence_required,
+            float,
+        )
+        method.processing_options.cluster_distance = settings.value(
+            "DefaultMethod/Processing/ClusterDistance",
+            method.processing_options.cluster_distance,
+            float,
+        )
+
+        return method
+
+    def saveDefaultMethod(self):
+        settings = QtCore.QSettings()
+        method = self.currentMethod()
+
+        if method.instrument_options.uptake is not None:
+            settings.setValue(
+                "DefaultMethod/Instrument/Uptake", method.instrument_options.uptake
+            )
+        else:
+            settings.remove("DefaultMethod/Instrument/Uptake")
+        if method.instrument_options.efficiency is not None:
+            settings.setValue(
+                "DefaultMethod/Instrument/Efficiency",
+                method.instrument_options.efficiency,
+            )
+        else:
+            settings.remove("DefaultMethod/Instrument/Efficiency")
+
+        settings.setValue(
+            "DefaultMethod/Limits/Gaussian/Alpha",
+            method.limit_options.gaussian_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/Poisson/Alpha",
+            method.limit_options.poisson_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/CompoundPoisson/Alpha",
+            method.limit_options.compound_poisson_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/CompoundPoisson/Sigma",
+            method.limit_options.compound_poisson_kws["sigma"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/MaxIterations", method.limit_options.max_iterations
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/WindowSize", method.limit_options.window_size
+        )
+
+        settings.setValue(
+            "DefaultMethod/Processing/CalibrationMode",
+            method.processing_options.calibration_mode,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/AccumulationMethod",
+            method.processing_options.accumulation_method,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/PointsRequired",
+            method.processing_options.points_required,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/ProminenceRequired",
+            method.processing_options.prominence_required,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/ClusterDistance",
+            method.processing_options.cluster_distance,
+        )
+
     # Access
 
     def clusters(self, data_file: SPCalDataFile, key: str) -> np.ndarray:
@@ -179,11 +298,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ].processClusters(self.processing_results[data_file], key)
         return self.processing_clusters[data_file][key]
 
-    @QtCore.Slot()
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
 
-    @QtCore.Slot()
     def setCurrentMethod(self, method: SPCalProcessingMethod):
         self.processing_methods["default"] = method
 
@@ -199,11 +316,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if isotope in current_isotopes:
                 self.isotope_options.setIsotopeOption(isotope, option)
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
-        # self.processing_options.optionsChanged.disconnect(
-        #     self.onProcessingOptionsChanged
-        # )
-        # self.processing_options.setProcessingOptions(method.processing_options)
-        # self.processing_options.optionsChanged.connect(self.onProcessingOptionsChanged)
 
         self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
         self.limit_options.setLimitOptions(
@@ -305,6 +417,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "Set processing options for the current method.",
             self.dialogProcessingOptions,
         )
+        self.action_save_default_method = create_action(
+            "document-save",
+            "Set Default Method",
+            "Set the current method as the default, restored when starting SPCal.",
+            self.saveDefaultMethod,
+        )
 
         # View
         current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
@@ -394,6 +512,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuedit.addAction(self.action_particle_database)
         menuedit.addSeparator()
         menuedit.addAction(self.action_processing_options)
+        menuedit.addSeparator()
+        menuedit.addAction(self.action_save_default_method)
 
         menuview = self.menuBar().addMenu("&View")
 
@@ -467,14 +587,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.isotope_options.setIsotopeOption(
                     isotope, method.isotope_options[isotope]
                 )
-
-    # def setClusterDistance(self, distance: float):
-    #     method = self.currentMethod()
-    #     if not np.isclose(method.cluster_distance, distance):
-    #         method.cluster_distance = distance
-    #
-    #         self.currentMethodChanged.emit(method)
-    #         self.reprocess(self.files.currentDataFile())
 
     # Slots for signals
 
@@ -567,12 +679,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.limit_options = self.limit_options.limitOptions()
         self.currentMethodChanged.emit(method)
         self.reprocess()
-
-    # def onProcessingOptionsChanged(self):
-    #     method = self.currentMethod()
-    #     # method.processing_options = self.processing_options.processingOptions()
-    #     self.currentMethodChanged.emit(method)
-    #     self.reprocess()
 
     def onResultsChanged(self, data_file: SPCalDataFile):
         isotopes = data_file.selected_isotopes + self.currentMethod().expressions
