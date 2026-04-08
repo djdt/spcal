@@ -173,38 +173,54 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             )
 
         method.limit_options.gaussian_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/Gaussian/Alpha", 2.867e-7, float
+            "DefaultMethod/Limits/Gaussian/Alpha",
+            method.limit_options.gaussian_kws["alpha"],
+            float,
         )
         method.limit_options.poisson_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/Poisson/Alpha", 1e-7, float
+            "DefaultMethod/Limits/Poisson/Alpha",
+            method.limit_options.poisson_kws["alpha"],
+            float,
         )
         method.limit_options.compound_poisson_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/CompoundPoisson/Alpha", 1e-7, float
+            "DefaultMethod/Limits/CompoundPoisson/Alpha",
+            method.limit_options.compound_poisson_kws["alpha"],
+            float,
         )
         method.limit_options.compound_poisson_kws["sigma"] = settings.value(
-            "DefaultMethod/Limits/CompoundPoisson/Sigma", 0.5, float
+            "DefaultMethod/Limits/CompoundPoisson/Sigma",
+            method.limit_options.compound_poisson_kws["sigma"],
+            float,
         )
         method.limit_options.max_iterations = settings.value(
-            "DefaultMethod/Limits/Iterative", 1, int
+            "DefaultMethod/Limits/Iterative", method.limit_options.max_iterations, int
         )
         method.limit_options.window_size = settings.value(
-            "DefaultMethod/Limits/WindowSize", 0, int
+            "DefaultMethod/Limits/WindowSize", method.limit_options.window_size, int
         )
 
         method.processing_options.calibration_mode = settings.value(
-            "DefaultMethod/Processing/CalibrationMode", "efficiency"
+            "DefaultMethod/Processing/CalibrationMode",
+            method.processing_options.calibration_mode,
         )
         method.processing_options.accumulation_method = settings.value(
-            "DefaultMethod/Processing/AccumulationMethod", "signal mean"
+            "DefaultMethod/Processing/AccumulationMethod",
+            method.processing_options.accumulation_method,
         )
         method.processing_options.points_required = settings.value(
-            "DefaultMethod/Processing/PointsRequired", 1, int
+            "DefaultMethod/Processing/PointsRequired",
+            method.processing_options.points_required,
+            int,
         )
         method.processing_options.prominence_required = settings.value(
-            "DefaultMethod/Processing/ProminenceRequired", 0.5, float
+            "DefaultMethod/Processing/ProminenceRequired",
+            method.processing_options.prominence_required,
+            float,
         )
         method.processing_options.cluster_distance = settings.value(
-            "DefaultMethod/Processing/ClusterDistance", 0.03, float
+            "DefaultMethod/Processing/ClusterDistance",
+            method.processing_options.cluster_distance,
+            float,
         )
 
         return method
