@@ -43,12 +43,7 @@ from spcal.gui.io import (
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import (
-    SPCalJSONEncoder,
-    save_session_json,
-    decode_json_method,
-    decode_json_datafile,
-)
+from spcal.io.session import save_session_json, decode_json_method, decode_json_datafile
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
@@ -167,20 +162,113 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def restoreDefaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
-        if settings.contains("DefaultMethod/JSON"):
-            mdict = json.loads(settings.value("DefaultMethod/JSON"))
-            return decode_json_method(mdict)
-        return SPCalProcessingMethod()
+        method = SPCalProcessingMethod()
+        if settings.contains("DefaultMethod/Instrument/Uptake"):
+            method.instrument_options.uptake = settings.value(
+                "DefaultMethod/Instrument/Uptake", None, float
+            )
+        if settings.contains("DefaultMethod/Instrument/Efficiency"):
+            method.instrument_options.efficiency = settings.value(
+                "DefaultMethod/Instrument/Efficiency", None, float
+            )
+
+        method.limit_options.gaussian_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/Gaussian/Alpha", 2.867e-7, float
+        )
+        method.limit_options.poisson_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/Poisson/Alpha", 1e-7, float
+        )
+        method.limit_options.compound_poisson_kws["alpha"] = settings.value(
+            "DefaultMethod/Limits/CompoundPoisson/Alpha", 1e-7, float
+        )
+        method.limit_options.compound_poisson_kws["sigma"] = settings.value(
+            "DefaultMethod/Limits/CompoundPoisson/Sigma", 0.5, float
+        )
+        method.limit_options.max_iterations = settings.value(
+            "DefaultMethod/Limits/Iterative", 1, int
+        )
+        method.limit_options.window_size = settings.value(
+            "DefaultMethod/Limits/WindowSize", 0, int
+        )
+
+        method.processing_options.calibration_mode = settings.value(
+            "DefaultMethod/Processing/CalibrationMode", "efficiency"
+        )
+        method.processing_options.accumulation_method = settings.value(
+            "DefaultMethod/Processing/AccumulationMethod", "signal mean"
+        )
+        method.processing_options.points_required = settings.value(
+            "DefaultMethod/Processing/PointsRequired", 1, int
+        )
+        method.processing_options.prominence_required = settings.value(
+            "DefaultMethod/Processing/ProminenceRequired", 0.5, float
+        )
+        method.processing_options.cluster_distance = settings.value(
+            "DefaultMethod/Processing/ClusterDistance", 0.03, float
+        )
+
+        return method
 
     def saveDefaultMethod(self):
         settings = QtCore.QSettings()
+        method = self.currentMethod()
+
+        if method.instrument_options.uptake is not None:
+            settings.setValue(
+                "DefaultMethod/Instrument/Uptake", method.instrument_options.uptake
+            )
+        else:
+            settings.remove("DefaultMethod/Instrument/Uptake")
+        if method.instrument_options.efficiency is not None:
+            settings.setValue(
+                "DefaultMethod/Instrument/Efficiency",
+                method.instrument_options.efficiency,
+            )
+        else:
+            settings.remove("DefaultMethod/Instrument/Efficiency")
+
         settings.setValue(
-            "DefaultMethod/JSON",
-            json.dumps(
-                self.processing_methods["default"],
-                cls=SPCalJSONEncoder,
-                separators=(",", ":"),
-            ),
+            "DefaultMethod/Limits/Gaussian/Alpha",
+            method.limit_options.gaussian_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/Poisson/Alpha",
+            method.limit_options.poisson_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/CompoundPoisson/Alpha",
+            method.limit_options.compound_poisson_kws["alpha"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/CompoundPoisson/Sigma",
+            method.limit_options.compound_poisson_kws["sigma"],
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/MaxIterations", method.limit_options.max_iterations
+        )
+        settings.setValue(
+            "DefaultMethod/Limits/WindowSize", method.limit_options.window_size
+        )
+
+        settings.setValue(
+            "DefaultMethod/Processing/CalibrationMode",
+            method.processing_options.calibration_mode,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/AccumulationMethod",
+            method.processing_options.accumulation_method,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/PointsRequired",
+            method.processing_options.points_required,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/ProminenceRequired",
+            method.processing_options.prominence_required,
+        )
+        settings.setValue(
+            "DefaultMethod/Processing/ClusterDistance",
+            method.processing_options.cluster_distance,
         )
 
     # Access
@@ -194,11 +282,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ].processClusters(self.processing_results[data_file], key)
         return self.processing_clusters[data_file][key]
 
-    @QtCore.Slot()
     def currentMethod(self) -> SPCalProcessingMethod:
         return self.processing_methods["default"]
 
-    @QtCore.Slot()
     def setCurrentMethod(self, method: SPCalProcessingMethod):
         self.processing_methods["default"] = method
 

@@ -16,7 +16,7 @@ class LimitOptionsBaseWidget(QtWidgets.QGroupBox):
     optionsChanged = QtCore.Signal()
 
     def __init__(
-        self, name: str, alpha: float = 0.001, parent: QtWidgets.QWidget | None = None
+        self, name: str, alpha: float = 1e-7, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent=parent)
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
@@ -55,7 +55,7 @@ class LimitOptionsBaseWidget(QtWidgets.QGroupBox):
 class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
     def __init__(
         self,
-        alpha: float = 1e-6,
+        alpha: float = 1e-7,
         sigma: float = 0.6,
         single_ion_parameters: np.ndarray | None = None,
         parent: QtWidgets.QWidget | None = None,
@@ -198,56 +198,12 @@ class PoissonOptionsWidget(LimitOptionsBaseWidget):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__("Poisson", alpha, parent=parent)
-        # self.button_advanced = QtWidgets.QPushButton("Advanced Options...")
-        # self.button_advanced.pressed.connect(self.dialogAdvancedOptions)
-        # button_layout = QtWidgets.QHBoxLayout()
-        # button_layout.addWidget(
-        #     self.button_advanced, 1, QtCore.Qt.AlignmentFlag.AlignRight
-        # )
-        # layout = self.layout()
-        # assert isinstance(layout, QtWidgets.QFormLayout)
-        # layout.addRow(button_layout)
 
         self.eta = eta
         self.epsilon = epsilon
 
     def isComplete(self) -> bool:
         return self.alpha.hasAcceptableInput()
-
-    # def parameters(self) -> dict:
-    #     return {
-    #         "alpha": self.alpha.value(),
-    #         "beta": 0.05,
-    #         "eta": self.eta,
-    #         "epsilon": self.epsilon,
-    #     }
-    #
-    # def setParameters(self, state: dict):
-    #     self.blockSignals(True)
-    #     if "alpha" in state:
-    #         self.alpha.setValue(state["alpha"])
-    #     if "params" in state:
-    #         if "eta" in state["params"]:
-    #             self.eta = state["params"]["eta"]
-    #         if "epsilon" in state["params"]:
-    #             self.epsilon = state["params"]["epsilon"]
-    #     self.blockSignals(False)
-    #     self.optionsChanged.emit()
-
-    # def dialogAdvancedOptions(self) -> AdvancedPoissonDialog:
-    #     dlg = AdvancedPoissonDialog(
-    #         self.eta,
-    #         self.epsilon,
-    #         parent=self,
-    #     )
-    #     dlg.optionsSelected.connect(self.setOptions)
-    #     dlg.open()
-    #     return dlg
-    #
-    # def setOptions(self, formula: str, eta: float, epsilon: float):
-    #     self.eta = eta
-    #     self.epsilon = epsilon
-    #     self.optionsChanged.emit()
 
 
 class ManualLimitsOptions(QtWidgets.QGroupBox):
