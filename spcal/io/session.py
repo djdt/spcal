@@ -51,7 +51,7 @@ class SPCalJSONEncoder(json.JSONEncoder):
         if isinstance(o, SPCalProcessingMethod):
             return {
                 "instrument options": o.instrument_options,
-                "isotope options": o.isotope_options,
+                "isotope options": {str(k): v for k, v in o.isotope_options.items()},
                 "limit options": o.limit_options,
                 "processing options": o.processing_options,
                 "exclusion regions": o.exclusion_regions,
@@ -66,15 +66,12 @@ class SPCalJSONEncoder(json.JSONEncoder):
             return {"uptake": o.uptake, "efficiency": o.efficiency}
         if isinstance(o, SPCalIsotopeOptions):
             return {
-                str(k): {
-                    "density": v.density,
-                    "response": v.response,
-                    "mass fraction": v.mass_fraction,
-                    "concentration": v.concentration,
-                    "diameter": v.diameter,
-                    "mass response": v.mass_response,
-                }
-                for k, v in o.items()
+                "density": o.density,
+                "response": o.response,
+                "mass fraction": o.mass_fraction,
+                "concentration": o.concentration,
+                "diameter": o.diameter,
+                "mass response": o.mass_response,
             }
         if isinstance(o, SPCalLimitOptions):
             return {
