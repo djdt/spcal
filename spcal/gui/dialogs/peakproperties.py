@@ -1,9 +1,11 @@
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.detection import detection_maxima
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.isotope import IsotopeComboBox
+
+from spcal.detection import detection_maxima
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
@@ -19,6 +21,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("SPCal Peak Properties")
         self.resize(600, 400)
+
+        self.view = SinglePlotGraphicsView("")
 
         self.results = results
 
@@ -49,6 +53,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.width_units.currentTextChanged.connect(self.updateValues)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.view, 1)
         layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.table, 1)
 
@@ -72,6 +77,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
                     raise ValueError("item is None")
                 item.setText("")
 
+    # def updateGraph(self):
+
     def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
 
@@ -79,18 +86,21 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             self.clear()
             return
 
-        maxima = detection_maxima(result.signals, result.regions)
-
         # heights from peak maxima to baseline
-        heights = result.signals[maxima] - result.limit.mean_signal
+        heights = result.signals[result.maxima] - result.limit.mean_signal
 
         widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
         # symmetry as how offcenter peak maxima is
         skews = (
-            (result.times[maxima] - result.times[result.regions[:, 0]]) / widths - 0.5
+            (result.times[result.maxima] - result.times[result.regions[:, 0]]) / widths
+            - 0.5
         ) * 2.0
         # widths converted to seconds
         widths /= time_units[self.width_units.currentText()]
+
+        self.view.plot.clear()
+        counts, bins = np.histogram(widths)
+        self.view.plot.drawHistogram(counts, bins, width=1.0)
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
