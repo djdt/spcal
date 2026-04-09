@@ -88,8 +88,7 @@ class SPCalProcessingResult(object):
     @property
     def number_concentration(self) -> float | None:
         if (
-            not self.canCalibrate("mass")
-            or self.method.instrument_options.efficiency is None
+            self.method.instrument_options.efficiency is None
             or self.method.instrument_options.uptake is None
         ):  # pragma: no cover
             return None
