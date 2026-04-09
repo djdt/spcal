@@ -186,6 +186,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         brushes = []
         for result, color in zip(results, colors):
+            color = QtGui.QColor(color)  # copy
             color.setAlphaF(0.66)
             brushes.append(QtGui.QBrush(color))
         self.composition.drawResults(results, clusters, key, pen, brushes)
@@ -205,6 +206,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         for result, color in zip(results, colors):
             if result.canCalibrate(key) and result.number > 1:
                 drawable.append(result)
+                color = QtGui.QColor(color)  # copy
                 color.setAlphaF(0.66)
                 brushes.append(QtGui.QBrush(color))
 
