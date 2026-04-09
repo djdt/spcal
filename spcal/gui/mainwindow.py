@@ -857,10 +857,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
             if view == "particle":
                 self.graph.drawResultsParticle(drawable, colors, names, key)
-                for start, end in data_file.exclusion_regions:
-                    self.graph.particle.addExclusionRegion(start, end)
+                if len(files) == 1:
+                    for start, end in files[0].exclusion_regions:
+                        self.graph.particle.addExclusionRegion(start, end)
                 for start, end in self.currentMethod().exclusion_regions:
                     self.graph.particle.addGlobalExclusionRegion(start, end)
+                self.graph.particle.action_exclusion_region.setEnabled(len(files) == 1)
             elif view == "histogram":
                 self.graph.drawResultsHistogram(drawable, colors, names, key)
 
