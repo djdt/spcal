@@ -103,7 +103,7 @@ class ParticleView(SinglePlotGraphicsView):
             pos = self.plot.vb.mapSceneToView(self.mapFromGlobal(self.cursor().pos()))
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
-        region = ExclusionRegion(start, end)  # type: ignore not None, see above
+        region = ExclusionRegion(start, end)
         region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
@@ -144,10 +144,8 @@ class ParticleView(SinglePlotGraphicsView):
             symbol=scatter_symbol,
         )
 
-        self.data_for_export[str(result.isotope) + "_x"] = result.times  # type: ignore , just set
-        self.data_for_export[str(result.isotope) + "_y"] = result.signals  # type: ignore , just set
-        self.data_for_export[str(result.isotope) + "_particle_x"] = scatter.getData()[0]
-        self.data_for_export[str(result.isotope) + "_particle_y"] = scatter.getData()[1]
+        self.data_for_export["times"] = result.times
+        self.data_for_export[str(result.isotope)] = result.signals
 
         pen.setStyle(QtCore.Qt.PenStyle.DashLine)
         if isinstance(result.limit.detection_threshold, np.ndarray):
