@@ -907,6 +907,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def dialogCustomColors(self):
         def set_custom_colors(colors: list[QtGui.QColor]):
             settings = QtCore.QSettings()
+            settings.remove("CustomColors")
             settings.beginWriteArray("CustomColors", len(colors))
             for i, color in enumerate(colors):
                 settings.setArrayIndex(i)
