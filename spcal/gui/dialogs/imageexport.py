@@ -1,19 +1,6 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
 
-def color_icon(color: QtGui.QColor) -> QtGui.QIcon:
-    pixmap = QtGui.QPixmap(32, 32)
-    pixmap.fill(QtCore.Qt.GlobalColor.transparent)
-    painter = QtGui.QPainter(pixmap)
-    painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-    painter.setPen(QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0))
-    painter.setBrush(QtGui.QBrush(color))
-    painter.drawEllipse(
-        pixmap.rect().center(), pixmap.width() // 2 - 2, pixmap.height() // 2 - 2
-    )
-    return QtGui.QIcon(pixmap)
-
-
 def color_button(color: QtGui.QColor) -> QtWidgets.QToolButton:
     button = QtWidgets.QToolButton()
     button.setText("Color")
