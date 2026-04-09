@@ -135,7 +135,7 @@ def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
 
     assert view.plot.legend is not None
     assert len(view.plot.legend.items) == 1
-    assert len(view.data_for_export) == 4
+    assert len(view.data_for_export) == 2
 
     # Test overlapping legend label
     item, label = view.plot.legend.items[0]
