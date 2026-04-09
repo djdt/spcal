@@ -98,7 +98,6 @@ class SPCalProcessingMethod(object):
         # remove exclusion regions
         if len(method.exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, method.exclusion_regions)
-            signals = signals.copy()
             for start, end in idx:
                 signals[start:end] = np.nan
 
@@ -132,6 +131,7 @@ class SPCalProcessingMethod(object):
             isotopes = data_file.selected_isotopes
 
         isotopes = list(isotopes) + self.validExpressions(data_file)
+        print(isotopes)
 
         with ThreadPoolExecutor() as exec:
             futures = [
@@ -143,6 +143,7 @@ class SPCalProcessingMethod(object):
                     max_size,
                 )
                 for isotope in isotopes
+                if isotope in data_file.isotopes
             ]
             results = {future.result().isotope: future.result() for future in futures}
 

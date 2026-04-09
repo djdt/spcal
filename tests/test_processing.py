@@ -234,8 +234,16 @@ def test_spcal_processing_method_exclusions(
     assert np.isclose(np.mean(results[ru].detections), 274.39)
     default_method.exclusion_regions = [(40.0, 70.0)]
     results = default_method.processDataFile(test_datafile, [ru])
-    assert not np.isclose(np.mean(results[ru].detections), 106.943)
+    idx = np.searchsorted(results[ru].times, (40.0, 70.0))
+    assert np.all(np.isnan(results[ru].signals[idx[0] : idx[1]]))
+
+    test_datafile.exclusion_regions = [(30.0, 40.0)]
+    results = default_method.processDataFile(test_datafile, [ru])
+    idx = np.searchsorted(results[ru].times, (30.0, 70.0))
+    assert np.all(np.isnan(results[ru].signals[idx[0] : idx[1]]))
+
     default_method.exclusion_regions = []
+    test_datafile.exclusion_regions = []
 
 
 def test_spcal_processing_method_filters(

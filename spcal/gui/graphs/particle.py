@@ -11,17 +11,24 @@ from spcal.processing.result import SPCalProcessingResult
 class ExclusionRegion(pyqtgraph.LinearRegionItem):
     requestRemoval = QtCore.Signal()
 
-    def __init__(self, start: float, end: float):
+    def __init__(self, start: float, end: float, global_region: bool = False):
+        if global_region:
+            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.DiagCrossPattern)
+        else:
+            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.FDiagPattern)
+
         super().__init__(
             values=(start, end),
             pen="grey",
             hoverPen="red",
-            brush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
-            hoverBrush=QtGui.QBrush(QtCore.Qt.BrushStyle.BDiagPattern),
+            brush=brush,
+            hoverBrush=brush,
             swapMode="block",
         )
         self.lines[0].addMarker("|>", 0.9)
         self.lines[1].addMarker("<|", 0.9)
+
+        self.global_region = global_region
 
     @property
     def start(self) -> float:
@@ -40,11 +47,12 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
         )
         menu = QtWidgets.QMenu()
         menu.addAction(close_action)
-        menu.exec(event.screenPos())
+        menu.exec_(event.screenPos())
 
 
 class ParticleView(SinglePlotGraphicsView):
     exclusionRegionsChanged = QtCore.Signal(list)
+    globalExclusionRegionsChanged = QtCore.Signal(list)
     requestPeakProperties = QtCore.Signal()
 
     def __init__(
@@ -79,35 +87,67 @@ class ParticleView(SinglePlotGraphicsView):
         self.action_exclusion_region = create_action(
             "removecell",
             "Add Exclusion Region",
-            "Prevent analysis in a region of the data.",
+            "Prevent analysis in a region of the datafile.",
             self.addExclusionRegion,
         )
         self.action_exclusion_region.triggered.connect(self.onRegionsChanged)
         self.context_menu_actions.append(self.action_exclusion_region)
 
+        self.action_exclusion_region_global = create_action(
+            "removecell",
+            "Add Global Exclusion Region",
+            "Prevent analysis in a time region of all datafiles.",
+            self.addGlobalExclusionRegion,
+        )
+        self.action_exclusion_region_global.triggered.connect(self.onRegionsChanged)
+        self.context_menu_actions.append(self.action_exclusion_region_global)
+
     def onRegionsChanged(self):
         self.exclusionRegionsChanged.emit(self.exclusionRegions())
+        self.globalExclusionRegionsChanged.emit(self.globalExclusionRegions())
 
     def exclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion):
+            if isinstance(item, ExclusionRegion) and not item.global_region:
                 regions.append((item.start, item.end))
         return regions
 
-    def addExclusionRegion(self, start: float | None = None, end: float | None = None):
-        if self.plot.vb is None:
+    def globalExclusionRegions(self) -> list[tuple[float, float]]:
+        regions = []
+        for item in self.plot.items:
+            if isinstance(item, ExclusionRegion) and item.global_region:
+                regions.append((item.start, item.end))
+        return regions
+
+    def addExclusionRegion(
+        self,
+        start: float | None = None,
+        end: float | None = None,
+        global_region: bool = False,
+    ):
+        if self.plot.vb is None or self.plot.vb.state["limits"] is None:
             return
-        x0, x1 = self.plot.vb.state["limits"]["xLimits"]
+        x0, x1 = self.plot.vb.state["limits"]["xLimits"]  # type: ignore
+        assert isinstance(x0, float) and isinstance(x1, float)
+
         if start is None or end is None:
             pos = self.plot.vb.mapSceneToView(self.mapFromGlobal(self.cursor().pos()))
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
-        region = ExclusionRegion(start, end)
+
+        region = ExclusionRegion(start, end, global_region=global_region)
         region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
+
+    def addGlobalExclusionRegion(
+        self,
+        start: float | None = None,
+        end: float | None = None,
+    ):
+        self.addExclusionRegion(start, end, global_region=True)
 
     def removeExclusionRegion(self):
         region = self.sender()

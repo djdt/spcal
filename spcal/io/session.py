@@ -99,6 +99,7 @@ class SPCalJSONEncoder(json.JSONEncoder):
                 "path": str(o.path.absolute()),
                 "format": o.format,
                 "selected isotopes": o.selected_isotopes,
+                "exclusion regions": o.exclusion_regions,
             }
             if isinstance(o, SPCalTextDataFile):
                 d.update(
@@ -279,6 +280,7 @@ def decode_json_datafile(file_dict: dict, path: Path | None = None) -> SPCalData
     else:
         raise ValueError(f"unknown data file format '{file_dict['format']}'")
 
+    df.exclusion_regions = [(s, e) for s, e in file_dict["exclusion regions"]]
     df.selected_isotopes = [
         SPCalIsotope.fromString(x) for x in file_dict["selected isotopes"]
     ]

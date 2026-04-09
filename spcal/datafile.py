@@ -37,16 +37,25 @@ class SPCalDataFile(object):
 
         self._event_time = None
 
+        self.exclusion_regions: list[tuple[float, float]] = []
+
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.path.stem})"
 
     def __getitem__(self, isotope: SPCalIsotopeBase) -> np.ndarray:
         if isinstance(isotope, SPCalIsotope):
-            return self.dataForIsotope(isotope)
+            signals = self.dataForIsotope(isotope).copy()
         elif isinstance(isotope, SPCalIsotopeExpression):
-            return self.dataForExpression(isotope)
+            signals = self.dataForExpression(isotope)
         else:  # pragma: no cover
             raise ValueError(f"cannot access data for isotope type {type(isotope)}")
+
+        if len(self.exclusion_regions) > 0:
+            idx = np.searchsorted(self.times, self.exclusion_regions)
+            for start, end in idx:
+                signals[start:end] = np.nan
+
+        return signals
 
     @property
     def selected_isotopes(self) -> list[SPCalIsotope]:
