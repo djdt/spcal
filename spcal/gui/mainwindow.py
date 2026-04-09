@@ -95,6 +95,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
         self.graph.particle.exclusionRegionsChanged.connect(self.setExclusionRegions)
+        self.graph.particle.globalExclusionRegionsChanged.connect(
+            self.setGlobalExclusionRegions
+        )
         self.graph.requestRedraw.connect(self.redraw)
 
         self.instrument_options.efficiencyDialogRequested.connect(
@@ -560,6 +563,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.files.currentDataFile(), self.files.selectedDataFiles()
         )
 
+    def setGlobalExclusionRegions(
+        self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
+    ):
+        method = self.currentMethod()
+        if method.exclusion_regions != regions:
+            method.exclusion_regions = regions
+            self.currentMethodChanged.emit(method)
+            self.reprocess()
+
     def setExclusionRegions(
         self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
     ):
@@ -568,11 +580,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if data_file is None:
             raise ValueError("cannot set exclusion regions, invalid data file")
 
-        method = self.currentMethod()
-        method.exclusion_regions = regions
-
-        self.currentMethodChanged.emit(method)
-        self.reprocess()
+        if data_file.exclusion_regions != regions:
+            data_file.exclusion_regions = regions
+            self.reprocess([data_file])
 
     def setResponses(self, responses: dict[SPCalIsotopeBase, float]):
         method = self.currentMethod()
@@ -726,11 +736,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
 
         for file in data_files:
-            if isotopes is None:
-                isotopes = file.selected_isotopes  # type: ignore
-
             existing = self.processing_results.get(file, {})
-            existing.update(method.processDataFile(file, isotopes))
+            existing.update(
+                method.processDataFile(file, isotopes or file.selected_isotopes)
+            )
             self.processing_results[file] = existing
             method.filterResults(self.processing_results[file])
             # refresh clusters
@@ -835,8 +844,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
             if view == "particle":
                 self.graph.drawResultsParticle(drawable, colors, names, key)
-                for start, end in self.currentMethod().exclusion_regions:
+                for start, end in data_file.exclusion_regions:
                     self.graph.particle.addExclusionRegion(start, end)
+                for start, end in self.currentMethod().exclusion_regions:
+                    self.graph.particle.addGlobalExclusionRegion(start, end)
             elif view == "histogram":
                 self.graph.drawResultsHistogram(drawable, colors, names, key)
 
