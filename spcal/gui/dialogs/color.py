@@ -115,17 +115,3 @@ class ColorDialog(QtWidgets.QDialog):
     def accept(self):
         self.colorsSelected.emit(self.colors())
         super().accept()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-
-    dlg = ColorDialog(
-        [
-            QtGui.QColor(0, 0, 255),
-            QtGui.QColor(0, 255, 0),
-            QtGui.QColor(255, 0, 0),
-        ]
-    )
-    dlg.show()
-    app.exec()
