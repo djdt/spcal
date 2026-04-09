@@ -11,6 +11,7 @@ from spcal.datafile import SPCalDataFile
 
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.color import ColorDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
@@ -425,7 +426,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         # View
-        current_scheme = QtCore.QSettings().value("colorscheme", "IBM Carbon")
+        current_scheme = QtCore.QSettings().value("ColorScheme", "IBM Carbon")
         self.action_color_scheme = QtGui.QActionGroup(self)
         icon_size = self.style().pixelMetric(
             QtWidgets.QStyle.PixelMetric.PM_SmallIconSize
@@ -438,13 +439,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 action.setChecked(True)
 
         # todo: add custom colors
-        # self.action_custom_colors = create_action(
-        #     "color-select",
-        #     "Custom...",
-        #     "Set custom colors for the scheme.",
-        #     self.dialogCustomColors,
-        # )
-        # self.action_color_scheme.addAction(self.action_custom_colors)
+        self.action_custom_colors = create_action(
+            "color-select",
+            "Custom...",
+            "Set custom colors for the scheme.",
+            self.dialogCustomColors,
+        )
+        self.action_color_scheme.addAction(self.action_custom_colors)
 
         self.action_color_scheme.triggered.connect(self.setColorScheme)
 
@@ -747,13 +748,25 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.resultsChanged.emit(file)
 
     # drawing
+    def customColors(self) -> list[QtGui.QColor]:
+        settings = QtCore.QSettings()
+        colors = []
+        for i in range(settings.beginReadArray("CustomColors")):
+            settings.setArrayIndex(i)
+            colors.append(settings.value("Color", QtGui.QColor(0, 0, 0)))
+
+        if len(colors) == 0:
+            colors.append(QtGui.QColor(0, 0, 0))
+        return colors
 
     def colorForIsotope(
         self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
     ) -> QtGui.QColor:
-        scheme = COLOR_SCHEMES[
-            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-        ]
+        scheme_name = str(QtCore.QSettings().value("ColorScheme", "IBM Carbon"))
+        if scheme_name == "Custom":
+            scheme = self.customColors()
+        else:
+            scheme = COLOR_SCHEMES[scheme_name]
         if isinstance(isotope, SPCalIsotope):
             idx = data_file.selected_isotopes.index(isotope)
         elif isinstance(isotope, SPCalIsotopeExpression):
@@ -891,10 +904,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    # def dialogCustomColors(self):
-    #     dlg = QtWidgets.QColorDialog(self)
-    #     dlg.setOption(QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog)
-    #     dlg.open()
+    def dialogCustomColors(self):
+        def set_custom_colors(colors: list[QtGui.QColor]):
+            settings = QtCore.QSettings()
+            settings.beginWriteArray("CustomColors", len(colors))
+            for i, color in enumerate(colors):
+                settings.setArrayIndex(i)
+                settings.setValue("Color", color)
+            settings.endArray()
+            settings.setValue("ColorScheme", "Custom")
+            self.redraw()
+
+        dlg = ColorDialog(colors=self.customColors(), parent=self)
+        dlg.colorsSelected.connect(set_custom_colors)
+        dlg.open()
 
     def dialogExportResults(self):
         df = self.files.currentDataFile()
@@ -1190,7 +1213,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
-        QtCore.QSettings().setValue("colorscheme", scheme)
+        scheme = scheme.rstrip(".")
+        QtCore.QSettings().setValue("ColorScheme", scheme)
 
         self.redraw()
 
