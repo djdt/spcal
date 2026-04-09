@@ -6,6 +6,7 @@ from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalTOFWERKDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
+from spcal.gui.dialogs.color import ColorDialog
 from spcal.gui.dialogs.filter import (
     BooleanItemWidget,
     FilterDialog,
@@ -122,6 +123,33 @@ def test_calculator_dialog_existing_expr(qtbot: QtBot):
 
     with qtbot.waitSignal(
         dlg.expressionsChanged, check_params_cb=check_expressions, timeout=100
+    ):
+        dlg.accept()
+
+
+def test_custom_color_dialog(qtbot: QtBot):
+    colors = [QtGui.QColor(255, 0, 0), QtGui.QColor(0, 255, 0), QtGui.QColor(0, 0, 255)]
+    dlg = ColorDialog(colors)
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.grid.count() == 3
+    assert dlg.colors() == colors
+
+    dlg.button_add.click()
+    assert dlg.grid.count() == 4
+    assert dlg.colors()[-1] == QtGui.QColor(0, 0, 0)
+
+    dlg.button_remove.click()
+    assert dlg.grid.count() == 3
+
+    dlg.grid.itemAt(0).widget().graphicsEffect().setColor(QtGui.QColor(255, 255, 255))  # type: ignore
+
+    with qtbot.waitSignal(
+        dlg.colorsSelected,
+        check_params_cb=lambda cs: cs[0] == QtGui.QColor(255, 255, 255),
+        timeout=100,
     ):
         dlg.accept()
 
