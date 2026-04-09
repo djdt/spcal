@@ -69,6 +69,7 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
         ),
     ]
     files[0].selected_isotopes = [SPCalIsotope.fromString("197Au")]
+    files[1].exclusion_regions = [(1.0, 2.0)]
 
     save_session_json(tmp_path.joinpath("session.spcal.json"), method, files)
     method2, files2 = load_session_json(tmp_path.joinpath("session.spcal.json"))
@@ -83,3 +84,6 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
     assert method.exclusion_regions == method2.exclusion_regions
 
     assert method.processing_options == method2.processing_options
+
+    assert files2[0].selected_isotopes == files[0].selected_isotopes
+    assert files2[1].exclusion_regions == [(1.0, 2.0)]
