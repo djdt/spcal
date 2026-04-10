@@ -5,7 +5,6 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.isotope import IsotopeComboBox
 
-from spcal.detection import detection_maxima
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
@@ -20,11 +19,14 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Peak Properties")
-        self.resize(600, 400)
+        self.resize(600, 600)
 
-        self.view = SinglePlotGraphicsView("")
+        self.view = SinglePlotGraphicsView("Peak Properties")
 
         self.results = results
+        self.widths: np.ndarray | None = None
+        self.heights: np.ndarray | None = None
+        self.skews: np.ndarray | None = None
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.addIsotopes(list(results.keys()))
@@ -37,6 +39,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.model.setColumnCount(5)
         self.model.setRowCount(3)
+        self.table.setCurrentIndex(self.model.index(0, 0))
+        self.table.selectionModel().currentChanged.connect(self.updateGraph)
 
         for i in range(3):
             for j in range(5):
@@ -53,7 +57,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.width_units.currentTextChanged.connect(self.updateValues)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.view, 1)
+        layout.addWidget(self.view, 2)
         layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.table, 1)
 
@@ -77,7 +81,24 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
                     raise ValueError("item is None")
                 item.setText("")
 
-    # def updateGraph(self):
+    def updateGraph(self):
+        self.view.plot.clear()
+        row = self.table.currentIndex().row()
+        if row == 0:
+            data, label = self.widths, "Width"
+            label += f" ({self.width_units.currentText()})"
+        elif row == 1:
+            data, label = self.heights, "Height"
+        elif row == 2:
+            data, label = self.skews, "Skew"
+        else:
+            return
+
+        if data is None:
+            return
+        counts, edges = np.histogram(data)
+        self.view.plot.xaxis.setLabel(label)
+        self.view.plot.drawHistogram(counts, edges, width=1.0)
 
     def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
@@ -87,26 +108,27 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             return
 
         # heights from peak maxima to baseline
-        heights = result.signals[result.maxima] - result.limit.mean_signal
+        self.heights = result.signals[result.maxima] - result.limit.mean_signal
 
-        widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
+        self.widths = (
+            result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
+        )
         # symmetry as how offcenter peak maxima is
-        skews = (
-            (result.times[result.maxima] - result.times[result.regions[:, 0]]) / widths
+        self.skews = (
+            (result.times[result.maxima] - result.times[result.regions[:, 0]])
+            / self.widths
             - 0.5
         ) * 2.0
         # widths converted to seconds
-        widths /= time_units[self.width_units.currentText()]
-
-        self.view.plot.clear()
-        counts, bins = np.histogram(widths)
-        self.view.plot.drawHistogram(counts, bins, width=1.0)
+        self.widths /= time_units[self.width_units.currentText()]
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        for i, x in enumerate([widths, heights, skews]):
+        for i, x in enumerate([self.widths, self.heights, self.skews]):
             self.model.item(i, 0).setText(f"{np.min(x):.{sf}g}")
             self.model.item(i, 1).setText(f"{np.max(x):.{sf}g}")
             self.model.item(i, 2).setText(f"{np.mean(x):.{sf}g}")
             self.model.item(i, 3).setText(f"{np.std(x):.{sf}g}")
             self.model.item(i, 4).setText(f"{np.median(x):.{sf}g}")
+
+        self.updateGraph()
