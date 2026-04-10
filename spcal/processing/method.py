@@ -131,7 +131,6 @@ class SPCalProcessingMethod(object):
             isotopes = data_file.selected_isotopes
 
         isotopes = list(isotopes) + self.validExpressions(data_file)
-        print(isotopes)
 
         with ThreadPoolExecutor() as exec:
             futures = [

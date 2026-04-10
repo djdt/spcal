@@ -132,11 +132,3 @@ def read_single_particle_file(
 
     assert data.dtype.names is not None
     return data
-
-
-if __name__ == "__main__":
-    print(
-        read_single_particle_file(
-            "/home/tom/Downloads/STD1_AuNPs 50 nm_38.csv", skip_rows=1
-        )[-10:]
-    )
