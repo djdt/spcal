@@ -8,6 +8,7 @@ from pathlib import Path
 import datetime
 
 import h5py
+import bottleneck as bn
 import numpy as np
 from numpy.lib import recfunctions as rfn
 
@@ -100,6 +101,14 @@ class SPCalDataFile(object):
     def num_events(self) -> int:  # pragma: no cover, not implemented
         raise NotImplementedError
 
+    @property
+    def masses(self) -> np.ndarray:  # pragma: no cover, not implemented
+        raise NotImplementedError
+
+    @property
+    def signals(self) -> np.ndarray:  # pragma: no cover, not implemented
+        raise NotImplementedError
+
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:  # pragma: no cover
         raise NotImplementedError
 
@@ -116,6 +125,13 @@ class SPCalDataFile(object):
             raise ReducerException("reduction of expression is not an array")
         result[~np.isfinite(result)] = np.nan  # set all infinite to nan
         return result
+
+    def spectra(self, regions: np.ndarray) -> np.ndarray:
+        spectra = np.zeros((regions.shape[0], self.signals.shape[1]), dtype=np.float32)
+
+        for i, region in enumerate(regions):
+            spectra[i] = bn.nanmean(self.signals[region[0] : region[1]], axis=0)
+        return spectra
 
     def information(self) -> dict[str, str]:
         return {
@@ -154,7 +170,7 @@ class SPCalTextDataFile(SPCalDataFile):
                     f"`isotope_table` '{name}' not found in `signals` array"
                 )
 
-        self.signals = signals
+        self._signals = signals
         self.isotope_table = isotope_table
 
         self.delimiter = delimiter
@@ -171,6 +187,14 @@ class SPCalTextDataFile(SPCalDataFile):
     @property
     def num_events(self) -> int:
         return self.signals.shape[0]
+
+    @property
+    def masses(self) -> np.ndarray:
+        return np.array([iso.mass for iso in self.isotope_table.keys()])
+
+    @property
+    def signals(self) -> np.ndarray:
+        return self._signals
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         return self.signals[self.isotope_table[isotope]]
@@ -298,8 +322,8 @@ class SPCalNuDataFile(SPCalDataFile):
 
         self.info = info
 
-        self.signals = signals
-        self.masses = masses
+        self._signals = signals
+        self._masses = masses
 
         self.cycle_number = cycle_number
         self.segment_number = segment_number
@@ -321,6 +345,14 @@ class SPCalNuDataFile(SPCalDataFile):
     @property
     def isotopes(self) -> list[SPCalIsotope]:
         return list(self.isotope_table.keys())
+
+    @property
+    def masses(self) -> np.ndarray:
+        return self._masses
+
+    @property
+    def signals(self) -> np.ndarray:
+        return self._signals
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
@@ -418,7 +450,7 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     ):
         super().__init__("tofwerk", path, times)
 
-        self.signals = signals
+        self._signals = signals
         self.times = times
         self.peak_table = peak_table
 
@@ -455,6 +487,10 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     def masses(self) -> np.ndarray:
         return self.peak_table["mass"]
 
+    @property
+    def signals(self) -> np.ndarray:
+        return self._signals
+
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
@@ -475,9 +511,9 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
             path = Path(path)
 
         with h5py.File(path) as h5:
-            if "PeakData" in h5["PeakData"]:  # type: ignore , supported
-                peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]  # type: ignore , returns numpy array
-            elif "ToFData" in h5["FullSpectra"]:  # type: ignore , supported  # pragma: no cover, tested in test_io_tofwerk
+            if "PeakData" in h5["PeakData"]:
+                peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]
+            elif "ToFData" in h5["FullSpectra"]:
                 logger.warning(  # pragma: no cover
                     f"PeakData missing from TOFWERK file {path.stem}, integrating"
                 )
@@ -489,17 +525,14 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
 
             peak_data = np.reshape(peak_data, (-1, peak_data.shape[-1]))
 
-            peak_table: np.ndarray = h5["PeakData"]["PeakTable"][:]  # type: ignore , defined in tofdaq
+            peak_table: np.ndarray = h5["PeakData"]["PeakTable"][:]
 
-            time_per_buf: float = h5["TimingData"].attrs["BlockPeriod"][0]  # type: ignore , defined in tofdaq
-            times: np.ndarray = h5["TimingData"]["BufTimes"][:max_size]  # type: ignore , defined in tofdaq
+            time_per_buf: float = h5["TimingData"].attrs["BlockPeriod"][0]
+            times: np.ndarray = h5["TimingData"]["BufTimes"][:max_size]
             times = (
                 times[:, :, None]
                 + np.linspace(
-                    0.0,
-                    time_per_buf * 1e-9,
-                    h5.attrs["NbrSegments"][0],
-                    endpoint=False,  # type: ignore
+                    0.0, time_per_buf * 1e-9, h5.attrs["NbrSegments"][0], endpoint=False
                 )[None, None, :]
             ).ravel()
 

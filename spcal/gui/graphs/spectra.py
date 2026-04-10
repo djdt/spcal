@@ -43,15 +43,15 @@ class SpectraPlotItem(pyqtgraph.PlotCurveItem):
         self.label.setParentItem(self)
         self.label.setVisible(False)
 
-    def hoverMoveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):  # type: ignore
-        if self.mouseShape().contains(event.pos()):  # type: ignore
+    def hoverMoveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):
+        if self.mouseShape().contains(event.pos()):
             closest_dist = 9999.9
             closest_pos = None
-            event_pos = self.mapToDevice(event.pos())  # type: ignore
+            event_pos = self.mapToDevice(event.pos())
             for polygon in self.getPath().toSubpathPolygons():
                 dist = QtCore.QLineF(
-                    self.mapToDevice(polygon.at(1)),  # type: ignore
-                    event_pos,  # type: ignore
+                    self.mapToDevice(polygon.at(1)),
+                    event_pos,
                 ).length()
                 if dist < closest_dist:
                     closest_dist = dist
@@ -65,7 +65,7 @@ class SpectraPlotItem(pyqtgraph.PlotCurveItem):
         else:
             self.label.setVisible(False)
 
-    def hoverLeaveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):  # type: ignore
+    def hoverLeaveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):
         self.label.setVisible(False)
 
 
@@ -84,28 +84,6 @@ class SpectraView(SinglePlotGraphicsView):
         # options
         self.subtract_background = True
 
-    def spectraForTOFFile(
-        self, data_file: SPCalNuDataFile | SPCalTOFWERKDataFile, regions: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        sums = np.zeros_like(data_file.masses)
-
-        for region in regions:
-            sums += bn.nansum(data_file.signals[region[0] : region[1]], axis=0)
-
-        counts = np.sum(regions[:, 1] - regions[:, 0])
-        sums /= counts
-
-        if self.subtract_background:
-            bg_regions = np.reshape(regions.ravel()[1:-1], (-1, 2))
-            bg = np.zeros_like(data_file.masses)
-            for region in bg_regions:
-                bg += bn.nansum(data_file.signals[region[0] : region[1]], axis=0)
-
-            bg_counts = np.sum(bg_regions[:, 1] - bg_regions[:, 0])
-            sums -= bg / bg_counts
-
-        return data_file.masses, sums
-
     def drawDataFile(
         self,
         data_file: SPCalDataFile,
@@ -114,10 +92,14 @@ class SpectraView(SinglePlotGraphicsView):
         pen: QtGui.QPen | None = None,
         negative: bool = False,
     ):
-        if isinstance(data_file, (SPCalNuDataFile, SPCalTOFWERKDataFile)):
-            xs, ys = self.spectraForTOFFile(data_file, regions)
-        else:
-            raise NotImplementedError
+        xs = data_file.masses
+        ys = np.nanmean(data_file.spectra(regions), axis=0)
+        if self.subtract_background:
+            bg_regions = np.reshape(
+                np.concatenate(([0], regions.ravel(), [data_file.num_events])),
+                (-1, 2),
+            )
+            ys -= np.nanmean(data_file.spectra(bg_regions), axis=0)
 
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
