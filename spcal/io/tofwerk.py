@@ -1,4 +1,6 @@
 """Loading data from TOFWERK ICP-ToF."""
+# Copyright 2023 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from pathlib import Path
 

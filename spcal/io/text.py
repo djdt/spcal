@@ -1,4 +1,6 @@
 """Reading single particle data from csv files."""
+# Copyright 2021 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
 import logging

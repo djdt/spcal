@@ -1,3 +1,7 @@
+"""Poisson distribution."""
+# Copyright 2023 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import numpy as np
 
 from spcal.lib.spcalext.dists import poisson_quantile

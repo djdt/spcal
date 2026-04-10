@@ -1,4 +1,7 @@
 """Helper class for SPCal limits and thresholding."""
+# Copyright 2022 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 
 import logging
 from statistics import NormalDist

@@ -1,4 +1,6 @@
 """Loading data from Nu Instruments ICP-ToF."""
+# Copyright 2021 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import json
 import logging

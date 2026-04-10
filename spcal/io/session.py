@@ -1,3 +1,7 @@
+"""Load and save SPCal method and datafiles to JSON"""
+# Copyright 2023 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from datetime import datetime
 import numpy as np
 from typing import Any

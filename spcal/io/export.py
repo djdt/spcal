@@ -1,4 +1,6 @@
 """Reading and writing single particle data from and to csv files."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
 import importlib.metadata

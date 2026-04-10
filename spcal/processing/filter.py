@@ -1,3 +1,7 @@
+"""Filtering classes for SPCalResults."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from typing import Callable
 
 import numpy as np

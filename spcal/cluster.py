@@ -1,4 +1,6 @@
 """Agglomerative clustering."""
+# Copyright 2022 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from typing import TYPE_CHECKING
 import numpy as np

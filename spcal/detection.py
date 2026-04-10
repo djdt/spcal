@@ -1,4 +1,6 @@
 """Functions for detecting and classifying particles."""
+# Copyright 2021 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import numpy as np
 

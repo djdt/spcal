@@ -2,6 +2,8 @@
 
 Based on `<https://www.engr.mun.ca/~theo/Misc/pratt_parsing.html>`_.
 """
+# Copyright 2023 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 import re
 

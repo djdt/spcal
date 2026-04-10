@@ -1,3 +1,8 @@
+"""The main processing module for SPCal.
+The processing method takes in an SPCalDataFile and processes it to SPCalResults."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from concurrent.futures import ThreadPoolExecutor
 
 from typing import Sequence

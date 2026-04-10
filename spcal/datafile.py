@@ -1,3 +1,7 @@
+"""File import and data access."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import logging
 import re
 from pathlib import Path

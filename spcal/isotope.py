@@ -1,3 +1,7 @@
+"""Classes for isotope data and expressions."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import logging
 import re
 from dataclasses import dataclass

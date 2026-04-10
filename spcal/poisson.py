@@ -5,8 +5,9 @@ Formulas used here are taken from the `MARLAP manual
 
 The limit of crticality should be used for all particle detection descisions,
 not the limit of detection. For an explaination of why, see the manual linked above.
-
 """
+# Copyright 2022 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from statistics import NormalDist
 

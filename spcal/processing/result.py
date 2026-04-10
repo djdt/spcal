@@ -1,3 +1,7 @@
+"""The result class produced by an SPCalProcessingMethod."""
+# Copyright 2025 Thomas Lockwood
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import numpy as np
 
 from spcal import particle
