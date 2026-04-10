@@ -122,6 +122,10 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         # widths converted to seconds
         self.widths /= time_units[self.width_units.currentText()]
 
+        self.view.data_for_export[f"widths_{self.width_units.currentText()}"] = self.widths
+        self.view.data_for_export["heights"] = self.heights
+        self.view.data_for_export["skews"] = self.skews
+
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
         for i, x in enumerate([self.widths, self.heights, self.skews]):
