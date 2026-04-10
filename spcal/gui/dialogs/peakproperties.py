@@ -9,6 +9,8 @@ from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
 
+from spcal.gui.io import get_save_spcal_path
+
 
 class PeakPropertiesDialog(QtWidgets.QDialog):
     def __init__(
@@ -56,12 +58,17 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.width_units.setCurrentText("µs")
         self.width_units.currentTextChanged.connect(self.updateValues)
 
+        self.button_export = QtWidgets.QPushButton("Export")
+        self.button_export.setIcon(QtGui.QIcon.fromTheme("document-save"))
+        self.button_export.pressed.connect(self.dialogSave)
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.view, 2)
         layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.table, 1)
 
         width_layout = QtWidgets.QHBoxLayout()
+        width_layout.addWidget(self.button_export, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         width_layout.addStretch(1)
         width_layout.addWidget(
             QtWidgets.QLabel("Width units:"), 0, QtCore.Qt.AlignmentFlag.AlignRight
@@ -81,11 +88,29 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
                     raise ValueError("item is None")
                 item.setText("")
 
+    def dialogSave(self):
+        if self.widths is None or self.heights is None or self.skews is None:
+            return
+
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")])
+        if path is None:
+            return
+
+        data = np.stack((self.widths, self.heights, self.skews), axis=1)
+        with path.open("w") as fp:
+            fp.write("width,height,skew\n")
+            np.savetxt(fp, data, delimiter=",")
+
     def updateGraph(self):
-        self.view.plot.clear()
+        self.view.clear()
+        if self.widths is None or self.heights is None or self.skews is None:
+            return
         row = self.table.currentIndex().row()
         if row == 0:
-            data, label = self.widths, "Width"
+            data, label = (
+                self.widths / time_units[self.width_units.currentText()],
+                "Width",
+            )
             label += f" ({self.width_units.currentText()})"
         elif row == 1:
             data, label = self.heights, "Height"
@@ -94,9 +119,10 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         else:
             return
 
-        if data is None:
-            return
         counts, edges = np.histogram(data)
+        self.view.data_for_export[f"{label.lower()}_counts"] = counts
+        self.view.data_for_export[f"{label.lower()}_edges"] = edges
+
         self.view.plot.xaxis.setLabel(label)
         self.view.plot.drawHistogram(counts, edges, width=1.0)
 
@@ -119,16 +145,16 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             / self.widths
             - 0.5
         ) * 2.0
-        # widths converted to seconds
-        self.widths /= time_units[self.width_units.currentText()]
-
-        self.view.data_for_export[f"widths_{self.width_units.currentText()}"] = self.widths
-        self.view.data_for_export["heights"] = self.heights
-        self.view.data_for_export["skews"] = self.skews
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        for i, x in enumerate([self.widths, self.heights, self.skews]):
+        for i, x in enumerate(
+            [
+                self.widths / time_units[self.width_units.currentText()],
+                self.heights,
+                self.skews,
+            ]
+        ):
             self.model.item(i, 0).setText(f"{np.min(x):.{sf}g}")
             self.model.item(i, 1).setText(f"{np.max(x):.{sf}g}")
             self.model.item(i, 2).setText(f"{np.mean(x):.{sf}g}")
