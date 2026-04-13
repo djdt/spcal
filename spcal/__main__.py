@@ -8,7 +8,7 @@ from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import spcal.resources  # noqa: F401
+from spcal.resources import icons, darkicons  # noqa: F401
 from spcal.datafile import (
     SPCalNuDataFile,
     SPCalTextDataFile,
