@@ -1,3 +1,4 @@
+import pyqtgraph
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -8,7 +9,7 @@ from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
-
+from spcal.detection import background_mask
 from spcal.gui.io import get_save_spcal_path
 
 
@@ -26,6 +27,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.view = SinglePlotGraphicsView("Peak Properties")
 
         self.results = results
+        self.shapes: np.ndarray | None = None
         self.widths: np.ndarray | None = None
         self.heights: np.ndarray | None = None
         self.skews: np.ndarray | None = None
@@ -103,45 +105,87 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
 
     def updateGraph(self):
         self.view.clear()
-        if self.widths is None or self.heights is None or self.skews is None:
+        # if self.widths is None or self.heights is None or self.skews is None:
+        #     return
+        # row = self.table.currentIndex().row()
+        # if row == 0:
+        #     data, label = (
+        #         self.widths / time_units[self.width_units.currentText()],
+        #         "Width",
+        #     )
+        #     label += f" ({self.width_units.currentText()})"
+        # elif row == 1:
+        #     data, label = self.heights, "Height"
+        # elif row == 2:
+        #     data, label = self.skews, "Skew"
+        # else:
+        #     return
+        #
+        # counts, edges = np.histogram(data)
+        # self.view.data_for_export[f"{label.lower()}_counts"] = counts
+        # self.view.data_for_export[f"{label.lower()}_edges"] = edges
+        #
+        # self.view.plot.xaxis.setLabel(label)
+        # self.view.plot.drawHistogram(counts, edges, width=1.0)
+        if self.shapes is None:
             return
-        row = self.table.currentIndex().row()
-        if row == 0:
-            data, label = (
-                self.widths / time_units[self.width_units.currentText()],
-                "Width",
-            )
-            label += f" ({self.width_units.currentText()})"
-        elif row == 1:
-            data, label = self.heights, "Height"
-        elif row == 2:
-            data, label = self.skews, "Skew"
-        else:
-            return
+        x = np.tile(
+            np.arange(self.shapes.shape[1], dtype=np.float32), self.shapes.shape[0]
+        )
+        y = self.shapes.ravel()
+        conn = np.ones(y.shape, dtype=bool)
+        conn[self.shapes.shape[1] - 1 :: self.shapes.shape[1]] = False
 
-        counts, edges = np.histogram(data)
-        self.view.data_for_export[f"{label.lower()}_counts"] = counts
-        self.view.data_for_export[f"{label.lower()}_edges"] = edges
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0, 64), 1)
+        pen.setCosmetic(True)
 
-        self.view.plot.xaxis.setLabel(label)
-        self.view.plot.drawHistogram(counts, edges, width=1.0)
+        curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen, connect=conn)
+        self.view.plot.addItem(curve)
+
+        x = np.arange(self.shapes.shape[1], dtype=np.float32)
+        y = np.mean(self.shapes, axis=0)
+
+        pen.setColor(QtCore.Qt.GlobalColor.red)
+
+        curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen)
+        self.view.plot.addItem(curve)
+        self.view.zoomReset()
 
     def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
 
-        if result.detections.size == 0:
+        if result.number == 0:
             self.clear()
             return
 
+        # shapes
+        max_width = np.amax(
+            result.regions[result.filter_indicies, 1]
+            - result.regions[result.filter_indicies, 0]
+        )
+        shapes = result.signals.copy()
+        shapes[background_mask(result.regions, shapes.size)] = 0.0
+        view = np.lib.stride_tricks.sliding_window_view(shapes, max_width)
+        self.shapes = view[result.maxima - max_width // 2]
+        # self.shapes = self.shapes - np.amin(self.shapes, axis=1)[:, None]
+        # self.shapes = self.shapes / np.amax(self.shapes, axis=1)[:, None]
+
         # heights from peak maxima to baseline
-        self.heights = result.signals[result.maxima] - result.limit.mean_signal
+        self.heights = (
+            result.signals[result.maxima[result.filter_indicies]]
+            - result.limit.mean_signal
+        )
 
         self.widths = (
-            result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
+            result.times[result.regions[result.filter_indicies, 1]]
+            - result.times[result.regions[result.filter_indicies, 0]]
         )
         # symmetry as how offcenter peak maxima is
         self.skews = (
-            (result.times[result.maxima] - result.times[result.regions[:, 0]])
+            (
+                result.times[result.maxima[result.filter_indicies]]
+                - result.times[result.regions[result.filter_indicies, 0]]
+            )
             / self.widths
             - 0.5
         ) * 2.0
