@@ -9,7 +9,6 @@ from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
-from spcal.detection import background_mask
 from spcal.gui.io import get_save_spcal_path
 
 
@@ -159,16 +158,32 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             return
 
         # shapes
-        max_width = np.amax(
-            result.regions[result.filter_indicies, 1]
-            - result.regions[result.filter_indicies, 0]
+        max_width = (
+            np.amax(
+                (
+                    result.maxima[result.filter_indicies]
+                    - result.regions[result.filter_indicies, 0],
+                    result.regions[result.filter_indicies, 1]
+                    - result.maxima[result.filter_indicies],
+                )
+            )
+            * 2
         )
-        shapes = result.signals.copy()
-        shapes[background_mask(result.regions, shapes.size)] = 0.0
-        view = np.lib.stride_tricks.sliding_window_view(shapes, max_width)
-        self.shapes = view[result.maxima - max_width // 2]
-        # self.shapes = self.shapes - np.amin(self.shapes, axis=1)[:, None]
-        # self.shapes = self.shapes / np.amax(self.shapes, axis=1)[:, None]
+
+        self.shapes = np.zeros((result.filter_indicies.shape[0], max_width), np.float32)
+        for i, ((s, e), m) in enumerate(
+            zip(
+                result.regions[result.filter_indicies],
+                result.maxima[result.filter_indicies],
+            )
+        ):
+            x0 = max_width // 2 - (m - s)
+            dx = e - s
+            self.shapes[i][x0 : x0 + dx] = result.signals[s:e]
+
+        # normalise 0 - 1
+        self.shapes = self.shapes - np.amin(self.shapes, axis=1)[:, None]
+        self.shapes = self.shapes / np.amax(self.shapes, axis=1)[:, None]
 
         # heights from peak maxima to baseline
         self.heights = (
