@@ -21,9 +21,10 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Peak Properties")
-        self.resize(600, 600)
+        self.resize(800, 600)
 
-        self.view = SinglePlotGraphicsView("Peak Properties")
+        self.view_shape = SinglePlotGraphicsView("Peak Shape")
+        self.view_hist = SinglePlotGraphicsView("")
 
         self.results = results
         self.shapes: np.ndarray | None = None
@@ -43,7 +44,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.model.setColumnCount(5)
         self.model.setRowCount(3)
         self.table.setCurrentIndex(self.model.index(0, 0))
-        self.table.selectionModel().currentChanged.connect(self.updateGraph)
+        self.table.selectionModel().currentChanged.connect(self.updateGraphHist)
 
         for i in range(3):
             for j in range(5):
@@ -63,11 +64,6 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.button_export.setIcon(QtGui.QIcon.fromTheme("document-save"))
         self.button_export.pressed.connect(self.dialogSave)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.view, 2)
-        layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.table, 1)
-
         width_layout = QtWidgets.QHBoxLayout()
         width_layout.addWidget(self.button_export, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         width_layout.addStretch(1)
@@ -75,7 +71,20 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             QtWidgets.QLabel("Width units:"), 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
         width_layout.addWidget(self.width_units, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        layout.addLayout(width_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self.view_shape, 0, 0, 1, 1)
+        layout.addWidget(self.view_hist, 0, 1, 1, 1)
+        layout.addWidget(
+            self.combo_isotope, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        layout.addWidget(self.table, 2, 0, 1, 2)
+        layout.addLayout(width_layout, 3, 0, 1, 2)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 2)
+        layout.setRowStretch(0, 2)
+        layout.setRowStretch(0, 0)
+        layout.setRowStretch(0, 1)
 
         self.updateValues()
 
@@ -102,30 +111,33 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             fp.write("width,height,skew\n")
             np.savetxt(fp, data, delimiter=",")
 
-    def updateGraph(self):
-        self.view.clear()
-        # if self.widths is None or self.heights is None or self.skews is None:
-        #     return
-        # row = self.table.currentIndex().row()
-        # if row == 0:
-        #     data, label = (
-        #         self.widths / time_units[self.width_units.currentText()],
-        #         "Width",
-        #     )
-        #     label += f" ({self.width_units.currentText()})"
-        # elif row == 1:
-        #     data, label = self.heights, "Height"
-        # elif row == 2:
-        #     data, label = self.skews, "Skew"
-        # else:
-        #     return
-        #
-        # counts, edges = np.histogram(data)
-        # self.view.data_for_export[f"{label.lower()}_counts"] = counts
-        # self.view.data_for_export[f"{label.lower()}_edges"] = edges
-        #
-        # self.view.plot.xaxis.setLabel(label)
-        # self.view.plot.drawHistogram(counts, edges, width=1.0)
+    def updateGraphHist(self):
+        self.view_hist.clear()
+        if self.widths is None or self.heights is None or self.skews is None:
+            return
+        row = self.table.currentIndex().row()
+        if row == 0:
+            data, label = (
+                self.widths / time_units[self.width_units.currentText()],
+                "Width",
+            )
+            label += f" ({self.width_units.currentText()})"
+        elif row == 1:
+            data, label = self.heights, "Height"
+        elif row == 2:
+            data, label = self.skews, "Skew"
+        else:
+            return
+
+        counts, edges = np.histogram(data)
+        self.view_hist.data_for_export[f"{label.lower()}_counts"] = counts
+        self.view_hist.data_for_export[f"{label.lower()}_edges"] = edges
+
+        self.view_hist.plot.xaxis.setLabel(label)
+        self.view_hist.plot.drawHistogram(counts, edges, width=1.0)
+
+    def updateGraphShape(self):
+        self.view_shape.clear()
         if self.shapes is None:
             return
         x = np.tile(
@@ -139,7 +151,7 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         pen.setCosmetic(True)
 
         curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen, connect=conn)
-        self.view.plot.addItem(curve)
+        self.view_shape.plot.addItem(curve)
 
         x = np.arange(self.shapes.shape[1], dtype=np.float32)
         y = np.mean(self.shapes, axis=0)
@@ -147,8 +159,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         pen.setColor(QtCore.Qt.GlobalColor.red)
 
         curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen)
-        self.view.plot.addItem(curve)
-        self.view.zoomReset()
+        self.view_shape.plot.addItem(curve)
+        self.view_shape.zoomReset()
 
     def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
@@ -220,4 +232,5 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
             self.model.item(i, 3).setText(f"{np.std(x):.{sf}g}")
             self.model.item(i, 4).setText(f"{np.median(x):.{sf}g}")
 
-        self.updateGraph()
+        self.updateGraphHist()
+        self.updateGraphShape()
