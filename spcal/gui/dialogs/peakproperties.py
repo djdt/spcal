@@ -140,9 +140,16 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.view_shape.clear()
         if self.shapes is None:
             return
-        x = np.tile(
-            np.arange(self.shapes.shape[1], dtype=np.float32), self.shapes.shape[0]
-        )
+
+        result = self.results[self.combo_isotope.currentIsotope()]
+
+        center_times = (
+            np.arange(self.shapes.shape[1], dtype=np.float32)
+            - self.shapes.shape[1] // 2
+        ) * result.event_time
+        center_times /= time_units[self.width_units.currentText()]
+
+        x = np.tile(center_times, self.shapes.shape[0])
         y = self.shapes.ravel()
         conn = np.ones(y.shape, dtype=bool)
         conn[self.shapes.shape[1] - 1 :: self.shapes.shape[1]] = False
@@ -153,13 +160,18 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen, connect=conn)
         self.view_shape.plot.addItem(curve)
 
-        x = np.arange(self.shapes.shape[1], dtype=np.float32)
         y = np.mean(self.shapes, axis=0)
 
         pen.setColor(QtCore.Qt.GlobalColor.red)
 
-        curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen)
+        curve = pyqtgraph.PlotCurveItem(x=center_times, y=y, pen=pen)
         self.view_shape.plot.addItem(curve)
+
+        for i in range(self.shapes.shape[1]):
+            self.view_shape.data_for_export[f"p{i}"] = self.shapes[:, i]
+
+        self.view_shape.plot.xaxis.setLabel(f"Time ({self.width_units.currentText()})")
+
         self.view_shape.zoomReset()
 
     def updateValues(self):
