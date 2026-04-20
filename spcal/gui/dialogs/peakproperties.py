@@ -1,12 +1,15 @@
+import pyqtgraph
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.detection import detection_maxima
+from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.isotope import IsotopeComboBox
+
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
+from spcal.gui.io import get_save_spcal_path
 
 
 class PeakPropertiesDialog(QtWidgets.QDialog):
@@ -18,9 +21,16 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("SPCal Peak Properties")
-        self.resize(600, 400)
+        self.resize(800, 600)
+
+        self.view_shape = SinglePlotGraphicsView("Peak Shape")
+        self.view_hist = SinglePlotGraphicsView("")
 
         self.results = results
+        self.shapes: np.ndarray | None = None
+        self.widths: np.ndarray | None = None
+        self.heights: np.ndarray | None = None
+        self.skews: np.ndarray | None = None
 
         self.combo_isotope = IsotopeComboBox()
         self.combo_isotope.addIsotopes(list(results.keys()))
@@ -33,6 +43,8 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.model.setColumnCount(5)
         self.model.setRowCount(3)
+        self.table.setCurrentIndex(self.model.index(0, 0))
+        self.table.selectionModel().currentChanged.connect(self.updateGraphHist)
 
         for i in range(3):
             for j in range(5):
@@ -48,17 +60,31 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
         self.width_units.setCurrentText("µs")
         self.width_units.currentTextChanged.connect(self.updateValues)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.combo_isotope, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(self.table, 1)
+        self.button_export = QtWidgets.QPushButton("Export")
+        self.button_export.setIcon(QtGui.QIcon.fromTheme("document-save"))
+        self.button_export.pressed.connect(self.dialogSave)
 
         width_layout = QtWidgets.QHBoxLayout()
+        width_layout.addWidget(self.button_export, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         width_layout.addStretch(1)
         width_layout.addWidget(
             QtWidgets.QLabel("Width units:"), 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
         width_layout.addWidget(self.width_units, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        layout.addLayout(width_layout)
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self.view_shape, 0, 0, 1, 1)
+        layout.addWidget(self.view_hist, 0, 1, 1, 1)
+        layout.addWidget(
+            self.combo_isotope, 1, 1, 1, 1, QtCore.Qt.AlignmentFlag.AlignRight
+        )
+        layout.addWidget(self.table, 2, 0, 1, 2)
+        layout.addLayout(width_layout, 3, 0, 1, 2)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 2)
+        layout.setRowStretch(0, 2)
+        layout.setRowStretch(0, 0)
+        layout.setRowStretch(0, 1)
 
         self.updateValues()
 
@@ -72,31 +98,151 @@ class PeakPropertiesDialog(QtWidgets.QDialog):
                     raise ValueError("item is None")
                 item.setText("")
 
+    def dialogSave(self):
+        if self.widths is None or self.heights is None or self.skews is None:
+            return
+
+        path = get_save_spcal_path(self, [("CSV Documents", ".csv")])
+        if path is None:
+            return
+
+        data = np.stack((self.widths, self.heights, self.skews), axis=1)
+        with path.open("w") as fp:
+            fp.write("width,height,skew\n")
+            np.savetxt(fp, data, delimiter=",")
+
+    def updateGraphHist(self):
+        self.view_hist.clear()
+        if self.widths is None or self.heights is None or self.skews is None:
+            return
+        row = self.table.currentIndex().row()
+        if row == 0:
+            data, label = (
+                self.widths / time_units[self.width_units.currentText()],
+                "Width",
+            )
+            label += f" ({self.width_units.currentText()})"
+        elif row == 1:
+            data, label = self.heights, "Height"
+        elif row == 2:
+            data, label = self.skews, "Skew"
+        else:
+            return
+
+        counts, edges = np.histogram(data)
+        self.view_hist.data_for_export[f"{label.lower()}_counts"] = counts
+        self.view_hist.data_for_export[f"{label.lower()}_edges"] = edges
+
+        self.view_hist.plot.xaxis.setLabel(label)
+        self.view_hist.plot.drawHistogram(counts, edges, width=1.0)
+
+    def updateGraphShape(self):
+        self.view_shape.clear()
+        if self.shapes is None:
+            return
+
+        result = self.results[self.combo_isotope.currentIsotope()]
+
+        center_times = (
+            np.arange(self.shapes.shape[1], dtype=np.float32)
+            - self.shapes.shape[1] // 2
+        ) * result.event_time
+        center_times /= time_units[self.width_units.currentText()]
+
+        x = np.tile(center_times, self.shapes.shape[0])
+        y = self.shapes.ravel()
+        conn = np.ones(y.shape, dtype=bool)
+        conn[self.shapes.shape[1] - 1 :: self.shapes.shape[1]] = False
+
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0, 64), 1)
+        pen.setCosmetic(True)
+
+        curve = pyqtgraph.PlotCurveItem(x=x, y=y, pen=pen, connect=conn)
+        self.view_shape.plot.addItem(curve)
+
+        y = np.mean(self.shapes, axis=0)
+
+        pen.setColor(QtCore.Qt.GlobalColor.red)
+
+        curve = pyqtgraph.PlotCurveItem(x=center_times, y=y, pen=pen)
+        self.view_shape.plot.addItem(curve)
+
+        for i in range(self.shapes.shape[1]):
+            self.view_shape.data_for_export[f"p{i}"] = self.shapes[:, i]
+
+        self.view_shape.plot.xaxis.setLabel(f"Time ({self.width_units.currentText()})")
+
+        self.view_shape.zoomReset()
+
     def updateValues(self):
         result = self.results[self.combo_isotope.currentIsotope()]
 
-        if result.detections.size == 0:
+        if result.number == 0:
             self.clear()
             return
 
-        maxima = detection_maxima(result.signals, result.regions)
+        # shapes
+        max_width = (
+            np.amax(
+                (
+                    result.maxima[result.filter_indicies]
+                    - result.regions[result.filter_indicies, 0],
+                    result.regions[result.filter_indicies, 1]
+                    - result.maxima[result.filter_indicies],
+                )
+            )
+            * 2
+        )
+
+        self.shapes = np.zeros((result.filter_indicies.shape[0], max_width), np.float32)
+        for i, ((s, e), m) in enumerate(
+            zip(
+                result.regions[result.filter_indicies],
+                result.maxima[result.filter_indicies],
+            )
+        ):
+            x0 = max_width // 2 - (m - s)
+            dx = e - s
+            self.shapes[i][x0 : x0 + dx] = result.signals[s:e]
+
+        # normalise 0 - 1
+        self.shapes = self.shapes - np.amin(self.shapes, axis=1)[:, None]
+        self.shapes = self.shapes / np.amax(self.shapes, axis=1)[:, None]
 
         # heights from peak maxima to baseline
-        heights = result.signals[maxima] - result.limit.mean_signal
+        self.heights = (
+            result.signals[result.maxima[result.filter_indicies]]
+            - result.limit.mean_signal
+        )
 
-        widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
+        self.widths = (
+            result.times[result.regions[result.filter_indicies, 1]]
+            - result.times[result.regions[result.filter_indicies, 0]]
+        )
         # symmetry as how offcenter peak maxima is
-        skews = (
-            (result.times[maxima] - result.times[result.regions[:, 0]]) / widths - 0.5
+        self.skews = (
+            (
+                result.times[result.maxima[result.filter_indicies]]
+                - result.times[result.regions[result.filter_indicies, 0]]
+            )
+            / self.widths
+            - 0.5
         ) * 2.0
-        # widths converted to seconds
-        widths /= time_units[self.width_units.currentText()]
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
-        for i, x in enumerate([widths, heights, skews]):
+        for i, x in enumerate(
+            [
+                self.widths / time_units[self.width_units.currentText()],
+                self.heights,
+                self.skews,
+            ]
+        ):
             self.model.item(i, 0).setText(f"{np.min(x):.{sf}g}")
             self.model.item(i, 1).setText(f"{np.max(x):.{sf}g}")
             self.model.item(i, 2).setText(f"{np.mean(x):.{sf}g}")
             self.model.item(i, 3).setText(f"{np.std(x):.{sf}g}")
             self.model.item(i, 4).setText(f"{np.median(x):.{sf}g}")
+
+        self.updateGraphHist()
+        self.updateGraphShape()

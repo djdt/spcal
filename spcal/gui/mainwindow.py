@@ -443,7 +443,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # todo: add custom colors
         self.action_custom_colors = create_action(
-            "color-select",
+            "color-picker",
             "Custom...",
             "Set custom colors for the scheme.",
             self.dialogCustomColors,
