@@ -421,7 +421,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         menu.addAction(self.action_copy_image)
         menu.addSeparator()
 
-        if self.plot.legend is not None:
+        if self.plot.legend is not None and len(self.plot.legend.items) > 0:
             menu.addAction(self.action_show_legend)
 
         menu.addAction(self.action_zoom_reset)
