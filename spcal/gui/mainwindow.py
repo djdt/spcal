@@ -1,4 +1,3 @@
-import json
 import logging
 import sys
 from pathlib import Path
@@ -34,17 +33,10 @@ from spcal.gui.docks.outputs import SPCalOutputsDock
 
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs.colors import COLOR_SCHEMES, scheme_icon
-from spcal.gui.io import (
-    NU_FILE_FILTER,
-    TEXT_FILE_FILTER,
-    TOFWERK_FILE_FILTER,
-    get_import_dialog_for_path,
-    get_open_spcal_path,
-    is_spcal_path,
-)
+from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import save_session_json, decode_json_method, decode_json_datafile
+from spcal.io.session import save_session_json
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
@@ -70,6 +62,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
+
+        self.session_thread = QtCore.QThread()
 
         method = self.restoreDefaultMethod()
 
@@ -1085,46 +1079,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         if file == "":
             return
-        with Path(file).open() as fp:
-            session = json.load(fp)
 
-        self.setCurrentMethod(decode_json_method(session["method"]))
+        from spcal.gui.dialogs.io.session import SessionImportDialog
 
-        check_update_paths = True
-        for datafile in session["datafiles"]:
-            path = Path(datafile["path"])
-            if not path.exists():
-                if not check_update_paths:
-                    continue
-                button = QtWidgets.QMessageBox.warning(
-                    self,
-                    "Datafile Not Found",
-                    f"Cannot find datafile at '{path}'. Select a new path?",
-                    buttons=QtWidgets.QMessageBox.StandardButton.Yes
-                    | QtWidgets.QMessageBox.StandardButton.No
-                    | QtWidgets.QMessageBox.StandardButton.NoToAll,
-                )
-                if button == QtWidgets.QMessageBox.StandardButton.No:
-                    continue
-                elif button == QtWidgets.QMessageBox.StandardButton.NoToAll:
-                    check_update_paths = False
-                    continue
-                # button == Ok
-                if datafile["format"] == "text":
-                    filter = TEXT_FILE_FILTER
-                elif datafile["format"] == "nu":
-                    filter = NU_FILE_FILTER
-                elif datafile["format"] == "tofwerk":
-                    filter = TOFWERK_FILE_FILTER
-                else:
-                    raise ValueError(f"unknown datafile format '{datafile['format']}")
-                file, _ = QtWidgets.QFileDialog.getOpenFileName(
-                    self, "Select New Path", str(path.parent), filter
-                )
-                if file == "":
-                    continue
-                path = Path(file)
-            self.files.addDataFile(decode_json_datafile(datafile, path))
+        dlg = SessionImportDialog(Path(file), self)
+        dlg.methodImported.connect(self.setCurrentMethod)
+        dlg.datafileImported.connect(self.files.addDataFile)
+        # cleanup
+        dlg.finished.connect(dlg.deleteLater)
+        dlg.show()
 
     def dialogSessionSave(self):
         def onFileSelected(file: str):
