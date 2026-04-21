@@ -63,7 +63,7 @@ class DoubleOrEmptyValidator(QtGui.QDoubleValidator):
     def validate(self, input: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
         if input == "":
             return (QtGui.QValidator.State.Acceptable, input, pos)
-        return super().validate(input, pos)
+        return super().validate(input, pos)  # type: ignore
 
 
 class DoubleOrPercentValidator(QtGui.QDoubleValidator):
@@ -99,9 +99,9 @@ class DoubleOrPercentValidator(QtGui.QDoubleValidator):
         # Treat as percent
         if "%" in input:
             if not input.endswith("%") or input.count("%") > 1:
-                return (QtGui.QValidator.Invalid, input, pos)
+                return (QtGui.QValidator.Invalid, input, pos)  # type: ignore
             self.setRange(self.percent_bottom, self.percent_top, self.decimals())
-            return (super().validate(input.rstrip("%"), pos)[0], input, pos)
+            return (super().validate(input.rstrip("%"), pos)[0], input, pos)  # type: ignore
         # Treat as double
         self.setRange(self._bottom, self._top, self.decimals())
-        return super().validate(input, pos)
+        return super().validate(input, pos)  # type: ignore
