@@ -110,7 +110,7 @@ class HistogramView(SinglePlotGraphicsView):
             )
 
         self.plot.xaxis.setLabel(unit_label, unit)
-        self.setDataLimits(xMax=1.0)
+        self.setDataLimits(yMax=1.05, xMax=1.0)
 
     def drawResults(
         self,
