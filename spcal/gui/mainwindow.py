@@ -16,6 +16,7 @@ from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
+from spcal.gui.dialogs.missingpaths import MissingPathsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
@@ -35,16 +36,14 @@ from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs.colors import COLOR_SCHEMES, scheme_icon
 from spcal.gui.io import (
-    NU_FILE_FILTER,
-    TEXT_FILE_FILTER,
-    TOFWERK_FILE_FILTER,
     get_import_dialog_for_path,
     get_open_spcal_path,
     is_spcal_path,
+    SessionImportWorker,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import save_session_json, decode_json_method, decode_json_datafile
+from spcal.io.session import save_session_json, decode_json_method
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
@@ -71,7 +70,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log = LoggingDialog()
         self.log.setWindowTitle("SPCal Log")
 
-        method = self.restoreDefaultMethod()
+        self.session_thread = QtCore.QThread()
+        self.session_worker: SessionImportWorker | None = None
+
+        method = self.defaultMethod()
 
         self.processing_methods = {"default": method}
 
@@ -164,7 +166,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def restoreDefaultMethod(self) -> SPCalProcessingMethod:
+    def defaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
         method = SPCalProcessingMethod()
         if settings.contains("DefaultMethod/Instrument/Uptake"):
@@ -1094,46 +1096,64 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         if file == "":
             return
+
         with Path(file).open() as fp:
             session = json.load(fp)
 
+        datafiles = [
+            (datafile, Path(datafile["path"])) for datafile in session["datafiles"]
+        ]
+        if len(datafiles) == 0:
+            return
+
+        missing = sum(not p.exists() for _, p in datafiles)
+
+        if missing > 0:
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Datafile Not Found",
+                f"Cannot find {missing} datafiles. Select new paths?",
+                buttons=QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No
+                | QtWidgets.QMessageBox.StandardButton.Cancel,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.Yes:
+                new_paths = MissingPathsDialog.getMissingPaths(
+                    self, [p for _, p in datafiles]
+                )
+                datafiles = [(df[0], new) for df, new in zip(datafiles, new_paths)]
+            elif button == QtWidgets.QMessageBox.StandardButton.Cancel:
+                return
+
         self.setCurrentMethod(decode_json_method(session["method"]))
 
-        check_update_paths = True
-        for datafile in session["datafiles"]:
-            path = Path(datafile["path"])
-            if not path.exists():
-                if not check_update_paths:
-                    continue
-                button = QtWidgets.QMessageBox.warning(
-                    self,
-                    "Datafile Not Found",
-                    f"Cannot find datafile at '{path}'. Select a new path?",
-                    buttons=QtWidgets.QMessageBox.StandardButton.Yes
-                    | QtWidgets.QMessageBox.StandardButton.No
-                    | QtWidgets.QMessageBox.StandardButton.NoToAll,
-                )
-                if button == QtWidgets.QMessageBox.StandardButton.No:
-                    continue
-                elif button == QtWidgets.QMessageBox.StandardButton.NoToAll:
-                    check_update_paths = False
-                    continue
-                # button == Ok
-                if datafile["format"] == "text":
-                    filter = TEXT_FILE_FILTER
-                elif datafile["format"] == "nu":
-                    filter = NU_FILE_FILTER
-                elif datafile["format"] == "tofwerk":
-                    filter = TOFWERK_FILE_FILTER
-                else:
-                    raise ValueError(f"unknown datafile format '{datafile['format']}")
-                file, _ = QtWidgets.QFileDialog.getOpenFileName(
-                    self, "Select New Path", str(path.parent), filter
-                )
-                if file == "":
-                    continue
-                path = Path(file)
-            self.files.addDataFile(decode_json_datafile(datafile, path))
+        dlg = QtWidgets.QProgressDialog(
+            "Importing Datafiles...", "Cancel", 0, len(datafiles), self
+        )
+
+        self.worker = SessionImportWorker(
+            [(df, path) for df, path in datafiles if path.exists()]
+        )
+
+        dlg.canceled.connect(self._stopSessionThread)
+
+        self.worker.moveToThread(self.session_thread)
+        self.worker.progress.connect(dlg.setValue)
+        self.worker.datafileImported.connect(self.files.addDataFile)
+        self.worker.finished.connect(dlg.reset)
+        self.worker.finished.connect(self._stopSessionThread)  # cleanup
+
+        self.session_thread.started.connect(self.worker.read)
+        self.session_thread.finished.connect(self.worker.deleteLater)
+        self.session_thread.start()
+
+        dlg.show()
+
+    def _stopSessionThread(self):
+        if self.session_thread.isRunning():
+            self.session_thread.requestInterruption()
+            self.session_thread.quit()
+            self.session_thread.wait(1000)
 
     def dialogSessionSave(self):
         def onFileSelected(file: str):
@@ -1226,13 +1246,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
     def reset(self):
-        self.files.reset()
+        self.files.clear()
         self.graph.clear()
-        self.outputs.reset()
-        self.instrument_options.reset()
-        self.limit_options.reset()
-        self.isotope_options.reset()
-        self.toolbar.reset()
+        self.outputs.clear()
+        self.isotope_options.clear()
+        self.toolbar.clear()
+        self.setCurrentMethod(self.defaultMethod())
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")
@@ -1340,5 +1359,5 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if etype is KeyboardInterrupt:
             logger.info("Keyboard interrupt, exiting.")
             sys.exit(1)
-        logger.exception("Uncaught exception", exc_info=(etype, value, tb))
+        logger.exception("Uncaught exception", exc_info=(etype, value, tb))  # type: ignore
         QtWidgets.QMessageBox.critical(self, "Uncaught Exception", str(value))

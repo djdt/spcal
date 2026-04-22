@@ -79,5 +79,5 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         delegate.setSigFigs(sf)
         self.view.setItemDelegate(delegate)
 
-    def reset(self):
+    def clear(self):
         self.setResults([])

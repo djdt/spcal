@@ -174,7 +174,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg = DataFileInformationDialog(index.data(DataFileRole), parent=self)
         dlg.open()
 
-    def reset(self):
+    def clear(self):
         self.model.beginResetModel()
         self.model.data_files.clear()
         self.model.endResetModel()

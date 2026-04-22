@@ -1,10 +1,9 @@
-import bottleneck as bn
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 import pyqtgraph
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.datafile import SPCalDataFile, SPCalNuDataFile, SPCalTOFWERKDataFile
+from spcal.datafile import SPCalDataFile
 
 from spcal.isotope import ISOTOPE_TABLE
 
@@ -56,7 +55,9 @@ class SpectraPlotItem(pyqtgraph.PlotCurveItem):
                 if dist < closest_dist:
                     closest_dist = dist
                     closest_pos = polygon.at(1)
-            if closest_pos is not None and closest_dist < self.opts["mouseWidth"]:
+            width = self.opts["mouseWidth"]
+            assert isinstance(width, float)
+            if closest_pos is not None and closest_dist < width:
                 self.label.setPos(closest_pos)
                 self.label.setText(text_for_mz(closest_pos.x()))
                 self.label.setVisible(True)

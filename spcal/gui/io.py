@@ -1,3 +1,4 @@
+from spcal.io.session import decode_json_datafile
 from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
@@ -140,3 +141,30 @@ def get_import_dialog_for_path(
 
     dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
     return dlg
+
+
+class SessionImportWorker(QtCore.QObject):
+    started = QtCore.Signal(int)
+    progress = QtCore.Signal(int, str)
+    finished = QtCore.Signal()
+    datafileImported = QtCore.Signal(object)
+
+    def __init__(
+        self, datafiles: list[tuple[dict, Path]], parent: QtCore.QObject | None = None
+    ):
+        super().__init__(parent)
+        self.datafiles = datafiles
+
+    def read(self):
+        self.started.emit(len(self.datafiles))
+        for i, (datafile, path) in enumerate(self.datafiles):
+            if self.thread().isInterruptionRequested():
+                return
+
+            self.progress.emit(i, path.name)
+            df = decode_json_datafile(datafile, path)
+            if not self.thread().isInterruptionRequested():
+                # prevent load if interrupted, but thread not complete
+                self.datafileImported.emit(df)
+
+        self.finished.emit()

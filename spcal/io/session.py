@@ -100,7 +100,7 @@ class SPCalJSONEncoder(json.JSONEncoder):
         # data files
         if isinstance(o, SPCalDataFile):
             d = {
-                "path": str(o.path.absolute()),
+                "path": o.path,
                 "format": o.format,
                 "selected isotopes": o.selected_isotopes,
                 "exclusion regions": o.exclusion_regions,
@@ -130,7 +130,7 @@ class SPCalJSONEncoder(json.JSONEncoder):
                 )
             return d
 
-        return super().default(o)
+        return super().default(o)  # pragma: no cover , default behaviour
 
 
 def save_session_json(
@@ -157,10 +157,10 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
             for expr in expressions:
                 if expr.name == text:
                     return expr
-        raise NameError(f"cannot assign '{text}' to an isotope or expression")
+        raise NameError(f"cannot assign '{text}' to an isotope or expression")  # pragma: no cover
 
     def decode_single_ion(x: np.ndarray | None):
-        if x is None:
+        if x is None:  # pragma: no cover
             return None
         x = np.asarray(x)
         params = np.empty(
@@ -193,7 +193,7 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
                     group.append(
                         SPCalClusterFilter(key=filter["key"], index=filter["index"])
                     )
-                else:
+                else:  # pragma: no cover
                     raise ValueError(f"unknown filter type {filter['filter type']}")
             filters.append(group)
         return filters
@@ -281,7 +281,7 @@ def decode_json_datafile(file_dict: dict, path: Path | None = None) -> SPCalData
         )
     elif file_dict["format"] == "tofwerk":
         df = SPCalTOFWERKDataFile.load(path)
-    else:
+    else:  # pragma: no cover
         raise ValueError(f"unknown data file format '{file_dict['format']}'")
 
     df.selected_isotopes = [

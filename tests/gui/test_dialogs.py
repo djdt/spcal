@@ -22,6 +22,7 @@ from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
+from spcal.gui.dialogs.missingpaths import MissingPathsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
@@ -517,6 +518,35 @@ def test_manual_limits_dialog(qtbot: QtBot):
         timeout=100,
     ):
         dlg.accept()
+
+
+def test_missing_paths_dialog(qtbot: QtBot, test_data_path: Path):
+
+    paths = [
+        test_data_path.joinpath("tofwerk_bad/tofwerk_testdata.h5"),
+        test_data_path.joinpath("tofwerk_bad/tofwerk_testdata_missing.h5"),
+    ]
+    dlg = MissingPathsDialog(paths)
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert not dlg.isComplete()
+    assert dlg.originalPaths() == paths
+    assert dlg.newPaths() == paths
+
+    dlg.list.item(0).setText(
+        str(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
+    )
+    dlg.list.item(1).setText(
+        str(test_data_path.joinpath("tofwerk/tofwerk_testdata_mssing.h5"))
+    )
+
+    assert dlg.isComplete()
+    assert dlg.originalPaths() == paths
+    assert dlg.newPaths() != paths
+
+    dlg.accept()
 
 
 def test_select_isotope_dialog(

@@ -529,8 +529,8 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     conc_model = ConcentrationModel()
     conc_model.beginResetModel()
-    conc_model.isotopes = isotopes
-    conc_model.concentrations = concs
+    conc_model.isotopes = isotopes  # type: ignore , works
+    conc_model.concentrations = concs  # type: ignore , works
     conc_model.endResetModel()
 
     assert (
@@ -544,7 +544,7 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     intensity_model = IntensityModel()
     intensity_model.beginResetModel()
-    intensity_model.isotopes = isotopes
+    intensity_model.isotopes = isotopes  # type: ignore , works
     intensity_model.intensities = intensities
     intensity_model.endResetModel()
 
@@ -552,7 +552,9 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
         intensity_model.data(
             intensity_model.index(0, 0), QtCore.Qt.ItemDataRole.EditRole
         ),
-        np.mean(next(iter(intensities.keys())).signals[str(isotopes[0])]),
+        np.mean(
+            next(iter(intensities.keys())).signals[:, 0]
+        ),  # sample as dataForIsotope(isotope[0])
     )
     assert intensity_model.data(intensity_model.index(0, 0), IsotopeRole) == isotopes[0]
 
@@ -704,7 +706,9 @@ def test_results_output_model(
 
         model.setData(model.index(0, 1), "#/ml", CurrentUnitRole)
         if result.number_concentration is not None:
-            assert model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+            assert (
+                model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+            )
         else:
             assert model.data(model.index(row, 1)) is None
 

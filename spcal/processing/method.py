@@ -210,7 +210,8 @@ class SPCalProcessingMethod(object):
                 if isinstance(filter, SPCalClusterFilter):
                     if filter.key not in clusters:  # pragma: no cover
                         continue
-                    if filter.preferInvalid():
+                    if filter.preferInvalid(): # pragma: no cover, not used
+                        raise NotImplementedError
                         filter_invalid = filter.invalidPeaks(clusters[filter.key])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
                     else:

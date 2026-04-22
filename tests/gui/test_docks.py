@@ -61,7 +61,7 @@ def test_spcal_datfiles_dock(qtbot: QtBot, random_datafile_gen):
     assert dock.currentDataFile() == dfs[-2]
     assert len(dock.dataFiles()) == 4
 
-    dock.reset()
+    dock.clear()
 
     assert len(dock.dataFiles()) == 0
     assert dock.currentDataFile() is None
@@ -178,9 +178,8 @@ def test_spcal_isotope_options_dock(qtbot: QtBot):
 
     dock.setSignificantFigures(3)
 
-    dock.reset()
-    assert len(dock.isotopeOptions()) == 3
-    assert dock.optionForIsotope(isotopes[1]).density is None
+    dock.clear()
+    assert len(dock.isotopeOptions()) == 0
 
 
 def test_spcal_limit_options_dock(qtbot: QtBot):
@@ -214,9 +213,6 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
 
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.options_widget.poisson.alpha.setValue(1e-3)
-
-    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
-        dock.reset()
 
 
 def test_spcal_outputs_dock(
@@ -296,7 +292,7 @@ def test_spcal_outputs_dock(
     ):
         dock.view.onHeaderClicked(0)
 
-    dock.reset()
+    dock.clear()
     assert dock.view.results_model.rowCount() == 0
 
 
@@ -339,8 +335,6 @@ def test_spcal_processing_dock(qtbot: QtBot):
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.setProcessingOptions(options)
     assert dock.options_widget.points_required.value() == 1
-
-    dock.reset()
 
 
 def test_spcal_toolbar(qtbot: QtBot):
@@ -397,7 +391,7 @@ def test_spcal_toolbar(qtbot: QtBot):
     with qtbot.waitSignal(toolbar.requestFilterDialog, timeout=100):
         toolbar.action_filter.trigger()
 
-    toolbar.reset()
+    toolbar.clear()
 
 
 def test_spcal_view_toolbar(qtbot: QtBot):

@@ -172,8 +172,8 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def optionForIsotope(self, isotope: SPCalIsotopeBase) -> SPCalIsotopeOptions:
         return self.table.isotope_model.isotope_options[isotope]
 
-    def reset(self):
-        self.setIsotopes(list(self.table.isotope_model.isotope_options.keys()))
+    def clear(self):
+        self.setIsotopes([])
 
     def setSignificantFigures(self, sf: int):
         self.table.setSignificantFigures(sf)
