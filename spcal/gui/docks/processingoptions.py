@@ -125,12 +125,6 @@ class SPCalProcessingOptionsDock(QtWidgets.QDockWidget):
     def setProcessingOptions(self, options: SPCalProcessingOptions):
         self.options_widget.setProcessingOptions(options)
 
-    def reset(self):
-        self.blockSignals(True)
-        self.options_widget.setProcessingOptions(SPCalProcessingOptions())
-        self.blockSignals(False)
-        self.optionsChanged.emit()
-
     def setSignificantFigures(self, num: int):
         for widget in self.options_widget.findChildren(ValueWidget):
             widget.setSigFigs(num)

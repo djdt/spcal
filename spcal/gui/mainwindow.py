@@ -73,7 +73,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.session_thread = QtCore.QThread()
         self.session_worker: SessionImportWorker | None = None
 
-        method = self.restoreDefaultMethod()
+        method = self.defaultMethod()
 
         self.processing_methods = {"default": method}
 
@@ -166,7 +166,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-    def restoreDefaultMethod(self) -> SPCalProcessingMethod:
+    def defaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
         method = SPCalProcessingMethod()
         if settings.contains("DefaultMethod/Instrument/Uptake"):
@@ -1237,13 +1237,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
     def reset(self):
-        self.files.reset()
+        self.files.clear()
         self.graph.clear()
-        self.outputs.reset()
-        self.instrument_options.reset()
-        self.limit_options.reset()
-        self.isotope_options.reset()
-        self.toolbar.reset()
+        self.outputs.clear()
+        self.isotope_options.clear()
+        self.toolbar.clear()
+        self.setCurrentMethod(self.defaultMethod())
 
     def setColorScheme(self, action: QtGui.QAction):
         scheme = action.text().replace("&", "")

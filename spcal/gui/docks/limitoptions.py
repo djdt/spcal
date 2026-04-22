@@ -427,12 +427,6 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
     def limitOptions(self) -> SPCalLimitOptions:
         return self.options_widget.limitOptions()
 
-    def reset(self):
-        self.blockSignals(True)
-        self.options_widget.setLimitOptions(SPCalLimitOptions())
-        self.blockSignals(False)
-        self.optionsChanged.emit()
-
     def setManualLimits(self, limits: dict[SPCalIsotopeBase, float]):
         self.options_widget.manual.setManualLimits(limits)
 

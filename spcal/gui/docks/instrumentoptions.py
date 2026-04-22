@@ -100,12 +100,6 @@ class SPCalInstrumentOptionsDock(QtWidgets.QDockWidget):
     def setInstrumentOptions(self, options: SPCalInstrumentOptions):
         self.options_widget.setInstrumentOptions(options)
 
-    def reset(self):
-        self.blockSignals(True)
-        self.options_widget.setInstrumentOptions(SPCalInstrumentOptions(None, None))
-        self.blockSignals(False)
-        self.optionsChanged.emit()
-
     def setSignificantFigures(self, num: int):
         for widget in self.options_widget.findChildren(ValueWidget):
             widget.setSigFigs(num)
