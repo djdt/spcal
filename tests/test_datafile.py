@@ -93,6 +93,8 @@ def test_spcal_datafile_text_nu(test_data_path: Path):
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Ag", 109)]]), 0.004975563)
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 0.002678757)
 
+    assert df.spectra(np.array([[10, 20]])).shape == (1, 3)
+
 
 def test_spcal_datafile_text_tofwerk(test_data_path: Path):
     path = test_data_path.joinpath("text/tofwerk_export_au.csv")
@@ -109,6 +111,8 @@ def test_spcal_datafile_text_tofwerk(test_data_path: Path):
 
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 2.142439)
 
+    assert df.spectra(np.array([[10, 20]])).shape == (1, 1)
+
 
 def test_spcal_datafile_nu(test_data_path: Path):
     path = test_data_path.joinpath("nu/run.info")
@@ -124,6 +128,8 @@ def test_spcal_datafile_nu(test_data_path: Path):
 
     assert np.isclose(np.nanmean(df[ISOTOPE_TABLE[("Au", 197)]]), 3.9454572)
     assert df.isotope_table[ISOTOPE_TABLE[("Au", 197)]] == 114
+
+    assert df.spectra(np.array([[10, 20]])).shape == (1, 127)
 
 
 def test_spcal_datafile_nu_integ_range(test_data_path: Path):
@@ -146,3 +152,5 @@ def test_spcal_datafile_tofwerk(test_data_path: Path):
     # assert np.isclose(df.event_time, 9.2e-5)  # wrong because I have messed with the data
 
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Ru", 101)]]), 2.2688558)
+
+    assert df.spectra(np.array([[10, 20]])).shape == (1, 315)
