@@ -194,10 +194,10 @@ class SPCalTextDataFile(SPCalDataFile):
 
     @property
     def signals(self) -> np.ndarray:
-        return self._signals
+        return rfn.structured_to_unstructured(self._signals, dtype=np.float32)
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
-        return self.signals[self.isotope_table[isotope]]
+        return self._signals[self.isotope_table[isotope]]
 
     def information(self) -> dict[str, str]:
         info = super().information()
