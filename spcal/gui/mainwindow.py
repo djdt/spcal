@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
+from spcal.gui.dialogs.missingpaths import MissingPathsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
@@ -33,10 +35,15 @@ from spcal.gui.docks.outputs import SPCalOutputsDock
 
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs.colors import COLOR_SCHEMES, scheme_icon
-from spcal.gui.io import get_import_dialog_for_path, get_open_spcal_path, is_spcal_path
+from spcal.gui.io import (
+    get_import_dialog_for_path,
+    get_open_spcal_path,
+    is_spcal_path,
+    SessionImportWorker,
+)
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-from spcal.io.session import save_session_json
+from spcal.io.session import save_session_json, decode_json_method
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
@@ -64,6 +71,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.log.setWindowTitle("SPCal Log")
 
         self.session_thread = QtCore.QThread()
+        self.session_worker: SessionImportWorker | None = None
 
         method = self.restoreDefaultMethod()
 
@@ -1080,14 +1088,64 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if file == "":
             return
 
-        from spcal.gui.dialogs.io.session import SessionImportDialog
+        with Path(file).open() as fp:
+            session = json.load(fp)
 
-        dlg = SessionImportDialog(Path(file), self)
-        dlg.methodImported.connect(self.setCurrentMethod)
-        dlg.datafileImported.connect(self.files.addDataFile)
-        # cleanup
-        dlg.finished.connect(dlg.deleteLater)
+        datafiles = [
+            (datafile, Path(datafile["path"])) for datafile in session["datafiles"]
+        ]
+        if len(datafiles) == 0:
+            return
+
+        missing = sum(not p.exists() for _, p in datafiles)
+
+        if missing > 0:
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Datafile Not Found",
+                f"Cannot find {missing} datafiles. Select new paths?",
+                buttons=QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.No
+                | QtWidgets.QMessageBox.StandardButton.Cancel,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.Yes:
+                new_paths = MissingPathsDialog.getMissingPaths(
+                    self, [p for _, p in datafiles]
+                )
+                datafiles = [(df[0], new) for df, new in zip(datafiles, new_paths)]
+            elif button == QtWidgets.QMessageBox.StandardButton.Cancel:
+                return
+
+        self.setCurrentMethod(decode_json_method(session["method"]))
+
+        dlg = QtWidgets.QProgressDialog(
+            "Importing Datafiles...", "Cancel", 0, len(datafiles), self
+        )
+
+        self.worker = SessionImportWorker(
+            [(df, path) for df, path in datafiles if path.exists()]
+        )
+
+        dlg.canceled.connect(self._stopSessionThread)
+
+        self.worker.moveToThread(self.session_thread)
+        self.worker.progress.connect(dlg.setValue)
+        self.worker.datafileImported.connect(self.files.addDataFile)
+        self.worker.finished.connect(dlg.reset)
+        self.worker.finished.connect(self._stopSessionThread)  # cleanup
+
+        self.session_thread.started.connect(self.worker.read)
+        self.session_thread.finished.connect(self.worker.deleteLater)
+        self.session_thread.start()
+
+        # TODO : check leaks
         dlg.show()
+
+    def _stopSessionThread(self):
+        if self.session_thread.isRunning():
+            self.session_thread.requestInterruption()
+            self.session_thread.quit()
+            self.session_thread.wait(1000)
 
     def dialogSessionSave(self):
         def onFileSelected(file: str):
@@ -1294,5 +1352,5 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if etype is KeyboardInterrupt:
             logger.info("Keyboard interrupt, exiting.")
             sys.exit(1)
-        logger.exception("Uncaught exception", exc_info=(etype, value, tb))
+        logger.exception("Uncaught exception", exc_info=(etype, value, tb))  # type: ignore
         QtWidgets.QMessageBox.critical(self, "Uncaught Exception", str(value))

@@ -17,34 +17,3 @@ def create_action(
         action.triggered.connect(func)
     action.setCheckable(checkable)
     return action
-
-
-class WorkerSignals(QtCore.QObject):
-    finished = QtCore.Signal()
-    exception = QtCore.Signal(type, BaseException, object)
-    result = QtCore.Signal(object)
-
-
-class Worker(QtCore.QRunnable):
-    def __init__(
-        self,
-        func: Callable,
-        *args,
-        **kwargs,
-    ):
-        super().__init__()
-
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
-
-    def run(self):
-        try:
-            result = self.func(*self.args, **self.kwargs)
-        except Exception as e:
-            self.signals.exception.emit(type(e), e, e.__traceback__)
-        else:
-            self.signals.result.emit(result)
-        finally:
-            self.signals.finished.emit()
