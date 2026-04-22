@@ -1138,7 +1138,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.session_thread.finished.connect(self.worker.deleteLater)
         self.session_thread.start()
 
-        # TODO : check leaks
         dlg.show()
 
     def _stopSessionThread(self):
