@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-# REGEX_ISOTOPE = re.compile("(\\d+)?([A-Z][a-z]?)(\\d+)?")
 REGEX_ISOTOPE = re.compile("(?:(\\d+)([A-Z][a-z]?))|(?:([A-Z][a-z]?)(\\d+))")
 
 
@@ -19,7 +18,7 @@ class SPCalIsotopeBase:
     def __lt__(self, other: object) -> bool:
         if isinstance(other, SPCalIsotopeBase):
             return self.name < other.name
-        else:
+        else:  # pragma: no cover
             raise TypeError
 
 
@@ -48,7 +47,7 @@ class SPCalIsotope(SPCalIsotopeBase):
             return self.isotope < other.isotope
         elif isinstance(other, SPCalIsotopeExpression):
             return True
-        else:
+        else:  # pragma: no cover
             raise TypeError
 
     @property
@@ -93,7 +92,7 @@ class SPCalIsotopeExpression(SPCalIsotopeBase):
             return False
         elif isinstance(other, SPCalIsotopeExpression):
             return self.name < other.name
-        else:
+        else:  # pragma: no cover
             raise TypeError
 
     def validForIsotopes(self, isotopes: list[SPCalIsotope]) -> bool:

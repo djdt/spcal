@@ -63,3 +63,26 @@ def test_isotope_expression_sum():
         [isotope.ISOTOPE_TABLE[("H", 1)], isotope.ISOTOPE_TABLE[("He", 3)]]
     )
     assert expr.name == "Σ1H3He"
+
+
+def test_isotope_comparisions():
+
+    assert isotope.SPCalIsotopeBase("1") < isotope.SPCalIsotopeBase("2")
+
+    assert isotope.SPCalIsotope.fromString("6Li") < isotope.SPCalIsotope.fromString(
+        "7Li"
+    )
+
+    assert isotope.SPCalIsotope.fromString(
+        "197Au"
+    ) < isotope.SPCalIsotopeExpression.fromString("test", "+ 6Li 7Li")
+
+    assert not isotope.SPCalIsotopeExpression.fromString(
+        "test", "+ 6Li 7Li"
+    ) < isotope.SPCalIsotope.fromString("197Au")
+
+    assert isotope.SPCalIsotopeExpression.fromString(
+        "b", "+ 6Li 7Li"
+    ) > isotope.SPCalIsotopeExpression.fromString(
+        "a", "+ 6Li 7Li"
+    )
