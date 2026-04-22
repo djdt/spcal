@@ -168,64 +168,73 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         settings = QtCore.QSettings()
         method = SPCalProcessingMethod()
         if settings.contains("DefaultMethod/Instrument/Uptake"):
-            method.instrument_options.uptake = settings.value(
-                "DefaultMethod/Instrument/Uptake", None, float
+            method.instrument_options.uptake = float(
+                settings.value("DefaultMethod/Instrument/Uptake")
             )
         if settings.contains("DefaultMethod/Instrument/Efficiency"):
-            method.instrument_options.efficiency = settings.value(
-                "DefaultMethod/Instrument/Efficiency", None, float
+            method.instrument_options.efficiency = float(
+                settings.value("DefaultMethod/Instrument/Efficiency")
             )
 
-        method.limit_options.gaussian_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/Gaussian/Alpha",
-            method.limit_options.gaussian_kws["alpha"],
-            float,
-        )
-        method.limit_options.poisson_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/Poisson/Alpha",
-            method.limit_options.poisson_kws["alpha"],
-            float,
-        )
-        method.limit_options.compound_poisson_kws["alpha"] = settings.value(
-            "DefaultMethod/Limits/CompoundPoisson/Alpha",
-            method.limit_options.compound_poisson_kws["alpha"],
-            float,
-        )
-        method.limit_options.compound_poisson_kws["sigma"] = settings.value(
-            "DefaultMethod/Limits/CompoundPoisson/Sigma",
-            method.limit_options.compound_poisson_kws["sigma"],
-            float,
-        )
-        method.limit_options.max_iterations = settings.value(
-            "DefaultMethod/Limits/Iterative", method.limit_options.max_iterations, int
-        )
-        method.limit_options.window_size = settings.value(
-            "DefaultMethod/Limits/WindowSize", method.limit_options.window_size, int
-        )
+        if settings.contains("DefaultMethod/Limits/Gaussian/Alpha"):
+            method.limit_options.gaussian_kws["alpha"] = float(
+                settings.value(
+                    "DefaultMethod/Limits/Gaussian/Alpha",
+                )
+            )
+        if settings.contains("DefaultMethod/Limits/Poisson/Alpha"):
+            method.limit_options.poisson_kws["alpha"] = float(
+                settings.value(
+                    "DefaultMethod/Limits/Poisson/Alpha",
+                )
+            )
+        if settings.contains("DefaultMethod/Limits/CompoundPoisson/Alpha"):
+            method.limit_options.compound_poisson_kws["alpha"] = float(
+                settings.value(
+                    "DefaultMethod/Limits/CompoundPoisson/Alpha",
+                )
+            )
+        if settings.contains("DefaultMethod/Limits/CompoundPoisson/Sigma"):
+            method.limit_options.compound_poisson_kws["sigma"] = float(
+                settings.value(
+                    "DefaultMethod/Limits/CompoundPoisson/Sigma",
+                )
+            )
+        if settings.contains("DefaultMethod/Limits/MaxIterations"):
+            method.limit_options.max_iterations = int(
+                settings.value("DefaultMethod/Limits/MaxIterations")
+            )
+        if settings.contains("DefaultMethod/Limits/WindowSize"):
+            method.limit_options.window_size = int(
+                settings.value("DefaultMethod/Limits/WindowSize")
+            )
 
-        method.processing_options.calibration_mode = settings.value(
-            "DefaultMethod/Processing/CalibrationMode",
-            method.processing_options.calibration_mode,
-        )
-        method.processing_options.accumulation_method = settings.value(
-            "DefaultMethod/Processing/AccumulationMethod",
-            method.processing_options.accumulation_method,
-        )
-        method.processing_options.points_required = settings.value(
-            "DefaultMethod/Processing/PointsRequired",
-            method.processing_options.points_required,
-            int,
-        )
-        method.processing_options.prominence_required = settings.value(
-            "DefaultMethod/Processing/ProminenceRequired",
-            method.processing_options.prominence_required,
-            float,
-        )
-        method.processing_options.cluster_distance = settings.value(
-            "DefaultMethod/Processing/ClusterDistance",
-            method.processing_options.cluster_distance,
-            float,
-        )
+        if settings.contains("DefaultMethod/Processing/CalibrationMode"):
+            method.processing_options.calibration_mode = settings.value(
+                "DefaultMethod/Processing/CalibrationMode",
+            )
+        if settings.contains("DefaultMethod/Processing/AccumulationMethod"):
+            method.processing_options.accumulation_method = settings.value(
+                "DefaultMethod/Processing/AccumulationMethod",
+            )
+        if settings.contains("DefaultMethod/Processing/PointsRequired"):
+            method.processing_options.points_required = int(
+                settings.value(
+                    "DefaultMethod/Processing/PointsRequired",
+                )
+            )
+        if settings.contains("DefaultMethod/Processing/ProminenceRequired"):
+            method.processing_options.prominence_required = float(
+                settings.value(
+                    "DefaultMethod/Processing/ProminenceRequired",
+                )
+            )
+        if settings.contains("DefaultMethod/Processing/ClusterDistance"):
+            method.processing_options.cluster_distance = float(
+                settings.value(
+                    "DefaultMethod/Processing/ClusterDistance",
+                )
+            )
 
         return method
 
