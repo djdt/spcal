@@ -133,13 +133,17 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             data_file.isotopes, data_file.selected_isotopes
         )
         self.table.requestShowIsotopes.connect(self.showIsotopes)
+        self.table.isotopesChanged.connect(self.completeChanged)
 
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Reset
         )
+        button_screen = QtWidgets.QPushButton("Screen")
+        button_screen.setIcon(QtGui.QIcon.fromTheme("edit-find"))
         self.button_box.addButton(
-            "Screen", QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+            button_screen, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole
         )
         self.button_box.clicked.connect(self.onButtonClicked)
 
@@ -192,11 +196,13 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
         role = self.button_box.buttonRole(button)
-        if role == QtWidgets.QDialogButtonBox.ButtonRole.ResetRole:  # screen
+        if role == QtWidgets.QDialogButtonBox.ButtonRole.ActionRole:  # screen
             self.dialogScreen()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.table.setSelectedIsotopes([])
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
-        else:
+        else:  # Close
             self.reject()
 
     def dialogScreen(self):
