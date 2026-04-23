@@ -200,6 +200,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             self.dialogScreen()
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.table.setSelectedIsotopes([])
+            self.table.setIsotopeColors([], [])
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
             self.accept()
         else:  # Close

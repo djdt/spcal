@@ -114,7 +114,6 @@ class TextImportDialog(ImportDialogBase):
         self.box_options_layout.addRow("Import from row:", self.spinbox_first_line)
 
         self.fillTable()
-
         self.guessIsotopesFromTable()
 
         self.layout_body.addWidget(self.table)
@@ -257,9 +256,9 @@ class TextImportDialog(ImportDialogBase):
                     item.setToolTip(f"Original: '{item.text()}'")
                     item.setText(m.group(4) + m.group(3))
                 columns.append(col)
-
-        for col in columns:
-            self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+                self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
+            else:
+                self.table_header.setCheckState(col, QtCore.Qt.CheckState.Unchecked)
 
     def guessEventTimeFromTable(self) -> tuple[float, str]:
         header_row = self.spinbox_first_line.value() - 1
@@ -313,3 +312,23 @@ class TextImportDialog(ImportDialogBase):
             f"Text data loaded from {self.file_path} ({data_file.num_events} events)."
         )
         super().accept()
+
+    def reset(self):
+        delimiter, first_data_line, column_count = guess_text_parameters(
+            self.file_lines[: self.HEADER_LINE_COUNT]
+        )
+        if delimiter == "":
+            delimiter = ","
+
+        cps = any(
+            "cps" in line.lower() for line in self.file_lines[: self.HEADER_LINE_COUNT]
+        )
+        self.combo_intensity_units.setCurrentIndex(1 if cps else 0)
+        self.combo_delimiter.setCurrentIndex(
+            list(self.DELIMITERS.keys()).index(delimiter)
+        )
+        self.spinbox_first_line.setValue(first_data_line)
+        self.override_event_time.setChecked(False)
+
+        self.fillTable()
+        self.guessIsotopesFromTable()

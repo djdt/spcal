@@ -346,6 +346,17 @@ class NuImportDialog(ImportDialogBase):
             self.cleanup()
             super().reject()
 
+    def reset(self):
+        self.cycle_number.setValue(0)
+        self.segment_number.setValue(0)
+        self.max_mass_diff.setValue(0.05)
+        self.first_integ.setValue(1)
+        self.last_integ.setValue(len(self.index) + 1)
+        self.combo_blanking.setCurrentText("Regions")
+
+        self.table.setSelectedIsotopes([])
+        self.table.setIsotopeColors([], [])
+
     @QtCore.Slot()
     def finalise(self):
         self.import_thread.quit()

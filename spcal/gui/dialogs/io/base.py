@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.widgets.elidedlabel import ElidedLabel
@@ -30,17 +30,18 @@ class ImportDialogBase(QtWidgets.QDialog):
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Reset
         )
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
             False
         )
         if screening_method is not None:
+            button_screen = QtWidgets.QPushButton("Screen")
+            button_screen.setIcon(QtGui.QIcon.fromTheme("edit-find"))
             self.button_box.addButton(
-                "Screen", QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+                button_screen, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole
             )
         self.button_box.clicked.connect(self.onButtonClicked)
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
 
         box_info = QtWidgets.QGroupBox("Information")
         self.box_info_layout = QtWidgets.QFormLayout()
@@ -66,15 +67,24 @@ class ImportDialogBase(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.reset()
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Cancel:
+            self.reject()
+
         if (
             self.button_box.buttonRole(button)
-            == QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+            == QtWidgets.QDialogButtonBox.ButtonRole.ActionRole
         ):
             self.dialogScreening()
 
     def dialogScreening(self):
         # local to prevent circular imports
         from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog
+
         dlg = ScreeningOptionsDialog(
             self.screening_ppm, self.screening_size, parent=self
         )
@@ -100,3 +110,6 @@ class ImportDialogBase(QtWidgets.QDialog):
 
     def isComplete(self) -> bool:
         return True
+
+    def reset(self):
+        pass
