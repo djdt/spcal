@@ -68,6 +68,11 @@ def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
 
+    dlg.reset()
+    assert dlg.table.item(0, 1).text() == "106.905 - seg Full mass spectrum att 1"  # type: ignore , not None
+    assert dlg.table.item(0, 3).text() == "196.967 - seg Full mass spectrum att 1"  # type: ignore , not None
+    assert dlg.event_time.baseValue() == 1e-5
+
 
 def test_import_dialog_text_tofwerk(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalTOFWERKDataFile):
@@ -93,6 +98,16 @@ def test_import_dialog_text_tofwerk(test_data_path: Path, qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
+
+    dlg.combo_intensity_units.setCurrentIndex(1)
+    dlg.spinbox_first_line.setValue(3)
+    dlg.combo_delimiter.setCurrentText("Space")
+
+    dlg.reset()
+
+    assert dlg.combo_intensity_units.currentText() == "Counts"
+    assert dlg.delimiter() == ","
+    assert dlg.spinbox_first_line.value() == 1
 
 
 def test_import_dialog_text_thermo_new_icap(test_data_path: Path, qtbot: QtBot):
@@ -154,6 +169,19 @@ def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
+
+    dlg.cycle_number.setValue(1)
+    dlg.segment_number.setValue(1)
+    dlg.max_mass_diff.setValue(0.1)
+    dlg.combo_blanking.setCurrentText("All")
+
+    dlg.reset()
+
+    assert len(dlg.table.selectedIsotopes()) == 0
+    assert dlg.cycle_number.value() == 0
+    assert dlg.segment_number.value() == 0
+    assert dlg.max_mass_diff.value() == 0.05
+    assert dlg.combo_blanking.currentText() == "Regions"
 
 
 def test_import_dialog_nu_screening(
@@ -229,6 +257,9 @@ def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
+
+    dlg.reset()
+    assert len(dlg.table.selectedIsotopes()) == 0
 
 
 def test_import_dialog_tofwerk_screening(
