@@ -33,10 +33,11 @@ class MissingPathsDialog(QtWidgets.QDialog):
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
 
-        self.search_button = QtWidgets.QPushButton("Search...")
-        self.search_button.pressed.connect(self.dialogSearch)
+        search_button = QtWidgets.QPushButton("Search...")
+        search_button.setIcon(QtGui.QIcon.fromTheme("edit-find"))
+        search_button.pressed.connect(self.dialogSearch)
         self.button_box.addButton(
-            self.search_button, QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
+            search_button, QtWidgets.QDialogButtonBox.ButtonRole.ResetRole
         )
 
         self.button_box.accepted.connect(self.accept)
