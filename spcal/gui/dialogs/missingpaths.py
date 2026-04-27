@@ -112,7 +112,6 @@ class MissingPathsDialog(QtWidgets.QDialog):
                     )
             for filename in dirs:
                 if filename in original_names:
-                    print(filename, original_names)
                     idx = original_names.index(filename)
                     self.list.item(idx).setText(str(path.joinpath(filename)))
                     self.list.item(idx).setIcon(
