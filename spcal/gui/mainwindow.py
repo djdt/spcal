@@ -711,17 +711,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for isotope in removed:
             self.processing_results[data_file].pop(isotope)
 
-        results = []
-        for data_file in self.files.selectedDataFiles():
-            # if data_file == self.files.currentDataFile():
-            results.extend(
+        if data_file == self.files.currentDataFile():
+            results = (
                 sorted(
                     self.processing_results[data_file].values(),
                     key=lambda result: result.isotope,
                 )
             )
-        self.outputs.setResults(results)
-        self.redraw()
+            self.outputs.setResults(results)
+            self.redraw()
 
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
