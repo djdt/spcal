@@ -40,6 +40,7 @@ from spcal.gui.io import (
     get_open_spcal_path,
     is_spcal_path,
     SessionImportWorker,
+    is_spcal_session_path,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
@@ -123,6 +124,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
 
         self.files.dataFileAdded.connect(self.onDataFileAdded)
+        self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.updateForDataFiles)
 
@@ -624,7 +626,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def onDataFileAdded(self, data_file: SPCalDataFile):
         self.reprocess([data_file])
-        self.updateRecentFiles(data_file)
         logger.info(
             f"DataFile '{data_file.path.stem}' imported with {data_file.num_events} events."
         )
@@ -710,13 +711,17 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for isotope in removed:
             self.processing_results[data_file].pop(isotope)
 
-        if data_file == self.files.currentDataFile():
-            results = sorted(
-                self.processing_results[data_file].values(),
-                key=lambda result: result.isotope,
+        results = []
+        for data_file in self.files.selectedDataFiles():
+            # if data_file == self.files.currentDataFile():
+            results.extend(
+                sorted(
+                    self.processing_results[data_file].values(),
+                    key=lambda result: result.isotope,
+                )
             )
-            self.outputs.setResults(results)
-            self.redraw()
+        self.outputs.setResults(results)
+        self.redraw()
 
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
@@ -1097,7 +1102,43 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if file == "":
             return
 
-        with Path(file).open() as fp:
+        self.restoreSession(Path(file))
+
+    def _stopSessionThread(self):
+        if self.session_thread.isRunning():
+            self.session_thread.requestInterruption()
+            self.session_thread.quit()
+            self.session_thread.wait(1000)
+        self.files.dataFileAdded.connect(self.updateRecentFiles)
+
+    def dialogSessionSave(self):
+        def onFileSelected(file: str):
+            path = Path(file)
+            if path.suffixes != [".spcal", ".json"]:
+                path = Path(path.stem).with_suffix(".spcal.json")
+            save_session_json(path, self.currentMethod(), self.files.dataFiles())
+
+        df = self.files.currentDataFile()
+        if df is None:
+            path = Path()
+        else:
+            path = df.path.parent
+
+        # Dont use getSaveFileName as it doesn't have setDefaultSuffix
+        dlg = QtWidgets.QFileDialog(
+            self,
+            "Save Session",
+            str(path),
+            "SPCal Sessions(*.spcal.json);;All Files(*)",
+        )
+        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        dlg.setDefaultSuffix(".spcal.json")
+
+        dlg.fileSelected.connect(onFileSelected)
+        dlg.exec()
+
+    def restoreSession(self, path: Path):
+        with path.open() as fp:
             session = json.load(fp)
 
         datafiles = [
@@ -1126,6 +1167,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 return
 
         self.setCurrentMethod(decode_json_method(session["method"]))
+        self.files.dataFileAdded.disconnect(self.updateRecentFiles)
 
         dlg = QtWidgets.QProgressDialog(
             "Importing Datafiles...", "Cancel", 0, len(datafiles), self
@@ -1148,38 +1190,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.session_thread.start()
 
         dlg.show()
-
-    def _stopSessionThread(self):
-        if self.session_thread.isRunning():
-            self.session_thread.requestInterruption()
-            self.session_thread.quit()
-            self.session_thread.wait(1000)
-
-    def dialogSessionSave(self):
-        def onFileSelected(file: str):
-            path = Path(file)
-            if path.suffixes != [".spcal", ".json"]:
-                path = Path(path.stem).with_suffix(".spcal.json")
-            save_session_json(path, self.currentMethod(), self.files.dataFiles())
-
-        df = self.files.currentDataFile()
-        if df is None:
-            path = Path()
-        else:
-            path = df.path.parent
-
-        # Dont use getSaveFileName as it doesn't have setDefaultSuffix
-        dlg = QtWidgets.QFileDialog(
-            self,
-            "Save Session",
-            str(path),
-            "SPCal Sessions(*.spcal.json);;All Files(*)",
-        )
-        dlg.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
-        dlg.setDefaultSuffix(".spcal.json")
-
-        dlg.fileSelected.connect(onFileSelected)
-        dlg.exec()
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
@@ -1343,6 +1353,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if is_spcal_path(url.toLocalFile()):
                 event.acceptProposedAction()
                 return
+            elif is_spcal_session_path(url.toLocalFile()):
+                event.acceptProposedAction()
+                return
         event.ignore()
 
     def dropEvent(self, event: QtGui.QDropEvent):
@@ -1351,6 +1364,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if is_spcal_path(path):
                 self.dialogLoadFile(path)
                 event.accept()
+            elif is_spcal_session_path(path):
+                self.restoreSession(path)
+                event.accept()
+                break
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None

@@ -1,4 +1,3 @@
-from spcal.io.session import decode_json_datafile
 from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
@@ -8,6 +7,7 @@ from spcal.datafile import SPCalDataFile
 from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
+from spcal.io.session import decode_json_datafile
 from spcal.processing.method import SPCalProcessingMethod
 
 from spcal.gui.dialogs.io.base import ImportDialogBase
@@ -32,6 +32,13 @@ def is_spcal_path(path: str | Path) -> bool:
         path = path.parent
 
     return any((is_text_file(path), is_nu_directory(path), is_tofwerk_file(path)))
+
+
+def is_spcal_session_path(path: str | Path) -> bool:
+    path = Path(path)
+    if path.suffixes == [".spcal", ".json"]:
+        return True
+    return False
 
 
 def most_recent_spcal_path() -> Path | None:
