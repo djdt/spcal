@@ -46,8 +46,9 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
             return False
 
     skip_rows = 0
-
+    column_count = 1
     delimiter = ""
+
     for line in lines:
         try:
             delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
@@ -59,7 +60,6 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
                 break
         skip_rows += 1
 
-    column_count = 1
     if delimiter != "":
         column_count = max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
 

@@ -117,8 +117,8 @@ class SPCalProcessingMethod(object):
         return SPCalProcessingResult(
             isotope,
             limit=limit,
+            data_file=data_file,
             method=method,
-            event_time=data_file.event_time,
             signals=signals,
             times=times,
             detections=detections,

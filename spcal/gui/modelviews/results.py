@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from typing import Any
 
 import bottleneck as bn
@@ -94,7 +95,15 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.DisplayRole,
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
-                return str(self.results[section].isotope)
+                if all(
+                    self.results[0].data_file == result.data_file
+                    for result in self.results[1:]
+                ):
+                    result = self.results[section]
+                    return f"{result.isotope}"
+                else:
+                    result = self.results[section]
+                    return f"{result.data_file.path.stem} : {result.isotope}"
             elif role == IsotopeRole:
                 return self.results[section].isotope
         return super().headerData(section, orientation, role)
@@ -163,6 +172,7 @@ class ResultOutputView(BasicTableView):
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveIsotopes = QtCore.Signal(list)
     requestRemoveExpressions = QtCore.Signal(list)
+    requestRemoveResult = QtCore.Signal(SPCalProcessingResult)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)

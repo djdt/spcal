@@ -571,7 +571,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for expr in expressions:
             if expr in method.expressions:
                 method.expressions.remove(expr)
-            self.removeIsotopeFromResults(expr)
+            for data_file, results in self.processing_results.items():
+                if expr in results:
+                    results.pop(expr)
+
         self.currentMethodChanged.emit(method)
         self.updateForDataFiles(
             self.files.currentDataFile(), self.files.selectedDataFiles()
@@ -733,14 +736,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def removeIsotopes(self, isotopes: list[SPCalIsotope]):
         for file in self.files.dataFiles():
             for isotope in isotopes:
+                if (
+                    file in self.processing_results
+                    and isotope in self.processing_results[file]
+                ):
+                    self.processing_results[file].pop(isotope)
                 if isotope in file.selected_isotopes:
                     file.selected_isotopes.remove(isotope)
         self.reprocess()
-
-    def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
-        for data_file, results in self.processing_results.items():
-            if isotope in results:
-                results.pop(isotope)
 
     def reprocess(
         self,
