@@ -537,25 +537,25 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             self.button_image_options, 0, QtCore.Qt.AlignmentFlag.AlignRight
         )
 
-        box_options = QtWidgets.QGroupBox("Export Options")
+        self.box_options = QtWidgets.QGroupBox("Export Options")
         box_options_layout = QtWidgets.QFormLayout()
         box_options_layout.addRow(self.check_export_options)
         box_options_layout.addRow(self.check_export_arrays)
         box_options_layout.addRow(self.check_export_clusters)
         box_options_layout.addRow(image_option_layout)
         box_options_layout.addRow(summary_option_layout)
-        box_options.setLayout(box_options_layout)
+        self.box_options.setLayout(box_options_layout)
 
-        box_units = QtWidgets.QGroupBox("Export Units")
+        self.box_units = QtWidgets.QGroupBox("Export Units")
         box_units_layout = QtWidgets.QFormLayout()
         box_units_layout.addRow("Mass", self.mass_units)
         box_units_layout.addRow("Size", self.size_units)
-        box_units.setLayout(box_units_layout)
+        self.box_units.setLayout(box_units_layout)
 
         grid_layout = QtWidgets.QGridLayout()
         grid_layout.addWidget(box_output, 0, 0, 2, 1)
-        grid_layout.addWidget(box_options, 0, 1)
-        grid_layout.addWidget(box_units, 1, 1)
+        grid_layout.addWidget(self.box_options, 0, 1)
+        grid_layout.addWidget(self.box_units, 1, 1)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(grid_layout, 1)
@@ -565,13 +565,19 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.registerField("export.options", self.check_export_options)
         self.registerField("export.arrays", self.check_export_arrays)
         self.registerField("export.clusters", self.check_export_clusters)
-        self.registerField("export.images", self.check_export_images)
         self.registerField("export.summary", self.check_export_summary)
         self.registerField("export.summary.name", self.summary_filename)
         self.registerField("export.units", self, "unitsProp")
 
         self.registerField("export.image", self.check_export_images)
         self.registerField("export.image.options", self, "imageExportOptionsProp")
+
+    def setControlsEnabled(self, enabled: bool):
+        self.output_name.setEnabled(enabled)
+        self.output_dir.setEnabled(enabled)
+        self.button_dir.setEnabled(enabled)
+        self.box_options.setEnabled(enabled)
+        self.box_units.setEnabled(enabled)
 
     def units(self) -> dict[str, tuple[str, float]]:
         mass = self.mass_units.currentText()
@@ -923,6 +929,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
 
     def startProgress(self, number_items: int):
         self.process_timer.start()
+        self.run_page.setControlsEnabled(False)
         logger.info(f"Batch processing started for {number_items} data files.")
 
     def updateProgress(self, index: int, partial: float):
@@ -955,6 +962,7 @@ class SPCalBatchProcessingWizard(QtWidgets.QWizard):
             self.setButtonText(QtWidgets.QWizard.WizardButton.CancelButton, "Close")
             self.run_page.resetProgress()
             self.run_page.setStatus("Processing cancelled!")
+            self.run_page.setControlsEnabled(True)
             logger.warning("Batch processing cancelled.")
         else:
             self.stopThread()
