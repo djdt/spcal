@@ -1,3 +1,4 @@
+from spcal.isotope import SPCalIsotope
 import numpy as np
 import pytest
 from PySide6 import QtCore
@@ -129,3 +130,39 @@ def test_gui_tof_data(qtbot: QtBot, test_locales, test_data_path):
         win.files.addDataFile(df)
 
     _click_through_mainwindow(qtbot, win)
+
+
+def test_gui_multi_result(qtbot: QtBot, test_locales, test_data_path):
+    win = SPCalMainWindow()
+    qtbot.addWidget(win)
+    with qtbot.waitExposed(win):
+        win.show()
+
+    df = SPCalTextDataFile.load(
+        test_data_path.joinpath("text/agilent_au50nm.csv"), skip_rows=4
+    )
+    df.selected_isotopes = df.isotopes
+    win.files.addDataFile(df)
+
+    df = SPCalTextDataFile.load(
+        test_data_path.joinpath("text/agilent_negative_test.csv"),
+        skip_rows=4,
+        cps=True,
+    )
+    df.selected_isotopes = df.isotopes
+    win.files.addDataFile(df)
+
+    df = SPCalTextDataFile.load(
+        test_data_path.joinpath("text/tofwerk_export_au.csv"),
+        isotope_table={SPCalIsotope.fromString("197Au"):"[197Au]+_(cts)"},
+        skip_rows=1,
+        cps=True,
+    )
+    df.selected_isotopes = df.isotopes
+    win.files.addDataFile(df)
+
+    assert win.outputs.view.results_model.rowCount() == 1
+
+    win.files.list.selectAll()
+
+    assert win.outputs.view.results_model.rowCount() == 3
