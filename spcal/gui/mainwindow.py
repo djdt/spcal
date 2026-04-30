@@ -652,7 +652,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
-        isotopes = sorted(current.selected_isotopes + method.validExpressions(current))
+        exprs = [
+            expr
+            for expr in method.expressions
+            if expr.validForIsotopes(current.isotopes)
+        ]
+        isotopes = sorted(current.selected_isotopes + exprs)
 
         method_changed = False
         self.isotope_options.blockSignals(True)

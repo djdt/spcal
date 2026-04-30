@@ -74,15 +74,6 @@ class SPCalProcessingMethod(object):
         self.result_filters = result_filters
         self.index_filters = index_filters
 
-    def validExpressions(
-        self, data_file: SPCalDataFile
-    ) -> list[SPCalIsotopeExpression]:
-        return [
-            expr
-            for expr in self.expressions
-            if expr.validForIsotopes(data_file.isotopes)
-        ]
-
     @staticmethod
     def calculate_result_for_isotope(
         method: "SPCalProcessingMethod",
@@ -90,6 +81,7 @@ class SPCalProcessingMethod(object):
         isotope: SPCalIsotopeBase,
         max_size: int | None,
     ) -> SPCalProcessingResult:
+        print(f"Calculating result for isotope: {isotope}, data file: {data_file}")
         limit = method.limit_options.limitsForIsotope(
             data_file, isotope, method.exclusion_regions
         )
@@ -135,7 +127,7 @@ class SPCalProcessingMethod(object):
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
-        isotopes = list(isotopes) + self.validExpressions(data_file)
+        isotopes = list(isotopes) + self.expressions
 
         with ThreadPoolExecutor() as exec:
             futures = [
@@ -148,6 +140,10 @@ class SPCalProcessingMethod(object):
                 )
                 for isotope in isotopes
                 if isotope in data_file.isotopes
+                or (
+                    isinstance(isotope, SPCalIsotopeExpression)
+                    and isotope.validForIsotopes(data_file.isotopes)
+                )
             ]
             results = {future.result().isotope: future.result() for future in futures}
 
@@ -210,7 +206,7 @@ class SPCalProcessingMethod(object):
                 if isinstance(filter, SPCalClusterFilter):
                     if filter.key not in clusters:  # pragma: no cover
                         continue
-                    if filter.preferInvalid(): # pragma: no cover, not used
+                    if filter.preferInvalid():  # pragma: no cover, not used
                         raise NotImplementedError
                         filter_invalid = filter.invalidPeaks(clusters[filter.key])
                         group_valid = np.setdiff1d(group_valid, filter_invalid)
