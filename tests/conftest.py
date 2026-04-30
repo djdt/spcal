@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from pathlib import Path
 import numpy as np
 import random
@@ -53,6 +54,7 @@ def random_result_generator():
             SPCalLimit("TestLimit", 1.0, 3.0),
             method,
             0.001,
+            Path("/home/fake_path.datafile"),
             signals,
             times,
             detections,

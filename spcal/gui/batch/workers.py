@@ -76,7 +76,7 @@ def _batch_export_results(
         )
 
     if summary_fp is not None:
-        append_results_summary(summary_fp, data_file, results, export_options["units"])
+        append_results_summary(summary_fp, results, export_options["units"])
 
 
 class NuBatchWorker(QtCore.QObject):

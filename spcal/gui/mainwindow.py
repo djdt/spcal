@@ -499,6 +499,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "Opens a link to documenation on usage.",
             self.linkToDocumenation,
         )
+        self.action_github = create_action(
+            "folder-git",
+            "SPCal GitHub",
+            "Opens a link to the GitHub.",
+            self.linkToGitHub,
+        )
         self.action_about = create_action(
             "help-about", "About", "About SPCal.", self.about
         )
@@ -553,6 +559,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
         menuhelp.addAction(self.action_documentation)
+        menuhelp.addAction(self.action_github)
         menuhelp.addAction(self.action_about)
 
     # Method modification
@@ -571,7 +578,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for expr in expressions:
             if expr in method.expressions:
                 method.expressions.remove(expr)
-            self.removeIsotopeFromResults(expr)
+            for data_file, results in self.processing_results.items():
+                if expr in results:
+                    results.pop(expr)
+
         self.currentMethodChanged.emit(method)
         self.updateForDataFiles(
             self.files.currentDataFile(), self.files.selectedDataFiles()
@@ -642,7 +652,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
-        isotopes = sorted(current.selected_isotopes + method.validExpressions(current))
+        exprs = [
+            expr
+            for expr in method.expressions
+            if expr.validForIsotopes(current.isotopes)
+        ]
+        isotopes = sorted(current.selected_isotopes + exprs)
 
         method_changed = False
         self.isotope_options.blockSignals(True)
@@ -731,14 +746,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def removeIsotopes(self, isotopes: list[SPCalIsotope]):
         for file in self.files.dataFiles():
             for isotope in isotopes:
+                if (
+                    file in self.processing_results
+                    and isotope in self.processing_results[file]
+                ):
+                    self.processing_results[file].pop(isotope)
                 if isotope in file.selected_isotopes:
                     file.selected_isotopes.remove(isotope)
         self.reprocess()
-
-    def removeIsotopeFromResults(self, isotope: SPCalIsotopeBase):
-        for data_file, results in self.processing_results.items():
-            if isotope in results:
-                results.pop(isotope)
 
     def reprocess(
         self,
@@ -1191,6 +1206,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
+
+    def linkToGitHub(self):
+        QtGui.QDesktopServices.openUrl("https://github.com/djdt/spcal")
 
     # UI
     # save / restore layout

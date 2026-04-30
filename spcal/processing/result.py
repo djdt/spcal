@@ -1,6 +1,8 @@
 """The result class produced by an SPCalProcessingMethod."""
+
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
+from pathlib import Path
 
 import numpy as np
 
@@ -20,8 +22,9 @@ class SPCalProcessingResult(object):
         self,
         isotope: SPCalIsotopeBase,
         limit: SPCalLimit,
-        method: "SPCalProcessingMethod",
+        method: SPCalProcessingMethod,
         event_time: float,
+        data_file_path: Path,
         signals: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
@@ -30,6 +33,8 @@ class SPCalProcessingResult(object):
     ):
         self.isotope = isotope
         self.limit = limit
+
+        self.data_file_path = data_file_path
         self.method = method
 
         self.signals = signals

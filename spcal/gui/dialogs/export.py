@@ -137,14 +137,17 @@ class ExportDialog(QtWidgets.QDialog):
             "CSV Documents (*.csv);;All files (*)",
         )
 
-        if any(x in file for x in ExportDialog.INVALID_CHARS):
+        path = Path(file)
+        if any(x in path.name for x in ExportDialog.INVALID_CHARS):
             QtWidgets.QMessageBox.information(
                 self,
                 "Invalid Name",
                 f"Files may not contain any of these characters: {ExportDialog.INVALID_CHARS}",
             )
             for char in ExportDialog.INVALID_CHARS:
-                file = file.replace(char, "")
+                path = path.with_name(path.name.replace(char, ""))
+
+        file = str(path.absolute())
 
         if file != "":
             self.lineedit_path.setText(file)

@@ -32,30 +32,29 @@ def _scaled(v: float | None, factor: float) -> str:
 
 def append_results_summary(
     fp: TextIO,
-    data_file: SPCalDataFile,
     results: list[SPCalProcessingResult],
     units: dict[str, tuple[str, float]],
 ):
     if fp.tell() == 0:
         fp.write("Data File,Isotope,Name,Unit,Value\n")
     for result in results:
-        fp.write(f"{data_file.path},{result.isotope},Number,#,{result.number}\n")
+        fp.write(f"{result.data_file_path},{result.isotope},Number,#,{result.number}\n")
         fp.write(
-            f"{data_file.path},{result.isotope},Number Error,#,{result.number_error}\n"
+            f"{result.data_file_path},{result.isotope},Number Error,#,{result.number_error}\n"
         )
         if result.number_concentration is not None:
             fp.write(
-                f"{data_file.path},{result.isotope},Number,#/L,{result.number_concentration}\n"
+                f"{result.data_file_path},{result.isotope},Number,#/L,{result.number_concentration}\n"
             )
         if result.mass_concentration is not None:
             unit, factor = units["mass"]
             fp.write(
-                f"{data_file.path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
+                f"{result.data_file_path},{result.isotope},Number,{unit}/L,{_scaled(result.mass_concentration, factor)}\n"
             )
         if result.ionic_background is not None:
             unit, factor = units["mass"]
             fp.write(
-                f"{data_file.path},{result.isotope},Ionic Background,{unit}/L,{_scaled(result.ionic_background, factor)}\n"
+                f"{result.data_file_path},{result.isotope},Ionic Background,{unit}/L,{_scaled(result.ionic_background, factor)}\n"
             )
         for key in CALIBRATION_KEYS:
             if not result.canCalibrate(key):  # pragma: no cover
@@ -78,7 +77,7 @@ def append_results_summary(
             ]
             for name, value in values:
                 fp.write(
-                    f"{data_file.path},{result.isotope},{name},{unit},{_scaled(value, factor)}\n"
+                    f"{result.data_file_path},{result.isotope},{name},{unit},{_scaled(value, factor)}\n"
                 )
 
 
