@@ -1,13 +1,14 @@
 """The result class produced by an SPCalProcessingMethod."""
+
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
+from pathlib import Path
 
 import numpy as np
 
 from spcal import particle
 from spcal.detection import background_mask, detection_maxima
 from spcal.isotope import SPCalIsotopeBase
-from spcal.datafile import SPCalDataFile
 from spcal.limit import SPCalLimit
 
 import typing
@@ -21,8 +22,9 @@ class SPCalProcessingResult(object):
         self,
         isotope: SPCalIsotopeBase,
         limit: SPCalLimit,
-        data_file: SPCalDataFile,
         method: SPCalProcessingMethod,
+        event_time: float,
+        data_file_path: Path,
         signals: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
@@ -31,7 +33,8 @@ class SPCalProcessingResult(object):
     ):
         self.isotope = isotope
         self.limit = limit
-        self.data_file = data_file
+
+        self.data_file_path = data_file_path
         self.method = method
 
         self.signals = signals
@@ -50,7 +53,7 @@ class SPCalProcessingResult(object):
         self.background = float(np.nanmean(signals[mask]))
         self.background_error = float(np.nanstd(signals[mask], mean=self.background))
 
-        # self.event_time = event_time
+        self.event_time = event_time
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalProcessingResult(number={self.number})"
@@ -61,7 +64,7 @@ class SPCalProcessingResult(object):
 
     @property
     def total_time(self) -> float:
-        return self.data_file.event_time * self.num_events
+        return self.event_time * self.num_events
 
     @property
     def valid_events(self) -> int:
@@ -143,11 +146,11 @@ class SPCalProcessingResult(object):
         values = self.detections
         if filtered:
             values = values[self.filter_indicies]
-        result = self.method.calibrateTo(values, key, self.isotope, self.data_file.event_time)
+        result = self.method.calibrateTo(values, key, self.isotope, self.event_time)
         assert isinstance(result, np.ndarray)
         return result
 
     def calibrateTo(
         self, value: float | np.ndarray, key: str
     ) -> float | np.ndarray:  # pragma: no cover, tested in method
-        return self.method.calibrateTo(value, key, self.isotope, self.data_file.event_time)
+        return self.method.calibrateTo(value, key, self.isotope, self.event_time)

@@ -96,14 +96,14 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
                 if all(
-                    self.results[0].data_file == result.data_file
+                    self.results[0].data_file_path == result.data_file_path
                     for result in self.results[1:]
                 ):
                     result = self.results[section]
                     return f"{result.isotope}"
                 else:
                     result = self.results[section]
-                    return f"{result.data_file.path.stem} : {result.isotope}"
+                    return f"{result.data_file_path.stem} : {result.isotope}"
             elif role == IsotopeRole:
                 return self.results[section].isotope
         return super().headerData(section, orientation, role)
