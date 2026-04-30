@@ -499,6 +499,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "Opens a link to documenation on usage.",
             self.linkToDocumenation,
         )
+        self.action_github = create_action(
+            "folder-git",
+            "SPCal GitHub",
+            "Opens a link to the GitHub.",
+            self.linkToGitHub,
+        )
         self.action_about = create_action(
             "help-about", "About", "About SPCal.", self.about
         )
@@ -553,6 +559,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuhelp = self.menuBar().addMenu("&Help")
         menuhelp.addAction(self.action_log)
         menuhelp.addAction(self.action_documentation)
+        menuhelp.addAction(self.action_github)
         menuhelp.addAction(self.action_about)
 
     # Method modification
@@ -1196,6 +1203,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
+
+    def linkToGitHub(self):
+        QtGui.QDesktopServices.openUrl("https://github.com/djdt/spcal")
 
     # UI
     # save / restore layout
