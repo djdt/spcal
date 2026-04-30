@@ -225,6 +225,23 @@ def test_spcal_processing_method(
     assert np.isclose(np.mean(results[ru[0]].detections), 259.619)
 
 
+def test_spcal_processing_method_expr(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
+
+    method = default_method
+    method.expressions = [
+        SPCalIsotopeExpression("Sum", ("+", "+", ru[0], ru[1], ru[2]))
+    ]
+
+    results = method.processDataFile(test_datafile, ru)
+    method.filterResults(results)
+    assert len(results) == 4
+    assert "Sum" in [x.name for x in results.keys()]
+    method.expressions = []
+
+
 def test_spcal_processing_method_exclusions(
     test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
 ):
