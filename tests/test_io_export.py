@@ -97,9 +97,7 @@ def test_export_spcal_append_summary(
 
     tmp = tmp_path.joinpath("test_summary.csv")
     with tmp.open("w") as fp:
-        export.append_results_summary(
-            fp, export_datafile, list(results.values()), units
-        )
+        export.append_results_summary(fp, list(results.values()), units)
 
     lines = tmp.open("r").readlines()
     lines_checked = (
