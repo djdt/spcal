@@ -81,7 +81,6 @@ class SPCalProcessingMethod(object):
         isotope: SPCalIsotopeBase,
         max_size: int | None,
     ) -> SPCalProcessingResult:
-        print(f"Calculating result for isotope: {isotope}, data file: {data_file}")
         limit = method.limit_options.limitsForIsotope(
             data_file, isotope, method.exclusion_regions
         )
