@@ -46,6 +46,8 @@ def test_io_nu_import_compressed(test_data_path: Path):
     assert masses.size == 29
     assert signals.shape == (51725, 29)
 
+    assert np.isclose(np.mean(signals[:, 0]), 0.03979577)
+
     assert np.isclose(eventtime_from_info(info), 88.08e-6)
 
 
