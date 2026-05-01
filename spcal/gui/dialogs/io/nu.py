@@ -105,7 +105,6 @@ class NuImportDialog(ImportDialogBase):
                     idx["FirstCycNum"],
                     idx["FirstSegNum"],
                     idx["FirstAcqNum"],
-                    memmap=True,
                 )
                 break
         if data is None:

@@ -10,6 +10,8 @@ from typing import BinaryIO, Callable, Generator
 import numpy as np
 import numpy.lib.recfunctions as rfn
 
+import gzip
+
 from spcal.calc import search_sorted_closest
 
 logger = logging.getLogger(__name__)
@@ -111,28 +113,38 @@ def read_integ_binary(
             ]
         )
 
-    with path.open("rb") as fp:
-        cyc_number = int.from_bytes(fp.read(4), "little")
-        if (
-            first_cyc_number is not None and cyc_number != first_cyc_number
-        ):  # pragma: no cover
-            raise ValueError("read_integ_binary: incorrect FirstCycNum")
-        seg_number = int.from_bytes(fp.read(4), "little")
-        if (
-            first_seg_number is not None and seg_number != first_seg_number
-        ):  # pragma: no cover
-            raise ValueError("read_integ_binary: incorrect FirstSegNum")
-        acq_number = int.from_bytes(fp.read(4), "little")
-        if (
-            first_acq_number is not None and acq_number != first_acq_number
-        ):  # pragma: no cover
-            raise ValueError("read_integ_binary: incorrect FirstAcqNum")
-        num_results = int.from_bytes(fp.read(4), "little")
+    fp = path.open("rb")
+
+    if fp.read(2) == b"\x1f\x8b":  # is a gzipped integ
+        fp = gzip.open(path, "rb")
+        if memmap:
+            memmap = False
+            logger.info("compressed, disabling memmory mapping for integ")
+    else:
+        fp.seek(0)
+
+    cyc_number = int.from_bytes(fp.read(4), "little")
+    if (
+        first_cyc_number is not None and cyc_number != first_cyc_number
+    ):  # pragma: no cover
+        raise ValueError("read_integ_binary: incorrect FirstCycNum")
+    seg_number = int.from_bytes(fp.read(4), "little")
+    if (
+        first_seg_number is not None and seg_number != first_seg_number
+    ):  # pragma: no cover
+        raise ValueError("read_integ_binary: incorrect FirstSegNum")
+    acq_number = int.from_bytes(fp.read(4), "little")
+    if (
+        first_acq_number is not None and acq_number != first_acq_number
+    ):  # pragma: no cover
+        raise ValueError("read_integ_binary: incorrect FirstAcqNum")
+    num_results = int.from_bytes(fp.read(4), "little")
 
     if memmap:
         return np.memmap(path, dtype=integ_dtype(num_results), mode="r")
     else:
-        return np.fromfile(path, dtype=integ_dtype(num_results))
+        fp.seek(0)
+        return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
 
 
 def read_binaries_in_index(
