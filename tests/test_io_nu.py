@@ -40,6 +40,14 @@ def test_io_nu_import(test_data_path: Path):
 
     assert np.isclose(eventtime_from_info(info), 0.09824e-3)
 
+def test_io_nu_import_compressed(test_data_path: Path):
+    path = test_data_path.joinpath("nu_compressed")
+    masses, signals, times, info = read_directory(path)
+    assert masses.size == 29
+    assert signals.shape == (51725, 29)
+
+    assert np.isclose(eventtime_from_info(info), 88.08e-6)
+
 
 def test_io_nu_import_integ_limits(test_data_path: Path):
     path = test_data_path.joinpath("nu")
