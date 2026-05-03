@@ -31,6 +31,8 @@ from spcal.processing.options import (
 
 
 class SPCalJSONEncoder(json.JSONEncoder):
+    """Encodes SPCal specific classes as text for JSON."""
+
     def default(self, o: Any):
         # normal types
         if isinstance(o, Path):
@@ -136,6 +138,19 @@ class SPCalJSONEncoder(json.JSONEncoder):
 def save_session_json(
     path: Path, method: SPCalProcessingMethod, data_files: list[SPCalDataFile]
 ):
+    """Save a processing method and data file (path)s to a session.
+
+    These fils are used by SPCal to save session for later restore.
+    Typically these have the extension '.spcal.json'.
+    Only a link to the orignal data file path is saved and the conditions
+    needed to restore its state.
+
+    Args:
+        path: Path to save to, typical extension is '.spcal.json'
+        method: method to save
+        datafiles: list of data files to save
+    """
+
     output = {
         "version": version("spcal"),
         "date": datetime.now().isoformat(timespec="seconds"),
@@ -148,6 +163,18 @@ def save_session_json(
 
 
 def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
+    """Restores a SPCalProcessingMethod from a parsed JSON file.
+
+    The `method_dict` is stored in SPCal sessions as "method".
+
+
+    Args:
+        method_dict: dictionary read from the JSON using `json.load`
+
+    Returns:
+        restored method
+    """
+
     def decode_isotope(
         text: str, expressions: list[SPCalIsotopeExpression]
     ) -> SPCalIsotopeBase:
@@ -157,7 +184,9 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
             for expr in expressions:
                 if expr.name == text:
                     return expr
-        raise NameError(f"cannot assign '{text}' to an isotope or expression")  # pragma: no cover
+        raise NameError(
+            f"cannot assign '{text}' to an isotope or expression"
+        )  # pragma: no cover
 
     def decode_single_ion(x: np.ndarray | None):
         if x is None:  # pragma: no cover
@@ -254,6 +283,18 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
 
 
 def decode_json_datafile(file_dict: dict, path: Path | None = None) -> SPCalDataFile:
+    """Restores a SPCalDataFile from a parsed JSON file.
+
+    The `file_dict` are stored in SPCal sessions as "datafiles".
+
+
+    Args:
+        file_dict: dictionary read from the JSON using `json.load`
+        path: alternate Path to load the datafile from
+
+    Returns:
+        restored data file
+    """
     if path is None:
         path = Path(file_dict["path"])
     if file_dict["format"] == "text":
@@ -293,6 +334,18 @@ def decode_json_datafile(file_dict: dict, path: Path | None = None) -> SPCalData
 
 
 def load_session_json(path: Path) -> tuple[SPCalProcessingMethod, list[SPCalDataFile]]:
+    """Load an SPCal session that has been saved to a JSON file.
+
+    These session can be created using `save_session_json`.
+    The processing method and any open datafiles are restored.
+
+    Args:
+        path: Path to the JSON file
+
+    Returns:
+        restored processing method
+        list of restored data files
+    """
     with path.open() as fp:
         session = json.load(fp)
 

@@ -43,6 +43,23 @@ def read_autob_binary(
     first_seg_number: int | None = None,
     first_acq_number: int | None = None,
 ) -> np.ndarray:
+    """Read a Nu Instruments .autob autoblanking binary.
+
+    These files are (unfortunately) not a fixed size, so 'num_edges' should be read
+    for each array value to determine the true size of 'edges'.
+
+    Args:
+        path: Path to the binary
+        first_cyc_number: optional check of first cycle number
+        first_seg_number: optional check of first segment number
+        first_acq_number: optional check of first acquisition number
+
+    Returns:
+        structured array
+
+    Raises:
+        ValueError if cyc, seg or acq number do not match
+    """
     data_dtype = np.dtype(
         [
             ("cyc_number", np.uint32),
@@ -95,6 +112,25 @@ def read_integ_binary(
     first_acq_number: int | None = None,
     memmap: bool = False,
 ) -> np.ndarray:
+    """Read a Nu Instruments .integ binary.
+
+    The data type of returned array will change depending on the value of 'num_results'.
+    From v2.0.11 the .integ may be compressed using gzip.
+
+    Args:
+        path: Path to the binary
+        first_cyc_number: optional check of first cycle number
+        first_seg_number: optional check of first segment number
+        first_acq_number: optional check of first acquisition number
+        memmap: use memmap instead of reading in data, can't be used when compressed
+
+    Returns:
+        structured array
+
+    Raises:
+        ValueError if cyc, seg or acq number do not match
+    """
+
     def integ_dtype(size: int) -> np.dtype:
         data_dtype = np.dtype(
             {
@@ -156,9 +192,27 @@ def read_binaries_in_index(
     cyc_number: int | None = None,
     seg_number: int | None = None,
 ) -> list[np.ndarray]:
-    datas = []
+    """Generic function for reading all Nu binaries stored in an index file.
+
+    This can be used for .integ, .autob, .pulse, etc.
+
+    Args:
+        root: directory containing files and index
+        index: list of indices from `json.loads`
+        binary_ext: extension of binary files, e.g. '.integ'
+        binary_read_fn: function to read binary file
+        binary_read_kwrags: keywords to forward to 'binary_read_fn'
+        cyc_number: restrict to cycle, None for all
+        seg_number: restrict to segments, None for all
+
+    Returns:
+        binary data as a list of arrays
+    """
+
     if binary_read_kwargs is None:
         binary_read_kwargs = {}
+
+    datas = []
     for idx in index:
         binary_path = root.joinpath(f"{idx['FileNum']}.{binary_ext}")
         if binary_path.exists():
@@ -350,6 +404,17 @@ def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
 
 
 def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
+    """Get the acquisition times from a list of .integ files.
+
+    Calculates the times using the acquistion, segment and cycle for each result.
+
+    Args:
+        integs: list of parsed .integ files, from `read_integ_binary`
+        run_info: dict of the run.info file, from `json.load`
+
+    Returns:
+        array of times for each result in all .integs
+    """
     seg_times = np.array(
         [
             seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]
@@ -401,6 +466,9 @@ def read_directory(
         signals in counts
         times in s
         dict of parameters from run.info
+
+    Raises:
+        ValueError if invalid directory or no integ files are selected
     """
 
     path = Path(path)

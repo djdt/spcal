@@ -67,6 +67,19 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
 
 
 def replace_comma_decimal(fp, ncols: int, delimiter: str = ","):
+    """Yields lines in a text file with the comma replaced with a period.
+
+    If a line has less delimiters than the expected number of columns - 1, then it is skipped.
+    If the delimiter is a comma, no action is performed.
+
+    Args:
+        fp: file pointer, e.g. from `.open`
+        ncols: expected number of columns
+        delimiter: column delimiter
+
+    Yields:
+        line with comma replaced, when number of columns is correct
+    """
     for line in fp:
         if line.count(delimiter) < ncols - 1:
             continue
@@ -77,6 +90,7 @@ def replace_comma_decimal(fp, ncols: int, delimiter: str = ","):
 
 
 def iso_time_to_float_seconds(text: str) -> float:
+    """Convert an ISO time string to a float."""
     time = datetime.time.fromisoformat(text)
     return (
         time.hour * 3600.0 + time.minute * 60.0 + time.second + time.microsecond * 1e-6
@@ -87,14 +101,13 @@ def read_single_particle_file(
     path: Path | str,
     delimiter: str = ",",
     skip_rows: int = 1,
-    max_rows: int | None = None,
 ) -> np.ndarray:
     """Imports data stored as text with elements in columns.
 
     Args:
         path: path to file
         delimiter: delimiting character between columns
-        first_line: the first data (not header) line else None
+        skip_rows: the first data (not header) line else None
 
     Returns:
         data, structred array

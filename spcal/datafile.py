@@ -27,12 +27,26 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalDataFile(object):
+    """A base class for data files.
+
+    Attributes:
+
+        exclusion_regions: array of start, end times to exclude from processing.
+            These regions are set to NaN, shape (..., 2)
+    """
+
     def __init__(
         self,
         format: str,
         path: Path,
         times: np.ndarray,
     ):
+        """Args:
+
+        format: the type of data file ('text', 'nu', 'tofwerk')
+        path: Path to the data file
+        times: array of event times
+        """
         self.path = path
         self.format = format
 
@@ -64,6 +78,7 @@ class SPCalDataFile(object):
 
     @property
     def selected_isotopes(self) -> list[SPCalIsotope]:
+        """Currently selected isotopes."""
         return self._selected_isotopes
 
     @selected_isotopes.setter
@@ -75,6 +90,7 @@ class SPCalDataFile(object):
 
     @property
     def preferred_isotopes(self) -> list[SPCalIsotope]:
+        """Returns the default isotope for each element."""
         return [
             isotope
             for isotope in self.isotopes
@@ -85,34 +101,44 @@ class SPCalDataFile(object):
 
     @property
     def event_time(self) -> float:
+        """The time of a single acuqisition. Sometimes called the 'dwell time'."""
         if self._event_time is None:
             self._event_time = float(np.mean(np.diff(self.times)))
         return self._event_time
 
     @property
     def total_time(self) -> float:
+        """The total time in seconds, excluding NaN regions."""
         return self.times[-1] - self.times[0] + self.event_time
 
     @property
     def isotopes(self) -> list[SPCalIsotope]:  # pragma: no cover, not implemented
+        """The number of isotopes.
+        This may be differetn from the number of masses due to isobars."""
         raise NotImplementedError
 
     @property
     def num_events(self) -> int:  # pragma: no cover, not implemented
+        """The number of events (e.g. acquisitions)."""
         raise NotImplementedError
 
     @property
     def masses(self) -> np.ndarray:  # pragma: no cover, not implemented
+        """Masses (m/z) in the data file."""
         raise NotImplementedError
 
     @property
     def signals(self) -> np.ndarray:  # pragma: no cover, not implemented
+        """Signal intensities in the data file.
+        Has the shape (num_events, masses)."""
         raise NotImplementedError
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:  # pragma: no cover
+        """Access signals for `isotope`."""
         raise NotImplementedError
 
     def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
+        """Calculate the result for `expr`."""
         reducer = Reducer(
             variables={
                 str(token): self.dataForIsotope(token)
@@ -127,6 +153,14 @@ class SPCalDataFile(object):
         return result
 
     def spectra(self, regions: np.ndarray) -> np.ndarray:
+        """Access the entire mass spectra between `regions`.
+
+        Args:
+            regions: array start, end points of shape (N, 2)
+
+        Returns:
+            array of spectra shape (N, masses)
+        """
         spectra = np.zeros((regions.shape[0], self.signals.shape[1]), dtype=np.float32)
 
         for i, region in enumerate(regions):
@@ -144,10 +178,15 @@ class SPCalDataFile(object):
         }
 
     def isTOF(self) -> bool:
+        """Returns True is file is 'suspected' of being from a ToF."""
         return self.format in ["nu", "tofwerk"]
 
 
 class SPCalTextDataFile(SPCalDataFile):
+    """Import and access to data stored as a text file, such as a CSV.
+
+    Create using the `SPCalTextDataFile.load` function."""
+
     def __init__(
         self,
         path: Path,
@@ -229,6 +268,29 @@ class SPCalTextDataFile(SPCalDataFile):
         drop_fields: list[str] | None = None,
         override_event_time: float | None = None,
     ) -> "SPCalTextDataFile":
+        """Imports single particle data stored in a text file.
+
+        If a column with 'time' in the header is present then the 'event_time' can be
+        automatically determined, otherwise `override_event_time` is required.
+        If more than one isotopes are imported, the file is assumed to be from a ToF.
+
+        Args:
+            path: path to the file
+            isotope_table: dictionary mmaping an SPCalIsotope to a column name.
+                Note that this uses the name post import via `np.genfromtxt`.
+            delimiter: the text / column delimiter
+            skip_rows: number of rows to skip, including the header
+            cps: convert counts-per-second into counts, required if file is CPS
+            drop_fields: names in the file to skip.
+                By default names containing 'index' or 'time' are skipped.
+            override_event_time: override any automatically determined event-time
+
+        Returns:
+            data file
+
+        Raises:
+            ValueError is event time cannot be read and is not provided
+        """
         if isinstance(path, str):
             path = Path(path)
 
@@ -301,8 +363,10 @@ class SPCalTextDataFile(SPCalDataFile):
 class SPCalNuDataFile(SPCalDataFile):
     """Data file for data from a Nu Instruments Vitesse.
 
+    Create using the `SPCalNuDataFile.load` function.
+
     Attributes:
-        isotope_table: dict of {isotope name: (index in signals, isotope mass)}
+        isotope_table: dict of  isotopes to their index in signals
     """
 
     def __init__(
@@ -359,7 +423,9 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals[:, idx]
 
     def generateIsotopeTable(self):
-        """Creates a table of isotope names in format '123Ab' to indicies and isotope array."""
+        """Populates `isotope_table` with all available isotopes.
+
+        Multiple isotopes may map to the same index in signals if they are isobars."""
         natural_isotopes = [
             iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
         ]
@@ -407,6 +473,18 @@ class SPCalNuDataFile(SPCalDataFile):
         last_integ_file: int | None = None,
         autoblank: str = "regions",
     ) -> "SPCalNuDataFile":
+        """Import Nu Instruments Vitesse data.
+
+        Args:
+            path: Path to the 'run.info' file or the containing directory.
+            max_mass_diff: maximum difference (in Da) used for match m/z value to isotopes
+            cycle_number: limit import to a cycle, default to all
+            segment_number: limit import to a segment, default to all
+            first_integ_file: import .integ files starting from this number
+            last_integ_file: import .integ files ending at this number, None for all
+            autoblank: apply autoblanking to overrange regions or to all masses,
+                one of 'off', 'regions', 'all'
+        """
         if isinstance(path, str):
             path = Path(path)
 
@@ -437,8 +515,13 @@ class SPCalNuDataFile(SPCalDataFile):
 
 
 class SPCalTOFWERKDataFile(SPCalDataFile):
-    re_isotope = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
-    type: str = "tofwerk"
+    """Data file for TOFWERK style data.
+
+    Create using the `SPCalTOFWERKDataFile.load` function.
+
+    Attributes:
+        isotope_table: dict of isotopes to signal indicies
+    """
 
     def __init__(
         self,
@@ -463,8 +546,9 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         self.generateIsotopeTable()
 
     def generateIsotopeTable(self):
+        re_isotope = re.compile("\\[(\\d+)([A-Z][a-z]?)\\]+")
         for i, peak in enumerate(self.peak_table):
-            m = SPCalTOFWERKDataFile.re_isotope.match(peak["label"].decode())
+            m = re_isotope.match(peak["label"].decode())
             if m is None:
                 continue
             self.isotope_table[ISOTOPE_TABLE[(m.group(2), int(m.group(1)))]] = i
@@ -507,6 +591,15 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     def load(
         cls, path: Path | str, max_size: int | None = None
     ) -> "SPCalTOFWERKDataFile":
+        """Import a TOFWERK .h5 file.
+
+        Args:
+            path: Path to the .h5
+            max_size: maximum number of events to read
+
+        Returns:
+            data file
+        """
         if isinstance(path, str):
             path = Path(path)
 

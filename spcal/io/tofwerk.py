@@ -5,11 +5,13 @@
 from pathlib import Path
 
 import h5py
+import h5py._hl.files
 import numpy as np
 import numpy.lib.recfunctions as rfn
 
 
 def is_tofwerk_file(path: Path) -> bool:
+    """Checks if the file is a .h5 file."""
     if not path.exists():
         return False
     if not path.suffix.lower() == ".h5":
