@@ -50,10 +50,6 @@ class IsotopeOptionTable(BasicTableView):
                 delegate = ValueWidgetDelegate()
             self.setItemDelegateForColumn(col, delegate)
 
-        for col, name in self.isotope_model.COLUMN_LABELS.items():
-            if name in ["Diameter", "Concentration", "Mass Response"]:
-                self.hideColumn(col)
-
         self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
 
     def isotope(self, row: int) -> SPCalIsotopeBase:
