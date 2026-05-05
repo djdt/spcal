@@ -49,6 +49,8 @@ class IsotopeOptionTable(BasicTableView):
             else:
                 delegate = ValueWidgetDelegate()
             self.setItemDelegateForColumn(col, delegate)
+
+        for col, name in self.isotope_model.COLUMN_LABELS.items():
             if name in ["Diameter", "Concentration", "Mass Response"]:
                 self.hideColumn(col)
 
