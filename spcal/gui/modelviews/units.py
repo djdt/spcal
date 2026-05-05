@@ -32,7 +32,7 @@ class UnitsModel(QtCore.QAbstractTableModel):
         self.units_orientation = units_orientation
 
         self.unit_labels = units_labels
-        self.units_tooltips = units_tooltips
+        self.unit_tooltips = units_tooltips
 
         self.current_unit = current_units
         self.units = units
@@ -68,9 +68,9 @@ class UnitsModel(QtCore.QAbstractTableModel):
                 return label
             elif (
                 role == QtCore.Qt.ItemDataRole.ToolTipRole
-                and self.units_tooltips is not None
+                and self.unit_tooltips is not None
             ):
-                return self.units_tooltips[section]
+                return self.unit_tooltips[section]
             elif role == UnitLabelRole:
                 return self.unit_labels[section]
             elif role == CurrentUnitRole:

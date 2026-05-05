@@ -654,7 +654,7 @@ def test_results_output_model(
     assert model.columnCount() == 8
 
     # test headers
-    for i, col in ResultOutputModel.COLUMNS.items():
+    for i, col in ResultOutputModel.COLUMN_LABELS.items():
         label = col
         if model.current_unit[i] != "":
             label += f" ({model.current_unit[i]})"

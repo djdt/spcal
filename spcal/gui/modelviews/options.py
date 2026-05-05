@@ -21,27 +21,26 @@ from spcal.siunits import (
 
 
 class IsotopeOptionModel(UnitsModel):
-    COLUMNS = {
-        0: (
-            "Density",
-            "Particle density, meaure externally or lookup in the density database",
-        ),
-        1: ("Response", "The signal produced per mass of the measured element"),
-        2: (
-            "Mass Fraction",
-            "The fraction of measured element in a particle, can be entered as a molecular formula",
-        ),
-        3: (
-            "Diameter",
-            "The diameter of a reference particle, for calculating transport efficiency",
-        ),
-        4: ("Concentration", "The mass concentration of a reference particle solution"),
-        5: ("Mass Response", "The average signal per mass of a reference particle"),
+    COLUMN_LABELS = {
+        0: "Density",
+        1: "Response",
+        2: "Mass Fraction",
+        3: "Diameter",
+        4: "Concentration",
+        5: "Mass Response",
+    }
+    COLUMN_TOOLTIPS = {
+        0: "Particle density, meaure externally or lookup in the density database",
+        1: "The signal produced per mass of the measured element",
+        2: "The fraction of measured element in a particle, can be entered as a molecular formula",
+        3: "The diameter of a reference particle, for calculating transport efficiency",
+        4: "The mass concentration of a reference particle solution",
+        5: "The average signal per mass of a reference particle",
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(
-            list(n for n, _ in IsotopeOptionModel.COLUMNS.values()),
+            list(IsotopeOptionModel.COLUMN_LABELS.values()),
             ["g/cm³", "L/µg", "", "nm", "µg/L", "ag"],
             [
                 density_units,
@@ -51,7 +50,7 @@ class IsotopeOptionModel(UnitsModel):
                 mass_concentration_units,
                 mass_units,
             ],
-            units_tooltips=list(tt for _, tt in IsotopeOptionModel.COLUMNS.values()),
+            units_tooltips=list(IsotopeOptionModel.COLUMN_TOOLTIPS.values()),
             parent=parent,
         )
 
@@ -69,13 +68,13 @@ class IsotopeOptionModel(UnitsModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
-        return len(IsotopeOptionModel.COLUMNS)
+        return len(IsotopeOptionModel.COLUMN_LABELS)
 
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
         flags = super().flags(index)
-        if IsotopeOptionModel.COLUMNS[index.column()] != "Mass Response":
+        if IsotopeOptionModel.COLUMN_LABELS[index.column()] != "Mass Response":
             flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
         return flags
 
@@ -102,7 +101,7 @@ class IsotopeOptionModel(UnitsModel):
             return None
 
         isotope = list(self.isotope_options.keys())[index.row()]
-        name = IsotopeOptionModel.COLUMNS[index.column()]
+        name = IsotopeOptionModel.COLUMN_LABELS[index.column()]
         if role == IsotopeRole:
             return isotope
         elif role == IsotopeOptionRole:
@@ -137,7 +136,7 @@ class IsotopeOptionModel(UnitsModel):
             return False
 
         isotope = list(self.isotope_options.keys())[index.row()]
-        name = IsotopeOptionModel.COLUMNS[index.column()]
+        name = IsotopeOptionModel.COLUMN_LABELS[index.column()]
 
         if role == IsotopeRole:
             return False  # cannot set isotope

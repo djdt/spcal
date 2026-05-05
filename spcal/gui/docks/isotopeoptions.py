@@ -41,7 +41,7 @@ class IsotopeOptionTable(BasicTableView):
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
 
-        for col, name in self.isotope_model.COLUMNS.items():
+        for col, name in self.isotope_model.COLUMN_LABELS.items():
             if name == "Mass Fraction":
                 delegate = MassFractionDelegate(max=1.0, step=0.1)
             # elif name == "Density":

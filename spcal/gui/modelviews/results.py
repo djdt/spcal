@@ -1,4 +1,3 @@
-from spcal.datafile import SPCalDataFile
 from typing import Any
 
 import bottleneck as bn
@@ -26,20 +25,30 @@ from spcal.siunits import (
 
 
 class ResultOutputModel(UnitsModel):
-    COLUMNS = {
-        0: ("Number", "Number of detected particles"),
-        1: ("Concentration", "Particle number / mass concentration"),
-        2: ("Ionic Background", "Mean concentration of background regions."),
-        3: ("Background", "Mean value of all regions without detected particles"),
-        4: ("LOD", "The limit of detection, different from the detection threshold"),
-        5: ("Mean", "Mean value of detected particles"),
-        6: ("Median", "Median value of detected particles"),
-        7: ("Mode", "The most frequent value of detected particles"),
+    COLUMN_LABELS = {
+        0: "Number",
+        1: "Concentration",
+        2: "Ionic Background",
+        3: "Background",
+        4: "LOD",
+        5: "Mean",
+        6: "Median",
+        7: "Mode",
+    }
+    COLUMN_TOOLTIPS = {
+        0: "Number of detected particles",
+        1: "Particle number or mass concentration",
+        2: "Mean concentration of background regions",
+        3: "Mean value of all regions without detected particles",
+        4: "The limit of detection, different from the detection threshold",
+        5: "Mean value of detected particles",
+        6: "Median value of detected particles",
+        7: "The most frequent value of detected particles",
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(
-            list(x[0] for x in ResultOutputModel.COLUMNS.values()),
+            list(ResultOutputModel.COLUMN_LABELS.values()),
             ["", "#/L", "µg/L", "cts", "cts", "cts", "cts", "cts"],
             [
                 {},
@@ -51,7 +60,7 @@ class ResultOutputModel(UnitsModel):
                 signal_units,
                 signal_units,
             ],
-            units_tooltips=list(x[1] for x in ResultOutputModel.COLUMNS.values()),
+            units_tooltips=list(ResultOutputModel.COLUMN_TOOLTIPS.values()),
             parent=parent,
         )
 
@@ -75,7 +84,7 @@ class ResultOutputModel(UnitsModel):
     ) -> int:
         if parent.isValid():
             return 0
-        return len(ResultOutputModel.COLUMNS)
+        return len(ResultOutputModel.COLUMN_LABELS)
 
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
@@ -117,7 +126,7 @@ class ResultOutputModel(UnitsModel):
         if not index.isValid():
             return None
 
-        name = ResultOutputModel.COLUMNS[index.column()]
+        name = ResultOutputModel.COLUMN_LABELS[index.column()]
         result = self.results[index.row()]
         if role == IsotopeRole:
             return result.isotope
