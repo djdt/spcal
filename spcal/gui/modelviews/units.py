@@ -1,3 +1,4 @@
+from spcal.gui.util import create_action
 from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -218,8 +219,37 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
                 return
         super().mousePressEvent(event)
 
-    # def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
-    #     print("YOWZA")
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+        def on_action_show(action: QtGui.QAction):
+            self.showSection(action.data())
+
+        logicalIndex = self.logicalIndexAt(event.pos())
+        menu = QtWidgets.QMenu(parent=self)
+        if logicalIndex >= 0:
+            action_hide = create_action(
+                "view-hidden",
+                "Hide Section",
+                "Hide this section from view.",
+                lambda: self.hideSection(logicalIndex),
+            )
+            action_hide.setParent(self)
+            menu.addAction(action_hide)
+
+        if self.hiddenSectionCount() > 0:
+            menu_show = menu.addMenu("Hidden Section(s)")
+            action_group = QtGui.QActionGroup(self)
+            action_group.triggered.connect(on_action_show)
+            for i in range(self.count()):
+                if self.isSectionHidden(i):
+                    action = QtGui.QAction(
+                        QtGui.QIcon.fromTheme("view-visible"),
+                        f"Show {self.model().headerData(i, self.orientation())}",
+                    )
+                    action.setData(i)
+                    action_group.addAction(action)
+                    menu_show.addAction(action)
+
+        menu.popup(event.globalPos())
 
     def paintSection(
         self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
