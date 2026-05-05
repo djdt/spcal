@@ -92,11 +92,13 @@ class UnitsModel(QtCore.QAbstractTableModel):
             elif role == CurrentUnitRole:
                 self.current_unit[section] = value
                 tl, br = self.unitStartEndIndices(section)
-                self.dataChanged.emit(tl, br)
+                if tl.isValid() and br.isValid():
+                    self.dataChanged.emit(tl, br)
             elif role == UnitsRole:
                 self.units[section] = value
                 tl, br = self.unitStartEndIndices(section)
-                self.dataChanged.emit(tl, br)
+                if tl.isValid() and br.isValid():
+                    self.dataChanged.emit(tl, br)
             else:
                 return False
             self.headerDataChanged.emit(orientation, section, section)
@@ -207,33 +209,37 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
         )
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
-        logicalIndex = self.logicalIndexAt(event.position().toPoint())
-        units = self.model().headerData(logicalIndex, self.orientation(), UnitsRole)
-        if len(units) > 1:
-            self.showComboBox(logicalIndex)
-        else:
-            super().mousePressEvent(event)
+        if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            logicalIndex = self.logicalIndexAt(event.position().toPoint())
+            units = self.model().headerData(logicalIndex, self.orientation(), UnitsRole)
+            if len(units) > 1:
+                self.showComboBox(logicalIndex)
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    # def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+    #     print("YOWZA")
 
     def paintSection(
         self, painter: QtGui.QPainter, rect: QtCore.QRect, logicalIndex: int
     ):
         option = QtWidgets.QStyleOptionComboBox()
         option.initFrom(self)
-        option.rect = rect  # type: ignore
-        option.currentText = str(  # type: ignore
+        option.rect = rect
+        option.currentText = str(
             self.model().headerData(
                 logicalIndex, self.orientation(), QtCore.Qt.ItemDataRole.EditRole
             )
         )
         units = self.model().headerData(logicalIndex, self.orientation(), UnitsRole)
         if len(units) < 2:
-            option.subControls = (  # type: ignore
-                option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow  # type: ignore
+            option.subControls = (
+                option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow
             )
 
         if self.hasFocus():
-            option.state = QtWidgets.QStyle.StateFlag.State_Selected  # type: ignore
-
+            option.state = QtWidgets.QStyle.StateFlag.State_Selected
         self.style().drawComplexControl(
             QtWidgets.QStyle.ComplexControl.CC_ComboBox, option, painter
         )
