@@ -1215,16 +1215,22 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     # save / restore layout
     def restoreLayout(self):
         settings = QtCore.QSettings()
-        if settings.contains("Window/Geometry"):
-            self.restoreGeometry(settings.value("Window/Geometry"))
-            self.restoreState(settings.value("Window/State"))
+        if settings.contains("Layout/Window/Geometry"):
+            self.restoreGeometry(settings.value("Layout/Window/Geometry"))
+            self.restoreState(settings.value("Layout/Window/State"))
+            self.isotope_options.restoreHeaderLayout(
+                settings, "Layout/IsotopeOptions/Headers"
+            )
+            self.outputs.restoreHeaderLayout(settings, "Layout/Outputs/Header")
         else:
             self.defaultLayout()
 
     def saveLayout(self):
         settings = QtCore.QSettings()
-        settings.setValue("Window/Geometry", self.saveGeometry())
-        settings.setValue("Window/State", self.saveState())
+        settings.setValue("Layout/Window/Geometry", self.saveGeometry())
+        settings.setValue("Layout/Window/State", self.saveState())
+        self.isotope_options.saveHeaderLayout(settings, "Layout/IsotopeOptions/Headers")
+        self.outputs.saveHeaderLayout(settings, "Layout/Outputs/Header")
 
     def defaultLayout(self):
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
@@ -1242,6 +1248,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, self.outputs)
+        self.tabifyDockWidget(self.isotope_options, self.outputs)
 
         for dock in self.findChildren(QtWidgets.QDockWidget):
             dock.show()
@@ -1259,18 +1266,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.resizeDocks(
             [self.instrument_options, self.limit_options, self.files],
             [
-                int(size.height() / 7 * 1),
-                int(size.height() / 7 * 3),
-                int(size.height() / 7 * 3),
+                int(size.height() / 6 * 1),
+                int(size.height() / 6 * 3),
+                int(size.height() / 6 * 2),
             ],
             QtCore.Qt.Orientation.Vertical,
         )
-        isotope_width = self.isotope_options.sizeHint().width() + 48
         self.resizeDocks(
-            [self.files, self.isotope_options, self.outputs],
-            [left_width, isotope_width, size.width() - left_width - isotope_width],
+            [self.files, self.isotope_options],
+            [left_width, size.width() - left_width],
             QtCore.Qt.Orientation.Horizontal,
         )
+
+        self.isotope_options.defaultLayout()
+        self.outputs.defaultLayout()
 
     def reset(self):
         self.files.clear()

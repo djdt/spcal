@@ -1,4 +1,5 @@
 from PySide6 import QtCore, QtWidgets
+import logging
 
 from spcal.gui.modelviews import (
     CurrentUnitRole,
@@ -15,6 +16,8 @@ from spcal.siunits import (
     signal_units,
     size_units,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
@@ -81,3 +84,37 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
     def clear(self):
         self.setResults([])
+
+    def saveHeaderLayout(self, settings: QtCore.QSettings, prefix: str):
+        orientation = self.view.header.orientation()
+        settings.beginWriteArray(prefix)
+        for i in range(self.view.header.count()):
+            settings.setArrayIndex(i)
+            settings.setValue("Hidden", self.view.header.isSectionHidden(i))
+            settings.setValue(
+                "Unit",
+                self.view.results_model.headerData(
+                    i, orientation, role=CurrentUnitRole
+                ),
+            )
+        settings.endArray()
+
+    def restoreHeaderLayout(self, settings: QtCore.QSettings, prefix: str):
+        orientation = self.view.header.orientation()
+        count = settings.beginReadArray(prefix)
+        if count != self.view.header.count():
+            logger.warning("unable to restore headers for outputs, mismatched size")
+            settings.endArray()
+            return
+
+        for i in range(self.view.header.count()):
+            settings.setArrayIndex(i)
+            self.view.header.setSectionHidden(i, settings.value("Hidden") == "true")
+            self.view.results_model.setHeaderData(
+                i, orientation, settings.value("Unit"), role=CurrentUnitRole
+            )
+        settings.endArray()
+
+    def defaultLayout(self):
+        for i in range(self.view.header.count()):
+            self.view.header.setSectionHidden(i, False)

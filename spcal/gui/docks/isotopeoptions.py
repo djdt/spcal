@@ -8,6 +8,7 @@ from spcal.gui.modelviews import (
     BaseValueRole,
     IsotopeOptionRole,
     IsotopeRole,
+    CurrentUnitRole,
 )
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsHeaderView
@@ -175,3 +176,40 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
     def setSignificantFigures(self, sf: int):
         self.table.setSignificantFigures(sf)
+
+    def saveHeaderLayout(self, settings: QtCore.QSettings, prefix: str):
+        orientation = self.table.header.orientation()
+        settings.beginWriteArray(prefix)
+        for i in range(self.table.header.count()):
+            settings.setArrayIndex(i)
+            settings.setValue("Hidden", self.table.header.isSectionHidden(i))
+            settings.setValue(
+                "Unit",
+                self.table.isotope_model.headerData(
+                    i, orientation, role=CurrentUnitRole
+                ),
+            )
+        settings.endArray()
+
+    def restoreHeaderLayout(self, settings: QtCore.QSettings, prefix: str):
+        orientation = self.table.header.orientation()
+        count = settings.beginReadArray(prefix)
+        if count != self.table.header.count():
+            logger.warning("unable to restore headers for isotopes, mismatched size")
+            settings.endArray()
+            return
+
+        for i in range(self.table.header.count()):
+            settings.setArrayIndex(i)
+            self.table.header.setSectionHidden(i, settings.value("Hidden") == "true")
+            self.table.isotope_model.setHeaderData(
+                i, orientation, settings.value("Unit"), role=CurrentUnitRole
+            )
+        settings.endArray()
+
+    def defaultLayout(self):
+        for col, name in self.table.isotope_model.COLUMN_LABELS.items():
+            if name in ["Diameter", "Concentration", "Mass Response"]:
+                self.table.header.setSectionHidden(col, True)
+            else:
+                self.table.header.setSectionHidden(col, False)
