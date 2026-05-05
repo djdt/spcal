@@ -46,7 +46,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         units = signal_units
         default_unit = "cts"
         conc_units = number_concentration_units
-        default_conc_unit = "#/L"
+        default_conc_unit = "#/ml"
 
         if key == "mass":
             units = mass_units

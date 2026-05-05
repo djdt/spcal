@@ -49,7 +49,7 @@ class ResultOutputModel(UnitsModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(
             list(ResultOutputModel.COLUMN_LABELS.values()),
-            ["", "#/L", "µg/L", "cts", "cts", "cts", "cts", "cts"],
+            ["", "#/ml", "µg/L", "cts", "cts", "cts", "cts", "cts"],
             [
                 {},
                 number_concentration_units,
