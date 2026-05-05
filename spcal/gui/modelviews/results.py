@@ -27,19 +27,19 @@ from spcal.siunits import (
 
 class ResultOutputModel(UnitsModel):
     COLUMNS = {
-        0: "Number",
-        1: "Concentration",
-        2: "Ionic Background",
-        3: "Background",
-        4: "LOD",
-        5: "Mean",
-        6: "Median",
-        7: "Mode",
+        0: ("Number", "Number of detected particles"),
+        1: ("Concentration", "Particle number / mass concentration"),
+        2: ("Ionic Background", "Mean concentration of background regions."),
+        3: ("Background", "Mean value of all regions without detected particles"),
+        4: ("LOD", "The limit of detection, different from the detection threshold"),
+        5: ("Mean", "Mean value of detected particles"),
+        6: ("Median", "Median value of detected particles"),
+        7: ("Mode", "The most frequent value of detected particles"),
     }
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(
-            list(ResultOutputModel.COLUMNS.values()),
+            list(x[0] for x in ResultOutputModel.COLUMNS.values()),
             ["", "#/L", "µg/L", "cts", "cts", "cts", "cts", "cts"],
             [
                 {},
@@ -51,6 +51,7 @@ class ResultOutputModel(UnitsModel):
                 signal_units,
                 signal_units,
             ],
+            units_tooltips=list(x[1] for x in ResultOutputModel.COLUMNS.values()),
             parent=parent,
         )
 

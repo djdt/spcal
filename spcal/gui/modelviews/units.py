@@ -17,11 +17,13 @@ class UnitsModel(QtCore.QAbstractTableModel):
     To implement, subclass and reimplment `data` and `setData` to return valid values for
     'BaseValueRole' and 'BasrErrorRole' and both `rowCount` and `columnCount`.
     """
+
     def __init__(
         self,
         units_labels: list[str],
         current_units: list[str],
         units: list[dict[str, float]],
+        units_tooltips: list[str] | None = None,
         units_orientation: QtCore.Qt.Orientation = QtCore.Qt.Orientation.Horizontal,
         parent: QtCore.QObject | None = None,
     ):
@@ -30,6 +32,8 @@ class UnitsModel(QtCore.QAbstractTableModel):
         self.units_orientation = units_orientation
 
         self.unit_labels = units_labels
+        self.units_tooltips = units_tooltips
+
         self.current_unit = current_units
         self.units = units
 
@@ -62,6 +66,11 @@ class UnitsModel(QtCore.QAbstractTableModel):
                 if unit != "":
                     label = f"{label} ({unit})"
                 return label
+            elif (
+                role == QtCore.Qt.ItemDataRole.ToolTipRole
+                and self.units_tooltips is not None
+            ):
+                return self.units_tooltips[section]
             elif role == UnitLabelRole:
                 return self.unit_labels[section]
             elif role == CurrentUnitRole:
