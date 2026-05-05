@@ -345,6 +345,25 @@ def eventtime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
+def indicies_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
+    """Get the acuisition index from integ files.
+
+    Args:
+        integ: from `read_integ_binary`
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        array of indicies
+
+    """
+    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
+    segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
+
+    idx = (integ["cyc_number"] - 1) * segment_acq[integ["seg_number"] - 1]
+    idx += integ["acq_number"]
+    return idx // num_acc
+
+
 def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
     """Converts signals from integ data to counts.
 
@@ -358,23 +377,18 @@ def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
         signals in counts
     """
 
-    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
-    segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
+    signals = np.concatenate([integ["result"]["signal"] for integ in integs], axis=0)
 
-    def indicies_for_integ(integ: np.ndarray) -> np.ndarray:
-        idx = (integ["cyc_number"] - 1) * segment_acq[integ["seg_number"] - 1]
-        idx += integ["acq_number"]
-        return idx // num_acc
-
-    signals = [integ["result"]["signal"] for integ in integs]
-    for i in range(len(integs) - 1):
-        if (
-            indicies_for_integ(integs[i][-1])
-            != indicies_for_integ(integs[i + 1][0]) - 1
+    # prevent joining of any signals across missing integs
+    pos = 0
+    for integ, integ2 in zip(integs[:-1], integs[1:]):
+        pos += integ.size
+        if indicies_from_integ(integ[-1], info) + 1 != indicies_from_integ(
+            integ2[0], info
         ):
-            integs[i][-1]["result"]["signal"] = np.nan
+            signals[pos - 1] = np.nan
 
-    return np.concatenate(signals, axis=0)
+    return signals
 
 
 def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
