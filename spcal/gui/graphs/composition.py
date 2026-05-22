@@ -104,7 +104,7 @@ class CompositionView(SinglePlotGraphicsView):
             self.data_for_export[str(result.isotope) + "_std"] = stds[:, i]
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
-            min_size = X.shape[0] * float(self.min_size.rstrip("%")) / 100.0
+            min_size = np.count_nonzero(valid) * float(self.min_size.rstrip("%")) / 100.0
         else:
             min_size = float(self.min_size)
 
