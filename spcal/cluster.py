@@ -57,8 +57,8 @@ def prepare_results_for_clustering(
     """
     if any(result.peak_indicies is None for result in results):  # pragma: no cover
         raise ValueError("cannot cluster, peak indidices have not been generated")
-
-    peak_data = np.empty((number_peaks, len(results)), np.float32)
+    
+    peak_data = np.zeros((number_peaks, len(results)), np.float32)
     valid = np.zeros(number_peaks, dtype=bool)
     for i, result in enumerate(results):
         if result.peak_indicies is None:  # pragma: no cover
