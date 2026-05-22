@@ -185,7 +185,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         pen.setCosmetic(True)
 
         brushes = []
-        for result, color in zip(results, colors):
+        for _, color in zip(results, colors):
             color = QtGui.QColor(color)  # copy
             color.setAlphaF(0.66)
             brushes.append(QtGui.QBrush(color))
