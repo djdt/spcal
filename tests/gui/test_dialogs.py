@@ -860,7 +860,7 @@ def test_transport_efficiency_dialog(
 
     assert dlg.diameter.baseValue() == 10.0
     assert dlg.density.baseValue() == 1.0
-    assert dlg.concentration.baseValue() is None
+    assert dlg.mass_concentration.baseValue() is None
     assert dlg.response.baseValue() == 1.0
     assert dlg.mass_fraction.value() is None
 
