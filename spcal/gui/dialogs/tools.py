@@ -361,7 +361,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
             button = QtWidgets.QMessageBox.warning(
                 self,
                 "Use Number Method?",
-                "The number method requires a reference particle solution with a certified number or mass concentration."
+                "Calibration using the number method requires a reference particle solution with a certified number or mass concentration.\n"
                 "Are you sure use wish to use this method?",
                 buttons=QtWidgets.QMessageBox.StandardButton.Ok
                 | QtWidgets.QMessageBox.StandardButton.Cancel,
