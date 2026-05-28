@@ -578,7 +578,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for expr in expressions:
             if expr in method.expressions:
                 method.expressions.remove(expr)
-            for data_file, results in self.processing_results.items():
+            for _, results in self.processing_results.items():
                 if expr in results:
                     results.pop(expr)
 
@@ -792,7 +792,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         colors = []
         for i in range(settings.beginReadArray("CustomColors")):
             settings.setArrayIndex(i)
-            colors.append(settings.value("Color", QtGui.QColor(0, 0, 0)))
+            color = settings.value("Color", QtGui.QColor(0, 0, 0))
+            assert isinstance(color, QtGui.QColor)
+            colors.append(color)
 
         if len(colors) == 0:
             colors.append(QtGui.QColor(0, 0, 0))

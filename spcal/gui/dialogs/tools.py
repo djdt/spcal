@@ -6,9 +6,10 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.datafile import SPCalDataFile
 from spcal.isotope import SPCalIsotopeBase
 from spcal.particle import (
-    nebulisation_efficiency_from_concentration,
     nebulisation_efficiency_from_mass,
     reference_particle_mass,
+    nebulisation_efficiency_from_mass_concentration,
+    nebulisation_efficiency_from_number_concentration,
 )
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
 from spcal.gui.widgets.values import ValueWidget
@@ -20,6 +21,7 @@ from spcal.siunits import (
     density_units,
     mass_units,
     mass_concentration_units,
+    number_concentration_units,
     size_units,
     response_units,
     flowrate_units,
@@ -266,9 +268,6 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
 
         self.diameter = UnitsWidget(size_units, "nm", options.diameter, sigfigs=sf)
         self.density = UnitsWidget(density_units, "g/cm³", options.density, sigfigs=sf)
-        self.concentration = UnitsWidget(
-            mass_concentration_units, "µg/L", options.concentration, sigfigs=sf
-        )
         self.response = UnitsWidget(
             response_units, "L/µg", options.response, sigfigs=sf
         )
@@ -276,12 +275,21 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
             options.mass_fraction, step=0.1, max=1.0, sigfigs=sf
         )
 
+        self.mass_concentration = UnitsWidget(
+            mass_concentration_units, "µg/L", options.concentration, sigfigs=sf
+        )
+        self.number_concentration = UnitsWidget(
+            number_concentration_units, default_unit="#/ml", base_value=None, sigfigs=sf
+        )
+
         self.diameter.baseValueChanged.connect(self.onOptionChanged)
         self.density.baseValueChanged.connect(self.onOptionChanged)
-        self.concentration.baseValueChanged.connect(self.onOptionChanged)
         self.response.baseValueChanged.connect(self.onOptionChanged)
         self.mass_fraction.valueChanged.connect(self.onOptionChanged)
         self.uptake.baseValueChanged.connect(self.onOptionChanged)
+
+        self.mass_concentration.baseValueChanged.connect(self.onOptionChanged)
+        self.number_concentration.baseValueChanged.connect(self.onOptionChanged)
 
         self.efficiency = ValueWidget(sigfigs=sf)
         self.efficiency.setReadOnly(True)
@@ -318,10 +326,14 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         gbox_mass_layout.addRow("Diameter", self.diameter)
         gbox_mass.setLayout(gbox_mass_layout)
 
-        gbox_conc = QtWidgets.QGroupBox("")
+        self.gbox_conc = QtWidgets.QGroupBox("Number method")
+        self.gbox_conc.setCheckable(True)
+        self.gbox_conc.setChecked(False)
+        self.gbox_conc.clicked.connect(self.onNumberMethodEnabled)
         gbox_conc_layout = QtWidgets.QFormLayout()
-        gbox_conc_layout.addRow("Concentration", self.concentration)
-        gbox_conc.setLayout(gbox_conc_layout)
+        gbox_conc_layout.addRow("Mass Conc.", self.mass_concentration)
+        gbox_conc_layout.addRow("Number Conc.", self.number_concentration)
+        self.gbox_conc.setLayout(gbox_conc_layout)
 
         gbox_output = QtWidgets.QGroupBox("Calculated")
         gbox_ouput_layout = QtWidgets.QFormLayout()
@@ -333,7 +345,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         layout.addWidget(gbox_info, 0, 0, 1, 2)
         layout.addWidget(gbox_inst, 1, 0, 1, 2)
         layout.addWidget(gbox_mass, 2, 0, 1, 1)
-        layout.addWidget(gbox_conc, 3, 0, 1, 1)
+        layout.addWidget(self.gbox_conc, 3, 0, 1, 1)
         layout.addWidget(gbox_output, 2, 1, 2, 1)
         layout.addWidget(self.button_box, 4, 0, 1, 2)
 
@@ -344,37 +356,58 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
         self.updateEfficiency()
         self.completeChanged()
 
+    def onNumberMethodEnabled(self):
+        if self.gbox_conc.isChecked():
+            button = QtWidgets.QMessageBox.warning(
+                self,
+                "Use Number Method?",
+                "Calibration using the number method requires a reference particle solution with a certified number or mass concentration.\n"
+                "Are you sure use wish to use this method?",
+                buttons=QtWidgets.QMessageBox.StandardButton.Ok
+                | QtWidgets.QMessageBox.StandardButton.Cancel,
+            )
+            if button == QtWidgets.QMessageBox.StandardButton.Cancel:
+                self.gbox_conc.setChecked(False)
+
     def updateEfficiency(self):
         density = self.density.baseValue()
         diameter = self.diameter.baseValue()
         mass_fraction = self.mass_fraction.value()
 
-        if density is None or diameter is None or mass_fraction is None:
-            self.massResponseChanged.emit(None)
-            self.efficencyChanged.emit(None)
-            return
-
-        reference_mass = reference_particle_mass(density, diameter)
-        mass_response = float(
-            reference_mass
-            * mass_fraction
-            / np.mean(self.proc_result.calibrated("signal"))
-        )
-        self.massResponseChanged.emit(mass_response)
-
-        concentration = self.concentration.baseValue()
+        mass_conc = self.mass_concentration.baseValue()
+        number_conc = self.number_concentration.baseValue()
         uptake = self.uptake.baseValue()
         response = self.response.baseValue()
 
-        if concentration is not None and uptake is not None:
-            eff = nebulisation_efficiency_from_concentration(
+        if number_conc is not None and uptake is not None:
+            eff = nebulisation_efficiency_from_number_concentration(
                 self.proc_result.number,
-                concentration=concentration,
+                number_concentration=number_conc,
+                flow_rate=uptake,
+                time=self.proc_result.total_time,
+            )
+        elif (
+            mass_conc is not None
+            and uptake is not None
+            and density is not None
+            and diameter is not None
+        ):
+            reference_mass = reference_particle_mass(density, diameter)
+            eff = nebulisation_efficiency_from_mass_concentration(
+                self.proc_result.number,
+                mass_concentration=mass_conc,
                 mass=reference_mass,
                 flow_rate=uptake,
                 time=self.proc_result.total_time,
             )
-        elif mass_fraction is not None and response is not None and uptake is not None:
+        elif (
+            mass_fraction is not None
+            and response is not None
+            and uptake is not None
+            and diameter is not None
+            and density is not None
+        ):
+            reference_mass = reference_particle_mass(density, diameter)
             eff = nebulisation_efficiency_from_mass(
                 self.proc_result.calibrated("signal"),
                 dwell=self.proc_result.event_time,
@@ -387,9 +420,20 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
             eff = None
         self.efficencyChanged.emit(eff)
 
+        if density is not None and diameter is not None and mass_fraction is not None:
+            mass_response = float(
+                reference_particle_mass(density, diameter)
+                * mass_fraction
+                / np.mean(self.proc_result.calibrated("signal"))
+            )
+        else:
+            mass_response = None
+        self.massResponseChanged.emit(mass_response)
+
     def isComplete(self) -> bool:
+        efficiency = self.efficiency.value()
         return (
-            self.efficiency.value() is not None
+            bool(efficiency is not None and efficiency < 1.0)
             or self.mass_response.baseValue() is not None
         )
 
@@ -409,7 +453,7 @@ class TransportEfficiencyDialog(QtWidgets.QDialog):
             self.density.baseValue(),
             self.response.baseValue(),
             self.mass_fraction.value(),
-            self.concentration.baseValue(),
+            self.mass_concentration.baseValue(),
             self.diameter.baseValue(),
             self.mass_response.baseValue(),
         )

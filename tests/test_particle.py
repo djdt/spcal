@@ -24,10 +24,17 @@ def test_equations():
     )
     # η = (m (kg) * N) / (c (kg/L) * V (L/s) * t (s))
     assert np.isclose(
-        particle.nebulisation_efficiency_from_concentration(
-            count=10, mass=80.0, concentration=10.0, flow_rate=20.0, time=4.0
+        particle.nebulisation_efficiency_from_mass_concentration(
+            count=10, mass=80.0, mass_concentration=10.0, flow_rate=20.0, time=4.0
         ),
         1.0,
+    )
+    # η = (N) / (c (#/L) * V (L/s) * t (s))
+    assert np.isclose(
+        particle.nebulisation_efficiency_from_number_concentration(
+            count=3000, number_concentration=120.0e6, flow_rate=0.5e-3 / 60.0, time=60.0
+        ),
+        0.05,
     )
     # η = (m (kg) * s (L/kg) * f) / (I * t (s) * V (L/s))
     assert np.all(
