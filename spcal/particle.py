@@ -58,6 +58,7 @@ def nebulisation_efficiency_from_mass_concentration(
     count: int, mass_concentration: float, mass: float, flow_rate: float, time: float
 ) -> float:
     """The nebulistaion efficiency given a defined concentration.
+    "This is the number concentration calculated using the mass of the particles."
 
     :math:`\\eta = \\frac{m (kg) N}{c ({kg} \\cdot L^{-1}) V (L \\cdot s^{-1}) t (s)}`
 
