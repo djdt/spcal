@@ -98,7 +98,9 @@ class SPCalProcessingResult(object):
     def number_concentration(self) -> float | None:
         if (
             self.method.instrument_options.efficiency is None
+            or not self.method.instrument_options.efficiency > 0.0
             or self.method.instrument_options.uptake is None
+            or not self.method.instrument_options.uptake > 0.0
         ):  # pragma: no cover
             return None
 
