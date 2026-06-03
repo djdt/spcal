@@ -123,7 +123,6 @@ class SPCalProcessingMethod(object):
         isotopes: Sequence[SPCalIsotopeBase] | None = None,
         max_size: int | None = None,
     ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
-        results = {}
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
@@ -280,6 +279,7 @@ class SPCalProcessingMethod(object):
     ) -> float | np.ndarray:
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
+
         if self.processing_options.calibration_mode == "efficiency":
             assert self.instrument_options.uptake is not None
             assert self.instrument_options.efficiency is not None

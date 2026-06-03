@@ -156,7 +156,6 @@ class ResultOutputModel(UnitsModel):
                     return modefn(result.calibrated(self.key))
                 else:
                     raise ValueError(f"unknown column name {name}")
-                return
         elif role == BaseValueErrorRole:
             if name == "Number":
                 return result.number_error if result.number_error > 0.0 else None
