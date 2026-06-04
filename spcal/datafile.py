@@ -167,14 +167,16 @@ class SPCalDataFile(object):
             spectra[i] = bn.nanmean(self.signals[region[0] : region[1]], axis=0)
         return spectra
 
-    def information(self) -> dict[str, str]:
+    def information(self) -> dict[str, dict[str, str]]:
         return {
-            "path": str(self.path.resolve()),
-            "format": self.format,
-            "event time": f"{self.event_time * 1e6} µs",
-            "total time": f"{datetime.timedelta(seconds=float(self.total_time))}",
-            "number events": str(self.num_events),
-            "number istopes": str(len(self.isotopes)),
+            "DataFile": {
+                "path": str(self.path.resolve()),
+                "format": self.format,
+                "event time": f"{self.event_time * 1e6} µs",
+                "total time": f"{datetime.timedelta(seconds=float(self.total_time))}",
+                "number events": str(self.num_events),
+                "number istopes": str(len(self.isotopes)),
+            }
         }
 
     def isTOF(self) -> bool:
@@ -238,20 +240,17 @@ class SPCalTextDataFile(SPCalDataFile):
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         return self._signals[self.isotope_table[isotope]]
 
-    def information(self) -> dict[str, str]:
+    def information(self) -> dict[str, dict[str, str]]:
         info = super().information()
-        info.update(
-            {
-                "delimiter": self.delimiter,
-                "skip rows": str(self.skip_row),
-                "intensity units": "CPS" if self.cps else "Counts",
-                "original isotope names": ",".join(self.isotope_table.values()),
-            }
-        )
+        info["TextOptions"] = {
+            "delimiter": self.delimiter,
+            "skip rows": str(self.skip_row),
+            "intensity units": "CPS" if self.cps else "Counts",
+            "original isotope names": ",".join(self.isotope_table.values()),
+        }
 
         if self.drop_fields is not None:
-            info["drop fields"] = ",".join(self.drop_fields)
-
+            info["TextOptions"]["drop fields"] = ",".join(self.drop_fields)
         return info
 
     def isTOF(self) -> bool:
@@ -438,27 +437,25 @@ class SPCalNuDataFile(SPCalDataFile):
             iso: idx for idx, iso, v in zip(indices, natural_isotopes, valid) if v
         }
 
-    def information(self) -> dict[str, str]:
+    def information(self) -> dict[str, dict[str, str]]:
         info = super().information()
-        info.update(
-            {
-                "cycle number": str(self.cycle_number or "All"),
-                "segment number": str(self.segment_number or "All"),
-                "max mass diff": f"{self.max_mass_diff:.4f}",
-                "integ files used": f"{self.integ_files[0]} to {self.integ_files[1] or 'end'}",
-                "autoblanking mode": self.autoblanking,
-            }
-        )
-        for key in [
-            "AnalysisDateTime",
-            "SampleName",
-            "MethodFile",
-            "CyclesWritten",
-            "Username",
-            "AverageSingleIonArea",
-        ]:
-            if key in self.info:
-                info[f"run.info :: {key}"] = self.info[key]
+        info["NuOptions"] = {
+            "cycle number": str(self.cycle_number or "All"),
+            "segment number": str(self.segment_number or "All"),
+            "max mass diff": f"{self.max_mass_diff:.4f}",
+            "integ files used": f"{self.integ_files[0]} to {self.integ_files[1] or 'end'}",
+            "autoblanking mode": self.autoblanking,
+        }
+
+        bad_run_info_keys = ["IntegrationRegions"]
+        bad_run_info_keys = []
+
+        info["RunInfo"] = {
+            key: str(val)
+            for key, val in self.info.items()
+            if key not in bad_run_info_keys
+        }
+        # info["RunInfo"]["IntegrationRegions"]
 
         return info
 
@@ -579,11 +576,13 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
 
-    def information(self) -> dict[str, str]:
+    def information(self) -> dict[str, dict[str, str]]:
         info = super().information()
-        for attr in ["TofDAQ Version", "Configuration File", "HDF5 File Creation Time"]:
-            if self.attrs is not None and attr in self.attrs:
-                info[f"HDF5 :: {attr}"] = self.attrs[attr]
+        if self.attrs is not None:
+            info["HDF5"] = {attr: str(self.attrs[attr]) for attr in self.attrs}
+        # for attr in ["TofDAQ Version", "Configuration File", "HDF5 File Creation Time"]:
+        #     if self.attrs is not None and attr in self.attrs:
+        #         info[f"HDF5 :: {attr}"] = self.attrs[attr]
 
         return info
 

@@ -19,29 +19,24 @@ class DataFileInformationDialog(QtWidgets.QDialog):
 
         info = data_file.information()
 
-        self.table = QtWidgets.QTableWidget(len(info), 2)
-        self.table.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setVisible(False)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
-        )
+        self.tree = QtWidgets.QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        self.tree.setColumnCount(2)
+        for group_key in info.keys():
+            group_item = QtWidgets.QTreeWidgetItem([group_key])
 
-        for i, (key, val) in enumerate(info.items()):
-            item = QtWidgets.QTableWidgetItem(key)
-            self.table.setItem(i, 0, item)
-            item = QtWidgets.QTableWidgetItem(val)
-            self.table.setItem(i, 1, item)
+            for key, val in info[group_key].items():
+                item = QtWidgets.QTreeWidgetItem([key, val])
+                group_item.addChild(item)
+
+            self.tree.addTopLevelItem(group_item)
+
+        self.tree.expandAll()
+        self.tree.resizeColumnToContents(0)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.table)
+        layout.addWidget(self.tree)
         self.setLayout(layout)
-
-    def sizeHint(self) -> QtCore.QSize:
-        height = self.table.rowHeight(0) * self.table.rowCount()
-        width = self.table.columnWidth(0) + self.table.columnWidth(1)
-        return QtCore.QSize(width, height)
 
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
