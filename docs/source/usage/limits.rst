@@ -52,7 +52,7 @@ SPCal also allows editing of the *Accumulation method*, to set the :term:`accumu
    Uses the value half way between the signal mean and :term:`detection threshold`.
 
 Advanced options for detections can be accessed using **Edit -> Processing Options**.
-Here you can set the :term:`required points` for a peak, the :term: `required prominence` used to split overlapping peaks and the point at which peak accumulation (summing of adjacent points) will stop.
+Here you can set the :term:`required points` for a peak, the :term:`required prominence` used to split overlapping peaks and the point at which peak accumulation (summing of adjacent points) will stop.
 
 Compound-Poisson options
 ------------------------
