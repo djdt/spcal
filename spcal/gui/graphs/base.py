@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +16,6 @@ class AxisRangeDialog(QtWidgets.QDialog):
         self,
         view_range: tuple[float, float],
         view_limit: tuple[float, float],
-        font: QtGui.QFont | None = None,
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
@@ -46,6 +46,107 @@ class AxisRangeDialog(QtWidgets.QDialog):
     def accept(self):
         self.rangeSelected.emit(self.spinbox_lo.value(), self.spinbox_hi.value())
         super().accept()
+
+
+class PlotCurveItemFix(pyqtgraph.PlotCurveItem):  # temporary fix to pyqtgraph
+    @typing.no_type_check
+    def dataBounds(self, ax, frac=1.0, orthoRange=None):
+        import warnings
+        import math
+
+        ## Need this to run as fast as possible.
+        ## check cache first:
+        cache = self._boundsCache[ax]
+        if cache is not None and cache[0] == (frac, orthoRange):
+            return cache[1]
+
+        (x, y) = self.getData()
+        if x is None or len(x) == 0:
+            return (None, None)
+
+        if ax == 0:
+            d = x
+            d2 = y
+        elif ax == 1:
+            d = y
+            d2 = x
+        else:
+            raise ValueError("Invalid axis value")
+
+        ## If an orthogonal range is specified, mask the data now
+        if orthoRange is not None:
+            mask = (d2 >= orthoRange[0]) * (d2 <= orthoRange[1])
+            if self.opts.get("stepMode", None) == "center":
+                if ax == 1:
+                    mask = mask[:-1]  # len(y) == len(x) - 1 when stepMode is center
+                else:
+                    mask = np.concatenate([mask, [0]])
+            d = d[mask]
+            # d2 = d2[mask]
+
+        if len(d) == 0:
+            return (None, None)
+
+        ## Get min/max (or percentiles) of the requested data range
+        if frac >= 1.0:
+            # include complete data range
+            # first try faster nanmin/max function, then cut out infs if needed.
+            with warnings.catch_warnings():
+                # All-NaN data is acceptable; Explicit numpy warning is not needed.
+                warnings.simplefilter("ignore")
+                b = (
+                    float(np.nanmin(d)),
+                    float(np.nanmax(d)),
+                )  # enforce float format for bounds, even if data format is different
+            if math.isinf(b[0]) or math.isinf(b[1]):
+                mask = np.isfinite(d)
+                d = d[mask]
+                if len(d) == 0:
+                    return (None, None)
+                b = (
+                    float(d.min()),
+                    float(d.max()),
+                )  # enforce float format for bounds, even if data format is different
+
+        elif frac <= 0.0:
+            raise Exception(
+                "Value for parameter 'frac' must be > 0. (got %s)" % str(frac)
+            )
+        else:
+            # include a percentile of data range
+            mask = np.isfinite(d)
+            d = d[mask]
+            if len(d) == 0:
+                return (None, None)
+            b = np.percentile(
+                d, [50 * (1 - frac), 50 * (1 + frac)]
+            )  # percentile result is always float64 or larger
+
+        ## adjust for fill level
+        if ax == 1 and self.opts["fillLevel"] not in [None, "enclosed"]:
+            b = (
+                float(min(b[0], self.opts["fillLevel"])),
+                float(max(b[1], self.opts["fillLevel"])),
+            )  # enforce float format for bounds, even if data format is different
+
+        ## Add pen width only if it is non-cosmetic.
+        pen = self.opts["pen"]
+        spen = self.opts["shadowPen"]
+        if (
+            pen is not None
+            and not pen.isCosmetic()
+            and pen.style() != QtCore.Qt.PenStyle.NoPen
+        ):
+            b = (b[0] - pen.widthF() * 0.7072, b[1] + pen.widthF() * 0.7072)
+        if (
+            spen is not None
+            and not spen.isCosmetic()
+            and spen.style() != QtCore.Qt.PenStyle.NoPen
+        ):
+            b = (b[0] - spen.widthF() * 0.7072, b[1] + spen.widthF() * 0.7072)
+
+        self._boundsCache[ax] = [(frac, orthoRange), b]
+        return b
 
 
 class SinglePlotItem(pyqtgraph.PlotItem):
@@ -87,8 +188,8 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             font = QtGui.QFont()
         self.setFont(font)
 
-    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):  # type: ignore
-        self.requestContextMenu.emit(event.pos().toPoint())  # type: ignore
+    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        self.requestContextMenu.emit(event.pos().toPoint())
 
     def dataBounds(self) -> tuple[float, float, float, float]:
         items = [item for item in self.listDataItems() if item.isVisible()]
@@ -106,10 +207,10 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         )
 
     def setFont(self, font: QtGui.QFont):  # type: ignore , pyqtgraph qt versions
-        super().setFont(font)  # type: ignore
+        super().setFont(font)
 
         fm = QtGui.QFontMetrics(font)
-        pen: QtGui.QPen = self.xaxis.tickPen()  # type: ignore
+        pen: QtGui.QPen = self.xaxis.tickPen()
         pen.setWidthF(fm.lineWidth())
 
         self.xaxis.setStyle(tickFont=font)
@@ -145,12 +246,12 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         self.legend.clear()
         # re-add
         for item, text in items:
-            self.scene().addItem(item)  # type: ignore
+            self.scene().addItem(item)
             item.show()
             self.legend.addItem(item, text)
         # fix label heights
         height = 0.0
-        for item, label in self.legend.items:
+        for _, label in self.legend.items:
             height = height + label.itemRect().height()
 
         # fix broken geometry calculations
@@ -189,7 +290,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         offset: float = 0.0,
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
-    ) -> pyqtgraph.PlotCurveItem:
+    ) -> PlotCurveItemFix:
         if pen is None:
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
@@ -211,7 +312,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         y = np.zeros(counts.size * 2 + 1, dtype=counts.dtype)
         y[1:-1:2] = counts
 
-        curve = pyqtgraph.PlotCurveItem(
+        curve = PlotCurveItemFix(
             x=x,
             y=y,
             stepMode="center",
@@ -227,7 +328,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
 
     def drawLine(
         self,
-        y: float,
+        v: float,
         orientation: QtCore.Qt.Orientation,
         pen: QtGui.QPen | None = None,
         name: str | None = None,
@@ -237,9 +338,19 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
             pen.setCosmetic(True)
 
-        x0, x1 = self.dataBounds()[:2]
+        if orientation == QtCore.Qt.Orientation.Horizontal:
+            x0, x1 = self.dataBounds()[:2]
+            y0, y1 = v, v
+        else:
+            y0, y1 = self.dataBounds()[2:]
+            x0, x1 = v, v
+
         return self.drawCurve(
-            x=np.array([x0, x1]), y=np.array([y, y]), pen=pen, name=name, connect="all"
+            x=np.array([x0, x1]),
+            y=np.array([y0, y1]),
+            pen=pen,
+            name=name,
+            connect=connect,
         )
 
     def drawScatter(
@@ -357,29 +468,28 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         assert self.plot.vb is not None
 
         (x1, x2), (y1, y2) = self.plot.vb.viewRange()
-        min, max = self.plot.vb.state["limits"][f"{axis}Limits"]
+        (lx1, lx2), (ly1, ly2) = self.plot.vb._effectiveLimits()
         if axis == "x":
             scale = self.plot.xaxis.scale
             v1, v2 = x1, x2
+            l1, l2 = lx1, lx2
         elif axis == "y":
             scale = self.plot.yaxis.scale
             v1, v2 = y1, y2
+            l1, l2 = ly1, ly2
         else:
             raise ValueError("axis must be 'x' or 'y'")
 
         def open_range_dialog():
             dlg = AxisRangeDialog(
-                (v1 * scale, v2 * scale),
-                (min * scale, max * scale),
-                self.font(),
-                parent=self,  # type: ignore , pyqtgraph weirdness
+                (v1 * scale, v2 * scale), (l1 * scale, l2 * scale), parent=self
             )
             dlg.rangeSelected.connect(
                 lambda min, max: self.setAxisRange(axis, min, max)
             )
             dlg.open()
 
-        menu = QtWidgets.QMenu(self)  # type: ignore
+        menu = QtWidgets.QMenu(self)
 
         autoscale_action = create_action(
             f"auto-scale-{axis}",
@@ -388,17 +498,16 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             lambda autoscale: self.setAxisAutoScale(axis, autoscale),
             checkable=True,
         )
-        autoscale_action.setParent(self)  # type: ignore
-        autoscale_action.setChecked(
-            self.plot.vb.state["autoRange"][["x", "y"].index(axis)] is not False
-        )
+        autoscale_action.setParent(self)
+        autorange = self.plot.vb.autoRangeEnabled()
+        autoscale_action.setChecked(autorange[["x", "y"].index(axis)] is not False)
         range_action = create_action(
             f"panel-fit-{['width', 'height'][['x', 'y'].index(axis)]}",
             "Set Range...",
             "Set the view range of the axis.",
             open_range_dialog,
         )
-        range_action.setParent(self)  # type: ignore
+        range_action.setParent(self)
 
         menu.addAction(autoscale_action)
         menu.addAction(range_action)
@@ -409,15 +518,15 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         view_pos = self.plot.xaxis.mapFromView(pos)
         if view_pos is not None and self.plot.xaxis.contains(view_pos):
             menu = self.axisMenu("x")
-            menu.popup(self.mapToGlobal(pos))  # type: ignore
+            menu.popup(self.mapToGlobal(pos))
             return
         view_pos = self.plot.yaxis.mapFromView(pos)
         if view_pos is not None and self.plot.yaxis.contains(view_pos):
             menu = self.axisMenu("y")
-            menu.popup(self.mapToGlobal(pos))  # type: ignore
+            menu.popup(self.mapToGlobal(pos))
             return
 
-        menu = QtWidgets.QMenu(self)  # type: ignore
+        menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
         menu.addSeparator()
 
@@ -475,7 +584,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         painter = QtGui.QPainter(pixmap)
         self.render(painter)
         painter.end()
-        QtWidgets.QApplication.clipboard().setPixmap(pixmap)  # type: ignore
+        QtWidgets.QApplication.clipboard().setPixmap(pixmap)
 
     def clear(self):
         self.data_for_export.clear()
@@ -539,7 +648,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if path is None:
             dir = most_recent_spcal_path()
             dir = str(Path(str(dir)).parent) if dir is not None else ""
-            path, filter = QtWidgets.QFileDialog.getSaveFileName(
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(
                 self,
                 "Export Image",
                 dir,
@@ -603,10 +712,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
     def zoomReset(self):
         if self.plot.vb is not None:
-            x, y = (
-                self.plot.vb.state["autoRange"][0],
-                self.plot.vb.state["autoRange"][1],
-            )
+            x, y = self.plot.vb.autoRangeEnabled()
             self.plot.vb.autoRange()
             self.plot.vb.enableAutoRange(x=x, y=y)
 
