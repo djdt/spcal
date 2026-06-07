@@ -49,7 +49,6 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         self.chunk_size.setSingleStep(100)
         self.chunk_size.setEnabled(False)
 
-        # todo: option to remove blanked regions?
         self.combo_blanking = QtWidgets.QComboBox()
         self.combo_blanking.addItems(["Off", "Regions", "All"])
         self.combo_blanking.setItemData(
