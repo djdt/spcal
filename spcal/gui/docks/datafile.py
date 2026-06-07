@@ -46,6 +46,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
     currentDataFileChanged = QtCore.Signal(SPCalDataFile)
     selectedDataFilesChanged = QtCore.Signal(list)
+    activeDataFilesChanged = QtCore.Signal(list)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -53,6 +54,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.setWindowTitle("Data Files")
 
         self.screening_method: SPCalProcessingMethod | None = None
+
+        self._previous_datafiles = []
 
         self.model = DataFileModel()
         self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
@@ -124,7 +127,10 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.currentDataFileChanged.emit(index.data(DataFileRole))
 
     def onSelectionChanged(self):
-        self.selectedDataFilesChanged.emit(self.selectedDataFiles())
+        active = self.activeDataFiles()
+        if active != self._previous_datafiles:
+            self._previous_datafiles = active
+            self.activeDataFilesChanged.emit(self.activeDataFiles())
 
     @QtCore.Slot()
     def setScreeningMethod(self, method: SPCalProcessingMethod):

@@ -4,6 +4,7 @@ import logging
 from spcal.gui.modelviews import (
     CurrentUnitRole,
     UnitsRole,
+    IsotopeRole,
 )
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
@@ -25,10 +26,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveExpressions = QtCore.Signal(list)
 
+    activeIsotopesChanged = QtCore.Signal(list)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("spcal-results-dock")
         self.setWindowTitle("Results")
+
+        self._previous_active = []
 
         self.model = ResultOutputModel()
 
@@ -39,8 +44,16 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.view.requestAddExpression.connect(self.requestAddExpression)
         self.view.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
+        self.view.selectedIsotopesChanged.connect(self.onSelectedIsotopesChanged)
+
         self.setWidget(self.view)
         self.updateOutputsForKey("signal")
+
+    def onSelectedIsotopesChanged(self):
+        active = self.activeIsotopes()
+        if active != self._previous_active:
+            self._previous_active = active
+            self.activeIsotopesChanged.emit(active)
 
     def activeIsotopes(self) -> list[SPCalIsotopeBase]:
         """The selected isotopes, or current if no selection exists"""
@@ -49,6 +62,18 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             current = self.view.currentIsotope()
             return [current] if current is not None else []
         return isotopes
+
+    def setActiveIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+        selection = QtCore.QItemSelection()
+        for row in range(self.model.rowCount()):
+            index = self.model.index(row, 0)
+            if index.data(IsotopeRole) in isotopes:
+                selection.select(index, index)
+        self.view.selectionModel().select(  # TODO: could be improved to retain selected columns
+            selection,
+            QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
+            | QtCore.QItemSelectionModel.SelectionFlag.Rows,
+        )
 
     def results(self) -> list[SPCalProcessingResult]:
         return self.model.results

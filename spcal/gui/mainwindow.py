@@ -124,9 +124,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.updateForDataFiles)
-        self.files.selectedDataFilesChanged.connect(self.updateForDataFiles)
+        self.files.activeDataFilesChanged.connect(self.updateForDataFiles)
 
-        self.outputs.view.selectedIsotopesChanged.connect(self.redraw)
+        self.outputs.activeIsotopesChanged.connect(self.redraw)
 
         self.outputs.requestRemoveIsotopes.connect(self.removeIsotopes)
         self.outputs.requestAddExpression.connect(self.addExpression)
@@ -718,6 +718,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess()
 
     def updateOutputs(self):
+        previous = self.outputs.activeIsotopes()
         results = []
         for data_file in self.files.activeDataFiles():
             results.extend(
@@ -727,6 +728,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 )
             )
         self.outputs.setResults(results)
+        self.outputs.setActiveIsotopes(previous)
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
     # data modification
