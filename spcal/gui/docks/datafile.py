@@ -121,11 +121,9 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.model.endResetModel()
 
     def onCurrentChanged(self, index: QtCore.QModelIndex):
-        print("current changed")
         self.currentDataFileChanged.emit(index.data(DataFileRole))
 
     def onSelectionChanged(self):
-        print("selected changed")
         self.selectedDataFilesChanged.emit(self.selectedDataFiles())
 
     @QtCore.Slot()
