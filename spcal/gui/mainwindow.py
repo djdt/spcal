@@ -375,7 +375,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.dialogSessionLoad,
         )
 
-        # Todo move to right click menu
+        # TODO: move to right click menu
         self.action_export = create_action(
             "document-save-as",
             "E&xport Results",
@@ -450,7 +450,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if scheme == current_scheme:
                 action.setChecked(True)
 
-        # todo: add custom colors
         self.action_custom_colors = create_action(
             "color-picker",
             "Custom...",
