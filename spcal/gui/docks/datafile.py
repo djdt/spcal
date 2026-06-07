@@ -41,8 +41,11 @@ class DataFileInformationDialog(QtWidgets.QDialog):
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
     dataFileAdded = QtCore.Signal(SPCalDataFile)
-    dataFilesChanged = QtCore.Signal(SPCalDataFile, list)
+    dataFilesChanged = QtCore.Signal(SPCalDataFile)
     dataFileRemoved = QtCore.Signal(SPCalDataFile)
+
+    currentDataFileChanged = QtCore.Signal(SPCalDataFile)
+    selectedDataFilesChanged = QtCore.Signal(list)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -60,10 +63,15 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setSelectionMode(QtWidgets.QListView.SelectionMode.ExtendedSelection)
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
-        self.list.selectionModel().selectionChanged.connect(
-            self.onCurrentOrSelectionChanged
-        )
+        self.list.selectionModel().selectionChanged.connect(self.onSelectionChanged)
         self.setWidget(self.list)
+
+    def activeDataFiles(self) -> list[SPCalDataFile]:
+        files = self.selectedDataFiles()
+        if len(files) == 0:
+            current = self.currentDataFile()
+            return [current] if current is not None else []
+        return files
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         pos = self.list.viewport().mapFromGlobal(event.globalPos())
@@ -104,26 +112,21 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         menu.popup(event.globalPos())
         event.accept()
 
-    def onCurrentOrSelectionChanged(self):
-        current = self.currentDataFile()
-        selected = self.selectedDataFiles()
-        self.dataFilesChanged.emit(current, selected)
+    def dataFiles(self) -> list[SPCalDataFile]:
+        return self.model.data_files
 
-    def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
-        if first <= self.list.currentIndex().row() < last:
-            self.list.selectionModel().setCurrentIndex(
-                self.model.index(first - 1, 0),
-                QtCore.QItemSelectionModel.SelectionFlag.Current,
-            )
-        for row in range(first, last):
-            self.dataFileRemoved.emit(self.model.data_files[row])
+    def setDataFiles(self, data_files: list[SPCalDataFile]):
+        self.model.beginResetModel()
+        self.model.data_files = data_files
+        self.model.endResetModel()
 
-    def currentDataFile(self) -> SPCalDataFile | None:
-        index = self.list.currentIndex()
-        if index.isValid():
-            return self.list.currentIndex().data(DataFileRole)
-        else:
-            return None
+    def onCurrentChanged(self, index: QtCore.QModelIndex):
+        print("current changed")
+        self.currentDataFileChanged.emit(index.data(DataFileRole))
+
+    def onSelectionChanged(self):
+        print("selected changed")
+        self.selectedDataFilesChanged.emit(self.selectedDataFiles())
 
     @QtCore.Slot()
     def setScreeningMethod(self, method: SPCalProcessingMethod):
@@ -144,23 +147,22 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             QtCore.QItemSelectionModel.SelectionFlag.Select,
         )
 
-    def selectedDataFiles(self) -> list[SPCalDataFile]:
-        selected = [index.data(DataFileRole) for index in self.list.selectedIndexes()]
-        if len(selected) == 0:
-            current = self.currentDataFile()
-            return [current] if current is not None else []
-        return selected
+    def currentDataFile(self) -> SPCalDataFile | None:
+        index = self.list.currentIndex()
+        if index.isValid():
+            return index.data(DataFileRole)
+        else:
+            return None
 
-    def dataFiles(self) -> list[SPCalDataFile]:
-        return self.model.data_files
+    def selectedDataFiles(self) -> list[SPCalDataFile]:
+        return list(set(idx.data(DataFileRole) for idx in self.list.selectedIndexes()))
 
     def dialogEditIsotopes(self, index: QtCore.QModelIndex):
         if self.screening_method is None:
             raise ValueError("screening method has not been set")
-        dlg = SelectIsotopesDialog(
-            index.data(DataFileRole), self.screening_method, parent=self
-        )
-        dlg.isotopesSelected.connect(self.onCurrentOrSelectionChanged)
+        file = index.data(DataFileRole)
+        dlg = SelectIsotopesDialog(file, self.screening_method, parent=self)
+        dlg.isotopesSelected.connect(lambda: self.dataFilesChanged.emit(file))
         dlg.open()
 
     def dialogInformation(self, index: QtCore.QModelIndex):
@@ -169,7 +171,16 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg = DataFileInformationDialog(index.data(DataFileRole), parent=self)
         dlg.open()
 
+    def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
+        if index.isValid():
+            raise ValueError("valid index for removed row")
+        if first <= self.list.currentIndex().row() < last:
+            self.list.selectionModel().setCurrentIndex(
+                self.model.index(first - 1, 0),
+                QtCore.QItemSelectionModel.SelectionFlag.Current,
+            )
+        for row in range(first, last):
+            self.dataFileRemoved.emit(self.model.data_files[row])
+
     def clear(self):
-        self.model.beginResetModel()
-        self.model.data_files.clear()
-        self.model.endResetModel()
+        self.setDataFiles([])
