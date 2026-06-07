@@ -6,8 +6,8 @@ from spcal.gui.modelviews import (
     UnitsRole,
 )
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.gui.modelviews.results import ResultOutputView
-from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
+from spcal.isotope import SPCalIsotopeExpression, SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,
@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalOutputsDock(QtWidgets.QDockWidget):
-    requestCurrentIsotope = QtCore.Signal(SPCalIsotopeBase)
     requestRemoveIsotopes = QtCore.Signal(list)
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveExpressions = QtCore.Signal(list)
@@ -31,9 +30,11 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.setObjectName("spcal-results-dock")
         self.setWindowTitle("Results")
 
-        self.view = ResultOutputView()
+        self.model = ResultOutputModel()
 
-        self.view.isotopeSelected.connect(self.requestCurrentIsotope)
+        self.view = ResultOutputView()
+        self.view.setModel(self.model)
+
         self.view.requestRemoveIsotopes.connect(self.requestRemoveIsotopes)
         self.view.requestAddExpression.connect(self.requestAddExpression)
         self.view.requestRemoveExpressions.connect(self.requestRemoveExpressions)
@@ -41,11 +42,24 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.setWidget(self.view)
         self.updateOutputsForKey("signal")
 
+    def activeIsotopes(self) -> list[SPCalIsotopeBase]:
+        """The selected isotopes, or current if no selection exists"""
+        isotopes = self.view.selectedIsotopes()
+        if len(isotopes) == 0:
+            current = self.view.currentIsotope()
+            return [current] if current is not None else []
+        return isotopes
+
+    def results(self) -> list[SPCalProcessingResult]:
+        return self.model.results
+
     def setResults(self, results: list[SPCalProcessingResult]):
-        self.view.setResults(results)
+        self.model.beginResetModel()
+        self.model.results = results
+        self.model.endResetModel()
 
     def updateOutputsForKey(self, key: str):
-        self.view.results_model.key = key
+        self.model.key = key
         units = signal_units
         default_unit = "cts"
         conc_units = number_concentration_units
@@ -63,18 +77,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             raise ValueError(f"unknown key '{key}'")
 
         orientation = self.view.header.orientation()
-        self.view.results_model.setHeaderData(
-            1, orientation, conc_units, role=UnitsRole
-        )
-        self.view.results_model.setHeaderData(
+        self.model.setHeaderData(1, orientation, conc_units, role=UnitsRole)
+        self.model.setHeaderData(
             1, orientation, default_conc_unit, role=CurrentUnitRole
         )
 
         for i in range(3, 8):
-            self.view.results_model.setHeaderData(i, orientation, units, role=UnitsRole)
-            self.view.results_model.setHeaderData(
-                i, orientation, default_unit, role=CurrentUnitRole
-            )
+            self.model.setHeaderData(i, orientation, units, role=UnitsRole)
+            self.model.setHeaderData(i, orientation, default_unit, role=CurrentUnitRole)
 
     def setSignificantFigures(self, sf: int):
         delegate = self.view.itemDelegate()
@@ -93,9 +103,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             settings.setValue("Hidden", self.view.header.isSectionHidden(i))
             settings.setValue(
                 "Unit",
-                self.view.results_model.headerData(
-                    i, orientation, role=CurrentUnitRole
-                ),
+                self.model.headerData(i, orientation, role=CurrentUnitRole),
             )
         settings.endArray()
 
@@ -110,7 +118,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         for i in range(self.view.header.count()):
             settings.setArrayIndex(i)
             self.view.header.setSectionHidden(i, settings.value("Hidden") == "true")
-            self.view.results_model.setHeaderData(
+            self.model.setHeaderData(
                 i, orientation, settings.value("Unit"), role=CurrentUnitRole
             )
         settings.endArray()

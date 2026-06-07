@@ -128,14 +128,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.updateForDataFiles)
 
-        self.outputs.requestCurrentIsotope.connect(
-            self.toolbar.combo_isotope.setCurrentIsotope
-        )
+        self.outputs.view.currentIsotopeChanged.connect(self.redraw)
+        self.outputs.view.selectedIsotopesChanged.connect(self.redraw)
+
         self.outputs.requestRemoveIsotopes.connect(self.removeIsotopes)
         self.outputs.requestAddExpression.connect(self.addExpression)
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
-        self.toolbar.isotopeChanged.connect(self.redraw)
+        # self.toolbar.isotopeChanged.connect(self.redraw)
         self.toolbar.scatterOptionsChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
         self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
@@ -824,7 +824,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def redraw(self):
         key = self.toolbar.currentKey()
         view = self.graph.currentView()
-        isotopes = self.toolbar.selectedIsotopes()
+        isotopes = self.outputs.activeIsotopes()
 
         self.graph.clear()
 

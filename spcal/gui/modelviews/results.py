@@ -177,7 +177,9 @@ class ResultOutputModel(UnitsModel):
 
 
 class ResultOutputView(BasicTableView):
-    isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+    currentIsotopeChanged = QtCore.Signal(SPCalIsotopeBase)
+    selectedIsotopesChanged = QtCore.Signal(list)
+
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveIsotopes = QtCore.Signal(list)
     requestRemoveExpressions = QtCore.Signal(list)
@@ -185,17 +187,16 @@ class ResultOutputView(BasicTableView):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.results_model = ResultOutputModel()
+
+        self._previous_isotopes = []
 
         self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.header.setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
 
-        self.setModel(self.results_model)
         self.setHorizontalHeader(self.header)
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
-        self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
         self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
@@ -222,19 +223,28 @@ class ResultOutputView(BasicTableView):
             self.removeSelectedExpressions,
         )
 
-    def results(self) -> list[SPCalProcessingResult]:
-        return self.results_model.results
+    def setModel(self, model: QtCore.QAbstractItemModel | None):
+        if not isinstance(model, ResultOutputModel):
+            raise ValueError("ResultOutputView requires a ResultOutputModel")
+        super().setModel(model)
+        # hook up signals
+        self.selectionModel().currentChanged.connect(self.onCurrentChanged)
+        self.selectionModel().selectionChanged.connect(self.onSelectionChanged)
 
-    def setResults(self, results: list[SPCalProcessingResult]):
-        self.results_model.beginResetModel()
-        self.results_model.results = results
-        self.results_model.endResetModel()
+    def currentIsotope(self) -> SPCalIsotopeBase | None:
+        return self.currentIndex().data(IsotopeRole)
 
-    def onHeaderClicked(self, section: int):
-        isotope = self.results_model.data(
-            self.results_model.index(section, 0), IsotopeRole
-        )
-        self.isotopeSelected.emit(isotope)
+    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
+        return list(set(idx.data(IsotopeRole) for idx in self.selectedIndexes()))
+
+    def onCurrentChanged(self, index: QtCore.QModelIndex):
+        self.currentIsotopeChanged.emit(index.data(IsotopeRole))
+
+    def onSelectionChanged(self):
+        selected = self.selectedIsotopes()
+        if selected != self._previous_isotopes:
+            self._previous_isotopes = selected
+            self.selectedIsotopesChanged.emit(selected)
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
@@ -248,14 +258,6 @@ class ResultOutputView(BasicTableView):
         if any(isinstance(iso, SPCalIsotope) for iso in selected):
             menu.addAction(self.action_remove_isotopes)
         menu.popup(event.globalPos())
-
-    def selectedIsotopes(self):
-        selected_isotopes = []
-        for idx in self.selectedIndexes():
-            isotope = idx.data(IsotopeRole)
-            if isotope not in selected_isotopes:
-                selected_isotopes.append(isotope)
-        return selected_isotopes
 
     def sumSelectedIsotopes(self):
         selected_isotopes = [
