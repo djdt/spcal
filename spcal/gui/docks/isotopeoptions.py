@@ -139,7 +139,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def onDataChanged(
         self,
         topleft: QtCore.QModelIndex,
-        bottom_right: QtCore.QModelIndex,
+        _bottom_right: QtCore.QModelIndex,
         roles: list[QtCore.Qt.ItemDataRole],
     ):
         isotope = self.table.isotope_model.data(topleft, IsotopeRole)
