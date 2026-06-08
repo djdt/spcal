@@ -251,7 +251,6 @@ class ResultOutputView(BasicTableView):
         )
 
     def onCurrentChanged(self, index: QtCore.QModelIndex):
-        print("current changed")
         self.currentRowChanged.emit(index.row())
 
     def selectedRows(self) -> list[int]:

@@ -64,7 +64,6 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         rows = self.view.selectedRows()
         if len(rows) == 0:
             current = self.view.currentRow()
-            print("the current row is", current)
             rows = [current] if current is not None else []
 
         results = {}
