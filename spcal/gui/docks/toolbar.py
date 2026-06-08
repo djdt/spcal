@@ -26,7 +26,8 @@ class ScatterExprLineEdit(QtWidgets.QLineEdit):
         self._completer.activated.connect(self.insertCompletion)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
-        if self._completer.popup().isVisible():
+        popup = self._completer.popup()
+        if popup is not None and popup.isVisible():
             if event.key() in [  # Ignore keys when popup is present
                 QtCore.Qt.Key.Key_Enter,
                 QtCore.Qt.Key.Key_Return,
@@ -40,6 +41,9 @@ class ScatterExprLineEdit(QtWidgets.QLineEdit):
 
         super().keyPressEvent(event)
 
+        if popup is None:
+            return
+
         eow = "~!@#$%^&*()+{}|:\"<>?,./;'[]\\-= "
 
         current_word = self.text()[
@@ -47,16 +51,14 @@ class ScatterExprLineEdit(QtWidgets.QLineEdit):
             + 1 : self.cursorPosition()
         ]
         if len(current_word) < 2 or current_word == self._completer.currentCompletion():
-            self._completer.popup().hide()
+            popup.hide()
         else:
             self._completer.setCompletionPrefix(current_word)
-            self._completer.popup().setCurrentIndex(
-                self._completer.completionModel().index(0, 0)
-            )
+            popup.setCurrentIndex(self._completer.completionModel().index(0, 0))
             rect = self.cursorRect()
             rect.setWidth(
-                self._completer.popup().sizeHintForColumn(0)
-                + self._completer.popup().verticalScrollBar().sizeHint().width()
+                popup.sizeHintForColumn(0)
+                + popup.verticalScrollBar().sizeHint().width()
             )
             self._completer.complete(rect)
 
@@ -77,9 +79,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.setObjectName("spcal-options-toolbar")
 
         # default widgets
-        self.combo_isotope = IsotopeComboBox()
-        self.combo_isotope.isotopeChanged.connect(self.isotopeChanged)
-
         self.combo_key = QtWidgets.QComboBox()
         self.combo_key.currentTextChanged.connect(self.onKeyChanged)  # to emit lower
         self.combo_key.addItems([x.title() for x in CALIBRATION_KEYS])
@@ -97,14 +96,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.scatter_key_x.activated.connect(self.scatterOptionsChanged)
         self.scatter_key_y.activated.connect(self.scatterOptionsChanged)
 
-        self.action_all_isotopes = create_action(
-            "office-chart-line-stacked",
-            "Overlay Isotopes",
-            "Plot all isotope signals.",
-            self.overlayOptionChanged,
-            checkable=True,
-        )
-
         self.action_filter = create_action(
             "view-filter",
             "Filter Detections",
@@ -119,10 +110,6 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         )
 
         self.addWidget(spacer)
-
-        self.addAction(self.action_all_isotopes)
-
-        self.isotope_action = self.addWidget(self.combo_isotope)
 
         self.key_action = self.addWidget(self.combo_key)
 
@@ -152,59 +139,15 @@ class SPCalOptionsToolBar(QtWidgets.QToolBar):
         self.keyChanged.emit(_key.lower())
 
     def onViewChanged(self, view: str):
-        self.isotope_action.setVisible(view in ["particle", "histogram", "spectra"])
-        self.action_all_isotopes.setVisible(view in ["particle", "histogram"])
-
         self.key_action.setVisible(view not in ["scatter"])
         self.scatter_actions.setVisible(view in ["scatter"])
 
-    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
-        if (
-            self.action_all_isotopes.isVisible()
-            and self.action_all_isotopes.isChecked()
-        ):
-            return [
-                self.combo_isotope.isotope(i) for i in range(self.combo_isotope.count())
-            ]
-        else:
-            isotope = self.combo_isotope.currentIsotope()
-            if isotope is not None:
-                return [isotope]
-        return []
-
-    def overlayOptionChanged(self, checked: bool):
-        self.combo_isotope.setEnabled(not checked)
-        self.isotopeChanged.emit(None)
-
     def setIsotopes(self, isotopes: list[SPCalIsotopeBase]):
-        for combo in [self.combo_isotope]:
-            current = combo.currentIsotope()
-            combo.blockSignals(True)
-
-            combo.clear()
-            combo.addIsotopes(isotopes)
-
-            if current is not None:
-                combo.setCurrentIsotope(current)
-
-            if combo.currentIndex() == -1:
-                combo.setCurrentIndex(0)
-
-            combo.blockSignals(False)
-
         self.scatter_x.setIsotopes(isotopes)
         self.scatter_y.setIsotopes(isotopes)
         if len(isotopes) >= 2:
             self.scatter_x.setText(str(isotopes[0]))
             self.scatter_y.setText(str(isotopes[1]))
-
-        self.action_all_isotopes.setEnabled(len(isotopes) > 1)
-
-    def clear(self):
-        for combo in [self.combo_isotope]:
-            combo.blockSignals(True)
-            combo.clear()
-            combo.blockSignals(False)
 
 
 class SPCalViewToolBar(QtWidgets.QToolBar):
