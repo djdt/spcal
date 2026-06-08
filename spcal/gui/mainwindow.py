@@ -114,9 +114,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
-        self.isotope_options.requestCurrentIsotope.connect(
-            self.toolbar.combo_isotope.setCurrentIsotope
-        )
+        # self.isotope_options.requestCurrentIsotope.connect(
+        #     self.toolbar.combo_isotope.setCurrentIsotope
+        # )
 
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
 
@@ -1095,10 +1095,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogTransportEfficiencyCalculator(self) -> TransportEfficiencyDialog | None:
-        isotope = self.toolbar.combo_isotope.currentIsotope()
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return None
+        current = self.outputs.currentResult()
+        if current is None:
+            return
+        data_file, isotope, _ = current
 
         dlg = TransportEfficiencyDialog(
             data_file, isotope, self.processing_results[data_file][isotope], parent=self

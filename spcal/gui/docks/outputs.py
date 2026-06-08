@@ -89,6 +89,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         if len(rows) > 0:
             self.view.setCurrentRow(rows[0])
 
+    def currentResult(
+        self,
+    ) -> tuple[SPCalDataFile, SPCalIsotopeBase, SPCalProcessingResult] | None:
+        row = self.view.currentRow()
+        if row is not None:
+            return self.model.results[row]
+        return None
+
     def results(
         self,
     ) -> dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]]:
