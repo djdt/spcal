@@ -456,10 +456,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
         self.setCentralWidget(self.plot)
 
-        self.plot.requestContextMenu.connect(self.customContextMenu)  # type: ignore
+        self.plot.requestContextMenu.connect(self.customContextMenu)
 
-    def font(self) -> QtGui.QFont:  # type: ignore , weird pyqtgraph classes
-        return self.plot.font()  # type: ignore
+    def font(self) -> QtGui.QFont:
+        return self.plot.font()
 
     def setFont(self, font: QtGui.QFont):  # type: ignore
         self.plot.setFont(font)
