@@ -723,6 +723,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         }
         self.outputs.setResults(results)
 
+        isotopes = {iso for result in results.values() for iso in result.keys()}
         if any(
             data_file in previous for data_file in results
         ):  # some datafiles are shared, keep selection
@@ -731,17 +732,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             previous_isotopes = {
                 iso for result in previous.values() for iso in result.keys()
             }
-            isotopes = {iso for result in results.values() for iso in result.keys()}
             if any(isotope in previous_isotopes for isotope in isotopes):
                 self.outputs.view.setSelectedIsotopes(list(previous_isotopes))
             else:
                 self.outputs.view.setSelectedRows([0])
                 self.outputs.view.setCurrentRow(0)
 
-        # if any(result.isotope in previous for result in results):
-        #     self.outputs.setActiveIsotopes(previous)
-        # elif len(results) > 0:
-        #     self.outputs.view.setCurrentIsotope([results[0].isotope])
+        self.toolbar.setIsotopes(list(isotopes))
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
     # data modification
