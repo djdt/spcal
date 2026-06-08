@@ -863,41 +863,26 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             )
 
         elif view == "spectra":
-            data_file = self.files.currentDataFile()
-            isotope = self.toolbar.combo_isotope.currentIsotope()
-            if (
-                data_file is None
-                or self.processing_results[data_file].get(isotope, None) is None
-            ):
+            current = self.outputs.currentResult()
+            if current is None:
                 return
 
-            self.graph.drawResultsSpectra(
-                data_file,
-                self.processing_results[data_file][isotope],
-                None,
-            )
+            data_file, _, result = current
+            self.graph.drawResultsSpectra(data_file, result, None)
         else:
-            results = self.outputs.activeResults()
-            # files = self.files.activeDataFiles()
-            #
-            drawable = []
-            names, colors = [], []
-            for data_file in results:
-                for isotope, result in results[data_file].items():
-                    drawable.append(result)
+            active = self.outputs.activeResults()
+            results, names, colors = [], [], []
+            for data_file in active:
+                for isotope, result in active[data_file].items():
+                    results.append(result)
                     colors.append(self.colorForIsotope(isotope, data_file))
                     name = str(isotope)
                     if len(results) > 2:
                         name = data_file.path.stem + " - " + name
                     names.append(name)
-            # for data_file in files:
-            #     for isotope in isotopes:
-            #         if isotope in self.processing_results[data_file]:
-            #             drawable.append(self.processing_results[data_file][isotope])
-            #             colors.append(self.colorForIsotope(isotope, data_file))
 
             if view == "particle":
-                self.graph.drawResultsParticle(drawable, colors, names, key)
+                self.graph.drawResultsParticle(results, colors, names, key)
                 if len(results) == 1:
                     for start, end in next(iter(results)).exclusion_regions:
                         self.graph.particle.addExclusionRegion(start, end)
@@ -907,7 +892,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     len(results) == 1
                 )
             elif view == "histogram":
-                self.graph.drawResultsHistogram(drawable, colors, names, key)
+                self.graph.drawResultsHistogram(results, colors, names, key)
 
     # Dialogs
 
