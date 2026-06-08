@@ -1,6 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.modelviews.isotope import IsotopeComboBox
 from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing import CALIBRATION_KEYS
