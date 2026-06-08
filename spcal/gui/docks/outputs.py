@@ -69,7 +69,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
 
         results = {}
         for row in rows:
-            data_file, isotope, result = self.model.resultForSection(row)
+            data_file, isotope, result = self.model.results[row]
             if data_file not in results:
                 results[data_file] = {}
             results[data_file][isotope] = result
@@ -92,14 +92,27 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
     def results(
         self,
     ) -> dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]]:
-        return self.model.results
+        """Converts from a flat list to a dict"""
+        results = {}
+        for df, isotope, result in self.model.results:
+            if df not in results:
+                results[df] = {}
+            results[df][isotope] = result
+        return results
 
     def setResults(
         self,
         results: dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]],
     ):
+        flattened = [
+            (df, isotope, result)
+            for df in results
+            for isotope, result in results[df].items()
+        ]
         self.model.beginResetModel()
-        self.model.results = results
+        self.model.results = flattened
+        if len(results) > 1:
+            self.model.multiple_datafiles = True
         self.model.endResetModel()
 
     def updateOutputsForKey(self, key: str):

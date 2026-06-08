@@ -68,20 +68,10 @@ class ResultOutputModel(UnitsModel):
 
         self.key = "signal"
 
-        self.results: dict[
-            SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]
-        ] = {}
-
-    def resultForSection(
-        self, section: int
-    ) -> tuple[SPCalDataFile, SPCalIsotopeBase, SPCalProcessingResult]:
-        current_section = 0
-        for data_file, results in self.results.items():
-            for isotope, result in results.items():
-                if current_section == section:
-                    return data_file, isotope, result
-                current_section += 1
-        raise StopIteration(f"unable to find result for section {section}")
+        self.multiple_datafiles = False
+        self.results: list[
+            tuple[SPCalDataFile, SPCalIsotopeBase, SPCalProcessingResult]
+        ] = []
 
     def rowCount(
         self,
@@ -90,7 +80,7 @@ class ResultOutputModel(UnitsModel):
     ) -> int:
         if parent.isValid():
             return 0
-        return sum(len(results) for results in self.results.values())
+        return len(self.results)
 
     def columnCount(
         self,
@@ -118,15 +108,15 @@ class ResultOutputModel(UnitsModel):
         if section < 0:
             return
         if orientation == QtCore.Qt.Orientation.Vertical:
-            data_file, isotope, _ = self.resultForSection(section)
+            data_file, isotope, _ = self.results[section]
             if role in [
                 QtCore.Qt.ItemDataRole.DisplayRole,
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
-                if len(self.results) < 2:
-                    return f"{isotope}"
-                else:
+                if self.multiple_datafiles:
                     return f"{data_file.path.stem} : {isotope}"
+                else:
+                    return f"{isotope}"
             elif role == DataFileRole:
                 return data_file
             elif role == IsotopeRole:
@@ -142,7 +132,7 @@ class ResultOutputModel(UnitsModel):
             return None
 
         name = ResultOutputModel.COLUMN_LABELS[index.column()]
-        data_file, isotope, result = self.resultForSection(index.row())
+        data_file, isotope, result = self.results[index.row()]
         if role == IsotopeRole:
             return isotope
         elif role == DataFileRole:
