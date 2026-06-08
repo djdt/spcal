@@ -126,7 +126,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFilesChanged.connect(self.updateForDataFiles)
         self.files.activeDataFilesChanged.connect(self.updateForDataFiles)
 
-        self.outputs.activeIsotopesChanged.connect(self.redraw)
+        self.outputs.activeResultsChanged.connect(self.redraw)
 
         self.outputs.requestRemoveIsotopes.connect(self.removeIsotopes)
         self.outputs.requestAddExpression.connect(self.addExpression)
@@ -635,9 +635,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self, data_files: list[SPCalDataFile] | SPCalDataFile | None = None
     ):
         if data_files is None:
-            self.isotope_options.setIsotopes([])
-            self.toolbar.setIsotopes([])
-            self.outputs.setResults([])
+            self.isotope_options.clear()
+            self.outputs.clear()
             self.graph.clear()
             return
         elif isinstance(data_files, SPCalDataFile):
@@ -717,17 +716,32 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess()
 
     def updateOutputs(self):
-        previous = self.outputs.activeIsotopes()
-        results = []
-        for data_file in self.files.activeDataFiles():
-            results.extend(
-                sorted(
-                    self.processing_results[data_file].values(),
-                    key=lambda result: result.isotope,
-                )
-            )
+        previous = self.outputs.activeResults()
+        results = {
+            data_file: self.processing_results[data_file]
+            for data_file in self.files.activeDataFiles()
+        }
         self.outputs.setResults(results)
-        self.outputs.setActiveIsotopes(previous)
+
+        if any(
+            data_file in previous for data_file in results
+        ):  # some datafiles are shared, keep selection
+            self.outputs.setActiveResults(previous)
+        else:
+            previous_isotopes = {
+                iso for result in previous.values() for iso in result.keys()
+            }
+            isotopes = {iso for result in results.values() for iso in result.keys()}
+            if any(isotope in previous_isotopes for isotope in isotopes):
+                self.outputs.view.setSelectedIsotopes(list(previous_isotopes))
+            else:
+                self.outputs.view.setSelectedRows([0])
+                self.outputs.view.setCurrentRow(0)
+
+        # if any(result.isotope in previous for result in results):
+        #     self.outputs.setActiveIsotopes(previous)
+        # elif len(results) > 0:
+        #     self.outputs.view.setCurrentIsotope([results[0].isotope])
         self.action_export.setEnabled(len(self.processing_results) > 0)
 
     # data modification
@@ -823,7 +837,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def redraw(self):
         key = self.toolbar.currentKey()
         view = self.graph.currentView()
-        isotopes = self.outputs.activeIsotopes()
 
         self.graph.clear()
 
@@ -867,30 +880,35 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 None,
             )
         else:
-            files = self.files.activeDataFiles()
-
+            results = self.outputs.activeResults()
+            # files = self.files.activeDataFiles()
+            #
             drawable = []
             names, colors = [], []
-            for data_file in files:
-                for isotope in isotopes:
-                    if isotope in self.processing_results[data_file]:
-                        drawable.append(self.processing_results[data_file][isotope])
-                        colors.append(self.colorForIsotope(isotope, data_file))
-                        name = (
-                            f"{data_file.path.stem} - {isotope}"
-                            if len(files) > 1
-                            else str(isotope)
-                        )
-                        names.append(name)
+            for data_file in results:
+                for isotope, result in results[data_file].items():
+                    drawable.append(result)
+                    colors.append(self.colorForIsotope(isotope, data_file))
+                    name = str(isotope)
+                    if len(results) > 2:
+                        name = data_file.path.stem + " - " + name
+                    names.append(name)
+            # for data_file in files:
+            #     for isotope in isotopes:
+            #         if isotope in self.processing_results[data_file]:
+            #             drawable.append(self.processing_results[data_file][isotope])
+            #             colors.append(self.colorForIsotope(isotope, data_file))
 
             if view == "particle":
                 self.graph.drawResultsParticle(drawable, colors, names, key)
-                if len(files) == 1:
-                    for start, end in files[0].exclusion_regions:
+                if len(results) == 1:
+                    for start, end in next(iter(results)).exclusion_regions:
                         self.graph.particle.addExclusionRegion(start, end)
                 for start, end in self.currentMethod().exclusion_regions:
                     self.graph.particle.addGlobalExclusionRegion(start, end)
-                self.graph.particle.action_exclusion_region.setEnabled(len(files) == 1)
+                self.graph.particle.action_exclusion_region.setEnabled(
+                    len(results) == 1
+                )
             elif view == "histogram":
                 self.graph.drawResultsHistogram(drawable, colors, names, key)
 

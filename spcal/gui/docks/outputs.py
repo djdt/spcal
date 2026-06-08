@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from PySide6 import QtCore, QtWidgets
 import logging
 
@@ -5,6 +6,7 @@ from spcal.gui.modelviews import (
     CurrentUnitRole,
     UnitsRole,
     IsotopeRole,
+    DataFileRole,
 )
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
@@ -26,7 +28,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveExpressions = QtCore.Signal(list)
 
-    activeIsotopesChanged = QtCore.Signal(list)
+    activeResultsChanged = QtCore.Signal(object)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
@@ -44,41 +46,58 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.view.requestAddExpression.connect(self.requestAddExpression)
         self.view.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
-        self.view.selectedIsotopesChanged.connect(self.onSelectedIsotopesChanged)
+        self.view.selectedRowsChanged.connect(self.onSelectedRowsChanged)
 
         self.setWidget(self.view)
         self.updateOutputsForKey("signal")
 
-    def onSelectedIsotopesChanged(self):
-        active = self.activeIsotopes()
+    def onSelectedRowsChanged(self):
+        active = self.activeResults()
         if active != self._previous_active:
             self._previous_active = active
-            self.activeIsotopesChanged.emit(active)
+            self.activeResultsChanged.emit(active)
 
-    def activeIsotopes(self) -> list[SPCalIsotopeBase]:
+    def activeResults(
+        self,
+    ) -> dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]]:
         """The selected isotopes, or current if no selection exists"""
-        isotopes = self.view.selectedIsotopes()
-        if len(isotopes) == 0:
-            current = self.view.currentIsotope()
-            return [current] if current is not None else []
-        return isotopes
+        rows = self.view.selectedRows()
+        if len(rows) == 0:
+            current = self.view.currentRow()
+            print("the current row is", current)
+            rows = [current] if current is not None else []
 
-    def setActiveIsotopes(self, isotopes: list[SPCalIsotopeBase]):
-        selection = QtCore.QItemSelection()
+        results = {}
+        for row in rows:
+            data_file, isotope, result = self.model.resultForSection(row)
+            if data_file not in results:
+                results[data_file] = {}
+            results[data_file][isotope] = result
+        return results
+
+    def setActiveResults(
+        self,
+        results: dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]],
+    ):
+        rows = []
         for row in range(self.model.rowCount()):
             index = self.model.index(row, 0)
-            if index.data(IsotopeRole) in isotopes:
-                selection.select(index, index)
-        self.view.selectionModel().select(  # TODO: could be improved to retain selected columns
-            selection,
-            QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
-            | QtCore.QItemSelectionModel.SelectionFlag.Rows,
-        )
+            data_file = index.data(DataFileRole)
+            if data_file in results and index.data(IsotopeRole) in results[data_file]:
+                rows.append(index.row())
+        self.view.setSelectedRows(rows)
+        if len(rows) > 0:
+            self.view.setCurrentRow(rows[0])
 
-    def results(self) -> list[SPCalProcessingResult]:
+    def results(
+        self,
+    ) -> dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]]:
         return self.model.results
 
-    def setResults(self, results: list[SPCalProcessingResult]):
+    def setResults(
+        self,
+        results: dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]],
+    ):
         self.model.beginResetModel()
         self.model.results = results
         self.model.endResetModel()
@@ -118,7 +137,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.view.setItemDelegate(delegate)
 
     def clear(self):
-        self.setResults([])
+        self.setResults({})
 
     def saveHeaderLayout(self, settings: QtCore.QSettings, prefix: str):
         orientation = self.view.header.orientation()
