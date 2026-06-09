@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from PySide6 import QtCore, QtGui
 from pytestqt.qtbot import QtBot
 
@@ -49,13 +50,13 @@ def test_spcal_datfiles_dock(qtbot: QtBot, random_datafile_gen):
     assert dock.currentDataFile() == dfs[-1]
     assert len(dock.selectedDataFiles()) == 1
 
-    with qtbot.waitSignal(dock.dataFilesChanged):
+    with qtbot.waitSignal(dock.activeDataFilesChanged):
         dock.list.selectAll()
 
     assert dock.currentDataFile() == dfs[-1]
     assert len(dock.selectedDataFiles()) == 5
 
-    with qtbot.waitSignal(dock.dataFileRemoved):
+    with qtbot.waitSignal(dock.activeDataFilesChanged):
         dock.model.removeRow(4)
 
     assert dock.currentDataFile() == dfs[-2]
@@ -230,70 +231,57 @@ def test_spcal_outputs_dock(
         1.0, 2.0, 3.0
     )
 
-    df = random_datafile_gen(
+    df: SPCalDataFile = random_datafile_gen(
         isotopes=[
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Fe", 57)],
             ISOTOPE_TABLE[("Ni", 58)],
         ]
     )
-    results = list(default_method.processDataFile(df).values())
+    results = {df: default_method.processDataFile(df)}
 
     dock = SPCalOutputsDock()
     qtbot.addWidget(dock)
     with qtbot.waitExposed(dock):
         dock.show()
 
-    assert dock.view.results_model.rowCount() == 0
+    assert dock.model.rowCount() == 0
     dock.setResults(results)
-    assert dock.view.results_model.rowCount() == 3
+    assert dock.model.rowCount() == 3
 
     orientation = QtCore.Qt.Orientation.Horizontal
 
-    assert (dock.view.results_model.headerData(0, orientation, UnitsRole)) == {}
+    assert (dock.model.headerData(0, orientation, UnitsRole)) == {}
     assert (
-        dock.view.results_model.headerData(1, orientation, UnitsRole)
+        dock.model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
     assert (
-        dock.view.results_model.headerData(2, orientation, UnitsRole)
+        dock.model.headerData(2, orientation, UnitsRole)
     ) == mass_concentration_units
     for i in range(3, 8):
-        assert (
-            dock.view.results_model.headerData(i, orientation, UnitsRole)
-        ) == signal_units
+        assert (dock.model.headerData(i, orientation, UnitsRole)) == signal_units
 
     dock.updateOutputsForKey("mass")
     assert (
-        dock.view.results_model.headerData(1, orientation, UnitsRole)
+        dock.model.headerData(1, orientation, UnitsRole)
     ) == mass_concentration_units
     for i in range(3, 8):
-        assert (
-            dock.view.results_model.headerData(i, orientation, UnitsRole)
-        ) == mass_units
+        assert (dock.model.headerData(i, orientation, UnitsRole)) == mass_units
 
     dock.updateOutputsForKey("size")
     assert (
-        dock.view.results_model.headerData(1, orientation, UnitsRole)
+        dock.model.headerData(1, orientation, UnitsRole)
     ) == number_concentration_units
     for i in range(3, 8):
-        assert (
-            dock.view.results_model.headerData(i, orientation, UnitsRole)
-        ) == size_units
+        assert (dock.model.headerData(i, orientation, UnitsRole)) == size_units
 
     dock.setSignificantFigures(3)
     delegate = dock.view.itemDelegate()
     assert isinstance(delegate, ValueWidgetDelegate)
     assert delegate.sigfigs == 3
 
-    with qtbot.waitSignal(
-        dock.requestCurrentIsotope,
-        check_params_cb=lambda iso: iso == ISOTOPE_TABLE[("Fe", 56)],
-        timeout=100,
-    ):
-        dock.view.onHeaderClicked(0)
-
     dock.clear()
-    assert dock.view.results_model.rowCount() == 0
+    assert dock.model.rowCount() == 0
 
 
 def test_spcal_processing_dock(qtbot: QtBot):
@@ -344,7 +332,6 @@ def test_spcal_toolbar(qtbot: QtBot):
         toolbar.show()
 
     assert not toolbar.scatter_actions.isVisible()
-    assert len(toolbar.selectedIsotopes()) == 0
 
     toolbar.setIsotopes(
         [
@@ -354,13 +341,8 @@ def test_spcal_toolbar(qtbot: QtBot):
         ]
     )
 
-    assert toolbar.combo_isotope.currentText() == "56Fe"
     assert toolbar.scatter_x.text() == "56Fe"
     assert toolbar.scatter_y.text() == "57Fe"
-    assert len(toolbar.selectedIsotopes()) == 1
-
-    with qtbot.waitSignal(toolbar.isotopeChanged, timeout=100):
-        toolbar.combo_isotope.setCurrentIsotope(ISOTOPE_TABLE[("Fe", 57)])
 
     # test retain current
     toolbar.setIsotopes(
@@ -370,11 +352,6 @@ def test_spcal_toolbar(qtbot: QtBot):
             ISOTOPE_TABLE[("Cu", 63)],
         ]
     )
-    assert toolbar.combo_isotope.currentText() == "57Fe"
-
-    with qtbot.waitSignal(toolbar.isotopeChanged, timeout=100):
-        toolbar.action_all_isotopes.trigger()
-    assert len(toolbar.selectedIsotopes()) == 3
 
     with qtbot.waitSignal(
         toolbar.keyChanged, check_params_cb=lambda k: k == "mass", timeout=100

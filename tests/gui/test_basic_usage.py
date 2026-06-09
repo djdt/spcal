@@ -109,7 +109,7 @@ def test_gui_single_quad_data(qtbot: QtBot, test_locales, test_data_path):
     )
     df.selected_isotopes = df.isotopes
 
-    with qtbot.waitSignal(win.resultsChanged, timeout=100):
+    with qtbot.waitSignal(win.files.dataFileAdded, timeout=100):
         win.files.addDataFile(df)
 
     _click_through_mainwindow(qtbot, win)
@@ -126,7 +126,7 @@ def test_gui_tof_data(qtbot: QtBot, test_locales, test_data_path):
     )
     df.selected_isotopes = df.isotopes[115:120]
 
-    with qtbot.waitSignal(win.resultsChanged, timeout=100):
+    with qtbot.waitSignal(win.files.dataFileAdded, timeout=100):
         win.files.addDataFile(df)
 
     _click_through_mainwindow(qtbot, win)
@@ -154,15 +154,15 @@ def test_gui_multi_result(qtbot: QtBot, test_locales, test_data_path):
 
     df = SPCalTextDataFile.load(
         test_data_path.joinpath("text/tofwerk_export_au.csv"),
-        isotope_table={SPCalIsotope.fromString("197Au"):"[197Au]+_(cts)"},
+        isotope_table={SPCalIsotope.fromString("197Au"): "[197Au]+_(cts)"},
         skip_rows=1,
         cps=True,
     )
     df.selected_isotopes = df.isotopes
     win.files.addDataFile(df)
 
-    assert win.outputs.view.results_model.rowCount() == 1
+    assert win.outputs.model.rowCount() == 1
 
     win.files.list.selectAll()
 
-    assert win.outputs.view.results_model.rowCount() == 3
+    assert win.outputs.model.rowCount() == 3
