@@ -318,7 +318,7 @@ def test_massfraction_delegate(qtbot: QtBot):
     table = QtWidgets.QTableWidget(1, 1)
     qtbot.addWidget(table)
 
-    table.setItem(0, 0, QtWidgets.QTableWidgetItem(""))
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem())
     table.setItemDelegate(MassFractionDelegate())
 
     with qtbot.waitExposed(table):
