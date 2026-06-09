@@ -1,3 +1,5 @@
+from typing import Callable
+from spcal.datafile import SPCalDataFile
 from pathlib import Path
 
 import numpy as np
@@ -347,9 +349,11 @@ def test_batch_wiard_image_export(
 
 
 def test_batch_wizard_files_page(
-    qtbot: QtBot, random_datafile_gen, test_data_path: Path
+    qtbot: QtBot,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+    test_data_path: Path,
 ):
-    df = random_datafile_gen()
+    df = random_datafile_generator()
 
     page = BatchFilesWizardPage(df)
     qtbot.addWidget(page)
@@ -441,12 +445,12 @@ def test_batch_wizard_method_page(qtbot: QtBot):
 
     model = page.isotope_table.isotope_model
     assert model.rowCount() == 2
-    assert model.data(model.index(0, 0)) == 0.001  # g/cm3
-    assert model.data(model.index(0, 1)) == 2e-9  # L/ug
-    assert model.data(model.index(0, 2)) == 1.0
-    assert model.data(model.index(1, 0)) is None
-    assert model.data(model.index(1, 1)) == 1e-9
-    assert model.data(model.index(1, 2)) == 0.5
+    assert model.data(model.index(0, 0)) == str(0.001)  # g/cm3
+    assert model.data(model.index(0, 1)) == str(2e-9)  # L/ug
+    assert model.data(model.index(0, 2)) == str(1.0)
+    assert model.data(model.index(1, 0), QtCore.Qt.ItemDataRole.EditRole) is None
+    assert model.data(model.index(1, 1)) == str(1e-9)
+    assert model.data(model.index(1, 2)) == str(0.5)
 
     assert page.expr_list.count() == 1
 
