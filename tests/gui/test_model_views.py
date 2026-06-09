@@ -311,6 +311,8 @@ def test_isotope_options_model(qtmodeltester: ModelTester):
     assert np.isclose(model.index(0, 4).data(BaseValueRole), 4.0)
     assert np.isclose(model.index(0, 5).data(BaseValueRole), 6.0)
 
+    qtmodeltester.check(model, force_py=True)
+
 
 def test_massfraction_delegate(qtbot: QtBot):
     table = QtWidgets.QTableWidget(1, 1)
