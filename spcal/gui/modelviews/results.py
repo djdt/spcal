@@ -254,7 +254,7 @@ class ResultOutputView(BasicTableView):
         self.currentRowChanged.emit(index.row())
 
     def selectedRows(self) -> list[int]:
-        return list(set(idx.row() for idx in self.selectedIndexes()))
+        return sorted(set(idx.row() for idx in self.selectedIndexes()))
 
     def setSelectedRows(self, rows: list[int]):
         selection = QtCore.QItemSelection()
@@ -274,7 +274,7 @@ class ResultOutputView(BasicTableView):
             self.selectedRowsChanged.emit(selected)
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
-        return list(
+        return sorted(
             set(
                 self.model().index(row, 0).data(IsotopeRole)
                 for row in self.selectedRows()
