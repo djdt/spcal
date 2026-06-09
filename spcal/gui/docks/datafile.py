@@ -67,6 +67,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.list.setModel(self.model)
         self.list.setItemDelegate(DataFileDelegate())
         self.list.selectionModel().selectionChanged.connect(self.onSelectionChanged)
+        self.list.selectionModel().currentChanged.connect(self.onCurrentChanged)
         self.setWidget(self.list)
 
     def activeDataFiles(self) -> list[SPCalDataFile]:

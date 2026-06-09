@@ -29,13 +29,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
     requestRemoveExpressions = QtCore.Signal(list)
 
     activeResultsChanged = QtCore.Signal(object)
+    currentResultChanged = QtCore.Signal(tuple)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("spcal-results-dock")
         self.setWindowTitle("Results")
 
-        self._previous_active = []
+        self._previous_active = {}
 
         self.model = ResultOutputModel()
 
@@ -47,6 +48,7 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.view.requestRemoveExpressions.connect(self.requestRemoveExpressions)
 
         self.view.selectedRowsChanged.connect(self.onSelectedRowsChanged)
+        self.view.currentRowChanged.connect(self.currentRowChanged)
 
         self.setWidget(self.view)
         self.updateOutputsForKey("signal")
@@ -87,6 +89,10 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         self.view.setSelectedRows(rows)
         if len(rows) > 0:
             self.view.setCurrentRow(rows[0])
+
+    def currentRowChanged(self, row: int):
+        current = self.model.results[row]
+        self.currentResultChanged.emit(current)
 
     def currentResult(
         self,
