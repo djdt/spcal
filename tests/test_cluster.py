@@ -1,3 +1,7 @@
+from spcal.isotope import ISOTOPE_TABLE
+from spcal.datafile import SPCalDataFile
+from typing import Callable
+from spcal.processing.method import SPCalProcessingMethod
 import numpy as np
 
 from spcal.cluster import (
@@ -37,7 +41,7 @@ def test_cluster_information():
     assert np.allclose(stds, [[0.08165, 0.04714], [0.05, 0.05], [0.0, 0.0]])
     assert np.all(counts == [3, 2, 1])
 
-    means, stds, counts = cluster_information(a, np.array([0, 1, 2, 2, 2, 3]))
+    _, _, counts = cluster_information(a, np.array([0, 1, 2, 2, 2, 3]))
     assert np.all(counts == [3, 1, 1])
 
 
@@ -58,9 +62,23 @@ def test_prepare_data_for_clustering():
     assert np.allclose(pd[:, 1], np.ones(5) / (np.arange(5) + 1))
 
 
-def test_preprare_results_for_clustering(random_result_generator, default_method):
-    a = random_result_generator(default_method)
-    b = random_result_generator(default_method)
+def test_preprare_results_for_clustering(
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
+    df = random_datafile_generator(
+        number=[
+            np.array([5, 10, 15, 20, 25, 40, 50, 60, 70, 75]),
+            np.array([5, 10, 15, 20, 25, 40, 50, 60, 70, 75]),
+        ],
+        isotopes=[ISOTOPE_TABLE[("Ag", 107)], ISOTOPE_TABLE[("Ag", 109)]],
+    )
+    results = default_method.processDataFile(
+        df,
+    )
+
+    a = results[list(results.keys())[0]]
+    b = results[list(results.keys())[1]]
 
     a.peak_indicies = np.array([0, 1, 2, 2, 5, 6, 8, 9, 10, 10])
     a.number_peak_indicies = 12

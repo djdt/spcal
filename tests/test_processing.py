@@ -1,3 +1,4 @@
+from typing import Callable
 from spcal.processing.options import SPCalIsotopeOptions
 import numpy as np
 from pathlib import Path
@@ -7,7 +8,7 @@ from spcal.limit import SPCalLimit
 from spcal import particle
 from spcal.processing import options
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile, SPCalDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 
@@ -33,9 +34,14 @@ def test_spcal_cluster_filter():
 
 
 def test_spcal_value_filter(
-    default_method: SPCalProcessingMethod, random_result_generator
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
-    result = random_result_generator(default_method)
+    df = random_datafile_generator()
+
+    results = default_method.processDataFile(df)
+    result = results[list(results.keys())[0]]
+
     result.peak_indicies = np.arange(result.number)
     filter = SPCalValueFilter(result.isotope, "signal", np.greater, 35.0)
 

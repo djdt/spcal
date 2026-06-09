@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from typing import Callable
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -196,14 +197,18 @@ def test_combo_header_view(qtbot: QtBot):
     assert model.headerData(1, QtCore.Qt.Orientation.Horizontal) == "B2"
 
 
-def test_datafile_model(qtmodeltester: ModelTester, random_datafile_gen: Callable):
-    model = DataFileModel([random_datafile_gen() for _ in range(5)])
+def test_datafile_model(
+    qtmodeltester: ModelTester, random_datafile_generator: Callable[..., SPCalDataFile]
+):
+    model = DataFileModel([random_datafile_generator() for _ in range(5)])
     qtmodeltester.check(model, force_py=True)
 
 
-def test_datafile_delegate(qtbot: QtBot, random_datafile_gen):
+def test_datafile_delegate(
+    qtbot: QtBot, random_datafile_generator: Callable[..., SPCalDataFile]
+):
     view = QtWidgets.QListView()
-    model = DataFileModel([random_datafile_gen() for _ in range(5)])
+    model = DataFileModel([random_datafile_generator() for _ in range(5)])
     qtbot.addWidget(view)
 
     view.setModel(model)
@@ -518,7 +523,9 @@ def test_search_columns_proxy_model(qtbot: QtBot):
     assert proxy.columnCount() == 3
 
 
-def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callable):
+def test_response_models(
+    qtmodeltester: ModelTester, random_datafile_generator: Callable[..., SPCalDataFile]
+):
     isotopes = [
         ISOTOPE_TABLE[("Fe", 56)],
         ISOTOPE_TABLE[("Cu", 63)],
@@ -526,7 +533,9 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
     ]
 
     concs = {
-        random_datafile_gen(isotopes=isotopes, size=10): {iso: 1.0 for iso in isotopes}
+        random_datafile_generator(isotopes=isotopes, size=10): {
+            iso: 1.0 for iso in isotopes
+        }
     }
 
     conc_model = ConcentrationModel()
@@ -542,7 +551,7 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
     qtmodeltester.check(conc_model)
 
-    intensities = {random_datafile_gen(isotopes=isotopes, size=10): {}}
+    intensities = {random_datafile_generator(isotopes=isotopes, size=10): {}}
 
     intensity_model = IntensityModel()
     intensity_model.beginResetModel()
@@ -564,29 +573,44 @@ def test_response_models(qtmodeltester: ModelTester, random_datafile_gen: Callab
 
 
 def test_results_output_view(
-    qtbot: QtBot, default_method: SPCalProcessingMethod, random_result_generator
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
     view = ResultOutputView()
+    model = ResultOutputModel()
     qtbot.addWidget(view)
+
+    view.setModel(model)
 
     default_method.instrument_options.uptake = 1.0
     default_method.instrument_options.efficiency = 0.1
 
-    results = [random_result_generator(default_method) for _ in range(5)]
+    df = random_datafile_generator(
+        isotopes=[
+            ISOTOPE_TABLE[("Mn", 55)],
+            ISOTOPE_TABLE[("Fe", 56)],
+            ISOTOPE_TABLE[("Fe", 57)],
+            ISOTOPE_TABLE[("Cu", 63)],
+            ISOTOPE_TABLE[("Zn", 66)],
+        ]
+    )
 
-    for result in results:
-        default_method.isotope_options[result.isotope] = SPCalIsotopeOptions(
-            1.0, 1.0, 1.0
-        )
+    results = default_method.processDataFile(df)
 
-    view.setResults(results)
+    for isotope, _ in results.items():
+        default_method.isotope_options[isotope] = SPCalIsotopeOptions(1.0, 1.0, 1.0)
+
+    model.beginResetModel()
+    model.results = [(df, iso, result) for iso, result in results.items()]
+    model.endResetModel()
 
     with qtbot.waitExposed(view):
         view.show()
 
-    assert view.results_model.rowCount() == 5
+    assert model.rowCount() == 5
 
-    with qtbot.waitSignal(view.isotopeSelected, timeout=100):
+    with qtbot.waitSignal(view.selectedRowsChanged, timeout=100):
         qtbot.mouseClick(
             view.verticalHeader().viewport(),
             QtCore.Qt.MouseButton.LeftButton,
@@ -597,9 +621,9 @@ def test_results_output_view(
             ),
         )
 
-    assert view.selectedIsotopes() == [results[1].isotope]
+    assert view.selectedIsotopes() == list(results.keys())[1:2]
 
-    with qtbot.waitSignal(view.isotopeSelected, timeout=100):
+    with qtbot.waitSignal(view.selectedRowsChanged, timeout=100):
         qtbot.mouseClick(
             view.verticalHeader().viewport(),
             QtCore.Qt.MouseButton.LeftButton,
@@ -611,7 +635,7 @@ def test_results_output_view(
             stateKey=QtCore.Qt.KeyboardModifier.ShiftModifier,
         )
 
-    assert view.selectedIsotopes() == [results[1].isotope, results[2].isotope]
+    assert view.selectedIsotopes() == list(results.keys())[1:3]
 
     with qtbot.waitSignal(
         view.requestAddExpression,
@@ -630,7 +654,7 @@ def test_results_output_view(
 def test_results_output_model(
     qtmodeltester: ModelTester,
     default_method: SPCalProcessingMethod,
-    random_result_generator,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
     model = ResultOutputModel()
 
@@ -640,16 +664,17 @@ def test_results_output_model(
         1.0, 1.0, 1.0
     )
 
-    results = [
-        random_result_generator(default_method, iso)
-        for iso in [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Fe", 57)]]
-    ]
+    df = random_datafile_generator(
+        isotopes=[ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Fe", 57)]]
+    )
+
+    results = default_method.processDataFile(df)
 
     assert model.rowCount() == 0
     assert model.columnCount() == 8
 
     model.beginResetModel()
-    model.results = results
+    model.results = [(df, iso, result) for iso, result in results.items()]
     model.endResetModel()
 
     assert model.rowCount() == 2
@@ -680,7 +705,7 @@ def test_results_output_model(
         ) == signal_units
 
     # signal results
-    for row, result in enumerate(results):
+    for row, result in enumerate(results.values()):
         assert model.data(model.index(row, 0), BaseValueRole) == result.number
         assert (
             model.data(model.index(row, 1), BaseValueRole)
@@ -704,12 +729,12 @@ def test_results_output_model(
 
         # test changing header works
         model.setData(model.index(0, 1), "#/L", CurrentUnitRole)
-        assert model.data(model.index(row, 1)) == result.number_concentration
+        assert model.data(model.index(row, 1)) == str(result.number_concentration)
 
         model.setData(model.index(0, 1), "#/ml", CurrentUnitRole)
         if result.number_concentration is not None:
-            assert (
-                model.data(model.index(row, 1)) == result.number_concentration / 1000.0
+            assert model.data(model.index(row, 1)) == str(
+                result.number_concentration / 1000.0
             )
         else:
             assert model.data(model.index(row, 1)) is None
@@ -740,7 +765,7 @@ def test_results_output_model(
         ) == mass_units
         assert model.data(model.index(1, i), BaseValueRole) is None
 
-    calib = results[0]
+    calib = list(results.values())[0]
 
     assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
     assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(
@@ -881,8 +906,8 @@ def test_value_widget_delegate(qtbot: QtBot):
 
     table.setRowCount(1)
     table.setColumnCount(2)
-    table.setItem(0, 0, QtWidgets.QTableWidgetItem(""))
-    table.setItem(0, 1, QtWidgets.QTableWidgetItem(""))
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem())
+    table.setItem(0, 1, QtWidgets.QTableWidgetItem())
     table.setItemDelegate(ValueWidgetDelegate())
 
     with qtbot.waitExposed(table):
