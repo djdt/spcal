@@ -126,7 +126,10 @@ class UnitsModel(QtCore.QAbstractTableModel):
             base = self.data(index, BaseValueRole)
             if base is not None:
                 base = float(base) / self.modifer(index)
-            return base
+            if role == QtCore.Qt.ItemDataRole.EditRole:
+                return base
+            else:
+                return str(base)
         elif role == ValueErrorRole:
             base = self.data(index, BaseValueErrorRole)
             if base is not None:

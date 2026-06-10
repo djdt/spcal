@@ -1,3 +1,4 @@
+from typing import Callable
 from pathlib import Path
 from PySide6 import QtGui
 import numpy as np
@@ -6,7 +7,7 @@ from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 
-from spcal.datafile import SPCalNuDataFile
+from spcal.datafile import SPCalNuDataFile, SPCalDataFile
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.items import BarChart, HoverableChartItem, PieChart
@@ -123,14 +124,20 @@ def test_graph_calibration(qtbot: QtBot):
     view.drawTrendline(xs, ys, weighting="1/x")
 
 
-def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
+def test_graph_particle(
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
     view = ParticleView()
     qtbot.addWidget(view)
 
     with qtbot.waitExposed(view):
         view.show()
 
-    result = random_result_generator(default_method, size=10000, number=100)
+    df = random_datafile_generator(size=10000, number=100)
+    result = default_method.processDataFile(df)[df.isotopes[0]]
+
     view.drawResult(result)
 
     assert view.plot.legend is not None
@@ -142,7 +149,6 @@ def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
     assert isinstance(item, ParticleItemSample)
     assert not item.sceneBoundingRect().intersects(label.sceneBoundingRect())
 
-    result = random_result_generator(default_method, size=1000, number=10)
     result.signals[:50] = np.nan
 
     # Test overlapping
@@ -164,17 +170,26 @@ def test_graph_particle(qtbot: QtBot, default_method, random_result_generator):
     view.clear()
 
 
-def test_graph_histogram(qtbot: QtBot, default_method, random_result_generator):
+def test_graph_histogram(
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
     view = HistogramView()
     qtbot.addWidget(view)
 
     with qtbot.waitExposed(view):
         view.show()
 
+    df = random_datafile_generator(
+        size=10000,
+        number=100,
+        isotopes=[ISOTOPE_TABLE["Fe", 56], ISOTOPE_TABLE["Fe", 57]],
+    )
+    results = default_method.processDataFile(df)
+
     # single
-    results = [random_result_generator(default_method, size=1000, number=100)]
-    # results[0].filter_indicies = np.arange(50)
-    view.drawResults(results)
+    view.drawResults([results[df.isotopes[0]]])
     view.repaint()
 
     assert view.plot.legend is not None
@@ -187,14 +202,13 @@ def test_graph_histogram(qtbot: QtBot, default_method, random_result_generator):
     view.clear()
 
     # multi
-    results.append(random_result_generator(default_method, size=1000, number=80))
-    view.drawResults(results, labels=["test1", "test2"])
+    view.drawResults(list(results.values()), labels=["test1", "test2"])
     view.repaint()
     view.clear()
 
     # filtered
     view.draw_filtered = False
-    view.drawResults(results, labels=["test1", "test2"])
+    view.drawResults(list(results.values()), labels=["test1", "test2"])
     view.repaint()
 
     assert len(view.data_for_export) == 4
@@ -204,18 +218,29 @@ def test_graph_histogram(qtbot: QtBot, default_method, random_result_generator):
     assert len(view.data_for_export) == 0
 
 
-def test_graph_composition(qtbot: QtBot, default_method, random_result_generator):
+def test_graph_composition(
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
     view = CompositionView()
     qtbot.addWidget(view)
 
     with qtbot.waitExposed(view):
         view.show()
 
-    results = [
-        random_result_generator(default_method, size=1000, number=100),
-        random_result_generator(default_method, size=1000, number=100),
-        random_result_generator(default_method, size=1000, number=100),
-    ]
+    positions = np.array([10, 50, 100, 200, 500, 550, 600, 670, 800, 900])
+    df = random_datafile_generator(
+        size=1000,
+        number=[positions, positions, positions],
+        isotopes=[
+            ISOTOPE_TABLE["Fe", 54],
+            ISOTOPE_TABLE["Fe", 56],
+            ISOTOPE_TABLE["Fe", 57],
+        ],
+    )
+    results = list(default_method.processDataFile(df).values())
+
     results[0].peak_indicies = np.arange(100)
     results[1].peak_indicies = np.repeat(np.arange(50), 2)
     results[2].peak_indicies = np.repeat(np.arange(25), 4)
@@ -260,7 +285,9 @@ def test_graph_composition(qtbot: QtBot, default_method, random_result_generator
 
 
 def test_graph_scatter(
-    qtbot: QtBot, default_method: SPCalProcessingMethod, random_result_generator
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
     view = ScatterView()
     qtbot.addWidget(view)
@@ -274,17 +301,17 @@ def test_graph_scatter(
     with qtbot.waitExposed(view):
         view.show()
 
-    results = [
-        random_result_generator(
-            default_method, size=1000, number=100, isotope=ISOTOPE_TABLE[("Au", 197)]
-        ),
-        random_result_generator(
-            default_method, size=1000, number=100, isotope=ISOTOPE_TABLE[("Ag", 107)]
-        ),
-        random_result_generator(
-            default_method, size=1000, number=100, isotope=ISOTOPE_TABLE[("Ag", 109)]
-        ),
-    ]
+    df = random_datafile_generator(
+        size=1000,
+        number=100,
+        isotopes=[
+            ISOTOPE_TABLE["Au", 197],
+            ISOTOPE_TABLE["Ag", 107],
+            ISOTOPE_TABLE["Ag", 109],
+        ],
+    )
+    results = list(default_method.processDataFile(df).values())
+
     results[0].peak_indicies = np.arange(100)
     results[1].peak_indicies = np.repeat(np.arange(50), 2)
     results[2].peak_indicies = np.repeat(np.arange(25), 4)

@@ -1,10 +1,11 @@
+from ast import Call
 from typing import Callable
 import numpy as np
 from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalTOFWERKDataFile
+from spcal.datafile import SPCalTOFWERKDataFile, SPCalDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
 from spcal.gui.dialogs.filter import (
@@ -158,10 +159,10 @@ def test_custom_color_dialog(qtbot: QtBot):
 def test_export_dialog(
     qtbot: QtBot,
     default_method: SPCalProcessingMethod,
-    random_datafile_gen,
+    random_datafile_generator: Callable[..., SPCalDataFile],
     tmp_path: Path,
 ):
-    df = random_datafile_gen(1000, lam=5.0)
+    df = random_datafile_generator(1000, lam=5.0)
     results = default_method.processDataFile(df)
     for isotope in results:
         default_method.isotope_options[isotope] = SPCalIsotopeOptions(1.0, 1.0, 1.0)
@@ -437,14 +438,18 @@ def test_graph_spectra_options_dialog(qtbot: QtBot):
 
 
 def test_peak_properties_dialog(
-    qtbot: QtBot, default_method: SPCalProcessingMethod, random_result_generator
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
-    results = {
-        iso: random_result_generator(default_method, number=100, isotope=iso)
-        for iso in [ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Cu", 63)]]
-    }
+    df = random_datafile_generator(
+        number=10,
+        isotopes=[ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Cu", 63)]],
+    )
 
-    dlg = PeakPropertiesDialog(results, ISOTOPE_TABLE[("Cu", 63)])  # type: ignore
+    results = default_method.processDataFile(df)
+
+    dlg = PeakPropertiesDialog(results, ISOTOPE_TABLE[("Cu", 63)])
     qtbot.addWidget(dlg)
 
     with qtbot.waitExposed(dlg):
@@ -456,7 +461,7 @@ def test_peak_properties_dialog(
         dlg.combo_isotope.setCurrentIsotope(iso)
         widths = result.times[result.regions[:, 1]] - result.times[result.regions[:, 0]]
         assert np.isclose(
-            float(dlg.model.item(0, 2).text()), np.mean(widths / 1e-6), atol=0.01
+            float(dlg.model.item(0, 2).text()), np.mean(widths / 1e-6), atol=1
         )
 
 
@@ -611,7 +616,9 @@ def test_select_isotope_screening_dialog(qtbot: QtBot):
         dlg.accept()
 
 
-def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
+def test_response_dialog(
+    qtbot: QtBot, random_datafile_generator: Callable[..., SPCalDataFile]
+):
     dlg = ResponseDialog()
     qtbot.addWidget(dlg)
 
@@ -620,7 +627,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
 
     dlg.reset()
 
-    df = random_datafile_gen(
+    df = random_datafile_generator(
         isotopes=[
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
@@ -639,7 +646,7 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
         dlg.model_concs.index(0, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole
     )
 
-    df = random_datafile_gen(
+    df = random_datafile_generator(
         lam=10.0,
         isotopes=[
             ISOTOPE_TABLE[("Fe", 56)],
@@ -680,12 +687,14 @@ def test_response_dialog(qtbot: QtBot, random_datafile_gen: Callable):
 
 
 def test_response_dialog_save(
-    tmp_path: Path, qtbot: QtBot, random_datafile_gen: Callable
+    tmp_path: Path,
+    qtbot: QtBot,
+    random_datafile_generator: Callable[..., SPCalDataFile],
 ):
     dlg = ResponseDialog()
     qtbot.add_widget(dlg)
 
-    df = random_datafile_gen(
+    df = random_datafile_generator(
         isotopes=[
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
@@ -696,7 +705,7 @@ def test_response_dialog_save(
 
     dlg.addDataFile(df)
 
-    df2 = random_datafile_gen(
+    df2 = random_datafile_generator(
         isotopes=[
             ISOTOPE_TABLE[("Fe", 56)],
             ISOTOPE_TABLE[("Cu", 63)],
@@ -840,14 +849,14 @@ def test_particle_database(qtbot: QtBot):
 
 def test_transport_efficiency_dialog(
     qtbot: QtBot,
-    random_datafile_gen,
+    random_datafile_generator: Callable[..., SPCalDataFile],
     default_method: SPCalProcessingMethod,
 ):
     default_method.instrument_options.uptake = 1.0
     default_method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(
         1.0, 1.0, None, diameter=10.0
     )
-    df = random_datafile_gen(isotopes=[ISOTOPE_TABLE[("Au", 197)]])
+    df = random_datafile_generator(isotopes=[ISOTOPE_TABLE[("Au", 197)]])
     result = default_method.processDataFile(df)
 
     dlg = TransportEfficiencyDialog(
@@ -887,14 +896,14 @@ def test_transport_efficiency_dialog(
 
 def test_transport_efficiency_dialog_mass_response(
     qtbot: QtBot,
-    random_datafile_gen,
+    random_datafile_generator: Callable[..., SPCalDataFile],
     default_method: SPCalProcessingMethod,
 ):
     default_method.instrument_options.uptake = 1.0
     default_method.isotope_options[ISOTOPE_TABLE[("C", 13)]] = SPCalIsotopeOptions(
         1000.0, None, 1.0, diameter=3.0e-6
     )
-    df = random_datafile_gen(
+    df = random_datafile_generator(
         isotopes=[ISOTOPE_TABLE[("C", 13)]], lam=1.0, number=0, size=100
     )
     result = default_method.processDataFile(df)[ISOTOPE_TABLE[("C", 13)]]

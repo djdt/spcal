@@ -36,11 +36,11 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         ]:
             assert isinstance(event, QtGui.QMouseEvent)
             style = (
-                option.widget.style()  # type: ignore
-                if option.widget is not None  # type: ignore
+                option.widget.style()
+                if option.widget is not None
                 else QtWidgets.QApplication.style()
             )
-            frame: QtCore.QRect = option.rect.adjusted(  # type: ignore
+            frame: QtCore.QRect = option.rect.adjusted(
                 self.margin, self.margin, -self.margin, -self.margin
             )
             pixmap = self.close_icon.pixmap(
@@ -70,13 +70,11 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         option: QtWidgets.QStyleOptionViewItem,
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ) -> QtCore.QSize:
-        #
-        return QtCore.QSize(200, 60)
-        style = QtWidgets.QApplication.style()
+        if not index.isValid():
+            return QtCore.QSize(200, 10)
 
-        return style.sizeFromContents(
-            style.ContentsType.CT_ItemViewItem, option, QtCore.QSize()
-        )
+        fm = QtGui.QFontMetrics(option.font)
+        return QtCore.QSize(200, fm.height() * 3)
 
     def drawElidedText(
         self,
@@ -89,7 +87,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         bold: bool = False,
     ) -> QtCore.QRect:
         elide = QtCore.Qt.TextElideMode.ElideRight
-        enabled = bool(option.state & style.StateFlag.State_Enabled)  # type: ignore
+        enabled = bool(option.state & style.StateFlag.State_Enabled)
         if alignment & QtCore.Qt.AlignmentFlag.AlignRight:
             elide = QtCore.Qt.TextElideMode.ElideLeft
 
@@ -103,7 +101,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         text_rect = style.itemTextRect(
             painter.fontMetrics(), rect, alignment, enabled, text
         )
-        style.drawItemText(painter, text_rect, alignment, option.palette, enabled, text)  # type: ignore
+        style.drawItemText(painter, text_rect, alignment, option.palette, enabled, text)
         painter.restore()
         return text_rect
 
@@ -123,16 +121,16 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             event_time_unit = "µs"
 
         # get the style for drawing
-        if option.widget is None:  # type: ignore , in QStyleOption
+        if option.widget is None:
             style = QtWidgets.QApplication.style()
         else:
-            style = option.widget.style()  # type: ignore , in QStyleOption
+            style = option.widget.style()
 
         # draw the basic item view
         style.drawControl(style.ControlElement.CE_ItemViewItem, option, painter)
 
         # frame for further drawing
-        frame = QtCore.QRect(option.rect)  # type: ignore , in QStyleOption
+        frame = QtCore.QRect(option.rect)
         frame.adjust(self.margin, self.margin, -self.margin, -self.margin)
 
         # draw the close button
@@ -142,7 +140,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         )
         close_pixmap = self.close_icon.pixmap(pixmap_size, QtGui.QIcon.Mode.Disabled)
         close_rect = style.itemPixmapRect(frame, self.close_align, close_pixmap)
-        if close_rect.contains(option.widget.mapFromGlobal(QtGui.QCursor.pos())):  # type: ignore
+        if close_rect.contains(option.widget.mapFromGlobal(QtGui.QCursor.pos())):
             close_pixmap = self.close_icon.pixmap(pixmap_size, QtGui.QIcon.Mode.Active)
         style.drawItemPixmap(painter, close_rect, self.close_align, close_pixmap)
 
@@ -150,7 +148,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
         if len(data_file.isotopes) > 1:
             menu_pixmap = self.menu_icon.pixmap(pixmap_size, QtGui.QIcon.Mode.Normal)
             menu_rect = style.itemPixmapRect(frame, self.menu_align, menu_pixmap)
-            if menu_rect.contains(option.widget.mapFromGlobal(QtGui.QCursor.pos())):  # type: ignore
+            if menu_rect.contains(option.widget.mapFromGlobal(QtGui.QCursor.pos())):
                 menu_pixmap = self.menu_icon.pixmap(
                     pixmap_size, QtGui.QIcon.Mode.Selected
                 )
@@ -212,7 +210,7 @@ class DataFileModel(QtCore.QAbstractListModel):
         self.beginRemoveRows(parent, row, row + count)
         if row < 0 or row + count > self.rowCount():
             return False
-        for i in range(row, row + count):
+        for _ in range(row, row + count):
             df = self.data_files.pop(row)
             del df
         self.endRemoveRows()
@@ -223,6 +221,8 @@ class DataFileModel(QtCore.QAbstractListModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.data_files)
 
     def data(

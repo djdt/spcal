@@ -1,3 +1,4 @@
+from spcal.gui.modelviews.options import IsotopeOptionModel
 import json
 import datetime
 import logging
@@ -312,7 +313,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         else:
             raise ValueError("unknown format")
 
-    pathsProp = QtCore.Property(list, paths, setPaths, notify=pathsChanged)  # type: ignore
+    pathsProp = QtCore.Property(list, paths, setPaths, notify=pathsChanged)
 
 
 class BatchMethodWizardPage(QtWidgets.QWizardPage):
@@ -338,8 +339,10 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
             method.processing_options
         )
 
+        self.isotope_model = IsotopeOptionModel()
+        self.isotope_model.isotope_options = method.isotope_options
         self.isotope_table = IsotopeOptionTable()
-        self.isotope_table.isotope_model.isotope_options = method.isotope_options
+        self.isotope_table.setModel(self.isotope_model)
 
         self.expr_list = CalculatorExprList()
         for expr in method.expressions:
@@ -393,7 +396,7 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         self.registerField("method", self, "methodProp")
 
     def dialogCalculator(self):
-        isotopes = list(self.isotope_table.isotope_model.isotope_options.keys())
+        isotopes = list(self.isotope_model.isotope_options.keys())
         dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)
         dlg.expressionsChanged.connect(self.setExpressions)
         dlg.open()
@@ -413,20 +416,20 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         else:
             raise ValueError("has not visited any format pages")
 
-        current = self.isotope_table.isotope_model.isotope_options
+        current = self.isotope_model.isotope_options
 
-        self.isotope_table.isotope_model.beginResetModel()
-        self.isotope_table.isotope_model.isotope_options = {
+        self.isotope_model.beginResetModel()
+        self.isotope_model.isotope_options = {
             isotope: current.get(isotope, SPCalIsotopeOptions(None, None, None))
             for isotope in isotopes
         }
-        self.isotope_table.isotope_model.endResetModel()
+        self.isotope_model.endResetModel()
 
     def getMethod(self) -> SPCalProcessingMethod:
         method = SPCalProcessingMethod(
             instrument_options=self.instrument_options.instrumentOptions(),
             limit_options=self.limit_options.limitOptions(),
-            isotope_options=self.isotope_table.isotope_model.isotope_options,
+            isotope_options=self.isotope_model.isotope_options,
             processing_options=self.processing_options.processingOptions(),
         )
         method.expressions = self.expr_list.expressions()

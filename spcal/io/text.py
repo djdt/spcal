@@ -113,7 +113,7 @@ def read_single_particle_file(
         data, structred array
     """
     with Path(path).open("r") as fp:
-        for i in range(skip_rows - 1):
+        for _ in range(skip_rows - 1):
             fp.readline()
 
         header = fp.readline().strip().split(delimiter)
@@ -130,10 +130,10 @@ def read_single_particle_file(
         fp.seek(data_start_pos)
         gen = replace_comma_decimal(fp, len(usecols), delimiter)
 
-        # todo: protential speed-up by trying loadtxt
+        # TODO: protential speed-up by trying loadtxt
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", category=ConversionWarning)
-            data = np.genfromtxt(
+            data = np.genfromtxt(  # ty: ignore[no-matching-overload]
                 gen,
                 delimiter=delimiter,
                 converters=converters,

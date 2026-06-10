@@ -1,3 +1,4 @@
+from spcal.datafile import SPCalDataFile
 from typing import Any
 
 import bottleneck as bn
@@ -9,6 +10,7 @@ from spcal.gui.modelviews import (
     BaseValueErrorRole,
     BaseValueRole,
     IsotopeRole,
+    DataFileRole,
 )
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
@@ -66,7 +68,10 @@ class ResultOutputModel(UnitsModel):
 
         self.key = "signal"
 
-        self.results: list[SPCalProcessingResult] = []
+        self.multiple_datafiles = False
+        self.results: list[
+            tuple[SPCalDataFile, SPCalIsotopeBase, SPCalProcessingResult]
+        ] = []
 
     def rowCount(
         self,
@@ -100,22 +105,22 @@ class ResultOutputModel(UnitsModel):
         orientation: QtCore.Qt.Orientation,
         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Any:
+        if section < 0:
+            return
         if orientation == QtCore.Qt.Orientation.Vertical:
+            data_file, isotope, _ = self.results[section]
             if role in [
                 QtCore.Qt.ItemDataRole.DisplayRole,
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
-                if all(
-                    self.results[0].data_file_path == result.data_file_path
-                    for result in self.results[1:]
-                ):
-                    result = self.results[section]
-                    return f"{result.isotope}"
+                if self.multiple_datafiles:
+                    return f"{data_file.path.stem} : {isotope}"
                 else:
-                    result = self.results[section]
-                    return f"{result.data_file_path.stem} : {result.isotope}"
+                    return f"{isotope}"
+            elif role == DataFileRole:
+                return data_file
             elif role == IsotopeRole:
-                return self.results[section].isotope
+                return isotope
         return super().headerData(section, orientation, role)
 
     def data(
@@ -127,9 +132,11 @@ class ResultOutputModel(UnitsModel):
             return None
 
         name = ResultOutputModel.COLUMN_LABELS[index.column()]
-        result = self.results[index.row()]
+        data_file, isotope, result = self.results[index.row()]
         if role == IsotopeRole:
-            return result.isotope
+            return isotope
+        elif role == DataFileRole:
+            return data_file
         elif role == BaseValueRole:
             if name == "Number":
                 return result.number
@@ -177,7 +184,9 @@ class ResultOutputModel(UnitsModel):
 
 
 class ResultOutputView(BasicTableView):
-    isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+    currentRowChanged = QtCore.Signal(SPCalIsotopeBase)
+    selectedRowsChanged = QtCore.Signal(list)
+
     requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
     requestRemoveIsotopes = QtCore.Signal(list)
     requestRemoveExpressions = QtCore.Signal(list)
@@ -185,17 +194,16 @@ class ResultOutputView(BasicTableView):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.results_model = ResultOutputModel()
+
+        self._previous_rows = []
 
         self.header = UnitsHeaderView(QtCore.Qt.Orientation.Horizontal)
         self.header.setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.ResizeToContents
         )
 
-        self.setModel(self.results_model)
         self.setHorizontalHeader(self.header)
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
-        self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
         self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
@@ -222,24 +230,70 @@ class ResultOutputView(BasicTableView):
             self.removeSelectedExpressions,
         )
 
-    def results(self) -> list[SPCalProcessingResult]:
-        return self.results_model.results
+    def setModel(self, model: QtCore.QAbstractItemModel | None):
+        if not isinstance(model, ResultOutputModel):
+            raise ValueError("ResultOutputView requires a ResultOutputModel")
+        super().setModel(model)
+        # hook up signals
+        self.selectionModel().currentChanged.connect(self.onCurrentChanged)
+        self.selectionModel().selectionChanged.connect(self.onSelectionChanged)
 
-    def setResults(self, results: list[SPCalProcessingResult]):
-        self.results_model.beginResetModel()
-        self.results_model.results = results
-        self.results_model.endResetModel()
+    def currentRow(self) -> int | None:
+        current = self.currentIndex()
+        if current.isValid():
+            return current.row()
+        return None
 
-    def onHeaderClicked(self, section: int):
-        isotope = self.results_model.data(
-            self.results_model.index(section, 0), IsotopeRole
+    def setCurrentRow(self, row: int):
+        self.selectionModel().setCurrentIndex(
+            self.model().index(row, 0),
+            QtCore.QItemSelectionModel.SelectionFlag.Current,
         )
-        self.isotopeSelected.emit(isotope)
+
+    def onCurrentChanged(self, index: QtCore.QModelIndex):
+        self.currentRowChanged.emit(index.row())
+
+    def selectedRows(self) -> list[int]:
+        return sorted(set(idx.row() for idx in self.selectedIndexes()))
+
+    def setSelectedRows(self, rows: list[int]):
+        selection = QtCore.QItemSelection()
+        for row in rows:
+            index = self.model().index(row, 0)
+            selection.select(index, index)
+        self.selectionModel().select(  # TODO: could be improved to retain selected columns
+            selection,
+            QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect
+            | QtCore.QItemSelectionModel.SelectionFlag.Rows,
+        )
+
+    def onSelectionChanged(self):
+        selected = self.selectedRows()
+        if selected != self._previous_rows:
+            self._previous_rows = selected
+            self.selectedRowsChanged.emit(selected)
+
+    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
+        return sorted(
+            set(
+                self.model().index(row, 0).data(IsotopeRole)
+                for row in self.selectedRows()
+            )
+        )
+
+    def setSelectedIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+        rows = []
+        for row in range(self.model().rowCount()):
+            if self.model().index(row, 0).data(IsotopeRole) in isotopes:
+                rows.append(row)
+        self.setSelectedRows(rows)
+        if len(rows) > 0:
+            self.setCurrentRow(rows[0])
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
-        selected = self.selectedIsotopes()
+        selected = self.selectedRows()
         menu.addSeparator()
         if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
             menu.addAction(self.action_sum)
@@ -248,14 +302,6 @@ class ResultOutputView(BasicTableView):
         if any(isinstance(iso, SPCalIsotope) for iso in selected):
             menu.addAction(self.action_remove_isotopes)
         menu.popup(event.globalPos())
-
-    def selectedIsotopes(self):
-        selected_isotopes = []
-        for idx in self.selectedIndexes():
-            isotope = idx.data(IsotopeRole)
-            if isotope not in selected_isotopes:
-                selected_isotopes.append(isotope)
-        return selected_isotopes
 
     def sumSelectedIsotopes(self):
         selected_isotopes = [

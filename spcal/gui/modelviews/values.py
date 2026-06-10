@@ -69,15 +69,21 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         super().initStyleOption(option, index)
+
+        value = index.data(QtCore.Qt.ItemDataRole.EditRole)
+        if value is None:
+            option.text = ""
+        else:
+            option.text = option.locale.toString(float(value), "g", self.sigfigs)
         # Align text to the right
-        option.displayAlignment = (  # type: ignore , works
+        option.displayAlignment = (
             QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
         )
         # Draw the error if set
         error = index.data(ValueErrorRole)
         if error is not None:
-            option.text = (  # type: ignore
-                option.text  # type: ignore
+            option.text = (
+                option.text
                 + " ± "
-                + option.locale.toString(float(error), "g", self.sigfigs)  # type: ignore
+                + option.locale.toString(float(error), "g", self.sigfigs)
             )

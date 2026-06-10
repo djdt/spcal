@@ -61,6 +61,8 @@ class IsotopeOptionModel(UnitsModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(self.isotope_options)
 
     def columnCount(
@@ -68,11 +70,15 @@ class IsotopeOptionModel(UnitsModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> int:
+        if parent.isValid():
+            return 0
         return len(IsotopeOptionModel.COLUMN_LABELS)
 
     def flags(
         self, index: QtCore.QModelIndex | QtCore.QPersistentModelIndex
     ) -> QtCore.Qt.ItemFlag:
+        if not index.isValid():
+            return QtCore.Qt.ItemFlag()
         flags = super().flags(index)
         if IsotopeOptionModel.COLUMN_LABELS[index.column()] != "Mass Response":
             flags ^= QtCore.Qt.ItemFlag.ItemIsEditable
@@ -166,5 +172,4 @@ class IsotopeOptionModel(UnitsModel):
             self.dataChanged.emit(index, index, [role])
             return True
         else:
-            self.dataChanged.emit(index, index, [role])
             return super().setData(index, value, role)

@@ -196,7 +196,7 @@ def test_import_dialog_nu_screening(
     dlg.screening_method = default_method
     dlg.screenDataFile(100, 1000, True)
 
-    # todo: get some better test data
+    # TODO: get some better test data
     assert dlg.table.selectedIsotopes() == []
 
 
