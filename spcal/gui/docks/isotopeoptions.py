@@ -149,6 +149,15 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.table.isotope_model.isotope_options
 
+    def addIsotopes(self, isotopes: list[SPCalIsotopeBase]):
+        self.table.isotope_model.beginResetModel()
+        for isotope in isotopes:
+            if isotope not in self.table.isotope_model.isotope_options:
+                self.table.isotope_model.isotope_options[isotope] = SPCalIsotopeOptions(
+                    None, None, None
+                )
+        self.table.isotope_model.endResetModel()
+
     def isotopes(self) -> list[SPCalIsotopeBase]:
         return list(self.table.isotope_model.isotope_options.keys())
 
@@ -156,7 +165,8 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         self.table.isotope_model.dataChanged.disconnect(self.onDataChanged)
         self.table.isotope_model.beginResetModel()
         self.table.isotope_model.isotope_options = {
-            isotope: SPCalIsotopeOptions(None, None, None) for isotope in isotopes
+            isotope: SPCalIsotopeOptions(None, None, None)
+            for isotope in sorted(isotopes)
         }
         self.table.isotope_model.endResetModel()
         self.table.isotope_model.dataChanged.connect(self.onDataChanged)

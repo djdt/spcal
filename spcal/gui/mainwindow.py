@@ -653,23 +653,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 for expr in method.expressions
                 if expr.validForIsotopes(file.isotopes)
             ]
-            isotopes = sorted(file.selected_isotopes + exprs)
-
-            method_changed = False
-            self.isotope_options.blockSignals(True)
-            self.isotope_options.setIsotopes(isotopes)
-            for isotope in file.selected_isotopes:
-                if isotope not in method.isotope_options:
-                    method.isotope_options[isotope] = SPCalIsotopeOptions(
-                        None, None, None
-                    )
-                    method_changed = True
-                self.isotope_options.setIsotopeOption(
-                    isotope, method.isotope_options[isotope]
-                )
-            self.isotope_options.blockSignals(False)
-            if method_changed:
-                self.currentMethodChanged.emit(method)
+            isotopes = file.selected_isotopes + exprs
 
             # Reprocess if new isotopes exist
             if file not in self.processing_results or any(
@@ -683,6 +667,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 for iso in remove_isotopes:
                     self.processing_results[file].pop(iso)
 
+        self.updateIsotopes()
         self.reprocess(reprocess_files)
         self.redraw()
 
@@ -693,16 +678,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess()
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
-        data_file = self.files.currentDataFile()
-        if data_file is None:
-            return
         method = self.currentMethod()
-
         option = self.isotope_options.optionForIsotope(isotope)
-        method.isotope_options[isotope] = option
 
-        self.currentMethodChanged.emit(method)
-        self.reprocess(isotopes=[isotope])
+        if method.isotope_options[isotope] != option:
+            method.isotope_options[isotope] = option
+            self.currentMethodChanged.emit(method)
+            self.reprocess(isotopes=[isotope])
 
     def onKeyChanged(self, key: str):
         self.outputs.updateOutputsForKey(key)
@@ -714,6 +696,26 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method.limit_options = self.limit_options.limitOptions()
         self.currentMethodChanged.emit(method)
         self.reprocess()
+
+    def updateIsotopes(self):
+        method = self.currentMethod()
+        all_isotopes = set(method.expressions)
+        for file in self.files.dataFiles():
+            all_isotopes = all_isotopes.union(file.selected_isotopes)
+
+        self.isotope_options.setIsotopes(list(all_isotopes))
+        for isotope in sorted(all_isotopes):
+            if isotope not in method.isotope_options:
+                method.isotope_options[isotope] = SPCalIsotopeOptions(None, None, None)
+            self.isotope_options.setIsotopeOption(
+                isotope, method.isotope_options[isotope]
+            )
+        remove = []
+        for isotope in method.isotope_options.keys():
+            if isotope not in all_isotopes:
+                remove.append(isotope)
+        for isotope in remove:
+            method.isotope_options.pop(isotope)
 
     def updateOutputs(self):
         previous = self.outputs.activeResults()
