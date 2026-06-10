@@ -66,7 +66,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         rows = self.view.selectedRows()
         if len(rows) == 0:
             current = self.view.currentRow()
-            rows = [current] if current is not None else []
+            if current is None:
+                if self.model.rowCount() > 0:
+                    self.view.setCurrentRow(0)
+                    rows = [0]
+                else:
+                    rows = []
+            else:
+                rows = [current]
 
         results = {}
         for row in rows:
@@ -122,6 +129,8 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             for df in results
             for isotope, result in results[df].items()
         ]
+        flattened.sort(key=lambda x: (x[0].path.stem, x[1]))
+
         self.model.beginResetModel()
         self.model.results = flattened
         if len(results) > 1:

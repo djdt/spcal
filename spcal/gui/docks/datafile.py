@@ -74,7 +74,13 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         files = self.selectedDataFiles()
         if len(files) == 0:
             current = self.currentDataFile()
-            return [current] if current is not None else []
+            if current is None:
+                if self.model.rowCount() > 0:
+                    index = self.model.index(0, 0)
+                    self.list.setCurrentIndex(index)
+                    return [index.data(DataFileRole)]
+                return []
+            return [current]
         return files
 
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
