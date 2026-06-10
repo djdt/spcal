@@ -877,7 +877,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     results.append(result)
                     colors.append(self.colorForIsotope(isotope, data_file))
                     name = str(isotope)
-                    if len(results) > 2:
+                    if len(active) > 2:
                         name = data_file.path.stem + " - " + name
                     names.append(name)
 
