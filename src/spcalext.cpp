@@ -1,19 +1,13 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include <algorithm>
-#include <cmath>
-#include <execution>
-#include <numeric>
-#include <ranges>
-#include <vector>
-
 namespace py = pybind11;
 
 void init_clustering(py::module_ &mod);
 void init_extraction(py::module_ &mod);
 void init_dists(py::module_ &mod);
 void init_detection(py::module_ &mod);
+void init_spectra(py::module_ &mod);
 
 PYBIND11_MODULE(spcalext, mod) {
   mod.doc() = "C++/pybind11 extension module for SPCal.";
@@ -32,4 +26,7 @@ PYBIND11_MODULE(spcalext, mod) {
 
   auto mod_dists = mod.def_submodule("dists", "poisson distribution extension");
   init_dists(mod_dists);
+
+  auto mod_spectra = mod.def_submodule("spectra", "extraction of spectra");
+  init_spectra(mod_spectra);
 }

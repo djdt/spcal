@@ -23,6 +23,8 @@ from spcal.isotope import (
 )
 from spcal.pratt import Reducer, ReducerException
 
+from spcal.lib.spcalext import spectra as ext
+
 logger = logging.getLogger(__name__)
 
 
@@ -161,10 +163,7 @@ class SPCalDataFile(object):
         Returns:
             array of spectra shape (N, masses)
         """
-        spectra = np.zeros((regions.shape[0], self.signals.shape[1]), dtype=np.float32)
-
-        for i, region in enumerate(regions):
-            spectra[i] = bn.nanmean(self.signals[region[0] : region[1]], axis=0)
+        spectra = ext.spectra(self.signals, regions)
         return spectra
 
     def information(self) -> dict[str, dict[str, str]]:
