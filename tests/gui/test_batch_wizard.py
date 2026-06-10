@@ -91,7 +91,7 @@ def test_batch_wizard_text(
     assert isinstance(page, BatchMethodWizardPage)
 
     assert page.isComplete()
-    assert page.isotope_table.isotope_model.rowCount() == 1
+    assert page.isotope_model.rowCount() == 1
 
     wiz.next()
 
@@ -443,7 +443,7 @@ def test_batch_wizard_method_page(qtbot: QtBot):
     assert not page.limit_options.compound.lognormal_sigma.isEnabled()
     assert page.limit_options.compound.lognormal_sigma.value() == 0.7
 
-    model = page.isotope_table.isotope_model
+    model = page.isotope_model
     assert model.rowCount() == 2
     assert model.data(model.index(0, 0)) == str(0.001)  # g/cm3
     assert model.data(model.index(0, 1)) == str(2e-9)  # L/ug

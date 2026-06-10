@@ -267,10 +267,10 @@ def test_spcal_outputs_dock(
 
     dock.setResults(results)
     assert dock.model.rowCount() == 3
-    assert sum(len(results) for results in dock.activeResults().values()) == 0
+    assert sum(len(results) for results in dock.activeResults().values()) == 1
 
     with qtbot.waitSignal(dock.currentResultChanged, timeout=100):
-        dock.view.setCurrentRow(0)
+        dock.view.setCurrentRow(1)
 
     assert sum(len(results) for results in dock.activeResults().values()) == 1
 
