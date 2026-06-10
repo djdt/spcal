@@ -448,14 +448,12 @@ class SPCalNuDataFile(SPCalDataFile):
         }
 
         bad_run_info_keys = ["IntegrationRegions"]
-        bad_run_info_keys = []
 
         info["RunInfo"] = {
             key: str(val)
             for key, val in self.info.items()
             if key not in bad_run_info_keys
         }
-        # info["RunInfo"]["IntegrationRegions"]
 
         return info
 
