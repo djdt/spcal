@@ -1,11 +1,7 @@
-#include <iostream>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
 #include <tbb/tbb.h>
-
-#include <cmath>
-#include <vector>
 
 namespace py = pybind11;
 
@@ -181,7 +177,6 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
     double max_prom = prom(i);
     // find overlaps and max prominence
     py::ssize_t j = i + 1;
-    py::ssize_t k = i;
     while ((j < lbuf.shape[0]) && ((lefts(j) < rights(j - 1)))) {
       max_prom = std::max(max_prom, prom(j++));
     }
