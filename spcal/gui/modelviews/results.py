@@ -148,8 +148,11 @@ class ResultOutputModel(UnitsModel):
             elif name == "Ionic Background":
                 return result.ionic_background
             else:  # other column
-                if not result.canCalibrate(self.key) or result.number == 0:
+                if not result.canCalibrate(self.key):
                     return None
+                if name in ["Mean", "Median", "Mode"] and result.number == 0:
+                    return 0
+
                 if name == "Background":
                     return result.calibrateTo(result.background, self.key)
                 elif name == "LOD":
@@ -166,12 +169,12 @@ class ResultOutputModel(UnitsModel):
         elif role == BaseValueErrorRole:
             if name == "Number":
                 return result.number_error if result.number_error > 0.0 else None
-            elif name in ["Background", "Mean"]:
-                if not result.canCalibrate(self.key) or result.number == 0:
+            else:
+                if not result.canCalibrate(self.key):
                     return None
                 if name == "Background":
                     return result.calibrateTo(float(result.background_error), self.key)
-                else:
+                elif name == "Mean" and result.number > 0:
                     return np.std(result.calibrated(self.key))
             return None
         elif role == QtCore.Qt.ItemDataRole.ToolTipRole:
