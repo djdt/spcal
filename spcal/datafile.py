@@ -8,7 +8,6 @@ from pathlib import Path
 import datetime
 
 import h5py
-import bottleneck as bn
 import numpy as np
 from numpy.lib import recfunctions as rfn
 
