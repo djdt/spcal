@@ -94,7 +94,6 @@ class ImageExportDialog(QtWidgets.QDialog):
         gbox_font_layout.addRow("Color", self.button_font_color)
         gbox_font.setLayout(gbox_font_layout)
 
-
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Close,
@@ -126,10 +125,3 @@ class ImageExportDialog(QtWidgets.QDialog):
             self.check_transparent.isChecked(),
         )
         super().accept()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication()
-    dlg = ImageExportDialog()
-    dlg.show()
-    app.exec()
