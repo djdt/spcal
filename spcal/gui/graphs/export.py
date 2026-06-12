@@ -7,6 +7,38 @@ from spcal.processing.result import SPCalProcessingResult
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 
 
+def create_export_view(
+    title: str = "",
+    xlabel: str = "",
+    ylabel: str = "",
+    size: QtCore.QSize | None = None,
+    dpi: int = 96,
+    font: QtGui.QFont | None = None,
+    font_pen: QtGui.QPen | None = None,
+) -> SinglePlotGraphicsView:
+    if font is None:
+        font = QtGui.QFont()
+
+    if font_pen is None:
+        font_pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+
+    font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
+    font.setPointSizeF(font.pointSize() * font_scale)
+
+    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=font)
+    font_pen.setCosmetic(True)
+    for axis in [view.plot.xaxis, view.plot.yaxis]:
+        axis.setTextPen(font_pen)
+        axis.setPen(font_pen)
+        axis.setTickPen(font_pen)
+        if axis.label is not None:
+            axis.label.setDefaultTextColor(font_pen.color())
+
+    if size is not None:
+        view.plot.resize(size)
+    return view
+
+
 def export_histograms_for_results(
     results: list[SPCalProcessingResult],
     output_dir: Path,

@@ -11,7 +11,7 @@ from spcal.datafile import (
     SPCalTextDataFile,
 )
 from spcal.isotope import SPCalIsotope
-from spcal.gui.graphs.export import export_histograms_for_results
+from spcal.gui.graphs.export import create_export_view
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
 
@@ -63,17 +63,35 @@ def _batch_export_results(
     if export_options["images"]:
         image_outpath = outpath.parent.joinpath("images")
         image_outpath.mkdir(exist_ok=True)
-        export_histograms_for_results(
-            results,
-            image_outpath,
-            str(outpath.stem),
+
+        view = create_export_view(
+            ylabel="Count",
             size=export_options["image options"]["size"],
             dpi=export_options["image options"]["dpi"],
-            brush=(export_options["image options"]["brush"]),
-            font=export_options["image options"]["font"],
             font_pen=export_options["image options"]["font pen"],
-            background_color=export_options["image options"]["background color"],
         )
+
+        brush = export_options["image options"]["brush"]
+        for key in CALIBRATION_KEYS:
+            view.plot.xaxis.setLabel(key.title())
+            for result in results:
+                if not result.canCalibrate(key):
+                    continue
+
+                x = result.calibrated(key)
+                top = np.percentile(x, 98.0)
+                counts, edges = np.histogram(x, range=(0.0, top), bins="fd")
+
+                view.plot.clear()
+                view.plot.drawHistogram(counts, edges, width=1.0, pen=None, brush=brush)
+
+                view.exportImage(
+                    image_outpath.joinpath(
+                        f"{outpath.stem}_{key}_{result.isotope}.png"
+                    ),
+                    size=export_options["image options"]["size"],
+                    background=export_options["image options"]["background color"],
+                )
 
     if summary_fp is not None:
         append_results_summary(summary_fp, results, export_options["units"])
