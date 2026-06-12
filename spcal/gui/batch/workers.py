@@ -11,7 +11,7 @@ from spcal.datafile import (
     SPCalTextDataFile,
 )
 from spcal.isotope import SPCalIsotope
-from spcal.gui.graphs.export import create_export_view
+from spcal.gui.graphs.base import create_export_view
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
 

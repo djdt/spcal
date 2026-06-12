@@ -671,15 +671,13 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             self.output_dir.setText(dir)
 
     def dialogImageExportOptions(self):
-        bg_color: QtGui.QColor = self.image_export_options["background color"]  # type: ignore
-
         dlg = ImageExportDialog(
             self.image_export_options["size"],  # type: ignore
             self.image_export_options["dpi"],  # type: ignore
             self.image_export_options["color"],  # type: ignore
             self.image_export_options["font"],  # type: ignore
             self.image_export_options["font color"],  # type: ignore
-            bg_color.alpha() != 255,
+            self.image_export_options["background color"],  # type: ignore
             parent=self,
         )
         dlg.imageOptionsSelected.connect(self.setImageExportOptions)
@@ -692,21 +690,14 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         color: QtGui.QColor,
         font: QtGui.QFont,
         font_color: QtGui.QColor,
-        transparent: bool,
+        background_color: QtGui.QColor,
     ):
         self.image_export_options["size"] = size
         self.image_export_options["dpi"] = dpi
         self.image_export_options["color"] = color
         self.image_export_options["font"] = font
         self.image_export_options["font color"] = font_color
-        bg_color = QtGui.QColor(
-            QtCore.Qt.GlobalColor.black
-            if font_color.value() > 127
-            else QtCore.Qt.GlobalColor.white
-        )
-        if transparent:
-            bg_color.setAlpha(0)
-        self.image_export_options["background color"] = bg_color
+        self.image_export_options["background color"] = background_color
 
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()
