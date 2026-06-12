@@ -59,7 +59,7 @@ class CalculatorFormula(QtWidgets.QTextEdit):
     def setCompleter(self, completer: QtWidgets.QCompleter):
         """Set the completer used."""
         if self.completer is not None:  # pragma: no cover
-            self.completer.disconnect(self)
+            self.completer.activated.disconnect(self.insertCompletion)
 
         self.completer = completer
         self.completer.setWidget(self)

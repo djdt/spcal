@@ -58,7 +58,7 @@ class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         super().initStyleOption(option, index)
-        option.decorationPosition = QtWidgets.QStyleOptionViewItem.Position.Right  # type: ignore
+        option.decorationPosition = QtWidgets.QStyleOptionViewItem.Position.Right
 
     def editorEvent(
         self,
@@ -71,15 +71,15 @@ class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
             assert isinstance(event, QtGui.QMouseEvent)
             self.initStyleOption(option, index)
             style = (
-                option.widget.style()  # type: ignore
-                if option.widget is not None  # type: ignore
+                option.widget.style()
+                if option.widget is not None
                 else QtWidgets.QApplication.style()
             )
 
             rect = style.subElementRect(
                 QtWidgets.QStyle.SubElement.SE_ItemViewItemDecoration,
                 option,
-                option.widget,  # type: ignore
+                option.widget,
             )
             if rect.contains(event.position().toPoint()):
                 model.removeRow(index.row())
@@ -397,7 +397,11 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
 
     def dialogCalculator(self):
         isotopes = list(self.isotope_model.isotope_options.keys())
-        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)
+        dlg = CalculatorDialog(
+            [iso for iso in isotopes if isinstance(iso, SPCalIsotope)],
+            self.expr_list.expressions(),
+            parent=self,
+        )
         dlg.expressionsChanged.connect(self.setExpressions)
         dlg.open()
 
