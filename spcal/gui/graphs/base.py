@@ -26,10 +26,11 @@ def create_export_view(
     if font_pen is None:
         font_pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
 
+    scaled_font = QtGui.QFont(font)
     font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
-    font.setPointSizeF(font.pointSize() * font_scale)
+    scaled_font.setPointSizeF(font.pointSize() * font_scale)
 
-    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=font)
+    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=scaled_font)
     font_pen.setCosmetic(True)
     for axis in [view.plot.xaxis, view.plot.yaxis]:
         axis.setTextPen(font_pen)
@@ -698,7 +699,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             font_color = QtGui.QColor(font_color)
 
         if isinstance(background_color, QtCore.Qt.GlobalColor):
-            print(background_color, type(background_color))
             background_color = QtGui.QColor(background_color)
 
         return size, dpi, font, font_color, background_color
@@ -742,23 +742,18 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         if path == "":
             return
 
-        size = QtCore.QSize(dlg.size_x.value(), dlg.size_y.value())
+        size, dpi, _, font, font_color, background_color = dlg.imageOptions()
         view = create_export_view(
             xlabel=self.plot.xaxis.labelText,
             ylabel=self.plot.yaxis.labelText,
             size=size,
-            dpi=dlg.dpi.value(),
-            font=dlg.combo_font.currentFont(),
-            font_pen=QtGui.QPen(dlg.fontColor()),
+            dpi=dpi,
+            font=font,
+            font_pen=QtGui.QPen(font_color),
         )
+        print(font)
 
-        self.setDefaultImageExportOptions(
-            size,
-            dlg.dpi.value(),
-            dlg.combo_font.currentFont(),
-            dlg.fontColor(),
-            dlg.backgroundColor(),
-        )
+        self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
 
         assert self.plot.legend is not None
         assert view.plot.legend is not None
@@ -768,8 +763,17 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         legend_items = [item for item in self.plot.legend.items]
         move_items = [item for item in self.plot.items]
 
+        # move items and scale to match DPI
         for item in move_items:
             self.plot.removeItem(item)
+            if isinstance(item, pyqtgraph.PlotCurveItem):
+                pen = item.opts["pen"]
+                pen.setWidthF(pen.widthF() * dpi / 96.0)
+                item.setPen(pen)
+            if isinstance(item, pyqtgraph.ScatterPlotItem):
+                item_size = item.opts["size"]
+                item.setSize(item_size * dpi / 96.0)
+
             view.plot.addItem(item)
 
         print("END OF MOVE ITEMS", flush=True)
@@ -780,15 +784,23 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         print("END OF MOVE LEGEND ITEMS", flush=True)
 
-        view.setRange(self.range)
+        view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
         print("END OF VIEW RANGE", flush=True)
         view.plot.redrawLegend()
         print("END OF VIEW REDRAW", flush=True)
-        view.exportImage(path, size, dlg.backgroundColor())
+        view.exportImage(path, size, background_color)
         print("END OF EXPORT", flush=True)
 
+        # move items and return scale to normal
         for item in move_items:
             view.plot.removeItem(item)
+            if isinstance(item, pyqtgraph.PlotCurveItem):
+                pen = item.opts["pen"]
+                pen.setWidthF(pen.widthF() * 96.0 / dpi)
+                item.setPen(pen)
+            if isinstance(item, pyqtgraph.ScatterPlotItem):
+                item_size = item.opts["size"]
+                item.setSize(item_size * 96.0 / dpi)
             self.plot.addItem(item)
 
         print("END OF RESTORE ITEMS", flush=True)
