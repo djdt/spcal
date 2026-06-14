@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.io import get_save_spcal_path, most_recent_spcal_path
 from spcal.gui.util import create_action
 
+from spcal.gui.graphs.legends import FontScaledItemSample
 from spcal.gui.dialogs.imageexport import ImageExportDialog
 
 
@@ -261,12 +262,12 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         self.yaxis.label.setFont(font)  # type: ignore , not None
 
         self.titleLabel.setText(
-            self.titleLabel.text,
-            family=font.family(),
-            size=f"{font.pointSize()}pt",
+            self.titleLabel.text, family=font.family(), size=f"{font.pointSize()}pt"
         )
 
         if self.legend is not None:
+            for item, _ in self.legend.items:
+                item.setFont(font)
             self.legend.setLabelTextSize(f"{font.pointSize()}pt")
             self.redrawLegend()
 
@@ -770,7 +771,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 pen = item.opts["pen"]
                 pen.setWidthF(pen.widthF() * dpi / 96.0)
                 item.setPen(pen)
-            if isinstance(item, pyqtgraph.ScatterPlotItem):
+            elif isinstance(item, pyqtgraph.ScatterPlotItem):
                 item_size = item.opts["size"]
                 item.setSize(item_size * dpi / 96.0)
 
@@ -778,8 +779,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         print("END OF MOVE ITEMS", flush=True)
 
+        font_metrics = QtGui.QFontMetrics(view.font())
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
+            if isinstance(item, FontScaledItemSample):
+                item.setFontMetrics(font_metrics)
             view.plot.legend.addItem(item, label.text)
 
         print("END OF MOVE LEGEND ITEMS", flush=True)
@@ -798,7 +802,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 pen = item.opts["pen"]
                 pen.setWidthF(pen.widthF() * 96.0 / dpi)
                 item.setPen(pen)
-            if isinstance(item, pyqtgraph.ScatterPlotItem):
+            elif isinstance(item, pyqtgraph.ScatterPlotItem):
                 item_size = item.opts["size"]
                 item.setSize(item_size * 96.0 / dpi)
             self.plot.addItem(item)
