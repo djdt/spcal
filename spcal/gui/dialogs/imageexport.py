@@ -82,8 +82,10 @@ class ImageExportDialog(QtWidgets.QDialog):
 
         self.button_color = color_button(color)
 
-        self.combo_font = QtWidgets.QFontComboBox()
-        self.combo_font.setCurrentFont(font)
+        self.button_font = QtWidgets.QPushButton(f"{font.family()}: {font.pointSize()}")
+        self.button_font.setFont(font)
+        self.button_font.setIcon(QtGui.QIcon.fromTheme("gtk-select-font"))
+        self.button_font.pressed.connect(self.dialogFont)
 
         self.button_font_color = color_button(font_color)
 
@@ -92,21 +94,21 @@ class ImageExportDialog(QtWidgets.QDialog):
         self.check_transparent = QtWidgets.QCheckBox("Transparent")
         self.check_transparent.setChecked(background_color.alpha() == 0)
 
-        layout_background = QtWidgets.QHBoxLayout()
-        layout_background.addWidget(self.button_background_color)
-        layout_background.addWidget(self.check_transparent)
+        background_layout = QtWidgets.QHBoxLayout()
+        background_layout.addWidget(self.button_background_color)
+        background_layout.addWidget(self.check_transparent)
 
         gbox = QtWidgets.QGroupBox("Image options")
         gbox_layout = QtWidgets.QFormLayout()
         gbox_layout.addRow("Size", size_layout)
         gbox_layout.addRow("DPI", self.dpi)
         gbox_layout.addRow("Color", self.button_color)
-        gbox_layout.addRow("Background", layout_background)
+        gbox_layout.addRow("Background", background_layout)
         gbox.setLayout(gbox_layout)
 
         gbox_font = QtWidgets.QGroupBox("Font options")
         gbox_font_layout = QtWidgets.QFormLayout()
-        gbox_font_layout.addRow("Font", self.combo_font)
+        gbox_font_layout.addRow("Font", self.button_font)
         gbox_font_layout.addRow("Color", self.button_font_color)
         gbox_font.setLayout(gbox_font_layout)
 
@@ -124,6 +126,28 @@ class ImageExportDialog(QtWidgets.QDialog):
         layout.addWidget(gbox_font, 1, 0, 1, 2)
         layout.addWidget(self.button_box, 2, 0, 1, 2)
         self.setLayout(layout)
+
+    def dialogFont(self):
+        ok, font = QtWidgets.QFontDialog.getFont(
+            self.button_font.font(), self, "Graph Font"
+        )
+        if ok:
+            self.button_font.setText(f"{font.family()}: {font.pointSize()}")
+            self.button_font.setFont(font)
+
+    def imageOptions(
+        self,
+    ) -> tuple[
+        QtCore.QSize, int, QtGui.QColor, QtGui.QFont, QtGui.QColor, QtGui.QColor
+    ]:
+        return (
+            QtCore.QSize(self.size_x.value(), self.size_y.value()),
+            self.dpi.value(),
+            self.color(),
+            self.button_font.font(),
+            self.fontColor(),
+            self.backgroundColor(),
+        )
 
     def color(self) -> QtGui.QColor:
         effect = self.button_color.graphicsEffect()
@@ -144,13 +168,5 @@ class ImageExportDialog(QtWidgets.QDialog):
         return effect.color()
 
     def accept(self):
-
-        self.imageOptionsSelected.emit(
-            QtCore.QSize(self.size_x.value(), self.size_y.value()),
-            self.dpi.value(),
-            self.color(),
-            self.combo_font.currentFont(),
-            self.fontColor(),
-            self.backgroundColor(),
-        )
+        self.imageOptionsSelected.emit(*self.imageOptions())
         super().accept()
