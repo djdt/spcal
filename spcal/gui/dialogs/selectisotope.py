@@ -91,9 +91,9 @@ class SignalsPopup(QtWidgets.QDialog):
 
         for isotope, signal in signals.items():
             view = SinglePlotGraphicsView(f"{isotope}", ylabel="")
-            view.plot.xaxis.setVisible(False)
             view.setInteractive(False)
-            view.drawCurve(np.arange(signal.size), signal)
+            view.plot.xaxis.setVisible(False)
+            view.plot.drawCurve(np.arange(signal.size), signal)
             layout.addWidget(view)
 
         self.nviews = len(signals)
@@ -171,6 +171,8 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         selected_isotopes = []
         selected_numbers = []
         for isotope, result in results.items():
+            if not isinstance(isotope, SPCalIsotope):
+                continue
             if result.number > result.num_events * screening_target_ppm * 1e-6:
                 selected_isotopes.append(isotope)
                 selected_numbers.append(result.number)

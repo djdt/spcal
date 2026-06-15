@@ -77,7 +77,7 @@ def append_results_summary(
             ]
             for name, value in values:
                 fp.write(
-                    f"{result.data_file_path},{result.isotope},{name},{unit},{_scaled(value, factor)}\n"
+                    f"{result.data_file_path},{result.isotope},{name},{unit},{_scaled(float(value), factor)}\n"
                 )
 
 
@@ -171,7 +171,7 @@ def export_spcal_result_outputs(
             ]
             fp.write(
                 f"# {result.isotope},"
-                + ",".join(_scaled(value, factor) for value in values)
+                + ",".join(_scaled(float(value), factor) for value in values)
                 + "\n"
             )
 

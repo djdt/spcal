@@ -79,7 +79,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
 
         self.points: SingleIonScatterPlot | None = None
         self.lines: dict[str, pyqtgraph.PlotCurveItem] = {}
-        self.plot.setLimits(xMin=0.0, yMin=0.0)
+        self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
     #     self.pointHovered.connect(self.onPointHovered)
     #
@@ -172,7 +172,7 @@ class SingleIonHistogramView(SinglePlotGraphicsView):
             viewbox=ViewBoxForceScaleAtZero(),
             parent=parent,
         )
-        self.plot.setLimits(xMin=0.0, yMin=0.0)
+        self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
         self._hist, self._edges = None, None
 

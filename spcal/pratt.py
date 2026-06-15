@@ -212,12 +212,12 @@ class LeftTernary(Left):
         self.div = div
         self.lbp = lbp
 
-    def led(self, parser: "Parser", tokens: list[str], lexpr: Expr) -> Expr:
-        expr = parser.parseExpr(tokens)
+    def led(self, parser: "Parser", tokens: list[str], expr: Expr) -> Expr:
+        _expr = parser.parseExpr(tokens)
         if len(tokens) == 0 or tokens.pop(0) != self.div:
             raise ParserException(f"Missing '{self.div}' statement.")
         rexpr = parser.parseExpr(tokens, self.rbp)
-        return Expr(value=self.value, children=[lexpr, expr, rexpr])
+        return Expr(value=self.value, children=[expr, _expr, rexpr])
 
 
 class LeftIndex(Left):

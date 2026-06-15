@@ -101,7 +101,7 @@ class SPCalJSONEncoder(json.JSONEncoder):
             }
         # data files
         if isinstance(o, SPCalDataFile):
-            d = {
+            d: dict[str, Any] = {
                 "path": o.path,
                 "format": o.format,
                 "selected isotopes": o.selected_isotopes,

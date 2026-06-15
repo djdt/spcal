@@ -277,7 +277,9 @@ class ResponseDialog(QtWidgets.QDialog):
     def updateCalibration(self):
         self.calibration.clear()
 
-        scheme = COLOR_SCHEMES[QtCore.QSettings().value("colorscheme", "IBM Carbon")]
+        scheme = COLOR_SCHEMES[
+            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        ]
 
         concs = self.concentrations()
         intensities = self.intensities()
