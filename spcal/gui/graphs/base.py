@@ -779,12 +779,14 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         print("END OF MOVE ITEMS", flush=True)
 
-        font_metrics = QtGui.QFontMetrics(view.font())
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
+            print("\t removed item:", label, item, flush=True)
             if isinstance(item, FontScaledItemSample):
-                item.setFontMetrics(font_metrics)
+                item.setFont(font)
+            print("\t setting font item", flush=True)
             view.plot.legend.addItem(item, label.text)
+            print("\t adding item", flush=True)
 
         print("END OF MOVE LEGEND ITEMS", flush=True)
 
