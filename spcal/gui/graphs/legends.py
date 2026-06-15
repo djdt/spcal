@@ -7,7 +7,7 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
     def __init__(
         self,
         font: QtGui.QFont,
-        item: QtWidgets.QGraphicsItem | None,
+        item: QtWidgets.QGraphicsItem,
         ratio: tuple[int, int] = (1, 1),
         brush: QtGui.QBrush | None = None,
     ):
@@ -27,6 +27,9 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed
         )
+
+    def mouseClickEvent(self, event):
+        pass
 
     def fontMetrics(self) -> QtGui.QFontMetrics:
         if self._font_metrics is None:
