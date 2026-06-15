@@ -752,14 +752,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             font=font,
             font_pen=QtGui.QPen(font_color),
         )
-        print(font)
 
         self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
 
         assert self.plot.legend is not None
         assert view.plot.legend is not None
-
-        print("END OF ASSERT")
 
         legend_items = [item for item in self.plot.legend.items]
         move_items = [item for item in self.plot.items]
@@ -777,25 +774,15 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
             view.plot.addItem(item)
 
-        print("END OF MOVE ITEMS", flush=True)
-
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
-            print("\t removed item:", label, item, flush=True)
-            if isinstance(item, FontScaledItemSample):
-                item.setFont(font)
-            print("\t setting font item", flush=True)
+            item.setFont(view.font())
             view.plot.legend.addItem(item, label.text)
-            print("\t adding item", flush=True)
-
-        print("END OF MOVE LEGEND ITEMS", flush=True)
+            print(item.fontMetrics().ascent())
 
         view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
-        print("END OF VIEW RANGE", flush=True)
         view.plot.redrawLegend()
-        print("END OF VIEW REDRAW", flush=True)
         view.exportImage(path, size, background_color)
-        print("END OF EXPORT", flush=True)
 
         # move items and return scale to normal
         for item in move_items:
@@ -809,16 +796,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 item.setSize(item_size * 96.0 / dpi)
             self.plot.addItem(item)
 
-        print("END OF RESTORE ITEMS", flush=True)
-
         for item, label in legend_items:
             view.plot.legend.removeItem(item)
+            item.setFont(self.font())
             self.plot.legend.addItem(item, label.text)
 
-        print("END OF RESTORE LEGEND ITEMS", flush=True)
-
         self.plot.redrawLegend()
-        print("END OF REDRAW", flush=True)
 
     def exportImage(
         self,
