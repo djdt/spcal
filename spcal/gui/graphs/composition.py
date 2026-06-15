@@ -58,14 +58,14 @@ class CompositionView(SinglePlotGraphicsView):
         self.plot.vb.setMouseEnabled(x=False, y=False)
         self.plot.vb.setAspectLocked(True)
         self.plot.vb.invertY(True)
-        assert self.plot.legend is not None
-        self.plot.legend.setSampleType(FontScaledItemSample)
         self.plot.xaxis.hide()
         self.plot.yaxis.hide()
 
         # options
         self.mode = "pie"
         self.min_size: float | str = "5%"
+
+        self.pies = []
 
         self.action_show_comp_dialog = create_action(
             "office-chart-pie",
@@ -120,7 +120,7 @@ class CompositionView(SinglePlotGraphicsView):
         size = 100.0
         spacing = size * 2.0
 
-        items = []
+        self.pies.clear()
         if self.mode == "pie":
             radii = np.sqrt(counts * np.pi)
             radii = radii / np.amax(radii) * size
@@ -144,7 +144,7 @@ class CompositionView(SinglePlotGraphicsView):
                 label.setPos(i * spacing, 0)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
-                items.append(item)
+                self.pies.append(item)
         elif self.mode == "bar":
             heights = counts / np.amax(counts) * size
             width = spacing / 2.0
@@ -171,24 +171,24 @@ class CompositionView(SinglePlotGraphicsView):
                 label.setPos(i * spacing, 0)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
-                items.append(item)
+                self.pies.append(item)
         else:
             raise ValueError("Composition mode must be 'pie' or 'bar'.")
 
         # link all hovers
-        for i in range(len(items)):
-            for j in range(len(items)):
+        for i in range(len(self.pies)):
+            for j in range(len(self.pies)):
                 if i == j:
                     continue
-                items[i].hovered.connect(items[j].setHoveredIdx)
+                self.pies[i].hovered.connect(self.pies[j].setHoveredIdx)
 
         # Add legend for each pie
         if self.plot.legend is not None:
             for result, brush in zip(results, brushes):
-                self.plot.legend.addItem(
-                    FontScaledItemSample(self.font(), None, brush=brush),
-                    str(result.isotope),
-                )
+                # a dirty hack because it crashes otherwise
+                item = FontScaledItemSample(self.font(), None, brush=brush)  # type: ignore
+                item.item = item
+                self.plot.legend.addItem(item, str(result.isotope))
 
     def zoomReset(self):  # No plotdata
         if self.plot.vb is not None:
