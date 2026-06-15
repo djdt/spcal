@@ -13,41 +13,39 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
     ):
         super().__init__(item)
 
-        self.setFont(font)
-
-        self._font_metrics = None
+        self.font_metrics = QtGui.QFontMetrics(font)
         self.ratio = ratio
 
         if brush is None:
             brush = QtGui.QBrush()
         self.brush = brush
 
-        self.setFixedWidth(self.fontMetrics().ascent() * ratio[0])
-        self.setFixedHeight(self.fontMetrics().ascent() * ratio[1])
+        self.setFixedWidth(self.font_metrics.ascent() * ratio[0])
+        self.setFixedHeight(self.font_metrics.ascent() * ratio[1])
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed
         )
 
-    def mouseClickEvent(self, event):
-        pass
-
-    def fontMetrics(self) -> QtGui.QFontMetrics:
-        if self._font_metrics is None:
-            self._font_metrics = QtGui.QFontMetrics(self.font())
-            self.setFixedWidth(self.fontMetrics().ascent() * self.ratio[0])
-            self.setFixedHeight(self.fontMetrics().ascent() * self.ratio[1])
-        return self._font_metrics
-
-    def setFont(self, font: QtGui.QFont | Sequence[str]):
-        super().setFont(font)
-        self._font_metrics = None
-        self.prepareGeometryChange()
-
     def pad(self) -> float:
-        return self.fontMetrics().lineWidth()
+        return self.font_metrics.lineWidth()
 
     def boundingRect(self):
         return QtCore.QRectF(0, 0, self.width(), self.height())
+
+    def updateFontMetrics(self, font: QtGui.QFont):
+        self.font_metrics = QtGui.QFontMetrics(font)
+        self.setFixedWidth(self.font_metrics.ascent() * self.ratio[0])
+        self.setFixedHeight(self.font_metrics.ascent() * self.ratio[1])
+        self.prepareGeometryChange()
+
+    def mouseClickEvent(self, event):
+        pass
+
+    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
+        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
+        painter.drawPixmap(
+            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
+        )
 
     def paint(  # type: ignore
         self,
@@ -130,12 +128,6 @@ class HistogramItemSample(FontScaledItemSample):
             event.accept()
             self.update()
 
-    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
-        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
-        painter.drawPixmap(
-            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
-        )
-
     def paint(
         self,
         painter: QtGui.QPainter,
@@ -164,9 +156,10 @@ class HistogramItemSample(FontScaledItemSample):
             self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))
         else:
             opts = self.item.opts
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 0.0)
             painter.setRenderHint(painter.RenderHint.Antialiasing, False)
             painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
-            painter.setPen(pyqtgraph.mkPen(opts["pen"]))
+            painter.setPen(pen)
             painter.drawRect(rect.adjusted(pad, pad, -pad, -pad))
 
     def addLimit(self, limit: pyqtgraph.InfiniteLine):
@@ -187,11 +180,6 @@ class ParticleItemSample(FontScaledItemSample):
         super().__init__(font, signals, ratio=(2, 1))
         self.detections = detections
         self.lines = lines
-
-    # def boundingRect(self) -> QtCore.QRectF:
-    #     rect = super().boundingRect()
-    #     rect.setWidth(rect.width() * 2)
-    #     return rect
 
     def setSibilingsVisble(
         self,
@@ -236,12 +224,6 @@ class ParticleItemSample(FontScaledItemSample):
 
             event.accept()
             self.update()
-
-    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
-        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
-        painter.drawPixmap(
-            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
-        )
 
     def paint(
         self,

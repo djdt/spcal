@@ -745,8 +745,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         size, dpi, _, font, font_color, background_color = dlg.imageOptions()
         view = create_export_view(
-            xlabel=self.plot.xaxis.labelText,
-            ylabel=self.plot.yaxis.labelText,
+            xlabel=self.plot.xaxis.labelString(),
+            ylabel=self.plot.yaxis.labelString(),
             size=size,
             dpi=dpi,
             font=font,
@@ -776,9 +776,9 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
-            item.setFont(view.font())
+            if isinstance(item, FontScaledItemSample):
+                item.updateFontMetrics(view.font())
             view.plot.legend.addItem(item, label.text)
-            print(item.fontMetrics().ascent())
 
         view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
         view.plot.redrawLegend()
@@ -798,7 +798,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         for item, label in legend_items:
             view.plot.legend.removeItem(item)
-            item.setFont(self.font())
+            if isinstance(item, FontScaledItemSample):
+                item.updateFontMetrics(self.font())
             self.plot.legend.addItem(item, label.text)
 
         self.plot.redrawLegend()
