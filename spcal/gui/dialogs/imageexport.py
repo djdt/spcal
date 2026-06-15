@@ -1,5 +1,4 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-import numpy as np
 
 
 def color_button(color: QtGui.QColor) -> QtWidgets.QToolButton:

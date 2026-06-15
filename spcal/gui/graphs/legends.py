@@ -1,4 +1,3 @@
-from typing import Sequence
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
