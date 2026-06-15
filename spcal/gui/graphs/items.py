@@ -55,17 +55,17 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
                     break
 
         if hovered_idx != self.hovered_idx:
-            self.hovered.emit(hovered_idx)  # type: ignore
+            self.hovered.emit(hovered_idx)
             self.update()
         self.hovered_idx = hovered_idx
 
-    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
+    def boundingRect(self) -> QtCore.QRectF:
         raise NotImplementedError
 
-    def shape(self) -> QtGui.QPainterPath:  # type: ignore
+    def shape(self) -> QtGui.QPainterPath:
         raise NotImplementedError
 
-    def paint(  # type: ignore
+    def paint(
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
@@ -91,7 +91,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
                 painter.save()
                 # save position then reset the painter transform to remove scaling
                 pos = painter.transform().map(self.label_positions[i])
-                painter.setTransform(self.transform())  # type: ignore , pyqtgraph weirdness
+                painter.setTransform(self.transform())
 
                 # now draw unscaled text
                 rect = painter.fontMetrics().boundingRect(self.labels[i]).toRectF()
@@ -212,10 +212,10 @@ class StaticRectItemSample(pyqtgraph.GraphicsWidget):
         super().__init__()
         self.brush = brush
 
-    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
+    def boundingRect(self) -> QtCore.QRectF:
         return QtCore.QRectF(0, 0, 20, 20)
 
-    def paint(  # type: ignore
+    def paint(
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,

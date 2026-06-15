@@ -172,7 +172,7 @@ class ScatterView(SinglePlotGraphicsView):
 
         self.drawArrays(x, y, text_x, text_y)
 
-    # def mousePressEvent(self, event: QtGui.QMouseEvent):  # type: ignore , more pyqtgraph
+    # def mousePressEvent(self, event: QtGui.QMouseEvent):
     #     if event.button() == QtCore.Qt.MouseButton.LeftButton:
     #         # self.band = QtWidgets.QRubberBand(QtWidgets.QRubberBand.Shape.Rectangle, self)
     #         # self.band.setGeometry(QtCore.QRect(event.pos(), QtCore.QSize(0,0)))
