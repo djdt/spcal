@@ -343,6 +343,9 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
         self.isotope_model.isotope_options = method.isotope_options
         self.isotope_table = IsotopeOptionTable()
         self.isotope_table.setModel(self.isotope_model)
+        self.isotope_table.setColumnHidden(3, True)
+        self.isotope_table.setColumnHidden(4, True)
+        self.isotope_table.setColumnHidden(5, True)
 
         self.expr_list = CalculatorExprList()
         for expr in method.expressions:
