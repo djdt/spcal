@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class IsotopeOptionTable(BasicTableView):
     isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+    requestIonicResponseDialog = (
+        QtCore.Signal()
+    )  # want to keep isotopes not in table too, so cant set here
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent=parent)
@@ -84,24 +87,28 @@ class IsotopeOptionTable(BasicTableView):
         menu = self.basicTableMenu()
 
         index = self.indexAt(event.pos())
-        if index.isValid() and index.column() == 0:
-            action_density = QtGui.QAction(
-                QtGui.QIcon.fromTheme("folder-database"), "Lookup Density", self
-            )
-            action_density.triggered.connect(lambda: self.dialogParticleDatabase(index))
-            menu.insertSeparator(menu.actions()[0])
-            menu.insertAction(menu.actions()[0], action_density)
-        elif index.isValid() and index.column() == 2:
-            action_massfrac = QtGui.QAction(
+        if index.isValid() and index.column() in [0, 1, 2]:
+            if index.column() == 0:
+                action = QtGui.QAction(
+                    QtGui.QIcon.fromTheme("folder-database"), "Lookup Density", self
+                )
+                action.triggered.connect(lambda: self.dialogParticleDatabase(index))
+            elif index.column() == 1:
+                action = QtGui.QAction(
+                    QtGui.QIcon.fromTheme("document-open"),
+                    "Ionic Response Calculator",
+                    parent=self,
+                )
+                action.triggered.connect(self.requestIonicResponseDialog)
+        elif index.column() == 2:
+            action = QtGui.QAction(
                 QtGui.QIcon.fromTheme("folder-calculate"),
                 "Calculate Mass Fraction",
                 self,
             )
-            action_massfrac.triggered.connect(
-                lambda: self.dialogMassFractionCalculator(index)
-            )
-            menu.insertSeparator(menu.actions()[0])
-            menu.insertAction(menu.actions()[0], action_massfrac)
+            action.triggered.connect(lambda: self.dialogMassFractionCalculator(index))
+        menu.insertSeparator(menu.actions()[0])
+        menu.insertAction(menu.actions()[0], action)
 
         menu.popup(event.globalPos())
 
@@ -115,6 +122,7 @@ class IsotopeOptionTable(BasicTableView):
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     requestCurrentIsotope = QtCore.Signal(SPCalIsotopeBase)
+    requestIonicResponseDialog = QtCore.Signal()
     optionChanged = QtCore.Signal(SPCalIsotopeBase)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
@@ -127,6 +135,7 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
         self.table = IsotopeOptionTable()
         self.table.isotopeSelected.connect(self.requestCurrentIsotope)
+        self.table.requestIonicResponseDialog.connect(self.requestIonicResponseDialog)
         self.table.setModel(self.model)
 
         self.setWidget(self.table)
