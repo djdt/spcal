@@ -114,9 +114,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
 
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
-        # self.isotope_options.requestCurrentIsotope.connect(
-        #     self.toolbar.combo_isotope.setCurrentIsotope
-        # )
+        self.isotope_options.requestIonicResponseDialog.connect(
+            self.dialogIonicResponse
+        )
 
         self.currentMethodChanged.connect(self.files.setScreeningMethod)
 
