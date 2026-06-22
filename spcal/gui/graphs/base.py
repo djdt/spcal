@@ -752,6 +752,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             font=font,
             font_pen=QtGui.QPen(font_color),
         )
+        # update some values that are used for plotting compositions
+        view.plot.getViewBox().setAspectLocked(
+            self.plot.getViewBox().state["aspectLocked"]
+        )
+        view.plot.xaxis.setVisible(self.plot.xaxis.isVisible())
+        view.plot.yaxis.setVisible(self.plot.yaxis.isVisible())
 
         self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
 
@@ -771,6 +777,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             elif isinstance(item, pyqtgraph.ScatterPlotItem):
                 item_size = item.opts["size"]
                 item.setSize(item_size * dpi / 96.0)
+            elif isinstance(item, (pyqtgraph.LabelItem, pyqtgraph.TextItem)):
+                item.setFont(view.font())
 
             view.plot.addItem(item)
 
@@ -794,6 +802,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             elif isinstance(item, pyqtgraph.ScatterPlotItem):
                 item_size = item.opts["size"]
                 item.setSize(item_size * 96.0 / dpi)
+            elif isinstance(item, (pyqtgraph.LabelItem, pyqtgraph.TextItem)):
+                item.setFont(self.font())
             self.plot.addItem(item)
 
         for item, label in legend_items:
