@@ -57,7 +57,6 @@ class CompositionView(SinglePlotGraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setMouseEnabled(x=False, y=False)
         self.plot.vb.setAspectLocked(True)
-        self.plot.vb.invertY(True)
         self.plot.xaxis.hide()
         self.plot.yaxis.hide()
 
@@ -129,7 +128,8 @@ class CompositionView(SinglePlotGraphicsView):
                 item = PieChart(
                     radius,
                     comp,
-                    brushes,
+                    pen=pen,
+                    brushes=brushes,
                     labels=[str(result.isotope) for result in results],
                     font=self.plot.font(),
                 )
@@ -141,7 +141,7 @@ class CompositionView(SinglePlotGraphicsView):
                     ensureInBounds=True,
                 )
                 label.setFont(self.plot.font())
-                label.setPos(i * spacing, 0)
+                label.setPos(i * spacing, -spacing)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
                 self.pies.append(item)
@@ -156,7 +156,8 @@ class CompositionView(SinglePlotGraphicsView):
                     height,
                     width,
                     comp,
-                    brushes,
+                    pen=pen,
+                    brushes=brushes,
                     labels=[str(result.isotope) for result in results],
                     font=self.plot.font(),
                 )
@@ -168,7 +169,7 @@ class CompositionView(SinglePlotGraphicsView):
                     ensureInBounds=True,
                 )
                 label.setFont(self.plot.font())
-                label.setPos(i * spacing, 0)
+                label.setPos(i * spacing, -spacing)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
                 self.pies.append(item)
