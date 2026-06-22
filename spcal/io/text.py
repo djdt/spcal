@@ -53,15 +53,26 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
         try:
             delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
             tokens = line.split(delimiter)
-            if all(is_number_or_time(token) for token in tokens):
+            print(tokens)
+            if all(
+                is_number_or_time(token) for token in tokens if token not in ["", "\n"]
+            ):
+                logger.debug(f"all numbers or times at line {skip_rows}")
                 break
         except StopIteration:  # special case where only one column exists
             if is_number_or_time(line):
+                logger.debug(f"one column, number or time at line {skip_rows}")
                 break
         skip_rows += 1
 
     if delimiter != "":
-        column_count = max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
+        try:
+            column_count = (
+                max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
+            )
+        except StopIteration:
+            logger.warning(f"could not count columns using delimiter '{delimiter}'")
+            column_count = 1
 
     return delimiter, skip_rows, column_count
 
