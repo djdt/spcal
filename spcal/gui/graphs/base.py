@@ -31,11 +31,11 @@ def create_export_view(
     font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
     scaled_font.setPointSizeF(font.pointSize() * font_scale)
 
-    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=font)
-
-    if view.plot.legend is not None:
-        view.plot.legend.setFont(scaled_font)
-        view.plot.legend.setLabelTextSize(f"{scaled_font.pointSize()}pt")
+    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=scaled_font)
+    if size is not None:
+        view.plot.resize(size)
+        view.viewport().resize(size)
+        view.update()
 
     font_pen.setCosmetic(True)
     for axis in [view.plot.xaxis, view.plot.yaxis]:
@@ -44,6 +44,7 @@ def create_export_view(
         axis.setTickPen(font_pen)
         if axis.label is not None:
             axis.label.setDefaultTextColor(font_pen.color())
+
     return view
 
 
@@ -801,13 +802,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
             if isinstance(item, FontScaledItemSample):
-                item.updateFontMetrics(view.plot.legend.font())
+                item.updateFontMetrics(view.font())
             view.plot.legend.addItem(item, label.text)
 
         # copy the current view
         view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
         view.plot.redrawLegend()
-        view.viewport().resize(size)
         view.exportImage(path, background_color)
 
         # move items and return scale to normal
