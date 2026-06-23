@@ -35,7 +35,6 @@ def create_export_view(
     if size is not None:
         view.plot.resize(size)
         view.viewport().resize(size)
-        view.update()
 
     font_pen.setCosmetic(True)
     for axis in [view.plot.xaxis, view.plot.yaxis]:
