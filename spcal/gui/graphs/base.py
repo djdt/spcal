@@ -41,7 +41,7 @@ def create_export_view(
             axis.label.setDefaultTextColor(font_pen.color())
 
     if size is not None:
-        view.plot.resize(size)
+        view.viewport().resize(size)
     return view
 
 
@@ -744,6 +744,21 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             return
 
         size, dpi, _, font, font_color, background_color = dlg.imageOptions()
+        self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
+        self.exportImageWithOptions(path, dpi, size, font, font_color, background_color)
+
+    def exportImageWithOptions(
+        self,
+        path: Path | str,
+        dpi: int,
+        size: QtCore.QSize,
+        font: QtGui.QFont,
+        font_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+        background_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+    ):
+        if font_color is None:
+            font_color = QtCore.Qt.GlobalColor.black
+
         view = create_export_view(
             xlabel=self.plot.xaxis.labelString(),
             ylabel=self.plot.yaxis.labelString(),
@@ -758,8 +773,6 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         )
         view.plot.xaxis.setVisible(self.plot.xaxis.isVisible())
         view.plot.yaxis.setVisible(self.plot.yaxis.isVisible())
-
-        self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
 
         assert self.plot.legend is not None
         assert view.plot.legend is not None
@@ -782,15 +795,17 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
             view.plot.addItem(item)
 
+        # set the legends to match the export font
         for item, label in legend_items:
             self.plot.legend.removeItem(item)
             if isinstance(item, FontScaledItemSample):
                 item.updateFontMetrics(view.font())
             view.plot.legend.addItem(item, label.text)
 
+        # copy the current view
         view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
         view.plot.redrawLegend()
-        view.exportImage(path, size, background_color)
+        view.exportImage(path, background_color)
 
         # move items and return scale to normal
         for item in move_items:
@@ -806,6 +821,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 item.setFont(self.font())
             self.plot.addItem(item)
 
+        # restore the legend fonts
         for item, label in legend_items:
             view.plot.legend.removeItem(item)
             if isinstance(item, FontScaledItemSample):
@@ -817,30 +833,24 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
     def exportImage(
         self,
         path: Path | str,
-        size: QtCore.QSize | None = None,
-        background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+        background_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ):
         path = Path(path)
         if len(path.suffixes) == 0 or path.suffixes[-1].lower() != ".png":
             path = path.with_name(path.name + ".png")
 
-        if background is None:
-            background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
+        if background_color is None:
+            background_color = QtGui.QColor(QtCore.Qt.GlobalColor.white)
 
-        if size is None:
-            size = self.viewport().size()
+        size = self.viewport().size()
+        print(size)
 
         image = QtGui.QImage(size, QtGui.QImage.Format.Format_ARGB32)
-        image.fill(background)
+        image.fill(background_color)
 
         painter = QtGui.QPainter(image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
-
-        # Setup for export
-        # for item in self.plot.items:
-        #     if hasattr(item, "_exportOpts"):
-        #         item._exportOpts = {}
 
         self.scene().render(
             painter,
