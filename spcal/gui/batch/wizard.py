@@ -495,8 +495,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
 
         # image options
         self.image_export_options = {
-            "size": QtCore.QSize(800, 600),
-            "dpi": 96,
+            "size": QtCore.QSize(1890, 1180),
+            "dpi": 600,
             "color": QtGui.QColor(128, 128, 128),
             "font": self.font(),
             "font color": QtGui.QColor(0, 0, 0),

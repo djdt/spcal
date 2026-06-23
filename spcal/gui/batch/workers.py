@@ -85,12 +85,14 @@ def _batch_export_results(
                 view.plot.clear()
                 view.plot.drawHistogram(counts, edges, width=1.0, pen=None, brush=brush)
 
+                # TODO: fix this
                 view.exportImage(
                     image_outpath.joinpath(
                         f"{outpath.stem}_{key}_{result.isotope}.png"
                     ),
-                    size=export_options["image options"]["size"],
-                    background=export_options["image options"]["background color"],
+                    background_color=export_options["image options"][
+                        "background color"
+                    ],
                 )
 
     if summary_fp is not None:
