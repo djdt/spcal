@@ -41,8 +41,10 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
 
         self.hovered_idx = -1
 
-    def setHoveredIdx(self, idx: int):
-        if self.hovered_idx != idx:
+    def setHoveredIdx(self, idx: int, min_value: float = 0.01):
+        if self.values[idx] < min_value:
+            self.hovered_idx = -1
+        elif self.hovered_idx != idx:
             self.hovered_idx = idx
             self.update()
 
