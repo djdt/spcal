@@ -33,8 +33,8 @@ def create_export_view(
 
     view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=scaled_font)
     if size is not None:
-        view.plot.resize(size)
         view.viewport().resize(size)
+        view.plot.resize(size)
 
     font_pen.setCosmetic(True)
     for axis in [view.plot.xaxis, view.plot.yaxis]:
@@ -773,8 +773,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         view.plot.getViewBox().setAspectLocked(
             self.plot.getViewBox().state["aspectLocked"]
         )
-        view.plot.xaxis.setVisible(self.plot.xaxis.isVisible())
-        view.plot.yaxis.setVisible(self.plot.yaxis.isVisible())
+        if not self.plot.xaxis.isVisible():
+            view.plot.xaxis.hide()  # cannot use setVisible as pyqtgraph does not update
+        if not self.plot.yaxis.isVisible():
+            view.plot.yaxis.hide()  # cannot use setVisible as pyqtgraph does not update
 
         assert self.plot.legend is not None
         assert view.plot.legend is not None
@@ -805,7 +807,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             view.plot.legend.addItem(item, label.text)
 
         # copy the current view
-        view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect())
+        view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect(), padding=0)
         view.plot.redrawLegend()
         view.exportImage(path, background_color)
 
