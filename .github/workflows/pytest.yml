@@ -17,6 +17,7 @@ jobs:
         python-version: "3.x"
     - name: Set up TBB and mesa
       run: |
+        sudo apt update
         sudo apt install libtbb-dev libgles2-mesa-dev
     - name: Install dependencies
       run: |
