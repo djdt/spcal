@@ -856,13 +856,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if data_file is None:
                 return
             clusters = self.clusters(data_file, key)
-            colors = [
-                self.colorForIsotope(isotope, data_file)
-                for isotope in self.processing_results[data_file].keys()
-            ]
-            self.graph.drawResultsComposition(
-                list(self.processing_results[data_file].values()), colors, key, clusters
+            results = sorted(
+                self.processing_results[data_file].values(), key=lambda r: r.isotope
             )
+            colors = [
+                self.colorForIsotope(result.isotope, data_file) for result in results
+            ]
+            self.graph.drawResultsComposition(results, colors, key, clusters)
         elif view == "scatter":
             data_file = self.files.currentDataFile()
             if data_file is None:
