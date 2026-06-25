@@ -41,7 +41,9 @@ def test_cluster_information():
     assert np.allclose(stds, [[0.08165, 0.04714], [0.05, 0.05], [0.0, 0.0]])
     assert np.all(counts == [3, 2, 1])
 
-    _, _, counts = cluster_information(a, np.array([0, 1, 2, 2, 2, 3]))
+    means, stds, counts = cluster_information(a, np.array([0, 1, 2, 2, 2, 3]))
+    assert np.allclose(means, [[1.1, 1.466667], [2.1, 2.2], [0.2, 0.3]])
+    assert np.allclose(stds, [[0.08165, 0.04714], [0.0, 0.0], [0.0, 0.0]])
     assert np.all(counts == [3, 1, 1])
 
 
@@ -73,9 +75,7 @@ def test_preprare_results_for_clustering(
         ],
         isotopes=[ISOTOPE_TABLE[("Ag", 107)], ISOTOPE_TABLE[("Ag", 109)]],
     )
-    results = default_method.processDataFile(
-        df,
-    )
+    results = default_method.processDataFile(df)
 
     a = results[list(results.keys())[0]]
     b = results[list(results.keys())[1]]
