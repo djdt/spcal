@@ -1,4 +1,3 @@
-from pyqtgraph.examples.NonUniformImage import res
 from pathlib import Path
 import numpy as np
 
