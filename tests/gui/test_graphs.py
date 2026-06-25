@@ -271,7 +271,7 @@ def test_graph_composition(
     for item in view.plot.items:
         if isinstance(item, HoverableChartItem):
             assert isinstance(item, PieChart)
-            assert item.radius == 100.0  # 10^2
+            assert item.radius == 1.0  # 10^2
 
     view.clear()
     view.mode = "bar"
@@ -290,7 +290,7 @@ def test_graph_composition(
     for item in view.plot.items:
         if isinstance(item, HoverableChartItem):
             assert isinstance(item, BarChart)
-            assert item.height == 100.0  # 10^2
+            assert item.height == 1.0  # 10^2
 
     # Hover tested externally
 

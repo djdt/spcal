@@ -69,10 +69,10 @@ def _batch_export_results(
             size=export_options["image options"]["size"],
             dpi=export_options["image options"]["dpi"],
             font=export_options["image options"]["font"],
-            font_pen=QtGui.QPen(export_options["image options"]["font color"]),
+            font_color=export_options["image options"]["font color"],
         )
 
-        brush = export_options["image options"]["brush"]
+        brush = QtGui.QBrush(export_options["image options"]["color"])
         for key in CALIBRATION_KEYS:
             view.plot.xaxis.setLabel(key.title())
             for result in results:

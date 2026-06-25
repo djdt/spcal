@@ -599,9 +599,9 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         return {
             "size": self.image_export_options["size"],
             "dpi": self.image_export_options["dpi"],
-            "brush": QtGui.QBrush(self.image_export_options["color"]),
+            "color": self.image_export_options["color"],
             "font": self.image_export_options["font"],
-            "font pen": QtGui.QPen(self.image_export_options["font color"]),
+            "font color": self.image_export_options["font color"],
             "background color": self.image_export_options["background color"],
         }
 
