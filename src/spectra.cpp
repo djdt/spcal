@@ -9,7 +9,6 @@ py::array_t<float> spectra(py::array_t<float> &values,
                            py::array_t<long> &regions, const bool mean) {
   py::buffer_info vbuf = values.request();
   py::buffer_info rbuf = regions.request();
-  bool mean_flag = false;
 
   if (vbuf.ndim != 2)
     throw std::runtime_error("values must have 2 dim");
