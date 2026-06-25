@@ -17,6 +17,7 @@ def export_method() -> SPCalProcessingMethod:
     method.instrument_options.uptake = 0.2e-3 / 60.0
     method.instrument_options.efficiency = 0.1
     method.processing_options.prominence_required = 0.2
+    method.processing_options.cluster_distance = 0.03
     method.isotope_options[ISOTOPE_TABLE[("Ag", 107)]] = SPCalIsotopeOptions(
         10.49e3, 1e9, 1.0
     )
