@@ -1,3 +1,4 @@
+import os
 from typing import Callable
 from spcal.datafile import SPCalDataFile
 from pathlib import Path
@@ -19,6 +20,7 @@ from spcal.gui.batch.wizard import (
     BatchMethodWizardPage,
     BatchRunWizardPage,
     SPCalBatchProcessingWizard,
+    BatchFileListDelegate,
 )
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
@@ -348,6 +350,10 @@ def test_batch_wiard_image_export(
     wiz.close()
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None,
+    reason="mouseClick does not work in GitHub actions",
+)
 def test_batch_wizard_files_page(
     qtbot: QtBot,
     random_datafile_generator: Callable[..., SPCalDataFile],
@@ -373,7 +379,10 @@ def test_batch_wizard_files_page(
 
     assert page.isComplete()
 
-    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=1000):
+    delegate = page.files.itemDelegate(page.files.indexFromItem(page.files.item(0)))
+    assert isinstance(delegate, BatchFileListDelegate)
+
+    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
         qtbot.mouseClick(
             page.files.viewport(),
             QtCore.Qt.MouseButton.LeftButton,
