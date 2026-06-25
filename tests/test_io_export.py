@@ -1,3 +1,4 @@
+from pyqtgraph.examples.NonUniformImage import res
 from pathlib import Path
 import numpy as np
 
@@ -59,7 +60,12 @@ def test_export_spcal_processing_results_known(
         key: export_method.processClusters(results, key)
         for key in ["signal", "mass", "size"]
     }
-    print(clusters)
+
+    for result in results.values():
+        print(result.isotope)
+        print(result.number)
+        print(result.detections.mean())
+        print(result.detections.std())
 
     export.export_spcal_processing_results(
         tmp,
@@ -79,6 +85,7 @@ def test_export_spcal_processing_results_known(
     assert lines[2].startswith("# File")
 
     for line, checked in zip(lines[3:], lines_checked[3:]):
+        print(line)
         for tok, tok_checked in zip(line.split(","), checked.split(",")):
             try:
                 assert np.isclose(float(tok), float(tok_checked))
