@@ -15,9 +15,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
-    - name: Set up TBB
+    - name: Set up TBB and mesa
       run: |
-        sudo apt install libtbb-dev
+        sudo apt install libtbb-dev libgles2-mesa-dev
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip
