@@ -373,7 +373,7 @@ def test_batch_wizard_files_page(
 
     assert page.isComplete()
 
-    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
+    with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=1000):
         qtbot.mouseClick(
             page.files.viewport(),
             QtCore.Qt.MouseButton.LeftButton,

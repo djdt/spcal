@@ -42,6 +42,9 @@ def test_periodic_table_selector(qtbot: QtBot):
     pt = PeriodicTableSelector(selected_isotopes=[ISOTOPE_TABLE[("Sn", 112)]])
     qtbot.addWidget(pt)
 
+    with qtbot.waitExposed(pt):
+        pt.show()
+
     # length of all isotopes in database
     assert len(pt.enabledIsotopes()) == 344
     assert len(pt.selectedIsotopes()) == 1
@@ -85,10 +88,6 @@ def test_periodic_table_selector(qtbot: QtBot):
     assert pt.buttons["Ti"].indicator.red() == 255
     assert pt.buttons["Cr"].indicator is not None
     assert pt.buttons["Cr"].indicator.green() == 255
-
-    with qtbot.waitExposed(pt):
-        pt.show()
-
     # Remove color
     pt.setIsotopeColors([enabled[50]], [QtGui.QColor.fromRgb(255, 0, 0)])
     assert pt.buttons["Cr"].indicator is None
@@ -205,8 +204,10 @@ def test_value_widget(qtbot: QtBot):
 
     w.clearFocus()
     assert w.text() == "0.123457"
-    w.setFocus()
-    qtbot.wait(100)  # test sometimes fails without wait
+    with qtbot.wait_active(w):
+        w.setFocus()
+
+    # qtbot.wait(100)  # test sometimes fails without wait
     assert w.text() == "0.123456789"
     w.clearFocus()
 
