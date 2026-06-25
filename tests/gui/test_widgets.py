@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 import pytest
@@ -48,10 +49,8 @@ def test_periodic_table_selector(qtbot: QtBot):
     # length of all isotopes in database
     assert len(pt.enabledIsotopes()) == 344
     assert len(pt.selectedIsotopes()) == 1
-    assert not pt.buttons["Cd"].icon().isNull()  # find collisions is on
     with qtbot.wait_signal(pt.isotopesChanged, timeout=100):
         pt.buttons["Sn"].isotope_actions[112].setChecked(False)
-    assert pt.buttons["Cd"].icon().isNull()
 
     pt.buttons["C"].isotope_actions[13].setChecked(True)
     pt.buttons["Au"].isotope_actions[197].setChecked(True)
@@ -107,6 +106,23 @@ def test_periodic_table_selector(qtbot: QtBot):
     )
     assert len(pt.enabledIsotopes()) == 3
     assert len(pt.selectedIsotopes()) == 2
+
+
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") is not None,
+    reason="icons do not work in GitHub actions",
+)
+def test_periodic_table_selector_icons(qtbot: QtBot):
+    pt = PeriodicTableSelector(selected_isotopes=[ISOTOPE_TABLE[("Sn", 112)]])
+    qtbot.addWidget(pt)
+
+    with qtbot.waitExposed(pt):
+        pt.show()
+
+    assert not pt.buttons["Cd"].icon().isNull()  # find collisions is on
+    with qtbot.wait_signal(pt.isotopesChanged, timeout=100):
+        pt.buttons["Sn"].isotope_actions[112].setChecked(False)
+    assert pt.buttons["Cd"].icon().isNull()
 
 
 def test_units_widget(qtbot: QtBot):
