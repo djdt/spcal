@@ -49,7 +49,8 @@ def test_periodic_table_selector(qtbot: QtBot):
     assert len(pt.enabledIsotopes()) == 344
     assert len(pt.selectedIsotopes()) == 1
     assert not pt.buttons["Cd"].icon().isNull()  # find collisions is on
-    pt.buttons["Sn"].isotope_actions[112].setChecked(False)
+    with qtbot.wait_signal(pt.isotopesChanged, timeout=100):
+        pt.buttons["Sn"].isotope_actions[112].setChecked(False)
     assert pt.buttons["Cd"].icon().isNull()
 
     pt.buttons["C"].isotope_actions[13].setChecked(True)
@@ -206,6 +207,7 @@ def test_value_widget(qtbot: QtBot):
     assert w.text() == "0.123457"
     with qtbot.wait_active(w):
         w.setFocus()
+        w.activateWindow()  # force active for CI tests
 
     # qtbot.wait(100)  # test sometimes fails without wait
     assert w.text() == "0.123456789"
