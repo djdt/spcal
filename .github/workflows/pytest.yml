@@ -24,7 +24,7 @@ jobs:
           pip install setuptools wheel pybind11 pytest
     - name: Install project
       run: |
-        pip install .[dev] -v
+        pip install .[tests]
         python setup.py build_ext --inplace
     - name: Run pytest
       run: |
