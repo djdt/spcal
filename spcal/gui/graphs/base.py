@@ -773,10 +773,16 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         view.plot.getViewBox().setAspectLocked(
             self.plot.getViewBox().state["aspectLocked"]
         )
+        layout: QtWidgets.QGraphicsGridLayout = view.plot.layout  # type: ignore , bad pyqtgraph names
+
         if not self.plot.xaxis.isVisible():
             view.plot.xaxis.hide()  # cannot use setVisible as pyqtgraph does not update
+            layout.invalidate()
         if not self.plot.yaxis.isVisible():
             view.plot.yaxis.hide()  # cannot use setVisible as pyqtgraph does not update
+            layout.invalidate()
+
+        layout.activate()  # update the layout if axis items were hidden
 
         assert self.plot.legend is not None
         assert view.plot.legend is not None
