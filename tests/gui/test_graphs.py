@@ -390,6 +390,7 @@ def test_graph_image_export_particle(
     for result in results.values():
         view.drawResult(result, label=str(result.isotope))
 
+    qtbot.addWidget(view)
     with qtbot.waitExposed(view):
         view.show()
 
@@ -418,6 +419,7 @@ def test_graph_image_export_histogram(
     for result in results.values():
         view.drawResult(result, label=str(result.isotope))
 
+    qtbot.addWidget(view)
     with qtbot.waitExposed(view):
         view.show()
 
@@ -448,6 +450,7 @@ def test_graph_image_export_composition(
 
     view.drawResults(list(results.values()), clusters)
 
+    qtbot.addWidget(view)
     with qtbot.waitExposed(view):
         view.show()
 
