@@ -43,8 +43,8 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
 
     def setHoveredIdx(self, idx: int, min_value: float = 0.01):
         if self.values[idx] < min_value:
-            self.hovered_idx = -1
-        elif self.hovered_idx != idx:
+            idx = -1
+        if self.hovered_idx != idx:
             self.hovered_idx = idx
             self.update()
 
@@ -168,9 +168,9 @@ class PieChart(HoverableChartItem):
         for value in values:
             span = 360.0 * value / total
             path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
-            if span == 360.0:
+            if span >= 359.95:
                 path.addEllipse(rect)
-            else:
+            elif span >= 0.05:
                 path.arcTo(rect, angle, span)
             paths.append(path)
             label_pos.append(
