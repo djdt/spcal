@@ -59,6 +59,7 @@ def test_export_spcal_processing_results_known(
         key: export_method.processClusters(results, key)
         for key in ["signal", "mass", "size"]
     }
+    print(clusters)
 
     export.export_spcal_processing_results(
         tmp,
