@@ -36,15 +36,15 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         self.particle = ParticleView(font=font)
         self.histogram = HistogramView(font=font)
-        self.composition = CompositionView(font=font)  # type: ignore
+        self.composition = CompositionView(font=font)
         self.spectra = SpectraView(font=font)
         self.scatter = ScatterView(font=font)
 
-        self.addWidget(self.particle)  # type: ignore , works
-        self.addWidget(self.histogram)  # type: ignore , works
-        self.addWidget(self.composition)  # type: ignore , works
-        self.addWidget(self.spectra)  # type: ignore , works
-        self.addWidget(self.scatter)  # type: ignore , works
+        self.addWidget(self.particle)
+        self.addWidget(self.histogram)
+        self.addWidget(self.composition)
+        self.addWidget(self.spectra)
+        self.addWidget(self.scatter)
 
         self.action_view_options = create_action(
             "configure",
@@ -70,15 +70,15 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
     @QtCore.Slot()
     def setView(self, view: str):
         if view == "composition":
-            self.setCurrentWidget(self.composition)  # type: ignore
+            self.setCurrentWidget(self.composition)
         elif view == "histogram":
-            self.setCurrentWidget(self.histogram)  # type: ignore
+            self.setCurrentWidget(self.histogram)
         elif view == "particle":
-            self.setCurrentWidget(self.particle)  # type: ignore
+            self.setCurrentWidget(self.particle)
         elif view == "spectra":
-            self.setCurrentWidget(self.spectra)  # type: ignore
+            self.setCurrentWidget(self.spectra)
         elif view == "scatter":
-            self.setCurrentWidget(self.scatter)  # type: ignore
+            self.setCurrentWidget(self.scatter)
         else:
             raise ValueError(f"unknown view {view}")
 

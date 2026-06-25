@@ -222,18 +222,18 @@ class SingleIonDialog(QtWidgets.QDialog):
             self.reported_mu = info["AverageSingleIonArea"]
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:
-                if "PeakData" in h5["PeakData"]:  # type: ignore
-                    data = h5["PeakData"]["PeakData"]  # type: ignore
+                if "PeakData" in h5["PeakData"]:
+                    data = h5["PeakData"]["PeakData"]
                 else:  # pragma: no cover, covered above
                     data = tofwerk.integrate_tof_data(h5)
-                self.masses = np.asarray(h5["PeakData"]["PeakTable"]["mass"])  # type: ignore
+                self.masses = np.asarray(h5["PeakData"]["PeakTable"]["mass"])
                 self.counts = (
                     data
-                    * h5["FullSpectra"].attrs["Single Ion Signal"][0]  # type: ignore
+                    * h5["FullSpectra"].attrs["Single Ion Signal"][0]
                     * tofwerk.factor_extraction_to_acquisition(h5)
                 ).reshape(-1, self.masses.size)
                 self.reported_mu = np.log(
-                    h5["FullSpectra"].attrs["Single Ion Signal"][0]  # type: ignore
+                    h5["FullSpectra"].attrs["Single Ion Signal"][0]
                 )
         else:
             QtWidgets.QMessageBox.warning(
@@ -335,7 +335,6 @@ class SingleIonDialog(QtWidgets.QDialog):
             return xs, np.interp(xs, _xs, _ys)
         else:
             raise ValueError(f"invalid smoothing window {smoothing}")
-        return xs, ys
 
     def updateHistogram(self):
         if np.count_nonzero(self.valid) > 0:

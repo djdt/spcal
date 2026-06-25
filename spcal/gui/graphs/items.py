@@ -41,8 +41,10 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
 
         self.hovered_idx = -1
 
-    def setHoveredIdx(self, idx: int):
-        if self.hovered_idx != idx:
+    def setHoveredIdx(self, idx: int, min_value: float = 0.01):
+        if self.values[idx] < min_value:
+            self.hovered_idx = -1
+        elif self.hovered_idx != idx:
             self.hovered_idx = idx
             self.update()
 
@@ -55,17 +57,17 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
                     break
 
         if hovered_idx != self.hovered_idx:
-            self.hovered.emit(hovered_idx)  # type: ignore
+            self.hovered.emit(hovered_idx)
             self.update()
         self.hovered_idx = hovered_idx
 
-    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
+    def boundingRect(self) -> QtCore.QRectF:
         raise NotImplementedError
 
-    def shape(self) -> QtGui.QPainterPath:  # type: ignore
+    def shape(self) -> QtGui.QPainterPath:
         raise NotImplementedError
 
-    def paint(  # type: ignore
+    def paint(
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
@@ -91,7 +93,7 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
                 painter.save()
                 # save position then reset the painter transform to remove scaling
                 pos = painter.transform().map(self.label_positions[i])
-                painter.setTransform(self.transform())  # type: ignore , pyqtgraph weirdness
+                painter.setTransform(self.transform())
 
                 # now draw unscaled text
                 rect = painter.fontMetrics().boundingRect(self.labels[i]).toRectF()
@@ -101,25 +103,6 @@ class HoverableChartItem(pyqtgraph.GraphicsObject):
 
                 painter.restore()
         painter.restore()
-
-    def dataBounds(self, ax, frac, orthoRange=None):
-        """Pad by pen width"""
-        if self.pen.isCosmetic():
-            pw = 0.0
-        else:
-            pw = self.pen.width() * 0.7072
-        br = self.boundingRect()
-        if ax == 0:
-            return [br.left() - pw, br.right() + pw]
-        else:
-            return [br.top() - pw, br.bottom() + pw]
-
-    def pixelPadding(self):
-        """Pad by pen width"""
-        if self.pen.isCosmetic():
-            return max(1, self.pen.width()) * 0.7072
-        else:
-            return 0.0
 
 
 class BarChart(HoverableChartItem):
@@ -185,7 +168,10 @@ class PieChart(HoverableChartItem):
         for value in values:
             span = 360.0 * value / total
             path = QtGui.QPainterPath(QtCore.QPointF(0, 0))
-            path.arcTo(rect, angle, span)
+            if span == 360.0:
+                path.addEllipse(rect)
+            else:
+                path.arcTo(rect, angle, span)
             paths.append(path)
             label_pos.append(
                 QtCore.QPointF(
@@ -205,23 +191,3 @@ class PieChart(HoverableChartItem):
         path = QtGui.QPainterPath()
         path.addEllipse(self.boundingRect())
         return path
-
-
-class StaticRectItemSample(pyqtgraph.GraphicsWidget):
-    def __init__(self, brush: QtGui.QBrush):
-        super().__init__()
-        self.brush = brush
-
-    def boundingRect(self) -> QtCore.QRectF:  # type: ignore
-        return QtCore.QRectF(0, 0, 20, 20)
-
-    def paint(  # type: ignore
-        self,
-        painter: QtGui.QPainter,
-        option: QtWidgets.QStyleOptionGraphicsItem,
-        widget: QtWidgets.QWidget | None = None,
-    ):
-        painter.save()
-        painter.setBrush(self.brush)
-        painter.drawRect(QtCore.QRectF(2, 2, 18, 18))
-        painter.restore()

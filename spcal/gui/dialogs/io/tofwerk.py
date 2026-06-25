@@ -10,7 +10,7 @@ from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io.tofwerk import factor_extraction_to_acquisition
-from spcal.isotope import ISOTOPE_TABLE
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,8 @@ class TofwerkImportDialog(ImportDialogBase):
         selected_isotopes = []
         selected_numbers = []
         for isotope, result in results.items():
+            if not isinstance(isotope, SPCalIsotope):
+                continue
             if result.number > result.num_events * screening_target_ppm * 1e-6:
                 selected_isotopes.append(isotope)
                 selected_numbers.append(result.number)

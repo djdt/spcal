@@ -140,12 +140,12 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         if self._value is None:
             text = ""
         elif self.hasFocus() and self.isEnabled() and not self.isReadOnly():
-            text = self.locale().toString(float(self._value), "g", 12)  # type: ignore
+            text = self.locale().toString(float(self._value), "g", 12)
         else:
-            text = self.locale().toString(float(self._value), "g", self.sigfigs)  # type: ignore
+            text = self.locale().toString(float(self._value), "g", self.sigfigs)
             if self._error is not None:
                 text += " ± "
-                text += self.locale().toString(float(self._error), "g", self.sigfigs)  # type: ignore
+                text += self.locale().toString(float(self._error), "g", self.sigfigs)
 
         self.lineEdit().setText(text)
 

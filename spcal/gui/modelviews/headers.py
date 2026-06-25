@@ -71,24 +71,24 @@ class CheckableHeaderView(QtWidgets.QHeaderView):
             QtWidgets.QStyle.ContentsType.CT_CheckBox, option, size
         )
 
-        option.rect = QtCore.QRect(  # type: ignore , works
+        option.rect = QtCore.QRect(
             rect.left(),
             rect.center().y() - cb_size.height() // 2,
             cb_size.width(),
             cb_size.height(),
         )
-        option.state = (  # type: ignore , works
+        option.state = (
             QtWidgets.QStyle.StateFlag.State_Enabled
             | QtWidgets.QStyle.StateFlag.State_Active
         )
 
         state = self.checkState(logicalIndex)
         if state == QtCore.Qt.CheckState.Checked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_On  # type: ignore , works
+            option.state |= QtWidgets.QStyle.StateFlag.State_On
         elif state == QtCore.Qt.CheckState.Unchecked:
-            option.state |= QtWidgets.QStyle.StateFlag.State_Off  # type: ignore , works
+            option.state |= QtWidgets.QStyle.StateFlag.State_Off
         else:
-            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange  # type: ignore , works
+            option.state |= QtWidgets.QStyle.StateFlag.State_NoChange
 
         self.style().drawControl(
             QtWidgets.QStyle.ControlElement.CE_CheckBox, option, painter
@@ -153,20 +153,20 @@ class ComboHeaderView(QtWidgets.QHeaderView):
     ):
         option = QtWidgets.QStyleOptionComboBox()
         option.initFrom(self)
-        option.rect = rect  # type: ignore
-        option.currentText = str(  # type: ignore
+        option.rect = rect
+        option.currentText = str(
             self.model().headerData(logicalIndex, self.orientation())
         )
         if (
             logicalIndex not in self.section_items
             or len(self.section_items[logicalIndex]) < 2
         ):
-            option.subControls = (  # type: ignore
-                option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow  # type: ignore
+            option.subControls = (
+                option.subControls & ~QtWidgets.QStyle.SubControl.SC_ComboBoxArrow
             )
 
         if self.hasFocus():
-            option.state = QtWidgets.QStyle.StateFlag.State_Selected  # type: ignore
+            option.state = QtWidgets.QStyle.StateFlag.State_Selected
 
         self.style().drawComplexControl(
             QtWidgets.QStyle.ComplexControl.CC_ComboBox, option, painter

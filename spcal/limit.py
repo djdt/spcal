@@ -83,10 +83,10 @@ class SPCalLimit(object):
             prev_threshold = threshold
 
             if self.window_size > 0:
-                padded_signal[halfwin:-halfwin] = np.where(  # type: ignore , is bound
+                padded_signal[halfwin:-halfwin] = np.where(
                     signals < threshold, signals, np.nan
                 )
-                mu, threshold = self.windowedThresholdFunction(padded_signal)  # type: ignore
+                mu, threshold = self.windowedThresholdFunction(padded_signal)
             else:
                 mu, threshold = self.thresholdFunction(signals[signals < threshold])
 

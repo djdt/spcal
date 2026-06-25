@@ -57,15 +57,14 @@ class CompositionView(SinglePlotGraphicsView):
         assert self.plot.vb is not None
         self.plot.vb.setMouseEnabled(x=False, y=False)
         self.plot.vb.setAspectLocked(True)
-        self.plot.vb.invertY(True)
-        assert self.plot.legend is not None
-        self.plot.legend.setSampleType(FontScaledItemSample)
         self.plot.xaxis.hide()
         self.plot.yaxis.hide()
 
         # options
         self.mode = "pie"
         self.min_size: float | str = "5%"
+
+        self.pies = []
 
         self.action_show_comp_dialog = create_action(
             "office-chart-pie",
@@ -104,7 +103,9 @@ class CompositionView(SinglePlotGraphicsView):
             self.data_for_export[str(result.isotope) + "_std"] = stds[:, i]
 
         if isinstance(self.min_size, str) and self.min_size.endswith("%"):
-            min_size = np.count_nonzero(valid) * float(self.min_size.rstrip("%")) / 100.0
+            min_size = (
+                np.count_nonzero(valid) * float(self.min_size.rstrip("%")) / 100.0
+            )
         else:
             min_size = float(self.min_size)
 
@@ -115,23 +116,29 @@ class CompositionView(SinglePlotGraphicsView):
         if counts.size == 0:
             return
 
-        size = 100.0
-        spacing = size * 2.0
+        size = 1.0
+        spacing = size / 4.0
 
-        items = []
+        self.pies.clear()
         if self.mode == "pie":
             radii = np.sqrt(counts * np.pi)
             radii = radii / np.amax(radii) * size
 
-            for i, (count, radius, comp) in enumerate(zip(counts, radii, compositions)):
+            steps = radii[:-1] + radii[1:] + spacing
+            positions = np.concatenate([[0.0], np.cumsum(steps)])
+
+            for xpos, count, radius, comp in zip(
+                positions, counts, radii, compositions
+            ):
                 item = PieChart(
                     radius,
                     comp,
-                    brushes,
+                    pen=pen,
+                    brushes=brushes,
                     labels=[str(result.isotope) for result in results],
                     font=self.plot.font(),
                 )
-                item.setPos(i * spacing, -size)
+                item.setPos(xpos, 0)
                 label = pyqtgraph.TextItem(
                     f"idx {i + 1}: {count}",
                     color="black",
@@ -139,26 +146,30 @@ class CompositionView(SinglePlotGraphicsView):
                     ensureInBounds=True,
                 )
                 label.setFont(self.plot.font())
-                label.setPos(i * spacing, 0)
+                label.setPos(xpos, -size)
+
                 self.plot.addItem(item)
                 self.plot.addItem(label)
-                items.append(item)
+                self.pies.append(item)
         elif self.mode == "bar":
             heights = counts / np.amax(counts) * size
             width = spacing / 2.0
 
-            for i, (count, height, comp) in enumerate(
-                zip(counts, heights, compositions)
+            positions = np.arange(len(counts)) * (width + spacing)
+
+            for xpos, count, height, comp in zip(
+                positions, counts, heights, compositions
             ):
                 item = BarChart(
                     height,
                     width,
                     comp,
-                    brushes,
+                    pen=pen,
+                    brushes=brushes,
                     labels=[str(result.isotope) for result in results],
                     font=self.plot.font(),
                 )
-                item.setPos(i * spacing - width / 2.0, -height)
+                item.setPos(xpos, 0)
                 label = pyqtgraph.TextItem(
                     f"idx {i + 1}: {count}",
                     color="black",
@@ -166,28 +177,27 @@ class CompositionView(SinglePlotGraphicsView):
                     ensureInBounds=True,
                 )
                 label.setFont(self.plot.font())
-                label.setPos(i * spacing, 0)
+                label.setPos(xpos + width / 2.0, 0.0)
                 self.plot.addItem(item)
                 self.plot.addItem(label)
-                items.append(item)
+                self.pies.append(item)
         else:
             raise ValueError("Composition mode must be 'pie' or 'bar'.")
 
         # link all hovers
-        for i in range(len(items)):
-            for j in range(len(items)):
+        for i in range(len(self.pies)):
+            for j in range(len(self.pies)):
                 if i == j:
                     continue
-                items[i].hovered.connect(items[j].setHoveredIdx)
+                self.pies[i].hovered.connect(self.pies[j].setHoveredIdx)
 
         # Add legend for each pie
         if self.plot.legend is not None:
-            fm = QtGui.QFontMetrics(self.font())
             for result, brush in zip(results, brushes):
-                self.plot.legend.addItem(
-                    FontScaledItemSample(None, fm, brush=brush),
-                    str(result.isotope),
-                )
+                # a dirty hack because it crashes otherwise
+                item = FontScaledItemSample(self.font(), None, brush=brush)  # type: ignore
+                item.item = item
+                self.plot.legend.addItem(item, str(result.isotope))
 
     def zoomReset(self):  # No plotdata
         if self.plot.vb is not None:

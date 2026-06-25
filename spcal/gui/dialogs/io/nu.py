@@ -10,7 +10,7 @@ from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io import nu
-from spcal.isotope import ISOTOPE_TABLE
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
@@ -260,6 +260,8 @@ class NuImportDialog(ImportDialogBase):
         selected_isotopes = []
         selected_numbers = []
         for isotope, result in results.items():
+            if not isinstance(isotope, SPCalIsotope):
+                continue
             if result.number > result.num_events * screening_target_ppm * 1e-6:
                 selected_isotopes.append(isotope)
                 selected_numbers.append(result.number)
@@ -300,6 +302,7 @@ class NuImportDialog(ImportDialogBase):
 
     def closeEvent(self, event: QtGui.QCloseEvent):
         self.cleanup()
+        super().closeEvent(event)
 
     def cleanup(self):
         self.import_data.clear()

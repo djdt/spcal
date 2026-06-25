@@ -37,7 +37,7 @@ def test_calibration_modes():
 def test_calibration(test_data_path: Path):
     path = test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     with h5py.File(path, "r") as h5:
-        mass: np.ndarray = h5["FullSpectra"]["MassAxis"][:]  # type: ignore , h5
+        mass: np.ndarray = h5["FullSpectra"]["MassAxis"][:]
     idx = np.arange(mass.size)
 
     # From file, unable to test other modes
@@ -56,7 +56,7 @@ def test_integrate(test_data_path: Path):
     with h5py.File(path, "r") as h5:
         data = integrate_tof_data(h5)
         data_ar = integrate_tof_data(h5, idx=[45])  # type: ignore
-        peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]  # type: ignore , h5
+        peak_data: np.ndarray = h5["PeakData"]["PeakData"][:]
 
     assert data.shape[-1] == 315
     assert data_ar.shape[-1] == 1

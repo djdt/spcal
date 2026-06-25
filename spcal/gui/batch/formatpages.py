@@ -157,7 +157,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
 class BatchTextWizardPage(QtWidgets.QWizardPage):
     def __init__(
         self,
-        isotopes: list[SPCalIsotope],
+        isotopes: list[SPCalIsotope],  # TODO: might be useful to set names
         delimiter: str,
         skip_rows: int,
         cps: bool,
@@ -281,7 +281,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         first_header = (
             paths[0].open("r").readlines(TextImportDialog.HEADER_LINE_COUNT * size)
         )
-        delimiter, skip_rows, columns = guess_text_parameters(first_header)
+        delimiter, skip_rows, _ = guess_text_parameters(first_header)
 
         for path in paths[1:]:
             header = path.open("r").readlines((skip_rows + 1) * size)

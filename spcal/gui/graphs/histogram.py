@@ -92,8 +92,7 @@ class HistogramView(SinglePlotGraphicsView):
         )
 
         if self.plot.legend is not None:
-            fm = QtGui.QFontMetrics(self.font())
-            legend = HistogramItemSample(fm, [curve])
+            legend = HistogramItemSample(self.font(), [curve])
             self.plot.legend.addItem(legend, label)
 
         if self.draw_filtered:

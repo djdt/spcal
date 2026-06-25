@@ -5,19 +5,45 @@ from PySide6 import QtCore, QtGui, QtWidgets
 class FontScaledItemSample(pyqtgraph.ItemSample):
     def __init__(
         self,
-        item: QtWidgets.QGraphicsItem | None,
-        font_metrics: QtGui.QFontMetrics,
+        font: QtGui.QFont,
+        item: QtWidgets.QGraphicsItem,
+        ratio: tuple[int, int] = (1, 1),
         brush: QtGui.QBrush | None = None,
     ):
         super().__init__(item)
-        self.setFixedHeight(font_metrics.ascent())
-        self.setFixedWidth(font_metrics.ascent())
-        self.pad = font_metrics.lineWidth()
+
+        self.font_metrics = QtGui.QFontMetrics(font)
+        self.ratio = ratio
+
+        if brush is None:
+            brush = QtGui.QBrush()
         self.brush = brush
 
+        self.setFixedWidth(self.font_metrics.ascent() * ratio[0])
+        self.setFixedHeight(self.font_metrics.ascent() * ratio[1])
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed
+        )
+
+    def pad(self) -> float:
+        return self.font_metrics.lineWidth()
+
     def boundingRect(self):
-        return QtCore.QRectF(  # vertically center
-            0, 0, self.width(), self.height()
+        return QtCore.QRectF(0, 0, self.width(), self.height())
+
+    def updateFontMetrics(self, font: QtGui.QFont):
+        self.font_metrics = QtGui.QFontMetrics(font)
+        self.setFixedWidth(self.font_metrics.ascent() * self.ratio[0])
+        self.setFixedHeight(self.font_metrics.ascent() * self.ratio[1])
+        self.prepareGeometryChange()
+
+    def mouseClickEvent(self, event):
+        pass
+
+    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
+        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
+        painter.drawPixmap(
+            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
         )
 
     def paint(  # type: ignore
@@ -26,32 +52,32 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
     ):
+        pad = self.pad()
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 0)
+
         painter.save()
+        painter.setPen(pen)
         painter.setBrush(self.brush)
-        painter.drawRect(
-            self.boundingRect().adjusted(self.pad, self.pad, -self.pad, -self.pad)
-        )
+
+        painter.drawRect(self.boundingRect().adjusted(pad, pad, -pad, -pad))
         painter.restore()
 
 
 class HistogramItemSample(FontScaledItemSample):
-    """Legend item for a histogram and its fit."""
+    """Legend item for a histogram and its fit.
+    Scales to match font size"""
 
     def __init__(
         self,
-        font_metrics: QtGui.QFontMetrics,
+        font: QtGui.QFont,
         histograms: list[pyqtgraph.PlotCurveItem],
-        fit: pyqtgraph.PlotCurveItem | None = None,
         limits: list[pyqtgraph.InfiniteLine] | None = None,
     ):
-        super().__init__(histograms[0], font_metrics)
+        super().__init__(font, histograms[0], ratio=(2, 1))
         self.other_items = histograms[1:]
-        self.item_fit = fit
         self.item_limits = []
         if limits is not None:
             self.item_limits.extend(limits)
-
-        self.setFixedWidth(self.height() * 3)
 
     def setLimitsVisible(self, visible: bool):
         for limit in self.item_limits:
@@ -62,7 +88,6 @@ class HistogramItemSample(FontScaledItemSample):
         self,
         hist: bool | None = None,
         limits: bool | None = None,
-        fit: bool | None = None,
     ):
         for item in self.parentItem().childItems():
             if isinstance(item, HistogramItemSample) and item != self:
@@ -72,8 +97,6 @@ class HistogramItemSample(FontScaledItemSample):
                     item.item.setVisible(hist)
                 if limits is not None:
                     item.setLimitsVisible(limits)
-                if fit is not None and item.item_fit is not None:
-                    item.item_fit.setVisible(fit)
                 item.update()
 
     def mouseClickEvent(
@@ -89,13 +112,6 @@ class HistogramItemSample(FontScaledItemSample):
                     else:
                         visible = any(limit.isVisible() for limit in self.item_limits)
                         self.setLimitsVisible(not visible)
-            elif event.pos().x() < self.boundingRect().right() - self.height():
-                if self.item_fit is not None:
-                    if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
-                        self.item_fit.setVisible(True)
-                        self.setSibilingsVisble(fit=False)
-                    else:
-                        self.item_fit.setVisible(not self.item_fit.isVisible())
             else:
                 if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
                     self.item.setVisible(True)
@@ -111,92 +127,42 @@ class HistogramItemSample(FontScaledItemSample):
             event.accept()
             self.update()
 
-    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
-        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
-        painter.drawPixmap(
-            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
-        )
-
-    def paint(  # type: ignore
+    def paint(
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
     ):
-        # painter.drawRect(self.boundingRect())
         painter.setRenderHint(painter.RenderHint.Antialiasing)
 
         rect = self.boundingRect()
-        rect.setWidth(self.width() / 3)
+        rect.setWidth(self.width() / 2)
+
+        pad = self.pad()
 
         if len(self.item_limits) > 0:
             if not all(limit.isVisible() for limit in self.item_limits):
-                self.drawHiddenIcon(
-                    painter, rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-                )
+                self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))
             else:
                 painter.setPen(self.item_limits[0].pen)
                 painter.drawLine(
-                    QtCore.QPointF(rect.center().x(), self.pad),
-                    QtCore.QPointF(rect.center().x(), rect.top() - self.pad),
+                    QtCore.QPointF(rect.center().x(), pad),
+                    QtCore.QPointF(rect.center().x(), rect.top() - pad),
                 )
 
-        rect.moveLeft(rect.left() + self.height())
-        if self.item_fit is not None:
-            opts = self.item_fit.opts
-            if not self.item_fit.isVisible():
-                self.drawHiddenIcon(
-                    painter, rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-                )
-            else:
-                path = self.pathForFit(
-                    rect.left() + self.pad,
-                    self.pad,
-                    rect.left() + self.height() - self.pad * 2.0,
-                    self.height() - self.pad * 2.0,
-                )
-                painter.strokePath(path, pyqtgraph.mkPen(opts["pen"]))
-
-        rect.moveLeft(rect.left() + self.height())
+        rect.moveLeft(rect.left() + self.width() / 2)
         if not self.item.isVisible():
-            self.drawHiddenIcon(
-                painter, rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-            )
+            self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))
         else:
             opts = self.item.opts
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 0.0)
+            painter.setRenderHint(painter.RenderHint.Antialiasing, False)
             painter.setBrush(pyqtgraph.mkBrush(opts["brush"]))
-            painter.setPen(pyqtgraph.mkPen(opts["pen"]))
-            painter.drawPath(
-                self.pathForHist(
-                    rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-                )
-            )
-
-    def pathForFit(
-        self, x0: float, y0: float, x1: float, y1: float
-    ) -> QtGui.QPainterPath:
-        xm = x0 + (x1 - x0) / 2.0
-        path = QtGui.QPainterPath()
-        path.moveTo(x0, y1)
-        path.cubicTo(x0 + (xm - x0) / 2.0, y1, xm - (xm - x0) / 3.0, y0, xm, y0)
-        path.cubicTo(xm + (xm - x0) / 3.0, y0, x1 - (xm - x0) / 2.0, y1, x1, y1)
-        return path
-
-    def pathForHist(self, rect: QtCore.QRectF) -> QtGui.QPainterPath:
-        dx = rect.width() / 3.0
-        dy = rect.height() / 3.0
-        path = QtGui.QPainterPath()
-        for i, h in enumerate([2.0, 1.0, 3.0]):
-            r = QtCore.QRectF(rect.left() + dx * i, rect.bottom() - dy * h, dx, dy * h)
-            path.addRect(r)
-        return path
+            painter.setPen(pen)
+            painter.drawRect(rect.adjusted(pad, pad, -pad, -pad))
 
     def addLimit(self, limit: pyqtgraph.InfiniteLine):
         self.item_limits.append(limit)
-        self.prepareGeometryChange()
-
-    def setFit(self, fit: pyqtgraph.PlotCurveItem | None):
-        self.item_fit = fit
         self.prepareGeometryChange()
 
 
@@ -205,16 +171,14 @@ class ParticleItemSample(FontScaledItemSample):
 
     def __init__(
         self,
-        font_metrics: QtGui.QFontMetrics,
+        font: QtGui.QFont,
         signals: pyqtgraph.PlotCurveItem,
         detections: pyqtgraph.ScatterPlotItem,
         lines: list[pyqtgraph.PlotCurveItem] | None = None,
     ):
-        super().__init__(signals, font_metrics)
+        super().__init__(font, signals, ratio=(2, 1))
         self.detections = detections
         self.lines = lines
-
-        self.setFixedWidth(self.height() * 2)
 
     def setSibilingsVisble(
         self,
@@ -260,44 +224,37 @@ class ParticleItemSample(FontScaledItemSample):
             event.accept()
             self.update()
 
-    def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
-        icon = pyqtgraph.icons.invisibleEye.qicon  # type: ignore
-        painter.drawPixmap(
-            rect.topLeft().toPoint(), icon.pixmap(rect.width(), rect.height())
-        )
-
-    def paint(  # type: ignore
+    def paint(
         self,
         painter: QtGui.QPainter,
         option: QtWidgets.QStyleOptionGraphicsItem,
         widget: QtWidgets.QWidget | None = None,
     ):
-        # painter.drawRect(self.boundingRect())
         painter.setRenderHint(painter.RenderHint.Antialiasing)
 
         rect = self.boundingRect()
-        rect.setRight(rect.left() + self.height())
+        rect.setRight(rect.left() + self.width() / 2)
+
+        pad = self.pad()
 
         if self.lines is not None and len(self.lines) > 0:
             if all(line.isVisible() for line in self.lines):
                 painter.save()
                 painter.setPen(self.lines[0].opts["pen"])
                 painter.drawLine(
-                    QtCore.QPointF(rect.left() + self.pad * 2, rect.center().y()),
-                    QtCore.QPointF(rect.right() - self.pad * 2, rect.center().y()),
+                    QtCore.QPointF(rect.left() + pad * 2, rect.center().y()),
+                    QtCore.QPointF(rect.right() - pad * 2, rect.center().y()),
                 )
                 painter.restore()
             else:
-                self.drawHiddenIcon(
-                    painter, rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-                )
+                self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))
 
-        rect.moveLeft(rect.left() + self.height())
+        rect.moveLeft(rect.left() + self.width() / 2)
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 0.0)
         if self.item.isVisible():
             painter.setRenderHint(painter.RenderHint.Antialiasing, False)
+            painter.setPen(pen)
             painter.setBrush(self.detections.opts["brush"])
-            painter.drawRect(rect.adjusted(self.pad, self.pad, -self.pad, -self.pad))
+            painter.drawRect(rect.adjusted(pad, pad, -pad, -pad))
         else:
-            self.drawHiddenIcon(
-                painter, rect.adjusted(self.pad, self.pad, -self.pad, -self.pad)
-            )
+            self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))

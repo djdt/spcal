@@ -259,7 +259,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         # Draw element number
         self.style().drawItemText(
             painter,
-            option.rect.adjusted(2, 0, 0, 0),  # type: ignore
+            option.rect.adjusted(2, 0, 0, 0),
             QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignTop,
             self.palette(),
             self.isEnabled(),
@@ -271,7 +271,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         if num > 0:
             self.style().drawItemText(
                 painter,
-                option.rect.adjusted(2, 0, 0, 0),  # type: ignore
+                option.rect.adjusted(2, 0, 0, 0),
                 QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignBottom,
                 self.palette(),
                 self.isEnabled(),
@@ -281,7 +281,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         # Draw color icon
         if self.indicator is not None:
             rect = QtCore.QRectF(0.0, 0.0, 10.0, 10.0)
-            rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))  # type: ignore
+            rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))
             painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
             painter.setBrush(QtGui.QBrush(self.indicator))
             painter.drawEllipse(rect)
@@ -399,5 +399,5 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         list,
         selectedIsotopes,
         setSelectedIsotopes,
-        notify=isotopesChanged,  # type: ignore
+        notify=isotopesChanged,
     )

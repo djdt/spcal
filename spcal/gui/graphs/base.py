@@ -8,6 +8,46 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.io import get_save_spcal_path, most_recent_spcal_path
 from spcal.gui.util import create_action
 
+from spcal.gui.graphs.legends import FontScaledItemSample
+from spcal.gui.dialogs.imageexport import ImageExportDialog
+
+
+def create_export_view(
+    title: str = "",
+    xlabel: str = "",
+    ylabel: str = "",
+    size: QtCore.QSize | None = None,
+    dpi: int = 96,
+    font: QtGui.QFont | None = None,
+    font_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+) -> "SinglePlotGraphicsView":
+    if font is None:
+        font = QtGui.QFont()
+
+    if font_color is None:
+        font_color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
+
+    scaled_font = QtGui.QFont(font)
+    font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
+    scaled_font.setPointSizeF(font.pointSize() * font_scale)
+
+    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=scaled_font)
+    if size is not None:
+        view.viewport().resize(size)
+        view.plot.resize(size)
+
+    font_pen = QtGui.QPen(font_color, 1.0)
+    font_pen.setCosmetic(True)
+
+    for axis in [view.plot.xaxis, view.plot.yaxis]:
+        axis.setTextPen(font_pen)
+        axis.setPen(font_pen)
+        axis.setTickPen(font_pen)
+        if axis.label is not None:
+            axis.label.setDefaultTextColor(font_pen.color())
+
+    return view
+
 
 class AxisRangeDialog(QtWidgets.QDialog):
     rangeSelected = QtCore.Signal(float, float)
@@ -226,12 +266,12 @@ class SinglePlotItem(pyqtgraph.PlotItem):
         self.yaxis.label.setFont(font)  # type: ignore , not None
 
         self.titleLabel.setText(
-            self.titleLabel.text,
-            family=font.family(),
-            size=f"{font.pointSize()}pt",
+            self.titleLabel.text, family=font.family(), size=f"{font.pointSize()}pt"
         )
 
         if self.legend is not None:
+            for item, _ in self.legend.items:
+                item.setFont(font)
             self.legend.setLabelTextSize(f"{font.pointSize()}pt")
             self.redrawLegend()
 
@@ -435,7 +475,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "viewimage",
             "Export Image",
             "Save the image to file, at a specified size and DPI.",
-            lambda: self.exportImage(None),
+            self.dialogExportImage,
         )
 
         self.context_menu_actions: list[QtGui.QAction] = []
@@ -639,44 +679,189 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         else:
             raise ValueError("file suffix must be '.npz' or '.csv'.")
 
+    def getDefaultImageExportOptions(
+        self,
+    ) -> tuple[QtCore.QSize, int, QtGui.QFont, QtGui.QColor, QtGui.QColor]:
+        size = self.viewport().size()
+        dpi = 96
+        font = self.font()
+        font_color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
+        background_color = QtGui.QColor(QtCore.Qt.GlobalColor.white)
+        settings = QtCore.QSettings()
+        if settings.contains("ImageExport/Size"):
+            size: QtCore.QSize = settings.value("ImageExport/Size")
+        if settings.contains("ImageExport/DPI"):
+            dpi = int(settings.value("ImageExport/DPI"))
+        if settings.contains("ImageExport/Font"):
+            font: QtGui.QFont = settings.value("ImageExport/Font")
+        if settings.contains("ImageExport/Font"):
+            font_color: QtGui.QColor = settings.value("ImageExport/FontColor")
+        if settings.contains("ImageExport/Background"):
+            background_color: QtGui.QColor = settings.value(
+                "ImageExport/BackgroundColor"
+            )
+        if isinstance(font_color, QtCore.Qt.GlobalColor):
+            font_color = QtGui.QColor(font_color)
+
+        if isinstance(background_color, QtCore.Qt.GlobalColor):
+            background_color = QtGui.QColor(background_color)
+
+        return size, dpi, font, font_color, background_color
+
+    def setDefaultImageExportOptions(
+        self,
+        size: QtCore.QSize,
+        dpi: int,
+        font: QtGui.QFont,
+        font_color: QtGui.QColor,
+        background_color: QtGui.QColor,
+    ):
+        settings = QtCore.QSettings()
+        settings.setValue("ImageExport/Size", size)
+        settings.setValue("ImageExport/DPI", dpi)
+        settings.setValue("ImageExport/Font", font)
+        settings.setValue("ImageExport/FontColor", font_color)
+        settings.setValue("ImageExport/BackgroundColor", background_color)
+
+    def dialogExportImage(self):
+        size, dpi, font, font_color, background_color = (
+            self.getDefaultImageExportOptions()
+        )
+
+        dlg = ImageExportDialog(
+            size, dpi, None, font, font_color, background_color, self
+        )
+        dlg.button_color.setVisible(False)
+        dlg.exec()
+        if dlg.result() != QtWidgets.QDialog.DialogCode.Accepted:
+            return
+
+        dir = most_recent_spcal_path()
+        dir = str(Path(str(dir)).parent) if dir is not None else ""
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export Image",
+            dir,
+            "PNG Images(*.png);;All Files(*)",
+        )
+        if path == "":
+            return
+
+        size, dpi, _, font, font_color, background_color = dlg.imageOptions()
+        self.setDefaultImageExportOptions(size, dpi, font, font_color, background_color)
+        self.exportImageWithOptions(path, dpi, size, font, font_color, background_color)
+
+    def exportImageWithOptions(
+        self,
+        path: Path | str,
+        dpi: int,
+        size: QtCore.QSize,
+        font: QtGui.QFont,
+        font_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+        background_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+    ):
+        if font_color is None:
+            font_color = QtCore.Qt.GlobalColor.black
+
+        view = create_export_view(
+            xlabel=self.plot.xaxis.labelString(),
+            ylabel=self.plot.yaxis.labelString(),
+            size=size,
+            dpi=dpi,
+            font=font,
+            font_color=font_color,
+        )
+        # update some values that are used for plotting compositions
+        view.plot.getViewBox().setAspectLocked(
+            self.plot.getViewBox().state["aspectLocked"]
+        )
+        layout: QtWidgets.QGraphicsGridLayout = view.plot.layout  # type: ignore , bad pyqtgraph names
+
+        if not self.plot.xaxis.isVisible():
+            view.plot.xaxis.hide()  # cannot use setVisible as pyqtgraph does not update
+            layout.invalidate()
+        if not self.plot.yaxis.isVisible():
+            view.plot.yaxis.hide()  # cannot use setVisible as pyqtgraph does not update
+            layout.invalidate()
+
+        layout.activate()  # update the layout if axis items were hidden
+
+        assert self.plot.legend is not None
+        assert view.plot.legend is not None
+
+        legend_items = [item for item in self.plot.legend.items]
+        move_items = [item for item in self.plot.items]
+
+        # move items and scale to match DPI
+        for item in move_items:
+            self.plot.removeItem(item)
+            if isinstance(item, pyqtgraph.PlotCurveItem):
+                pen = item.opts["pen"]
+                pen.setWidthF(pen.widthF() * dpi / 96.0)
+                item.setPen(pen)
+            elif isinstance(item, pyqtgraph.ScatterPlotItem):
+                item_size = item.opts["size"]
+                item.setSize(item_size * dpi / 96.0)
+            elif isinstance(item, (pyqtgraph.LabelItem, pyqtgraph.TextItem)):
+                item.setFont(view.font())
+
+            view.plot.addItem(item)
+
+        # set the legends to match the export font
+        for item, label in legend_items:
+            self.plot.legend.removeItem(item)
+            if isinstance(item, FontScaledItemSample):
+                item.updateFontMetrics(view.font())
+            view.plot.legend.addItem(item, label.text)
+
+        # copy the current view
+        view.plot.getViewBox().setRange(self.plot.getViewBox().viewRect(), padding=0)
+        view.plot.redrawLegend()
+        view.exportImage(path, background_color)
+
+        # move items and return scale to normal
+        for item in move_items:
+            view.plot.removeItem(item)
+            if isinstance(item, pyqtgraph.PlotCurveItem):
+                pen = item.opts["pen"]
+                pen.setWidthF(pen.widthF() * 96.0 / dpi)
+                item.setPen(pen)
+            elif isinstance(item, pyqtgraph.ScatterPlotItem):
+                item_size = item.opts["size"]
+                item.setSize(item_size * 96.0 / dpi)
+            elif isinstance(item, (pyqtgraph.LabelItem, pyqtgraph.TextItem)):
+                item.setFont(self.font())
+            self.plot.addItem(item)
+
+        # restore the legend fonts
+        for item, label in legend_items:
+            view.plot.legend.removeItem(item)
+            if isinstance(item, FontScaledItemSample):
+                item.updateFontMetrics(self.font())
+            self.plot.legend.addItem(item, label.text)
+
+        self.plot.redrawLegend()
+
     def exportImage(
         self,
-        path: Path | str | None,
-        size: QtCore.QSize | None = None,
-        background: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
+        path: Path | str,
+        background_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
     ):
-        if path is None:
-            dir = most_recent_spcal_path()
-            dir = str(Path(str(dir)).parent) if dir is not None else ""
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(
-                self,
-                "Export Image",
-                dir,
-                "PNG Images(*.png);;All Files(*)",
-            )
-            if path == "":
-                return
         path = Path(path)
         if len(path.suffixes) == 0 or path.suffixes[-1].lower() != ".png":
             path = path.with_name(path.name + ".png")
 
-        if background is None:
-            background = QtGui.QColor(QtCore.Qt.GlobalColor.white)
+        if background_color is None:
+            background_color = QtGui.QColor(QtCore.Qt.GlobalColor.white)
 
-        if size is None:
-            size = self.viewport().size()
+        size = self.viewport().size()
 
         image = QtGui.QImage(size, QtGui.QImage.Format.Format_ARGB32)
-        image.fill(background)
+        image.fill(background_color)
 
         painter = QtGui.QPainter(image)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QtGui.QPainter.RenderHint.TextAntialiasing, True)
-
-        # Setup for export
-        for item in self.plot.items:
-            if hasattr(item, "_exportOpts"):
-                item._exportOpts = {}
 
         self.scene().render(
             painter,

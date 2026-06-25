@@ -58,7 +58,7 @@ class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
         index: QtCore.QModelIndex | QtCore.QPersistentModelIndex,
     ):
         super().initStyleOption(option, index)
-        option.decorationPosition = QtWidgets.QStyleOptionViewItem.Position.Right  # type: ignore
+        option.decorationPosition = QtWidgets.QStyleOptionViewItem.Position.Right
 
     def editorEvent(
         self,
@@ -71,15 +71,15 @@ class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
             assert isinstance(event, QtGui.QMouseEvent)
             self.initStyleOption(option, index)
             style = (
-                option.widget.style()  # type: ignore
-                if option.widget is not None  # type: ignore
+                option.widget.style()
+                if option.widget is not None
                 else QtWidgets.QApplication.style()
             )
 
             rect = style.subElementRect(
                 QtWidgets.QStyle.SubElement.SE_ItemViewItemDecoration,
                 option,
-                option.widget,  # type: ignore
+                option.widget,
             )
             if rect.contains(event.position().toPoint()):
                 model.removeRow(index.row())
@@ -400,7 +400,11 @@ class BatchMethodWizardPage(QtWidgets.QWizardPage):
 
     def dialogCalculator(self):
         isotopes = list(self.isotope_model.isotope_options.keys())
-        dlg = CalculatorDialog(isotopes, self.expr_list.expressions(), parent=self)
+        dlg = CalculatorDialog(
+            [iso for iso in isotopes if isinstance(iso, SPCalIsotope)],
+            self.expr_list.expressions(),
+            parent=self,
+        )
         dlg.expressionsChanged.connect(self.setExpressions)
         dlg.open()
 
@@ -494,8 +498,8 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
 
         # image options
         self.image_export_options = {
-            "size": QtCore.QSize(800, 600),
-            "dpi": 96,
+            "size": QtCore.QSize(1890, 1180),
+            "dpi": 300,
             "color": QtGui.QColor(128, 128, 128),
             "font": self.font(),
             "font color": QtGui.QColor(0, 0, 0),
@@ -598,9 +602,9 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         return {
             "size": self.image_export_options["size"],
             "dpi": self.image_export_options["dpi"],
-            "brush": QtGui.QBrush(self.image_export_options["color"]),
+            "color": self.image_export_options["color"],
             "font": self.image_export_options["font"],
-            "font pen": QtGui.QPen(self.image_export_options["font color"]),
+            "font color": self.image_export_options["font color"],
             "background color": self.image_export_options["background color"],
         }
 
@@ -670,15 +674,13 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             self.output_dir.setText(dir)
 
     def dialogImageExportOptions(self):
-        bg_color: QtGui.QColor = self.image_export_options["background color"]  # type: ignore
-
         dlg = ImageExportDialog(
             self.image_export_options["size"],  # type: ignore
             self.image_export_options["dpi"],  # type: ignore
             self.image_export_options["color"],  # type: ignore
             self.image_export_options["font"],  # type: ignore
             self.image_export_options["font color"],  # type: ignore
-            bg_color.alpha() != 255,
+            self.image_export_options["background color"],  # type: ignore
             parent=self,
         )
         dlg.imageOptionsSelected.connect(self.setImageExportOptions)
@@ -691,21 +693,14 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         color: QtGui.QColor,
         font: QtGui.QFont,
         font_color: QtGui.QColor,
-        transparent: bool,
+        background_color: QtGui.QColor,
     ):
         self.image_export_options["size"] = size
         self.image_export_options["dpi"] = dpi
         self.image_export_options["color"] = color
         self.image_export_options["font"] = font
         self.image_export_options["font color"] = font_color
-        bg_color = QtGui.QColor(
-            QtCore.Qt.GlobalColor.black
-            if font_color.value() > 127
-            else QtCore.Qt.GlobalColor.white
-        )
-        if transparent:
-            bg_color.setAlpha(0)
-        self.image_export_options["background color"] = bg_color
+        self.image_export_options["background color"] = background_color
 
     def addFile(self, path: Path, chunk: tuple[int, int | None] | None = None):
         item = QtWidgets.QListWidgetItem()

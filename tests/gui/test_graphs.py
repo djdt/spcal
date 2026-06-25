@@ -22,6 +22,17 @@ from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 
 
+def png_size(path: Path) -> tuple[int, int]:
+    """Returns the width and height of a PNG file"""
+    with path.open("rb") as fp:
+        header = fp.read(8)
+        assert header == b"\x89\x50\x4e\x47\x0d\x0a\x1a\x0a"
+        fp.read(8)
+        w = fp.read(4)
+        h = fp.read(4)
+    return int.from_bytes(w), int.from_bytes(h)
+
+
 def test_graph_base(qtbot: QtBot):
     view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
     qtbot.addWidget(view)
@@ -260,7 +271,7 @@ def test_graph_composition(
     for item in view.plot.items:
         if isinstance(item, HoverableChartItem):
             assert isinstance(item, PieChart)
-            assert item.radius == 100.0  # 10^2
+            assert item.radius == 1.0  # 10^2
 
     view.clear()
     view.mode = "bar"
@@ -279,7 +290,7 @@ def test_graph_composition(
     for item in view.plot.items:
         if isinstance(item, HoverableChartItem):
             assert isinstance(item, BarChart)
-            assert item.height == 100.0  # 10^2
+            assert item.height == 1.0  # 10^2
 
     # Hover tested externally
 
@@ -363,3 +374,92 @@ def test_graph_spectra(qtbot: QtBot):
     view.clear()
 
     assert len(view.data_for_export) == 0
+
+
+def test_graph_image_export_particle(
+    qtbot: QtBot,
+    tmp_path: Path,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
+    view = ParticleView()
+    output = tmp_path.joinpath("particle_image.png")
+    df = random_datafile_generator()
+    results = default_method.processDataFile(df)
+
+    for result in results.values():
+        view.drawResult(result, label=str(result.isotope))
+
+    qtbot.addWidget(view)
+    with qtbot.waitExposed(view):
+        view.show()
+
+    view.exportImageWithOptions(
+        output,
+        dpi=300,
+        size=QtCore.QSize(1800, 1200),
+        font=QtGui.QFont("serif"),
+    )
+
+    assert output.exists()
+    assert png_size(output) == (1800, 1200)
+
+
+def test_graph_image_export_histogram(
+    qtbot: QtBot,
+    tmp_path: Path,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
+    view = HistogramView()
+    output = tmp_path.joinpath("histogram_image.png")
+    df = random_datafile_generator()
+    results = default_method.processDataFile(df)
+
+    for result in results.values():
+        view.drawResult(result, label=str(result.isotope))
+
+    qtbot.addWidget(view)
+    with qtbot.waitExposed(view):
+        view.show()
+
+    view.exportImageWithOptions(
+        output,
+        dpi=96,
+        size=QtCore.QSize(600, 400),
+        font=QtGui.QFont("sans"),
+    )
+
+    assert output.exists()
+    assert png_size(output) == (600, 400)
+
+
+def test_graph_image_export_composition(
+    qtbot: QtBot,
+    tmp_path: Path,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
+    view = CompositionView()
+    output = tmp_path.joinpath("histogram_image.png")
+    df = random_datafile_generator()
+
+    results = default_method.processDataFile(df)
+    default_method.filterResults(results)
+    clusters = default_method.processClusters(results)
+
+    view.drawResults(list(results.values()), clusters)
+
+    qtbot.addWidget(view)
+    with qtbot.waitExposed(view):
+        view.show()
+
+    view.exportImageWithOptions(
+        output,
+        dpi=96,
+        size=QtCore.QSize(600, 400),
+        font=QtGui.QFont("sans"),
+    )
+
+    assert output.exists()
+    assert png_size(output) == (600, 400)

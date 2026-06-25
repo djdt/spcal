@@ -1,4 +1,4 @@
-from ast import Call
+from spcal.gui.dialogs.imageexport import ImageExportDialog
 from typing import Callable
 import numpy as np
 from pathlib import Path
@@ -435,6 +435,41 @@ def test_graph_spectra_options_dialog(qtbot: QtBot):
     assert dlg.check_subtract_background.isChecked()
 
     dlg.accept()
+
+
+def test_image_export_dialog(qtbot: QtBot):
+    dlg = ImageExportDialog(QtCore.QSize(600, 500), dpi=100)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.show()
+
+    assert dlg.size_x.value() == 600
+    assert dlg.size_y.value() == 500
+    assert dlg.dpi.value() == 100
+    assert dlg.imageSize() == QtCore.QSize(600, 500)
+    assert dlg.color() == QtGui.QColor(255, 0, 0)
+    assert dlg.fontColor() == QtGui.QColor(0, 0, 0)
+    assert dlg.backgroundColor() == QtGui.QColor(255, 255, 255)
+
+    dlg.size_unit.setCurrentText("inch")
+    assert dlg.size_x.value() == 6.0
+    assert dlg.size_y.value() == 5.0
+    assert dlg.imageSize() == QtCore.QSize(600, 500)
+
+    dlg.size_unit.setCurrentText("mm")
+    assert dlg.size_x.value() == int(6.0 * 25.4)
+    assert dlg.size_y.value() == int(5.0 * 25.4)
+    assert dlg.imageSize() == QtCore.QSize(598, 500)  # slight change
+
+    dlg.size_x.setValue(100.0)
+    dlg.size_y.setValue(50.0)
+    assert dlg.imageSize() == QtCore.QSize(393, 196)  # slight change
+
+    dlg.check_transparent.setChecked(True)
+    assert dlg.backgroundColor() == QtGui.QColor(255, 255, 255, 0)
+
+    with qtbot.wait_signal(dlg.imageOptionsSelected, timeout=100):
+        dlg.accept()
 
 
 def test_peak_properties_dialog(
