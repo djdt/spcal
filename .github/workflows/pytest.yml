@@ -18,7 +18,7 @@ jobs:
     - name: Set up TBB and mesa
       run: |
         sudo apt update
-        sudo apt install libtbb-dev libgles2-mesa-dev
+        sudo apt install libtbb-dev libgles2-mesa-dev xvfb
     - name: Install dependencies
       run: |
           python -m pip install --upgrade pip
