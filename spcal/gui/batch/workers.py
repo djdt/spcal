@@ -2,7 +2,7 @@ import json
 import numpy as np
 from pathlib import Path
 from typing import Generator, TextIO
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
 
 from spcal.datafile import (
     SPCalDataFile,
@@ -68,7 +68,8 @@ def _batch_export_results(
             ylabel="Count",
             size=export_options["image options"]["size"],
             dpi=export_options["image options"]["dpi"],
-            font_pen=export_options["image options"]["font pen"],
+            font=export_options["image options"]["font"],
+            font_pen=QtGui.QPen(export_options["image options"]["font color"]),
         )
 
         brush = export_options["image options"]["brush"]
@@ -85,7 +86,6 @@ def _batch_export_results(
                 view.plot.clear()
                 view.plot.drawHistogram(counts, edges, width=1.0, pen=None, brush=brush)
 
-                # TODO: fix this
                 view.exportImage(
                     image_outpath.joinpath(
                         f"{outpath.stem}_{key}_{result.isotope}.png"

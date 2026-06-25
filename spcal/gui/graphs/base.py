@@ -19,13 +19,13 @@ def create_export_view(
     size: QtCore.QSize | None = None,
     dpi: int = 96,
     font: QtGui.QFont | None = None,
-    font_pen: QtGui.QPen | None = None,
+    font_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
 ) -> "SinglePlotGraphicsView":
     if font is None:
         font = QtGui.QFont()
 
-    if font_pen is None:
-        font_pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+    if font_color is None:
+        font_color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
 
     scaled_font = QtGui.QFont(font)
     font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
@@ -36,7 +36,9 @@ def create_export_view(
         view.viewport().resize(size)
         view.plot.resize(size)
 
+    font_pen = QtGui.QPen(font_color, 1.0)
     font_pen.setCosmetic(True)
+
     for axis in [view.plot.xaxis, view.plot.yaxis]:
         axis.setTextPen(font_pen)
         axis.setPen(font_pen)
@@ -767,7 +769,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             size=size,
             dpi=dpi,
             font=font,
-            font_pen=QtGui.QPen(font_color),
+            font_color=font_color,
         )
         # update some values that are used for plotting compositions
         view.plot.getViewBox().setAspectLocked(
