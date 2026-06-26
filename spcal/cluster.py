@@ -29,9 +29,9 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
         2D array, ready for ``agglomerative_cluster``
     """
     if data.dtype.names is not None:
-        X = rfn.structured_to_unstructured(data, dtype=np.float32)
+        X = rfn.structured_to_unstructured(data, dtype=np.float64)
     else:
-        X = data.astype(np.float32, copy=True)
+        X = data.astype(np.float64, copy=True)
     totals = np.sum(X, axis=1)
     np.divide(X.T, totals, where=totals > 0.0, out=X.T)
     return X
@@ -57,8 +57,8 @@ def prepare_results_for_clustering(
     """
     if any(result.peak_indicies is None for result in results):  # pragma: no cover
         raise ValueError("cannot cluster, peak indidices have not been generated")
-    
-    peak_data = np.zeros((number_peaks, len(results)), np.float32)
+
+    peak_data = np.zeros((number_peaks, len(results)), np.float64)
     valid = np.zeros(number_peaks, dtype=bool)
     for i, result in enumerate(results):
         if result.peak_indicies is None:  # pragma: no cover
