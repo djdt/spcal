@@ -1,3 +1,5 @@
+[![pytest](https://github.com/djdt/spcal/actions/workflows/pytest.yml/badge.svg)](https://github.com/djdt/spcal/actions/workflows/pytest.yml)
+
 # SPCal
 
 SPCal in an spICP-MS calculator with an interactive GUI.
