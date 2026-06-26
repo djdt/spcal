@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-I, include, -isystem, /usr/include/python3.14/, -Wall]
