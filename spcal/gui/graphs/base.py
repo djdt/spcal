@@ -420,7 +420,6 @@ class SinglePlotItem(pyqtgraph.PlotItem):
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
-    SYMBOLS = ["t", "o", "s", "d", "+", "star", "t1", "x"]
     UNIT_LABELS = {
         "signal": ("Signal (cts)", None, 1.0),
         "mass": ("Mass", "g", 1e3),  # kg -> g
