@@ -38,7 +38,6 @@ from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs.colors import (
     COLOR_SCHEMES,
     BRUSH_STYLES,
-    MARKER_SYMBOLS,
     scheme_icon,
 )
 from spcal.gui.io import (
@@ -831,7 +830,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def styleForResult(
         self, result: SPCalProcessingResult
-    ) -> tuple[QtGui.QPen, QtGui.QBrush, str]:
+    ) -> tuple[QtGui.QPen, QtGui.QBrush]:
         scheme_name = str(QtCore.QSettings().value("ColorScheme", "IBM Carbon"))
         if scheme_name == "Custom":
             scheme = self.customColors()
@@ -847,30 +846,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         color.setAlphaF(0.75)
         style = BRUSH_STYLES[(idx // len(scheme)) % len(BRUSH_STYLES)]
         brush = QtGui.QBrush(color, style)
-        marker = MARKER_SYMBOLS[(idx // len(scheme)) % len(MARKER_SYMBOLS)]
 
-        return pen, brush, marker
-
-    def colorForIsotope(
-        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
-    ) -> QtGui.QColor:
-        scheme_name = str(QtCore.QSettings().value("ColorScheme", "IBM Carbon"))
-        if scheme_name == "Custom":
-            scheme = self.customColors()
-        else:
-            scheme = COLOR_SCHEMES[scheme_name]
-        if isinstance(isotope, SPCalIsotope):
-            idx = data_file.selected_isotopes.index(isotope)
-        elif isinstance(isotope, SPCalIsotopeExpression):
-            method = self.currentMethod()
-            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
-        else:
-            raise ValueError(f"unknown isotope type '{type(isotope)}'")
-
-        data_files = self.files.activeDataFiles()
-        for i in range(0, data_files.index(data_file)):
-            idx += len(data_files[i].selected_isotopes)
-        return scheme[idx % len(scheme)]
+        return pen, brush
 
     def redraw(self):
         key = self.toolbar.currentKey()
@@ -936,13 +913,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             active = self.outputs.activeResults()
             for data_file in active:
                 for isotope, result in active[data_file].items():
-                    pen, brush, symbol = self.styleForResult(result)
-                    brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+                    pen, brush = self.styleForResult(result)
                     name = str(isotope)
                     if len(active) >= 2:
                         name = data_file.path.stem + " - " + name
                     self.graph.particle.drawResult(
-                        result, pen, brush, name, scatter_size, symbol
+                        result, pen, brush, name, scatter_size, "t"
                     )
 
             if len(active) == 1:  # single data file
