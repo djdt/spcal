@@ -178,7 +178,7 @@ class ParticleView(SinglePlotGraphicsView):
         scatter = self.plot.drawScatter(
             result.times[result.maxima[result.filter_indicies]],
             result.signals[result.maxima[result.filter_indicies]],
-            pen=None,
+            pen=pen,
             brush=brush,
             size=scatter_size,
             symbol=scatter_symbol,
