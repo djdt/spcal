@@ -35,7 +35,11 @@ from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
-from spcal.gui.graphs.colors import COLOR_SCHEMES, scheme_icon
+from spcal.gui.graphs.colors import (
+    COLOR_SCHEMES,
+    BRUSH_STYLES,
+    scheme_icon,
+)
 from spcal.gui.io import (
     get_import_dialog_for_path,
     get_open_spcal_path,
@@ -824,26 +828,26 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             colors.append(QtGui.QColor(0, 0, 0))
         return colors
 
-    def colorForIsotope(
-        self, isotope: SPCalIsotopeBase, data_file: SPCalDataFile
-    ) -> QtGui.QColor:
+    def styleForResult(
+        self, result: SPCalProcessingResult
+    ) -> tuple[QtGui.QPen, QtGui.QBrush]:
         scheme_name = str(QtCore.QSettings().value("ColorScheme", "IBM Carbon"))
         if scheme_name == "Custom":
             scheme = self.customColors()
         else:
             scheme = COLOR_SCHEMES[scheme_name]
-        if isinstance(isotope, SPCalIsotope):
-            idx = data_file.selected_isotopes.index(isotope)
-        elif isinstance(isotope, SPCalIsotopeExpression):
-            method = self.currentMethod()
-            idx = method.expressions.index(isotope) + len(data_file.selected_isotopes)
-        else:
-            raise ValueError(f"unknown isotope type '{type(isotope)}'")
 
-        data_files = self.files.activeDataFiles()
-        for i in range(0, data_files.index(data_file)):
-            idx += len(data_files[i].selected_isotopes)
-        return scheme[idx % len(scheme)]
+        idx = self.outputs.rowForResult(result)
+
+        pen = QtGui.QPen(QtGui.QColor(scheme[idx % len(scheme)]), 1.0)
+        pen.setCosmetic(True)
+
+        color = QtGui.QColor(scheme[idx % len(scheme)])
+        color.setAlphaF(0.75)
+        style = BRUSH_STYLES[(idx // len(scheme)) % len(BRUSH_STYLES)]
+        brush = QtGui.QBrush(color, style)
+
+        return pen, brush
 
     def redraw(self):
         key = self.toolbar.currentKey()
@@ -859,16 +863,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             results = sorted(
                 self.processing_results[data_file].values(), key=lambda r: r.isotope
             )
-            colors = [
-                self.colorForIsotope(result.isotope, data_file) for result in results
-            ]
-            self.graph.drawResultsComposition(results, colors, key, clusters)
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
+            pen.setCosmetic(True)
+            brushes = [self.styleForResult(result)[1] for result in results]
+
+            self.graph.composition.drawResults(results, clusters, key, pen, brushes)
+
         elif view == "scatter":
             data_file = self.files.currentDataFile()
             if data_file is None:
                 return
 
-            self.graph.drawResultsScatterExpr(
+            self.graph.scatter.drawResultsExpr(
                 list(self.processing_results[data_file].values()),
                 self.toolbar.scatter_x.text(),
                 self.toolbar.scatter_y.text(),
@@ -882,29 +888,68 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 return
 
             data_file, _, result = current
-            self.graph.drawResultsSpectra(data_file, result, None)
-        else:
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
+            pen.setCosmetic(True)
+
+            regions = result.regions[result.filter_indicies]
+
+            try:
+                self.graph.spectra.drawDataFile(data_file, regions, pen=pen)
+            except NotImplementedError:
+                logger.warning(f"spectra not implemented for {type(data_file)}")
+                return
+
+            # if reverse_result is not None:
+            #     reverse_regions = reverse_result.regions[reverse_result.filter_indicies]
+            #     self.graph.spectra.drawDataFile(
+            #         data_file, reverse_regions, negative=True, pen=pen
+            #     )
+
+            self.graph.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
+            self.graph.spectra.zoomReset()
+
+        elif view == "particle":
+            scatter_size = 5.0 * np.sqrt(self.devicePixelRatio())
             active = self.outputs.activeResults()
-            results, names, colors = [], [], []
             for data_file in active:
                 for isotope, result in active[data_file].items():
-                    results.append(result)
-                    colors.append(self.colorForIsotope(isotope, data_file))
+                    pen, brush = self.styleForResult(result)
                     name = str(isotope)
-                    if len(active) > 2:
+                    if len(active) >= 2:
                         name = data_file.path.stem + " - " + name
-                    names.append(name)
+                    self.graph.particle.drawResult(
+                        result, pen, brush, name, scatter_size, "t"
+                    )
 
-            if view == "particle":
-                self.graph.drawResultsParticle(results, colors, names, key)
-                if len(active) == 1:  # single data file
-                    for start, end in next(iter(active)).exclusion_regions:
-                        self.graph.particle.addExclusionRegion(start, end)
-                for start, end in self.currentMethod().exclusion_regions:
-                    self.graph.particle.addGlobalExclusionRegion(start, end)
-                self.graph.particle.action_exclusion_region.setEnabled(len(active) == 1)
-            elif view == "histogram":
-                self.graph.drawResultsHistogram(results, colors, names, key)
+            if len(active) == 1:  # single data file
+                for start, end in next(iter(active)).exclusion_regions:
+                    self.graph.particle.addExclusionRegion(start, end)
+            for start, end in self.currentMethod().exclusion_regions:
+                self.graph.particle.addGlobalExclusionRegion(start, end)
+            self.graph.particle.action_exclusion_region.setEnabled(len(active) == 1)
+
+        elif view == "histogram":
+            active = self.outputs.activeResults()
+            results, names, brushes = [], [], []
+            for data_file in active:
+                for isotope, result in active[data_file].items():
+                    if result.canCalibrate(key) and result.number > 1:
+                        results.append(result)
+                        brushes.append(self.styleForResult(result)[1])
+                        name = str(isotope)
+                        if len(active) >= 2:
+                            name = data_file.path.stem + " - " + name
+                        names.append(name)
+
+            if len(results) == 0:
+                return
+
+            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
+            pen.setCosmetic(True)
+
+            self.graph.histogram.drawResults(
+                results, key, pen=pen, brushes=brushes, labels=names
+            )
 
     # Dialogs
 

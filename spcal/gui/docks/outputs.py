@@ -109,6 +109,12 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
             return self.model.results[row]
         return None
 
+    def rowForResult(self, result: SPCalProcessingResult) -> int:
+        for i, (_, _, res) in enumerate(self.model.results):
+            if res == result:
+                return i
+        raise StopIteration
+
     def results(
         self,
     ) -> dict[SPCalDataFile, dict[SPCalIsotopeBase, SPCalProcessingResult]]:

@@ -107,6 +107,13 @@ VIRIDIS_32 = [
     QtGui.QColor.fromRgbF(0.99324789, 0.90615657, 0.1439362),
 ]
 
+BRUSH_STYLES = [
+    QtCore.Qt.BrushStyle.SolidPattern,
+    QtCore.Qt.BrushStyle.DiagCrossPattern,
+    QtCore.Qt.BrushStyle.Dense2Pattern,
+    QtCore.Qt.BrushStyle.RadialGradientPattern,
+]
+
 
 def scheme_icon(
     name: str, width: int = 32, height: int = 32, max_colors: int = 4

@@ -1,9 +1,7 @@
 import logging
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
@@ -16,7 +14,6 @@ from spcal.gui.graphs.particle import ParticleView
 from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.util import create_action
-from spcal.processing.result import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -150,116 +147,6 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
 
         dlg.open()
         return dlg
-
-    def drawResultsParticle(
-        self,
-        results: list[SPCalProcessingResult],
-        colors: list[QtGui.QColor],
-        names: list[str],
-        key: str,
-    ):
-        for i, (result, color, name) in enumerate(zip(results, colors, names)):
-            symbol = SinglePlotGraphicsView.SYMBOLS[
-                i % len(SinglePlotGraphicsView.SYMBOLS)
-            ]
-            pen = QtGui.QPen(color, 1.0)  # cant change to other than 1, slow
-            pen.setCosmetic(True)
-            brush = QtGui.QBrush(color)
-            self.particle.drawResult(
-                result,
-                pen=pen,
-                brush=brush,
-                scatter_size=5.0 * np.sqrt(self.devicePixelRatio()),
-                scatter_symbol=symbol,
-                label=name,
-            )
-
-    def drawResultsComposition(
-        self,
-        results: list[SPCalProcessingResult],
-        colors: list[QtGui.QColor],
-        key: str,
-        clusters: np.ndarray,
-    ):
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
-        pen.setCosmetic(True)
-
-        brushes = []
-        for _, color in zip(results, colors):
-            color = QtGui.QColor(color)  # copy
-            color.setAlphaF(0.66)
-            brushes.append(QtGui.QBrush(color))
-        self.composition.drawResults(results, clusters, key, pen, brushes)
-
-    def drawResultsHistogram(
-        self,
-        results: list[SPCalProcessingResult],
-        colors: list[QtGui.QColor],
-        names: list[str],
-        key: str,
-    ):
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0 * self.devicePixelRatio())
-        pen.setCosmetic(True)
-
-        drawable = []
-        brushes = []
-        for result, color in zip(results, colors):
-            if result.canCalibrate(key) and result.number > 1:
-                drawable.append(result)
-                color = QtGui.QColor(color)  # copy
-                color.setAlphaF(0.66)
-                brushes.append(QtGui.QBrush(color))
-
-        if len(drawable) > 0:
-            self.histogram.drawResults(
-                drawable, key, pen=pen, brushes=brushes, labels=names
-            )
-
-    def drawResultsScatterExpr(
-        self,
-        results: list[SPCalProcessingResult],
-        text_x: str,
-        text_y: str,
-        key_x: str,
-        key_y: str,
-    ):
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-        pen.setCosmetic(True)
-
-        self.scatter.drawResultsExpr(results, text_x, text_y, key_x, key_y)
-
-    # def drawResultsScatter(
-    #     self, result_x: SPCalProcessingResult, result_y: SPCalProcessingResult, key: str
-    # ):
-    #     pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-    #     pen.setCosmetic(True)
-    #
-    #     self.scatter.drawResults(result_x, result_y, key, pen=pen)
-
-    def drawResultsSpectra(
-        self,
-        data_file: SPCalDataFile,
-        result: SPCalProcessingResult,
-        reverse_result: SPCalProcessingResult | None = None,
-    ):
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 2.0 * self.devicePixelRatio())
-        pen.setCosmetic(True)
-
-        regions = result.regions[result.filter_indicies]
-
-        try:
-            self.spectra.drawDataFile(data_file, regions, pen=pen)
-        except NotImplementedError:
-            logger.warning(f"spectra not implemented for {type(data_file)}")
-            return
-        if reverse_result is not None:
-            reverse_regions = reverse_result.regions[reverse_result.filter_indicies]
-            self.spectra.drawDataFile(
-                data_file, reverse_regions, negative=True, pen=pen
-            )
-
-        self.spectra.setDataLimits(yMin=-0.05, yMax=1.05)
-        self.spectra.zoomReset()
 
     def zoomReset(self):
         view = self.currentWidget()
