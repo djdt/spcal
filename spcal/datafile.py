@@ -170,10 +170,10 @@ class SPCalDataFile(object):
             "DataFile": {
                 "path": str(self.path.resolve()),
                 "format": self.format,
-                "event time": f"{self.event_time * 1e6} µs",
+                "event time": f"{self.event_time * 1e6:.6g} µs",
                 "total time": f"{datetime.timedelta(seconds=float(self.total_time))}",
                 "number events": str(self.num_events),
-                "number istopes": str(len(self.isotopes)),
+                "number isotopes": str(len(self.isotopes)),
             }
         }
 
@@ -288,7 +288,7 @@ class SPCalTextDataFile(SPCalDataFile):
         Raises:
             ValueError is event time cannot be read and is not provided
         """
-        if isinstance(path, str):
+        if isinstance(path, str):  # pragma: no cover, trivial
             path = Path(path)
 
         signals = text.read_single_particle_file(
@@ -307,9 +307,9 @@ class SPCalTextDataFile(SPCalDataFile):
                     if m is not None:
                         if m.group(1) in ["ms"]:
                             times *= 1e-3
-                        elif m.group(1) in ["us", "µs"]:
+                        elif m.group(1) in ["us", "µs"]:  # pragma: no cover, trivial
                             times *= 1e-6
-                        elif m.group(1) in ["ns"]:
+                        elif m.group(1) in ["ns"]:  # pragma: no cover, trivial
                             times *= 1e-9
                         elif m.group(1) in ["s"]:
                             pass
@@ -478,7 +478,7 @@ class SPCalNuDataFile(SPCalDataFile):
             autoblank: apply autoblanking to overrange regions or to all masses,
                 one of 'off', 'regions', 'all'
         """
-        if isinstance(path, str):
+        if isinstance(path, str):  # pragma: no cover, trivial
             path = Path(path)
 
         if path.is_file() and path.name == "run.info":
@@ -595,14 +595,16 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
         Returns:
             data file
         """
-        if isinstance(path, str):
+        if isinstance(path, str):  # pragma: no cover, trivial
             path = Path(path)
 
         with h5py.File(path) as h5:
             if "PeakData" in h5["PeakData"]:
                 peak_data: np.ndarray = h5["PeakData"]["PeakData"][:max_size]
-            elif "ToFData" in h5["FullSpectra"]:
-                logger.warning(  # pragma: no cover
+            elif (
+                "ToFData" in h5["FullSpectra"]
+            ):  # pragma: no cover, tested in test_io_tofwerk
+                logger.warning(
                     f"PeakData missing from TOFWERK file {path.stem}, integrating"
                 )
                 peak_data = tofwerk.integrate_tof_data(h5)[:max_size]
