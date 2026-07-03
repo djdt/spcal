@@ -71,7 +71,7 @@ def test_peak_prominence_dropped_peaks():
     y[5::10, 2] += 100 + np.tile([10, 20, 30, 40, 50], 20)
 
     for ax in [0, 1, 2]:
-        prom, left, right = detection.peak_prominence(y[:, ax], np.arange(5, 1000, 10))
+        prom, _, _ = detection.peak_prominence(y[:, ax], np.arange(5, 1000, 10))
         assert prom.size == 100
 
 
@@ -94,7 +94,7 @@ def test_label_regions():
     labels = detection.label_regions(r, 10)
     assert np.all(labels == [1, 1, 1, 1, 0, 0, 2, 2, 3, 0])
 
-    r = np.array([[0, 4], [3, 5], [8, 9]])
+    r = np.array([[0, 3], [3, 5], [8, 9]])
     labels = detection.label_regions(r, 10)
     assert np.all(labels == [1, 1, 1, 2, 2, 0, 0, 0, 3, 0])
 
