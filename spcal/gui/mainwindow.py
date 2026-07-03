@@ -172,7 +172,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles()
 
         settings = QtCore.QSettings()
-        if settings.contains("DisableCheckForUpdates"):
+        if settings.contains("DisableCheckForUpdates"):  # pragma: no cover, settings
             if compare_version_strings(
                 settings.value("DisableCheckForUpdates"),
                 version("spcal"),
@@ -181,7 +181,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if not settings.contains("DisableCheckForUpdates"):
             QtCore.QTimer.singleShot(1000, self.checkForUpdates)
 
-    def defaultMethod(self) -> SPCalProcessingMethod:
+    def defaultMethod(self) -> SPCalProcessingMethod:  # pragma: no cover, settings
         settings = QtCore.QSettings()
         method = SPCalProcessingMethod()
         if settings.contains("DefaultMethod/Instrument/Uptake"):
@@ -255,7 +255,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         return method
 
-    def saveDefaultMethod(self):
+    def saveDefaultMethod(self):  # pragma: no cover, settings
         settings = QtCore.QSettings()
         method = self.currentMethod()
 
@@ -594,9 +594,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.currentMethodChanged.emit(method)
         self.updateForDataFiles(self.files.activeDataFiles())
 
-    def setGlobalExclusionRegions(
-        self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
-    ):
+    def setGlobalExclusionRegions(self, regions: list[tuple[float, float]]):
         method = self.currentMethod()
         if method.exclusion_regions != regions:
             method.exclusion_regions = regions

@@ -18,7 +18,7 @@ class DragDropRedirectFilter(QtCore.QObject):
 
     def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
         parent = self.parent()
-        if not isinstance(parent, QtWidgets.QWidget):
+        if not isinstance(parent, QtWidgets.QWidget):  # pragma: no cover, trivial
             return False
         if event.type() == QtCore.QEvent.Type.DragEnter and isinstance(
             event, QtGui.QDragEnterEvent
@@ -43,7 +43,9 @@ class DragDropRedirectFilter(QtCore.QObject):
         return bool(super().eventFilter(obj, event))
 
 
-class KeepMenuOpenFilter(QtCore.QObject):
+class KeepMenuOpenFilter(
+    QtCore.QObject
+):  # pragma: no cover, unable to test using pytest-qt
     """Keeps menu open when action is triggered."""
 
     def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:

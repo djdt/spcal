@@ -144,7 +144,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
         self.isotope_actions = {
             iso.isotope: self.createAction(iso) for iso in self.isotopes
         }
-        if enabled is not None:
+        if enabled is not None:  # pragma: no cover, trivial
             self.setEnabledIsotopes(enabled)
 
         isotopes_menu = QtWidgets.QMenu("Isotopes", parent=self)
@@ -225,7 +225,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
 
     def selectPreferredIsotopes(self, checked: bool):
         preferred = self.preferred()
-        if preferred is None:
+        if preferred is None:  # pragma: no cover, trival
             return
         for num, action in self.isotope_actions.items():
             if checked and num == preferred.isotope:
@@ -279,7 +279,7 @@ class PeriodicTableButton(QtWidgets.QToolButton):
             )
 
         # Draw color icon
-        if self.indicator is not None:
+        if self.indicator is not None:  # pragma: no cover, inspected visually
             rect = QtCore.QRectF(0.0, 0.0, 10.0, 10.0)
             rect.moveTopRight(option.rect.topRight() + QtCore.QPoint(-2, 3))
             painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)

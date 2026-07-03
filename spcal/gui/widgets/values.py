@@ -113,7 +113,7 @@ class ValueWidget(QtWidgets.QAbstractSpinBox):
         self.step = step
 
     def stepBy(self, steps: int):
-        if self._value is None:
+        if self._value is None:  # pragma: no cover, trivial
             return
         if isinstance(self.step, float | int):
             new_value = self._value + steps * self.step
