@@ -1109,14 +1109,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogPeakProperties(self) -> QtWidgets.QDialog | None:
-        data_file = self.files.currentDataFile()
-        if data_file is None:
+        current = self.outputs.currentResult()
+        if current is None:
             return
+        data_file, isotope, _ = current
 
-        dlg = PeakPropertiesDialog(
-            self.processing_results[data_file],
-            self.toolbar.combo_isotope.currentIsotope(),
-        )
+        dlg = PeakPropertiesDialog(self.processing_results[data_file], isotope)
         dlg.exec()
 
     def dialogProcessingOptions(self):
