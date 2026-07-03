@@ -109,13 +109,10 @@ VIRIDIS_32 = [
 
 BRUSH_STYLES = [
     QtCore.Qt.BrushStyle.SolidPattern,
-    QtCore.Qt.BrushStyle.BDiagPattern,
-    QtCore.Qt.BrushStyle.Dense1Pattern,
-    QtCore.Qt.BrushStyle.FDiagPattern,
-    QtCore.Qt.BrushStyle.Dense3Pattern,
+    QtCore.Qt.BrushStyle.DiagCrossPattern,
+    QtCore.Qt.BrushStyle.Dense2Pattern,
+    QtCore.Qt.BrushStyle.RadialGradientPattern,
 ]
-
-MARKER_SYMBOLS = ["t", "o", "s", "d", "+", "star", "t1", "x"]
 
 
 def scheme_icon(
