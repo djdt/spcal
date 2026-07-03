@@ -1,6 +1,6 @@
 from typing import Callable
 from spcal.datafile import SPCalDataFile
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.docks.datafile import SPCalDataFilesDock
@@ -112,26 +112,13 @@ def test_spcal_central_widget(
     default_method.filterResults(results)
     clusters = default_method.processClusters(results)
 
-    widget.drawResultsParticle(
+    widget.particle.drawResult(next(iter(results.values())))
+    widget.histogram.drawResults(
         list(results.values()),
-        [QtGui.QColor(255, 0, 0), QtGui.QColor(0, 255, 0), QtGui.QColor(0, 0, 255)],
-        ["a", "b", "c"],
-        "signal",
     )
-    widget.drawResultsHistogram(
-        list(results.values()),
-        [QtGui.QColor(255, 0, 0), QtGui.QColor(0, 255, 0), QtGui.QColor(0, 0, 255)],
-        ["a", "b", "c"],
-        "signal",
-    )
-    widget.drawResultsSpectra(df, next(iter(results.values())))
-    widget.drawResultsComposition(
-        list(results.values()),
-        [QtGui.QColor(255, 0, 0), QtGui.QColor(0, 255, 0), QtGui.QColor(0, 0, 255)],
-        "signal",
-        clusters,
-    )
-    widget.drawResultsScatterExpr(
+    widget.spectra.drawDataFile(df, next(iter(results.values())).regions)
+    widget.composition.drawResults(list(results.values()), clusters)
+    widget.scatter.drawResultsExpr(
         list(results.values()), "107Ag + 109Ag", "197Au / 2.0", "signal", "signal"
     )
 
