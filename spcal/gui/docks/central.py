@@ -76,7 +76,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             self.setCurrentWidget(self.spectra)
         elif view == "scatter":
             self.setCurrentWidget(self.scatter)
-        else:
+        else:  # pragma: no cover, error
             raise ValueError(f"unknown view {view}")
 
         self.action_view_options.setEnabled(view != "particle")
@@ -94,7 +94,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
             return "spectra"
         elif view == self.scatter:
             return "scatter"
-        else:
+        else:  # pragma: no cover, error
             raise ValueError("current view is invalid")
 
     def setGraphFont(self, font: QtGui.QFont):
@@ -120,7 +120,7 @@ class SPCalCentralWidget(QtWidgets.QStackedWidget):
         self.spectra.subtract_background = subtract_background
         self.requestRedraw.emit()
 
-    def dialogGraphOptions(self):
+    def dialogGraphOptions(self) -> QtWidgets.QDialog | None:
         view = self.currentView()
         if view == "histogram":
             dlg = HistogramOptionsDialog(

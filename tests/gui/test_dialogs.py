@@ -561,7 +561,6 @@ def test_manual_limits_dialog(qtbot: QtBot):
 
 
 def test_missing_paths_dialog(qtbot: QtBot, test_data_path: Path):
-
     paths = [
         test_data_path.joinpath("tofwerk_bad/tofwerk_testdata.h5"),
         test_data_path.joinpath("tofwerk_bad/tofwerk_testdata_missing.h5"),
@@ -589,6 +588,26 @@ def test_missing_paths_dialog(qtbot: QtBot, test_data_path: Path):
     dlg.accept()
 
 
+def test_missing_paths_dialog_search(qtbot: QtBot, test_data_path: Path):
+    paths = [
+        test_data_path.joinpath("tofwerk_bad/tofwerk_testdata.h5"),
+        test_data_path.joinpath("tofwerk_bad/tofwerk_testdata_missing.h5"),
+    ]
+    dlg = MissingPathsDialog(paths)
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert not dlg.isComplete()
+
+    dlg.searchForPaths(test_data_path)
+
+    assert dlg.isComplete()
+    assert dlg.newPaths() != paths
+
+    dlg.accept()
+
+
 def test_select_isotope_dialog(
     test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
 ):
@@ -606,9 +625,14 @@ def test_select_isotope_dialog(
     with qtbot.waitExposed(dlg):
         dlg.show()
 
+    dlg.setScreeningParameters(10, 10, False)
+
     assert dlg.table.selectedIsotopes() == df.selected_isotopes
 
     assert len(dlg.table.enabledIsotopes()) == len(df.isotopes)
+
+    popup = dlg.showIsotopes(df.selected_isotopes[:2])
+    popup.close()
 
     dlg.screenDataFile(1000000, 1000000, False)
     assert dlg.table.selectedIsotopes() == df.selected_isotopes

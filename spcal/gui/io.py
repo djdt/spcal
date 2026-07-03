@@ -25,7 +25,7 @@ NP_FILE_FILTERS = (
 )
 
 
-def is_spcal_path(path: str | Path) -> bool:
+def is_spcal_path(path: str | Path) -> bool:  # pragma: no cover, tested in io modules
     path = Path(path)
 
     if is_nu_run_info_file(path):
@@ -57,7 +57,7 @@ def get_save_spcal_path(
     parent: QtWidgets.QWidget,
     filters: list[tuple[str, str]],
     path: str | Path | None = None,
-) -> Path | None:
+) -> Path | None:  # pragma: no cover, dialog
     if path is None:
         recent = most_recent_spcal_path()
         if recent is not None:
@@ -85,7 +85,7 @@ def get_save_spcal_path(
 
 def get_open_spcal_path(
     parent: QtWidgets.QWidget, title: str = "Open File"
-) -> Path | None:
+) -> Path | None:  # pragma: no cover, dialog
     recent = most_recent_spcal_path()
     if recent is not None:
         dir = str(recent.parent)
@@ -106,7 +106,7 @@ def get_open_spcal_paths(
     parent: QtWidgets.QWidget,
     title: str = "Open Files",
     selected_filter: str = NP_FILE_FILTER,
-) -> list[Path]:
+) -> list[Path]:  # pragma: no cover, dialog
     recent = most_recent_spcal_path()
     if recent is not None:
         dir = str(recent.parent)

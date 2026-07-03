@@ -70,7 +70,7 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
             column_count = (
                 max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
             )
-        except StopIteration:
+        except StopIteration:  # pragma: no cover, warning
             logger.warning(f"could not count columns using delimiter '{delimiter}'")
             column_count = 1
 

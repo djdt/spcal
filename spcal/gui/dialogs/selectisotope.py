@@ -171,7 +171,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         selected_isotopes = []
         selected_numbers = []
         for isotope, result in results.items():
-            if not isinstance(isotope, SPCalIsotope):
+            if not isinstance(isotope, SPCalIsotope):  # pragma: no cover, trivial
                 continue
             if result.number > result.num_events * screening_target_ppm * 1e-6:
                 selected_isotopes.append(isotope)
@@ -189,11 +189,12 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             selected_isotopes = list(selected_isotopes)
         self.table.setSelectedIsotopes(selected_isotopes)
 
-    def showIsotopes(self, isotopes: list[SPCalIsotope]):
+    def showIsotopes(self, isotopes: list[SPCalIsotope]) -> SignalsPopup:
         popup = SignalsPopup(
             {isotope: self.data_file[isotope] for isotope in isotopes}, parent=self
         )
         popup.show()
+        return popup
 
     def onButtonClicked(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
