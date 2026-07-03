@@ -50,7 +50,7 @@ from spcal.gui.io import (
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 
-from spcal.api import get_version_of_latest_release, compare_version_strings
+from spcal.api import compare_version_strings, get_github_release_info
 from spcal.io.session import save_session_json, decode_json_method
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
@@ -1449,10 +1449,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def checkForUpdates(self):
         current_version = version("spcal")
         try:
-            latest_version = get_version_of_latest_release()
+            info = get_github_release_info()
+            if "tag_name" not in info or not info["tag_name"].startswith("v"):
+                raise ValueError("invalid release version")
+
         except (TimeoutError, ConnectionError, ValueError):
             logger.warning("unable to check for updates")
             return
+
+        if "tag_name" not in info or not info["tag_name"].startswith("v"):
+            logger.warning("invalid release")
+            return
+
+        latest_version = info["tag_name"][1:]
 
         if compare_version_strings(current_version, latest_version):
             button = QtWidgets.QMessageBox.information(

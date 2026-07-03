@@ -1,7 +1,7 @@
 import urllib.request
 import json
 
-SPCAL_RELEASE_URL = "https://api.github.com/repos/djdt/spcal/releases/latest"
+API_URL = "https://api.github.com/repos/djdt/spcal/"
 
 
 def compare_version_strings(version_a: str, version_b: str) -> bool:
@@ -26,8 +26,13 @@ def compare_version_strings(version_a: str, version_b: str) -> bool:
     return version_b.count(".") > version_a.count(".")
 
 
-def get_version_of_latest_release() -> str:
-    """Retrieves the latest version of SPCal from the github.
+def get_github_release_info(version: str = "latest") -> dict:
+    """Retrieves the release info from the SPCal GitHub.
+
+    The JSON format can be found in the `API docs <https://docs.github.com/en/rest/releases/releases>`_.
+
+    Args:
+        version: either 'latest' or a tag in the format 'tags/vXX.XX.XX'.
 
     Returns:
         SPCal version in format "XX.XX.XX", "major.minor.release"
@@ -36,12 +41,8 @@ def get_version_of_latest_release() -> str:
         ConnectionError: status code is not 200, invalid connection
         ValueError: tag version  format is invalid
     """
-    result = urllib.request.urlopen(SPCAL_RELEASE_URL, timeout=5)
+    result = urllib.request.urlopen(API_URL + "releases/" + version, timeout=5)
     if result.status != 200:
         raise ConnectionError(f"invalid status code '{result.status}'")
 
-    data = json.loads(result.read())
-    version = data["tag_name"]
-    if not version.startswith("v"):
-        raise ValueError(f"version format is not valid '{version}'")
-    return version[1:]
+    return json.loads(result.read())
