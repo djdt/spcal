@@ -26,23 +26,24 @@ def compare_version_strings(version_a: str, version_b: str) -> bool:
     return version_b.count(".") > version_a.count(".")
 
 
-def get_github_release_info(version: str = "latest") -> dict:
+def get_github_release_info(name: str = "latest") -> dict:
     """Retrieves the release info from the SPCal GitHub.
 
     The JSON format can be found in the `API docs <https://docs.github.com/en/rest/releases/releases>`_.
 
     Args:
-        version: either 'latest' or a tag in the format 'tags/vXX.XX.XX'.
+        name: either 'latest' or a tag in the format 'tags/vXX.XX.XX'.
 
     Returns:
-        SPCal version in format "XX.XX.XX", "major.minor.release"
+        JSON style dictionary of release information
+
     Raises:
         TimeoutError: no connection after 5 seconds
         ConnectionError: status code is not 200, invalid connection
         ValueError: tag version  format is invalid
     """
-    result = urllib.request.urlopen(API_URL + "releases/" + version, timeout=5)
-    if result.status != 200:
+    result = urllib.request.urlopen(API_URL + "releases/" + name, timeout=5)
+    if result.status != 200:  # pragma: no cover, error
         raise ConnectionError(f"invalid status code '{result.status}'")
 
     return json.loads(result.read())
