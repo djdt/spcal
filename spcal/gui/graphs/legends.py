@@ -203,7 +203,6 @@ class ParticleItemSample(FontScaledItemSample):
         self, event: QtWidgets.QGraphicsSceneMouseEvent
     ):  # Dumb pyqtgraph class, use pos()
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            print(event.pos())
             if event.pos().x() < self.boundingRect().center().x():  # lines
                 if self.lines is not None:
                     if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:

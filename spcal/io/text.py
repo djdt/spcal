@@ -111,7 +111,6 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
         try:
             delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
             tokens = line.split(delimiter)
-            print(tokens)
             if all(
                 is_number_or_time(token) for token in tokens if token not in ["", "\n"]
             ):
