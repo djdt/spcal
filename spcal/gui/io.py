@@ -135,7 +135,7 @@ def get_import_dialog_for_path(
     if path.is_dir():
         if is_nu_directory(path):
             dlg = NuImportDialog(path, data_file, screening_method, parent=parent)
-        else:
+        else:  # pragma: no cover, error
             raise FileNotFoundError("getImportDialogForPath: invalid directory.")
     elif is_nu_run_info_file(path):
         dlg = NuImportDialog(path.parent, data_file, screening_method, parent=parent)
@@ -143,7 +143,7 @@ def get_import_dialog_for_path(
         dlg = TofwerkImportDialog(path, data_file, screening_method, parent=parent)
     elif is_text_file(path):
         dlg = TextImportDialog(path, data_file, parent=parent)
-    else:
+    else:  # pragma: no cover, error
         raise FileNotFoundError("getImportDialogForPath: invalid file.")
 
     dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
