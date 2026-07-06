@@ -1,5 +1,5 @@
 import pytest
-from PySide6 import QtCore
+from PySide6 import QtCore, QtWidgets
 
 
 @pytest.fixture(
@@ -14,3 +14,9 @@ def test_locales(request):
         | locale.NumberOption.RejectGroupSeparator
     )
     QtCore.QLocale.setDefault(locale)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def app_config(qapp: QtWidgets.QApplication):
+    qapp.setOrganizationName("PyTest")
+    qapp.setOrganizationName("PyTest-SPCal")
