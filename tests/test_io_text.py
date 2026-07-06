@@ -6,7 +6,51 @@ from spcal.io.text import (
     guess_text_parameters,
     is_text_file,
     read_single_particle_file,
+    guess_event_time,
 )
+
+agilent_header = [
+    "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
+    "Intensity Vs Time,CPS",
+    "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+    "Time [Sec],S32 -> 48,Gd156 -> 172",
+    "0.2312,12274.84,20",
+    "0.4402,12304.86,30",
+    "0.6492,12114.71,40",
+    "0.8582,12244.81,10",
+]
+
+agilent_header_with_delims = [
+    "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run,0.1,\tok.b\\001SMPL.d",
+    "Intensity Vs Time,CPS",
+    "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
+    "Time [Sec],S32 -> 48,Gd156 -> 172",
+    "0.2312,12274.84,20",
+    "0.4402,12304.86,30",
+    "0.6492,12114.71,40",
+    "0.8582,12244.81,10",
+]
+nu_header = [
+    "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
+    "0.09704,0,0,0",
+    "0.14556,0,0,0",
+    "0.19408,0,0,0",
+]
+icap_header = [
+    "sep=,",
+    "Number,Time 80Se | 80Se.16O,Intensity (cps) 80Se | 80Se.16O",
+    "1,00:00:00.0000500,0",
+    "2,00:00:00.0001000,0",
+    "3,00:00:00.0001500,0",
+    "4,00:00:00.0002000,0",
+]
+tofwerk_header = [
+    "Index,timestamp (s),[197Au]+ (cts)",
+    "0,0,0",
+    "1,0.0009999,0",
+    "2,0.0019998,0",
+    "3,0.0029997,0",
+]
 
 
 def test_io_is_text_file(test_data_path: Path):
@@ -53,32 +97,10 @@ def test_io_text_import_perkin_elmer(test_data_path: Path):
 
 
 def test_guess_text_parameters_agilent():
-    agilent_header = [
-        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run.b\\001SMPL.d",
-        "Intensity Vs Time,CPS",
-        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
-        "Time [Sec],S32 -> 48,Gd156 -> 172",
-        "0.2312,12274.84,20",
-        "0.4402,12304.86,30",
-        "0.6492,12114.71,40",
-        "0.8582,12244.81,10",
-    ]
-
     delim, skip_rows, columns = guess_text_parameters(agilent_header)
     assert delim == ","
     assert skip_rows == 4
     assert columns == 3
-
-    agilent_header_with_delims = [
-        "D:\\Agilent\\ICPMH\\1\\DATA\\Tom\\run,0.1,\tok.b\\001SMPL.d",
-        "Intensity Vs Time,CPS",
-        "Acquired    : 00/00/0000 0:00:00 PM using Batch run.b",
-        "Time [Sec],S32 -> 48,Gd156 -> 172",
-        "0.2312,12274.84,20",
-        "0.4402,12304.86,30",
-        "0.6492,12114.71,40",
-        "0.8582,12244.81,10",
-    ]
 
     delim, skip_rows, columns = guess_text_parameters(agilent_header_with_delims)
     assert delim == ","
@@ -87,12 +109,6 @@ def test_guess_text_parameters_agilent():
 
 
 def test_guess_text_parameters_nu():
-    nu_header = [
-        "Time (ms),106.905 - seg Full mass spectrum att 1,108.905 - seg Full mass spectrum att 1,196.967 - seg Full mass spectrum att 1",
-        "0.09704,0,0,0",
-        "0.14556,0,0,0",
-        "0.19408,0,0,0",
-    ]
     delim, skip_rows, columns = guess_text_parameters(nu_header)
     assert delim == ","
     assert skip_rows == 1
@@ -100,14 +116,6 @@ def test_guess_text_parameters_nu():
 
 
 def test_guess_text_parameters_thermo_new_icap():
-    icap_header = [
-        "sep=,",
-        "Number,Time 80Se | 80Se.16O,Intensity (cps) 80Se | 80Se.16O",
-        "1,00:00:00.0000500,0",
-        "2,00:00:00.0001000,0",
-        "3,00:00:00.0001500,0",
-        "4,00:00:00.0002000,0",
-    ]
     delim, skip_rows, columns = guess_text_parameters(icap_header)
     assert delim == ","
     assert skip_rows == 2
@@ -115,15 +123,35 @@ def test_guess_text_parameters_thermo_new_icap():
 
 
 def test_guess_text_parameters_tofwerk():
-    tofwerk_header = [
-        "Index,timestamp (s),[197Au]+ (cts)",
-        "0,0,0",
-        "1,0.0009999,0",
-        "2,0.0019998,0",
-        "3,0.0029997,0",
-    ]
-
     delim, skip_rows, columns = guess_text_parameters(tofwerk_header)
     assert delim == ","
     assert skip_rows == 1
     assert columns == 3
+
+
+def test_guess_event_time_agilent():
+    val, unit = guess_event_time(agilent_header, ",", skip_rows=4)
+    assert val == 0.209
+    assert unit == "s"
+
+    val, unit = guess_event_time(agilent_header_with_delims, ",", skip_rows=4)
+    assert val == 0.209
+    assert unit == "s"
+
+
+def test_guess_event_time_nu():
+    val, unit = guess_event_time(nu_header, ",", skip_rows=1)
+    assert val == 0.04852
+    assert unit == "ms"
+
+
+def test_guess_event_time_thermo_new_icap():
+    val, unit = guess_event_time(icap_header, ",", skip_rows=2)
+    assert np.isclose(val, 5e-5)
+    assert unit is None
+
+
+def test_guess_event_time_tofwerk():
+    val, unit = guess_event_time(tofwerk_header, ",", skip_rows=1)
+    assert val == 0.0009999
+    assert unit == "s"
