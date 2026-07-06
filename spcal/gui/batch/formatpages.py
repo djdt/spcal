@@ -10,7 +10,11 @@ from spcal.gui.batch import METHOD_PAGE_ID
 from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
-from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
+from spcal.io.text import (
+    guess_text_parameters,
+    iso_time_to_float_seconds,
+    guess_event_time,
+)
 from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate
@@ -139,7 +143,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
         for path in paths:
             with path.joinpath("integrated.index").open("r") as fp:
                 nintegs = len(json.load(fp))
-            if nintegs > 1000:
+            if nintegs > 1000:  # pragma: no cover, blocking warning
                 button = QtWidgets.QMessageBox.warning(
                     self,
                     "Large Files",
@@ -169,7 +173,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.setTitle("SPCal Batch Processing")
         self.setSubTitle("Text Import Options")
 
-        if delimiter == "":
+        if delimiter == "":  # pragma: no cover, trivial
             delimiter = ","
 
         self.event_time = UnitsWidget(
@@ -184,7 +188,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
         self.combo_intensity_units = QtWidgets.QComboBox()
         self.combo_intensity_units.addItems(["Counts", "CPS"])
-        if cps:
+        if cps:  # pragma: no cover, trivial
             self.combo_intensity_units.setCurrentText("CPS")
 
         self.combo_delimiter = QtWidgets.QComboBox()
@@ -234,44 +238,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         self.registerField("text.isotopes.table", self, "isotopesTableProp")
 
     def delimiter(self) -> str:
-        delimiter = self.combo_delimiter.currentText()
-        if delimiter == "Space":
-            delimiter = " "
-        elif delimiter == "Tab":
-            delimiter = "\t"
-        return delimiter
-
-    def guessEventTime(self, path: Path) -> float | None:
-        header_row = self.first_line.value() - 1
-        re_time = re.compile("[\\(\\[]([nmuµ]s)[\\]\\)]")
-
-        header = path.open("r").readlines(
-            (header_row + 10) * TextImportDialog.HEADER_LINE_SIZE
-        )
-        col_names = header[header_row].split(self.delimiter())
-        for col, name in enumerate(col_names):
-            if "time" in name.lower():
-                m = re_time.search(name.lower())
-                unit = "s"
-                if m is not None:
-                    if m.group(1) == "ms":
-                        unit = "ms"
-                    elif m.group(1) in ["us", "µs"]:
-                        unit = "µs"
-                    elif m.group(1) == "ns":
-                        unit = "ns"
-
-                time_texts = [
-                    line.split(self.delimiter())[col]
-                    for line in header[header_row + 1 :]
-                ]
-                if len(time_texts) == 0:
-                    return None
-                elif "00:" in time_texts[0]:
-                    times = [iso_time_to_float_seconds(tt) for tt in time_texts]
-                else:
-                    times = [float(tt) for tt in time_texts]
-                return float(np.mean(np.diff(times))) * time_units[unit]
+        return TextImportDialog.DELIMITERS[self.combo_delimiter.currentText()]
 
     def initializePage(self):
         paths: list[Path] = self.field("paths")
@@ -294,39 +261,44 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             self.combo_delimiter.setCurrentText(TextImportDialog.DELIMITERS[delimiter])
             self.first_line.setValue(skip_rows)
 
-            event_time = self.guessEventTime(paths[0])
-            self.event_time.setBaseValue(event_time)
-            self.event_time.setBestUnit()
+            try:
+                val, unit = guess_event_time(first_header, self.delimiter(), skip_rows)
+                self.event_time.setUnit(unit)
+                self.event_time.setValue(val)
+            except StopIteration:
+                self.event_time.setBaseValue(None)
 
         self.updateIsotopes()
 
     def updateIsotopes(self):
         paths: list[Path] = self.field("paths")
 
-        row = self.first_line.value() - 1
+        skip_rows = self.first_line.value()
         delimiter: str = self.delimiter()
         size = TextImportDialog.HEADER_LINE_SIZE
-        header = paths[0].open("r").readlines((row + 1) * size)
+        header = paths[0].open("r").readlines((skip_rows) * size)
 
-        shared_names = set(header[row].split(delimiter))
+        shared_names = set(header[skip_rows - 1].split(delimiter))
 
         for path in paths[1:]:
-            header = path.open("r").readlines((row + 1) * size)
-            shared_names = shared_names.intersection(header[row].split(delimiter))
+            header = path.open("r").readlines((skip_rows) * size)
+            shared_names = shared_names.intersection(
+                header[skip_rows - 1].split(delimiter)
+            )
 
         self.table_isotopes.clear()
         self.table_isotopes.setRowCount(len(shared_names))
 
         isotope_count = 0
 
-        for row, name in enumerate(sorted(shared_names)):
+        for skip_rows, name in enumerate(sorted(shared_names)):
             name = name.strip()
             item = QtWidgets.QTableWidgetItem()
             item.setText(name.replace(" ", "_"))
             item.setFlags(item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)
             item.setCheckState(QtCore.Qt.CheckState.Unchecked)
 
-            self.table_isotopes.setItem(row, 0, item)
+            self.table_isotopes.setItem(skip_rows, 0, item)
             iso_item = QtWidgets.QTableWidgetItem()
             m = REGEX_ISOTOPE.search(name)
             if m is not None and m.group(1) is not None and m.group(2) is not None:
@@ -343,7 +315,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 background = QtGui.QPalette.ColorRole.AlternateBase
             iso_item.setBackground(self.palette().color(background))
 
-            self.table_isotopes.setItem(row, 1, iso_item)
+            self.table_isotopes.setItem(skip_rows, 1, iso_item)
 
     def selectedIsotopes(self) -> list[SPCalIsotope]:
         selected = []
@@ -394,13 +366,27 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             return True
 
         paths: list[Path] = self.field("paths")
-        event_time = self.guessEventTime(paths[0])
+
+        event_time = self.event_time.baseValue()
         if event_time is None:
             return True
 
+        skip_rows = self.first_line.value()
+        delimiter: str = self.delimiter()
+
         for path in paths[1:]:
-            _event_time = self.guessEventTime(path)
-            if _event_time is None:
+            header = path.open("r").readlines(
+                (skip_rows + 10) * TextImportDialog.HEADER_LINE_SIZE
+            )
+            try:
+                val, unit = guess_event_time(header, delimiter, skip_rows)
+                _event_time = val * time_units[unit]
+            except StopIteration:
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Invalid Event Time",
+                    "Cannot read event time for '{path.name}', event time override required.",
+                )
                 return False
             if not np.isclose(event_time, _event_time, rtol=0.01):
                 button = QtWidgets.QMessageBox.warning(

@@ -1,8 +1,6 @@
 import logging
-import re
 from pathlib import Path
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTextDataFile
@@ -10,7 +8,10 @@ from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 from spcal.gui.modelviews.headers import CheckableHeaderView
 from spcal.gui.widgets.units import UnitsWidget
-from spcal.io.text import guess_text_parameters, iso_time_to_float_seconds
+from spcal.io.text import (
+    guess_text_parameters,
+    guess_event_time,
+)
 from spcal.isotope import SPCalIsotope, REGEX_ISOTOPE
 from spcal.siunits import time_units
 
@@ -199,7 +200,11 @@ class TextImportDialog(ImportDialogBase):
 
         if self.event_time.value() is None:
             try:
-                val, unit = self.guessEventTimeFromTable()
+                val, unit = guess_event_time(
+                    self.file_lines[: self.HEADER_LINE_COUNT],
+                    self.delimiter(),
+                    self.spinbox_first_line.value(),
+                )
                 self.event_time.setUnit(unit)
                 self.event_time.setValue(val)
             except StopIteration:
@@ -259,40 +264,6 @@ class TextImportDialog(ImportDialogBase):
                 self.table_header.setCheckState(col, QtCore.Qt.CheckState.Checked)
             else:
                 self.table_header.setCheckState(col, QtCore.Qt.CheckState.Unchecked)
-
-    def guessEventTimeFromTable(self) -> tuple[float, str]:
-        header_row = self.spinbox_first_line.value() - 1
-        for col in range(self.table.columnCount()):
-            item = self.table.item(header_row, col)
-            if item is None:
-                raise ValueError(f"missing item at {header_row}, {col}")
-            if "time" in item.text().lower():
-                m = re.search("[\\(\\[]([nmuµ]s)[\\]\\)]", item.text().lower())
-                unit = "s"
-                if m is not None:
-                    if m.group(1) == "ms":
-                        unit = "ms"
-                    elif m.group(1) in ["us", "µs"]:
-                        unit = "µs"
-                    elif m.group(1) == "ns":
-                        unit = "ns"
-
-                time_items = [
-                    self.table.item(row, col)
-                    for row in range(header_row + 1, self.table.rowCount())
-                ]
-                time_texts = [
-                    ti.text().replace(",", ".") for ti in time_items if ti is not None
-                ]
-                if len(time_texts) == 0:
-                    raise StopIteration
-                elif "00:" in time_texts[0]:
-                    times = [iso_time_to_float_seconds(tt) for tt in time_texts]
-                else:
-                    times = [float(tt) for tt in time_texts]
-                return float(np.mean(np.diff(times))), unit
-
-        raise StopIteration
 
     def accept(self):
         data_file = SPCalTextDataFile.load(
