@@ -1,3 +1,4 @@
+from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from typing import Callable
 from pathlib import Path
 from PySide6 import QtGui
@@ -17,6 +18,8 @@ from spcal.gui.graphs.composition import CompositionView
 from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
 from spcal.gui.graphs.legends import ParticleItemSample, HistogramItemSample
+from spcal.gui.graphs.util import text_for_mz
+
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
@@ -31,6 +34,20 @@ def png_size(path: Path) -> tuple[int, int]:
         w = fp.read(4)
         h = fp.read(4)
     return int.from_bytes(w), int.from_bytes(h)
+
+
+def test_graph_viewbox():
+    vb = ViewBoxForceScaleAtZero()
+
+    vb.setRange(xRange=(10.0, 30.0), yRange=(0.0, 20.0))
+    vb.scaleBy([1.0, 2.0], center=QtCore.QPointF(5.0, 10.0))
+
+    assert vb.viewRange()[1] == [-0.8, 40.8]
+
+    vb.translateBy(x=0, y=10)
+    assert vb.viewRange()[1] == [-0.8, 40.8]
+    vb.translateBy(QtCore.QPointF(0.0, 10.0))
+    assert vb.viewRange()[1] == [-0.8, 40.8]
 
 
 def test_graph_base(qtbot: QtBot):
@@ -108,7 +125,7 @@ def test_graph_base_font_overlar(qtbot: QtBot):
     with qtbot.waitExposed(view):
         view.show()
 
-    item = view.plot.drawCurve(np.arange(10), np.random.random(10), name="curve")
+    view.plot.drawCurve(np.arange(10), np.random.random(10), name="curve")
 
     assert view.plot.legend is not None
 
@@ -463,3 +480,9 @@ def test_graph_image_export_composition(
 
     assert output.exists()
     assert png_size(output) == (600, 400)
+
+
+def test_graph_text_for_mz():
+    assert text_for_mz(56.0) == "56.00(Fe)"
+    assert text_for_mz(190.0) == "190.00(Os)"
+    assert text_for_mz(116.0) == "116.00(Cd,Sn)"

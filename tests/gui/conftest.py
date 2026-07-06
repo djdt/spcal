@@ -20,3 +20,7 @@ def test_locales(request):
 def app_config(qapp: QtWidgets.QApplication):
     qapp.setOrganizationName("PyTest")
     qapp.setOrganizationName("PyTest-SPCal")
+
+    settings = QtCore.QSettings()
+    settings.clear()
+    settings.setValue("DisableCheckForUpdates", "0.0.0")

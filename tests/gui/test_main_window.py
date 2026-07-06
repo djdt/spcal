@@ -1,7 +1,6 @@
 from PySide6 import QtWidgets, QtCore
 from pathlib import Path
 
-import pytest
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
@@ -9,13 +8,6 @@ from spcal.processing.options import SPCalIsotopeOptions
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.gui.mainwindow import SPCalMainWindow
-
-
-@pytest.fixture(scope="module", autouse=True)
-def settings_config():
-    settings = QtCore.QSettings()
-    settings.clear()
-    settings.setValue("DisableCheckForUpdates", "0.0.0")
 
 
 def test_main_window_method_dialogs(qtbot: QtBot, test_data_path: Path):
@@ -200,6 +192,9 @@ def test_main_window_save_restore_method(qtbot: QtBot, test_data_path: Path):
 
 
 def test_main_window_recent_files(qtbot: QtBot, test_data_path: Path):
+    settings = QtCore.QSettings()
+    settings.remove("RecentFiles")
+
     win = SPCalMainWindow()
     qtbot.addWidget(win)
     df = SPCalTOFWERKDataFile.load(
@@ -211,7 +206,6 @@ def test_main_window_recent_files(qtbot: QtBot, test_data_path: Path):
     )
     win.files.addDataFile(df)
 
-    settings = QtCore.QSettings()
     assert settings.value("RecentFiles/size") == 2
     settings.beginReadArray("RecentFiles")
     settings.setArrayIndex(1)
