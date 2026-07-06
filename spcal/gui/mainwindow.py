@@ -172,7 +172,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.updateRecentFiles()
 
         settings = QtCore.QSettings()
-        if settings.contains("DisableCheckForUpdates"):  # pragma: no cover, settings
+        if settings.contains("DisableCheckForUpdates"):
             if compare_version_strings(
                 settings.value("DisableCheckForUpdates"),
                 version("spcal"),
@@ -181,7 +181,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         if not settings.contains("DisableCheckForUpdates"):
             QtCore.QTimer.singleShot(1000, self.checkForUpdates)
 
-    def defaultMethod(self) -> SPCalProcessingMethod:  # pragma: no cover, settings
+    def defaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
         method = SPCalProcessingMethod()
         if settings.contains("DefaultMethod/Instrument/Uptake"):
@@ -348,9 +348,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
 
         self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
-        self.limit_options.setLimitOptions(
-            method.limit_options,
-        )
+        self.limit_options.setLimitOptions(method.limit_options)
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
         self.currentMethodChanged.emit(method)
@@ -606,7 +604,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     ):
         if data_file is None:
             data_file = self.files.currentDataFile()
-        if data_file is None:
+        if data_file is None:  # pragma: no cover, error
             raise ValueError("cannot set exclusion regions, invalid data file")
 
         if data_file.exclusion_regions != regions:
@@ -693,16 +691,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.reprocess()
 
     def onIsotopeOptionChanged(self, isotope: SPCalIsotopeBase):
-        print("ISOTOPE OPTIONS CHANGED")
         method = self.currentMethod()
         option = self.isotope_options.optionForIsotope(isotope)
 
-        print(
-            id(method.isotope_options[isotope]),
-            id(self.isotope_options.optionForIsotope(isotope)),
-        )
         if method.isotope_options[isotope] != option:
-            print(isotope)
             method.isotope_options[isotope] = option
             self.currentMethodChanged.emit(method)
             self.reprocess(isotopes=[isotope])
@@ -1255,7 +1247,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         dlg.show()
 
-    def wizardBatchProcess(self):  # BatchProcessDialog:
+    def wizardBatchProcess(self):
         df = self.files.currentDataFile()
         dlg = SPCalBatchProcessingWizard(
             df,
