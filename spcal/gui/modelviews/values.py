@@ -18,12 +18,12 @@ class ValueWidgetDelegate(QtWidgets.QStyledItemDelegate):
         self.min, self.max = min, max
         self.step = step
 
-    def setMin(self, min: float):
-        self.min = min
-
-    def setMax(self, max: float):
-        self.max = max
-
+    # def setMin(self, min: float):
+    #     self.min = min
+    #
+    # def setMax(self, max: float):
+    #     self.max = max
+    #
     def setSigFigs(self, sigfigs: int):
         self.sigfigs = sigfigs
 
