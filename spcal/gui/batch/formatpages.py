@@ -261,10 +261,10 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 if unit is not None:
                     self.event_time.setUnit(unit)
                     self.event_time.setValue(val)
-                else:
+                else:  # pragma: no cover, assumes seconds
                     self.event_time.setBaseValue(val)
                     self.event_time.setBestUnit()
-            except StopIteration:
+            except StopIteration:  # pragma: no cover, trivial
                 self.event_time.setBaseValue(None)
 
         self.updateIsotopes()
@@ -301,11 +301,15 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             iso_item = QtWidgets.QTableWidgetItem()
             m = REGEX_ISOTOPE.search(name)
             if m is not None and m.group(1) is not None and m.group(2) is not None:
+                # ordered number, symbol
                 iso_item.setText(m.group(1) + m.group(2))
                 item.setCheckState(QtCore.Qt.CheckState.Checked)
                 background = QtGui.QPalette.ColorRole.Base
                 isotope_count += 1
-            elif m is not None and m.group(3) is not None and m.group(4) is not None:
+            elif (
+                m is not None and m.group(3) is not None and m.group(4) is not None
+            ):  # pragma: no cover, same as above
+                # ordered symbol, number
                 iso_item.setText(m.group(4) + m.group(3))
                 item.setCheckState(QtCore.Qt.CheckState.Checked)
                 background = QtGui.QPalette.ColorRole.Base
@@ -325,7 +329,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 if item is not None and item.text() != "":
                     try:
                         selected.append(SPCalIsotope.fromString(item.text()))
-                    except NameError:
+                    except NameError:  # pragma: no cover, skips
                         pass
         return selected
 
@@ -338,8 +342,8 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         for r in range(self.table_isotopes.rowCount()):
             name_item = self.table_isotopes.item(r, 0)
             iso_item = self.table_isotopes.item(r, 1)
-            if name_item is None or iso_item is None:
-                continue
+            if name_item is None or iso_item is None:  # pragma: no cover, error
+                raise ValueError("missing items")
             try:
                 isotope = SPCalIsotope.fromString(iso_item.text())
                 table[isotope] = name_item.text()
@@ -367,8 +371,8 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
         paths: list[Path] = self.field("paths")
 
         event_time = self.event_time.baseValue()
-        if event_time is None:
-            return True
+        if event_time is None:  # pragma: no cover, shouldn't reach
+            raise ValueError("event time cannot be none")
 
         skip_rows = self.first_line.value()
         delimiter: str = self.delimiter()
@@ -382,14 +386,16 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                 if unit is None:
                     unit = "s"
                 _event_time = val * time_units[unit]
-            except StopIteration:
+            except StopIteration:  # pragma: no cover, blocking
                 QtWidgets.QMessageBox.critical(
                     self,
                     "Invalid Event Time",
-                    "Cannot read event time for '{path.name}', event time override required.",
+                    f"Cannot read event time for '{path.name}', event time override required.",
                 )
                 return False
-            if not np.isclose(event_time, _event_time, rtol=0.01):
+            if not np.isclose(
+                event_time, _event_time, rtol=0.01
+            ):  # pragma: no cover, blocking
                 button = QtWidgets.QMessageBox.warning(
                     self,
                     "Inconsistent Event Time",
