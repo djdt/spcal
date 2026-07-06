@@ -63,7 +63,7 @@ def guess_event_time(
                 unit = "µs"
             elif m.group(1) == "ns":
                 unit = "ns"
-            else:
+            else:  # pragma: no cover, error
                 raise ValueError(f"unknown time column unit '{m.group(1)}'")
         else:
             unit = None

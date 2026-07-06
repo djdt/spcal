@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 
 import numpy as np
@@ -96,6 +97,14 @@ def test_io_text_import_perkin_elmer(test_data_path: Path):
     assert np.all(data["Au"] == np.arange(10))
 
 
+def test_io_text_import_new_icap(test_data_path: Path):
+    path = test_data_path.joinpath("text/thermo_icap_export.csv")
+    data = read_single_particle_file(path, delimiter=",", skip_rows=2)
+    assert data.dtype.names is not None
+    assert data["Time_80Se_|_80Se.16O"].dtype == np.float32
+    assert np.all(~np.isnan(data["Time_80Se_|_80Se.16O"]))  # converted correctly
+
+
 def test_guess_text_parameters_agilent():
     delim, skip_rows, columns = guess_text_parameters(agilent_header)
     assert delim == ","
@@ -127,6 +136,24 @@ def test_guess_text_parameters_tofwerk():
     assert delim == ","
     assert skip_rows == 1
     assert columns == 3
+
+
+def test_guess_event_time():
+    lines = ["time (s);data", "0.1;1.0", "0.2;2.0", "0.3;3.0", "0.4;2.0"]
+    for test_unit in ["s", "ms", "µs", "ns"]:
+        lines[0] = f"time ({test_unit});data"
+        val, unit = guess_event_time(lines, ";", 1)
+        assert val == 0.1
+        assert unit == test_unit
+
+    lines[0] = "time;data"
+    val, unit = guess_event_time(lines, ";", 1)
+    assert val == 0.1
+    assert unit is None
+
+    lines[0] = "index;data"
+    with pytest.raises(StopIteration):
+        guess_event_time(lines, ";", 1)
 
 
 def test_guess_event_time_agilent():
