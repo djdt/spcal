@@ -205,8 +205,12 @@ class TextImportDialog(ImportDialogBase):
                     self.delimiter(),
                     self.spinbox_first_line.value(),
                 )
-                self.event_time.setUnit(unit)
-                self.event_time.setValue(val)
+                if unit is not None:
+                    self.event_time.setUnit(unit)
+                    self.event_time.setValue(val)
+                else:
+                    self.event_time.setBaseValue(val)
+                    self.event_time.setBestUnit()
             except StopIteration:
                 pass
 

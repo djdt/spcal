@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 
 import numpy as np
@@ -10,11 +9,7 @@ from spcal.gui.batch import METHOD_PAGE_ID
 from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
-from spcal.io.text import (
-    guess_text_parameters,
-    iso_time_to_float_seconds,
-    guess_event_time,
-)
+from spcal.io.text import guess_text_parameters, guess_event_time
 from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
 from spcal.gui.modelviews.isotope import IsotopeNameDelegate
@@ -263,8 +258,12 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
 
             try:
                 val, unit = guess_event_time(first_header, self.delimiter(), skip_rows)
-                self.event_time.setUnit(unit)
-                self.event_time.setValue(val)
+                if unit is not None:
+                    self.event_time.setUnit(unit)
+                    self.event_time.setValue(val)
+                else:
+                    self.event_time.setBaseValue(val)
+                    self.event_time.setBestUnit()
             except StopIteration:
                 self.event_time.setBaseValue(None)
 
@@ -380,6 +379,8 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             )
             try:
                 val, unit = guess_event_time(header, delimiter, skip_rows)
+                if unit is None:
+                    unit = "s"
                 _event_time = val * time_units[unit]
             except StopIteration:
                 QtWidgets.QMessageBox.critical(

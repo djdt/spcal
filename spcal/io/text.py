@@ -11,8 +11,6 @@ import re
 import numpy as np
 from numpy.lib._iotools import ConversionWarning
 
-from spcal.siunits import time_units
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ def is_text_file(path: Path) -> bool:
 
 def guess_event_time(
     lines: list[str], delimiter: str = ",", skip_rows: int = 1
-) -> tuple[float, str]:
+) -> tuple[float, str | None]:
     """Try to find a column of times and extract the event time.
 
     Times are extracted as the median difference of a column containing 'time'.
@@ -45,7 +43,7 @@ def guess_event_time(
         StopIteration: 'time' column is not found
         ValueError: incorrectly formated input
     """
-    re_time = re.compile("[\\(\\[]([nmuµ]?s)[\\]\\)]")
+    re_time = re.compile("[\\(\\[]([nmuµ]?s|sec)[\\]\\)]")
 
     header = lines[skip_rows - 1].split(delimiter)
 
@@ -56,13 +54,8 @@ def guess_event_time(
         if "time" not in name.strip().lower():
             continue
         m = re_time.search(name.lower())
-        unit = "s"
-        if m is None:  # pragma: no cover, trivial
-            logger.warning(
-                f"found a time column '{name}' but could not read unit, assuming seconds"
-            )
-        else:
-            if m.group(1) == "s":
+        if m is not None:
+            if m.group(1) in ["s", "sec"]:
                 unit = "s"
             elif m.group(1) == "ms":
                 unit = "ms"
@@ -71,7 +64,11 @@ def guess_event_time(
             elif m.group(1) == "ns":
                 unit = "ns"
             else:
-                raise ValueError(f"unknown time column unit '{unit}'")
+                raise ValueError(f"unknown time column unit '{m.group(1)}'")
+        else:
+            unit = None
+            logger.info(f"found a time column '{name}' but no unit")
+
         texts = [line.split(delimiter)[col] for line in lines[skip_rows:]]
         if len(texts) == 0:  # pragma: no cover, error
             raise ValueError("time column has no entries")
