@@ -1,3 +1,5 @@
+from spcal.gui.dialogs.imageexport import ImageExportDialog
+from pyqtgraph.Qt import QtWidgets
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from typing import Callable
 from pathlib import Path
@@ -9,7 +11,7 @@ from pytestqt.qtbot import QtBot
 
 
 from spcal.datafile import SPCalNuDataFile, SPCalDataFile
-from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.graphs.base import SinglePlotGraphicsView, AxisRangeDialog
 from spcal.gui.graphs.calibration import CalibrationView
 from spcal.gui.graphs.items import BarChart, HoverableChartItem, PieChart
 from spcal.gui.graphs.particle import ExclusionRegion, ParticleView
@@ -85,6 +87,13 @@ def test_graph_base(qtbot: QtBot):
     assert item.xData[0] == 0.0
     assert item.xData[1] == 9.0
 
+    # test line, vertical
+    item = view.plot.drawLine(5.0, QtCore.Qt.Orientation.Vertical)
+    assert item.xData is not None and item.yData is not None
+    assert np.all(item.xData == 5.0)
+    assert item.yData[0] == 0.0
+    assert item.yData[1] == 6.0
+
     # test scatter
     item = view.plot.drawScatter(np.arange(5), np.random.random(5))
     assert item.getData()[0].size == 5
@@ -97,6 +106,101 @@ def test_graph_base(qtbot: QtBot):
     assert rect.height() == 6
 
     view.clear()
+
+
+def test_graph_base_ranges(qtbot: QtBot):
+    view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    view.plot.drawCurve(np.arange(11), np.arange(11) * 2.0)
+    assert view.dataBounds() == (0.0, 10.0, 0.0, 20.0)
+
+    # test axis range
+    assert view.plot.getViewBox().viewRange() == [[0.0, 1.0], [0.0, 1.0]]
+    view.setAxisRange("x", 0.4, 0.5)
+    view.setAxisRange("y", 0.3, 0.6)
+    assert np.allclose(
+        view.plot.getViewBox().viewRange(), [[0.4, 0.5], [0.3, 0.6]], atol=0.1
+    )
+
+    assert view.plot.getViewBox().mouseEnabled()[0]
+    assert not view.plot.getViewBox().state["autoVisibleOnly"][0]  # type: ignore
+    assert not view.plot.getViewBox().autoRangeEnabled()[0]
+
+    view.setAxisAutoScale("x", True)
+
+    assert not view.plot.getViewBox().mouseEnabled()[0]
+    assert view.plot.getViewBox().state["autoVisibleOnly"][0]  # type: ignore
+    assert view.plot.getViewBox().autoRangeEnabled()[0]
+
+    view.setAxisAutoScale("y", True)
+
+
+def test_graph_base_events(qtbot: QtBot):
+    view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    view.plot.drawCurve(np.arange(11), np.arange(11) * 2.0, name="test")
+    view.plot.getViewBox().enableAutoRange(x=True, y=False)
+
+    assert view.dataBounds() == (0.0, 10.0, 0.0, 20.0)
+
+    menu = view.axisMenu("x")
+    assert menu.actions()[0].isChecked()
+    menu.actions()[0].trigger()
+    assert not view.plot.getViewBox().autoRangeEnabled()[0]
+
+    menu = view.axisMenu("y")
+    assert not menu.actions()[0].isChecked()
+
+    menu = view.customContextMenu(QtCore.QPoint(view.mapToGlobal(view.rect().center())))
+    assert (
+        len(menu.actions()) == 6
+    )  # copy image, export image, legend, zoom reset, 2 seps
+
+    view.data_for_export = {"a": np.zeros(10)}
+    view.context_menu_actions.append(QtGui.QAction("test"))
+
+    menu = view.customContextMenu(QtCore.QPoint(view.mapToGlobal(view.rect().center())))
+    assert len(menu.actions()) == 9  # + action, data export, legend and a sep
+
+    # callbacks
+    assert view.plot.legend is not None and view.plot.legend.isVisible()
+    view.setLegendVisible(False)
+    assert view.plot.legend is not None and not view.plot.legend.isVisible()
+
+    view.copyToClipboard()
+    assert QtWidgets.QApplication.clipboard().pixmap() is not None
+
+
+def test_axis_range_dialog(qtbot: QtBot):
+    dlg = AxisRangeDialog((20.0, 40.0), (0.0, 100.0))
+
+    qtbot.addWidget(dlg)
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    assert dlg.spinbox_lo.value() == 20.0
+    assert dlg.spinbox_hi.value() == 40.0
+    for spinbox in [dlg.spinbox_lo, dlg.spinbox_hi]:
+        assert spinbox.minimum() == 0.0
+        assert spinbox.maximum() == 100.0
+
+    dlg.spinbox_lo.setValue(10.0)
+    dlg.spinbox_hi.setValue(15.0)
+
+    with qtbot.waitSignal(
+        dlg.rangeSelected,
+        check_params_cb=lambda min, max: min == 10.0 and max == 15.0,
+        timeout=100,
+    ):
+        dlg.accept()
 
 
 def test_graph_base_export(qtbot: QtBot, tmp_path: Path):
@@ -118,7 +222,7 @@ def test_graph_base_export(qtbot: QtBot, tmp_path: Path):
     assert np.allclose(npz["test2"], 1.0)
 
 
-def test_graph_base_font_overlar(qtbot: QtBot):
+def test_graph_base_font_overlap(qtbot: QtBot):
     view = SinglePlotGraphicsView("test", xlabel="xxx", ylabel="yyy", xunits="s")
     qtbot.addWidget(view)
 
@@ -420,6 +524,31 @@ def test_graph_image_export_particle(
 
     assert output.exists()
     assert png_size(output) == (1800, 1200)
+
+    # test setting defaults
+    settings = QtCore.QSettings()
+    settings.clear()
+
+    options = view.getDefaultImageExportOptions()
+    assert options[0] == view.viewport().size()
+    assert options[1] == 96
+    assert options[2] == view.font()
+    assert options[3] == QtGui.QColor(QtCore.Qt.GlobalColor.black)
+    assert options[4] == QtGui.QColor(QtCore.Qt.GlobalColor.white)
+
+    view.setDefaultImageExportOptions(
+        QtCore.QSize(1800, 1200),
+        300,
+        QtGui.QFont("serif"),
+        QtGui.QColor(255, 0, 0),
+        QtGui.QColor(0, 0, 255),
+    )
+    options = view.getDefaultImageExportOptions()
+    assert options[0] == QtCore.QSize(1800, 1200)
+    assert options[1] == 300
+    assert options[2] == QtGui.QFont("serif")
+    assert options[3] == QtGui.QColor(255, 0, 0)
+    assert options[4] == QtGui.QColor(0, 0, 255)
 
 
 def test_graph_image_export_histogram(

@@ -21,10 +21,10 @@ def create_export_view(
     font: QtGui.QFont | None = None,
     font_color: QtGui.QColor | QtCore.Qt.GlobalColor | None = None,
 ) -> "SinglePlotGraphicsView":
-    if font is None:
+    if font is None:  # pragma: no cover, trivial
         font = QtGui.QFont()
 
-    if font_color is None:
+    if font_color is None:  # pragma: no cover, trivial
         font_color = QtGui.QColor(QtCore.Qt.GlobalColor.black)
 
     scaled_font = QtGui.QFont(font)
@@ -88,7 +88,10 @@ class AxisRangeDialog(QtWidgets.QDialog):
         super().accept()
 
 
-class PlotCurveItemFix(pyqtgraph.PlotCurveItem):  # temporary fix to pyqtgraph
+# TODO: remove when pyqtgraph is updated
+class PlotCurveItemFix(
+    pyqtgraph.PlotCurveItem
+):  # pragma: no cover, temporary fix to pyqtgraph
     @typing.no_type_check
     def dataBounds(self, ax, frac=1.0, orthoRange=None):
         import warnings
@@ -224,11 +227,13 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             offset=(-10, 10), verSpacing=0, colCount=1, labelTextColor="black"
         )
 
-        if font is None:
+        if font is None:  # pragma: no cover, trivial
             font = QtGui.QFont()
         self.setFont(font)
 
-    def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+    def contextMenuEvent(
+        self, event: QtWidgets.QGraphicsSceneContextMenuEvent
+    ):  # pragma: no cover, covered elsewhere
         self.requestContextMenu.emit(event.pos().toPoint())
 
     def dataBounds(self) -> tuple[float, float, float, float]:
@@ -276,7 +281,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
             self.redrawLegend()
 
     def redrawLegend(self):
-        if self.legend is None:
+        if self.legend is None:  # pragma: no cover, trivial
             return
         # store items
         items = []
@@ -516,10 +521,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             scale = self.plot.yaxis.scale
             v1, v2 = y1, y2
             l1, l2 = ly1, ly2
-        else:
+        else:  # pragma: no cover, error
             raise ValueError("axis must be 'x' or 'y'")
 
-        def open_range_dialog():
+        def open_range_dialog():  # pragma: no cover, tested individually for dlg
             dlg = AxisRangeDialog(
                 (v1 * scale, v2 * scale), (l1 * scale, l2 * scale), parent=self
             )
@@ -553,17 +558,21 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
 
         return menu
 
-    def customContextMenu(self, pos: QtCore.QPoint):
+    def customContextMenu(self, pos: QtCore.QPoint) -> QtWidgets.QMenu:
         view_pos = self.plot.xaxis.mapFromView(pos)
-        if view_pos is not None and self.plot.xaxis.contains(view_pos):
+        if view_pos is not None and self.plot.xaxis.contains(
+            view_pos
+        ):  # pragma: no cover
             menu = self.axisMenu("x")
             menu.popup(self.mapToGlobal(pos))
-            return
+            return menu
         view_pos = self.plot.yaxis.mapFromView(pos)
-        if view_pos is not None and self.plot.yaxis.contains(view_pos):
+        if view_pos is not None and self.plot.yaxis.contains(
+            view_pos
+        ):  # pragma: no cover
             menu = self.axisMenu("y")
             menu.popup(self.mapToGlobal(pos))
-            return
+            return menu
 
         menu = QtWidgets.QMenu(self)
         menu.addAction(self.action_copy_image)
@@ -585,11 +594,12 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
                 menu.addAction(action)
 
         menu.popup(self.mapToGlobal(pos))
+        return menu
 
     def setAxisRange(self, axis: str, min: float, max: float):
-        if self.plot.vb is None:
+        if self.plot.vb is None:  # pragma: no cover, trivial
             return
-        if min > max:
+        if min > max:  # pragma: no cover, trivial
             min, max = max, min
         if axis == "x":
             scale = self.plot.xaxis.scale
@@ -597,11 +607,11 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         elif axis == "y":
             scale = self.plot.yaxis.scale
             self.plot.vb.setRange(yRange=(min / scale, max / scale))  # type: ignore , pyqtgraph bad names
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"bad axis '{axis}', must be x or y")
 
     def setAxisAutoScale(self, axis: str, auto_scale: bool):
-        if self.plot.vb is None:
+        if self.plot.vb is None:  # pragma: no cover, trivial
             return
         if axis == "x":
             self.plot.vb.setMouseEnabled(x=not auto_scale)
@@ -642,7 +652,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         return QtCore.QRectF(x0, y0, x1 - x0, y1 - y0)
 
     def exportData(self, path: Path | None):
-        if path is None:
+        if path is None:  # pragma: no cover, dialog
             path = most_recent_spcal_path()
             if path is not None:
                 path = path.parent.joinpath("export.csv")
@@ -695,7 +705,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             font: QtGui.QFont = settings.value("ImageExport/Font")
         if settings.contains("ImageExport/Font"):
             font_color: QtGui.QColor = settings.value("ImageExport/FontColor")
-        if settings.contains("ImageExport/Background"):
+        if settings.contains("ImageExport/BackgroundColor"):
             background_color: QtGui.QColor = settings.value(
                 "ImageExport/BackgroundColor"
             )
@@ -722,7 +732,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         settings.setValue("ImageExport/FontColor", font_color)
         settings.setValue("ImageExport/BackgroundColor", background_color)
 
-    def dialogExportImage(self):
+    def dialogExportImage(self):  # pragma: no cover, dialog
         size, dpi, font, font_color, background_color = (
             self.getDefaultImageExportOptions()
         )
@@ -738,10 +748,7 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
         dir = most_recent_spcal_path()
         dir = str(Path(str(dir)).parent) if dir is not None else ""
         path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            "Export Image",
-            dir,
-            "PNG Images(*.png);;All Files(*)",
+            self, "Export Image", dir, "PNG Images(*.png);;All Files(*)"
         )
         if path == "":
             return

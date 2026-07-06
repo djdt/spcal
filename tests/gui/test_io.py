@@ -34,6 +34,9 @@ def test_get_import_dialog_for_path(qtbot: QtBot, test_data_path: Path):
     dlg = get_import_dialog_for_path(window, test_data_path.joinpath("nu"))
     assert isinstance(dlg, NuImportDialog)
 
+    dlg = get_import_dialog_for_path(window, test_data_path.joinpath("nu/run.info"))
+    assert isinstance(dlg, NuImportDialog)
+
     dlg = get_import_dialog_for_path(
         window, test_data_path.joinpath("tofwerk/tofwerk_au_50nm.h5")
     )
@@ -41,10 +44,12 @@ def test_get_import_dialog_for_path(qtbot: QtBot, test_data_path: Path):
 
 
 def test_most_recent_spcal_path():
+    settings = QtCore.QSettings()
+    settings.remove("RecentFiles")
+
     path = most_recent_spcal_path()
     assert path is None
 
-    settings = QtCore.QSettings()
     settings.beginWriteArray("RecentFiles")
     settings.setArrayIndex(0)
     settings.setValue("Path", "/most/recent.path")

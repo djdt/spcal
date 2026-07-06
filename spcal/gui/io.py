@@ -165,7 +165,7 @@ class SessionImportWorker(QtCore.QObject):
     def read(self):
         self.started.emit(len(self.datafiles))
         for i, (datafile, path) in enumerate(self.datafiles):
-            if self.thread().isInterruptionRequested():
+            if self.thread().isInterruptionRequested():  # pragma: no cover, trivial
                 return
 
             self.progress.emit(i, path.name)
