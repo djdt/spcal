@@ -7,68 +7,68 @@ from spcal.pratt import Parser, ParserException, Reducer, ReducerException
 from spcal.processing.result import SPCalProcessingResult
 
 
-class PolygonSelectionItem(QtWidgets.QGraphicsWidget):
-    def __init__(
-        self,
-        pen: QtGui.QPen,
-        brush: QtGui.QBrush | None = None,
-        parent: QtWidgets.QGraphicsObject | None = None,
-    ):
-        super().__init__(parent)
-
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush)
-
-        self.pen = pen
-        self.brush = brush
-
-        self.poly = QtGui.QPolygonF()
-
-    def boundingRect(self) -> QtCore.QRectF:
-        return self.poly.boundingRect()
-
-    def shape(self) -> QtGui.QPainterPath:
-        path = QtGui.QPainterPath()
-        path.addPolygon(self.poly)
-        return path
-
-    def addPoint(self, point: QtCore.QPointF):
-        self.poly.append(point)
-
-    def containsPoints(self, points: np.ndarray) -> np.ndarray:
-        """Test an array of points, shape (N, 2).
-
-        This is a much lazier implementation than in pewpew."""
-
-        rect = self.boundingRect()
-
-        valid = np.logical_and(
-            np.logical_and(points[:, 0] > rect.left(), points[:, 0] < rect.right()),
-            np.logical_and(points[:, 1] > rect.bottom(), points[:, 1] < rect.top()),
-        )
-        test_idx = np.flatnonzero(~valid)
-
-        valid_test_points = [
-            self.poly.containsPoint(
-                QtCore.QPointF(points[i][0], points[i][1]),
-                QtCore.Qt.FillRule.OddEvenFill,
-            )
-            for i in test_idx
-        ]
-        valid[test_idx] = valid_test_points
-        return valid
-
-    def paint(
-        self,
-        painter: QtGui.QPainter,
-        options: QtWidgets.QStyleOptionGraphicsItem,
-        widget: QtWidgets.QWidget | None = None,
-    ):
-        painter.save()
-        painter.setPen(self.pen)
-        painter.setBrush(self.brush)
-        painter.drawConvexPolygon(self.poly)
-        painter.restore()
+# class PolygonSelectionItem(QtWidgets.QGraphicsWidget):
+#     def __init__(
+#         self,
+#         pen: QtGui.QPen,
+#         brush: QtGui.QBrush | None = None,
+#         parent: QtWidgets.QGraphicsObject | None = None,
+#     ):
+#         super().__init__(parent)
+#
+#         if brush is None:
+#             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush)
+#
+#         self.pen = pen
+#         self.brush = brush
+#
+#         self.poly = QtGui.QPolygonF()
+#
+#     def boundingRect(self) -> QtCore.QRectF:
+#         return self.poly.boundingRect()
+#
+#     def shape(self) -> QtGui.QPainterPath:
+#         path = QtGui.QPainterPath()
+#         path.addPolygon(self.poly)
+#         return path
+#
+#     def addPoint(self, point: QtCore.QPointF):
+#         self.poly.append(point)
+#
+#     def containsPoints(self, points: np.ndarray) -> np.ndarray:
+#         """Test an array of points, shape (N, 2).
+#
+#         This is a much lazier implementation than in pewpew."""
+#
+#         rect = self.boundingRect()
+#
+#         valid = np.logical_and(
+#             np.logical_and(points[:, 0] > rect.left(), points[:, 0] < rect.right()),
+#             np.logical_and(points[:, 1] > rect.bottom(), points[:, 1] < rect.top()),
+#         )
+#         test_idx = np.flatnonzero(~valid)
+#
+#         valid_test_points = [
+#             self.poly.containsPoint(
+#                 QtCore.QPointF(points[i][0], points[i][1]),
+#                 QtCore.Qt.FillRule.OddEvenFill,
+#             )
+#             for i in test_idx
+#         ]
+#         valid[test_idx] = valid_test_points
+#         return valid
+#
+#     def paint(
+#         self,
+#         painter: QtGui.QPainter,
+#         options: QtWidgets.QStyleOptionGraphicsItem,
+#         widget: QtWidgets.QWidget | None = None,
+#     ):
+#         painter.save()
+#         painter.setPen(self.pen)
+#         painter.setBrush(self.brush)
+#         painter.drawConvexPolygon(self.poly)
+#         painter.restore()
 
 
 class ScatterView(SinglePlotGraphicsView):
@@ -77,7 +77,7 @@ class ScatterView(SinglePlotGraphicsView):
     ):
         super().__init__("Scatter", font=font, parent=parent)
 
-        self.poly: PolygonSelectionItem | None = None
+        # self.poly: PolygonSelectionItem | None = None
 
     def drawArrays(
         self,
