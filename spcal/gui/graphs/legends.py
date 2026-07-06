@@ -37,7 +37,7 @@ class FontScaledItemSample(pyqtgraph.ItemSample):
         self.setFixedHeight(self.font_metrics.ascent() * self.ratio[1])
         self.prepareGeometryChange()
 
-    def mouseClickEvent(self, event):
+    def mouseClickEvent(self, event):  # pragma: no cover
         pass
 
     def drawHiddenIcon(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
@@ -104,7 +104,9 @@ class HistogramItemSample(FontScaledItemSample):
     ):  # Dumb pyqtgraph class, use pos()
         """Use the mouseClick event to toggle the visibility of the plotItem"""
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            if event.pos().x() < self.boundingRect().left() + self.height():
+            if (
+                event.pos().x() < self.boundingRect().left() + self.height()
+            ):  # pragma: no cover, unused
                 if len(self.item_limits) > 0:
                     if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:
                         self.setLimitsVisible(True)
@@ -140,7 +142,7 @@ class HistogramItemSample(FontScaledItemSample):
 
         pad = self.pad()
 
-        if len(self.item_limits) > 0:
+        if len(self.item_limits) > 0:  # pragma: no cover, unused
             if not all(limit.isVisible() for limit in self.item_limits):
                 self.drawHiddenIcon(painter, rect.adjusted(pad, pad, -pad, -pad))
             else:
@@ -161,7 +163,7 @@ class HistogramItemSample(FontScaledItemSample):
             painter.setPen(pen)
             painter.drawRect(rect.adjusted(pad, pad, -pad, -pad))
 
-    def addLimit(self, limit: pyqtgraph.InfiniteLine):
+    def addLimit(self, limit: pyqtgraph.InfiniteLine):  # pragma: no cover, unused
         self.item_limits.append(limit)
         self.prepareGeometryChange()
 
@@ -201,6 +203,7 @@ class ParticleItemSample(FontScaledItemSample):
         self, event: QtWidgets.QGraphicsSceneMouseEvent
     ):  # Dumb pyqtgraph class, use pos()
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
+            print(event.pos())
             if event.pos().x() < self.boundingRect().center().x():  # lines
                 if self.lines is not None:
                     if event.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier:

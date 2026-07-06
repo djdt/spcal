@@ -1,4 +1,3 @@
-from spcal.gui.dialogs.imageexport import ImageExportDialog
 from pyqtgraph.Qt import QtWidgets
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from typing import Callable
@@ -267,10 +266,14 @@ def test_graph_particle(
     with qtbot.waitExposed(view):
         view.show()
 
-    df = random_datafile_generator(size=10000, number=100)
-    result = default_method.processDataFile(df)[df.isotopes[0]]
+    df = random_datafile_generator(
+        size=10000,
+        number=100,
+        isotopes=[ISOTOPE_TABLE[("Ag", 107)], ISOTOPE_TABLE[("Ag", 109)]],
+    )
+    results = default_method.processDataFile(df)
 
-    view.drawResult(result)
+    view.drawResult(results[df.selected_isotopes[0]])
 
     assert view.plot.legend is not None
     assert len(view.plot.legend.items) == 1
@@ -281,14 +284,73 @@ def test_graph_particle(
     assert isinstance(item, ParticleItemSample)
     assert not item.sceneBoundingRect().intersects(label.sceneBoundingRect())
 
-    result.signals[:50] = np.nan
-
     # Test overlapping
-    view.drawResult(result)
+    view.drawResult(results[df.selected_isotopes[1]])
     assert len(view.plot.legend.items) == 2
     item, _ = view.plot.legend.items[0]
     item2, _ = view.plot.legend.items[1]
     assert not item.sceneBoundingRect().intersects(item2.sceneBoundingRect())
+
+    # test legend mouse clicks
+    pos = view.mapFromScene(item.mapToScene(item.rect().center()))
+
+    assert item.item.isVisible()
+    assert item.detections.isVisible()
+    assert item2.item.isVisible()
+    assert item2.detections.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        pos=pos,
+    )
+    assert not item.item.isVisible()
+    assert not item.detections.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.ShiftModifier,
+        pos=pos,
+    )
+    assert item.item.isVisible()
+    assert item.detections.isVisible()
+
+    assert not item2.item.isVisible()
+    assert not item2.detections.isVisible()
+
+    view.update()
+    QtWidgets.QApplication.processEvents()
+
+    pos = view.mapFromScene(item.mapToScene(item.rect().topLeft()))
+
+    for line in item.lines:
+        assert line.isVisible()
+    for line in item2.lines:
+        assert line.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        pos=pos,
+    )
+    for line in item.lines:
+        assert not line.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.ShiftModifier,
+        pos=pos,
+    )
+
+    for line in item.lines:
+        assert line.isVisible()
+    for line in item2.lines:
+        assert not line.isVisible()
+
+    view.update()  # force draw
+    QtWidgets.QApplication.processEvents()
 
     view.addExclusionRegion(0.1, 0.3)
     assert view.exclusionRegions() == [(0.1, 0.3)]
@@ -321,15 +383,44 @@ def test_graph_histogram(
     results = default_method.processDataFile(df)
 
     # single
-    view.drawResults([results[df.isotopes[0]]])
+    view.drawResults(list(results.values()))
     view.repaint()
 
     assert view.plot.legend is not None
-    assert len(view.plot.legend.items) == 1
-    assert len(view.data_for_export) == 4
+    assert len(view.plot.legend.items) == 2
+    assert len(view.data_for_export) == 8
+
+    # test legend
     item, label = view.plot.legend.items[0]
     assert isinstance(item, HistogramItemSample)
     assert not item.sceneBoundingRect().intersects(label.sceneBoundingRect())
+    item2, _ = view.plot.legend.items[1]
+    assert isinstance(item2, HistogramItemSample)
+    assert not item2.sceneBoundingRect().intersects(item.sceneBoundingRect())
+
+    pos = view.mapFromScene(item.mapToScene(item.rect().center()))
+
+    assert item.item.isVisible()
+    assert item2.item.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        pos=pos,
+    )
+    assert not item.item.isVisible()
+
+    qtbot.mouseClick(
+        view.viewport(),
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.ShiftModifier,
+        pos=pos,
+    )
+    assert item.item.isVisible()
+    assert not item2.item.isVisible()
+
+    view.update()  # force draw
+    QtWidgets.QApplication.processEvents()
 
     view.clear()
 
