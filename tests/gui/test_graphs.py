@@ -1,8 +1,7 @@
-from pyqtgraph.Qt import QtWidgets
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from typing import Callable
 from pathlib import Path
-from PySide6 import QtGui
+from PySide6 import QtGui, QtWidgets
 import numpy as np
 
 from PySide6 import QtCore

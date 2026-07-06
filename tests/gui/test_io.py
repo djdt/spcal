@@ -1,10 +1,8 @@
-from spcal.datafile import SPCalTextDataFile
-from pyqtgraph.Qt import QtCore
 from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
 from spcal.gui.dialogs.io.nu import NuImportDialog
 from spcal.gui.dialogs.io.text import TextImportDialog
 from pytestqt.qtbot import QtBot
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 from pathlib import Path
 from spcal.gui.io import (
     is_spcal_session_path,

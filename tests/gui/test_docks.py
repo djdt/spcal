@@ -1,9 +1,11 @@
-from pyqtgraph.Qt import QtGui
 from typing import Callable
-from spcal.datafile import SPCalDataFile
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
+import numpy as np
+
 from pytestqt.qtbot import QtBot
 
+from spcal.datafile import SPCalDataFile
+from spcal.gui.dialogs.singleion import SingleIonDialog
 from spcal.gui.docks.datafile import SPCalDataFilesDock, DataFileInformationDialog
 from spcal.gui.docks.central import SPCalCentralWidget
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
@@ -233,6 +235,25 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
 
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.options_widget.poisson.alpha.setValue(1e-3)
+
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.gaussian.sigma.setValue(3.0)
+
+    dock.setSignificantFigures(4)
+    assert dock.options_widget.poisson.alpha.sigfigs == 4
+
+    # compound single ion
+    dock.options_widget.compound.setSingleIonParameters(
+        np.ones(10, dtype=[("mass", float), ("mu", float), ("sigma", float)])
+    )
+    dlg = dock.options_widget.compound.dialogSingleIon()
+    assert isinstance(dlg, SingleIonDialog)
+    dlg.close()
+    assert dock.options_widget.compound.single_ion_parameters is not None
+    assert not dock.options_widget.compound.lognormal_sigma.isEnabled()
+    dock.options_widget.compound.clearSingleIon()
+    assert dock.options_widget.compound.lognormal_sigma.isEnabled()
+    assert dock.options_widget.compound.single_ion_parameters is None
 
 
 def test_spcal_outputs_dock(
