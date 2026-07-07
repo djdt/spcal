@@ -183,9 +183,11 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
 
     def addFile(self, path: Path):
         format = self.selectedFormat()
-        if not path.exists():
+        if not path.exists():  # pragma: no cover, error
             raise FileNotFoundError(f"'{path}' does not exist")
-        if not BatchFilesWizardPage.FORMAT_FUNCTIONS[format](path):
+        if not BatchFilesWizardPage.FORMAT_FUNCTIONS[format](
+            path
+        ):  # pragma: no cover, error
             raise FileNotFoundError(f"'{path.name}' is not a '{format}' file")
         item = QtWidgets.QListWidgetItem()
         item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
@@ -221,10 +223,10 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
             return "Nu"
         elif self.radio_tofwerk.isChecked():
             return "TOFWERK"
-        else:
+        else:  # pragma: no cover, error
             raise ValueError("unknown format")
 
-    def dialogOpen(self):
+    def dialogOpen(self):  # pragma: no cover, blocking dialog
         paths = get_open_spcal_paths(
             self,
             selected_filter=BatchFilesWizardPage.FORMAT_FILTERS[self.selectedFormat()],
@@ -232,7 +234,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
         for path in paths:
             self.addFile(path)
 
-    def dialogOpenAll(self):
+    def dialogOpenAll(self):  # pragma: no cover, blocking dialog
         recent = most_recent_spcal_path()
         if recent is not None:
             dir = str(recent.parent)
@@ -288,7 +290,9 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
             for path in paths[1:]:
                 with open(path.joinpath("run.info"), "r") as fp:
                     info = json.load(fp)
-                if not np.isclose(eventtime_from_info(info), event_time):
+                if not np.isclose(
+                    eventtime_from_info(info), event_time
+                ):  # pragma: no cover, blocking dialog
                     button = QtWidgets.QMessageBox.warning(
                         self,
                         "Different Event Times",
@@ -637,7 +641,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         existing = [path for _, path in self.pathPairs() if path.exists()]
         if len(existing) == 0:
             return True
-        else:
+        else:  # pragma: no cover, blocking dialog
             button = QtWidgets.QMessageBox.question(
                 self,
                 "Overwrite Files?",
@@ -666,7 +670,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
             else:
                 item.setIcon(QtGui.QIcon.fromTheme("document-new"))
 
-    def dialogOutputDirectory(self):
+    def dialogOutputDirectory(self):  # pragma: no cover, blocking dialog
         dir = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Output Directory", dir=self.output_dir.text()
         )

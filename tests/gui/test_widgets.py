@@ -1,30 +1,14 @@
 import os
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 import pytest
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.widgets.collapsablewidget import CollapsableWidget
 from spcal.gui.widgets.elidedlabel import ElidedLabel
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import ISOTOPE_TABLE
-
-
-def test_collapsable_widget(qtbot: QtBot):
-    widget = CollapsableWidget("Test")
-    label = QtWidgets.QLabel("Label")
-    widget.setWidget(label)
-
-    qtbot.addWidget(widget)
-
-    with qtbot.waitExposed(widget):
-        widget.show()
-
-    assert not label.isVisible()
-    qtbot.mouseClick(widget.button, QtCore.Qt.MouseButton.LeftButton)
-    assert label.isVisible()
 
 
 def test_edlided_label(qtbot: QtBot):
@@ -71,6 +55,18 @@ def test_periodic_table_selector(qtbot: QtBot):
     assert selected is not None
     assert len(selected) == 2
     assert selected[0].isotope == 12
+
+    # select , default isotope
+    qtbot.mouseClick(pt.buttons["Tc"], QtCore.Qt.MouseButton.LeftButton)
+    selected = pt.selectedIsotopes()
+    assert selected is not None
+    assert len(selected) == 3
+    assert selected[1].isotope == 97
+
+    with qtbot.waitSignal(pt.requestShowIsotopes, timeout=100):
+        qtbot.mouseClick(pt.buttons["C"], QtCore.Qt.MouseButton.MiddleButton)
+    with qtbot.assertNotEmitted(pt.requestShowIsotopes):
+        qtbot.mouseClick(pt.buttons["C"], QtCore.Qt.MouseButton.RightButton)
 
     # Select 3 isotopes, remove other selected
     enabled = pt.enabledIsotopes()
@@ -172,6 +168,9 @@ def test_units_widget(qtbot: QtBot):
     with qtbot.assertNotEmitted(w.baseValueChanged):
         w.setValue(None)
 
+    w.setSigFigs(1)
+    assert w._value.sigfigs == 1
+
 
 def test_units_widget_error(qtbot: QtBot):
     w = UnitsWidget({"a": 1.0, "b": 0.1, "c": 0.01}, base_value=50.0)
@@ -253,15 +252,26 @@ def test_value_widget(qtbot: QtBot):
     w.repaint()
 
     # Range cuts value
+    w.setValue(1.1)
+    w.setRange(3.0, 6.0)
+    assert w.value() == 3.0
     w.setValue(10.1)
     w.setRange(4.0, 6.0)
     assert w.value() == 6.0
+
     w.stepDown()
     assert w.value() == 5.0
     w.stepDown()
     assert w.value() == 4.0
     w.stepDown()  # reached min
     assert w.value() == 4.0
+
+    # test change step size
+    w.setStep(1.5)
+    w.stepUp()
+    assert w.value() == 5.5
+    w.stepUp()  # reached max
+    assert w.value() == 6.0
 
     with qtbot.waitSignal(w.valueChanged):
         w.setValue(None)
@@ -273,6 +283,12 @@ def test_value_widget(qtbot: QtBot):
     with qtbot.assertNotEmitted(w.errorChanged):
         w.setError(None)
 
+    # test setting none
+    w.setValue(5.0)
+    w.lineEdit().setText("")
+    w.lineEdit().textEdited.emit("")
+    assert w.value() is None
+
 
 def test_value_widget_no_none(qtbot: QtBot):
     w = ValueWidget(value=100.0, allow_none=False)
@@ -281,6 +297,7 @@ def test_value_widget_no_none(qtbot: QtBot):
         w.show()
 
     w.lineEdit().setText("")
+    w.lineEdit().textEdited.emit("")
 
     assert w.value() is not None
 

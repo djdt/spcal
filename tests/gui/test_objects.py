@@ -6,6 +6,7 @@ from spcal.gui.objects import (
     DragDropRedirectFilter,
     DoubleOrEmptyValidator,
     DoubleOrPercentValidator,
+    KeepMenuOpenFilter,
 )
 
 
@@ -125,7 +126,14 @@ def test_drag_drop_redirect_filter(qtbot: QtBot):
 #
 #     with qtbot.waitExposed(button):
 #         button.show()
+#     menu.setWindowFlags(
+#         QtCore.Qt.WindowType.Tool | QtCore.Qt.WindowType.FramelessWindowHint
+#     )
+#     button.showMenu()
 #
+#     assert menu.isVisible()
+#     menu.actions()[0].trigger()
+#     assert menu.isVisible()
 
 
 def test_double_or_empty_validator(qtbot: QtBot):

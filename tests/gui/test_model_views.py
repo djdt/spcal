@@ -885,10 +885,10 @@ def test_units_model_and_header(qtbot: QtBot):
     view.setModel(model)
 
     qtbot.addWidget(view)
-
     with qtbot.waitExposed(view):
         view.show()
 
+    # events
     header.showComboBox(1)
     combo = header.findChild(QtWidgets.QComboBox)
     assert isinstance(combo, QtWidgets.QComboBox)
@@ -898,6 +898,18 @@ def test_units_model_and_header(qtbot: QtBot):
     assert (
         model.headerData(1, QtCore.Qt.Orientation.Horizontal, CurrentUnitRole) == "mg"
     )
+
+    header.hideSection(1)  # hide so 2 actions should show
+    header.contextMenuEvent(
+        QtGui.QContextMenuEvent(
+            QtGui.QContextMenuEvent.Reason.Mouse,
+            header.visualRect(model.index(0, 0)).center(),
+            header.mapToGlobal(header.visualRect(model.index(0, 0)).center()),
+        )
+    )
+    popup = QtWidgets.QApplication.activePopupWidget()
+    assert isinstance(popup, QtWidgets.QMenu)
+    assert len(popup.actions()) == 2
 
 
 def test_value_widget_delegate(qtbot: QtBot):
@@ -918,6 +930,7 @@ def test_value_widget_delegate(qtbot: QtBot):
     editor = delegate.createEditor(
         table, QtWidgets.QStyleOptionViewItem(), table.model().index(0, 0)
     )
+    delegate.setEditorData(editor, table.model().index(0, 0))
     assert isinstance(editor, ValueWidget)
     assert editor.value() is None
     editor.setValue(10.0)

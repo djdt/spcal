@@ -153,7 +153,7 @@ def read_integ_binary(
 
     if fp.read(2) == b"\x1f\x8b":  # is a gzipped integ
         fp = gzip.open(path, "rb")
-        if memmap:
+        if memmap:  # pragma: no cover, warning
             memmap = False
             logger.info("compressed, disabling memmory mapping for integ")
     else:

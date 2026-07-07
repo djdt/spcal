@@ -10,6 +10,7 @@ from spcal.io.nu import (
     is_nu_run_info_file,
     read_directory,
     select_nu_signals,
+    read_integ_binary,
 )
 
 
@@ -39,6 +40,7 @@ def test_io_nu_import(test_data_path: Path):
     assert info["SegmentInfo"][0]["AcquisitionTriggerDelayNs"] == 14950.0
 
     assert np.isclose(eventtime_from_info(info), 0.09824e-3)
+
 
 def test_io_nu_import_compressed(test_data_path: Path):
     path = test_data_path.joinpath("nu_compressed")
@@ -116,3 +118,12 @@ def test_select_nu_signals():
 
     with pytest.raises(ValueError):
         select_nu_signals(masses, signals, {"a": 2.0, "b": 9.95}, max_mass_diff=0.01)
+
+
+def test_nu_read_integ_binary_memmap(test_data_path: Path):
+    path = test_data_path.joinpath("nu/1.integ")
+
+    data = read_integ_binary(path)
+    data_memmap = read_integ_binary(path, memmap=True)
+
+    assert np.all(data == data_memmap)

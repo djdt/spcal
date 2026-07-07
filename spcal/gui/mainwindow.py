@@ -50,7 +50,7 @@ from spcal.gui.io import (
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 
-from spcal.api import get_version_of_latest_release, compare_version_strings
+from spcal.api import compare_version_strings, get_github_release_info
 from spcal.io.session import save_session_json, decode_json_method
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
@@ -255,7 +255,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
         return method
 
-    def saveDefaultMethod(self):
+    def saveDefaultMethod(self):  # pragma: no cover, settings
         settings = QtCore.QSettings()
         method = self.currentMethod()
 
@@ -348,9 +348,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.isotope_options.optionChanged.connect(self.onIsotopeOptionChanged)
 
         self.limit_options.optionsChanged.disconnect(self.onLimitOptionsChanged)
-        self.limit_options.setLimitOptions(
-            method.limit_options,
-        )
+        self.limit_options.setLimitOptions(method.limit_options)
         self.limit_options.optionsChanged.connect(self.onLimitOptionsChanged)
 
         self.currentMethodChanged.emit(method)
@@ -375,7 +373,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             "document-multiple",
             "&Batch Processing",
             "Process multiple files using the current sample and reference settings.",
-            self.dialogBatchProcess,
+            self.wizardBatchProcess,
         )
 
         self.action_save_session = create_action(
@@ -594,9 +592,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.currentMethodChanged.emit(method)
         self.updateForDataFiles(self.files.activeDataFiles())
 
-    def setGlobalExclusionRegions(
-        self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
-    ):
+    def setGlobalExclusionRegions(self, regions: list[tuple[float, float]]):
         method = self.currentMethod()
         if method.exclusion_regions != regions:
             method.exclusion_regions = regions
@@ -608,7 +604,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     ):
         if data_file is None:
             data_file = self.files.currentDataFile()
-        if data_file is None:
+        if data_file is None:  # pragma: no cover, error
             raise ValueError("cannot set exclusion regions, invalid data file")
 
         if data_file.exclusion_regions != regions:
@@ -628,6 +624,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 self.isotope_options.setIsotopeOption(
                     isotope, method.isotope_options[isotope]
                 )
+        self.currentMethodChanged.emit(method)
 
     # Slots for signals
 
@@ -969,16 +966,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogBatchProcess(self):  # BatchProcessDialog:
-        df = self.files.currentDataFile()
-        dlg = SPCalBatchProcessingWizard(
-            df,
-            self.currentMethod(),
-            df.selected_isotopes if df is not None else [],
-            parent=self,
-        )
-        dlg.exec()
-
     def dialogCalculator(self) -> CalculatorDialog:
         method = self.currentMethod()
 
@@ -1000,7 +987,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogCustomColors(self):
+    def dialogCustomColors(self) -> ColorDialog:
         def set_custom_colors(colors: list[QtGui.QColor]):
             settings = QtCore.QSettings()
             settings.remove("CustomColors")
@@ -1015,8 +1002,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg = ColorDialog(colors=self.customColors(), parent=self)
         dlg.colorsSelected.connect(set_custom_colors)
         dlg.open()
+        return dlg
 
-    def dialogExportResults(self):
+    def dialogExportResults(self) -> ExportDialog | None:
         df = self.files.currentDataFile()
         if df is None:
             return
@@ -1031,8 +1019,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             parent=self,
         )
         dlg.open()
+        return dlg
 
-    def dialogFilterDetections(self):
+    def dialogFilterDetections(self) -> FilterDialog | None:
         data_file = self.files.currentDataFile()
         if data_file is None:
             return
@@ -1056,6 +1045,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         )
         dlg.filtersChanged.connect(set_filters)
         dlg.open()
+        return dlg
 
     def dialogIonicResponse(self) -> ResponseDialog:
         dlg = ResponseDialog(parent=self)
@@ -1084,7 +1074,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.dataImported.connect(self.files.addDataFile)
         # the importer can take up a lot of memory so delete it
         # dlg.finished.connect(dlg.deleteLater)
-        dlg.exec()
+        dlg.open()
         return dlg
 
     def dialogManualLimits(self) -> ManualLimitDialog:
@@ -1115,9 +1105,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         data_file, isotope, _ = current
 
         dlg = PeakPropertiesDialog(self.processing_results[data_file], isotope)
-        dlg.exec()
+        dlg.open()
+        return dlg
 
-    def dialogProcessingOptions(self):
+    def dialogProcessingOptions(self) -> ProcessingOptionsDialog:
         def set_processing_options(options: SPCalProcessingOptions):
             method = self.currentMethod()
             method.processing_options = options
@@ -1151,7 +1142,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogSessionLoad(self):
+    def dialogSessionLoad(self):  # pragma: no cover, dialog with exec
         df = self.files.currentDataFile()
         if df is None:
             path = Path()
@@ -1255,6 +1246,16 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.session_thread.start()
 
         dlg.show()
+
+    def wizardBatchProcess(self):
+        df = self.files.currentDataFile()
+        dlg = SPCalBatchProcessingWizard(
+            df,
+            self.currentMethod(),
+            df.selected_isotopes if df is not None else [],
+            parent=self,
+        )
+        dlg.exec()
 
     def linkToDocumenation(self):
         QtGui.QDesktopServices.openUrl("https://spcal.readthedocs.io")
@@ -1449,10 +1450,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def checkForUpdates(self):
         current_version = version("spcal")
         try:
-            latest_version = get_version_of_latest_release()
+            info = get_github_release_info()
+            if "tag_name" not in info or not info["tag_name"].startswith("v"):
+                raise ValueError("invalid release version")
+
         except (TimeoutError, ConnectionError, ValueError):
             logger.warning("unable to check for updates")
             return
+
+        if "tag_name" not in info or not info["tag_name"].startswith("v"):
+            logger.warning("invalid release")
+            return
+
+        latest_version = info["tag_name"][1:]
 
         if compare_version_strings(current_version, latest_version):
             button = QtWidgets.QMessageBox.information(

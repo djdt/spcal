@@ -1,9 +1,12 @@
 from typing import Callable
-from spcal.datafile import SPCalDataFile
-from PySide6 import QtCore
+from PySide6 import QtCore, QtGui
+import numpy as np
+
 from pytestqt.qtbot import QtBot
 
-from spcal.gui.docks.datafile import SPCalDataFilesDock
+from spcal.datafile import SPCalDataFile
+from spcal.gui.dialogs.singleion import SingleIonDialog
+from spcal.gui.docks.datafile import SPCalDataFilesDock, DataFileInformationDialog
 from spcal.gui.docks.central import SPCalCentralWidget
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
@@ -75,6 +78,9 @@ def test_spcal_datfiles_dock(
     assert len(dock.dataFiles()) == 4
     assert len(dock.activeDataFiles()) == 1
 
+    dlg = dock.dialogInformation(dock.model.index(0, 0))
+    assert isinstance(dlg, DataFileInformationDialog)
+
     dock.clear()
 
     assert len(dock.dataFiles()) == 0
@@ -122,12 +128,24 @@ def test_spcal_central_widget(
         list(results.values()), "107Ag + 109Ag", "197Au / 2.0", "signal", "signal"
     )
 
+    widget.setGraphFont(QtGui.QFont("sans", 5))
+    widget.setCompositionOptions(5, "pie")
+    widget.setHistogramOptions({"signal": 10}, 98.0, True)
+    widget.setSpectraOptions(True)
+
     views = ["particle", "histogram", "composition", "spectra", "scatter"]
     for view in views:
         with qtbot.waitSignal(widget.requestRedraw):
             widget.setView(view)
         assert widget.currentView() == view
 
+        dlg = widget.dialogGraphOptions()
+        if view in ["composition", "histogram", "spectra"]:
+            assert dlg is not None
+        else:
+            assert dlg is None
+
+    widget.zoomReset()
     widget.clear()
 
     for view in views:
@@ -217,6 +235,25 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
 
     with qtbot.waitSignal(dock.optionsChanged, timeout=100):
         dock.options_widget.poisson.alpha.setValue(1e-3)
+
+    with qtbot.waitSignal(dock.optionsChanged, timeout=100):
+        dock.options_widget.gaussian.sigma.setValue(3.0)
+
+    dock.setSignificantFigures(4)
+    assert dock.options_widget.poisson.alpha.sigfigs == 4
+
+    # compound single ion
+    dock.options_widget.compound.setSingleIonParameters(
+        np.ones(10, dtype=[("mass", float), ("mu", float), ("sigma", float)])
+    )
+    dlg = dock.options_widget.compound.dialogSingleIon()
+    assert isinstance(dlg, SingleIonDialog)
+    dlg.close()
+    assert dock.options_widget.compound.single_ion_parameters is not None
+    assert not dock.options_widget.compound.lognormal_sigma.isEnabled()
+    dock.options_widget.compound.clearSingleIon()
+    assert dock.options_widget.compound.lognormal_sigma.isEnabled()
+    assert dock.options_widget.compound.single_ion_parameters is None
 
 
 def test_spcal_outputs_dock(

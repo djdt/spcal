@@ -68,6 +68,9 @@ def test_batch_wizard_text(
     page.files.model().removeRow(1)
     assert page.files.count() == 1
 
+    page.addFile(test_data_path.joinpath("text/tofwerk_export_au.csv"))
+    assert page.files.count() == 2
+
     wiz.next()
 
     # Text Options page
@@ -83,8 +86,10 @@ def test_batch_wizard_text(
     assert not page.isComplete()
     page.table_isotopes.item(1, 1).setText("197Au")  # type: ignore
 
-    # Prevent error in simulated data, dwelltime can't be read accurately
     page.override_event_time.setChecked(True)
+    assert page.isComplete()
+    page.override_event_time.setChecked(False)
+    assert page.isComplete()
 
     wiz.next()
 
@@ -102,7 +107,7 @@ def test_batch_wizard_text(
     assert isinstance(page, BatchRunWizardPage)
 
     assert page.isComplete()
-    assert page.output_files.count() == 1
+    assert page.output_files.count() == 2
 
     page.output_name.setText("%DataFile%.csv")
     page.output_dir.setText(str(tmp_path))
@@ -145,7 +150,8 @@ def test_batch_wizard_nu(
 
     page.radio_nu.click()
     page.addFile(test_data_path.joinpath("nu"))
-    assert page.files.count() == 1
+    page.addFile(test_data_path.joinpath("nu"))
+    assert page.files.count() == 2
     assert page.isComplete()
 
     wiz.next()
@@ -164,6 +170,9 @@ def test_batch_wizard_nu(
 
     assert page.combo_blanking.currentText() == "Regions"
     assert not page.check_chunked.isChecked()
+
+    assert page.validatePage()  # test pre chunked
+
     page.check_chunked.setChecked(True)
     page.chunk_size.setValue(1)
 
@@ -190,7 +199,7 @@ def test_batch_wizard_nu(
     assert isinstance(page, BatchRunWizardPage)
 
     assert page.isComplete()
-    assert page.output_files.count() == 1
+    assert page.output_files.count() == 2
 
     page.output_name.setText("test_batch.csv")
     page.output_dir.setText(str(tmp_path))
@@ -379,7 +388,10 @@ def test_batch_wizard_files_page(
 
     assert page.isComplete()
 
-    delegate = page.files.itemDelegate(page.files.indexFromItem(page.files.item(0)))
+    # test removal
+    delegate = page.files.itemDelegateForIndex(
+        page.files.indexFromItem(page.files.item(0))
+    )
     assert isinstance(delegate, BatchFileListDelegate)
 
     with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
@@ -392,6 +404,12 @@ def test_batch_wizard_files_page(
         )
 
     assert page.files.count() == 0
+    assert not page.isComplete()
+
+    # test format changing
+    page.addFile(test_data_path.joinpath("text/tofwerk_export_au.csv"))
+    page.radio_tofwerk.setChecked(True)
+    assert page.files.item(0).foreground() == QtCore.Qt.GlobalColor.red
     assert not page.isComplete()
 
 

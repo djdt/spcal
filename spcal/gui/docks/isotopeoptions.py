@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import Sequence
 
@@ -147,7 +148,9 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
         roles: list[QtCore.Qt.ItemDataRole],
     ):
         isotope = self.model.data(topleft, IsotopeRole)
-        if isotope is not None and BaseValueRole in roles:
+        if isotope is not None and any(
+            x in roles for x in [BaseValueRole, IsotopeOptionRole]
+        ):
             self.optionChanged.emit(isotope)
 
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
@@ -177,7 +180,9 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
     def setIsotopeOption(self, isotope: SPCalIsotopeBase, option: SPCalIsotopeOptions):
         row = list(self.model.isotope_options.keys()).index(isotope)
-        self.model.setData(self.model.index(row, 0), option, role=IsotopeOptionRole)
+        self.model.setData(
+            self.model.index(row, 0), copy.copy(option), role=IsotopeOptionRole
+        )
 
     def optionForIsotope(self, isotope: SPCalIsotopeBase) -> SPCalIsotopeOptions:
         return self.model.isotope_options[isotope]

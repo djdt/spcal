@@ -45,7 +45,7 @@ class LimitOptionsBaseWidget(QtWidgets.QGroupBox):
         self.blockSignals(False)
         self.optionsChanged.emit()
 
-    def isComplete(self) -> bool:
+    def isComplete(self) -> bool:  # pragma: no cover
         return False
 
     def setSignificantFigures(self, sf: int):
@@ -94,7 +94,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         dlg.resetRequested.connect(self.clearSingleIon)
 
         dlg.open()
-        if self.single_ion_parameters is None:
+        if self.single_ion_parameters is None:  # pragma: no cover, dialog with exec
             dlg.loadSingleIonData()
         return dlg
 
@@ -102,6 +102,13 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.setSingleIonParameters(None)
 
     def setSingleIonParameters(self, params: np.ndarray | None):
+        if params is not None:
+            if params.dtype.names is None or not all(
+                x in params.dtype.names for x in ["mass", "mu", "sigma"]
+            ):
+                raise ValueError(  # pragma: no cover, error
+                    "params must be a structured array with names 'mass', 'mu', 'sigma'"
+                )
         self.single_ion_parameters = params
         self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
         self.optionsChanged.emit()
@@ -120,8 +127,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         if "sigma" in state:
             self.lognormal_sigma.setValue(state["sigma"])
         if "single ion parameters" in state:
-            self.single_ion_parameters = state["single ion parameters"]
-            self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
+            self.setSingleIonParameters(state["single ion parameters"])
 
         self.blockSignals(False)
         self.optionsChanged.emit()
@@ -165,7 +171,7 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
 
     def updateAlpha(self):
         sigma = self.sigma.value()
-        if sigma is None:
+        if sigma is None:  # pragma: no cover
             return
         alpha = 1.0 - NormalDist().cdf(sigma)
         self.alpha.valueChanged.disconnect(self.updateSigma)
@@ -174,7 +180,7 @@ class GaussianOptionsWidget(LimitOptionsBaseWidget):
 
     def updateSigma(self):
         alpha = self.alpha.value()
-        if alpha is None:
+        if alpha is None:  # pragma: no cover
             alpha = 1e-6
         sigma = NormalDist().inv_cdf(1.0 - alpha)
         self.sigma.valueChanged.disconnect(self.updateAlpha)
@@ -436,11 +442,5 @@ class SPCalLimitOptionsDock(QtWidgets.QDockWidget):
         self.options_widget.compound.setSignificantFigures(sf)
         self.options_widget.manual.setSignificantFigures(sf)
 
-    def setLimitOptions(
-        self,
-        options: SPCalLimitOptions,
-        accumlation_method: str | None = None,
-        points_required: int | None = None,
-        prominence_required: float | None = None,
-    ):
+    def setLimitOptions(self, options: SPCalLimitOptions):
         self.options_widget.setLimitOptions(options)

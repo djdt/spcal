@@ -76,7 +76,9 @@ class MissingPathsDialog(QtWidgets.QDialog):
     def newPaths(self) -> list[Path]:
         return [Path(self.list.item(i).text()) for i in range(self.list.count())]
 
-    def dialogForPath(self, item: QtWidgets.QListWidgetItem):
+    def dialogForPath(
+        self, item: QtWidgets.QListWidgetItem
+    ):  # pragma: no cover, dialog
         path = Path(item.text())
         file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Select New Path", str(path.parent), NP_FILE_FILTERS
@@ -87,7 +89,7 @@ class MissingPathsDialog(QtWidgets.QDialog):
         item.setText(file)
         item.setIcon(self.iconForPath(Path(file)))
 
-    def dialogSearch(self):
+    def dialogSearch(self):  # pragma: no cover, dialog
         dir = QtWidgets.QFileDialog.getExistingDirectory(
             self,
             "Directory to search",
@@ -125,5 +127,3 @@ class MissingPathsDialog(QtWidgets.QDialog):
         if dlg.result() == QtWidgets.QDialog.DialogCode.Accepted:
             return dlg.newPaths()
         return []
-
-

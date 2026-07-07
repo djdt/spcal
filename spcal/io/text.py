@@ -6,6 +6,7 @@ import datetime
 import logging
 from pathlib import Path
 import warnings
+import re
 
 import numpy as np
 from numpy.lib._iotools import ConversionWarning
@@ -21,6 +22,63 @@ def is_text_file(path: Path) -> bool:
     if path.is_dir() or not path.exists():
         return False
     return True
+
+
+def guess_event_time(
+    lines: list[str], delimiter: str = ",", skip_rows: int = 1
+) -> tuple[float, str | None]:
+    """Try to find a column of times and extract the event time.
+
+    Times are extracted as the median difference of a column containing 'time'.
+
+    Args:
+        lines: list of delimited lines, with 2 or more columns
+        delimiter: the text delimiter
+        skip_rows: number of rows to the first data line
+
+    Returns:
+        event time in seconds if found, else None
+
+    Raises:
+        StopIteration: 'time' column is not found
+        ValueError: incorrectly formated input
+    """
+    re_time = re.compile("[\\(\\[]([nmuµ]?s|sec)[\\]\\)]")
+
+    header = lines[skip_rows - 1].split(delimiter)
+
+    if len(header) < 2:  # pragma: no cover, error
+        raise ValueError("header does not have enough columns")
+
+    for col, name in enumerate(header):
+        if "time" not in name.strip().lower():
+            continue
+        m = re_time.search(name.lower())
+        if m is not None:
+            if m.group(1) in ["s", "sec"]:
+                unit = "s"
+            elif m.group(1) == "ms":
+                unit = "ms"
+            elif m.group(1) in ["us", "µs"]:
+                unit = "µs"
+            elif m.group(1) == "ns":
+                unit = "ns"
+            else:  # pragma: no cover, error
+                raise ValueError(f"unknown time column unit '{m.group(1)}'")
+        else:
+            unit = None
+            logger.info(f"found a time column '{name}' but no unit")
+
+        texts = [line.split(delimiter)[col] for line in lines[skip_rows:]]
+        if len(texts) == 0:  # pragma: no cover, error
+            raise ValueError("time column has no entries")
+
+        if "00:" in texts[0]:
+            times = [iso_time_to_float_seconds(t) for t in texts]
+        else:
+            times = [float(t) for t in texts]
+        return float(np.median(np.diff(times))), unit
+    raise StopIteration
 
 
 def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
@@ -53,7 +111,6 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
         try:
             delimiter = next(d for d in ["\t", ";", ",", " "] if d in line)
             tokens = line.split(delimiter)
-            print(tokens)
             if all(
                 is_number_or_time(token) for token in tokens if token not in ["", "\n"]
             ):
@@ -70,7 +127,7 @@ def guess_text_parameters(lines: list[str]) -> tuple[str, int, int]:
             column_count = (
                 max([line.count(delimiter) for line in lines[skip_rows:]]) + 1
             )
-        except StopIteration:
+        except StopIteration:  # pragma: no cover, warning
             logger.warning(f"could not count columns using delimiter '{delimiter}'")
             column_count = 1
 

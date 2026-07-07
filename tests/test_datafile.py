@@ -32,6 +32,18 @@ def test_spcal_datafile_text_agilent(test_data_path: Path):
     assert np.isclose(np.median(df[df.isotopes[0]]), 1.0)
     assert np.isclose(df[df.isotopes[0]].max(), 439.67)
 
+    info = df.information()
+    assert info["DataFile"]["format"] == "text"
+    assert info["DataFile"]["event time"] == "100 µs"
+    assert info["DataFile"]["total time"] == "0:00:00.999600"
+    assert info["DataFile"]["number events"] == "9996"
+    assert info["DataFile"]["number isotopes"] == "1"
+
+    assert info["TextOptions"]["delimiter"] == ","
+    assert info["TextOptions"]["skip rows"] == "4"
+    assert info["TextOptions"]["intensity units"] == "Counts"
+    assert info["TextOptions"]["original isotope names"] == "Au197"
+
     df = datafile.SPCalTextDataFile.load(path, skip_rows=4, override_event_time=1.0)
     assert np.isclose(df.event_time, 1.0)
     assert np.isclose(df.total_time, 9996.0)
@@ -44,6 +56,9 @@ def test_spcal_datafile_text_agilent_cps(test_data_path: Path):
     assert np.all(np.isfinite(df[df.isotopes[0]]))
     assert np.all(df[df.isotopes[0]] >= 0.0)
     assert np.isclose(np.max(df[df.isotopes[0]]), 39.62782)
+
+    info = df.information()
+    assert info["TextOptions"]["intensity units"] == "CPS"
 
 
 def test_spcal_datafile_text_icap(test_data_path: Path):
@@ -68,6 +83,17 @@ def test_spcal_datafile_text_icap(test_data_path: Path):
     assert df.isotopes == [ISOTOPE_TABLE[("Se", 80)]]
 
     assert np.isclose(df[df.isotopes[0]].max(), 2.0, atol=0.1)  # check cps
+
+    info = df.information()
+    assert info["DataFile"]["format"] == "text"
+
+    assert info["TextOptions"]["delimiter"] == ","
+    assert info["TextOptions"]["skip rows"] == "2"
+    assert info["TextOptions"]["intensity units"] == "CPS"
+    assert (
+        info["TextOptions"]["original isotope names"]
+        == "Intensity_(cps)_80Se_|_80Se.16O"
+    )
 
 
 def test_spcal_datafile_text_nu(test_data_path: Path):
@@ -94,6 +120,18 @@ def test_spcal_datafile_text_nu(test_data_path: Path):
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Au", 197)]]), 0.002678757)
 
     assert df.spectra(np.array([[10, 20]])).shape == (1, 3)
+
+    info = df.information()
+    assert info["DataFile"]["format"] == "text"
+    assert info["DataFile"]["number isotopes"] == "3"
+
+    assert info["TextOptions"]["delimiter"] == ","
+    assert info["TextOptions"]["skip rows"] == "1"
+    assert info["TextOptions"]["intensity units"] == "Counts"
+    assert (
+        info["TextOptions"]["original isotope names"]
+        == "106.905_-_seg_Full_mass_spectrum_att_1,108.905_-_seg_Full_mass_spectrum_att_1,196.967_-_seg_Full_mass_spectrum_att_1"
+    )
 
 
 def test_spcal_datafile_text_tofwerk(test_data_path: Path):
@@ -131,6 +169,19 @@ def test_spcal_datafile_nu(test_data_path: Path):
 
     assert df.spectra(np.array([[10, 20]])).shape == (1, 127)
 
+    info = df.information()
+    assert info["DataFile"]["format"] == "nu"
+    assert info["DataFile"]["event time"] == "98.24 µs"
+    assert info["DataFile"]["number events"] == "40"
+    assert info["DataFile"]["number isotopes"] == "188"
+
+    assert info["NuOptions"]["cycle number"] == "All"
+    assert info["NuOptions"]["segment number"] == "All"
+    assert info["NuOptions"]["max mass diff"] == "0.0500"
+    assert info["NuOptions"]["integ files used"] == "0 to end"
+
+    assert "RunInfo" in info
+
 
 def test_spcal_datafile_nu_integ_range(test_data_path: Path):
     path = test_data_path.joinpath("nu")
@@ -154,3 +205,11 @@ def test_spcal_datafile_tofwerk(test_data_path: Path):
     assert np.isclose(np.mean(df[ISOTOPE_TABLE[("Ru", 101)]]), 2.2688558)
 
     assert df.spectra(np.array([[10, 20]])).shape == (1, 315)
+
+    info = df.information()
+    assert info["DataFile"]["format"] == "tofwerk"
+    # assert info["DataFile"]["event time"] == "18400 µs"
+    assert info["DataFile"]["number events"] == "4895"
+    assert info["DataFile"]["number isotopes"] == "278"
+
+    assert "HDF5" in info

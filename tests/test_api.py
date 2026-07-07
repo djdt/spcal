@@ -1,4 +1,4 @@
-from spcal.api import compare_version_strings
+from spcal.api import get_github_release_info, compare_version_strings
 
 
 def test_compare_verison_strings():
@@ -12,3 +12,11 @@ def test_compare_verison_strings():
 
     assert compare_version_strings("0.1", "0.1.1")
     assert not compare_version_strings("0.1.1", "0.1")
+
+
+def test_get_github_release_info():
+    info = get_github_release_info("tags/v2.1.1")
+
+    assert info["tag_name"] == "v2.1.1"
+    assert info["author"]["login"] == "djdt"
+    assert info["body"].startswith("## What's Changed")

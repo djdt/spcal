@@ -83,7 +83,9 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             return [current]
         return files
 
-    def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
+    def contextMenuEvent(
+        self, event: QtGui.QContextMenuEvent
+    ):  # pragma: no cover, dialog and event
         pos = self.list.viewport().mapFromGlobal(event.globalPos())
         index = self.list.indexAt(pos)
         if not index.isValid():
@@ -176,14 +178,17 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg.isotopesSelected.connect(lambda: self.dataFilesChanged.emit(file))
         dlg.open()
 
-    def dialogInformation(self, index: QtCore.QModelIndex):
+    def dialogInformation(
+        self, index: QtCore.QModelIndex
+    ) -> DataFileInformationDialog | None:
         if not index.isValid():
             return
         dlg = DataFileInformationDialog(index.data(DataFileRole), parent=self)
         dlg.open()
+        return dlg
 
     def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
-        if index.isValid():
+        if index.isValid():  # pragma: no cover, error
             raise ValueError("valid index for removed row")
         if first <= self.list.currentIndex().row() < last:
             self.list.selectionModel().setCurrentIndex(
