@@ -389,7 +389,9 @@ def test_batch_wizard_files_page(
     assert page.isComplete()
 
     # test removal
-    delegate = page.files.itemDelegate(page.files.indexFromItem(page.files.item(0)))
+    delegate = page.files.itemDelegateForIndex(
+        page.files.indexFromItem(page.files.item(0))
+    )
     assert isinstance(delegate, BatchFileListDelegate)
 
     with qtbot.waitSignal(page.files.model().rowsRemoved, timeout=100):
