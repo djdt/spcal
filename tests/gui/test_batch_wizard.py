@@ -388,6 +388,7 @@ def test_batch_wizard_files_page(
 
     assert page.isComplete()
 
+    # test removal
     delegate = page.files.itemDelegate(page.files.indexFromItem(page.files.item(0)))
     assert isinstance(delegate, BatchFileListDelegate)
 
@@ -401,6 +402,12 @@ def test_batch_wizard_files_page(
         )
 
     assert page.files.count() == 0
+    assert not page.isComplete()
+
+    # test format changing
+    page.addFile(test_data_path.joinpath("text/tofwerk_export_au.csv"))
+    page.radio_tofwerk.setChecked(True)
+    assert page.files.item(0).foreground() == QtCore.Qt.GlobalColor.red
     assert not page.isComplete()
 
 
