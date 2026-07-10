@@ -110,8 +110,8 @@ class IsotopeOptionTable(BasicTableView):
                 action.triggered.connect(
                     lambda: self.dialogMassFractionCalculator(index)
                 )
-        menu.insertSeparator(menu.actions()[0])
-        menu.insertAction(menu.actions()[0], action)
+            menu.insertSeparator(menu.actions()[0])
+            menu.insertAction(menu.actions()[0], action)
 
         menu.popup(event.globalPos())
 
