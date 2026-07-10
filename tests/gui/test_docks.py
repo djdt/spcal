@@ -1,5 +1,5 @@
 from typing import Callable
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 
 from pytestqt.qtbot import QtBot
@@ -200,6 +200,22 @@ def test_spcal_isotope_options_dock(qtbot: QtBot):
 
     dock.setSignificantFigures(3)
 
+    # actions
+    for name, col in zip(
+        ["Lookup Density", "Ionic Response Calculator", "Calculate Mass Fraction"],
+        [0, 1, 2],
+    ):
+        pos = dock.table.visualRect(dock.model.index(0, col)).center()
+        dock.table.contextMenuEvent(
+            QtGui.QContextMenuEvent(
+                QtGui.QContextMenuEvent.Reason.Mouse, pos, dock.table.mapToGlobal(pos)
+            )
+        )
+        popup = QtWidgets.QApplication.activePopupWidget()
+        assert isinstance(popup, QtWidgets.QMenu)
+        assert popup.actions()[0].text() == name
+
+    # clear
     dock.clear()
     assert len(dock.isotopeOptions()) == 0
 
