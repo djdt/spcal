@@ -33,7 +33,7 @@ def test_accumulate_detections():
 
     # Lc > Ld
     with pytest.raises(ValueError):
-        sums, regions = detection.accumulate_detections(x, 1.0, 0.0)
+        detection.accumulate_detections(x, 1.0, 0.0)
 
     # Lc > max
     sums, regions = detection.accumulate_detections(x, 7.0, 7.0)
@@ -64,9 +64,7 @@ def test_accumulate_detections_zeros():
 
 def test_accumulate_detections_edges():
     x = np.array([9, 1, 3, 1, 0, 2, 4, 2, 0, 4, 2, 6, 2, 1]).astype(float)
-    sums, regions = detection.accumulate_detections(
-        x, 0.5, 1.0, prominence_required=0.0
-    )
+    sums, _ = detection.accumulate_detections(x, 0.5, 1.0, prominence_required=0.0)
     assert np.all(sums == [5.0, 8.0, 4.0, 10.0])
 
 
@@ -76,7 +74,7 @@ def test_accumulate_detections_windowed():
     ld = np.array(
         [1.0, 2.0, 2.0, 2.0, 1.0, 4.0, 6.0, 6.0, 1.0, 2.0, 1.0, 2.0, 1.0, 1.0]
     )
-    sums, regions = detection.accumulate_detections(x, lc, ld, prominence_required=0.0)
+    sums, _ = detection.accumulate_detections(x, lc, ld, prominence_required=0.0)
     assert np.all(sums == [5.0, 4.0, 10.0])
 
 
@@ -118,9 +116,7 @@ def test_accumulate_detections_prominence():
 
     # strange case with same max peak
     x = np.array([0, 0, 3, 5, 2, 5, 1, 0, 0, 0, 5, 6, 5, 0]).astype(float)
-    sums, regions = detection.accumulate_detections(
-        x, 0.5, 1.0, prominence_required=0.0
-    )
+    sums, _ = detection.accumulate_detections(x, 0.5, 1.0, prominence_required=0.0)
     assert np.all(sums == [16.0, 16.0])
 
 
@@ -146,8 +142,8 @@ def test_detection_maxima():
     assert np.all(maxima == [1, 5, 6, 9])
 
 
-def test_single_particle_peak_splitting():
-    path = Path(__file__).parent.joinpath("data/ti_split_peaks.npz")
+def test_single_particle_peak_splitting(test_data_path: Path):
+    path = test_data_path.joinpath("ti_split_peaks.npz")
     x = np.load(path)
     loa, lod = 19.90, 45.0
 
@@ -171,6 +167,22 @@ def test_single_particle_peak_splitting():
     )
     assert sums.size == 3
     assert regions[0][1] == regions[1][0]
+
+
+def test_single_particle_prominence_required(test_data_path: Path):
+    """Failing prominence required"""
+    path = test_data_path.joinpath("au_single_peak_prominence.npz")
+    x = np.load(path)["au197"]
+    loa, lod = 0.737286, 12.2188
+
+    sums, _ = detection.accumulate_detections(
+        x, loa, lod, prominence_required=0.0, points_required=1
+    )
+    assert sums.size > 1
+    sums, _ = detection.accumulate_detections(
+        x, loa, lod, prominence_required=0.1, points_required=1
+    )
+    assert sums.size == 1
 
 
 def test_noise_level():

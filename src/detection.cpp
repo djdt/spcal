@@ -175,9 +175,12 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
   while (i < pbuf.shape[0]) {
 
     double max_prom = prom(i);
+    long max_right = rights(i);
     // find overlaps and max prominence
     py::ssize_t j = i + 1;
-    while ((j < lbuf.shape[0]) && ((lefts(j) < rights(j - 1)))) {
+    py::ssize_t k = i;
+    while ((j < lbuf.shape[0]) && (lefts(j) < max_right)) {
+      max_right = std::max(max_right, rights(j));
       max_prom = std::max(max_prom, prom(j++));
     }
     // early exit for single peak
@@ -188,6 +191,7 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
       // limit to unique peaks with required prominence
       std::vector<py::ssize_t> valid;
       for (py::ssize_t k = i; k < j; ++k) {
+        // ignore identical peaks
         if ((k > 0) && (lefts(k) == lefts(k - 1)) &&
             ((rights(k) == rights(k - 1)))) {
           continue;
@@ -200,6 +204,7 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
       long current_left = lefts(i);
       long current_right = rights(valid[0]);
 
+      // start with the left-most point
       split_left->push_back(current_left);
       for (py::ssize_t k = 1; k < valid.size(); ++k) {
         py::ssize_t idx = valid[k];
@@ -212,7 +217,8 @@ py::tuple split_peaks(const py::array_t<double> &prominence_array,
         split_left->push_back(current_left);
         split_right->push_back(current_left);
       }
-      split_right->push_back(current_right);
+      // end with the right-most point
+      split_right->push_back(max_right);
     }
     i = j;
   }
