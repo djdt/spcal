@@ -119,7 +119,10 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Select Isotopes")
         self.setWhatsThis(
-            "This dialog is used to select isotopes for processing. Select the preferred isotope (highest abundance without interferences) by left-clicking an element. Right-click allows selection of specific isotopes, while middle-click will preview the signals for an element. Holding shift while left-clicking will select all isotopes with a natural abundance over 10 %. Finally, non-target screening can be performed using the Screen button."
+            "This dialog is used to select isotopes for processing. Select the preferred isotope (highest abundance without interferences) by left-clicking an element. "
+            "Right-click allows selection of specific isotopes, while middle-click will preview the signals for an element. "
+            "Holding shift while left-clicking will select all isotopes with a natural abundance over 10 %. "
+            "Finally, non-target screening can be performed using the Screen button."
         )
         # self.setWindowFlag(QtCore.Qt.WindowType.WindowContextHelpButtonHint)
 
