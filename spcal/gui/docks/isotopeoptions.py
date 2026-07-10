@@ -101,13 +101,15 @@ class IsotopeOptionTable(BasicTableView):
                     parent=self,
                 )
                 action.triggered.connect(self.requestIonicResponseDialog)
-        elif index.column() == 2:
-            action = QtGui.QAction(
-                QtGui.QIcon.fromTheme("folder-calculate"),
-                "Calculate Mass Fraction",
-                self,
-            )
-            action.triggered.connect(lambda: self.dialogMassFractionCalculator(index))
+            elif index.column() == 2:
+                action = QtGui.QAction(
+                    QtGui.QIcon.fromTheme("folder-calculate"),
+                    "Calculate Mass Fraction",
+                    self,
+                )
+                action.triggered.connect(
+                    lambda: self.dialogMassFractionCalculator(index)
+                )
         menu.insertSeparator(menu.actions()[0])
         menu.insertAction(menu.actions()[0], action)
 
