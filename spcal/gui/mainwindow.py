@@ -171,7 +171,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-        self.window_shown = False
+        # Start check for updates
+        QtCore.QTimer.singleShot(1000, self.checkForUpdates)
 
     def defaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
@@ -1439,26 +1440,21 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 event.accept()
                 break
 
-    def showEvent(self, event: QtGui.QShowEvent):
-        super().showEvent(event)
-
-        if not self.window_shown:
-            settings = QtCore.QSettings()
-            if settings.contains("DisableCheckForUpdates"):
-                if compare_version_strings(
-                    settings.value("DisableCheckForUpdates"),
-                    version("spcal"),
-                ):
-                    settings.remove("DisableCheckForUpdates")
-
-            if not settings.contains("DisableCheckForUpdates"):
-                QtCore.QTimer.singleShot(1000, self.checkForUpdates)
-            else:
-                logger.info("Check for updates is disabled, skipping...")
-            self.window_shown = True
-
     def checkForUpdates(self):
         current_version = version("spcal")
+
+        settings = QtCore.QSettings()
+        if compare_version_strings(  # current version is newer than version updates disabled on
+            str(settings.value("DisableCheckForUpdates", "0.0.0")), current_version
+        ):
+            settings.remove("DisableCheckForUpdates")
+
+        if settings.contains("DisableCheckForUpdates"):
+            logger.info("Checking for updates is disabled, skipping...")
+            return
+
+        logger.info("Checking for updates...")
+
         try:
             info = get_github_release_info()
             if "tag_name" not in info or not info["tag_name"].startswith("v"):
@@ -1475,6 +1471,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         latest_version = info["tag_name"][1:]
 
         if compare_version_strings(current_version, latest_version):
+            logger.info(f"New release found: '{latest_version}'.")
             msg = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
                 "Update Available",
@@ -1492,8 +1489,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             msg.exec()
 
             if msg.result() == QtWidgets.QMessageBox.StandardButton.Ignore:
-                logger.info("Disabled checking for updates at start-up")
+                logger.info("Checking for updates disabled.")
                 QtCore.QSettings().setValue("DisableCheckForUpdates", current_version)
+        else:
+            logger.info("Current version is the latest release.")
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None
