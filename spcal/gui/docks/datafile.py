@@ -1,3 +1,4 @@
+import pickle
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import create_action
@@ -93,30 +94,48 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
         menu = QtWidgets.QMenu(self)
 
+        action_copy_isotopes = create_action(
+            "edit-copy",
+            "Copy Isotopes",
+            "Copy selected isotopes to clipboard",
+            self.copyIsotopes,
+            parent=self,
+        )
+
+        action_paste_isotopes = create_action(
+            "edit-paste",
+            "Paste Isotopes",
+            "Paste selected isotopes from clipboard",
+            self.pasteIsotopes,
+            parent=self,
+        )
+
         action_edit_isotopes = create_action(
             "view-list-icons",
             "Select Isotopes",
             "Open a dialog to select isotopes from the data file.",
             lambda: self.dialogEditIsotopes(index),
+            parent=self,
         )
-        action_edit_isotopes.setParent(self)
 
         action_information = create_action(
             "info",
             "Information",
             "Display information about the data file.",
             lambda: self.dialogInformation(index),
+            parent=self,
         )
-        action_information.setParent(self)
 
         action_close = create_action(
             "view-close",
             "Close Data File",
             "Close the selected data file.",
             lambda: self.model.removeRow(index.row()),
+            parent=self,
         )
-        action_close.setParent(self)
 
+        menu.addAction(action_copy_isotopes)
+        menu.addAction(action_paste_isotopes)
         menu.addAction(action_edit_isotopes)
         menu.addAction(action_information)
         menu.addSeparator()
@@ -200,3 +219,20 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
     def clear(self):
         self.setDataFiles([])
+
+    def copyIsotopes(self):
+        isotopes = set(
+            iso for df in self.selectedDataFiles() for iso in df.selected_isotopes
+        )
+        mime = QtCore.QMimeData()
+        mime.setText(",".join(str(iso) for iso in isotopes))
+        mime.setData("application/x-spcal-isotopes", pickle.dumps(isotopes))
+        QtWidgets.QApplication.clipboard().setMimeData(mime)
+
+    def pasteIsotopes(self):
+        mime = QtWidgets.QApplication.clipboard().mimeData()
+        isotopes = pickle.loads(mime.data("application/x-spcal-isotopes").data())
+
+        for df in self.selectedDataFiles():
+            df.selected_isotopes = [iso for iso in isotopes if iso in df.isotopes]
+            self.dataFilesChanged.emit(df)
