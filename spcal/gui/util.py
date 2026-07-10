@@ -9,8 +9,9 @@ def create_action(
     status: str,
     func: Callable | QtCore.SignalInstance | None = None,
     checkable: bool = False,
+    parent: QtCore.QObject | None = None,
 ) -> QtGui.QAction:
-    action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label)
+    action = QtGui.QAction(QtGui.QIcon.fromTheme(icon), label, parent=parent)
     action.setStatusTip(status)
     action.setToolTip(status)
     if func is not None:

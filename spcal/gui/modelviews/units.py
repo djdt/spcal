@@ -234,8 +234,8 @@ class UnitsHeaderView(QtWidgets.QHeaderView):
                 "Hide Section",
                 "Hide this section from view.",
                 lambda: self.hideSection(logicalIndex),
+                parent=self,
             )
-            action_hide.setParent(self)
             menu.addAction(action_hide)
 
         if self.hiddenSectionCount() > 0:
