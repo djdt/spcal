@@ -541,8 +541,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "Automatically scale the axis with visible data.",
             lambda autoscale: self.setAxisAutoScale(axis, autoscale),
             checkable=True,
+            parent=self,
         )
-        autoscale_action.setParent(self)
         autorange = self.plot.vb.autoRangeEnabled()
         autoscale_action.setChecked(autorange[["x", "y"].index(axis)] is not False)
         range_action = create_action(
@@ -550,8 +550,8 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             "Set Range...",
             "Set the view range of the axis.",
             open_range_dialog,
+            parent=self,
         )
-        range_action.setParent(self)
 
         menu.addAction(autoscale_action)
         menu.addAction(range_action)
