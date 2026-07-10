@@ -1,3 +1,4 @@
+from pathlib import Path
 import warnings
 import numpy as np
 from scipy.signal import peak_prominences
@@ -271,6 +272,8 @@ def test_split_peaks():
     assert np.all(_left == [2])
     assert np.all(_right == [10])
 
+
+def test_splot_peaks_fixes():
     # previous error
     prom, left, right = [3.0, 4.0, 2.0, 6.0], [0, 4, 8, 8], [4, 8, 10, 13]
     _left, _right = detection.split_peaks(prom, left, right, 0.0)
@@ -280,3 +283,23 @@ def test_split_peaks():
     _left, _right = detection.split_peaks(prom, left, right, 1.0)
     assert np.all(_left == [0, 4, 8])
     assert np.all(_right == [4, 8, 13])
+
+    # previous error, multiple overlapping peaks, could not find true maximum
+    prom, left, right = (
+        [240.0, 2.4, 6.9, 2.9],
+        [175, 235, 263, 266],
+        [279, 334, 266, 369],
+    )
+    _left, _right = detection.split_peaks(prom, left, right, 0.1)
+    assert np.all(_left == [175])
+    assert np.all(_right == [369])
+
+    # previous error, multiple overlapping peaks, could not find true maximum
+    prom, left, right = (
+        [240.0, 2.4, 690.0, 2.9],
+        [175, 235, 263, 266],
+        [279, 334, 266, 369],
+    )
+    _left, _right = detection.split_peaks(prom, left, right, 0.1)
+    assert np.all(_left == [175, 263])
+    assert np.all(_right == [263, 369])
