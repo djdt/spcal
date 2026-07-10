@@ -171,15 +171,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.createMenuBar()
         self.updateRecentFiles()
 
-        settings = QtCore.QSettings()
-        if settings.contains("DisableCheckForUpdates"):
-            if compare_version_strings(
-                settings.value("DisableCheckForUpdates"),
-                version("spcal"),
-            ):
-                settings.remove("DisableCheckForUpdates")
-        if not settings.contains("DisableCheckForUpdates"):
-            QtCore.QTimer.singleShot(1000, self.checkForUpdates)
+        # Start check for updates
+        QtCore.QTimer.singleShot(1000, self.checkForUpdates)
 
     def defaultMethod(self) -> SPCalProcessingMethod:
         settings = QtCore.QSettings()
@@ -1449,6 +1442,19 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def checkForUpdates(self):
         current_version = version("spcal")
+
+        settings = QtCore.QSettings()
+        if compare_version_strings(  # current version is newer than version updates disabled on
+            str(settings.value("DisableCheckForUpdates", "0.0.0")), current_version
+        ):
+            settings.remove("DisableCheckForUpdates")
+
+        if settings.contains("DisableCheckForUpdates"):
+            logger.info("Checking for updates is disabled, skipping...")
+            return
+
+        logger.info("Checking for updates...")
+
         try:
             info = get_github_release_info()
             if "tag_name" not in info or not info["tag_name"].startswith("v"):
@@ -1465,16 +1471,28 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         latest_version = info["tag_name"][1:]
 
         if compare_version_strings(current_version, latest_version):
-            button = QtWidgets.QMessageBox.information(
-                self,
-                "New Release Available",
+            logger.info(f"New release found: '{latest_version}'.")
+            msg = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Icon.Information,
+                "Update Available",
                 f"A new version of SPCal ({latest_version}) is available on "
                 '<a href="https://github.com/djdt/spcal/releases/latest">GitHub</a>.',
                 buttons=QtWidgets.QMessageBox.StandardButton.Close
                 | QtWidgets.QMessageBox.StandardButton.Ignore,
+                parent=self,
             )
-            if button == QtWidgets.QMessageBox.StandardButton.Ignore:
+            msg.setTextFormat(QtCore.Qt.TextFormat.RichText)
+            msg.setDetailedText(info["body"])
+            textedit = msg.findChild(QtWidgets.QTextEdit)
+            if textedit is not None:
+                textedit.setMarkdown(info["body"])
+            msg.exec()
+
+            if msg.result() == QtWidgets.QMessageBox.StandardButton.Ignore:
+                logger.info("Checking for updates disabled.")
                 QtCore.QSettings().setValue("DisableCheckForUpdates", current_version)
+        else:
+            logger.info("Current version is the latest release.")
 
     def exceptHook(
         self, etype: type, value: BaseException, tb: TracebackType | None = None
