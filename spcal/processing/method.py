@@ -237,6 +237,8 @@ class SPCalProcessingMethod(object):
         ):  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
+        if len(results) == 0:
+            return np.array([], dtype=int)
         npeaks = np.amax([result.number_peak_indicies for result in results.values()])
         if npeaks == 0:  # pragma: no cover
             return np.array([], dtype=int)
