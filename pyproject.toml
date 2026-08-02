@@ -41,6 +41,7 @@ filterwarnings = [
     # https://github.com/pytest-dev/pytest-qt/issues/558
     "ignore:Failed to disconnect .* from signal:RuntimeWarning",
 ]
+qt_api = "pyside6"
 
 [tool.coverage.report]
 include = ["spcal/*"]
