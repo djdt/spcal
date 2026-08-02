@@ -106,8 +106,9 @@ class SPCalProcessingMethod(object):
         )
 
         # Subtract bases
-        bases = detection_baselines(limit.mean_signal, regions)
-        detections -= bases
+        if method.processing_options.subtract_baselines:
+            bases = detection_baselines(limit.mean_signal, regions)
+            detections -= bases
 
         return SPCalProcessingResult(
             isotope,

@@ -297,6 +297,12 @@ class SPCalLimitOptions(object):
 
 
 class SPCalProcessingOptions(object):
+    """A class for storing processing options.
+
+    These options mostly revolve around peak detection and calibration.
+    ``subtract_baselines`` should always be True for valid peak signals, masses and sizes.
+    """
+
     def __init__(
         self,
         calibration_mode: str = "efficiency",
@@ -304,6 +310,7 @@ class SPCalProcessingOptions(object):
         points_required: int = 1,
         prominence_required: float = 0.5,
         cluster_distance: float = 0.03,
+        subtract_baselines: bool = True,
     ):
         if accumulation_method not in [
             "signal mean",
@@ -322,6 +329,7 @@ class SPCalProcessingOptions(object):
         self.points_required = points_required
         self.prominence_required = prominence_required
         self.cluster_distance = cluster_distance
+        self.subtract_baselines = subtract_baselines
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"SPCalProcessingOptions({self.calibration_mode})"
@@ -335,6 +343,7 @@ class SPCalProcessingOptions(object):
             and self.points_required == other.points_required
             and self.prominence_required == other.prominence_required
             and self.cluster_distance == other.cluster_distance
+            and self.subtract_baselines == other.subtract_baselines
         )
 
     def accumulationLimit(self, limit: SPCalLimit) -> float | np.ndarray:
