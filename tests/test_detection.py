@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from spcal import detection, poisson
+from spcal import detection
 
 
 def test_accumulate_detections():
@@ -18,16 +18,15 @@ def test_accumulate_detections():
     # Test regions access
     assert np.all(sums == np.add.reduceat(x, regions.ravel()[:-1])[::2])
 
-    # Lc < Ld, integrate
-    sums, regions = detection.accumulate_detections(x, 0.5, 1.0, integrate=True)
-    assert np.all(sums == [3.5, 6.5, 3.5, 8.5])
-
-    assert np.all(
-        sums == np.add.reduceat(x, regions.ravel()[:-1])[::2] - [1.5, 1.5, 0.5, 1.5]
-    )
-
     # Lc == Ld
     sums, regions = detection.accumulate_detections(x, 1.0, 1.0)
+    assert np.all(sums == [4.0, 8.0, 14.0])
+    assert np.all(regions == [[1, 3], [4, 8], [8, 13]])
+
+    # Lc == Ld, prominence at 0.2
+    sums, regions = detection.accumulate_detections(
+        x, 1.0, 1.0, prominence_required=0.2
+    )
     assert np.all(sums == [4.0, 8.0, 4.0, 10.0])
     assert np.all(regions == [[1, 3], [4, 8], [8, 10], [10, 13]])
 
