@@ -103,6 +103,7 @@ class SPCalProcessingMethod(object):
             limit_detection=limit_detection,
             points_required=method.processing_options.points_required,
             prominence_required=method.processing_options.prominence_required,
+            integrate=True,
         )
 
         return SPCalProcessingResult(
