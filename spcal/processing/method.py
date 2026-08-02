@@ -103,8 +103,15 @@ class SPCalProcessingMethod(object):
             limit_detection=limit_detection,
             points_required=method.processing_options.points_required,
             prominence_required=method.processing_options.prominence_required,
-            integrate=True,
         )
+
+        # Subtract bases
+        indicies = regions.ravel()
+        if isinstance(limit.mean_signal, np.ndarray):
+            bases = np.add.reduceat(limit.mean_signal, indicies)[::2]
+            detections -= bases
+        else:  # faster
+            detections -= limit.mean_signal * (regions[:, 1] - regions[:, 0])
 
         return SPCalProcessingResult(
             isotope,
