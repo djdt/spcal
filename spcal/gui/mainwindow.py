@@ -1,14 +1,24 @@
-from importlib.metadata import version
 import json
 import logging
 import sys
+from importlib.metadata import version
 from pathlib import Path
+from urllib.error import URLError
 from types import TracebackType
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+
+from spcal.api import compare_version_strings, get_github_release_info
 from spcal.datafile import SPCalDataFile
+from spcal.io.session import save_session_json, decode_json_method
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.processing import CALIBRATION_KEYS
+from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.result import SPCalProcessingResult
+from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
 
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
@@ -49,15 +59,6 @@ from spcal.gui.io import (
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
-
-from spcal.api import compare_version_strings, get_github_release_info
-from spcal.io.session import save_session_json, decode_json_method
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
-from spcal.processing import CALIBRATION_KEYS
-from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
-from spcal.processing.method import SPCalProcessingMethod
-from spcal.processing.result import SPCalProcessingResult
-from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
 
 logger = logging.getLogger(__name__)
 
@@ -1460,7 +1461,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if "tag_name" not in info or not info["tag_name"].startswith("v"):
                 raise ValueError("invalid release version")
 
-        except (TimeoutError, ConnectionError, ValueError):
+        except (TimeoutError, ConnectionError, ValueError, URLError):
             logger.warning("unable to check for updates")
             return
 
