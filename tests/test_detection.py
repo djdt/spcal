@@ -129,6 +129,17 @@ def test_background_mask():
     assert np.all(mask[8:])
 
 
+def test_detection_baselines():
+    x = np.array([1.0, 2.0, 5.0, 2.0, 1.0, 10.0, 20.0, 5.0, 1.0])
+    regions = np.array([[2, 3], [5, 8]])
+
+    bases = detection.detection_baselines(x, regions)
+    assert np.all(bases == [5.0, 35.0])
+
+    bases = detection.detection_baselines(1.0, regions)
+    assert np.all(bases == [1.0, 3.0])
+
+
 def test_detection_maxima():
     x = np.array([2.0, 1.0, 0.0, 2.0, 3.0, 5.0, 2.0, 3.0, 0.0, 3.0, 0.0])
     regions = np.array([[1, 2], [3, 8], [9, 10]])
