@@ -109,6 +109,23 @@ def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
     return ext.combine_regions(regions, overlap)  # pragma: no cover, covered in ext
 
 
+def detection_baselines(mean: float | np.ndarray, regions: np.ndarray) -> np.ndarray:
+    """Calculate the baselines of detected peaks
+
+    mean: the mean signal, from an ``SPCalLimit``
+    regions: regions from ``accumulate_detections``, shape (N, 2)
+
+    Returns:
+        values for baseline subtraction, shape N
+    """
+
+    indicies = regions.ravel()
+    if isinstance(mean, np.ndarray):
+        return np.add.reduceat(mean, indicies)[::2]
+    else:  # faster
+        return mean * (regions[:, 1] - regions[:, 0])
+
+
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:
     """Calculates the maxima of each region.
 

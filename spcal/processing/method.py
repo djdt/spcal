@@ -14,7 +14,7 @@ from spcal.cluster import (
     prepare_results_for_clustering,
 )
 from spcal.datafile import SPCalDataFile
-from spcal.detection import accumulate_detections, combine_regions
+from spcal.detection import accumulate_detections, combine_regions, detection_baselines
 from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
 import logging
@@ -106,12 +106,8 @@ class SPCalProcessingMethod(object):
         )
 
         # Subtract bases
-        indicies = regions.ravel()
-        if isinstance(limit.mean_signal, np.ndarray):
-            bases = np.add.reduceat(limit.mean_signal, indicies)[::2]
-            detections -= bases
-        else:  # faster
-            detections -= limit.mean_signal * (regions[:, 1] - regions[:, 0])
+        bases = detection_baselines(limit.mean_signal, regions)
+        detections -= bases
 
         return SPCalProcessingResult(
             isotope,
