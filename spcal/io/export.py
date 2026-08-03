@@ -106,8 +106,18 @@ def export_spcal_result_options(fp: TextIO, results: list["SPCalProcessingResult
     fp.write(
         f"# ,{_scaled(options.uptake, units['uptake'][1])},{_value(options.efficiency)}\n"
     )
-
     fp.write("#\n")
+
+    fp.write(
+        "# Processing Options,Calibration Mode,Accumulation Mode,Points Required,Prominence Required,Cluster Distance\n"
+    )
+    options = next(iter(results)).method.processing_options
+    fp.write(
+        f"# ,{options.calibration_mode.title()},{options.accumulation_method.title()},"
+        f"{options.points_required},{options.prominence_required},{options.cluster_distance}\n"
+    )
+    fp.write("#\n")
+
     fp.write("# Limit Options,Type,Parameters\n")
     for result in results:
         pstring = ";".join(f"{k}={v}" for k, v in result.limit.parameters.items())
