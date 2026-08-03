@@ -72,10 +72,8 @@ def accumulate_detections(
     # Remove regions without minimum_size values above detection limit
     regions = regions[num_detections >= points_required]
 
-    indicies = regions.ravel()
-
     # Sum regions
-    sums = np.add.reduceat(y, indicies)[::2]
+    sums = np.add.reduceat(y, regions.flat)[::2]
 
     return sums, regions
 
@@ -119,9 +117,8 @@ def detection_baselines(mean: float | np.ndarray, regions: np.ndarray) -> np.nda
         values for baseline subtraction, shape N
     """
 
-    indicies = regions.ravel()
     if isinstance(mean, np.ndarray):
-        return np.add.reduceat(mean, indicies)[::2]
+        return np.add.reduceat(mean, regions.flat)[::2]
     else:  # faster
         return mean * (regions[:, 1] - regions[:, 0])
 
