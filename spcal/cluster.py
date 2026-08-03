@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from spcal.processing.result import SPCalProcessingResult
 
 
-def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
+def prepare_data_for_clustering(data: np.ndarray, normalise: bool = True) -> np.ndarray:
     """Prepare data by stacking into 2D array.
 
     Takes a dictionary or structured array and creates an NxM array, where M is the
@@ -24,6 +24,7 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
 
     Args:
         data: dictionary of names: array or structured array
+        normalise: divide data so each feature sums to 1.0
 
     Returns:
         2D array, ready for ``agglomerative_cluster``
@@ -32,13 +33,17 @@ def prepare_data_for_clustering(data: np.ndarray) -> np.ndarray:
         X = rfn.structured_to_unstructured(data, dtype=np.float64)
     else:
         X = data.astype(np.float64, copy=True)
-    totals = np.sum(X, axis=1)
-    np.divide(X.T, totals, where=totals > 0.0, out=X.T)
+    if normalise:
+        totals = np.sum(X, axis=1)
+        np.divide(X.T, totals, where=totals > 0.0, out=X.T)
     return X
 
 
 def prepare_results_for_clustering(
-    results: list["SPCalProcessingResult"], number_peaks: int, key: str
+    results: list["SPCalProcessingResult"],
+    number_peaks: int,
+    key: str,
+    normalise: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Prepare data by stacking into 2D array.
 
@@ -67,7 +72,7 @@ def prepare_results_for_clustering(
             continue
         peak_data[:, i] = result.calibrateTo(result.peakValues(), key)
         valid[result.peak_indicies[result.filter_indicies]] = True
-    return prepare_data_for_clustering(peak_data), valid
+    return prepare_data_for_clustering(peak_data, normalise), valid
 
 
 def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
@@ -75,6 +80,8 @@ def agglomerative_cluster(X: np.ndarray, max_dist: float) -> np.ndarray:
 
     Performs agglomerative clustering by merging close clusters until none are
     closer than ``max_dist``. Distance is measured as Euclidean distance.
+
+    `X` should be normalised so that each feature sums to 1.0.
 
     Args:
         X: 2D array (samples, features)

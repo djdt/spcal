@@ -1,0 +1,105 @@
+Data File,Isotope,Name,Unit,Value
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Number,#,399
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Number Error,#,19.974984355438178
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Number,#/L,99750007.0
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Number,fg/L,2.4246042e+09
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Ionic Background,fg/L,505331933.4983825
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background,cts,1.0106638669967651
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background Error,cts,1.0562664270401
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,LOD,cts,7.915103197097778
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mean,cts,24.30681037902832
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Std,cts,12.794147491455078
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Median,cts,21.745309829711914
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mode,cts,20.566062927246094
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background,fg,1.0106637973439638
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background Error,fg,1.0562663542444675
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,LOD,fg,7.915102651605722
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mean,fg,24.306808178989122
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Std,fg,12.794146463784262
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Median,fg,21.745307754598215
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mode,fg,20.566062529730367
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background,nm,53.79337596534792
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Background Error,nm,54.59058055370178
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,LOD,nm,106.82643811060275
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mean,nm,151.0663310000382
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Std,nm,25.22096664847595
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Median,nm,149.6172927772932
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,103Rh,Mode,nm,150.9391154286277
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Number,#,159
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Number Error,#,12.609520212918492
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Number,#/L,39750003.0
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Number,fg/L,4.390235e+09
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Ionic Background,fg/L,2564630210.3996277
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background,cts,1.025852084159851
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background Error,cts,1.0018799304962158
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,LOD,cts,7.9539971351623535
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mean,cts,110.44619750976562
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Std,cts,22.154850006103516
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Median,cts,107.677978515625
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mode,cts,108.76199340820312
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background,fg,1.02585201346031
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background Error,fg,1.0018798614487845
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,LOD,fg,7.953996586989811
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mean,fg,110.4461612397051
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Std,fg,22.154848184595668
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Median,fg,107.67797154129435
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mode,fg,108.76198180787775
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background,nm,57.161489222250545
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Background Error,nm,56.71272459489429
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,LOD,nm,113.13676676452523
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mean,nm,270.9796831368294
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Std,nm,15.710163836502032
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Median,nm,269.63996901940845
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,107Ag,Mode,nm,272.5916488088842
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Number,#,159
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Number Error,#,12.609520212918492
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Number,#/L,39750003.0
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Number,fg/L,2.684367e+09
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Ionic Background,fg/L,1573839684.3274434
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background,cts,0.9443038105964661
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background Error,cts,0.9801451563835144
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,LOD,cts,8.022079110145569
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mean,cts,101.296875
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Std,cts,22.227073669433594
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Median,cts,98.15455627441406
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mode,cts,99.59909057617188
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background,fg,0.6295358303447055
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background Error,fg,0.653430059222665
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,LOD,fg,5.34805237152064
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mean,fg,67.53124358451089
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Std,fg,14.818048973187157
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Median,fg,65.43636566982849
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mode,fg,66.39938919129743
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background,nm,48.575295090188625
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Background Error,nm,49.18224318402505
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,LOD,nm,99.11525751531302
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mean,nm,229.81801350852035
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Std,nm,14.769335088260503
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Median,nm,228.39242319605543
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,109Ag,Mode,nm,226.36491792127345
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Number,#,444
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Number Error,#,21.071307505705477
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Number,#/L,111000008.0
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Number,fg/L,5.101497e+09
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Ionic Background,fg/L,989302933.2160949
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background,cts,0.989302933216095
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background Error,cts,1.008021593093872
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,LOD,cts,7.943049430847168
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mean,cts,91.91885375976562
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Std,cts,51.58506393432617
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Median,cts,85.60134887695312
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mode,cts,88.07783508300781
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background,fg,0.4946514325177218
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background Error,fg,0.5040107618115852
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,LOD,fg,3.9715244417145583
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mean,fg,45.959428691589544
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Std,fg,25.792532092613992
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Median,fg,42.8006674689884
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mode,fg,44.038917141310876
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background,nm,36.56771657808414
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Background Error,nm,36.79691038570789
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,LOD,nm,73.22350246074656
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mean,nm,160.14649872886366
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Std,nm,30.061347189302975
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Median,nm,161.73903816252277
+/home/tom/Documents/python/spcal/tests/data/simulations/sptool_aurh_ag_data.csv,197Au,Mode,nm,161.1838911230734
