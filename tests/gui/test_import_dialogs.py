@@ -144,7 +144,7 @@ def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
 
         return True
 
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     dlg = NuImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
@@ -187,7 +187,7 @@ def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
 def test_import_dialog_nu_screening(
     test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
 ):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     dlg = NuImportDialog(path)
     qtbot.add_widget(dlg)
     with qtbot.wait_exposed(dlg):
