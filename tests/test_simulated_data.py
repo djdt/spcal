@@ -1,4 +1,4 @@
-"""These tests use data generated in SPTool
+"""These tests use data generated in SPTool 3.2.1
 https://doi.org/10.1039/D3JA00292F
 """
 
