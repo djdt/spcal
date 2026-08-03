@@ -199,7 +199,12 @@ def export_spcal_compositions(
         ):  # pragma: no cover
             continue
 
-        X, valid = prepare_results_for_clustering(results, clusters[key].size, key)
+        X, valid = prepare_results_for_clustering(
+            results,
+            clusters[key].size,
+            key,
+            normalise=False,  # no norm so real values are used
+        )
         means, stds, counts = cluster_information(X[valid], clusters[key][valid])
 
         unit, factor = units[key]
@@ -210,7 +215,7 @@ def export_spcal_compositions(
 
         for i in range(len(counts)):
             fp.write(f"# {i},{counts[i]}")
-            for j, result in enumerate(results):
+            for j, _ in enumerate(results):
                 fp.write(
                     f",{_scaled(means[i, j], factor)},{_scaled(stds[i, j], factor)}"
                 )
