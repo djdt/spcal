@@ -76,6 +76,12 @@ def test_io_text_import_euro(test_data_path: Path):
     assert np.all(data["C"] == [1, 2, 4])
 
 
+def test_io_text_import_onecol(test_data_path: Path):
+    path = test_data_path.joinpath("text/text_onecol.csv")
+    data = read_single_particle_file(path, delimiter=";", skip_rows=1)
+    assert np.all(data["A"] == [1, 2, 3, 4, 5])
+
+
 def test_guess_text_parameters():
     onecol_header = ["Name", "1", "2", "3"]
     delim, skip_rows, columns = guess_text_parameters(onecol_header)

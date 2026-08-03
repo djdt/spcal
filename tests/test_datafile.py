@@ -153,7 +153,7 @@ def test_spcal_datafile_text_tofwerk(test_data_path: Path):
 
 
 def test_spcal_datafile_nu(test_data_path: Path):
-    path = test_data_path.joinpath("nu/run.info")
+    path = test_data_path.joinpath("nu/normal/run.info")
     df = datafile.SPCalNuDataFile.load(path)
 
     assert df.times.size == 40
@@ -184,7 +184,7 @@ def test_spcal_datafile_nu(test_data_path: Path):
 
 
 def test_spcal_datafile_nu_integ_range(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     df = datafile.SPCalNuDataFile.load(path, first_integ_file=1, last_integ_file=2)
     assert not np.any(np.isnan(df.signals))
     assert df.times.size == 10

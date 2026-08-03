@@ -997,7 +997,7 @@ def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
     assert not dlg.controls_box.isEnabled()
 
     # test nu loads
-    dlg.loadSingleIonData(test_data_path.joinpath("nu"))
+    dlg.loadSingleIonData(test_data_path.joinpath("nu/normal"))
 
     dlg.loadSingleIonData(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
     assert dlg.mus.size > 0

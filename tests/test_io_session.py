@@ -60,7 +60,7 @@ def test_session_save_load(test_data_path: Path, tmp_path: Path):
     method.exclusion_regions = [(0.4, 1.0), (230.2, 276.0)]
 
     files = [
-        SPCalNuDataFile.load(test_data_path.joinpath("nu")),
+        SPCalNuDataFile.load(test_data_path.joinpath("nu/normal")),
         SPCalTextDataFile.load(
             test_data_path.joinpath("text/agilent_au50nm.csv"), skip_rows=4
         ),

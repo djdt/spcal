@@ -149,8 +149,8 @@ def test_batch_wizard_nu(
     assert not page.isComplete()
 
     page.radio_nu.click()
-    page.addFile(test_data_path.joinpath("nu"))
-    page.addFile(test_data_path.joinpath("nu"))
+    page.addFile(test_data_path.joinpath("nu/normal"))
+    page.addFile(test_data_path.joinpath("nu/normal"))
     assert page.files.count() == 2
     assert page.isComplete()
 

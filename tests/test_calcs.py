@@ -26,13 +26,16 @@ def test_expand_mask():
     x = calc.expand_mask(x, 2)
     assert np.all(x[1:8, 4])
 
+
 def test_searchsorted_closest():
     x = np.arange(10.0)
     y = calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]))
     assert np.all(y == [1, 5, 9, 6])
 
     with pytest.raises(ValueError):
-        calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1)
+        calc.search_sorted_closest(
+            x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1
+        )
 
 
 def test_mode():
@@ -44,6 +47,9 @@ def test_mode():
     x = np.random.uniform(0.0, 1.0, size=1000)
     x[np.random.choice(x.size, 100)] = 0.3
     assert np.isclose(calc.mode(x), 0.3, atol=0.01)
+
+    x[2] = np.nan
+    assert np.isnan(calc.mode(x))
 
 
 def test_otsu():

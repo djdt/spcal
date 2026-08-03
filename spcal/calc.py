@@ -90,6 +90,8 @@ def mode(x: np.ndarray, bins: int | np.ndarray | str = "auto") -> float:
     Returns:
         mode
     """
+    if np.any(np.isnan(x)):
+        return np.nan
     hist, edges = np.histogram(x, bins=bins)
     mode_idx = np.argmax(hist)
     return (edges[mode_idx] + edges[mode_idx + 1]) / 2.0

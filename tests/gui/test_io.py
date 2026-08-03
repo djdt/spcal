@@ -29,10 +29,12 @@ def test_get_import_dialog_for_path(qtbot: QtBot, test_data_path: Path):
     )
     assert isinstance(dlg, TextImportDialog)
 
-    dlg = get_import_dialog_for_path(window, test_data_path.joinpath("nu"))
+    dlg = get_import_dialog_for_path(window, test_data_path.joinpath("nu/normal"))
     assert isinstance(dlg, NuImportDialog)
 
-    dlg = get_import_dialog_for_path(window, test_data_path.joinpath("nu/run.info"))
+    dlg = get_import_dialog_for_path(
+        window, test_data_path.joinpath("nu/normal/run.info")
+    )
     assert isinstance(dlg, NuImportDialog)
 
     dlg = get_import_dialog_for_path(

@@ -1,10 +1,9 @@
 from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from typing import Callable
 from pathlib import Path
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 import numpy as np
 
-from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
 
@@ -292,6 +291,7 @@ def test_graph_particle(
 
     # test legend mouse clicks
     pos = view.mapFromScene(item.mapToScene(item.rect().center()))
+    pos.setX(pos.x() + 1.0)  # ensure in right side
 
     assert item.item.isVisible()
     assert item.detections.isVisible()

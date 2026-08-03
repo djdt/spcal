@@ -12,8 +12,7 @@ def accumulate_detections(
     limit_accumulation: float | np.ndarray,
     limit_detection: float | np.ndarray,
     points_required: int = 1,
-    prominence_required: float = 0.2,
-    integrate: bool = False,
+    prominence_required: float = 0.5,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Returns an array of accumulated detections.
 
@@ -29,7 +28,6 @@ def accumulate_detections(
         limit_detection: minimum detection value(s)
         points_required: no. points > limit_detection to be detected
         prominence_required: minimum fraction of max prominence for overlapping peaks
-        integrate: integrate, otherwise sum
 
     Returns:
         summed detection regions
@@ -57,7 +55,7 @@ def accumulate_detections(
 
     # First we remove any peaks lower than the lod - base
     if isinstance(min_prominence, np.ndarray):
-        detected = prominence >= min_prominence[possible_detections]
+        detected = prominence >= min_prominence[possible_detections]  # type: ignore
     else:
         detected = prominence >= min_prominence
     prominence, lefts, rights = (
@@ -74,15 +72,8 @@ def accumulate_detections(
     # Remove regions without minimum_size values above detection limit
     regions = regions[num_detections >= points_required]
 
-    indicies = regions.ravel()
-
     # Sum regions
-    if integrate:
-        base = y - limit_accumulation
-        base[base < 0.0] = 0.0
-        sums = np.add.reduceat(base, indicies)[::2]
-    else:
-        sums = np.add.reduceat(y, indicies)[::2]
+    sums = np.add.reduceat(y, regions.flat)[::2]
 
     return sums, regions
 
@@ -114,6 +105,22 @@ def combine_regions(regions: list[np.ndarray], overlap: int) -> np.ndarray:
         merged regions
     """
     return ext.combine_regions(regions, overlap)  # pragma: no cover, covered in ext
+
+
+def detection_baselines(mean: float | np.ndarray, regions: np.ndarray) -> np.ndarray:
+    """Calculate the baselines of detected peaks
+
+    mean: the mean signal, from an ``SPCalLimit``
+    regions: regions from ``accumulate_detections``, shape (N, 2)
+
+    Returns:
+        values for baseline subtraction, shape N
+    """
+
+    if isinstance(mean, np.ndarray):
+        return np.add.reduceat(mean, regions.flat)[::2]
+    else:  # faster
+        return mean * (regions[:, 1] - regions[:, 0])
 
 
 def detection_maxima(y: np.ndarray, regions: np.ndarray) -> np.ndarray:

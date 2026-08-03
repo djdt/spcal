@@ -183,6 +183,8 @@ def test_spcal_processing_options():
     limit = SPCalLimit("test", np.ones(10), np.ones(10) * 2)
     assert np.all(popts.accumulationLimit(limit) == 2.0)
 
+    assert popts.subtract_baselines
+
 
 def test_spcal_processing_method(
     test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
@@ -190,6 +192,54 @@ def test_spcal_processing_method(
     ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
 
     method = default_method
+    results = method.processDataFile(test_datafile, ru)
+    method.filterResults(results)
+    assert len(results) == 3
+
+    assert results[ru[0]].number == 8
+    assert results[ru[1]].number == 10
+    assert results[ru[2]].number == 8
+    assert np.isclose(np.mean(results[ru[0]].detections), 262.195)
+
+    assert method.canCalibrate("signal", ru[0])
+    assert not method.canCalibrate("mass", ru[0])
+    assert not method.canCalibrate("size", ru[0])
+
+    method.instrument_options.uptake = 1.0
+    method.instrument_options.efficiency = 1.0
+    method.isotope_options[ru[0]] = options.SPCalIsotopeOptions(
+        1.0, 1.0, 1.0, mass_response=1.0
+    )
+
+    assert method.canCalibrate("mass", ru[0])
+    assert method.canCalibrate("size", ru[0])
+
+    assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 0.001
+    assert method.calibrateTo(1.0, "size", ru[0], 1e-3) == np.cbrt(6.0 / np.pi * 0.001)
+
+    method.processing_options.calibration_mode = "mass reponse"
+    assert method.calibrateTo(1.0, "mass", ru[0], 1e-3) == 1.0
+
+    clusters = method.processClusters(results, "signal")
+    assert np.all(clusters == [1, 1, 5, 1, 1, 2, 1, 4, 3, 2])
+
+    # test other accumulation methods
+    method.processing_options.accumulation_method = "half detection threshold"
+    results = method.processDataFile(test_datafile, [ru[0]])
+    assert np.isclose(np.mean(results[ru[0]].detections), 260.055)
+
+    method.processing_options.accumulation_method = "detection threshold"
+    results = method.processDataFile(test_datafile, [ru[0]])
+    assert np.isclose(np.mean(results[ru[0]].detections), 253.663)
+
+
+def test_spcal_processing_method_no_subtract_baslines(
+    test_datafile: SPCalTOFWERKDataFile, default_method: SPCalProcessingMethod
+):
+    ru = [ISOTOPE_TABLE[("Ru", x)] for x in [101, 102, 104]]
+
+    method = default_method
+    method.processing_options.subtract_baselines = False
     results = method.processDataFile(test_datafile, ru)
     method.filterResults(results)
     assert len(results) == 3
@@ -254,7 +304,7 @@ def test_spcal_processing_method_exclusions(
     ru = ISOTOPE_TABLE[("Ru", 101)]
 
     results = default_method.processDataFile(test_datafile, [ru])
-    assert np.isclose(np.mean(results[ru].detections), 274.39)
+    assert np.isclose(np.mean(results[ru].detections), 262.195)
     default_method.exclusion_regions = [(40.0, 70.0)]
     results = default_method.processDataFile(test_datafile, [ru])
     idx = np.searchsorted(results[ru].times, (40.0, 70.0))
@@ -292,7 +342,7 @@ def test_spcal_processing_method_filters(
     method.setFilters(
         [
             [
-                SPCalValueFilter(ru[0], "signal", np.greater, 70.0),
+                SPCalValueFilter(ru[0], "signal", np.greater, 60.0),
                 SPCalValueFilter(ru[0], "signal", np.less, 100.0, prefer_invalid=True),
             ]
         ],
@@ -384,7 +434,9 @@ def test_spcal_processing_results_standard_file(
     df.selected_isotopes = df.isotopes
 
     method = default_method
-    method.limit_options.poisson_kws["alpha"] = 1e-6
+    method.limit_options.poisson_kws["alpha"] = 1e-7
+    method.limit_options.max_iterations = 100
+    method.processing_options.prominence_required = 0.5
     method.instrument_options.uptake = 5.0746e-6
     method.instrument_options.efficiency = 0.08312
     method.isotope_options[ISOTOPE_TABLE[("Au", 197)]] = SPCalIsotopeOptions(

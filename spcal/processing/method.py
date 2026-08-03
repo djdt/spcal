@@ -14,7 +14,7 @@ from spcal.cluster import (
     prepare_results_for_clustering,
 )
 from spcal.datafile import SPCalDataFile
-from spcal.detection import accumulate_detections, combine_regions
+from spcal.detection import accumulate_detections, combine_regions, detection_baselines
 from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
 import logging
@@ -104,6 +104,11 @@ class SPCalProcessingMethod(object):
             points_required=method.processing_options.points_required,
             prominence_required=method.processing_options.prominence_required,
         )
+
+        # Subtract bases
+        if method.processing_options.subtract_baselines:
+            bases = detection_baselines(limit.mean_signal, regions)
+            detections -= bases
 
         return SPCalProcessingResult(
             isotope,
@@ -232,6 +237,8 @@ class SPCalProcessingMethod(object):
         ):  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
+        if len(results) == 0:
+            return np.array([], dtype=int)
         npeaks = np.amax([result.number_peak_indicies for result in results.values()])
         if npeaks == 0:  # pragma: no cover
             return np.array([], dtype=int)

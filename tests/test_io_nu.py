@@ -15,20 +15,20 @@ from spcal.io.nu import (
 
 
 def test_is_nu_run_info_file(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     assert not is_nu_run_info_file(path)
     assert is_nu_run_info_file(path.joinpath("run.info"))
 
 
 def test_is_nu_dir(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     assert is_nu_directory(path)
     assert not is_nu_directory(path.parent)
     assert not is_nu_directory(path.joinpath("fake"))
 
 
 def test_io_nu_import(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
     assert masses.size == 127
     assert signals.shape == (40, 127)
@@ -43,7 +43,7 @@ def test_io_nu_import(test_data_path: Path):
 
 
 def test_io_nu_import_compressed(test_data_path: Path):
-    path = test_data_path.joinpath("nu_compressed")
+    path = test_data_path.joinpath("nu/compressed")
     masses, signals, times, info = read_directory(path)
     assert masses.size == 29
     assert signals.shape == (51725, 29)
@@ -54,7 +54,7 @@ def test_io_nu_import_compressed(test_data_path: Path):
 
 
 def test_io_nu_import_integ_limits(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     masses, signals, times, info = read_directory(
         path, last_integ_file=1, cycle=1, segment=1
     )
@@ -76,7 +76,7 @@ def test_io_nu_import_integ_limits(test_data_path: Path):
 
 
 def test_io_nu_import_integ_missing(test_data_path: Path):
-    path = test_data_path.joinpath("nu")
+    path = test_data_path.joinpath("nu/normal")
     masses, signals, times, info = read_directory(path, cycle=1, segment=1)
     assert signals.shape == (40, 127)
     assert np.all(~np.isnan(signals[:29]))
@@ -121,7 +121,7 @@ def test_select_nu_signals():
 
 
 def test_nu_read_integ_binary_memmap(test_data_path: Path):
-    path = test_data_path.joinpath("nu/1.integ")
+    path = test_data_path.joinpath("nu/normal/1.integ")
 
     data = read_integ_binary(path)
     data_memmap = read_integ_binary(path, memmap=True)
