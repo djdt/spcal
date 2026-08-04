@@ -198,20 +198,28 @@ def read_single_particle_file(
         fp.seek(data_start_pos)
         gen = replace_comma_decimal(fp, len(usecols), delimiter)
 
-        # TODO: protential speed-up by trying loadtxt
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action="ignore", category=ConversionWarning)
-            data = np.genfromtxt(  # ty: ignore[no-matching-overload]
+        try:
+            data = np.loadtxt(
                 gen,
                 delimiter=delimiter,
-                converters=converters,
-                names=header,
-                dtype=np.float32,
-                deletechars="",
-                invalid_raise=False,
-                usecols=usecols,
-                loose=True,
+                dtype=[(name.replace(" ", "_"), np.float32) for name in header],
             )
+        except ValueError:
+            logger.warning(f"loadtxt failed for {path}, falling back to genfromtxt")
+            fp.seek(data_start_pos)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action="ignore", category=ConversionWarning)
+                data = np.genfromtxt(  # ty: ignore[no-matching-overload]
+                    gen,
+                    delimiter=delimiter,
+                    converters=converters,
+                    names=header,
+                    dtype=np.float32,
+                    deletechars="",
+                    invalid_raise=False,
+                    usecols=usecols,
+                    loose=True,
+                )
 
     assert data.dtype.names is not None
     return data
