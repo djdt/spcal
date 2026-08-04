@@ -50,7 +50,7 @@ class DataFileDelegate(QtWidgets.QAbstractItemDelegate):
             close_rect = style.itemPixmapRect(frame, self.close_align, pixmap)
             if close_rect.contains(event.position().toPoint()):
                 if event.type() == QtCore.QEvent.Type.MouseButtonRelease:
-                    index.model().removeRow(index.row())
+                    model.removeRow(index.row())
                 return True
 
             menu_rect = style.itemPixmapRect(frame, self.menu_align, pixmap)
@@ -207,10 +207,11 @@ class DataFileModel(QtCore.QAbstractListModel):
         parent: QtCore.QModelIndex
         | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
     ) -> bool:
-        self.beginRemoveRows(parent, row, row + count)
-        if row < 0 or row + count > self.rowCount():
+        if parent.isValid() or row < 0 or row + count > self.rowCount():
             return False
-        for _ in range(row, row + count):
+
+        self.beginRemoveRows(parent, row, row + count - 1)
+        for _ in range(count):
             df = self.data_files.pop(row)
             del df
         self.endRemoveRows()

@@ -60,7 +60,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
         self.model = DataFileModel()
         self.model.editIsotopesRequested.connect(self.dialogEditIsotopes)
-        self.model.rowsAboutToBeRemoved.connect(self.onRowsRemoved)
+        self.model.rowsAboutToBeRemoved.connect(self.onRowsAboutToBeRemoved)
+        self.model.rowsRemoved.connect(self.onRowsRemoved)
 
         self.list = QtWidgets.QListView()
         self.list.setMouseTracking(True)
@@ -77,10 +78,10 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             current = self.currentDataFile()
             if current is None:
                 if self.model.rowCount() > 0:
-                    index = self.model.index(0, 0)
-                    self.list.setCurrentIndex(index)
-                    return [index.data(DataFileRole)]
-                return []
+                    self.list.setCurrentIndex(self.model.index(0, 0))
+                    return [self.model.data(self.model.index(0, 0), DataFileRole)]
+                else:
+                    return []
             return [current]
         return files
 
@@ -206,16 +207,15 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         dlg.open()
         return dlg
 
-    def onRowsRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
+    def onRowsAboutToBeRemoved(self, index: QtCore.QModelIndex, first: int, last: int):
         if index.isValid():  # pragma: no cover, error
             raise ValueError("valid index for removed row")
-        if first <= self.list.currentIndex().row() < last:
-            self.list.selectionModel().setCurrentIndex(
-                self.model.index(first - 1, 0),
-                QtCore.QItemSelectionModel.SelectionFlag.Current,
-            )
         for row in range(first, last):
             self.dataFileRemoved.emit(self.model.data_files[row])
+
+    def onRowsRemoved(self):
+        if self.model.rowCount() == 0:  # very rarely the last file wont release
+            self.activeDataFilesChanged.emit([])
 
     def clear(self):
         self.setDataFiles([])
