@@ -137,11 +137,14 @@ class SPCalOutputsDock(QtWidgets.QDockWidget):
         ]
         flattened.sort(key=lambda x: (x[0].path.stem, x[1]))
 
+        current_active = self.activeResults()
         self.model.beginResetModel()
         self.model.results = flattened
         if len(results) > 1:
             self.model.multiple_datafiles = True
         self.model.endResetModel()
+        self.setActiveResults(current_active)
+        self.activeResultsChanged.emit(self.activeResults())
 
     def updateOutputsForKey(self, key: str):
         self.model.key = key
