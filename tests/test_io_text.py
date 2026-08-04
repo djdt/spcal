@@ -45,6 +45,7 @@ icap_header = [
     "3,00:00:00.0001500,0",
     "4,00:00:00.0002000,0",
 ]
+single_column_header = ["Au197", "1", "0", "0", "3"]
 tofwerk_header = [
     "Index,timestamp (s),[197Au]+ (cts)",
     "0,0,0",
@@ -137,6 +138,13 @@ def test_guess_text_parameters_thermo_new_icap():
     assert columns == 3
 
 
+def test_guess_text_parameters_single_column():
+    delim, skip_rows, columns = guess_text_parameters(single_column_header)
+    assert delim == ""
+    assert skip_rows == 1
+    assert columns == 1
+
+
 def test_guess_text_parameters_tofwerk():
     delim, skip_rows, columns = guess_text_parameters(tofwerk_header)
     assert delim == ","
@@ -182,6 +190,11 @@ def test_guess_event_time_thermo_new_icap():
     val, unit = guess_event_time(icap_header, ",", skip_rows=2)
     assert np.isclose(val, 5e-5)
     assert unit is None
+
+
+def test_guess_event_time_single_column():
+    with pytest.raises(StopIteration):
+        guess_event_time(single_column_header, ",", skip_rows=1)
 
 
 def test_guess_event_time_tofwerk():

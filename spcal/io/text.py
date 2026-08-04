@@ -47,8 +47,8 @@ def guess_event_time(
 
     header = lines[skip_rows - 1].split(delimiter)
 
-    if len(header) < 2:  # pragma: no cover, error
-        raise ValueError("header does not have enough columns")
+    if len(header) == 0:
+        raise ValueError("header is empty")
 
     for col, name in enumerate(header):
         if "time" not in name.strip().lower():
