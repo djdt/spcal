@@ -166,3 +166,4 @@ def test_gui_multi_result(qtbot: QtBot, test_locales, test_data_path):
     win.files.list.selectAll()
 
     assert win.outputs.model.rowCount() == 3
+    assert len(win.outputs.activeResults()) == 3  # also get selected
