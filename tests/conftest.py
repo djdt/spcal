@@ -1,9 +1,10 @@
-from typing import Callable
-from spcal.datafile import SPCalTextDataFile, SPCalDataFile
 from pathlib import Path
+from typing import Callable
+
 import numpy as np
 import pytest
 
+from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 

@@ -7,7 +7,6 @@ from typing import Callable
 import numpy as np
 
 from spcal.isotope import SPCalIsotopeBase
-
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.result import SPCalProcessingResult
 

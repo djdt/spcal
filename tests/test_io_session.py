@@ -1,11 +1,13 @@
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from spcal.datafile import (
     SPCalNuDataFile,
-    SPCalTOFWERKDataFile,
     SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
 )
+from spcal.io.session import load_session_json, save_session_json
 from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.filter import (
     SPCalClusterFilter,
@@ -15,7 +17,6 @@ from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import (
     SPCalIsotopeOptions,
 )
-from spcal.io.session import save_session_json, load_session_json
 
 
 def test_session_save_load(test_data_path: Path, tmp_path: Path):

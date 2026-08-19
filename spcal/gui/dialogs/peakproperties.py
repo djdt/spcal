@@ -1,15 +1,14 @@
-import pyqtgraph
 import numpy as np
+import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
+from spcal.gui.io import get_save_spcal_path
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.isotope import IsotopeComboBox
-
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import time_units
-from spcal.gui.io import get_save_spcal_path
 
 
 class PeakPropertiesDialog(QtWidgets.QDialog):

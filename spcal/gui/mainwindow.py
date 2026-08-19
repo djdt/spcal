@@ -3,23 +3,14 @@ import logging
 import sys
 from importlib.metadata import version
 from pathlib import Path
-from urllib.error import URLError
 from types import TracebackType
+from urllib.error import URLError
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-
 from spcal.api import compare_version_strings, get_github_release_info
 from spcal.datafile import SPCalDataFile
-from spcal.io.session import save_session_json, decode_json_method
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
-from spcal.processing import CALIBRATION_KEYS
-from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
-from spcal.processing.method import SPCalProcessingMethod
-from spcal.processing.result import SPCalProcessingResult
-from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
-
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
@@ -28,10 +19,9 @@ from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.missingpaths import MissingPathsDialog
-from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
-
+from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.tools import (
     MassFractionCalculatorDialog,
     ParticleDatabaseDialog,
@@ -43,22 +33,28 @@ from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
-
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.graphs.colors import (
-    COLOR_SCHEMES,
     BRUSH_STYLES,
+    COLOR_SCHEMES,
     scheme_icon,
 )
 from spcal.gui.io import (
+    SessionImportWorker,
     get_import_dialog_for_path,
     get_open_spcal_path,
     is_spcal_path,
-    SessionImportWorker,
     is_spcal_session_path,
 )
 from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
+from spcal.io.session import decode_json_method, save_session_json
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.processing import CALIBRATION_KEYS
+from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import SPCalIsotopeOptions, SPCalProcessingOptions
+from spcal.processing.result import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
 
@@ -451,7 +447,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         icon_size = self.style().pixelMetric(
             QtWidgets.QStyle.PixelMetric.PM_SmallIconSize
         )
-        for scheme in COLOR_SCHEMES.keys():
+        for scheme in COLOR_SCHEMES:
             action = self.action_color_scheme.addAction(scheme)
             action.setIcon(scheme_icon(scheme, icon_size, icon_size))
             action.setCheckable(True)
@@ -579,7 +575,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         for expr in expressions:
             if expr in method.expressions:
                 method.expressions.remove(expr)
-            for _, results in self.processing_results.items():
+            for results in self.processing_results.values():
                 if expr in results:
                     results.pop(expr)
 
@@ -718,7 +714,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 isotope, method.isotope_options[isotope]
             )
         remove = []
-        for isotope in method.isotope_options.keys():
+        for isotope in method.isotope_options:
             if isotope not in all_isotopes:
                 remove.append(isotope)
         for isotope in remove:
@@ -732,15 +728,13 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         }
         self.outputs.setResults(results)
 
-        isotopes = {iso for result in results.values() for iso in result.keys()}
+        isotopes = {iso for result in results.values() for iso in result}
         if any(
             data_file in previous for data_file in results
         ):  # some datafiles are shared, keep selection
             self.outputs.setActiveResults(previous)
         else:
-            previous_isotopes = {
-                iso for result in previous.values() for iso in result.keys()
-            }
+            previous_isotopes = {iso for result in previous.values() for iso in result}
             if any(isotope in previous_isotopes for isotope in isotopes):
                 self.outputs.view.setSelectedIsotopes(list(previous_isotopes))
             else:
@@ -1422,10 +1416,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         for url in event.mimeData().urls():
-            if is_spcal_path(url.toLocalFile()):
-                event.acceptProposedAction()
-                return
-            elif is_spcal_session_path(url.toLocalFile()):
+            if is_spcal_path(url.toLocalFile()) or is_spcal_session_path(
+                url.toLocalFile()
+            ):
                 event.acceptProposedAction()
                 return
         event.ignore()

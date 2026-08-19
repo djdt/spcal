@@ -1,5 +1,6 @@
-from spcal.gui.util import create_action
 from PySide6 import QtCore, QtGui, QtWidgets
+
+from spcal.gui.util import create_action
 
 
 def color_button(color: QtGui.QColor) -> QtWidgets.QToolButton:

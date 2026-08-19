@@ -2,10 +2,10 @@
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import datetime
 import logging
 import re
 from pathlib import Path
-import datetime
 
 import h5py
 import numpy as np
@@ -16,13 +16,12 @@ from spcal.io import nu, text, tofwerk
 from spcal.isotope import (
     ISOTOPE_TABLE,
     RECOMMENDED_ISOTOPES,
-    SPCalIsotopeBase,
     SPCalIsotope,
+    SPCalIsotopeBase,
     SPCalIsotopeExpression,
 )
-from spcal.pratt import Reducer, ReducerException
-
 from spcal.lib.spcalext import spectra as ext
+from spcal.pratt import Reducer, ReducerException
 
 logger = logging.getLogger(__name__)
 

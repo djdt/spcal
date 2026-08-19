@@ -3,9 +3,10 @@ The processing method takes in an SPCalDataFile and processes it to SPCalResults
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
-
 from typing import Sequence
+
 import numpy as np
 
 from spcal import particle
@@ -16,10 +17,13 @@ from spcal.cluster import (
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions, detection_baselines
 from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
-
-import logging
-
 from spcal.processing import CALIBRATION_KEYS
+from spcal.processing.filter import (
+    SPCalClusterFilter,
+    SPCalIndexFilter,
+    SPCalResultFilter,
+    SPCalValueFilter,
+)
 from spcal.processing.options import (
     SPCalInstrumentOptions,
     SPCalIsotopeOptions,
@@ -27,13 +31,6 @@ from spcal.processing.options import (
     SPCalProcessingOptions,
 )
 from spcal.processing.result import SPCalProcessingResult
-
-from spcal.processing.filter import (
-    SPCalResultFilter,
-    SPCalIndexFilter,
-    SPCalValueFilter,
-    SPCalClusterFilter,
-)
 
 logger = logging.getLogger(__name__)
 

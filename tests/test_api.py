@@ -1,4 +1,4 @@
-from spcal.api import get_github_release_info, compare_version_strings
+from spcal.api import compare_version_strings, get_github_release_info
 
 
 def test_compare_verison_strings():

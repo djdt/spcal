@@ -1,4 +1,5 @@
 from PySide6 import QtCore, QtWidgets
+
 from spcal.gui.docks.processingoptions import SPCalProcessingOptionsWidget
 from spcal.processing.options import SPCalProcessingOptions
 

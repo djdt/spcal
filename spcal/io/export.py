@@ -11,13 +11,11 @@ from typing import TextIO
 import numpy as np
 
 from spcal.calc import mode as modefn
-
 from spcal.cluster import cluster_information, prepare_results_for_clustering
-from spcal.detection import combine_regions
-
 from spcal.datafile import SPCalDataFile
-from spcal.processing.result import SPCalProcessingResult
+from spcal.detection import combine_regions
 from spcal.processing import CALIBRATION_KEYS
+from spcal.processing.result import SPCalProcessingResult
 
 logger = logging.getLogger(__name__)
 

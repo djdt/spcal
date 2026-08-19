@@ -1,7 +1,8 @@
 import os
+
 import numpy as np
-from PySide6 import QtCore, QtGui
 import pytest
+from PySide6 import QtCore, QtGui
 from pytestqt.qtbot import QtBot
 
 from spcal.gui.widgets.elidedlabel import ElidedLabel

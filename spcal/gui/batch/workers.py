@@ -1,24 +1,23 @@
 import json
-import numpy as np
+import logging
 from pathlib import Path
 from typing import Generator, TextIO
+
+import numpy as np
 from PySide6 import QtCore, QtGui
 
 from spcal.datafile import (
     SPCalDataFile,
     SPCalNuDataFile,
-    SPCalTOFWERKDataFile,
     SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
 )
-from spcal.isotope import SPCalIsotope
 from spcal.gui.graphs.base import create_export_view
+from spcal.io.export import append_results_summary, export_spcal_processing_results
+from spcal.isotope import SPCalIsotope
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.method import SPCalProcessingMethod
-
-from spcal.io.export import append_results_summary, export_spcal_processing_results
 from spcal.processing.result import SPCalProcessingResult
-
-import logging
 
 logger = logging.getLogger(__name__)
 

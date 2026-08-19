@@ -1,8 +1,8 @@
-from spcal.gui.io import NP_FILE_FILTERS
-
 from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
+
+from spcal.gui.io import NP_FILE_FILTERS
 
 
 class MissingPathsDialog(QtWidgets.QDialog):

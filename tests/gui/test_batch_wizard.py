@@ -1,26 +1,24 @@
 import os
-from typing import Callable
-from spcal.datafile import SPCalDataFile
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
-from PySide6 import QtCore
-
 import pytest
+from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
+from spcal.datafile import SPCalDataFile
 from spcal.gui.batch.formatpages import (
     BatchNuWizardPage,
-    BatchTOFWERKWizardPage,
     BatchTextWizardPage,
+    BatchTOFWERKWizardPage,
 )
-
 from spcal.gui.batch.wizard import (
+    BatchFileListDelegate,
     BatchFilesWizardPage,
     BatchMethodWizardPage,
     BatchRunWizardPage,
     SPCalBatchProcessingWizard,
-    BatchFileListDelegate,
 )
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod

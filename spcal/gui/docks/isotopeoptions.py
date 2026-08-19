@@ -7,14 +7,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.modelviews import (
     BaseValueRole,
+    CurrentUnitRole,
     IsotopeOptionRole,
     IsotopeRole,
-    CurrentUnitRole,
 )
 from spcal.gui.modelviews.basic import BasicTableView
-from spcal.gui.modelviews.units import UnitsHeaderView
-from spcal.gui.modelviews.options import IsotopeOptionModel
 from spcal.gui.modelviews.massfraction import MassFractionDelegate
+from spcal.gui.modelviews.options import IsotopeOptionModel
+from spcal.gui.modelviews.units import UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.objects import ContextMenuRedirectFilter
 from spcal.isotope import SPCalIsotopeBase

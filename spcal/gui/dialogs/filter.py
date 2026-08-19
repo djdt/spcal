@@ -4,8 +4,8 @@ from spcal.gui.util import create_action
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.filter import (
-    SPCalResultFilter,
     SPCalClusterFilter,
+    SPCalResultFilter,
     SPCalValueFilter,
 )
 from spcal.siunits import mass_units, signal_units, size_units

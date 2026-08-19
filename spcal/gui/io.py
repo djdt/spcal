@@ -3,17 +3,15 @@ from pathlib import Path
 from PySide6 import QtCore, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-
-from spcal.io.nu import is_nu_directory, is_nu_run_info_file
-from spcal.io.text import is_text_file
-from spcal.io.tofwerk import is_tofwerk_file
-from spcal.io.session import decode_json_datafile
-from spcal.processing.method import SPCalProcessingMethod
-
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.io.nu import NuImportDialog
 from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
+from spcal.io.nu import is_nu_directory, is_nu_run_info_file
+from spcal.io.session import decode_json_datafile
+from spcal.io.text import is_text_file
+from spcal.io.tofwerk import is_tofwerk_file
+from spcal.processing.method import SPCalProcessingMethod
 
 NP_FILE_FILTER = "NP Data Files (*.csv *.info *.h5)"
 TEXT_FILE_FILTER = "CSV Documents(*.csv *.txt *.text)"

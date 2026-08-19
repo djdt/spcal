@@ -8,7 +8,6 @@ from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.resources import icons, darkicons  # noqa: F401
 from spcal.datafile import (
     SPCalNuDataFile,
     SPCalTextDataFile,
@@ -19,6 +18,7 @@ from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 from spcal.io.text import guess_text_parameters, is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
 from spcal.isotope import SPCalIsotope
+from spcal.resources import darkicons, icons  # noqa: F401
 
 logging.captureWarnings(True)
 logger = logging.getLogger("spcal")

@@ -4,7 +4,7 @@ import numpy as np
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalNuDataFile, SPCalTextDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.io.nu import NuImportDialog
 from spcal.gui.dialogs.io.text import TextImportDialog
 from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog

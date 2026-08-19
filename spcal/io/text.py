@@ -4,13 +4,12 @@
 
 import datetime
 import logging
-from pathlib import Path
-import warnings
 import re
+import warnings
+from pathlib import Path
 
 import numpy as np
 from numpy.lib._iotools import ConversionWarning
-
 
 logger = logging.getLogger(__name__)
 

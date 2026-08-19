@@ -1,13 +1,13 @@
-import pytest
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from spcal.io.text import (
+    guess_event_time,
     guess_text_parameters,
     is_text_file,
     read_single_particle_file,
-    guess_event_time,
 )
 
 agilent_header = [

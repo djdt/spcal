@@ -5,14 +5,14 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile, SPCalTextDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
-from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 from spcal.gui.modelviews.headers import CheckableHeaderView
+from spcal.gui.modelviews.isotope import IsotopeNameDelegate, IsotopeNameValidator
 from spcal.gui.widgets.units import UnitsWidget
 from spcal.io.text import (
-    guess_text_parameters,
     guess_event_time,
+    guess_text_parameters,
 )
-from spcal.isotope import SPCalIsotope, REGEX_ISOTOPE
+from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
 
 logger = logging.getLogger(__name__)

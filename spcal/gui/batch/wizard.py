@@ -1,23 +1,37 @@
-from spcal.gui.modelviews.options import IsotopeOptionModel
-import json
 import datetime
+import json
 import logging
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import (
     SPCalDataFile,
     SPCalNuDataFile,
-    SPCalTOFWERKDataFile,
     SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
 )
+from spcal.gui.batch import (
+    FILE_PAGE_ID,
+    METHOD_PAGE_ID,
+    NU_PAGE_ID,
+    RUN_PAGE_ID,
+    TEXT_PAGE_ID,
+    TOFWERK_PAGE_ID,
+)
+from spcal.gui.batch.formatpages import (
+    BatchNuWizardPage,
+    BatchTextWizardPage,
+    BatchTOFWERKWizardPage,
+)
+from spcal.gui.batch.workers import NuBatchWorker, TextBatchWorker, TOFWERKBatchWorker
+from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
+from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsWidget
 from spcal.gui.docks.isotopeoptions import IsotopeOptionTable
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsWidget
 from spcal.gui.docks.processingoptions import SPCalProcessingOptionsWidget
-from spcal.gui.dialogs.calculator import CalculatorDialog, CalculatorExprList
-from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.io import (
     NU_FILE_FILTER,
     TEXT_FILE_FILTER,
@@ -25,6 +39,7 @@ from spcal.gui.io import (
     get_open_spcal_paths,
     most_recent_spcal_path,
 )
+from spcal.gui.modelviews.options import IsotopeOptionModel
 from spcal.io.nu import eventtime_from_info, is_nu_directory, is_nu_run_info_file
 from spcal.io.text import is_text_file
 from spcal.io.tofwerk import is_tofwerk_file
@@ -32,21 +47,6 @@ from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.siunits import mass_units, size_units
-
-from spcal.gui.batch import (
-    FILE_PAGE_ID,
-    TEXT_PAGE_ID,
-    NU_PAGE_ID,
-    TOFWERK_PAGE_ID,
-    METHOD_PAGE_ID,
-    RUN_PAGE_ID,
-)
-from spcal.gui.batch.formatpages import (
-    BatchNuWizardPage,
-    BatchTextWizardPage,
-    BatchTOFWERKWizardPage,
-)
-from spcal.gui.batch.workers import NuBatchWorker, TOFWERKBatchWorker, TextBatchWorker
 
 logger = logging.getLogger(__name__)
 

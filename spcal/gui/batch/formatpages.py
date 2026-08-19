@@ -7,12 +7,12 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.datafile import SPCalNuDataFile, SPCalTOFWERKDataFile
 from spcal.gui.batch import METHOD_PAGE_ID
 from spcal.gui.dialogs.io.text import TextImportDialog
+from spcal.gui.modelviews.isotope import IsotopeNameDelegate
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.gui.widgets.units import UnitsWidget
-from spcal.io.text import guess_text_parameters, guess_event_time
+from spcal.io.text import guess_event_time, guess_text_parameters
 from spcal.isotope import REGEX_ISOTOPE, SPCalIsotope
 from spcal.siunits import time_units
-from spcal.gui.modelviews.isotope import IsotopeNameDelegate
 
 
 class BatchNuWizardPage(QtWidgets.QWizardPage):

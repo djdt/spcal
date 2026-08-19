@@ -1,11 +1,11 @@
-from spcal.isotope import SPCalIsotope
 import numpy as np
 import pytest
 from PySide6 import QtCore
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
+from spcal.datafile import SPCalTextDataFile, SPCalTOFWERKDataFile
 from spcal.gui.mainwindow import SPCalMainWindow
+from spcal.isotope import SPCalIsotope
 
 
 def _click_through_mainwindow(qtbot: QtBot, win: SPCalMainWindow):

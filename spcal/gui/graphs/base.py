@@ -5,11 +5,10 @@ import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from spcal.gui.dialogs.imageexport import ImageExportDialog
+from spcal.gui.graphs.legends import FontScaledItemSample
 from spcal.gui.io import get_save_spcal_path, most_recent_spcal_path
 from spcal.gui.util import create_action
-
-from spcal.gui.graphs.legends import FontScaledItemSample
-from spcal.gui.dialogs.imageexport import ImageExportDialog
 
 
 def create_export_view(
@@ -94,8 +93,8 @@ class PlotCurveItemFix(
 ):  # pragma: no cover, temporary fix to pyqtgraph
     @typing.no_type_check
     def dataBounds(self, ax, frac=1.0, orthoRange=None):
-        import warnings
         import math
+        import warnings
 
         ## Need this to run as fast as possible.
         ## check cache first:

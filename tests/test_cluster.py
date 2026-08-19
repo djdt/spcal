@@ -1,7 +1,5 @@
-from spcal.isotope import ISOTOPE_TABLE
-from spcal.datafile import SPCalDataFile
 from typing import Callable
-from spcal.processing.method import SPCalProcessingMethod
+
 import numpy as np
 
 from spcal.cluster import (
@@ -10,6 +8,9 @@ from spcal.cluster import (
     prepare_data_for_clustering,
     prepare_results_for_clustering,
 )
+from spcal.datafile import SPCalDataFile
+from spcal.isotope import ISOTOPE_TABLE
+from spcal.processing.method import SPCalProcessingMethod
 
 
 def test_agglomerative_cluster():

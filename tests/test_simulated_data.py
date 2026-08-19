@@ -2,13 +2,13 @@
 https://doi.org/10.1039/D3JA00292F
 """
 
-from spcal.cluster import cluster_information, prepare_results_for_clustering
-
-from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
-from spcal.datafile import SPCalTextDataFile
-
 from pathlib import Path
+
 import numpy as np
+
+from spcal.cluster import cluster_information, prepare_results_for_clustering
+from spcal.datafile import SPCalTextDataFile
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
 
 

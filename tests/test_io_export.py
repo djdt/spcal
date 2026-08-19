@@ -1,7 +1,8 @@
 from pathlib import Path
-import numpy as np
 
+import numpy as np
 import pytest
+
 from spcal.datafile import SPCalTextDataFile
 from spcal.io import export
 from spcal.isotope import ISOTOPE_TABLE

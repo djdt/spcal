@@ -1,14 +1,16 @@
-from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
+from pathlib import Path
+
+from PySide6 import QtCore, QtWidgets
+from pytestqt.qtbot import QtBot
+
 from spcal.gui.dialogs.io.nu import NuImportDialog
 from spcal.gui.dialogs.io.text import TextImportDialog
-from pytestqt.qtbot import QtBot
-from PySide6 import QtWidgets, QtCore
-from pathlib import Path
+from spcal.gui.dialogs.io.tofwerk import TofwerkImportDialog
 from spcal.gui.io import (
-    is_spcal_session_path,
-    get_import_dialog_for_path,
-    most_recent_spcal_path,
     SessionImportWorker,
+    get_import_dialog_for_path,
+    is_spcal_session_path,
+    most_recent_spcal_path,
 )
 
 

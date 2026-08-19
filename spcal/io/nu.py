@@ -2,6 +2,7 @@
 # Copyright 2021 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import gzip
 import json
 import logging
 from pathlib import Path
@@ -9,8 +10,6 @@ from typing import BinaryIO, Callable, Generator
 
 import numpy as np
 import numpy.lib.recfunctions as rfn
-
-import gzip
 
 from spcal.calc import search_sorted_closest
 

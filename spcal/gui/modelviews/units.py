@@ -1,4 +1,3 @@
-from spcal.gui.util import create_action
 from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -11,6 +10,7 @@ from spcal.gui.modelviews import (
     UnitsRole,
     ValueErrorRole,
 )
+from spcal.gui.util import create_action
 
 
 class UnitsModel(QtCore.QAbstractTableModel):

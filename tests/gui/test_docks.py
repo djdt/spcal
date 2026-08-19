@@ -1,18 +1,18 @@
 from typing import Callable
-from PySide6 import QtCore, QtGui, QtWidgets
-import numpy as np
 
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.singleion import SingleIonDialog
-from spcal.gui.docks.datafile import SPCalDataFilesDock, DataFileInformationDialog
 from spcal.gui.docks.central import SPCalCentralWidget
+from spcal.gui.docks.datafile import DataFileInformationDialog, SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
 from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
-from spcal.gui.docks.processingoptions import SPCalProcessingOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
+from spcal.gui.docks.processingoptions import SPCalProcessingOptionsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
 from spcal.gui.modelviews import UnitsRole
 from spcal.gui.modelviews.values import ValueWidgetDelegate
@@ -24,12 +24,11 @@ from spcal.processing.options import (
     SPCalLimitOptions,
     SPCalProcessingOptions,
 )
-
 from spcal.siunits import (
-    number_concentration_units,
     mass_concentration_units,
-    signal_units,
     mass_units,
+    number_concentration_units,
+    signal_units,
     size_units,
 )
 

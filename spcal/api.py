@@ -1,5 +1,5 @@
-import urllib.request
 import json
+import urllib.request
 
 API_URL = "https://api.github.com/repos/djdt/spcal/"
 

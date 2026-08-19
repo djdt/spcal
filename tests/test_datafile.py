@@ -1,8 +1,9 @@
-import pytest
-from spcal import datafile
 from pathlib import Path
-import numpy as np
 
+import numpy as np
+import pytest
+
+from spcal import datafile
 from spcal.isotope import ISOTOPE_TABLE
 
 

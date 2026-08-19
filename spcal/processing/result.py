@@ -2,6 +2,7 @@
 
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
+import typing
 from pathlib import Path
 
 import numpy as np
@@ -10,8 +11,6 @@ from spcal import particle
 from spcal.detection import background_mask, detection_maxima
 from spcal.isotope import SPCalIsotopeBase
 from spcal.limit import SPCalLimit
-
-import typing
 
 if typing.TYPE_CHECKING:
     from spcal.processing.method import SPCalProcessingMethod

@@ -1,8 +1,8 @@
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
-from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
-from spcal.gui.modelviews.isotope import IsotopeComboBox
 
+from spcal.gui.modelviews.isotope import IsotopeComboBox
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.pratt import (
     BinaryFunction,
     Parser,

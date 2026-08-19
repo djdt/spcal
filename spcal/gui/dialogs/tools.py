@@ -4,27 +4,27 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
+from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
+from spcal.gui.widgets.units import UnitsWidget
+from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import SPCalIsotopeBase
+from spcal.npdb import db
 from spcal.particle import (
     nebulisation_efficiency_from_mass,
-    reference_particle_mass,
     nebulisation_efficiency_from_mass_concentration,
     nebulisation_efficiency_from_number_concentration,
+    reference_particle_mass,
 )
-from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
-from spcal.gui.widgets.values import ValueWidget
-from spcal.gui.widgets.units import UnitsWidget
-from spcal.npdb import db
 from spcal.processing.options import SPCalIsotopeOptions
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
     density_units,
-    mass_units,
-    mass_concentration_units,
-    number_concentration_units,
-    size_units,
-    response_units,
     flowrate_units,
+    mass_concentration_units,
+    mass_units,
+    number_concentration_units,
+    response_units,
+    size_units,
 )
 
 

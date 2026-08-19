@@ -1,6 +1,6 @@
-from spcal import isotope
-
 import pytest
+
+from spcal import isotope
 
 
 def test_isotope_base():

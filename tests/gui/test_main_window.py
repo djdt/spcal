@@ -1,13 +1,13 @@
-from PySide6 import QtWidgets, QtCore
 from pathlib import Path
 
+from PySide6 import QtCore, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile
-from spcal.processing.options import SPCalIsotopeOptions
+from spcal.datafile import SPCalTextDataFile, SPCalTOFWERKDataFile
+from spcal.gui.mainwindow import SPCalMainWindow
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
-from spcal.gui.mainwindow import SPCalMainWindow
+from spcal.processing.options import SPCalIsotopeOptions
 
 
 def test_main_window_method_dialogs(qtbot: QtBot, test_data_path: Path):

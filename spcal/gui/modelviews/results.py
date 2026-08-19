@@ -1,4 +1,3 @@
-from spcal.datafile import SPCalDataFile
 from typing import Any
 
 import bottleneck as bn
@@ -6,11 +5,12 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.calc import mode as modefn
+from spcal.datafile import SPCalDataFile
 from spcal.gui.modelviews import (
     BaseValueErrorRole,
     BaseValueRole,
-    IsotopeRole,
     DataFileRole,
+    IsotopeRole,
 )
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
@@ -20,9 +20,9 @@ from spcal.gui.util import create_action
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
+    mass_concentration_units,
     number_concentration_units,
     signal_units,
-    mass_concentration_units,
 )
 
 

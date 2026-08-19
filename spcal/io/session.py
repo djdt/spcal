@@ -2,21 +2,21 @@
 # Copyright 2023 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from datetime import datetime
-import numpy as np
-from typing import Any
-from pathlib import Path
-
 import json
+from datetime import datetime
 from importlib.metadata import version
+from pathlib import Path
+from typing import Any
+
+import numpy as np
 
 from spcal.datafile import (
     SPCalDataFile,
     SPCalNuDataFile,
-    SPCalTOFWERKDataFile,
     SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
 )
-from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing.filter import (
     SPCalClusterFilter,
     SPCalValueFilter,

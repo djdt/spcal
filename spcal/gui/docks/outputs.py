@@ -1,16 +1,17 @@
-from spcal.datafile import SPCalDataFile
-from PySide6 import QtCore, QtWidgets
 import logging
 
+from PySide6 import QtCore, QtWidgets
+
+from spcal.datafile import SPCalDataFile
 from spcal.gui.modelviews import (
     CurrentUnitRole,
-    UnitsRole,
-    IsotopeRole,
     DataFileRole,
+    IsotopeRole,
+    UnitsRole,
 )
+from spcal.gui.modelviews.results import ResultOutputModel, ResultOutputView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
-from spcal.isotope import SPCalIsotopeExpression, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing.result import SPCalProcessingResult
 from spcal.siunits import (
     mass_concentration_units,

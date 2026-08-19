@@ -1,16 +1,17 @@
-from typing import Callable
-from spcal.processing.options import SPCalIsotopeOptions
-import numpy as np
 from pathlib import Path
+from typing import Callable
+
+import numpy as np
 import pytest
 
-from spcal.limit import SPCalLimit
 from spcal import particle
-from spcal.processing import options
-from spcal.processing.method import SPCalProcessingMethod
-from spcal.datafile import SPCalTOFWERKDataFile, SPCalTextDataFile, SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalTextDataFile, SPCalTOFWERKDataFile
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
+from spcal.limit import SPCalLimit
+from spcal.processing import options
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
+from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import SPCalIsotopeOptions
 
 
 @pytest.fixture(scope="module")

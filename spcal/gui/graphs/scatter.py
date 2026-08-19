@@ -2,10 +2,8 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-
 from spcal.pratt import Parser, ParserException, Reducer, ReducerException
 from spcal.processing.result import SPCalProcessingResult
-
 
 # class PolygonSelectionItem(QtWidgets.QGraphicsWidget):
 #     def __init__(

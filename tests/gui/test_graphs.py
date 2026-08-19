@@ -1,24 +1,22 @@
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
-from typing import Callable
 from pathlib import Path
-from PySide6 import QtCore, QtGui, QtWidgets
-import numpy as np
+from typing import Callable
 
+import numpy as np
+from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
-
-from spcal.datafile import SPCalNuDataFile, SPCalDataFile
-from spcal.gui.graphs.base import SinglePlotGraphicsView, AxisRangeDialog
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
+from spcal.gui.graphs.base import AxisRangeDialog, SinglePlotGraphicsView
 from spcal.gui.graphs.calibration import CalibrationView
-from spcal.gui.graphs.items import BarChart, HoverableChartItem, PieChart
-from spcal.gui.graphs.particle import ExclusionRegion, ParticleView
-from spcal.gui.graphs.histogram import HistogramView
 from spcal.gui.graphs.composition import CompositionView
+from spcal.gui.graphs.histogram import HistogramView
+from spcal.gui.graphs.items import BarChart, HoverableChartItem, PieChart
+from spcal.gui.graphs.legends import HistogramItemSample, ParticleItemSample
+from spcal.gui.graphs.particle import ExclusionRegion, ParticleView
 from spcal.gui.graphs.scatter import ScatterView
 from spcal.gui.graphs.spectra import SpectraView
-from spcal.gui.graphs.legends import ParticleItemSample, HistogramItemSample
 from spcal.gui.graphs.util import text_for_mz
-
+from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
 from spcal.processing.options import SPCalIsotopeOptions

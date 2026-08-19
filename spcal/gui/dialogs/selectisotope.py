@@ -2,11 +2,10 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
-from spcal.isotope import SPCalIsotope
-from spcal.processing.method import SPCalProcessingMethod
-
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
+from spcal.isotope import SPCalIsotope
+from spcal.processing.method import SPCalProcessingMethod
 
 
 class ScreeningOptionsDialog(QtWidgets.QDialog):

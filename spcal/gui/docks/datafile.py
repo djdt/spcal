@@ -1,11 +1,12 @@
 import pickle
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.gui.util import create_action
 from spcal.datafile import SPCalDataFile
 from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
 from spcal.gui.modelviews import DataFileRole
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
+from spcal.gui.util import create_action
 from spcal.processing.method import SPCalProcessingMethod
 
 

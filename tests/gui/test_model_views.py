@@ -1,10 +1,12 @@
-from spcal.datafile import SPCalDataFile
 from typing import Callable
+
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
-from pytestqt.qtbot import QtBot
 from pytestqt.modeltest import ModelTester
+from pytestqt.qtbot import QtBot
 
+from spcal.calc import mode as modefn
+from spcal.datafile import SPCalDataFile
 from spcal.gui.modelviews import (
     BaseValueErrorRole,
     BaseValueRole,
@@ -21,30 +23,27 @@ from spcal.gui.modelviews.isotope import (
     IsotopeNameDelegate,
     IsotopeNameValidator,
 )
-from spcal.gui.modelviews.options import IsotopeOptionModel
 from spcal.gui.modelviews.massfraction import (
     MassFractionDelegate,
     MassFractionValidator,
 )
 from spcal.gui.modelviews.models import NumpyRecArrayTableModel, SearchColumnsProxyModel
+from spcal.gui.modelviews.options import IsotopeOptionModel
 from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
-from spcal.gui.modelviews.results import ResultOutputView, ResultOutputModel
+from spcal.gui.modelviews.results import ResultOutputModel, ResultOutputView
 from spcal.gui.modelviews.units import UnitsHeaderView, UnitsModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.widgets.values import ValueWidget
-
-from spcal.calc import mode as modefn
-
-from spcal.processing.options import SPCalIsotopeOptions
-from spcal.siunits import (
-    number_concentration_units,
-    mass_concentration_units,
-    signal_units,
-    size_units,
-    mass_units,
-)
 from spcal.isotope import ISOTOPE_TABLE
 from spcal.processing.method import SPCalProcessingMethod
+from spcal.processing.options import SPCalIsotopeOptions
+from spcal.siunits import (
+    mass_concentration_units,
+    mass_units,
+    number_concentration_units,
+    signal_units,
+    size_units,
+)
 
 
 def test_basic_table(qtbot: QtBot):

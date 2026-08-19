@@ -9,8 +9,8 @@ from spcal.io.nu import (
     is_nu_directory,
     is_nu_run_info_file,
     read_directory,
-    select_nu_signals,
     read_integ_binary,
+    select_nu_signals,
 )
 
 

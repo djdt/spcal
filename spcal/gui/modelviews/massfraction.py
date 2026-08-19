@@ -2,11 +2,10 @@ import re
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.npdb import db
-
+from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.objects import DoubleOrEmptyValidator
 from spcal.gui.widgets.values import ValueWidget
-from spcal.gui.modelviews.values import ValueWidgetDelegate
+from spcal.npdb import db
 
 
 class MassFractionValidator(DoubleOrEmptyValidator):

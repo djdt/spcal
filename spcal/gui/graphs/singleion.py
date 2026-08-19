@@ -3,8 +3,8 @@ import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 from spcal.gui.graphs.util import text_for_mz
+from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
 class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):

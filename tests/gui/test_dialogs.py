@@ -1,29 +1,30 @@
-from spcal.gui.dialogs.imageexport import ImageExportDialog
-from typing import Callable
-import numpy as np
 from pathlib import Path
+from typing import Callable
+
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
-from spcal.datafile import SPCalTOFWERKDataFile, SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
+from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import (
     BooleanItemWidget,
+    ClusterFilterItemWidget,
     FilterDialog,
     FilterItemWidget,
-    ClusterFilterItemWidget,
 )
 from spcal.gui.dialogs.graphoptions import (
     CompositionsOptionsDialog,
     HistogramOptionsDialog,
     SpectraOptionsDialog,
 )
-from spcal.gui.dialogs.export import ExportDialog
-from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
-from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
+from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.missingpaths import MissingPathsDialog
+from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
+from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.singleion import SingleIonDialog
@@ -32,7 +33,6 @@ from spcal.gui.dialogs.tools import (
     ParticleDatabaseDialog,
     TransportEfficiencyDialog,
 )
-
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
