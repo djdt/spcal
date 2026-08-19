@@ -1,10 +1,10 @@
 import typing
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
-from typing_extensions import ClassVar
 
 from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.graphs.legends import FontScaledItemSample
