@@ -15,7 +15,7 @@ def test_isotope():
     assert iso.symbol == "Tt"
 
     assert iso == isotope.SPCalIsotope("Tt", 1000, 123, 456)
-    assert not iso == isotope.SPCalIsotope("Tq", 1000, 123, 456)
+    assert iso != isotope.SPCalIsotope("Tq", 1000, 123, 456)
 
 
 def test_isotope_from_string():

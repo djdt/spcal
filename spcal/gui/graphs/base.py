@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pyqtgraph
 from PySide6 import QtCore, QtGui, QtWidgets
+from typing_extensions import ClassVar
 
 from spcal.gui.dialogs.imageexport import ImageExportDialog
 from spcal.gui.graphs.legends import FontScaledItemSample
@@ -424,7 +425,7 @@ class SinglePlotItem(pyqtgraph.PlotItem):
 
 
 class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
-    UNIT_LABELS = {
+    UNIT_LABELS: ClassVar = {
         "signal": ("Signal (cts)", None, 1.0),
         "mass": ("Mass", "g", 1e3),  # kg -> g
         "size": ("Size", "m", 1.0),

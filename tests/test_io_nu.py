@@ -29,7 +29,7 @@ def test_is_nu_dir(test_data_path: Path):
 
 def test_io_nu_import(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
-    masses, signals, times, info = read_directory(path, cycle=1, segment=1)
+    masses, signals, _times, info = read_directory(path, cycle=1, segment=1)
     assert masses.size == 127
     assert signals.shape == (40, 127)
     assert np.isclose(masses[0], 80.90475)
@@ -44,7 +44,7 @@ def test_io_nu_import(test_data_path: Path):
 
 def test_io_nu_import_compressed(test_data_path: Path):
     path = test_data_path.joinpath("nu/compressed")
-    masses, signals, times, info = read_directory(path)
+    masses, signals, _times, info = read_directory(path)
     assert masses.size == 29
     assert signals.shape == (51725, 29)
 
@@ -70,14 +70,14 @@ def test_io_nu_import_integ_limits(test_data_path: Path):
     assert signals.shape == (20, 127)
 
     with pytest.raises(ValueError):
-        masses, signals, times, info = read_directory(
+        masses, signals, times, _info = read_directory(
             path, first_integ_file=1, last_integ_file=1, cycle=1, segment=1
         )
 
 
 def test_io_nu_import_integ_missing(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
-    masses, signals, times, info = read_directory(path, cycle=1, segment=1)
+    _masses, signals, _times, _info = read_directory(path, cycle=1, segment=1)
     assert signals.shape == (40, 127)
     assert np.all(~np.isnan(signals[:29]))
     assert np.all(np.isnan(signals[29]))
@@ -101,7 +101,7 @@ def test_io_nu_import_autoblank(test_data_path: Path, tmp_path: Path):
     )
     assert np.all(~np.isnan(signals[32204:49999, 0:14]))
 
-    masses, signals, times, info = read_directory(
+    _masses, signals, _times, _info = read_directory(
         tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="all"
     )
     assert np.all(np.isnan(signals[32204:49999, 0:14]))

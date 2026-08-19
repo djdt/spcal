@@ -34,9 +34,7 @@ def is_spcal_path(path: str | Path) -> bool:  # pragma: no cover, tested in io m
 
 def is_spcal_session_path(path: str | Path) -> bool:
     path = Path(path)
-    if path.suffixes == [".spcal", ".json"]:
-        return True
-    return False
+    return path.suffixes == [".spcal", ".json"]
 
 
 def most_recent_spcal_path() -> Path | None:

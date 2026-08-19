@@ -25,9 +25,7 @@ def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
             "196.967_-_seg_Full_mass_spectrum_att_1",
         ]:
             return False
-        if data_file.event_time != 1e-5:
-            return False
-        return True
+        return data_file.event_time == 1e-05
 
     path = test_data_path.joinpath("text/nu_export_auag.csv")
     dlg = TextImportDialog(path)
@@ -76,13 +74,11 @@ def test_import_dialog_text_nu(test_data_path: Path, qtbot: QtBot):
 
 def test_import_dialog_text_tofwerk(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalTOFWERKDataFile):
-        if not len(data_file.isotopes) == 1:
+        if len(data_file.isotopes) != 1:
             return False
-        if not str(data_file.isotopes[0]) == "197Au":
+        if str(data_file.isotopes[0]) != "197Au":
             return False
-        if data_file.num_events != 999:
-            return False
-        return True
+        return data_file.num_events == 999
 
     path = test_data_path.joinpath("text/tofwerk_export_au.csv")
     dlg = TextImportDialog(path)
@@ -119,11 +115,9 @@ def test_import_dialog_text_thermo_new_icap(test_data_path: Path, qtbot: QtBot):
     assert np.isclose(dlg.event_time.baseValue(), 50e-6)  # type: ignore
 
     def check_data(data_file: SPCalTOFWERKDataFile):
-        if not len(data_file.isotopes) == 1:
+        if len(data_file.isotopes) != 1:
             return False
-        if not str(data_file.isotopes[0]) == "80Se":
-            return False
-        return True
+        return str(data_file.isotopes[0]) == "80Se"
 
     with qtbot.wait_signal(dlg.dataImported, check_params_cb=check_data, timeout=100):
         dlg.accept()
@@ -131,18 +125,15 @@ def test_import_dialog_text_thermo_new_icap(test_data_path: Path, qtbot: QtBot):
 
 def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalNuDataFile):
-        if not len(data_file.isotopes) == 188:
+        if len(data_file.isotopes) != 188:
             return False
-        if not str(data_file.selected_isotopes[0]) == "107Ag":
+        if str(data_file.selected_isotopes[0]) != "107Ag":
             return False
-        if not str(data_file.selected_isotopes[1]) == "197Au":
+        if str(data_file.selected_isotopes[1]) != "197Au":
             return False
         if data_file.num_events != 40:
             return False
-        if not np.isclose(data_file.event_time, 9.824e-5):
-            return False
-
-        return True
+        return np.isclose(data_file.event_time, 9.824e-05)
 
     path = test_data_path.joinpath("nu/normal")
     dlg = NuImportDialog(path)
@@ -202,9 +193,9 @@ def test_import_dialog_nu_screening(
 
 def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
     def check_data(data_file: SPCalTOFWERKDataFile):
-        if not str(data_file.selected_isotopes[0]) == "107Ag":
+        if str(data_file.selected_isotopes[0]) != "107Ag":
             return False
-        if not str(data_file.selected_isotopes[1]) == "197Au":
+        if str(data_file.selected_isotopes[1]) != "197Au":
             return False
         if data_file.num_events != 4895:
             return False

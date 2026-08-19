@@ -14,7 +14,7 @@ def is_tofwerk_file(path: Path) -> bool:
     """Checks if the file is a .h5 file."""
     if not path.exists():
         return False
-    if not path.suffix.lower() == ".h5":
+    if path.suffix.lower() != ".h5":
         return False
     # Check for TofDAQ Version?
     return True

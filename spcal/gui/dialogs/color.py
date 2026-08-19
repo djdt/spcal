@@ -15,7 +15,7 @@ def color_button(color: QtGui.QColor) -> QtWidgets.QToolButton:
 
     def set_color():
         effect = button.graphicsEffect()
-        if not isinstance(effect, QtWidgets.QGraphicsColorizeEffect):
+        if effect is None or not isinstance(effect, QtWidgets.QGraphicsColorizeEffect):
             raise ValueError("effect has no color")
         color = QtWidgets.QColorDialog.getColor(effect.color())
         if color.isValid():

@@ -20,7 +20,7 @@ from spcal.isotope import (
     SPCalIsotopeBase,
     SPCalIsotopeExpression,
 )
-from spcal.lib.spcalext import spectra as ext
+from spcal.lib.spcalext import spectra as spectra_ext
 from spcal.pratt import Reducer, ReducerException
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class SPCalDataFile:
         elif isinstance(isotope, SPCalIsotopeExpression):
             signals = self.dataForExpression(isotope)
         else:  # pragma: no cover
-            raise ValueError(f"cannot access data for isotope type {type(isotope)}")
+            raise TypeError(f"cannot access data for isotope type {type(isotope)}")
 
         if len(self.exclusion_regions) > 0:
             idx = np.searchsorted(self.times, self.exclusion_regions)
@@ -161,7 +161,7 @@ class SPCalDataFile:
         Returns:
             array of spectra shape (N, masses)
         """
-        spectra = ext.spectra(self.signals, regions)
+        spectra = spectra_ext.spectra(self.signals, regions)
         return spectra
 
     def information(self) -> dict[str, dict[str, str]]:
@@ -228,7 +228,7 @@ class SPCalTextDataFile(SPCalDataFile):
 
     @property
     def masses(self) -> np.ndarray:
-        return np.array([iso.mass for iso in self.isotope_table.keys()])
+        return np.array([iso.mass for iso in self.isotope_table])
 
     @property
     def signals(self) -> np.ndarray:

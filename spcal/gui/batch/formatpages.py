@@ -146,10 +146,7 @@ class BatchNuWizardPage(QtWidgets.QWizardPage):
                     QtWidgets.QMessageBox.StandardButton.Ignore
                     | QtWidgets.QMessageBox.StandardButton.Cancel,
                 )
-                if button == QtWidgets.QMessageBox.StandardButton.Ignore:
-                    return True
-                else:
-                    return False
+                return button == QtWidgets.QMessageBox.StandardButton.Ignore
         return True
 
 
@@ -360,9 +357,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
             and self.event_time.baseValue() is None
         ):
             return False
-        if len(self.selectedIsotopes()) == 0:
-            return False
-        return True
+        return len(self.selectedIsotopes()) != 0
 
     def validatePage(self):
         if self.override_event_time.isChecked():
@@ -403,10 +398,7 @@ class BatchTextWizardPage(QtWidgets.QWizardPage):
                     QtWidgets.QMessageBox.StandardButton.Ignore
                     | QtWidgets.QMessageBox.StandardButton.Cancel,
                 )
-                if button == QtWidgets.QMessageBox.StandardButton.Ignore:
-                    return True
-                else:
-                    return False
+                return button == QtWidgets.QMessageBox.StandardButton.Ignore
         return True
 
     isotopesProp = QtCore.Property(list, selectedIsotopes)

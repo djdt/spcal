@@ -31,7 +31,7 @@ class CalibrationView(SinglePlotGraphicsView):
             return
 
         weights = weights_from_weighting(x, weighting)
-        m, b, r2, err = weighted_linreg(x, y, w=weights)
+        m, b, r2, _err = weighted_linreg(x, y, w=weights)
         x0, x1 = x.min(), x.max()
 
         line = pyqtgraph.PlotCurveItem([x0, x1], [m * x0 + b, m * x1 + b], pen=pen)

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 import bottleneck as bn
 import numpy as np
@@ -27,7 +27,7 @@ from spcal.siunits import (
 
 
 class ResultOutputModel(UnitsModel):
-    COLUMN_LABELS = {
+    COLUMN_LABELS: ClassVar = {
         0: "Number",
         1: "Concentration",
         2: "Ionic Background",
@@ -37,7 +37,7 @@ class ResultOutputModel(UnitsModel):
         6: "Median",
         7: "Mode",
     }
-    COLUMN_TOOLTIPS = {
+    COLUMN_TOOLTIPS: ClassVar = {
         0: "Number of detected particles",
         1: "Particle number or mass concentration",
         2: "Mean concentration of background regions",
@@ -235,7 +235,7 @@ class ResultOutputView(BasicTableView):
 
     def setModel(self, model: QtCore.QAbstractItemModel | None):
         if not isinstance(model, ResultOutputModel):
-            raise ValueError("ResultOutputView requires a ResultOutputModel")
+            raise TypeError("ResultOutputView requires a ResultOutputModel")
         super().setModel(model)
         # hook up signals
         self.selectionModel().currentChanged.connect(self.onCurrentChanged)
@@ -257,7 +257,7 @@ class ResultOutputView(BasicTableView):
         self.currentRowChanged.emit(index.row())
 
     def selectedRows(self) -> list[int]:
-        return sorted(set(idx.row() for idx in self.selectedIndexes()))
+        return sorted({idx.row() for idx in self.selectedIndexes()})
 
     def setSelectedRows(self, rows: list[int]):
         selection = QtCore.QItemSelection()
@@ -278,10 +278,10 @@ class ResultOutputView(BasicTableView):
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         return sorted(
-            set(
+            {
                 self.model().index(row, 0).data(IsotopeRole)
                 for row in self.selectedRows()
-            )
+            }
         )
 
     def setSelectedIsotopes(self, isotopes: list[SPCalIsotopeBase]):

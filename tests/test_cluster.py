@@ -78,7 +78,7 @@ def test_preprare_results_for_clustering(
     )
     results = default_method.processDataFile(df)
 
-    a = results[list(results.keys())[0]]
+    a = results[next(iter(results.keys()))]
     b = results[list(results.keys())[1]]
 
     a.peak_indicies = np.array([0, 1, 2, 2, 5, 6, 8, 9, 10, 10])

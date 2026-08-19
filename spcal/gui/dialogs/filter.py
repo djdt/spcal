@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from PySide6 import QtCore, QtWidgets
 
 from spcal.gui.util import create_action
@@ -14,7 +16,7 @@ from spcal.siunits import mass_units, signal_units, size_units
 class FilterItemWidget(QtWidgets.QWidget):
     closeRequested = QtCore.Signal(QtWidgets.QWidget)
 
-    KEY_LABELS = {
+    KEY_LABELS: ClassVar = {
         "signal": "Intensity",
         "mass": "Mass",
         "size": "Size",
@@ -394,10 +396,9 @@ class FilterDialog(QtWidgets.QDialog):
             if isinstance(widget, FilterItemWidget):
                 if widget.value.baseValue() is not None:
                     group.append(widget.asFilter())
-            elif isinstance(widget, BooleanItemWidget):
-                if len(group) > 0:
-                    filters.append(group)
-                    group = []
+            elif isinstance(widget, BooleanItemWidget) and len(group) > 0:
+                filters.append(group)
+                group = []
         filters.append(group)
 
         cluster_filters = []

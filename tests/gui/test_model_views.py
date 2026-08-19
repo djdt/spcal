@@ -597,7 +597,7 @@ def test_results_output_view(
 
     results = default_method.processDataFile(df)
 
-    for isotope, _ in results.items():
+    for isotope in results:
         default_method.isotope_options[isotope] = SPCalIsotopeOptions(1.0, 1.0, 1.0)
 
     model.beginResetModel()
@@ -764,7 +764,7 @@ def test_results_output_model(
         ) == mass_units
         assert model.data(model.index(1, i), BaseValueRole) is None
 
-    calib = list(results.values())[0]
+    calib = next(iter(results.values()))
 
     assert model.data(model.index(0, 1), BaseValueRole) == calib.mass_concentration
     assert model.data(model.index(0, 4), BaseValueRole) == calib.calibrateTo(

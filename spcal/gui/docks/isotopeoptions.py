@@ -48,7 +48,7 @@ class IsotopeOptionTable(BasicTableView):
 
     def setModel(self, model: QtCore.QAbstractItemModel | None):
         if not isinstance(model, IsotopeOptionModel):
-            raise ValueError("IsotopeOptionTable requires an IsotopeOptionModel")
+            raise TypeError("IsotopeOptionTable requires an IsotopeOptionModel")
         super().setModel(model)
         for col, name in IsotopeOptionModel.COLUMN_LABELS.items():
             if name == "Mass Fraction":

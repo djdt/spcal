@@ -24,7 +24,7 @@ class DataFileInformationDialog(QtWidgets.QDialog):
         self.tree = QtWidgets.QTreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.setColumnCount(2)
-        for group_key in info.keys():
+        for group_key in info:
             group_item = QtWidgets.QTreeWidgetItem([group_key])
 
             for key, val in info[group_key].items():
@@ -189,7 +189,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             return None
 
     def selectedDataFiles(self) -> list[SPCalDataFile]:
-        return list(set(idx.data(DataFileRole) for idx in self.list.selectedIndexes()))
+        return list({idx.data(DataFileRole) for idx in self.list.selectedIndexes()})
 
     def dialogEditIsotopes(self, index: QtCore.QModelIndex):
         if self.screening_method is None:
@@ -222,9 +222,9 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         self.setDataFiles([])
 
     def copyIsotopes(self):
-        isotopes = set(
+        isotopes = {
             iso for df in self.selectedDataFiles() for iso in df.selected_isotopes
-        )
+        }
         mime = QtCore.QMimeData()
         mime.setText(",".join(str(iso) for iso in isotopes))
         mime.setData("application/x-spcal-isotopes", pickle.dumps(isotopes))

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, ClassVar
 
 from PySide6 import QtCore
 
@@ -21,7 +21,7 @@ from spcal.siunits import (
 
 
 class IsotopeOptionModel(UnitsModel):
-    COLUMN_LABELS = {
+    COLUMN_LABELS: ClassVar = {
         0: "Density",
         1: "Response",
         2: "Mass Fraction",
@@ -29,7 +29,7 @@ class IsotopeOptionModel(UnitsModel):
         4: "Concentration",
         5: "Mass Response",
     }
-    COLUMN_TOOLTIPS = {
+    COLUMN_TOOLTIPS: ClassVar = {
         0: "Particle density, meaure externally or lookup in the density database",
         1: "The signal produced per mass of the measured element",
         2: "The fraction of measured element in a particle, can be entered as a molecular formula",
@@ -90,12 +90,11 @@ class IsotopeOptionModel(UnitsModel):
         orientation: QtCore.Qt.Orientation,
         role: int = QtCore.Qt.ItemDataRole.DisplayRole,
     ) -> Any:
-        if orientation == QtCore.Qt.Orientation.Vertical:
-            if role in [
-                QtCore.Qt.ItemDataRole.DisplayRole,
-                QtCore.Qt.ItemDataRole.EditRole,
-            ]:
-                return str(list(self.isotope_options.keys())[section])
+        if orientation == QtCore.Qt.Orientation.Vertical and role in [
+            QtCore.Qt.ItemDataRole.DisplayRole,
+            QtCore.Qt.ItemDataRole.EditRole,
+        ]:
+            return str(list(self.isotope_options.keys())[section])
         return super().headerData(section, orientation, role)
 
     def data(

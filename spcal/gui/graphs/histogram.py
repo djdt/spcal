@@ -119,7 +119,7 @@ class HistogramView(SinglePlotGraphicsView):
         brushes: list[QtGui.QBrush] | None = None,
         labels: list[str] | None = None,
     ):
-        label, unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
+        label, _unit, mult = SinglePlotGraphicsView.UNIT_LABELS[key]
         # Limit maximum / minimum number of bins
         values = [result.calibrated(key) * mult for result in results]
 

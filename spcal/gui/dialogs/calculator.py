@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -80,17 +82,21 @@ class CalculatorFormula(QtWidgets.QTextEdit):
             raise ValueError("no completer, did you not set it?")
 
         popup = self.completer.popup()
-        if popup is not None and popup.isVisible():
-            if event.key() in [  # Ignore keys when popup is present
+        if (
+            popup is not None
+            and popup.isVisible()
+            and event.key()
+            in [  # Ignore keys when popup is present
                 QtCore.Qt.Key.Key_Enter,
                 QtCore.Qt.Key.Key_Return,
                 QtCore.Qt.Key.Key_Escape,
                 QtCore.Qt.Key.Key_Tab,
                 QtCore.Qt.Key.Key_Down,
                 QtCore.Qt.Key.Key_Up,
-            ]:
-                event.ignore()
-                return
+            ]
+        ):
+            event.ignore()
+            return
 
         if event.key() in [QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return]:
             if self.hasAcceptableInput():
@@ -161,7 +167,7 @@ class CalculatorExprList(QtWidgets.QListWidget):
 class CalculatorDialog(QtWidgets.QDialog):
     """Calculator for element data operations."""
 
-    functions = {
+    functions: ClassVar = {
         "abs": (
             (UnaryFunction("abs"), "(<x>)", "The absolute value of <x>."),
             (np.abs, 1),
@@ -232,8 +238,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         )
         self.formula.setCompleter(
             QtWidgets.QCompleter(
-                list(self.isotope_table.keys())
-                + [k + "(" for k in self.functions.keys()]
+                list(self.isotope_table.keys()) + [k + "(" for k in self.functions]
             )
         )
         self.formula.requestSubmit.connect(self.reformAndAddExpression)
@@ -300,11 +305,9 @@ class CalculatorDialog(QtWidgets.QDialog):
         if name == "":
             return True
 
-        if any(name == x for x in self.isotope_table.keys()):
+        if any(name == x for x in self.isotope_table):
             return False
-        if any(name == x.name for x in self.expressions.expressions()):
-            return False
-        return True
+        return not any(name == x.name for x in self.expressions.expressions())
 
     def completeChanged(self):
         self.button_add.setEnabled(self.isComplete())

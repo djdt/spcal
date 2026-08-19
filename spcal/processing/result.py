@@ -21,7 +21,7 @@ class SPCalProcessingResult:
         self,
         isotope: SPCalIsotopeBase,
         limit: SPCalLimit,
-        method: SPCalProcessingMethod,
+        method: "SPCalProcessingMethod",
         event_time: float,
         data_file_path: Path,
         signals: np.ndarray,

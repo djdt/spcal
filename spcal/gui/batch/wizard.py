@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -88,12 +89,12 @@ class BatchFileListDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class BatchFilesWizardPage(QtWidgets.QWizardPage):
-    FORMAT_FILTERS = {
+    FORMAT_FILTERS: ClassVar = {
         "Text": TEXT_FILE_FILTER,
         "Nu": NU_FILE_FILTER,
         "TOFWERK": TOFWERK_FILE_FILTER,
     }
-    FORMAT_FUNCTIONS = {
+    FORMAT_FUNCTIONS: ClassVar = {
         "Text": is_text_file,
         "Nu": is_nu_directory,
         "TOFWERK": is_tofwerk_file,
@@ -300,10 +301,7 @@ class BatchFilesWizardPage(QtWidgets.QWizardPage):
                         QtWidgets.QMessageBox.StandardButton.Ignore
                         | QtWidgets.QMessageBox.StandardButton.Cancel,
                     )
-                    if button == QtWidgets.QMessageBox.StandardButton.Ignore:
-                        return True
-                    else:
-                        return False
+                    return button == QtWidgets.QMessageBox.StandardButton.Ignore
         return True
 
     def nextId(self) -> int:

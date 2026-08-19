@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from collections.abc import Callable
+from typing import ClassVar
 
 import numpy as np
 
@@ -62,7 +63,7 @@ class SPCalValueFilter(SPCalResultFilter):
     #     for ufunc in [np.greater, np.greater_equal, np.equal, np.less_equal, np.less]
     # }
 
-    OPERATION_LABELS = {
+    OPERATION_LABELS: ClassVar = {
         ">": np.greater,
         "<": np.less,
         ">=": np.greater_equal,
@@ -80,7 +81,9 @@ class SPCalValueFilter(SPCalResultFilter):
     ):
         if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"invalid key {key}")
-        if operation not in SPCalValueFilter.OPERATION_LABELS.values():  # pragma: no cover
+        if (
+            operation not in SPCalValueFilter.OPERATION_LABELS.values()
+        ):  # pragma: no cover
             raise ValueError(f"invalid operation {operation}")
 
         super().__init__()

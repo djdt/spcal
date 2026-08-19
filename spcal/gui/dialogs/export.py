@@ -119,9 +119,7 @@ class ExportDialog(QtWidgets.QDialog):
         ).setEnabled(self.isComplete())
 
     def isComplete(self) -> bool:
-        if not self.lineedit_path.hasAcceptableInput():
-            return False
-        return True
+        return self.lineedit_path.hasAcceptableInput()
 
     def togglePressedItem(self, item: QtWidgets.QListWidgetItem):
         state = QtCore.Qt.CheckState.Checked

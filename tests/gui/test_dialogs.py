@@ -84,13 +84,11 @@ def test_calculator_dialog(qtbot: QtBot):
     dlg.formula.setText("107Ag / 197Au")
 
     def check_expressions(exprs: list[SPCalIsotopeExpression]) -> bool:
-        if not len(exprs) == 2:
+        if len(exprs) != 2:
             return False
-        if not exprs[0].name == "(+ 10B 107Ag)":
+        if exprs[0].name != "(+ 10B 107Ag)":
             return False
-        if not exprs[1].name == "(/ 107Ag 197Au)":
-            return False
-        return True
+        return exprs[1].name == "(/ 107Ag 197Au)"
 
     with qtbot.waitSignal(
         dlg.expressionsChanged, check_params_cb=check_expressions, timeout=100
@@ -239,9 +237,7 @@ def test_filter_dialog_empty(qtbot: QtBot):
             return False
         if len(cluster_filters[0]) != 1:
             return False
-        if cluster_filters[0][0].index != 1:
-            return False
-        return True
+        return cluster_filters[0][0].index == 1
 
     with qtbot.wait_signal(
         dlg.filtersChanged, check_params_cb=check_filters, timeout=100
@@ -311,9 +307,7 @@ def test_filter_dialog_filters(qtbot: QtBot):
             return False
         if len(cluster_filters) != 1 or len(cluster_filters[0]) != 1:
             return False
-        if cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7:
-            return False
-        return True
+        return not (cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7)
 
     with qtbot.wait_signal(
         dlg.filtersChanged, check_params_cb=check_filters, timeout=100
@@ -386,9 +380,7 @@ def test_graph_histogram_options_dialog(qtbot: QtBot):
             return False
         if widths["mass"] != 1e-19:
             return False
-        if widths["size"] != 1e-9:
-            return False
-        return True
+        return widths["size"] == 1e-09
 
     with qtbot.wait_signal(
         dlg.optionsChanged,
@@ -734,9 +726,7 @@ def test_response_dialog(
             return False
         if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], 1e6, rtol=0.05):
             return False
-        if not np.isclose(responses[ISOTOPE_TABLE[("Cu", 63)]], 1e6, rtol=0.05):
-            return False
-        return True
+        return np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], 1000000.0, rtol=0.05)
 
     with qtbot.wait_signal(
         dlg.responsesSelected, timeout=100, check_params_cb=check_response
@@ -805,9 +795,7 @@ def test_response_dialog_save(
         if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], slope):
             return False
         slope = df[ISOTOPE_TABLE[("Cu", 63)]].mean() * 1e9
-        if not np.isclose(responses[ISOTOPE_TABLE[("Cu", 63)]], slope):
-            return False
-        return True
+        return np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], slope)
 
     with qtbot.wait_signal(
         dlg.responsesSelected, check_params_cb=check_responses, timeout=100
@@ -863,9 +851,7 @@ def test_mass_fraction_calculator(qtbot: QtBot):
             return False
         if ratios[1][0] != "Cl":
             return False
-        if not np.isclose(ratios[1][1], 0.3966, atol=1e-4):
-            return False
-        return True
+        return np.isclose(ratios[1][1], 0.3966, atol=0.0001)
 
     with qtbot.wait_signals(
         [dlg.ratiosSelected, dlg.molarMassSelected],

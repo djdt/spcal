@@ -2,9 +2,9 @@
 # Copyright 2022 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-
 import logging
 from statistics import NormalDist
+from typing import ClassVar
 
 import bottleneck as bn
 import numpy as np
@@ -148,7 +148,7 @@ class SPCalGaussianLimit(SPCalLimit):
 
 
 class SPCalPoissonLimit(SPCalLimit):
-    FUNCTIONS = {
+    FUNCTIONS: ClassVar = {
         "currie": poisson.currie,
         "formula a": poisson.formula_a,
         "formula c": poisson.formula_c,
@@ -168,7 +168,7 @@ class SPCalPoissonLimit(SPCalLimit):
         window_size: int = 0,
         max_iterations: int = 1,
     ):
-        if function not in SPCalPoissonLimit.FUNCTIONS.keys():  # pragma: no cover
+        if function not in SPCalPoissonLimit.FUNCTIONS:  # pragma: no cover
             raise ValueError(
                 "fomula must be one of", ", ".join(SPCalPoissonLimit.FUNCTIONS.keys())
             )

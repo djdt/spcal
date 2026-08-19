@@ -6,8 +6,10 @@ import numpy.lib.recfunctions as rfn
 
 
 def make_elements(
-    path: str, delimiter: str = "\t", drop_names: list[str] = ["MP", "BP", "Ref"]
+    path: str, delimiter: str = "\t", drop_names: list[str] | None = None
 ):
+    if drop_names is None:
+        drop_names = ["MP", "BP", "Ref"]
     elements = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -29,7 +31,9 @@ def make_elements(
     return rfn.drop_fields(elements, drop_names)
 
 
-def make_isotopes(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
+def make_isotopes(path: str, delimiter: str = "\t", drop_names: list[str] | None = None):
+    if drop_names is None:
+        drop_names = ["Ref"]
     isotopes = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -48,7 +52,9 @@ def make_isotopes(path: str, delimiter: str = "\t", drop_names: list[str] = ["Re
     return rfn.drop_fields(isotopes, drop_names)
 
 
-def make_inorganic(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
+def make_inorganic(path: str, delimiter: str = "\t", drop_names: list[str] | None = None):
+    if drop_names is None:
+        drop_names = ["Ref"]
     inorganic = np.genfromtxt(
         path,
         delimiter=delimiter,
@@ -65,7 +71,9 @@ def make_inorganic(path: str, delimiter: str = "\t", drop_names: list[str] = ["R
     return rfn.drop_fields(inorganic, drop_names)
 
 
-def make_polymer(path: str, delimiter: str = "\t", drop_names: list[str] = ["Ref"]):
+def make_polymer(path: str, delimiter: str = "\t", drop_names: list[str] | None = None):
+    if drop_names is None:
+        drop_names = ["Ref"]
     polymer = np.genfromtxt(
         path,
         delimiter=delimiter,

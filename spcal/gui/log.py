@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -25,7 +26,7 @@ class LoggingTextEdit(QtWidgets.QPlainTextEdit):
     Log is read only and levels are colored.
     """
 
-    COLORS = {
+    COLORS: ClassVar = {
         logging.DEBUG: "black",
         logging.INFO: "blue",
         logging.WARNING: "orange",

@@ -7,11 +7,13 @@ from pathlib import Path
 
 
 def collect_icons(path: Path) -> set[str]:
-    regex_icon = "(?:(?:fromTheme\\(|create_action\\()|#\\sicon:)\\s*['\"]([a-z\\-]+)['\"]"
+    regex_icon = (
+        "(?:(?:fromTheme\\(|create_action\\()|#\\sicon:)\\s*['\"]([a-z\\-]+)['\"]"
+    )
     icons = set()
 
-    for path in sorted(path.glob("**/*.py")):
-        with path.open() as fp:
+    for file in sorted(path.glob("**/*.py")):
+        with file.open() as fp:
             icons.update(re.findall(regex_icon, fp.read()))
     return icons
 
@@ -64,7 +66,7 @@ def write_qrc(
 def build_icons_resource(qrc: Path, output: Path, rcc: str):
     cmd = [rcc, "-g", "python", "-o", str(output), str(qrc)]
     print(f"running {' '.join(cmd[:-1])} <icons.qrc>")
-    proc = subprocess.run(cmd, capture_output=True)
+    proc = subprocess.run(cmd, capture_output=True, check=False)
     proc.check_returncode()
 
 
@@ -100,6 +102,13 @@ if __name__ == "__main__":
     ):
         index, qrc = Path(index_tmp.name), Path(qrc_tmp.name)
         write_index_theme(index, args.sizes, theme_name=args.theme_name)
-        write_qrc(qrc, index, args.icons, list(icon_names), args.sizes, theme_name=args.theme_name)
+        write_qrc(
+            qrc,
+            index,
+            args.icons,
+            list(icon_names),
+            args.sizes,
+            theme_name=args.theme_name,
+        )
 
         build_icons_resource(qrc, args.output, args.rcc)

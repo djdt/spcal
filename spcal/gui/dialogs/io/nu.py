@@ -287,9 +287,7 @@ class NuImportDialog(ImportDialogBase):
     def isComplete(self) -> bool:
         if self.first_integ.value() >= self.last_integ.value():
             return False
-        if len(self.table.selectedIsotopes()) == 0:
-            return False
-        return True
+        return len(self.table.selectedIsotopes()) != 0
 
     def setControlsEnabled(self, enabled: bool):
         button = self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok)

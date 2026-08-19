@@ -94,9 +94,9 @@ def test_equations():
     )
 
     # Test that particle mass is recoverable from same reference mass
-    kws = dict(
-        signal=4.3, response_factor=7.8, mass_fraction=0.91, dwell=0.87, flow_rate=0.65
-    )
+    kws = {
+        "signal": 4.3, "response_factor": 7.8, "mass_fraction": 0.91, "dwell": 0.87, "flow_rate": 0.65
+    }
     assert np.isclose(
         particle.particle_mass(
             efficiency=particle.nebulisation_efficiency_from_mass(mass=5.6, **kws),

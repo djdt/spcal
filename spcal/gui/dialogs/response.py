@@ -347,7 +347,7 @@ class ResponseDialog(QtWidgets.QDialog):
         responses = {}
         concs = self.concentrations()
         intensities = self.intensities()
-        for isotope in concs.keys():
+        for isotope in concs:
             response, _, _, _ = self.calibrationResult(
                 concs[isotope], intensities[isotope]
             )
@@ -398,7 +398,7 @@ class ResponseDialog(QtWidgets.QDialog):
         with path.open("w") as fp:
             fp.write(f"#SPCal Calibration {version('spcal')}\n")
             fp.write("Isotope,Slope,Intercept,r2,Error\n")
-            for isotope in concs.keys():
+            for isotope in concs:
                 m, b, r2, err = self.calibrationResult(
                     concs[isotope], intensities[isotope]
                 )

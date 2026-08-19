@@ -254,7 +254,7 @@ class Parser:
     null_token = "[\\[\\]\\(\\)\\,]|if|then|else"
     number_token = "\\d*\\.?\\d+(?:[eE][+\\-]?\\d+)?|nan"
     operator_token = "[+\\-\\*/^!=<>?:]+"
-    base_tokens = "|".join([function_token, null_token, number_token, operator_token])
+    base_tokens = f"{function_token}|{null_token}|{number_token}|{operator_token}"
 
     def __init__(self, variables: list[str] | None = None):
         self.regexp_number = re.compile(Parser.number_token)

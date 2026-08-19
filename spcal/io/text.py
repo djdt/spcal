@@ -18,9 +18,7 @@ def is_text_file(path: Path) -> bool:
     """Checks path exists and is a '.csv', '.txt' or '.text'."""
     if path.suffix.lower() not in [".csv", ".txt", ".text"]:
         return False
-    if path.is_dir() or not path.exists():
-        return False
-    return True
+    return not (path.is_dir() or not path.exists())
 
 
 def guess_event_time(

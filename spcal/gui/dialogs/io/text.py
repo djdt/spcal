@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class TextImportDialog(ImportDialogBase):
     HEADER_LINE_COUNT = 20
     HEADER_LINE_SIZE = 512
-    DELIMITERS = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
+    DELIMITERS: ClassVar = {",": ",", ";": ";", " ": "Space", "\t": "Tab"}
 
     def __init__(
         self,
@@ -289,7 +290,7 @@ class TextImportDialog(ImportDialogBase):
         super().accept()
 
     def reset(self):
-        delimiter, first_data_line, column_count = guess_text_parameters(
+        delimiter, first_data_line, _column_count = guess_text_parameters(
             self.file_lines[: self.HEADER_LINE_COUNT]
         )
         if delimiter == "":

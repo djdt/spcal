@@ -124,9 +124,9 @@ class IsotopeNameValidator(QtGui.QValidator):
 
 
 class IsotopeNameDelegate(QtWidgets.QItemDelegate):
-    ISOTOPE_COMPLETER_STRINGS = list(
-        f"{symbol}{isotope}" for symbol, isotope in ISOTOPE_TABLE.keys()
-    ) + list(f"{isotope}{symbol}" for symbol, isotope in ISOTOPE_TABLE.keys())
+    ISOTOPE_COMPLETER_STRINGS = [
+        f"{symbol}{isotope}" for symbol, isotope in ISOTOPE_TABLE
+    ] + [f"{isotope}{symbol}" for symbol, isotope in ISOTOPE_TABLE]
 
     def createEditor(
         self,

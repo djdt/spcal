@@ -41,7 +41,7 @@ def test_spcal_value_filter(
     df = random_datafile_generator()
 
     results = default_method.processDataFile(df)
-    result = results[list(results.keys())[0]]
+    result = results[next(iter(results.keys()))]
 
     result.peak_indicies = np.arange(result.number)
     filter = SPCalValueFilter(result.isotope, "signal", np.greater, 35.0)
@@ -295,7 +295,7 @@ def test_spcal_processing_method_expr(
     results = method.processDataFile(test_datafile, ru)
     method.filterResults(results)
     assert len(results) == 4
-    assert "Sum" in [x.name for x in results.keys()]
+    assert "Sum" in [x.name for x in results]
     method.expressions = []
 
 

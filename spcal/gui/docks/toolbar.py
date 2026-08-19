@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.util import create_action
@@ -26,17 +28,21 @@ class ScatterExprLineEdit(QtWidgets.QLineEdit):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
         popup = self._completer.popup()
-        if popup is not None and popup.isVisible():
-            if event.key() in [  # Ignore keys when popup is present
+        if (
+            popup is not None
+            and popup.isVisible()
+            and event.key()
+            in [  # Ignore keys when popup is present
                 QtCore.Qt.Key.Key_Enter,
                 QtCore.Qt.Key.Key_Return,
                 QtCore.Qt.Key.Key_Escape,
                 QtCore.Qt.Key.Key_Tab,
                 QtCore.Qt.Key.Key_Down,
                 QtCore.Qt.Key.Key_Up,
-            ]:
-                event.ignore()
-                return
+            ]
+        ):
+            event.ignore()
+            return
 
         super().keyPressEvent(event)
 
@@ -154,7 +160,7 @@ class SPCalViewToolBar(QtWidgets.QToolBar):
 
     requestViewOptionsDialog = QtCore.Signal()
 
-    VIEWS = {
+    VIEWS: ClassVar = {
         "particle": (
             "office-chart-line-stacked",
             "Show signals and detected peaks.",
