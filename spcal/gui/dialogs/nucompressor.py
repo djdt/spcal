@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.io import NU_FILE_FILTER, most_recent_spcal_path
-from spcal.io.nu import is_nu_directory
+from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 
 
 class NuCompressWorker(QtCore.QObject):
@@ -64,6 +64,7 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Nu Batch Compressor")
         self.setMinimumSize(600, 400)
+        self.setAcceptDrops(True)
 
         self.compress_thread = QtCore.QThread(self)
 
@@ -108,6 +109,21 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         self.setLayout(layout)
 
         self.completeChanged()
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
+        for url in event.mimeData().urls():
+            path = Path(url.toLocalFile())
+            if is_nu_run_info_file(path) or is_nu_directory(path):
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+    def dropEvent(self, event: QtGui.QDropEvent):
+        for url in event.mimeData().urls():
+            path = Path(url.toLocalFile())
+            if is_nu_run_info_file(path) or is_nu_directory(path):
+                self.addPath(path)
+                event.accept()
 
     def integPaths(self) -> list[Path]:
         paths = []
@@ -181,6 +197,39 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
             "Close"
         )
 
+    def addPath(self, path: Path):
+        if is_nu_run_info_file(path):
+            path = path.parent
+
+        if not is_nu_directory(path):
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Invalid Nu Directory",
+                f"{path} is not a valid Nu Vitesse batch directory.",
+            )
+            return
+
+        integs = sorted(path.glob("*.integ"), key=lambda p: int(p.stem))
+        if len(integs) == 0:
+            QtWidgets.QMessageBox.warning(
+                self, "No .integ Files", f"Directory {path} has no .integ files."
+            )
+            return
+        integs = list(filter(lambda p: not self.isCompressed(p), integs))
+        if len(integs) == 0:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Already Compressed",
+                f"Nu Vitesse batch {path} has already been compressed.",
+            )
+            return
+
+        item = QtWidgets.QListWidgetItem(str(path))
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, integs)
+        item.setIcon(QtGui.QIcon.fromTheme("document-open-folder"))
+        self.list.addItem(item)
+        self.completeChanged()
+
     def dialogOpenDirectory(self):
         recent = most_recent_spcal_path() or ""
         recent = str(recent)
@@ -190,30 +239,7 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         )
         if file == "":
             return
-        parent = Path(file).parent
-        if not is_nu_directory(parent):
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Invalid Nu Directory",
-                f"{parent} is not a valid Nu Vitesse batch directory.",
-            )
-            return
-
-        integs = sorted(parent.glob("*.integ"), key=lambda p: int(p.stem))
-        integs = list(filter(lambda p: not self.isCompressed(p), integs))
-        if len(integs) == 0:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "Already Compressed",
-                f"Nu Vitesse batch {parent} has already been compressed.",
-            )
-            return
-
-        item = QtWidgets.QListWidgetItem(str(Path(file).parent))
-        item.setData(QtCore.Qt.ItemDataRole.UserRole, integs)
-        item.setIcon(QtGui.QIcon.fromTheme("document-open-folder"))
-        self.list.addItem(item)
-        self.completeChanged()
+        self.addPath(Path(file).parent)
 
 
 if __name__ == "__main__":
