@@ -19,6 +19,7 @@ from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.missingpaths import MissingPathsDialog
+from spcal.gui.dialogs.nucompressor import NuBatchCompressorDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
@@ -485,6 +486,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.defaultLayout,
         )
 
+        # Tools
+        self.action_nu_compress = create_action(
+            "application-zip",
+            "Nu Batch Compressor",
+            "Open a tool to compress Nu Vitesse directories using gzip.",
+            self.dialogNuCompress,
+        )
+
         # Help
         self.action_log = create_action(
             "dialog-information",
@@ -548,6 +557,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
         menuview.addSeparator()
+
+        menutools = self.menuBar().addMenu("&Tools")
+        menutools.addAction(self.action_nu_compress)
 
         menu_docks = menuview.addMenu("Show/hide dock widgets")
         for dock in self.findChildren(QtWidgets.QDockWidget):
@@ -1078,6 +1090,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogNuCompress(self) -> NuBatchCompressorDialog:
+        dlg = NuBatchCompressorDialog(self)
         dlg.open()
         return dlg
 

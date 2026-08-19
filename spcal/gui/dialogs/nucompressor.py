@@ -59,7 +59,7 @@ class CompressSpinBox(QtWidgets.QSpinBox):
             return super().textFromValue(value)
 
 
-class NuBatchCompressor(QtWidgets.QDialog):
+class NuBatchCompressorDialog(QtWidgets.QDialog):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setWindowTitle("Nu Batch Compressor")
@@ -218,6 +218,6 @@ class NuBatchCompressor(QtWidgets.QDialog):
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
-    dlg = NuBatchCompressor()
+    dlg = NuBatchCompressorDialog()
     dlg.show()
     app.exec()
