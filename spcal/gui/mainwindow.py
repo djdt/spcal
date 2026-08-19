@@ -1092,7 +1092,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             return
         data_file, isotope, _ = current
 
-        dlg = PeakPropertiesDialog(self.processing_results[data_file], isotope)
+        dlg = PeakPropertiesDialog(
+            self.processing_results[data_file], isotope, parent=self
+        )
         dlg.open()
         return dlg
 
