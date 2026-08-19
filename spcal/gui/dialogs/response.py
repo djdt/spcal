@@ -35,6 +35,7 @@ class ResponseDialog(QtWidgets.QDialog):
         super().__init__(parent=parent)
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
+        self.setAcceptDrops(True)
 
         self.intensity = ParticleView()
         self.intensity.exclusionRegionsChanged.connect(self.updateExclusionRegions)
@@ -255,6 +256,20 @@ class ResponseDialog(QtWidgets.QDialog):
         dlg.open()
 
         return dlg
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
+        for url in event.mimeData().urls():
+            if is_spcal_path(Path(url.toLocalFile())):
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+    def dropEvent(self, event: QtGui.QDropEvent):
+        for url in event.mimeData().urls():
+            path = Path(url.toLocalFile())
+            if is_spcal_path(path):
+                self.dialogLoadFile(path)
+                event.accept()
 
     @QtCore.Slot()
     def addDataFile(self, data_file: SPCalDataFile):
