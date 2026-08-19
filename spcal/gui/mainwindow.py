@@ -536,12 +536,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuedit = self.menuBar().addMenu("&Edit")
         menuedit.addAction(self.action_clear)
         menuedit.addSeparator()
-        menuedit.addAction(self.action_calculator)
-        menuedit.addAction(self.action_ionic_response_tool)
-        menuedit.addSeparator()
-        menuedit.addAction(self.action_mass_fraction_calculator)
-        menuedit.addAction(self.action_particle_database)
-        menuedit.addSeparator()
         menuedit.addAction(self.action_processing_options)
         menuedit.addSeparator()
         menuedit.addAction(self.action_save_default_method)
@@ -559,6 +553,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuview.addSeparator()
 
         menutools = self.menuBar().addMenu("&Tools")
+        menutools.addAction(self.action_calculator)
+        menutools.addAction(self.action_ionic_response_tool)
+        menutools.addSeparator()
+        menutools.addAction(self.action_mass_fraction_calculator)
+        menutools.addAction(self.action_particle_database)
+        menutools.addSeparator()
         menutools.addAction(self.action_nu_compress)
 
         menu_docks = menuview.addMenu("Show/hide dock widgets")
@@ -966,7 +966,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogCalculator(self) -> CalculatorDialog:
+    def dialogCalculator(self) -> CalculatorDialog | None:
         method = self.currentMethod()
 
         def set_expressions(expressions: list[SPCalIsotopeExpression]):
@@ -976,6 +976,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.updateForDataFiles(self.files.activeDataFiles())
 
         files = self.files.dataFiles()
+        if len(files) == 0:
+            return None
 
         all_isotopes = set(files[0].isotopes)
         for file in files[1:]:
@@ -1345,7 +1347,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.graph.clear()
         self.outputs.clear()
         self.isotope_options.clear()
-        self.toolbar.clear()
         self.setCurrentMethod(self.defaultMethod())
 
     def setColorScheme(self, action: QtGui.QAction):
