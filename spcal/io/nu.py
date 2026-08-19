@@ -29,10 +29,7 @@ def is_nu_directory(path: Path) -> bool:
         return False
     if not path.joinpath("run.info").exists():
         return False
-    if not path.joinpath("integrated.index").exists():  # pragma: no cover
-        return False
-
-    return True
+    return path.joinpath("integrated.index").exists()
 
 
 def read_autob_binary(

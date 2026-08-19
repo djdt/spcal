@@ -19,6 +19,7 @@ from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.dialogs.manuallimits import ManualLimitDialog
 from spcal.gui.dialogs.missingpaths import MissingPathsDialog
+from spcal.gui.dialogs.nucompressor import NuBatchCompressorDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
@@ -485,6 +486,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.defaultLayout,
         )
 
+        # Tools
+        self.action_nu_compress = create_action(
+            "application-zip",
+            "Nu Batch Compressor",
+            "Open a tool to compress Nu Vitesse directories using gzip.",
+            self.dialogNuCompress,
+        )
+
         # Help
         self.action_log = create_action(
             "dialog-information",
@@ -527,12 +536,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuedit = self.menuBar().addMenu("&Edit")
         menuedit.addAction(self.action_clear)
         menuedit.addSeparator()
-        menuedit.addAction(self.action_calculator)
-        menuedit.addAction(self.action_ionic_response_tool)
-        menuedit.addSeparator()
-        menuedit.addAction(self.action_mass_fraction_calculator)
-        menuedit.addAction(self.action_particle_database)
-        menuedit.addSeparator()
         menuedit.addAction(self.action_processing_options)
         menuedit.addSeparator()
         menuedit.addAction(self.action_save_default_method)
@@ -548,6 +551,15 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         menuview.addAction(self.action_font)
         menuview.addAction(self.action_display_sigfigs)
         menuview.addSeparator()
+
+        menutools = self.menuBar().addMenu("&Tools")
+        menutools.addAction(self.action_calculator)
+        menutools.addAction(self.action_ionic_response_tool)
+        menutools.addSeparator()
+        menutools.addAction(self.action_mass_fraction_calculator)
+        menutools.addAction(self.action_particle_database)
+        menutools.addSeparator()
+        menutools.addAction(self.action_nu_compress)
 
         menu_docks = menuview.addMenu("Show/hide dock widgets")
         for dock in self.findChildren(QtWidgets.QDockWidget):
@@ -954,7 +966,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         dlg.open()
         return dlg
 
-    def dialogCalculator(self) -> CalculatorDialog:
+    def dialogCalculator(self) -> CalculatorDialog | None:
         method = self.currentMethod()
 
         def set_expressions(expressions: list[SPCalIsotopeExpression]):
@@ -964,6 +976,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.updateForDataFiles(self.files.activeDataFiles())
 
         files = self.files.dataFiles()
+        if len(files) == 0:
+            return None
 
         all_isotopes = set(files[0].isotopes)
         for file in files[1:]:
@@ -1078,6 +1092,11 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dialogMassFractionCalculator(self) -> MassFractionCalculatorDialog:
         dlg = MassFractionCalculatorDialog(parent=self)
+        dlg.open()
+        return dlg
+
+    def dialogNuCompress(self) -> NuBatchCompressorDialog:
+        dlg = NuBatchCompressorDialog(self)
         dlg.open()
         return dlg
 
@@ -1328,7 +1347,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.graph.clear()
         self.outputs.clear()
         self.isotope_options.clear()
-        self.toolbar.clear()
         self.setCurrentMethod(self.defaultMethod())
 
     def setColorScheme(self, action: QtGui.QAction):
