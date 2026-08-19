@@ -345,19 +345,6 @@ class ResponseDialog(QtWidgets.QDialog):
         elif sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
             self.reset()
 
-    def dropEvent(self, event: QtGui.QDropEvent):
-        if event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                path = Path(url.toLocalFile())
-                if is_spcal_path(path):
-                    self.dialogLoadFile(path)
-                    break
-            event.acceptProposedAction()
-        elif event.mimeData().hasHtml():
-            pass
-        else:
-            super().dropEvent(event)
-
     def accept(self):
         responses = {}
         concs = self.concentrations()
