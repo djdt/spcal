@@ -1436,9 +1436,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     def dragEnterEvent(self, event: QtGui.QDragEnterEvent):
         for url in event.mimeData().urls():
-            if is_spcal_path(url.toLocalFile()) or is_spcal_session_path(
-                url.toLocalFile()
-            ):
+            path = Path(url.toLocalFile())
+            if is_spcal_path(path) or is_spcal_session_path(path):
                 event.acceptProposedAction()
                 return
         event.ignore()
