@@ -46,7 +46,7 @@ class CheckableHeaderView(QtWidgets.QHeaderView):
             if QtCore.Qt.KeyboardModifier.ShiftModifier & event.modifiers():
                 self.setCheckState(logicalIndex, QtCore.Qt.CheckState.Checked)
 
-                for idx in range(0, self.count()):
+                for idx in range(self.count()):
                     if idx == logicalIndex:
                         continue
                     self.setCheckState(idx, QtCore.Qt.CheckState.Unchecked)

@@ -4,8 +4,8 @@ The processing method takes in an SPCalDataFile and processes it to SPCalResults
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import Sequence
 
 import numpy as np
 
@@ -35,7 +35,7 @@ from spcal.processing.result import SPCalProcessingResult
 logger = logging.getLogger(__name__)
 
 
-class SPCalProcessingMethod(object):
+class SPCalProcessingMethod:
     def __init__(
         self,
         instrument_options: SPCalInstrumentOptions | None = None,
@@ -57,8 +57,8 @@ class SPCalProcessingMethod(object):
         self.isotope_options = isotope_options
         self.processing_options = processing_options
 
-        self.result_filters: list[list["SPCalResultFilter"]] = [[]]
-        self.index_filters: list[list["SPCalIndexFilter"]] = [[]]
+        self.result_filters: list[list[SPCalResultFilter]] = [[]]
+        self.index_filters: list[list[SPCalIndexFilter]] = [[]]
         self.exclusion_regions: list[tuple[float, float]] = []
 
         self.expressions: list[SPCalIsotopeExpression] = []

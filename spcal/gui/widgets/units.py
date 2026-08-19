@@ -2,7 +2,7 @@
 [ line edit ] [combo box]
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 from PySide6 import QtCore, QtWidgets

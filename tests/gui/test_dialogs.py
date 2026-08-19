@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -738,7 +738,6 @@ def test_response_dialog(
             return False
         return True
 
-    #
     with qtbot.wait_signal(
         dlg.responsesSelected, timeout=100, check_params_cb=check_response
     ):

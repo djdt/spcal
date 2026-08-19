@@ -21,7 +21,7 @@ class CompositionDetailDialog(QtWidgets.QDialog):
         self.setWindowTitle("Compostion Detail")
         self.setMinimumSize(QtCore.QSize(480, 640))
 
-        names = [k[:-5] for k in export_data.keys() if "_mean" in k]
+        names = [k[:-5] for k in export_data if "_mean" in k]
         nrows = export_data["count"].size
 
         self.table = BasicTableView()

@@ -15,7 +15,7 @@ from spcal.dists.util import compound_poisson_lognormal_quantile_lookup
 logger = logging.getLogger(__name__)
 
 
-class SPCalLimit(object):
+class SPCalLimit:
     ITER_EPS = 1e-2
 
     def __init__(

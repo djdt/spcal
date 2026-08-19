@@ -5,8 +5,9 @@
 import gzip
 import json
 import logging
+from collections.abc import Callable, Generator
 from pathlib import Path
-from typing import BinaryIO, Callable, Generator
+from typing import BinaryIO
 
 import numpy as np
 import numpy.lib.recfunctions as rfn

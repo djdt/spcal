@@ -301,7 +301,7 @@ class PeriodicTableSelector(QtWidgets.QWidget):
         self.pkeys: list[int] = []
 
         self.buttons: dict[str, PeriodicTableButton] = {}
-        for symbol in ELEMENT_PERIOD_INFO.keys():
+        for symbol in ELEMENT_PERIOD_INFO:
             # Limit to chosen ones
             isotopes = [v for k, v in ISOTOPE_TABLE.items() if k[0] == symbol]
             self.buttons[symbol] = PeriodicTableButton(isotopes)

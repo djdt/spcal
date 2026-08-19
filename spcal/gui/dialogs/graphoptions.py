@@ -207,7 +207,6 @@ class HistogramOptionsDialog(QtWidgets.QDialog):
         self.check_draw_filtered.setChecked(False)
 
 
-#
 class ScatterOptionsDialog(QtWidgets.QDialog):
     pass
 

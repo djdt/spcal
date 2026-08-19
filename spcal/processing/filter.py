@@ -2,7 +2,7 @@
 # Copyright 2025 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.result import SPCalProcessingResult
 
 
-class SPCalResultFilter(object):
+class SPCalResultFilter:
     """A filter that takes an SPCalProcessingResult."""
 
     def preferInvalid(self) -> bool:  # pragma: no cover
@@ -28,7 +28,7 @@ class SPCalResultFilter(object):
         raise NotImplementedError
 
 
-class SPCalIndexFilter(object):
+class SPCalIndexFilter:
     """A filter that compares existing indicies."""
 
     def __init__(self, operation: Callable[[np.ndarray, int], np.ndarray], index: int):

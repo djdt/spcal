@@ -6,7 +6,6 @@ from spcal.gui.objects import (
     DoubleOrEmptyValidator,
     DoubleOrPercentValidator,
     DragDropRedirectFilter,
-    KeepMenuOpenFilter,
 )
 
 

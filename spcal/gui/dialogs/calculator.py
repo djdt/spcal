@@ -220,7 +220,7 @@ class CalculatorDialog(QtWidgets.QDialog):
         self.combo_function = QtWidgets.QComboBox()
         self.combo_function.addItem("Functions")
         self.combo_function.addItems(functions)
-        for i in range(0, len(tooltips)):
+        for i in range(len(tooltips)):
             self.combo_function.setItemData(
                 i + 1, tooltips[i], QtCore.Qt.ItemDataRole.ToolTipRole
             )

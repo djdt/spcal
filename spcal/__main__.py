@@ -58,9 +58,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                 isotopes = [SPCalIsotope.fromString(value) for value in values[1:]]
                 data_file.selected_isotopes = isotopes
 
-            data_files = getattr(namespace, "open") or []
+            data_files = namespace.open or []
             data_files.append(data_file)
-            setattr(namespace, "open", data_files)
+            namespace.open = data_files
 
     parser = argparse.ArgumentParser(
         prog="spcal",

@@ -19,7 +19,7 @@ from spcal.limit import (
 logger = logging.getLogger(__name__)
 
 
-class SPCalInstrumentOptions(object):
+class SPCalInstrumentOptions:
     def __init__(
         self,
         uptake: float | None,
@@ -50,7 +50,7 @@ class SPCalInstrumentOptions(object):
             raise ValueError(f"unknown calibration mode '{mode}'")
 
 
-class SPCalIsotopeOptions(object):
+class SPCalIsotopeOptions:
     def __init__(
         self,
         density: float | None,
@@ -113,7 +113,7 @@ class SPCalIsotopeOptions(object):
             raise ValueError(f"unknown calibration key '{key}'")
 
 
-class SPCalLimitOptions(object):
+class SPCalLimitOptions:
     def __init__(
         self,
         limit_method: str = "automatic",
@@ -296,7 +296,7 @@ class SPCalLimitOptions(object):
             raise ValueError(f"unknown limit method {limit_method}")
 
 
-class SPCalProcessingOptions(object):
+class SPCalProcessingOptions:
     """A class for storing processing options.
 
     These options mostly revolve around peak detection and calibration.

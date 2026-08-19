@@ -26,7 +26,7 @@ from spcal.pratt import Reducer, ReducerException
 logger = logging.getLogger(__name__)
 
 
-class SPCalDataFile(object):
+class SPCalDataFile:
     """A base class for data files.
 
     Attributes:

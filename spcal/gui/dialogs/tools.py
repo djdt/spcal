@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets

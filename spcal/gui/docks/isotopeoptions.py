@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Sequence
+from collections.abc import Sequence
 
 from PySide6 import QtCore, QtGui, QtWidgets
 

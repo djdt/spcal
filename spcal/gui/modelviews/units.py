@@ -115,9 +115,7 @@ class UnitsModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return
 
-        if role == BaseValueRole:
-            raise NotImplementedError
-        elif role == BaseValueErrorRole:
+        if role == BaseValueRole or role == BaseValueErrorRole:
             raise NotImplementedError
         elif role in [
             QtCore.Qt.ItemDataRole.DisplayRole,
@@ -150,9 +148,7 @@ class UnitsModel(QtCore.QAbstractTableModel):
         if not index.isValid():
             return False
 
-        if role == BaseValueRole:
-            raise NotImplementedError
-        elif role == BaseValueErrorRole:
+        if role == BaseValueRole or role == BaseValueErrorRole:
             raise NotImplementedError
         elif role == CurrentUnitRole:
             self.current_unit[index.column()] = value

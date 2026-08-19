@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
     from spcal.processing.method import SPCalProcessingMethod
 
 
-class SPCalProcessingResult(object):
+class SPCalProcessingResult:
     def __init__(
         self,
         isotope: SPCalIsotopeBase,

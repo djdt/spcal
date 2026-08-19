@@ -4,10 +4,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Set
 
 
-def collect_icons(path: Path) -> Set[str]:
+def collect_icons(path: Path) -> set[str]:
     regex_icon = "(?:(?:fromTheme\\(|create_action\\()|#\\sicon:)\\s*['\"]([a-z\\-]+)['\"]"
     icons = set()
 

@@ -1,1 +1,1 @@
-__all__ = ["icons", "darkicons"]
+__all__ = ["darkicons", "icons"]

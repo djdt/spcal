@@ -73,10 +73,10 @@ def append_results_summary(
                 ("Median", np.median(detections)),
                 ("Mode", modefn(detections)),
             ]
-            for name, value in values:
-                fp.write(
-                    f"{result.data_file_path},{result.isotope},{name},{unit},{_scaled(float(value), factor)}\n"
-                )
+            fp.writelines(
+                f"{result.data_file_path},{result.isotope},{name},{unit},{_scaled(float(value), factor)}\n"
+                for name, value in values
+            )
 
 
 def export_spcal_datafile_header(fp: TextIO, data_file: "SPCalDataFile"):
@@ -144,16 +144,16 @@ def export_spcal_result_outputs(
     fp.write(
         f"# Outputs (number),Number,Number Error,Number Concentration (#/L),Mass Concentration ({mass_unit}/L)\n"
     )
-    for result in results:
-        fp.write(
-            f"# {result.isotope},{result.number},{result.number_error},"
-            f"{_value(result.number_concentration)},{_scaled(result.mass_concentration, mass_factor)}\n"
-        )
+    fp.writelines(
+        f"# {result.isotope},{result.number},{result.number_error},"
+        f"{_value(result.number_concentration)},{_scaled(result.mass_concentration, mass_factor)}\n"
+        for result in results
+    )
     fp.write(f"# Outputs (ionic),Ionic Background({mass_unit}/L)\n")
-    for result in results:
-        fp.write(
-            f"# {result.isotope},{_scaled(result.ionic_background, mass_factor)}\n"
-        )
+    fp.writelines(
+        f"# {result.isotope},{_scaled(result.ionic_background, mass_factor)}\n"
+        for result in results
+    )
 
     for key in CALIBRATION_KEYS:
         if not any(result.canCalibrate(key) for result in results):  # pragma: no cover
@@ -207,16 +207,18 @@ def export_spcal_compositions(
 
         unit, factor = units[key]
         fp.write(f"# Compositions ({key}),Count")
-        for result in results:
-            fp.write(f",{result.isotope} mean ({unit}),{result.isotope} std ({unit})")
+        fp.writelines(
+            f",{result.isotope} mean ({unit}),{result.isotope} std ({unit})"
+            for result in results
+        )
         fp.write("\n")
 
         for i in range(len(counts)):
             fp.write(f"# {i},{counts[i]}")
-            for j, _ in enumerate(results):
-                fp.write(
-                    f",{_scaled(means[i, j], factor)},{_scaled(stds[i, j], factor)}"
-                )
+            fp.writelines(
+                f",{_scaled(means[i, j], factor)},{_scaled(stds[i, j], factor)}"
+                for j, _ in enumerate(results)
+            )
             fp.write("\n")
 
 

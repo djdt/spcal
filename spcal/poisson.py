@@ -42,8 +42,8 @@ def currie(
             https://doi.org/10.1007/s10967-008-0501-5
     """
 
-    z_a = NormalDist().inv_cdf((1.0 - alpha))
-    z_b = NormalDist().inv_cdf((1.0 - beta))
+    z_a = NormalDist().inv_cdf(1.0 - alpha)
+    z_b = NormalDist().inv_cdf(1.0 - beta)
 
     Sc = z_a * np.sqrt((ub + epsilon) * eta)
     Sd = z_b**2 + 2.0 * Sc
@@ -78,8 +78,8 @@ def formula_a(
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """
-    z_a = NormalDist().inv_cdf((1.0 - alpha))
-    z_b = NormalDist().inv_cdf((1.0 - beta))
+    z_a = NormalDist().inv_cdf(1.0 - alpha)
+    z_b = NormalDist().inv_cdf(1.0 - beta)
 
     tr = t_sample / t_blank
 
@@ -128,8 +128,8 @@ def formula_c(
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """
-    z_a = NormalDist().inv_cdf((1.0 - alpha))
-    z_b = NormalDist().inv_cdf((1.0 - beta))
+    z_a = NormalDist().inv_cdf(1.0 - alpha)
+    z_b = NormalDist().inv_cdf(1.0 - beta)
 
     tr = t_sample / t_blank
 
@@ -167,8 +167,8 @@ def stapleton_approximation(
             MARLAP Manual Volume III: Chapter 20,
             Detection and Quantification Capabilities Overview
     """
-    z_a = NormalDist().inv_cdf((1.0 - alpha))
-    z_b = NormalDist().inv_cdf((1.0 - beta))
+    z_a = NormalDist().inv_cdf(1.0 - alpha)
+    z_b = NormalDist().inv_cdf(1.0 - beta)
 
     d = z_a / 4.112
     tr = t_sample / t_blank

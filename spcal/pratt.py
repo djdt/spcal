@@ -18,7 +18,7 @@ class ReducerException(Exception):
     pass
 
 
-class Expr(object):
+class Expr:
     """Stores expressions for conversion to string.
 
     Attributes:
@@ -38,7 +38,7 @@ class Expr(object):
 
 
 # Null Commands
-class Null(object):
+class Null:
     """Base for non binding tokens."""
 
     rbp = -1
@@ -169,7 +169,7 @@ class TernaryFunction(Ternary):
 
 
 # Left Commands
-class Left(object):
+class Left:
     """Base class for left binding operations."""
 
     lbp = -1
@@ -234,7 +234,7 @@ class LeftIndex(Left):
         return Expr(self.value, children=[expr, rexpr])
 
 
-class Parser(object):
+class Parser:
     """Class for parsing inputs to an easily reduced string.
 
     Uses a series of regular expressions to convert input into tokens.
@@ -335,7 +335,7 @@ class Parser(object):
         return str(result)
 
 
-class Reducer(object):
+class Reducer:
     """Class for reducing preivously parsed inputs.
 
     Common operations are mapped to numpy ufuncs.
@@ -377,7 +377,7 @@ class Reducer(object):
 
     @variables.setter
     def variables(self, variables: dict[str, float | np.ndarray]):
-        if any(" " in v for v in variables.keys()):
+        if any(" " in v for v in variables):
             raise ValueError("Spaces are not allowed in variable names!")
         self._variables = variables
 
