@@ -12,6 +12,8 @@ class CalibrationView(SinglePlotGraphicsView):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__("Calibration", "Concentration", "Response", parent=parent)
+        assert self.plot.legend is not None
+        self.plot.legend.anchor((0, 0), (0, 0), (10, 10))
         assert self.plot.vb is not None
         self.plot.vb.setMouseEnabled(x=False, y=False)
         self.plot.vb.enableAutoRange(x=True, y=True)
