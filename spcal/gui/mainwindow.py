@@ -649,6 +649,8 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
     def updateForDataFiles(
         self, data_files: list[SPCalDataFile] | SPCalDataFile | None = None
     ):
+        current_results = self.outputs.activeResults()
+
         if data_files is None:
             self.isotope_options.clear()
             self.outputs.clear()
@@ -741,7 +743,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.setResults(results)
 
         isotopes = {iso for result in results.values() for iso in result}
-        if any(
+        if all(
             data_file in previous for data_file in results
         ):  # some datafiles are shared, keep selection
             self.outputs.setActiveResults(previous)

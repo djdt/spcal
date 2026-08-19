@@ -68,7 +68,6 @@ class ResultOutputModel(UnitsModel):
 
         self.key = "signal"
 
-        self.multiple_datafiles = False
         self.results: list[
             tuple[SPCalDataFile, SPCalIsotopeBase, SPCalProcessingResult]
         ] = []
@@ -113,7 +112,7 @@ class ResultOutputModel(UnitsModel):
                 QtCore.Qt.ItemDataRole.DisplayRole,
                 QtCore.Qt.ItemDataRole.EditRole,
             ]:
-                if self.multiple_datafiles:
+                if any(result[0] != data_file for result in self.results):
                     return f"{data_file.path.stem} : {isotope}"
                 else:
                     return f"{isotope}"
