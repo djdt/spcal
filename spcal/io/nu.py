@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def is_nu_run_info_file(path: Path) -> bool:
     """Checks file exists and is called 'run.info'."""
-    return not (not path.exists() or path.name != "run.info")
+    return path.exists() and path.name == "run.info"
 
 
 def is_nu_directory(path: Path) -> bool:
