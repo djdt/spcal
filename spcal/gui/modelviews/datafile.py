@@ -204,9 +204,10 @@ class DataFileModel(QtCore.QAbstractListModel):
         self,
         row: int,
         count: int,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> bool:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid() or row < 0 or row + count > self.rowCount():
             return False
 
@@ -219,9 +220,10 @@ class DataFileModel(QtCore.QAbstractListModel):
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.data_files)

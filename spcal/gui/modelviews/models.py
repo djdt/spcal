@@ -48,9 +48,10 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
     # Rows and Columns
     def columnCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
@@ -60,9 +61,10 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
@@ -154,9 +156,10 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         self,
         pos: int,
         columns: int,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> bool:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if self.orientation == QtCore.Qt.Orientation.Vertical:
             raise NotImplementedError("name insert is not implemented")
 
@@ -165,7 +168,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             [
                 tuple(
                     self.fill_values[d.kind]
-                    for d, v in self.array.dtype.fields.values()  # type: ignore
+                    for d, _ in self.array.dtype.fields.values()  # type: ignore
                 )
             ],
             dtype=self.array.dtype,
@@ -178,9 +181,10 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
         self,
         pos: int,
         rows: int,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> bool:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if self.orientation == QtCore.Qt.Orientation.Horizontal:
             raise NotImplementedError("name insert is not implemented")
 
@@ -189,7 +193,7 @@ class NumpyRecArrayTableModel(QtCore.QAbstractTableModel):
             [
                 tuple(
                     self.fill_values[d.kind]
-                    for d, v in self.array.dtype.fields.values()  # type: ignore
+                    for d, _ in self.array.dtype.fields.values()  # type: ignore
                 )
             ],
             dtype=self.array.dtype,

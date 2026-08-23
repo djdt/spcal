@@ -331,9 +331,11 @@ class FilterDialog(QtWidgets.QDialog):
     def isComplete(self) -> bool:
         for i in range(self.list.count()):
             widget = self.list.itemWidget(self.list.item(i))
-            if isinstance(widget, FilterItemWidget):
-                if widget.value.baseValue() is None:
-                    return False
+            if (
+                isinstance(widget, FilterItemWidget)
+                and widget.value.baseValue() is None
+            ):
+                return False
         return True
 
     def completeChanged(self):

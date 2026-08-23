@@ -58,18 +58,20 @@ class IsotopeOptionModel(UnitsModel):
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.isotope_options)
 
     def columnCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(IsotopeOptionModel.COLUMN_LABELS)

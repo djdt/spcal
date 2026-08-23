@@ -74,18 +74,20 @@ class ResultOutputModel(UnitsModel):
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.results)
 
     def columnCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(ResultOutputModel.COLUMN_LABELS)

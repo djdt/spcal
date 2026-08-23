@@ -2,8 +2,8 @@
 # Copyright 2023 Thomas Lockwood
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import datetime
 import json
-from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -153,7 +153,9 @@ def save_session_json(
 
     output = {
         "version": version("spcal"),
-        "date": datetime.now().isoformat(timespec="seconds"),
+        "date": datetime.datetime.now(datetime.UTC)
+        .astimezone()
+        .isoformat(timespec="seconds"),
         "method": method,
         "datafiles": data_files,
     }

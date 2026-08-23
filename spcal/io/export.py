@@ -80,9 +80,9 @@ def append_results_summary(
 
 
 def export_spcal_datafile_header(fp: TextIO, data_file: "SPCalDataFile"):
-    date = datetime.datetime.strftime(datetime.datetime.now(), "%c")
+    date = datetime.datetime.now(datetime.UTC).astimezone()
     fp.write(f"# SPCal Export {importlib.metadata.version('spcal')}\n")
-    fp.write(f"# Date,{date}\n")
+    fp.write(f"# Date,{datetime.datetime.strftime(date, '%c')}\n")
     fp.write(f"# File,{data_file.path}\n")
     fp.write(f"# Acquisition events,{data_file.num_events}\n")
     fp.write(f"# Acquisition time,{data_file.total_time}\n")

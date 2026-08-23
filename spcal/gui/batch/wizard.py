@@ -490,8 +490,10 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         self.check_export_arrays = QtWidgets.QCheckBox("Particle data arrays")
         self.check_export_arrays.setChecked(True)
         self.check_export_summary = QtWidgets.QCheckBox("Batch summary")
+
+        date = datetime.datetime.now(datetime.UTC).astimezone()
         self.summary_filename = QtWidgets.QLineEdit(
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%dT%H_%M_%S_spcal_batch.csv')}"
+            f"{datetime.datetime.strftime(date, '%Y-%m-%dT%H_%M_%S_spcal_batch.csv')}"
         )
         self.check_export_summary.toggled.connect(self.completeChanged)
         self.check_export_summary.toggled.connect(self.summary_filename.setEnabled)

@@ -21,18 +21,20 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
 
     def columnCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.isotopes)
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.concentrations)
@@ -119,18 +121,20 @@ class IntensityModel(QtCore.QAbstractTableModel):
 
     def columnCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.isotopes)
 
     def rowCount(
         self,
-        parent: QtCore.QModelIndex
-        | QtCore.QPersistentModelIndex = QtCore.QModelIndex(),
+        parent: QtCore.QModelIndex | QtCore.QPersistentModelIndex | None = None,
     ) -> int:
+        if parent is None:
+            parent = QtCore.QModelIndex()
         if parent.isValid():
             return 0
         return len(self.intensities)

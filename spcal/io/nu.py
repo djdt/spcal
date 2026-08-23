@@ -128,11 +128,7 @@ def read_integ_binary(
 
     def integ_dtype(size: int) -> np.dtype:
         data_dtype = np.dtype(
-            {
-                "names": ["center", "signal"],
-                "formats": [np.float32, np.float32],
-                "itemsize": 4 + 4 + 4 + 1,  # unused f32, unused i8
-            }
+            [("center", np.float32), ("signal", np.float32), ("_", np.void, 5)]
         )
         return np.dtype(
             [
@@ -144,38 +140,40 @@ def read_integ_binary(
             ]
         )
 
-    fp = path.open("rb")
+    with path.open("rb") as fp:
+        buffer = bytearray(fp.read(2))
+        if buffer == b"\x1f\x8b":  # is a gzipped integ
+            with gzip.open(path, "rb") as gp:
+                buffer = bytearray(gp.read())
+            if memmap:  # pragma: no cover, warning
+                memmap = False
+                logger.info("compressed, disabling memmory mapping for integ")
+        elif memmap:
+            buffer.extend(fp.read(14))  # total 16 bytes, the header size
+        else:
+            buffer.extend(fp.read())
 
-    if fp.read(2) == b"\x1f\x8b":  # is a gzipped integ
-        fp = gzip.open(path, "rb")
-        if memmap:  # pragma: no cover, warning
-            memmap = False
-            logger.info("compressed, disabling memmory mapping for integ")
-    else:
-        fp.seek(0)
-
-    cyc_number = int.from_bytes(fp.read(4), "little")
+    cyc_number = int.from_bytes(buffer[:4], "little")
     if (
         first_cyc_number is not None and cyc_number != first_cyc_number
     ):  # pragma: no cover
         raise ValueError("read_integ_binary: incorrect FirstCycNum")
-    seg_number = int.from_bytes(fp.read(4), "little")
+    seg_number = int.from_bytes(buffer[4:8], "little")
     if (
         first_seg_number is not None and seg_number != first_seg_number
     ):  # pragma: no cover
         raise ValueError("read_integ_binary: incorrect FirstSegNum")
-    acq_number = int.from_bytes(fp.read(4), "little")
+    acq_number = int.from_bytes(buffer[8:12], "little")
     if (
         first_acq_number is not None and acq_number != first_acq_number
     ):  # pragma: no cover
         raise ValueError("read_integ_binary: incorrect FirstAcqNum")
-    num_results = int.from_bytes(fp.read(4), "little")
+    num_results = int.from_bytes(buffer[12:16], "little")
 
     if memmap:
         return np.memmap(path, dtype=integ_dtype(num_results), mode="r")
     else:
-        fp.seek(0)
-        return np.frombuffer(fp.read(), dtype=integ_dtype(num_results))
+        return np.frombuffer(buffer, dtype=integ_dtype(num_results))
 
 
 def read_binaries_in_index(
@@ -376,7 +374,7 @@ def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
 
     # prevent joining of any signals across missing integs
     pos = 0
-    for integ, integ2 in zip(integs[:-1], integs[1:]):
+    for integ, integ2 in zip(integs[:-1], integs[1:]):  # noqa: RUF007
         pos += integ.size
         if indicies_from_integ(integ[-1], info) + 1 != indicies_from_integ(
             integ2[0], info
@@ -562,10 +560,5 @@ def select_nu_signals(
     selected = np.fromiter(selected_masses.values(), dtype=np.float32)
     idx = search_sorted_closest(masses, selected, check_max_diff=max_mass_diff)
 
-    dtype = np.dtype(
-        {
-            "names": list(selected_masses.keys()),
-            "formats": [np.float32 for _ in idx],
-        }
-    )
+    dtype = np.dtype([(name, np.float32) for name in selected_masses])
     return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)

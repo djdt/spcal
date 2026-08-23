@@ -14,10 +14,7 @@ def is_tofwerk_file(path: Path) -> bool:
     """Checks if the file is a .h5 file."""
     if not path.exists():
         return False
-    if path.suffix.lower() != ".h5":
-        return False
-    # Check for TofDAQ Version?
-    return True
+    return path.suffix.lower() == ".h5"
 
 
 def calibrate_index_to_mass(
