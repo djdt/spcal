@@ -201,7 +201,7 @@ class NuBatchWorker(QtCore.QObject):
     def process(self):
         self.started.emit(len(self.paths))
         if self.export_options["summary"] is not None:
-            summary_fp = Path(self.export_options["summary"]).open("w")
+            summary_fp = Path(self.export_options["summary"]).open("w")  # noqa: SIM115
         else:
             summary_fp = None
 
@@ -210,7 +210,7 @@ class NuBatchWorker(QtCore.QObject):
                 self.processFile(i, input, output, summary_fp)
             except Exception as e:
                 self.exception.emit(i, e)
-                logger.exception(e)
+                logger.exception(f"Exception raised for path: {input}")
                 continue
 
         if summary_fp is not None:
@@ -270,7 +270,7 @@ class TOFWERKBatchWorker(QtCore.QObject):
     def process(self):
         self.started.emit(len(self.paths))
         if self.export_options["summary"] is not None:
-            summary_fp = Path(self.export_options["summary"]).open("w")
+            summary_fp = Path(self.export_options["summary"]).open("w")  # noqa: SIM115
         else:
             summary_fp = None
 
@@ -279,7 +279,7 @@ class TOFWERKBatchWorker(QtCore.QObject):
                 self.processFile(i, input, output, summary_fp)
             except Exception as e:
                 self.exception.emit(i, e)
-                logger.exception(e)
+                logger.exception(f"Exception raised for path: {input}")
                 continue
 
         if summary_fp is not None:
@@ -359,7 +359,7 @@ class TextBatchWorker(QtCore.QObject):
     def process(self):
         self.started.emit(len(self.paths))
         if self.export_options["summary"] is not None:
-            summary_fp = Path(self.export_options["summary"]).open("w")
+            summary_fp = Path(self.export_options["summary"]).open("w")  # noqa: SIM115
         else:
             summary_fp = None
 
@@ -368,7 +368,7 @@ class TextBatchWorker(QtCore.QObject):
                 self.processFile(i, input, output, summary_fp)
             except Exception as e:
                 self.exception.emit(i, e)
-                logger.exception(e)
+                logger.exception(f"Exception raised for path: {input}")
                 continue
 
         if summary_fp is not None:
