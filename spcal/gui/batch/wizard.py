@@ -743,6 +743,7 @@ class BatchRunWizardPage(QtWidgets.QWizardPage):
         item = self.output_files.item(index)
         item.setIcon(QtGui.QIcon.fromTheme("data-error"))
         item.setData(QtCore.Qt.ItemDataRole.ToolTipRole, str(exception))
+        logger.exception(f"Exception raise for {item.text()}: {exception}")
 
     def setStatus(self, text: str):
         self.status.setText(text)
