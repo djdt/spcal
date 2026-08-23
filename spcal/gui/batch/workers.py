@@ -210,7 +210,7 @@ class NuBatchWorker(QtCore.QObject):
                 self.processFile(i, input, output, summary_fp)
             except Exception as e:
                 self.exception.emit(i, e)
-                logger.exception(f"Exception raised for path: {input}")
+                logger.exception(f"exception raised for path: {input}")
                 continue
 
         if summary_fp is not None:
