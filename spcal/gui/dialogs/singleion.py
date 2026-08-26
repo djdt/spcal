@@ -2,16 +2,22 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
+from PySide6.QtWidgets import QSpinBox
 
 from spcal.dists.util import (
     extract_compound_poisson_lognormal_parameters,
+    zero_trunc_quantile,
 )
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.singleion import SingleIonHistogramView, SingleIonScatterView
+from spcal.gui.graphs.singleion import (
+    SingleIonAreaScatterView,
+)
 from spcal.gui.io import get_open_spcal_path
 from spcal.io import nu, tofwerk
+from spcal.limit import SPCalGaussianLimit
+from spcal.processing.method import SPCalProcessingMethod
 
 
 class OddValueSpinBox(QtWidgets.QSpinBox):
@@ -29,7 +35,7 @@ class OddValueSpinBox(QtWidgets.QSpinBox):
         return QValidator.State.Acceptable
 
 
-class SingleIonSignalsPopup(QtWidgets.QDialog):
+class SingleIonAreaSignalsPopup(QtWidgets.QDialog):
     def __init__(
         self, mz: float, y: np.ndarray, parent: QtWidgets.QWidget | None = None
     ):
@@ -53,7 +59,7 @@ class SingleIonSignalsPopup(QtWidgets.QDialog):
         )
 
 
-class SingleIonDialog(QtWidgets.QDialog):
+class SingleIonAreaDialog(QtWidgets.QDialog):
     resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
 
@@ -65,11 +71,7 @@ class SingleIonDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
 
-        self.hist = SingleIonHistogramView()
-        self.hist.plot.yaxis.setLabel("Event Density")
-        assert self.hist.plot.vb is not None
-        self.hist.plot.vb.setMouseEnabled(x=False, y=False)
-        self.scatter = SingleIonScatterView()
+        self.scatter = SingleIonAreaScatterView()
         self.scatter.pointClicked.connect(self.onPointClicked)
 
         self.masses = np.array([])
@@ -80,37 +82,14 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.sigmas = np.array([])
         self.valid = np.array([])
 
-        self.minimum_value = QtWidgets.QDoubleSpinBox()
-        self.minimum_value.setRange(0.0, 1e9)
-        self.minimum_value.setValue(0.0)
-        self.minimum_value.setStepType(
-            QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
-        )
-        self.minimum_value.valueChanged.connect(self.updateExtractedParameters)
-        self.minimum_value.valueChanged.connect(self.updateMinMaxValueRanges)
+        self.screening_method = SPCalProcessingMethod()
+        self.screening_method.limit_options.limit_method = "poisson"
+        self.screening_method.limit_options.poisson_kws["alpha"] = 1e-7
 
-        self.maximum_value = QtWidgets.QDoubleSpinBox()
-        self.maximum_value.setRange(0.0, 1e9)
-        self.maximum_value.setValue(0.0)
-        self.maximum_value.setStepType(
-            QtWidgets.QDoubleSpinBox.StepType.AdaptiveDecimalStepType
-        )
-        self.maximum_value.valueChanged.connect(self.updateExtractedParameters)
-        self.maximum_value.valueChanged.connect(self.updateMinMaxValueRanges)
-
-        layout_range = QtWidgets.QHBoxLayout()
-        layout_range.addWidget(self.minimum_value)
-        layout_range.addWidget(QtWidgets.QLabel("-"))
-        layout_range.addWidget(self.maximum_value)
-
-        self.check_restrict = QtWidgets.QCheckBox("Restrict to single ion signals.")
-        self.check_restrict.checkStateChanged.connect(self.updateValidParameters)
-
-        self.hist_controls_box = QtWidgets.QGroupBox()
-        hist_controls_box_layout = QtWidgets.QFormLayout()
-        hist_controls_box_layout.addRow("Range:", layout_range)
-        hist_controls_box_layout.addRow(self.check_restrict)
-        self.hist_controls_box.setLayout(hist_controls_box_layout)
+        self.required_nonzero = QtWidgets.QSpinBox()
+        self.required_nonzero.setRange(0, 10000)
+        self.required_nonzero.setValue(2100)
+        self.required_nonzero.setSingleStep(1000)
 
         self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
         self.max_sigma_difference.setRange(0.01, 1.0)
@@ -143,15 +122,13 @@ class SingleIonDialog(QtWidgets.QDialog):
             QtWidgets.QDialogButtonBox.StandardButton.Apply
         ).setEnabled(False)
 
-        layout = QtWidgets.QGridLayout()
-        layout.addWidget(self.hist, 0, 0)
-        layout.addWidget(self.hist_controls_box, 1, 0)
-        layout.addWidget(self.scatter, 0, 1)
-        layout.addWidget(self.controls_box, 1, 1)
-        layout.addWidget(self.button_box, 2, 0, 1, 2)
+        layout = QtWidgets.QVBoxLayout()
+        layout_horz = QtWidgets.QHBoxLayout()
+        layout_horz.addWidget(self.controls_box, 0)
+        layout_horz.addWidget(self.scatter, 1)
+        layout.addLayout(layout_horz, 1)
+        layout.addWidget(self.button_box, 0)
 
-        layout.setColumnStretch(0, 2)
-        layout.setColumnStretch(1, 3)
         self.setLayout(layout)
 
         # A 'read-only' mode for existing parameters
@@ -161,7 +138,9 @@ class SingleIonDialog(QtWidgets.QDialog):
     @QtCore.Slot()
     def onPointClicked(self, pos: QtCore.QPointF, index: int):
         sia = np.exp(self.mus[index] + 0.5 * self.sigmas[index] ** 2)
-        popup = SingleIonSignalsPopup(pos.x(), self.counts[:, index] / sia, parent=self)
+        popup = SingleIonAreaSignalsPopup(
+            pos.x(), self.counts[:, index] / sia, parent=self
+        )
         popup.show()
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton):
@@ -185,7 +164,6 @@ class SingleIonDialog(QtWidgets.QDialog):
 
     def enableControls(self, enabled: bool):
         self.controls_box.setEnabled(enabled)
-        self.hist_controls_box.setEnabled(enabled)
 
     def clear(self):
         self.masses = np.array([])
@@ -195,18 +173,10 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.sigmas = np.array([])
         self.valid = np.array([])
 
-        self.hist.clear()
+        # self.hist.clear()
         self.scatter.clear()
 
         self.enableControls(False)
-
-    def updateMinMaxValueRanges(self):
-        if self.minimum_value.hasAcceptableInput():
-            min = self.minimum_value.value()
-            self.maximum_value.setRange(min, 1e9)
-        if self.maximum_value.hasAcceptableInput():
-            max = self.maximum_value.value()
-            self.minimum_value.setRange(0.0, max)
 
     def loadSingleIonData(self, path: str | Path | None = None):
         if path is None:
@@ -243,20 +213,12 @@ class SingleIonDialog(QtWidgets.QDialog):
             )
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
-            self.masses, self.counts, info = nu.read_directory(
-                path, autoblank="all", raw=True
-            )
-            self.reported_mu = np.log(info["AverageSingleIonArea"])
-
         # Remove clearly gaussian signals
-        zeros = np.count_nonzero(self.counts == 0, axis=0)
-        self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
-
-        max = np.nanmax(self.counts)
-        self.minimum_value.setRange(0.0, max)
-        self.maximum_value.setRange(0.0, max)
-        self.minimum_value.setValue(0.0)
-        self.maximum_value.setValue(max)
+        # zeros = np.count_nonzero(self.counts == 0, axis=0)
+        # print(np.count_nonzero(zeros))
+        #
+        # # TODO: Remove particle containing signals
+        # self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
 
         self.updateExtractedParameters()
         self.enableControls(True)
@@ -265,13 +227,9 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.scatter.clear()
         if not self.max_sigma_difference.hasAcceptableInput():
             return
-        mask = np.logical_and(
-            self.counts >= self.minimum_value.value(),
-            self.counts <= self.maximum_value.value(),
-        )
-        mask = np.logical_or(self.counts == 0, mask)
+
         self.lams, self.mus, self.sigmas = (
-            extract_compound_poisson_lognormal_parameters(self.counts, mask).T
+            extract_compound_poisson_lognormal_parameters(self.counts).T
         )
 
         self.scatter.drawData(self.masses, self.sigmas)
@@ -287,19 +245,50 @@ class SingleIonDialog(QtWidgets.QDialog):
         if not np.any(valid):
             return
 
+        print(self.counts.shape)
+        SPCalGaussianLimit.isGaussianDistributed(self.counts)
+        nonzeros = np.count_nonzero(self.counts, axis=0)
+        zeros = self.counts.shape[0] - nonzeros
+
+        # percs = np.nanpercentile(
+        #     np.where(self.counts > 0, self.counts, np.nan), 99, axis=0
+        # )
+        # particles = np.count_nonzero(self.counts > 10 * percs, axis=0) > 10
+        # valid = np.logical_and(valid, gaussian)
+        # valid = np.logical_and(valid, particles)
+
         poly = np.polynomial.Polynomial.fit(self.masses[valid], self.sigmas[valid], 1)
 
         self.valid = (
             np.abs(self.sigmas - poly(self.masses)) < self.max_sigma_difference.value()
         )
-
-        if self.check_restrict.isChecked():
-            p0 = np.exp(-self.lams)
-            p2 = (self.lams**2 * p0) / 2.0
-            single_ions = np.logical_and(p0 > 1e-2, p2 < 1e-3)
-            self.valid = np.logical_and(self.valid, single_ions)
-
+        self.valid = np.logical_and(
+            self.valid, nonzeros >= self.required_nonzero.value()
+        )
+        self.valid = np.logical_and(self.valid, self.required_nonzero.value() >= 2100)
         self.scatter.setValid(self.valid)
+
+        colors = [
+            QtGui.QBrush(QtCore.Qt.GlobalColor.black),
+            QtGui.QBrush(QtCore.Qt.GlobalColor.red),
+            QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+            QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+        ]
+
+        idx = np.ones(self.valid.shape, int)
+        idx[self.valid] = 0
+        idx[nonzeros < 2100] = 2
+        idx[zeros < 2100] = 3
+        # idx[particles] = 4
+
+        self.scatter.setColors(idx, colors)
+        symbols = np.full(self.valid.shape, "o", dtype="U2")
+        symbols[self.valid] = "o"
+        symbols[nonzeros < 2100] = "t"
+        symbols[zeros < 2100] = "t1"
+        if self.scatter.points is not None:
+            self.scatter.points.setSymbol(symbols)
+
         self.scatter.drawMaxDifference(poly, self.max_sigma_difference.value())
 
         mean_mu, mean_sigma = (
@@ -312,7 +301,6 @@ class SingleIonDialog(QtWidgets.QDialog):
         self.completeChanged()
 
         self.updateScatterInterp()
-        self.updateHistogram()
 
     def updateScatterInterp(self):
         xs, ys = self.smoothedParameters(
@@ -335,24 +323,6 @@ class SingleIonDialog(QtWidgets.QDialog):
             return xs, np.interp(xs, _xs, _ys)
         else:
             raise ValueError(f"invalid smoothing window {smoothing}")
-
-    def updateHistogram(self):
-        if np.count_nonzero(self.valid) > 0:
-            counts = self.counts[:, self.valid]
-
-            mask = np.logical_and(
-                counts > self.minimum_value.value(),
-                counts <= self.maximum_value.value(),
-            )
-
-            hist, edges = np.histogram(
-                counts[mask],
-                bins=200,
-                density=True,
-            )
-            self.hist.drawHist(hist, edges)
-        elif self.hist.hist_curve is not None:
-            self.hist.hist_curve.clear()
 
     def accept(self):
         if self.masses.size > 0:
@@ -378,9 +348,9 @@ if __name__ == "__main__":
     # 2.
     app = QtWidgets.QApplication()
 
-    win = SingleIonDialog()
-    win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
-    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
+    win = SingleIonAreaDialog()
+    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
+    win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
     win.show()
 
     app.exec()

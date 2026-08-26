@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from pytestqt.qtbot import QtBot
 
 from spcal.datafile import SPCalDataFile
-from spcal.gui.dialogs.singleion import SingleIonDialog
+from spcal.gui.dialogs.singleion import SingleIonAreaDialog
 from spcal.gui.docks.central import SPCalCentralWidget
 from spcal.gui.docks.datafile import DataFileInformationDialog, SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
@@ -262,7 +262,7 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
         np.ones(10, dtype=[("mass", float), ("mu", float), ("sigma", float)])
     )
     dlg = dock.options_widget.compound.dialogSingleIon()
-    assert isinstance(dlg, SingleIonDialog)
+    assert isinstance(dlg, SingleIonAreaDialog)
     dlg.close()
     assert dock.options_widget.compound.single_ion_parameters is not None
     assert not dock.options_widget.compound.lognormal_sigma.isEnabled()

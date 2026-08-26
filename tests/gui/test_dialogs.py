@@ -27,7 +27,7 @@ from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
-from spcal.gui.dialogs.singleion import SingleIonDialog
+from spcal.gui.dialogs.singleion import SingleIonAreaDialog
 from spcal.gui.dialogs.tools import (
     MassFractionCalculatorDialog,
     ParticleDatabaseDialog,
@@ -307,7 +307,9 @@ def test_filter_dialog_filters(qtbot: QtBot):
             return False
         if len(cluster_filters) != 1 or len(cluster_filters[0]) != 1:
             return False
-        return not (cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7)
+        return not (
+            cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7
+        )
 
     with qtbot.wait_signal(
         dlg.filtersChanged, check_params_cb=check_filters, timeout=100
@@ -971,7 +973,7 @@ def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
     params["mu"] = np.random.uniform(6.0, 8.0, size=100)
     params["sigma"] = np.linspace(0.5, 0.7, 100)
 
-    dlg = SingleIonDialog(params)
+    dlg = SingleIonAreaDialog(params)
     qtbot.addWidget(dlg)
 
     with qtbot.waitExposed(dlg):

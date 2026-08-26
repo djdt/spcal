@@ -4,10 +4,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.util import text_for_mz
-from spcal.gui.graphs.viewbox import ViewBoxForceScaleAtZero
 
 
-class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):
+class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
     pointHovered = QtCore.Signal(QtCore.QPointF, int)
     pointClicked = QtCore.Signal(QtCore.QPointF, int)
 
@@ -49,7 +48,7 @@ class SingleIonScatterPlot(pyqtgraph.ScatterPlotItem):
         )
 
 
-class SingleIonScatterView(SinglePlotGraphicsView):
+class SingleIonAreaScatterView(SinglePlotGraphicsView):
     pointHovered = QtCore.Signal(QtCore.QPointF, int)
     pointClicked = QtCore.Signal(QtCore.QPointF, int)
 
@@ -62,7 +61,7 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         )
         self.plot.yaxis.autoSIPrefix = False
 
-        self.points: SingleIonScatterPlot | None = None
+        self.points: SingleIonAreaScatterPlot | None = None
         self.lines: dict[str, pyqtgraph.PlotCurveItem] = {}
         self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
@@ -92,12 +91,18 @@ class SingleIonScatterView(SinglePlotGraphicsView):
         if brush is None:
             brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
 
-        self.points = SingleIonScatterPlot(x=x, y=y, pen=pen, brush=brush)
+        self.points = SingleIonAreaScatterPlot(x=x, y=y, pen=pen, brush=brush)
         self.points.pointHovered.connect(self.pointHovered)
         self.points.pointClicked.connect(self.pointClicked)
         self.plot.addItem(self.points)
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
+
+    def setColors(self, indicies: np.ndarray, brushes: list[QtGui.QBrush]):
+        if self.points is None:
+            return
+
+        self.points.setBrush([brushes[i] for i in indicies])
 
     def setValid(self, valid: np.ndarray):
         if self.points is None:
@@ -146,73 +151,3 @@ class SingleIonScatterView(SinglePlotGraphicsView):
             self.lines["interp"] = interp
         else:
             self.lines["interp"].setData(x=xs, y=ys)
-
-
-class SingleIonHistogramView(SinglePlotGraphicsView):
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
-        super().__init__(
-            "Signal Distribution",
-            xlabel="Raw Signal",
-            ylabel="No. Events",
-            viewbox=ViewBoxForceScaleAtZero(),
-            parent=parent,
-        )
-        self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
-
-        self._hist, self._edges = None, None
-
-        self.hist_curve: pyqtgraph.PlotCurveItem | None = None
-        self.fit_curve: pyqtgraph.PlotCurveItem | None = None
-        self.fit_curves = []
-
-    def clear(self):
-        super().clear()
-        self.hist_curve = None
-        self.fit_curve = None
-        self.fit_curves.clear()
-
-    def drawHist(
-        self,
-        hist: np.ndarray,
-        edges: np.ndarray,
-        bar_width: float = 1.0,
-        bar_offset: float = 0.0,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ):
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.gray)
-
-        assert bar_width > 0.0 and bar_width <= 1.0
-        assert bar_offset >= 0.0 and bar_offset < 1.0
-
-        widths = np.diff(edges)
-
-        x = np.repeat(edges, 2)
-
-        # Calculate bar start and end points for width / offset
-        x[1:-1:2] += widths * ((1.0 - bar_width) / 2.0 + bar_offset)
-        x[2::2] -= widths * ((1.0 - bar_width) / 2.0 - bar_offset)
-
-        y = np.zeros(hist.size * 2 + 1, dtype=hist.dtype)
-        y[1:-1:2] = hist
-
-        if self.hist_curve is None:
-            self.hist_curve = pyqtgraph.PlotCurveItem(
-                x=x,
-                y=y,
-                stepMode="center",
-                fillLevel=0,
-                fillOutline=True,
-                pen=pen,
-                brush=brush,
-                skipFiniteCheck=True,
-            )
-            self.plot.addItem(self.hist_curve)
-        else:
-            self.hist_curve.setData(x=x, y=y, pen=pen, brush=brush)
-        self._hist, self._edges = hist, edges

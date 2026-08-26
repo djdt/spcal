@@ -4,7 +4,7 @@ from statistics import NormalDist
 import numpy as np
 from PySide6 import QtCore, QtWidgets
 
-from spcal.gui.dialogs.singleion import SingleIonDialog
+from spcal.gui.dialogs.singleion import SingleIonAreaDialog
 from spcal.gui.widgets.values import ValueWidget
 from spcal.isotope import SPCalIsotopeBase
 from spcal.processing.options import SPCalLimitOptions
@@ -85,8 +85,8 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         layout.addRow("SIA σ:", self.lognormal_sigma)
         layout.addRow(button_layout)
 
-    def dialogSingleIon(self) -> SingleIonDialog:
-        dlg = SingleIonDialog(
+    def dialogSingleIon(self) -> SingleIonAreaDialog:
+        dlg = SingleIonAreaDialog(
             self.single_ion_parameters,
             parent=self,
         )
@@ -102,9 +102,10 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.setSingleIonParameters(None)
 
     def setSingleIonParameters(self, params: np.ndarray | None):
-        if params is not None and (params.dtype.names is None or not all(
-            x in params.dtype.names for x in ["mass", "mu", "sigma"]
-        )):
+        if params is not None and (
+            params.dtype.names is None
+            or not all(x in params.dtype.names for x in ["mass", "mu", "sigma"])
+        ):
             raise ValueError(  # pragma: no cover, error
                 "params must be a structured array with names 'mass', 'mu', 'sigma'"
             )
@@ -308,8 +309,10 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             [
                 "Automatically determine the best method.",
                 "Use the highest of Gaussian and Poisson.",
-                ("Estimate ToF limits using a compound distribution based on the "
-                "number of accumulations and the single ion distribution."),
+                (
+                    "Estimate ToF limits using a compound distribution based on the "
+                    "number of accumulations and the single ion distribution."
+                ),
                 "Threshold using the mean and standard deviation.",
                 "Threshold using poisson statistics, see the MARLAP manual.",
                 "Manually define limits in the sample and reference tabs.",
