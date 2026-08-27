@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.limit import (
@@ -114,6 +115,8 @@ class SPCalIsotopeOptions:
 
 
 class SPCalLimitOptions:
+    MAX_SIGMA_MASS_DIFF = 0.05
+
     def __init__(
         self,
         limit_method: str = "automatic",
@@ -210,11 +213,20 @@ class SPCalLimitOptions:
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    sigma = np.interp(
-                        isotope.mass,
-                        self.single_ion_parameters["mass"],
-                        self.single_ion_parameters["sigma"],
-                    )
+                    try:
+                        sigma = self.single_ion_parameters["sigma"][
+                            search_sorted_closest(
+                                self.single_ion_parameters["mass"],
+                                [isotope.mass],
+                                SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                            )
+                        ]
+                    except ValueError:
+                        logger.warning(
+                            f"missing SIA for mass {isotope.mass}, falling back to default"
+                        )
+                        sigma = self.compound_poisson_kws["sigma"]
+
                 elif isinstance(isotope, SPCalIsotopeExpression):
                     masses = [
                         token.mass
@@ -223,13 +235,21 @@ class SPCalLimitOptions:
                     ]
                     if any(x <= 0.0 for x in masses):  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    sigma = np.mean(
-                        np.interp(
-                            masses,
-                            self.single_ion_parameters["mass"],
-                            self.single_ion_parameters["sigma"],
+                    try:
+                        sigma = np.mean(
+                            self.single_ion_parameters["sigma"][
+                                search_sorted_closest(
+                                    self.single_ion_parameters["mass"],
+                                    masses,
+                                    SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                                )
+                            ]
                         )
-                    )
+                    except ValueError:
+                        logger.warning(
+                            f"unable to calculate SIA for expr {isotope}, falling back to default"
+                        )
+                        sigma = self.compound_poisson_kws["sigma"]
                 else:  # pragma: no cover
                     raise ValueError(
                         f"cannot infer sigma from isotope type '{type(isotope)}'"

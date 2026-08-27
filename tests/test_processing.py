@@ -85,7 +85,6 @@ def test_spcal_isotope_options():
     assert not mass.canCalibrate("mass")
     assert mass.canCalibrate("mass", mode="mass response")
 
-    assert empty == empty
     assert empty != full
 
 
@@ -132,21 +131,29 @@ def test_spcal_limit_options(test_datafile: SPCalTOFWERKDataFile):
 
     # sia
     limit_options.single_ion_parameters = np.array(
-        [(1.0, 2.0, 0.8), (100.0, 2.0, 1.0)],
+        [(40.0, 2.0, 0.8), (42.0, 2.0, 1.0)],
         dtype=[("mass", float), ("mu", float), ("sigma", float)],
     )
     limit_sia = limit_options.limitsForIsotope(
+        test_datafile, ISOTOPE_TABLE[("Ca", 42)], limit_method="compound poisson"
+    )
+    assert limit_sia.parameters["sigma"] == 1.0
+    assert limit.detection_threshold != limit_sia.detection_threshold
+
+    # sia fallback
+    limit_sia_fallback = limit_options.limitsForIsotope(
         test_datafile, ISOTOPE_TABLE[("K", 41)], limit_method="compound poisson"
     )
-    assert limit.detection_threshold != limit_sia.detection_threshold
+    assert limit_sia_fallback.parameters["sigma"] == 0.65  # default
 
     # sia with expr
     isotope = SPCalIsotopeExpression(
-        "test", (ISOTOPE_TABLE[("Ar", 40)], ISOTOPE_TABLE[("K", 41)])
+        "test", (ISOTOPE_TABLE[("Ar", 40)], ISOTOPE_TABLE[("Ca", 42)])
     )
     limit_sia_expr = limit_options.limitsForIsotope(
         test_datafile, isotope, limit_method="compound poisson"
     )
+    assert limit_sia_expr.parameters["sigma"] == 0.9  # average
     assert limit_sia_expr.parameters["sigma"] < limit_sia.parameters["sigma"]
 
     test_datafile.format = "text"  # fake for test
