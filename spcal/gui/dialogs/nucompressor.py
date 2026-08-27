@@ -11,10 +11,14 @@ from spcal.io.nu import is_nu_directory, is_nu_run_info_file
 class NuCompressWorker(QtCore.QObject):
     started = QtCore.Signal(int)
     progress = QtCore.Signal(int)
+    directoryComplete = QtCore.Signal(int)
     finished = QtCore.Signal()
 
     def __init__(
-        self, paths: list[Path], level: int = 6, parent: QtCore.QObject | None = None
+        self,
+        paths: list[list[Path]],
+        level: int = 6,
+        parent: QtCore.QObject | None = None,
     ):
         super().__init__(parent)
         self.paths = paths
@@ -22,22 +26,27 @@ class NuCompressWorker(QtCore.QObject):
 
     def compressIntegFile(self, path: Path, level: int):
         tmp = path.with_name(path.name + ".gzip")
-        with (
-            path.open("rb") as fp,
-            gzip.open(tmp, "wb", compresslevel=level) as gp,
-        ):
-            gp.write(fp.read())
+        with path.open("rb") as fp:
+            data = fp.read()
+            if data[:2] == b"\x1f\x8b":  # already compressed
+                return
+            with gzip.open(tmp, "wb", compresslevel=level) as gp:
+                gp.write(data)
 
         shutil.move(tmp, path)
 
     def process(self):
         self.started.emit(0)
 
-        for i, path in enumerate(self.paths):
-            if self.thread().isInterruptionRequested():
-                break
-            self.compressIntegFile(path, self.level)
-            self.progress.emit(i)
+        progress = 1
+        for i, paths in enumerate(self.paths):
+            for path in paths:
+                if self.thread().isInterruptionRequested():
+                    break
+                self.compressIntegFile(path, self.level)
+                self.progress.emit(progress)
+                progress += 1
+            self.directoryComplete.emit(i)
 
         self.finished.emit()
 
@@ -125,13 +134,13 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
                 self.addPath(path)
                 event.accept()
 
-    def integPaths(self) -> list[Path]:
+    def integPaths(self) -> list[list[Path]]:
         paths = []
         for row in range(self.list.count()):
             item = self.list.item(row)
             integs = item.data(QtCore.Qt.ItemDataRole.UserRole)
             if integs is not None:
-                paths.extend(integs)
+                paths.append(integs)
         return paths
 
     def completeChanged(self):
@@ -140,7 +149,7 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         )
 
     def isComplete(self) -> bool:
-        return len(self.integPaths()) > 0
+        return sum(len(paths) for paths in self.integPaths()) > 0
 
     def isCompressed(self, integ: Path) -> bool:
         with integ.open("rb") as fp:
@@ -150,12 +159,13 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         paths = self.integPaths()
 
         self.worker = NuCompressWorker(paths, self.spinbox_level.value())
-        self.progress.setRange(0, len(paths))
+        self.progress.setRange(0, sum(len(integs) for integs in paths))
 
         self.worker.moveToThread(self.compress_thread)
 
         self.worker.started.connect(self.threadStarted)
         self.worker.progress.connect(self.progress.setValue)
+        self.worker.directoryComplete.connect(self.setDirectoryComplete)
         self.worker.finished.connect(self.threadFinished)
 
         self.compress_thread.started.connect(self.worker.process)
@@ -196,6 +206,13 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
         self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Close).setText(
             "Close"
         )
+        self.completeChanged()
+
+    def setDirectoryComplete(self, index: int):
+        item = self.list.item(index)
+        if item is not None:
+            item.setIcon(QtGui.QIcon.fromTheme("application-zip"))
+            item.setData(QtCore.Qt.ItemDataRole.UserRole, [])
 
     def addPath(self, path: Path):
         if is_nu_run_info_file(path):
@@ -207,6 +224,9 @@ class NuBatchCompressorDialog(QtWidgets.QDialog):
                 "Invalid Nu Directory",
                 f"{path} is not a valid Nu Vitesse batch directory.",
             )
+            return
+
+        if any(str(path) == self.list.item(i).text() for i in range(self.list.count())):
             return
 
         integs = sorted(path.glob("*.integ"), key=lambda p: int(p.stem))
