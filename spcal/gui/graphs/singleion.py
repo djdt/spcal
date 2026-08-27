@@ -98,19 +98,19 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
 
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
-    def setColors(self, indicies: np.ndarray, brushes: list[QtGui.QBrush]):
-        if self.points is None:
-            return
-
-        self.points.setBrush([brushes[i] for i in indicies])
-
-    def setValid(self, valid: np.ndarray):
-        if self.points is None:
-            return
-        brush_valid = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
-        brush_invalid = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
-        brushes = [brush_valid if x else brush_invalid for x in valid]
-        self.points.setBrush(brushes)
+    # def setColors(self, indicies: np.ndarray, brushes: list[QtGui.QBrush]):
+    #     if self.points is None:
+    #         return
+    #
+    #     self.points.setBrush([brushes[i] for i in indicies])
+    #
+    # def setValid(self, valid: np.ndarray):
+    #     if self.points is None:
+    #         return
+    #     brush_valid = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+    #     brush_invalid = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
+    #     brushes = [brush_valid if x else brush_invalid for x in valid]
+    #     self.points.setBrush(brushes)
 
     def drawMaxDifference(
         self,

@@ -1,22 +1,18 @@
 from pathlib import Path
+from typing import ClassVar
 
 import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
-from PySide6.QtWidgets import QSpinBox
 
-from spcal.dists.util import (
-    extract_compound_poisson_lognormal_parameters,
-    zero_trunc_quantile,
-)
+from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import (
     SingleIonAreaScatterView,
 )
 from spcal.gui.io import get_open_spcal_path
 from spcal.io import nu, tofwerk
-from spcal.limit import SPCalGaussianLimit
 from spcal.processing.method import SPCalProcessingMethod
 
 
@@ -63,10 +59,10 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
     resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
 
+    NUM_ZEROS_FOR_ERROR: ClassVar = {1: 350, 2: 2100, 5: 8900}
+
     def __init__(
-        self,
-        params: np.ndarray | None = None,
-        parent: QtWidgets.QWidget | None = None,
+        self, params: np.ndarray | None = None, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
@@ -88,7 +84,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.required_nonzero = QtWidgets.QSpinBox()
         self.required_nonzero.setRange(0, 10000)
-        self.required_nonzero.setValue(2100)
+        self.required_nonzero.setValue(350)
         self.required_nonzero.setSingleStep(1000)
 
         self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
@@ -213,13 +209,6 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             )
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
 
-        # Remove clearly gaussian signals
-        # zeros = np.count_nonzero(self.counts == 0, axis=0)
-        # print(np.count_nonzero(zeros))
-        #
-        # # TODO: Remove particle containing signals
-        # self.masses, self.counts = self.masses[zeros > 0], self.counts[:, zeros > 0]
-
         self.updateExtractedParameters()
         self.enableControls(True)
 
@@ -238,63 +227,46 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateValidParameters(self):
         # most likely invalid
-        valid = np.logical_and(
-            np.logical_and(self.sigmas > 0.2, self.sigmas < 0.95),
-            np.logical_and(self.lams > 0.005, self.lams < 10.0),
-        )
-        if not np.any(valid):
-            return
+        outside_sigma_range = np.logical_or(self.sigmas < 0.2, self.sigmas > 0.95)
+        # outside_lambda_range = np.logical_or(self.lams < 0.005, self.lams > 10.0)
 
-        print(self.counts.shape)
-        SPCalGaussianLimit.isGaussianDistributed(self.counts)
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
 
-        # percs = np.nanpercentile(
-        #     np.where(self.counts > 0, self.counts, np.nan), 99, axis=0
-        # )
-        # particles = np.count_nonzero(self.counts > 10 * percs, axis=0) > 10
-        # valid = np.logical_and(valid, gaussian)
-        # valid = np.logical_and(valid, particles)
+        insufficient_zeros = zeros < 150
+        insufficient_nonzeros = nonzeros < self.required_nonzero.value()
+
+        idx_error = np.zeros(self.counts.shape[1], int)
+        idx_error[outside_sigma_range] = 1
+        idx_error[insufficient_zeros] = 2
+        idx_error[insufficient_nonzeros] = 3
+
+        valid = idx_error == 0
 
         poly = np.polynomial.Polynomial.fit(self.masses[valid], self.sigmas[valid], 1)
 
         self.valid = (
             np.abs(self.sigmas - poly(self.masses)) < self.max_sigma_difference.value()
         )
-        self.valid = np.logical_and(
-            self.valid, nonzeros >= self.required_nonzero.value()
-        )
-        self.valid = np.logical_and(self.valid, self.required_nonzero.value() >= 2100)
-        self.scatter.setValid(self.valid)
+        self.valid = np.logical_and(self.valid, valid)
 
-        colors = [
-            QtGui.QBrush(QtCore.Qt.GlobalColor.black),
-            QtGui.QBrush(QtCore.Qt.GlobalColor.red),
-            QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
-            QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
-        ]
-
-        idx = np.ones(self.valid.shape, int)
-        idx[self.valid] = 0
-        idx[nonzeros < 2100] = 2
-        idx[zeros < 2100] = 3
-        # idx[particles] = 4
-
-        self.scatter.setColors(idx, colors)
-        symbols = np.full(self.valid.shape, "o", dtype="U2")
-        symbols[self.valid] = "o"
-        symbols[nonzeros < 2100] = "t"
-        symbols[zeros < 2100] = "t1"
         if self.scatter.points is not None:
-            self.scatter.points.setSymbol(symbols)
+            brushes = np.array(
+                [
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.black),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.red),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+                ]
+            )
+            symbols = np.array(["o", "x", "t", "t1"])
+            self.scatter.points.setBrush(brushes[idx_error])
+            self.scatter.points.setSymbol(symbols[idx_error])
 
         self.scatter.drawMaxDifference(poly, self.max_sigma_difference.value())
 
-        mean_mu, mean_sigma = (
-            np.mean(self.mus[self.valid]),
-            np.mean(self.sigmas[self.valid]),
-        )
+        mean_mu = np.mean(self.mus[self.valid])
+        mean_sigma = np.mean(self.sigmas[self.valid])
 
         self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
 
@@ -350,7 +322,9 @@ if __name__ == "__main__":
 
     win = SingleIonAreaDialog()
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
-    win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
+    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
+    win.loadSingleIonData("/home/tom/Downloads/NT032/14-35-55 10 ppb unatt/")
+    # win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
     win.show()
 
     app.exec()
