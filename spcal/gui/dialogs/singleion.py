@@ -84,7 +84,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.required_nonzero = QtWidgets.QSpinBox()
         self.required_nonzero.setRange(0, 10000)
-        self.required_nonzero.setValue(350)
+        self.required_nonzero.setValue(350)  # approx 5 % error
         self.required_nonzero.setSingleStep(1000)
 
         self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
@@ -233,7 +233,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
 
-        insufficient_zeros = zeros < 150
+        insufficient_zeros = zeros < 150  # approx 5 % error
         insufficient_nonzeros = nonzeros < self.required_nonzero.value()
 
         idx_error = np.zeros(self.counts.shape[1], int)
