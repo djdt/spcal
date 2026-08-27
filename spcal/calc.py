@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 def is_integer_or_near(
@@ -49,7 +50,7 @@ def expand_mask(mask: np.ndarray, size: int) -> np.ndarray:
 
 
 def search_sorted_closest(
-    x: np.ndarray, v: np.ndarray, check_max_diff: float | None = None
+    x: np.ndarray, v: ArrayLike, check_max_diff: float | None = None
 ):
     """Get the idx of the closest values in ``x`` for ``v``.
 
