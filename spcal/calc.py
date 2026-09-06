@@ -6,24 +6,6 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 
-def is_integer_or_near(
-    x: np.ndarray | float, max_deviation: float = 1e-3
-) -> np.ndarray | float:
-    """Test if float data is 'near' integer.
-    Near integers values are those less than `max_deviation` from a whole number.
-
-    Args:
-        x: float array
-        max_deviation: max distance from whole number
-
-    Returns:
-        array of bool
-    """
-    if max_deviation < 0.0 or max_deviation >= 1.0:
-        raise ValueError("'max_deviation' must be in the range [0-1).")
-    return np.abs(x - np.round(x)) <= max_deviation
-
-
 def expand_mask(mask: np.ndarray, size: int) -> np.ndarray:
     """Grows mask values in ``mask`` by ``size`` on either side.
 
@@ -49,37 +31,79 @@ def expand_mask(mask: np.ndarray, size: int) -> np.ndarray:
     return new_mask
 
 
-def search_sorted_closest(
-    x: np.ndarray, v: ArrayLike, check_max_diff: float | None = None
-):
-    """Get the idx of the closest values in ``x`` for ``v``.
-
-    If ``check_max_diff`` is a value, the maximum distance must be lower.
+def interpolate_3d(
+    x: ArrayLike | float,
+    y: ArrayLike | float,
+    z: ArrayLike | float,
+    xs: np.ndarray,
+    ys: np.ndarray,
+    zs: np.ndarray,
+    data: np.ndarray,
+) -> np.ndarray | float:
+    """Cubic interpolation of (x, y, z) for data.
 
     Args:
-        x: sorted array
-        y: values to find closest idx of in x
-        check_max_diff: if not None, check maximum diff is less than this
+        x: x position of values to interpolate
+        y: y position of values to interpolate
+        z: z position of values to interpolate
+        xs: x values of ``data``
+        ys: y values of ``data``
+        zs: z values of ``data``
+        data: known values, shape (xs, ys, zs)
 
     Returns:
-        idx of closest ``x`` values for ``v``
-
-    Raises:
-        ValueError if ``check_max_diff`` is not None and max diff greater.
+        interpolated values, shape (x)
     """
-    idx = np.searchsorted(x, v, side="left")
-    prev_less = np.abs(v - x[np.maximum(idx - 1, 0)]) < np.abs(
-        v - x[np.minimum(idx, len(x) - 1)]
-    )
-    prev_less = (idx == len(x)) | prev_less
-    idx[prev_less] -= 1
+    x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
+    assert x.size == y.size == z.size
+    assert data.shape == (xs.size, ys.size, zs.size)
 
-    if check_max_diff is not None:
-        diffs = np.abs(x[idx] - v)
-        if np.any(diffs > check_max_diff):
-            raise ValueError("could not find value closer than 'check_max_diff'")
+    idx0 = np.searchsorted(xs, x, side="right") - 1
+    idy0 = np.searchsorted(ys, y, side="right") - 1
+    idz0 = np.searchsorted(zs, z, side="right") - 1
 
-    return idx
+    idx1 = np.minimum(idx0 + 1, xs.size - 1)
+    idy1 = np.minimum(idy0 + 1, ys.size - 1)
+    idz1 = np.minimum(idz0 + 1, zs.size - 1)
+
+    # Fix any edge cases
+    idx0 = np.where(idx1 == xs.size - 1, idx1 - 1, idx0)
+    idy0 = np.where(idy1 == ys.size - 1, idy1 - 1, idy0)
+    idz0 = np.where(idz1 == zs.size - 1, idz1 - 1, idz0)
+
+    xd = (x - xs[idx0]) / (xs[idx1] - xs[idx0])
+    yd = (y - ys[idy0]) / (ys[idy1] - ys[idy0])
+    zd = (z - zs[idz0]) / (zs[idz1] - zs[idz0])
+
+    c00 = data[idx0, idy0, idz0] * (1.0 - xd) + data[idx1, idy0, idz0] * xd
+    c01 = data[idx0, idy0, idz1] * (1.0 - xd) + data[idx1, idy0, idz1] * xd
+    c10 = data[idx0, idy1, idz0] * (1.0 - xd) + data[idx1, idy1, idz0] * xd
+    c11 = data[idx0, idy1, idz1] * (1.0 - xd) + data[idx1, idy1, idz1] * xd
+
+    c0 = c00 * (1.0 - yd) + c10 * yd
+    c1 = c01 * (1.0 - yd) + c11 * yd
+
+    c = c0 * (1.0 - zd) + c1 * zd
+
+    return c
+
+
+def is_integer_or_near(
+    x: np.ndarray | float, max_deviation: float = 1e-3
+) -> np.ndarray | float:
+    """Test if float data is 'near' integer.
+    Near integers values are those less than `max_deviation` from a whole number.
+
+    Args:
+        x: float array
+        max_deviation: max distance from whole number
+
+    Returns:
+        array of bool
+    """
+    if max_deviation < 0.0 or max_deviation >= 1.0:
+        raise ValueError("'max_deviation' must be in the range [0-1).")
+    return np.abs(x - np.round(x)) <= max_deviation
 
 
 def mode(x: np.ndarray, bins: int | np.ndarray | str = "auto") -> float:
@@ -163,6 +187,56 @@ def pca(
         v[:trim_to_components],
         explained_variance[:trim_to_components],
     )
+
+
+def search_sorted_closest(
+    x: np.ndarray, v: ArrayLike, check_max_diff: float | None = None
+):
+    """Get the idx of the closest values in ``x`` for ``v``.
+
+    If ``check_max_diff`` is a value, the maximum distance must be lower.
+
+    Args:
+        x: sorted array
+        y: values to find closest idx of in x
+        check_max_diff: if not None, check maximum diff is less than this
+
+    Returns:
+        idx of closest ``x`` values for ``v``
+
+    Raises:
+        ValueError if ``check_max_diff`` is not None and max diff greater.
+    """
+    idx = np.searchsorted(x, v, side="left")
+    prev_less = np.abs(v - x[np.maximum(idx - 1, 0)]) < np.abs(
+        v - x[np.minimum(idx, len(x) - 1)]
+    )
+    prev_less = (idx == len(x)) | prev_less
+    idx[prev_less] -= 1
+
+    if check_max_diff is not None:
+        diffs = np.abs(x[idx] - v)
+        if np.any(diffs > check_max_diff):
+            raise ValueError("could not find value closer than 'check_max_diff'")
+
+    return idx
+
+
+def sparse_gaussian(x: np.ndarray, y: np.ndarray, sigma: float):
+    """Gaussian filter with uneven spaced values.
+
+    Args:
+        x: array of x values
+        y: values to smooth
+        sigma: spread parameter
+
+    Returns:
+        smoothed array
+    """
+    valid = ~np.isnan(y)
+    diff = x[:, None] - x[valid]
+    weights = np.exp(-0.5 * (diff / sigma) ** 2)
+    return np.dot(weights, y[valid]) / np.sum(weights, axis=1)
 
 
 def weights_from_weighting(
@@ -257,60 +331,3 @@ def weighted_linreg(
         error = 0.0
 
     return coef[1], coef[0], r2, error
-
-
-def interpolate_3d(
-    x: np.ndarray | float,
-    y: np.ndarray | float,
-    z: np.ndarray | float,
-    xs: np.ndarray,
-    ys: np.ndarray,
-    zs: np.ndarray,
-    data: np.ndarray,
-) -> np.ndarray | float:
-    """Cubic interpolation of (x, y, z) for data.
-
-    Args:
-        x: x position of values to interpolate
-        y: y position of values to interpolate
-        z: z position of values to interpolate
-        xs: x values of ``data``
-        ys: y values of ``data``
-        zs: z values of ``data``
-        data: known values, shape (xs, ys, zs)
-
-    Returns:
-        interpolated values, shape (x)
-    """
-    x, y, z = np.asarray(x), np.asarray(y), np.asarray(z)
-    assert x.size == y.size == z.size
-    assert data.shape == (xs.size, ys.size, zs.size)
-
-    idx0 = np.searchsorted(xs, x, side="right") - 1
-    idy0 = np.searchsorted(ys, y, side="right") - 1
-    idz0 = np.searchsorted(zs, z, side="right") - 1
-
-    idx1 = np.minimum(idx0 + 1, xs.size - 1)
-    idy1 = np.minimum(idy0 + 1, ys.size - 1)
-    idz1 = np.minimum(idz0 + 1, zs.size - 1)
-
-    # Fix any edge cases
-    idx0 = np.where(idx1 == xs.size - 1, idx1 - 1, idx0)
-    idy0 = np.where(idy1 == ys.size - 1, idy1 - 1, idy0)
-    idz0 = np.where(idz1 == zs.size - 1, idz1 - 1, idz0)
-
-    xd = (x - xs[idx0]) / (xs[idx1] - xs[idx0])
-    yd = (y - ys[idy0]) / (ys[idy1] - ys[idy0])
-    zd = (z - zs[idz0]) / (zs[idz1] - zs[idz0])
-
-    c00 = data[idx0, idy0, idz0] * (1.0 - xd) + data[idx1, idy0, idz0] * xd
-    c01 = data[idx0, idy0, idz1] * (1.0 - xd) + data[idx1, idy0, idz1] * xd
-    c10 = data[idx0, idy1, idz0] * (1.0 - xd) + data[idx1, idy1, idz0] * xd
-    c11 = data[idx0, idy1, idz1] * (1.0 - xd) + data[idx1, idy1, idz1] * xd
-
-    c0 = c00 * (1.0 - yd) + c10 * yd
-    c1 = c01 * (1.0 - yd) + c11 * yd
-
-    c = c0 * (1.0 - zd) + c1 * zd
-
-    return c

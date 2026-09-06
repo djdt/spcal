@@ -1,7 +1,40 @@
 import numpy as np
 import pytest
+from scipy.ndimage import gaussian_filter1d
 
 from spcal import calc
+
+
+def test_expand_mask():
+    x = np.zeros((9, 9))
+    x[4, 4] = 1
+    x = calc.expand_mask(x, 1)
+    assert np.all(x[3:6, 4])
+    x = calc.expand_mask(x, 2)
+    assert np.all(x[1:8, 4])
+
+
+def test_interpolate_3d():
+    xs = np.array([1.0, 2.0, 3.0])
+    ys = np.array([2.0, 4.0, 6.0])
+    zs = np.array([10.0, 20.0, 30.0])
+    data = np.sin(np.arange(3 * 3 * 3).reshape(3, 3, 3))
+
+    # existing value
+    v1 = calc.interpolate_3d(2.0, 4.0, 20.0, xs, ys, zs, data)
+    assert v1 == data[1, 1, 1]
+
+    # linear between 2 values
+    v2 = calc.interpolate_3d(2.5, 4.0, 20.0, xs, ys, zs, data)
+    assert v2 == np.mean([data[1, 1, 1], data[2, 1, 1]])
+
+    # all existing
+    v3 = calc.interpolate_3d([2.0, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
+    assert np.allclose(v3, [data[1, 1, 0], data[2, 2, 1]])
+
+    # mix of existing
+    v4 = calc.interpolate_3d([2.5, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
+    assert np.all(v4 == [np.mean([data[2, 1, 0], data[1, 1, 0]]), data[2, 2, 1]])
 
 
 def test_is_integer_or_near():
@@ -16,26 +49,6 @@ def test_is_integer_or_near():
 
     with pytest.raises(ValueError):
         calc.is_integer_or_near(1.0, max_deviation=-0.1)
-
-
-def test_expand_mask():
-    x = np.zeros((9, 9))
-    x[4, 4] = 1
-    x = calc.expand_mask(x, 1)
-    assert np.all(x[3:6, 4])
-    x = calc.expand_mask(x, 2)
-    assert np.all(x[1:8, 4])
-
-
-def test_searchsorted_closest():
-    x = np.arange(10.0)
-    y = calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]))
-    assert np.all(y == [1, 5, 9, 6])
-
-    with pytest.raises(ValueError):
-        calc.search_sorted_closest(
-            x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1
-        )
 
 
 def test_mode():
@@ -75,6 +88,27 @@ def test_pca():
             [-1.17631538e00, -9.72176943e-01, -1.43748120e-16, 3.78944142e-18],
         ],
     )
+
+
+def test_searchsorted_closest():
+    x = np.arange(10.0)
+    y = calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]))
+    assert np.all(y == [1, 5, 9, 6])
+
+    with pytest.raises(ValueError):
+        calc.search_sorted_closest(
+            x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1
+        )
+
+
+def test_sparse_gaussian():
+    x = np.arange(50, dtype=float)
+    y = np.random.random(50)
+
+    g = calc.sparse_gaussian(x, y, 2.0)
+    scipy_gaus = gaussian_filter1d(y, 2.0)
+
+    assert np.allclose(g[10:-10], scipy_gaus[10:-10], atol=1e-5)
 
 
 def test_weighting():
@@ -127,26 +161,3 @@ def test_weighted_linreg():
     assert calc.weighted_linreg(x, y, x) == pytest.approx(
         (2.085714, -3.314286, 0.865097, 1.603991)
     )
-
-
-def test_interpolate_3d():
-    xs = np.array([1.0, 2.0, 3.0])
-    ys = np.array([2.0, 4.0, 6.0])
-    zs = np.array([10.0, 20.0, 30.0])
-    data = np.sin(np.arange(3 * 3 * 3).reshape(3, 3, 3))
-
-    # existing value
-    v1 = calc.interpolate_3d(2.0, 4.0, 20.0, xs, ys, zs, data)
-    assert v1 == data[1, 1, 1]
-
-    # linear between 2 values
-    v2 = calc.interpolate_3d(2.5, 4.0, 20.0, xs, ys, zs, data)
-    assert v2 == np.mean([data[1, 1, 1], data[2, 1, 1]])
-
-    # all existing
-    v3 = calc.interpolate_3d([2.0, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
-    assert np.allclose(v3, [data[1, 1, 0], data[2, 2, 1]])
-
-    # mix of existing
-    v4 = calc.interpolate_3d([2.5, 3.0], [4.0, 6.0], [10.0, 20.0], xs, ys, zs, data)
-    assert np.all(v4 == [np.mean([data[2, 1, 0], data[1, 1, 0]]), data[2, 2, 1]])
