@@ -1,11 +1,12 @@
+from importlib.resources import files
 from pathlib import Path
-from typing import ClassVar
 
 import h5py
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
 
+from spcal.calc import sparse_gaussian
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import (
@@ -59,13 +60,19 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
     resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
 
-    NUM_ZEROS_FOR_ERROR: ClassVar = {1: 350, 2: 2100, 5: 8900}
-
     def __init__(
         self, params: np.ndarray | None = None, parent: QtWidgets.QWidget | None = None
     ):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
+
+        """ The SIA guide is calculated from data in https://doi.org/10.1039/d5ja00230c.
+            This is from several Nu Vitesse instruments
+        """
+        self.guide_data = np.load(
+            files("spcal.resources").joinpath("sia_shape_guide.npz").open("rb"),
+            allow_pickle=False,
+        )
 
         self.scatter = SingleIonAreaScatterView()
         self.scatter.pointClicked.connect(self.onPointClicked)
@@ -82,28 +89,33 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.screening_method.limit_options.limit_method = "poisson"
         self.screening_method.limit_options.poisson_kws["alpha"] = 1e-7
 
-        self.required_nonzero = QtWidgets.QSpinBox()
-        self.required_nonzero.setRange(0, 10000)
-        self.required_nonzero.setValue(350)  # approx 5 % error
-        self.required_nonzero.setSingleStep(1000)
+        self.required_nonzero_error = QtWidgets.QComboBox()
+        self.required_nonzero_error.addItems(["1 %", "2 %", "5 %"])
+        self.required_nonzero_error.setItemData(
+            0, 8900, QtCore.Qt.ItemDataRole.UserRole
+        )
+        self.required_nonzero_error.setItemData(
+            1, 2100, QtCore.Qt.ItemDataRole.UserRole
+        )
+        self.required_nonzero_error.setItemData(2, 350, QtCore.Qt.ItemDataRole.UserRole)
+        self.required_nonzero_error.setCurrentIndex(2)
+        self.required_nonzero_error.currentIndexChanged.connect(
+            self.updateValidParameters
+        )
 
-        self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
-        self.max_sigma_difference.setRange(0.01, 1.0)
-        self.max_sigma_difference.setValue(0.1)
-        self.max_sigma_difference.setSingleStep(0.01)
-        self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
+        # self.selected_
 
-        self.smoothing = OddValueSpinBox()
-        self.smoothing.setSpecialValueText("None")
-        self.smoothing.setRange(1, 9)
-        self.smoothing.setValue(-1)
-        self.smoothing.setSingleStep(1)
-        self.smoothing.valueChanged.connect(self.updateScatterInterp)
+        # self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
+        # self.max_sigma_difference.setRange(0.01, 1.0)
+        # self.max_sigma_difference.setValue(0.1)
+        # self.max_sigma_difference.setSingleStep(0.01)
+        # self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
 
         self.controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
-        controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
-        controls_layout.addRow("Smoothing:", self.smoothing)
+        # controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
+        controls_layout.addRow("Max σ error:", self.required_nonzero_error)
+        # controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
         self.enableControls(False)
 
@@ -214,8 +226,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateExtractedParameters(self):
         self.scatter.clear()
-        if not self.max_sigma_difference.hasAcceptableInput():
-            return
+        # if not self.max_sigma_difference.hasAcceptableInput():
+        #     return
 
         self.lams, self.mus, self.sigmas = (
             extract_compound_poisson_lognormal_parameters(self.counts).T
@@ -225,6 +237,23 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.updateValidParameters()
 
+    def updateGuide(self):
+        idx = np.searchsorted(self.masses[self.valid] + 0.5, self.guide_data["mass"])
+        valid = np.abs(self.masses[self.valid][idx] - self.guide_data["mass"]) < 0.1
+        offset = np.nanmedian(
+            self.guide_data["median"][valid] - self.sigmas[self.valid][idx][valid]
+        )
+
+        xs = self.guide_data["mass"]
+        min = sparse_gaussian(
+            xs, self.guide_data["median"] - 1.5 * self.guide_data["iqr"], 3.0
+        )
+        max = sparse_gaussian(
+            xs, self.guide_data["median"] + 1.5 * self.guide_data["iqr"], 3.0
+        )
+
+        self.scatter.drawGuide(self.guide_data["mass"], min - offset, max - offset)
+
     def updateValidParameters(self):
         # most likely invalid
         outside_sigma_range = np.logical_or(self.sigmas < 0.2, self.sigmas > 0.95)
@@ -233,22 +262,19 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
 
-        insufficient_zeros = zeros < 150  # approx 5 % error
-        insufficient_nonzeros = nonzeros < self.required_nonzero.value()
+        required_zeros = self.required_nonzero_error.currentData(
+            QtCore.Qt.ItemDataRole.UserRole
+        )
+
+        insufficient_zeros = zeros < 150  # approx 5 % error in lambda
+        insufficient_nonzeros = nonzeros < required_zeros
 
         idx_error = np.zeros(self.counts.shape[1], int)
         idx_error[outside_sigma_range] = 1
         idx_error[insufficient_zeros] = 2
         idx_error[insufficient_nonzeros] = 3
 
-        valid = idx_error == 0
-
-        poly = np.polynomial.Polynomial.fit(self.masses[valid], self.sigmas[valid], 1)
-
-        self.valid = (
-            np.abs(self.sigmas - poly(self.masses)) < self.max_sigma_difference.value()
-        )
-        self.valid = np.logical_and(self.valid, valid)
+        self.valid = idx_error == 0
 
         if self.scatter.points is not None:
             brushes = np.array(
@@ -263,8 +289,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.scatter.points.setBrush(brushes[idx_error])
             self.scatter.points.setSymbol(symbols[idx_error])
 
-        self.scatter.drawMaxDifference(poly, self.max_sigma_difference.value())
-
+        self.updateGuide()
         mean_mu = np.mean(self.mus[self.valid])
         mean_sigma = np.mean(self.sigmas[self.valid])
 
@@ -272,29 +297,29 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.completeChanged()
 
-        self.updateScatterInterp()
+    #     self.updateScatterInterp()
+    #
+    # def updateScatterInterp(self):
+    #     xs, ys = self.smoothedParameters(
+    #         self.masses[self.valid], self.sigmas[self.valid]
+    #     )
+    #     self.scatter.drawInterpolationLine(xs, ys)
 
-    def updateScatterInterp(self):
-        xs, ys = self.smoothedParameters(
-            self.masses[self.valid], self.sigmas[self.valid]
-        )
-        self.scatter.drawInterpolationLine(xs, ys)
+    # def smoothedParameters(
+    #     self, xs: np.ndarray, ys: np.ndarray
 
-    def smoothedParameters(
-        self, xs: np.ndarray, ys: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
-        smoothing = self.smoothing.value()
-        if smoothing < 3:
-            return xs, ys
-        elif smoothing % 2 == 1:
-            _xs = np.arange(xs[0], xs[-1] + 1.0, 1.0)
-            _ys = np.interp(_xs, xs, ys)
-            _ys[smoothing // 2 - 1 : -(smoothing // 2 + 1)] = np.convolve(
-                _ys, np.ones(smoothing) / smoothing, mode="valid"
-            )
-            return xs, np.interp(xs, _xs, _ys)
-        else:
-            raise ValueError(f"invalid smoothing window {smoothing}")
+    #     smoothing = self.smoothing.value()
+    #     if smoothing < 3:
+    #         return xs, ys
+    #     elif smoothing % 2 == 1:
+    #         _xs = np.arange(xs[0], xs[-1] + 1.0, 1.0)
+    #         _ys = np.interp(_xs, xs, ys)
+    #         _ys[smoothing // 2 - 1 : -(smoothing // 2 + 1)] = np.convolve(
+    #             _ys, np.ones(smoothing) / smoothing, mode="valid"
+    #         )
+    #         return xs, np.interp(xs, _xs, _ys)
+    #     else:
+    #         raise ValueError(f"invalid smoothing window {smoothing}")
 
     def accept(self):
         if self.masses.size > 0:
@@ -323,7 +348,7 @@ if __name__ == "__main__":
     win = SingleIonAreaDialog()
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
-    win.loadSingleIonData("/home/tom/Downloads/NT032/14-35-55 10 ppb unatt/")
+    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
     # win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
     win.show()
 

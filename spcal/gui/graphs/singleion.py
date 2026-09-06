@@ -61,8 +61,38 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
         )
         self.plot.yaxis.autoSIPrefix = False
 
-        self.points: SingleIonAreaScatterPlot | None = None
-        self.lines: dict[str, pyqtgraph.PlotCurveItem] = {}
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
+        pen.setCosmetic(True)
+        brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
+
+        self.points = SingleIonAreaScatterPlot(
+            x=np.array([0]), y=np.array([0]), pen=pen, brush=brush
+        )
+        self.points.pointHovered.connect(self.pointHovered)
+        self.points.pointClicked.connect(self.pointClicked)
+        self.plot.addItem(self.points)
+
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+        pen.setCosmetic(True)
+        brush = QtGui.QBrush(QtGui.QColor.fromRgbF(1.0, 0.0, 0.0, 0.1))
+
+        self.guide_mean = pyqtgraph.PlotCurveItem(
+            x=[], y=[], pen=pen, skipFiniteCheck=True
+        )
+        self.guide_std_top = pyqtgraph.PlotCurveItem(
+            x=[], y=[], pen=pen, skipFiniteCheck=True
+        )
+        self.guide_std_bot = pyqtgraph.PlotCurveItem(
+            x=[], y=[], pen=pen, skipFiniteCheck=True
+        )
+
+        self.guide_std = pyqtgraph.FillBetweenItem(
+            self.guide_std_top, self.guide_std_bot, brush=brush
+        )
+
+        self.plot.addItem(self.guide_mean)
+        self.plot.addItem(self.guide_std)
+
         self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
     #     self.pointHovered.connect(self.onPointHovered)
@@ -71,31 +101,10 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
     #     self.label.setPos(pos)
 
     def clear(self):
-        super().clear()
-        self.points = None
-        self.lines.clear()
+        self.points.clear()
 
-    def drawData(
-        self,
-        x: np.ndarray,
-        y: np.ndarray,
-        pen: QtGui.QPen | None = None,
-        brush: QtGui.QBrush | None = None,
-    ):
-        if self.points is not None:
-            self.plot.removeItem(self.points)
-
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.black, 1.0)
-            pen.setCosmetic(True)
-        if brush is None:
-            brush = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
-
-        self.points = SingleIonAreaScatterPlot(x=x, y=y, pen=pen, brush=brush)
-        self.points.pointHovered.connect(self.pointHovered)
-        self.points.pointClicked.connect(self.pointClicked)
-        self.plot.addItem(self.points)
-
+    def drawData(self, x: np.ndarray, y: np.ndarray):
+        self.points.setData(x=x, y=y)
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
     # def setColors(self, indicies: np.ndarray, brushes: list[QtGui.QBrush]):
@@ -112,42 +121,53 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
     #     brushes = [brush_valid if x else brush_invalid for x in valid]
     #     self.points.setBrush(brushes)
 
-    def drawMaxDifference(
-        self,
-        poly: np.polynomial.Polynomial,
-        max_difference: float,
-        pen: QtGui.QPen | None = None,
-    ):
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
-            pen.setCosmetic(True)
+    def drawGuide(self, xs: np.ndarray, min: np.ndarray, max: np.ndarray):
+        # pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+        # pen.setCosmetic(True)
 
-        if "max_diff" not in self.lines:
-            max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs", antialias=True)
-            self.plot.addItem(max_diff)
-            self.lines["max_diff"] = max_diff
+        # self.guide_mean = pyqtgraph.PlotCurveItem(
+        #     x=xs, y=mean, pen=pen, skipFiniteCheck=True
+        # )
+        # self.guide_mean.setData(x=xs, y=mean)
+        self.guide_std_top.setData(x=xs, y=max)
+        self.guide_std_bot.setData(x=xs, y=min)
 
-        xs = [poly.domain[0], poly.domain[-1], poly.domain[0], poly.domain[-1]]
-        ys = poly(xs)
-        ys += [
-            max_difference,
-            max_difference,
-            -max_difference,
-            -max_difference,
-        ]
-        self.lines["max_diff"].setData(x=xs, y=ys)
-        self.lines["max_diff"].setPen(pen)
-
-    def drawInterpolationLine(
-        self, xs: np.ndarray, ys: np.ndarray, pen: QtGui.QPen | None = None
-    ):
-        if pen is None:
-            pen = QtGui.QPen(QtCore.Qt.GlobalColor.blue, 1.0)
-            pen.setCosmetic(True)
-
-        if "interp" not in self.lines:
-            interp = pyqtgraph.PlotCurveItem(x=xs, y=ys, pen=pen, skipFiniteCheck=True)
-            self.plot.addItem(interp)
-            self.lines["interp"] = interp
-        else:
-            self.lines["interp"].setData(x=xs, y=ys)
+    # def drawMaxDifference(
+    #     self,
+    #     poly: np.polynomial.Polynomial,
+    #     max_difference: float,
+    #     pen: QtGui.QPen | None = None,
+    # ):
+    #     if pen is None:
+    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+    #         pen.setCosmetic(True)
+    #
+    #     if "max_diff" not in self.lines:
+    #         max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs", antialias=True)
+    #         self.plot.addItem(max_diff)
+    #         self.lines["max_diff"] = max_diff
+    #
+    #     xs = [poly.domain[0], poly.domain[-1], poly.domain[0], poly.domain[-1]]
+    #     ys = poly(xs)
+    #     ys += [
+    #         max_difference,
+    #         max_difference,
+    #         -max_difference,
+    #         -max_difference,
+    #     ]
+    #     self.lines["max_diff"].setData(x=xs, y=ys)
+    #     self.lines["max_diff"].setPen(pen)
+    #
+    # def drawInterpolationLine(
+    #     self, xs: np.ndarray, ys: np.ndarray, pen: QtGui.QPen | None = None
+    # ):
+    #     if pen is None:
+    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.blue, 1.0)
+    #         pen.setCosmetic(True)
+    #
+    #     if "interp" not in self.lines:
+    #         interp = pyqtgraph.PlotCurveItem(x=xs, y=ys, pen=pen, skipFiniteCheck=True)
+    #         self.plot.addItem(interp)
+    #         self.lines["interp"] = interp
+    #     else:
+    #         self.lines["interp"].setData(x=xs, y=ys)
