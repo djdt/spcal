@@ -6,15 +6,25 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
 
-from spcal.calc import sparse_gaussian
+from spcal.calc import search_sorted_closest, sparse_gaussian
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import (
     SingleIonAreaScatterView,
 )
 from spcal.gui.io import get_open_spcal_path
+from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io import nu, tofwerk
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
 from spcal.processing.method import SPCalProcessingMethod
+
+
+def isotopesForMasses(valid_isotopes: list[SPCalIsotope], masses: np.ndarray):
+    isotopes = []
+    for iso in valid_isotopes:
+        if np.any(np.abs(masses - iso.mass) < 0.1):
+            isotopes.append(iso)
+    return isotopes
 
 
 class OddValueSpinBox(QtWidgets.QSpinBox):
@@ -56,6 +66,67 @@ class SingleIonAreaSignalsPopup(QtWidgets.QDialog):
         )
 
 
+class SingleIonIsotopesDialog(QtWidgets.QDialog):
+    isotopesSelected = QtCore.Signal(list)
+
+    def __init__(
+        self,
+        enabled: list[SPCalIsotope],
+        selected: list[SPCalIsotope],
+        parent: QtWidgets.QWidget | None = None,
+    ):
+        super().__init__(parent)
+
+        # [
+        #     iso
+        #     for iso in ISOTOPE_TABLE.values()
+        #     if iso.composition is not None and iso.composition > min_composition
+        # ]
+
+        self.table = PeriodicTableSelector(enabled, selected)
+
+        self.buttons = QtWidgets.QDialogButtonBox
+
+        self.button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+            | QtWidgets.QDialogButtonBox.StandardButton.Reset
+        )
+        button_screen = QtWidgets.QPushButton("Screen")
+        button_screen.setIcon(QtGui.QIcon.fromTheme("edit-find"))
+        self.button_box.addButton(
+            button_screen, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole
+        )
+        self.button_box.clicked.connect(self.onButtonClicked)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.table, 1)
+        layout.addWidget(self.button_box, 0)
+        self.setLayout(layout)
+
+    def onButtonClicked(self, button: QtWidgets.QAbstractButton):
+        sb = self.button_box.standardButton(button)
+        if sb == QtWidgets.QDialogButtonBox.StandardButton.Reset:
+            self.table.setSelectedIsotopes([])
+        elif sb == QtWidgets.QDialogButtonBox.StandardButton.Ok:
+            self.accept()
+        else:  # Close
+            self.reject()
+
+    def completeChanged(self):
+        complete = self.isComplete()
+        self.button_box.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setEnabled(
+            complete
+        )
+
+    def isComplete(self) -> bool:
+        return len(self.table.selectedIsotopes()) > 0
+
+    def accept(self):
+        self.isotopesSelected.emit(self.table.selectedIsotopes())
+        super().accept()
+
+
 class SingleIonAreaDialog(QtWidgets.QDialog):
     resetRequested = QtCore.Signal()
     parametersExtracted = QtCore.Signal(np.ndarray)
@@ -78,6 +149,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.scatter.pointClicked.connect(self.onPointClicked)
 
         self.masses = np.array([])
+        self.selected_masses = np.array([])
         self.counts = np.array([])
 
         self.lams = np.array([])
@@ -98,23 +170,28 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             1, 2100, QtCore.Qt.ItemDataRole.UserRole
         )
         self.required_nonzero_error.setItemData(2, 350, QtCore.Qt.ItemDataRole.UserRole)
-        self.required_nonzero_error.setCurrentIndex(2)
+        self.required_nonzero_error.setCurrentIndex(0)
         self.required_nonzero_error.currentIndexChanged.connect(
             self.updateValidParameters
         )
 
-        # self.selected_
+        self.check_peaks = QtWidgets.QCheckBox("Remove signals with particles")
+        self.check_peaks.setToolTip(
+            "Remove signals with values greater than 10 times the non-zero mean."
+        )
+        self.check_peaks.setChecked(True)
+        self.check_peaks.checkStateChanged.connect(self.updateValidParameters)
 
-        # self.max_sigma_difference = QtWidgets.QDoubleSpinBox()
-        # self.max_sigma_difference.setRange(0.01, 1.0)
-        # self.max_sigma_difference.setValue(0.1)
-        # self.max_sigma_difference.setSingleStep(0.01)
-        # self.max_sigma_difference.valueChanged.connect(self.updateValidParameters)
+        self.selected_isotopes = []
+        self.button_select_isotopes = QtWidgets.QPushButton("Set isotopes...")
+        self.button_select_isotopes.pressed.connect(self.dialogSelectIsotopes)
 
         self.controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
         # controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
         controls_layout.addRow("Max σ error:", self.required_nonzero_error)
+        controls_layout.addWidget(self.button_select_isotopes)
+        controls_layout.addRow(self.check_peaks)
         # controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
         self.enableControls(False)
@@ -186,6 +263,18 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.enableControls(False)
 
+    def dialogSelectIsotopes(self) -> QtWidgets.QDialog:
+        dlg = SingleIonIsotopesDialog(
+            self.enabled_isotopes, self.selected_isotopes, parent=self
+        )
+        dlg.isotopesSelected.connect(self.setSelectedIsotopes)
+        dlg.open()
+        return dlg
+
+    def setSelectedIsotopes(self, isotopes: list[SPCalIsotope]):
+        self.selected_isotopes = sorted(isotopes, key=lambda iso: iso.mass)
+        self.updateValidParameters()
+
     def loadSingleIonData(self, path: str | Path | None = None):
         if path is None:
             path = get_open_spcal_path(self, "Single Ion Data")
@@ -220,6 +309,44 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
                 f"'{path.stem}' is not a valid TOF data file.\nOnly Nu Instruments and TOFWERK data is supported.",
             )
             raise ValueError(f"{path.stem} is neither a Nu or TOFWERK file")
+
+        natural_isotopes = [
+            iso for iso in ISOTOPE_TABLE.values() if iso.composition is not None
+        ]
+        natural_isotopes = sorted(natural_isotopes, key=lambda iso: iso.mass)
+        natural_masses = np.fromiter(
+            (iso.mass for iso in natural_isotopes), dtype=float
+        )
+        idx = search_sorted_closest(self.masses, natural_masses)
+        valid_natural = np.abs(self.masses[idx] - natural_masses) < 0.1
+
+        enabled_isotopes = [
+            iso
+            for iso in natural_isotopes
+            if iso.composition is not None and iso.composition > 0.1
+        ]
+        enabled_masses = np.fromiter(
+            (iso.mass for iso in enabled_isotopes), dtype=float
+        )
+        idx = search_sorted_closest(self.masses, enabled_masses)
+        valid_enabled = np.abs(self.masses[idx] - enabled_masses) < 0.1
+
+        self.enabled_isotopes = [
+            iso for iso, v in zip(natural_isotopes, valid_natural) if v
+        ]
+        self.selected_isotopes = [
+            iso for iso, v in zip(enabled_isotopes, valid_enabled) if v
+        ]
+
+        # trim to valid masses
+        enabled_masses = np.fromiter(
+            (iso.mass for iso in self.enabled_isotopes), dtype=float
+        )
+        idx = search_sorted_closest(enabled_masses, self.masses)
+        valid = np.abs(enabled_masses[idx] - self.masses) < 0.1
+
+        self.masses = self.masses[valid]
+        self.counts = self.counts[:, valid]
 
         self.updateExtractedParameters()
         self.enableControls(True)
@@ -256,8 +383,17 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateValidParameters(self):
         # most likely invalid
-        outside_sigma_range = np.logical_or(self.sigmas < 0.2, self.sigmas > 0.95)
+        # outside_sigma_range = np.logical_or(self.sigmas < 0.3, self.sigmas > 0.9)
         # outside_lambda_range = np.logical_or(self.lams < 0.005, self.lams > 10.0)
+        #
+        idx_error = np.zeros(self.counts.shape[1], int)
+
+        selected_isotope_masses = np.fromiter(
+            (iso.mass for iso in self.selected_isotopes), dtype=float
+        )
+        idx = search_sorted_closest(selected_isotope_masses, self.masses)
+        not_selected = np.abs(selected_isotope_masses[idx] - self.masses) > 0.1
+        idx_error[not_selected] = 1
 
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
@@ -269,23 +405,30 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         insufficient_zeros = zeros < 150  # approx 5 % error in lambda
         insufficient_nonzeros = nonzeros < required_zeros
 
-        idx_error = np.zeros(self.counts.shape[1], int)
-        idx_error[outside_sigma_range] = 1
-        idx_error[insufficient_zeros] = 2
-        idx_error[insufficient_nonzeros] = 3
+        idx_error[insufficient_zeros] = 3
+        idx_error[insufficient_nonzeros] = 4
+
+        if self.check_peaks.isChecked():
+            nonzero_mean = np.sum(self.counts, axis=0) / nonzeros
+            has_peaks = np.count_nonzero(self.counts > nonzero_mean * 10.0, axis=0) > 1
+            idx_error[has_peaks] = 2
 
         self.valid = idx_error == 0
+        if np.count_nonzero(self.valid) == 0:
+            self.clear()
+            return
 
         if self.scatter.points is not None:
             brushes = np.array(
                 [
                     QtGui.QBrush(QtCore.Qt.GlobalColor.black),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.white),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.red),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                 ]
             )
-            symbols = np.array(["o", "x", "t", "t1"])
+            symbols = np.array(["o", "o", "x", "t1", "t"])
             self.scatter.points.setBrush(brushes[idx_error])
             self.scatter.points.setSymbol(symbols[idx_error])
 
@@ -348,8 +491,8 @@ if __name__ == "__main__":
     win = SingleIonAreaDialog()
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
-    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
-    # win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
+    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
+    win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
     win.show()
 
     app.exec()
