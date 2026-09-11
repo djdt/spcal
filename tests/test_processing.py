@@ -131,7 +131,7 @@ def test_spcal_limit_options(test_datafile: SPCalTOFWERKDataFile):
     assert limit.detection_threshold == limit_options.default_manual_limit
 
     # sia
-    limit_options.single_ion_parameters = np.array(
+    limit_options.compound_poisson_kws["single ion parameters"] = np.array(
         [(1.0, 2.0, 0.8), (100.0, 2.0, 1.0)],
         dtype=[("mass", float), ("mu", float), ("sigma", float)],
     )

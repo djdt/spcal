@@ -207,7 +207,10 @@ class SPCalLimitOptions:
             limit_method == "highest" and data_file.isTOF()
         ):
             # Override the default sigma if single ion paramters are present
-            if "single ion parameters" in self.compound_poisson_kws:
+            if (
+                "single ion parameters" in self.compound_poisson_kws
+                and self.compound_poisson_kws["single ion parameters"] is not None
+            ):
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")

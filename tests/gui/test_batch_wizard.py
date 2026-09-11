@@ -422,7 +422,9 @@ def test_batch_wizard_method_page(qtbot: QtBot):
 
     method.limit_options.window_size = 100
     method.limit_options.max_iterations = 100
-    method.limit_options.single_ion_parameters = np.array([])  # dummy
+    method.limit_options.compound_poisson_kws["single ion parameters"] = np.array(
+        []
+    )  # dummy
 
     method.limit_options.gaussian_kws["alpha"] = 1e-3
     method.limit_options.poisson_kws["alpha"] = 1e-3
