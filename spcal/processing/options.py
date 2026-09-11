@@ -124,14 +124,17 @@ class SPCalLimitOptions:
         max_iterations: int = 1,
         default_manual_limit: float = 100.0,
         manual_limits: dict | None = None,
-        single_ion_parameters: np.ndarray | None = None,
     ):
         self.limit_method = limit_method
 
         # deafult kws
         _gaussian_kws = {"alpha": 2.867e-7}
         _poisson_kws = {"alpha": 1e-7}
-        _compound_poisson_kws = {"alpha": 1e-7, "sigma": 0.5}
+        _compound_poisson_kws = {
+            "alpha": 1e-7,
+            "sigma": 0.5,
+            "single ion parameters": None,
+        }
 
         if gaussian_kws is not None:  # pragma: no cover
             _gaussian_kws.update(gaussian_kws)
@@ -147,7 +150,6 @@ class SPCalLimitOptions:
         self.window_size = window_size
         self.max_iterations = max_iterations
 
-        self.single_ion_parameters = single_ion_parameters
         self.manual_limits: dict[SPCalIsotopeBase, float] = {}
         if manual_limits is not None:
             self.manual_limits.update(manual_limits)
@@ -166,7 +168,6 @@ class SPCalLimitOptions:
             and self.compound_poisson_kws == other.compound_poisson_kws
             and self.window_size == other.window_size
             and self.max_iterations == other.max_iterations
-            and bool(np.all(self.single_ion_parameters == other.single_ion_parameters))
             and self.manual_limits == other.manual_limits
             and self.default_manual_limit == other.default_manual_limit
         )
@@ -206,14 +207,14 @@ class SPCalLimitOptions:
             limit_method == "highest" and data_file.isTOF()
         ):
             # Override the default sigma if single ion paramters are present
-            if self.single_ion_parameters is not None:
+            if "single ion parameters" in self.compound_poisson_kws:
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
                     sigma = np.interp(
                         isotope.mass,
-                        self.single_ion_parameters["mass"],
-                        self.single_ion_parameters["sigma"],
+                        self.compound_poisson_kws["single ion parameters"]["mass"],
+                        self.compound_poisson_kws["single ion parameters"]["sigma"],
                     )
                 elif isinstance(isotope, SPCalIsotopeExpression):
                     masses = [
@@ -226,8 +227,8 @@ class SPCalLimitOptions:
                     sigma = np.mean(
                         np.interp(
                             masses,
-                            self.single_ion_parameters["mass"],
-                            self.single_ion_parameters["sigma"],
+                            self.compound_poisson_kws["single ion parameters"]["mass"],
+                            self.compound_poisson_kws["single ion parameters"]["sigma"],
                         )
                     )
                 else:  # pragma: no cover

@@ -102,9 +102,10 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.setSingleIonParameters(None)
 
     def setSingleIonParameters(self, params: np.ndarray | None):
-        if params is not None and (params.dtype.names is None or not all(
-            x in params.dtype.names for x in ["mass", "mu", "sigma"]
-        )):
+        if params is not None and (
+            params.dtype.names is None
+            or not all(x in params.dtype.names for x in ["mass", "mu", "sigma"])
+        ):
             raise ValueError(  # pragma: no cover, error
                 "params must be a structured array with names 'mass', 'mu', 'sigma'"
             )
@@ -113,11 +114,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.optionsChanged.emit()
 
     def parameters(self) -> dict:
-        return {
-            "alpha": self.alpha.value(),
-            "sigma": self.lognormal_sigma.value(),
-            "single ion parameters": self.single_ion_parameters,
-        }
+        return {"alpha": self.alpha.value(), "sigma": self.lognormal_sigma.value()}
 
     def setParameters(self, state: dict):
         self.blockSignals(True)
@@ -308,8 +305,10 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
             [
                 "Automatically determine the best method.",
                 "Use the highest of Gaussian and Poisson.",
-                ("Estimate ToF limits using a compound distribution based on the "
-                "number of accumulations and the single ion distribution."),
+                (
+                    "Estimate ToF limits using a compound distribution based on the "
+                    "number of accumulations and the single ion distribution."
+                ),
                 "Threshold using the mean and standard deviation.",
                 "Threshold using poisson statistics, see the MARLAP manual.",
                 "Manually define limits in the sample and reference tabs.",
@@ -332,7 +331,7 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.compound = CompoundPoissonOptionsWidget(
             limit_options.compound_poisson_kws["alpha"],
             limit_options.compound_poisson_kws["sigma"],
-            limit_options.single_ion_parameters,
+            limit_options.compound_poisson_kws["single ion parameters"],
         )
         self.manual = ManualLimitsOptions(
             limit_options.default_manual_limit, limit_options.manual_limits
@@ -388,7 +387,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
         self.poisson.setParameters(options.poisson_kws)
 
         self.compound.setParameters(options.compound_poisson_kws)
-        self.compound.single_ion_parameters = options.single_ion_parameters
 
         self.manual.default_manual_limit.setValue(options.default_manual_limit)
         self.manual.setManualLimits(options.manual_limits)
@@ -406,7 +404,6 @@ class SPCalLimitOptionsWidget(QtWidgets.QWidget):
                 self.window_size.value() or 0 if self.check_window.isChecked() else 0
             ),
             max_iterations=100 if self.check_iterative.isChecked() else 1,
-            single_ion_parameters=self.compound.single_ion_parameters,
             default_manual_limit=self.manual.default_manual_limit.value() or 100.0,
             manual_limits=self.manual.manual_limits,
         )

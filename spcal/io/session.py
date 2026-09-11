@@ -89,7 +89,6 @@ class SPCalJSONEncoder(json.JSONEncoder):
                 "poisson": o.poisson_kws,
                 "compound poisson": o.compound_poisson_kws,
                 "manual limits": {str(k): v for k, v in o.manual_limits.items()},
-                "single ion": o.single_ion_parameters,
             }
         if isinstance(o, SPCalProcessingOptions):
             return {
@@ -249,16 +248,18 @@ def decode_json_method(method_dict: dict) -> SPCalProcessingMethod:
         )
         for k, v in method_dict["isotope options"].items()
     }
+    compound_poisson_kws = method_dict["limit options"]["compound poisson"]
+    if compound_poisson_kws["single ion parameters"] is not None:
+        compound_poisson_kws["single ion parameters"] = decode_single_ion(
+            compound_poisson_kws["single ion parameters"]
+        )
     limit_options = SPCalLimitOptions(
         method_dict["limit options"]["method"],
         gaussian_kws=method_dict["limit options"]["gaussian"],
         poisson_kws=method_dict["limit options"]["poisson"],
-        compound_poisson_kws=method_dict["limit options"]["compound poisson"],
+        compound_poisson_kws=compound_poisson_kws,
         max_iterations=method_dict["limit options"]["max iterations"],
         window_size=method_dict["limit options"]["window size"],
-        single_ion_parameters=decode_single_ion(
-            method_dict["limit options"]["single ion"]
-        ),
         default_manual_limit=method_dict["limit options"]["default manual limit"],
         manual_limits={
             decode_isotope(k, expressions): v
