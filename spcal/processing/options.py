@@ -161,11 +161,15 @@ class SPCalLimitOptions:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SPCalLimitOptions):  # pragma: no cover
             return False
+        if not all(
+            np.all(self.compound_poisson_kws[key] == other.compound_poisson_kws[key])
+            for key in self.compound_poisson_kws
+        ):
+            return False
         return (
             self.limit_method == other.limit_method
             and self.gaussian_kws == other.gaussian_kws
             and self.poisson_kws == other.poisson_kws
-            and self.compound_poisson_kws == other.compound_poisson_kws
             and self.window_size == other.window_size
             and self.max_iterations == other.max_iterations
             and self.manual_limits == other.manual_limits
