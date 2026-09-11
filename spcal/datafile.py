@@ -429,7 +429,9 @@ class SPCalNuDataFile(SPCalDataFile):
             (iso.mass for iso in natural_isotopes), dtype=float
         )
         indices = search_sorted_closest(self.masses, natural_masses)
-        valid = np.abs(self.masses[indices] - natural_masses) < self.max_mass_diff
+        valid = np.isclose(
+            self.masses[indices], natural_masses, atol=self.max_mass_diff
+        )
         self.isotope_table = {
             iso: idx for idx, iso, v in zip(indices, natural_isotopes, valid) if v
         }

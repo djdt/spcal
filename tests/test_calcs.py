@@ -95,11 +95,6 @@ def test_searchsorted_closest():
     y = calc.search_sorted_closest(x, np.array([1.2, 4.6, 12.9, 5.5]))
     assert np.all(y == [1, 5, 9, 6])
 
-    with pytest.raises(ValueError):
-        calc.search_sorted_closest(
-            x, np.array([1.2, 4.6, 12.9, 5.5]), check_max_diff=0.1
-        )
-
 
 def test_sparse_gaussian():
     x = np.arange(50, dtype=float)

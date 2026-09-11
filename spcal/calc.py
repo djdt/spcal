@@ -189,24 +189,17 @@ def pca(
     )
 
 
-def search_sorted_closest(
-    x: np.ndarray, v: ArrayLike, check_max_diff: float | None = None
-):
+def search_sorted_closest(x: ArrayLike, v: ArrayLike):
     """Get the idx of the closest values in ``x`` for ``v``.
-
-    If ``check_max_diff`` is a value, the maximum distance must be lower.
 
     Args:
         x: sorted array
         y: values to find closest idx of in x
-        check_max_diff: if not None, check maximum diff is less than this
 
     Returns:
         idx of closest ``x`` values for ``v``
-
-    Raises:
-        ValueError if ``check_max_diff`` is not None and max diff greater.
     """
+    x = np.asanyarray(x)
     idx = np.searchsorted(x, v, side="left")
     prev_less = np.abs(v - x[np.maximum(idx - 1, 0)]) < np.abs(
         v - x[np.minimum(idx, len(x) - 1)]
@@ -214,12 +207,25 @@ def search_sorted_closest(
     prev_less = (idx == len(x)) | prev_less
     idx[prev_less] -= 1
 
-    if check_max_diff is not None:
-        diffs = np.abs(x[idx] - v)
-        if np.any(diffs > check_max_diff):
-            raise ValueError("could not find value closer than 'check_max_diff'")
-
     return idx
+
+
+def sorted_any_close(
+    x: ArrayLike, y: ArrayLike, rtol: float = 1e-5, atol: float = 1e-8
+) -> np.ndarray:
+    """Checks if values in `x` are close to any values in `y`.
+    Implemented using ``search_sorted_closest``, `y` must be sorted.
+    Args:
+        x: values to check
+        y: sorted array
+        rtol: relative tolerence
+        atol: absloute tolerence, see ``numpy.isclose``
+    Returns:
+        boolean array size of `x`
+    """
+    y = np.asanyarray(y)
+    idx = search_sorted_closest(y, x)
+    return np.isclose(y[idx], x, atol=atol, rtol=rtol)
 
 
 def sparse_gaussian(x: np.ndarray, y: np.ndarray, sigma: float):

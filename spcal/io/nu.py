@@ -558,7 +558,9 @@ def select_nu_signals(
             greater than 'max_mass_diff'
     """
     selected = np.fromiter(selected_masses.values(), dtype=np.float32)
-    idx = search_sorted_closest(masses, selected, check_max_diff=max_mass_diff)
+    idx = search_sorted_closest(masses, selected)
+    if not np.allclose(masses[idx], selected, atol=max_mass_diff):
+        raise ValueError(f"mass difference greater than '{max_mass_diff}' from data")
 
     dtype = np.dtype([(name, np.float32) for name in selected_masses])
     return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)

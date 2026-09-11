@@ -6,7 +6,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
 
-from spcal.calc import search_sorted_closest, sparse_gaussian
+from spcal.calc import sorted_any_close, sparse_gaussian
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import (
@@ -317,8 +317,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         natural_masses = np.fromiter(
             (iso.mass for iso in natural_isotopes), dtype=float
         )
-        idx = search_sorted_closest(self.masses, natural_masses)
-        valid_natural = np.abs(self.masses[idx] - natural_masses) < 0.1
+        valid_natural = sorted_any_close(natural_masses, self.masses, atol=0.1)
 
         enabled_isotopes = [
             iso
@@ -328,8 +327,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         enabled_masses = np.fromiter(
             (iso.mass for iso in enabled_isotopes), dtype=float
         )
-        idx = search_sorted_closest(self.masses, enabled_masses)
-        valid_enabled = np.abs(self.masses[idx] - enabled_masses) < 0.1
+        valid_enabled = sorted_any_close(enabled_masses, self.masses, atol=0.1)
 
         self.enabled_isotopes = [
             iso for iso, v in zip(natural_isotopes, valid_natural) if v
@@ -342,8 +340,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         enabled_masses = np.fromiter(
             (iso.mass for iso in self.enabled_isotopes), dtype=float
         )
-        idx = search_sorted_closest(enabled_masses, self.masses)
-        valid = np.abs(enabled_masses[idx] - self.masses) < 0.1
+        valid = sorted_any_close(self.masses, enabled_masses, atol=0.1)
 
         self.masses = self.masses[valid]
         self.counts = self.counts[:, valid]
@@ -391,8 +388,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         selected_isotope_masses = np.fromiter(
             (iso.mass for iso in self.selected_isotopes), dtype=float
         )
-        idx = search_sorted_closest(selected_isotope_masses, self.masses)
-        not_selected = np.abs(selected_isotope_masses[idx] - self.masses) > 0.1
+        not_selected = ~sorted_any_close(self.masses, selected_isotope_masses, atol=0.1)
         idx_error[not_selected] = 1
 
         nonzeros = np.count_nonzero(self.counts, axis=0)
@@ -414,9 +410,6 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             idx_error[has_peaks] = 2
 
         self.valid = idx_error == 0
-        if np.count_nonzero(self.valid) == 0:
-            self.clear()
-            return
 
         if self.scatter.points is not None:
             brushes = np.array(

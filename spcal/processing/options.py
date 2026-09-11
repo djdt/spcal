@@ -213,15 +213,16 @@ class SPCalLimitOptions:
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    try:
-                        sigma = self.single_ion_parameters["sigma"][
-                            search_sorted_closest(
-                                self.single_ion_parameters["mass"],
-                                [isotope.mass],
-                                SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
-                            )
-                        ]
-                    except ValueError:
+                    idx = search_sorted_closest(
+                        self.single_ion_parameters["mass"], [isotope.mass]
+                    )
+                    if np.isclose(
+                        self.single_ion_parameters["mass"][idx],
+                        isotope.mass,
+                        atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                    ):
+                        sigma = self.single_ion_parameters["sigma"][idx]
+                    else:
                         logger.warning(
                             f"missing SIA for mass {isotope.mass}, falling back to default"
                         )
@@ -235,17 +236,16 @@ class SPCalLimitOptions:
                     ]
                     if any(x <= 0.0 for x in masses):  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    try:
-                        sigma = np.mean(
-                            self.single_ion_parameters["sigma"][
-                                search_sorted_closest(
-                                    self.single_ion_parameters["mass"],
-                                    masses,
-                                    SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
-                                )
-                            ]
-                        )
-                    except ValueError:
+                    idx = search_sorted_closest(
+                        self.single_ion_parameters["mass"], masses
+                    )
+                    if np.allclose(
+                        self.single_ion_parameters["mass"][idx],
+                        masses,
+                        atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                    ):
+                        sigma = np.mean(self.single_ion_parameters["sigma"][idx])
+                    else:
                         logger.warning(
                             f"unable to calculate SIA for expr {isotope}, falling back to default"
                         )

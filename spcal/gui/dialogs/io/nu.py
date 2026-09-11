@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.calc import search_sorted_closest
+from spcal.calc import sorted_any_close
 from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
@@ -215,9 +215,8 @@ class NuImportDialog(ImportDialogBase):
         natural_masses = np.fromiter(
             (iso.mass for iso in natural_isotopes), dtype=float
         )
-        indices = search_sorted_closest(self.masses, natural_masses)
-        valid = (
-            np.abs(self.masses[indices] - natural_masses) < self.max_mass_diff.value()
+        valid = sorted_any_close(
+            natural_masses, self.masses, atol=self.max_mass_diff.value()
         )
         self.table.setEnabledIsotopes(
             [iso for iso, v in zip(natural_isotopes, valid) if v]
