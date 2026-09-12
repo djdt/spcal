@@ -127,14 +127,17 @@ class SPCalLimitOptions:
         max_iterations: int = 1,
         default_manual_limit: float = 100.0,
         manual_limits: dict | None = None,
-        single_ion_parameters: np.ndarray | None = None,
     ):
         self.limit_method = limit_method
 
         # deafult kws
         _gaussian_kws = {"alpha": 2.867e-7}
         _poisson_kws = {"alpha": 1e-7}
-        _compound_poisson_kws = {"alpha": 1e-7, "sigma": 0.5}
+        _compound_poisson_kws = {
+            "alpha": 1e-7,
+            "sigma": 0.5,
+            "single ion parameters": None,
+        }
 
         if gaussian_kws is not None:  # pragma: no cover
             _gaussian_kws.update(gaussian_kws)
@@ -150,7 +153,6 @@ class SPCalLimitOptions:
         self.window_size = window_size
         self.max_iterations = max_iterations
 
-        self.single_ion_parameters = single_ion_parameters
         self.manual_limits: dict[SPCalIsotopeBase, float] = {}
         if manual_limits is not None:
             self.manual_limits.update(manual_limits)
@@ -162,14 +164,17 @@ class SPCalLimitOptions:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, SPCalLimitOptions):  # pragma: no cover
             return False
+        if not all(
+            np.all(self.compound_poisson_kws[key] == other.compound_poisson_kws[key])
+            for key in self.compound_poisson_kws
+        ):
+            return False
         return (
             self.limit_method == other.limit_method
             and self.gaussian_kws == other.gaussian_kws
             and self.poisson_kws == other.poisson_kws
-            and self.compound_poisson_kws == other.compound_poisson_kws
             and self.window_size == other.window_size
             and self.max_iterations == other.max_iterations
-            and bool(np.all(self.single_ion_parameters == other.single_ion_parameters))
             and self.manual_limits == other.manual_limits
             and self.default_manual_limit == other.default_manual_limit
         )
@@ -208,20 +213,26 @@ class SPCalLimitOptions:
         if limit_method == "compound poisson" or (
             limit_method == "highest" and data_file.isTOF()
         ):
-            # Override the default sigma if single ion paramters are present
-            if self.single_ion_parameters is not None:
+            # Override the default sigma if single ion parameters are present
+            if (
+                "single ion parameters" in self.compound_poisson_kws
+                and self.compound_poisson_kws["single ion parameters"] is not None
+            ):
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
                     idx = search_sorted_closest(
-                        self.single_ion_parameters["mass"], [isotope.mass]
+                        self.compound_poisson_kws["single ion parameters"]["mass"],
+                        [isotope.mass],
                     )
                     if np.isclose(
-                        self.single_ion_parameters["mass"][idx],
+                        self.compound_poisson_kws["single ion parameters"]["mass"][idx],
                         isotope.mass,
                         atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
                     ):
-                        sigma = self.single_ion_parameters["sigma"][idx]
+                        sigma = self.compound_poisson_kws["single ion parameters"][
+                            "sigma"
+                        ][idx]
                     else:
                         logger.warning(
                             f"missing SIA for mass {isotope.mass}, falling back to default"
@@ -237,14 +248,19 @@ class SPCalLimitOptions:
                     if any(x <= 0.0 for x in masses):  # pragma: no cover
                         raise ValueError("isotope mass is 0")
                     idx = search_sorted_closest(
-                        self.single_ion_parameters["mass"], masses
+                        self.compound_poisson_kws["single ion parameters"]["mass"],
+                        masses,
                     )
                     if np.allclose(
-                        self.single_ion_parameters["mass"][idx],
+                        self.compound_poisson_kws["single ion parameters"]["mass"][idx],
                         masses,
                         atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
                     ):
-                        sigma = np.mean(self.single_ion_parameters["sigma"][idx])
+                        sigma = np.mean(
+                            self.compound_poisson_kws["single ion parameters"]["sigma"][
+                                idx
+                            ]
+                        )
                     else:
                         logger.warning(
                             f"unable to calculate SIA for expr {isotope}, falling back to default"
