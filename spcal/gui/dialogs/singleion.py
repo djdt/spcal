@@ -241,7 +241,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
     def clear(self):
         self.masses = np.array([])
         self.counts = np.array([])
-        self.parameters = np.ma.array([], dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE)
+        self.parameters = np.array([], dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE)
 
         self.scatter.clear()
 
@@ -336,7 +336,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.scatter.clear()
 
         lams, mus, sigmas = extract_compound_poisson_lognormal_parameters(self.counts).T
-        self.parameters = np.ma.empty(
+        self.parameters = np.empty(
             self.masses.shape, dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE
         )
         self.parameters["mass"] = self.masses
@@ -398,6 +398,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.scatter.points.setSymbol(symbols[idx_error])
 
         self.updateGraphTitle()
+        self.scatter.setGuideOffset(np.median(self.parameters["sigma"][self.valid]))
 
         self.completeChanged()
 

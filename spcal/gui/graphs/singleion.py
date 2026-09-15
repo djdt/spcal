@@ -6,6 +6,7 @@ from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.util import text_for_mz
 
 # fmt: off
+# Guide data created from data collected on multiple Vitesse, see https://doi.org/10.1039/d5ja00230c
 guide_data = np.array(
     [
         [0.9574, 1.0593], [0.9591, 1.0616], [0.9607, 1.0643], [0.9622, 1.0673], [0.9634, 1.0705],
@@ -112,12 +113,25 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         pen.setCosmetic(True)
 
+        self.guide_bot = pyqtgraph.PlotCurveItem(
+            x=np.arange(50, 200), y=guide_data[:, 0], pen=pen, skipFiniteCheck=True
+        )
+        self.guide_top = pyqtgraph.PlotCurveItem(
+            x=np.arange(50, 200), y=guide_data[:, 1], pen=pen, skipFiniteCheck=True
+        )
+        self.plot.addItem(self.guide_bot)
+        self.plot.addItem(self.guide_top)
+
         self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
     #     self.pointHovered.connect(self.onPointHovered)
     #
     # def onPointHovered(self, pos: QtCore.QPointF, index: int):
     #     self.label.setPos(pos)
+    #
+    def setGuideOffset(self, mean: float):
+        self.guide_top.setPos(0.0, mean - 1.0)
+        self.guide_bot.setPos(0.0, mean - 1.0)
 
     def clear(self):
         self.points.clear()
