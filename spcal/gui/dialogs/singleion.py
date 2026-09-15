@@ -1,4 +1,3 @@
-from importlib.resources import files
 from pathlib import Path
 
 import h5py
@@ -6,7 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QValidator
 
-from spcal.calc import sorted_any_close, sparse_gaussian
+from spcal.calc import sorted_any_close
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.graphs.singleion import (
@@ -69,6 +68,10 @@ class SingleIonAreaSignalsPopup(QtWidgets.QDialog):
 class SingleIonIsotopesDialog(QtWidgets.QDialog):
     isotopesSelected = QtCore.Signal(list)
 
+    PARAMETER_DTYPE = np.dtype(
+        [("mass", float), ("lam", float), ("mu", float), ("sigma", float)]
+    )
+
     def __init__(
         self,
         enabled: list[SPCalIsotope],
@@ -76,12 +79,6 @@ class SingleIonIsotopesDialog(QtWidgets.QDialog):
         parent: QtWidgets.QWidget | None = None,
     ):
         super().__init__(parent)
-
-        # [
-        #     iso
-        #     for iso in ISOTOPE_TABLE.values()
-        #     if iso.composition is not None and iso.composition > min_composition
-        # ]
 
         self.table = PeriodicTableSelector(enabled, selected)
 
@@ -137,25 +134,14 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Single Ion Distribution")
 
-        """ The SIA guide is calculated from data in https://doi.org/10.1039/d5ja00230c.
-            This is from several Nu Vitesse instruments
-        """
-        self.guide_data = np.load(
-            files("spcal.resources").joinpath("sia_shape_guide.npz").open("rb"),
-            allow_pickle=False,
-        )
-
         self.scatter = SingleIonAreaScatterView()
         self.scatter.pointClicked.connect(self.onPointClicked)
 
         self.masses = np.array([])
-        self.selected_masses = np.array([])
         self.counts = np.array([])
 
-        self.lams = np.array([])
-        self.mus = np.array([])
-        self.sigmas = np.array([])
-        self.valid = np.array([])
+        self.parameters = np.array([], dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE)
+        self.valid = np.array([], dtype=bool)
 
         self.screening_method = SPCalProcessingMethod()
         self.screening_method.limit_options.limit_method = "poisson"
@@ -222,7 +208,9 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     @QtCore.Slot()
     def onPointClicked(self, pos: QtCore.QPointF, index: int):
-        sia = np.exp(self.mus[index] + 0.5 * self.sigmas[index] ** 2)
+        sia = np.exp(
+            self.parameters["mu"][index] + 0.5 * self.parameters["sigma"][index] ** 2
+        )
         popup = SingleIonAreaSignalsPopup(
             pos.x(), self.counts[:, index] / sia, parent=self
         )
@@ -245,7 +233,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         button.setEnabled(self.isComplete())
 
     def isComplete(self) -> bool:
-        return bool(self.valid.size > 0 and np.any(self.valid))
+        return bool(self.parameters.size > 0 and np.any(self.valid))
 
     def enableControls(self, enabled: bool):
         self.controls_box.setEnabled(enabled)
@@ -253,12 +241,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
     def clear(self):
         self.masses = np.array([])
         self.counts = np.array([])
-        self.lams = np.array([])
-        self.mus = np.array([])
-        self.sigmas = np.array([])
-        self.valid = np.array([])
+        self.parameters = np.ma.array([], dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE)
 
-        # self.hist.clear()
         self.scatter.clear()
 
         self.enableControls(False)
@@ -350,39 +334,27 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateExtractedParameters(self):
         self.scatter.clear()
-        # if not self.max_sigma_difference.hasAcceptableInput():
-        #     return
 
-        self.lams, self.mus, self.sigmas = (
-            extract_compound_poisson_lognormal_parameters(self.counts).T
+        lams, mus, sigmas = extract_compound_poisson_lognormal_parameters(self.counts).T
+        self.parameters = np.ma.empty(
+            self.masses.shape, dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE
         )
+        self.parameters["mass"] = self.masses
+        self.parameters["lam"] = lams
+        self.parameters["mu"] = mus
+        self.parameters["sigma"] = sigmas
 
-        self.scatter.drawData(self.masses, self.sigmas)
+        self.scatter.drawData(self.masses, sigmas)
 
         self.updateValidParameters()
 
-    def updateGuide(self):
-        idx = np.searchsorted(self.masses[self.valid] + 0.5, self.guide_data["mass"])
-        valid = np.abs(self.masses[self.valid][idx] - self.guide_data["mass"]) < 0.1
-        offset = np.nanmedian(
-            self.guide_data["median"][valid] - self.sigmas[self.valid][idx][valid]
-        )
+    def updateGraphTitle(self):
+        mean_mu = np.mean(self.parameters["mu"][self.valid])
+        mean_sigma = np.mean(self.parameters["sigma"][self.valid])
 
-        xs = self.guide_data["mass"]
-        min = sparse_gaussian(
-            xs, self.guide_data["median"] - 1.5 * self.guide_data["iqr"], 3.0
-        )
-        max = sparse_gaussian(
-            xs, self.guide_data["median"] + 1.5 * self.guide_data["iqr"], 3.0
-        )
-
-        self.scatter.drawGuide(self.guide_data["mass"], min - offset, max - offset)
+        self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
 
     def updateValidParameters(self):
-        # most likely invalid
-        # outside_sigma_range = np.logical_or(self.sigmas < 0.3, self.sigmas > 0.9)
-        # outside_lambda_range = np.logical_or(self.lams < 0.005, self.lams > 10.0)
-        #
         idx_error = np.zeros(self.counts.shape[1], int)
 
         selected_isotope_masses = np.fromiter(
@@ -425,53 +397,13 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.scatter.points.setBrush(brushes[idx_error])
             self.scatter.points.setSymbol(symbols[idx_error])
 
-        self.updateGuide()
-        mean_mu = np.mean(self.mus[self.valid])
-        mean_sigma = np.mean(self.sigmas[self.valid])
-
-        self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
+        self.updateGraphTitle()
 
         self.completeChanged()
 
-    #     self.updateScatterInterp()
-    #
-    # def updateScatterInterp(self):
-    #     xs, ys = self.smoothedParameters(
-    #         self.masses[self.valid], self.sigmas[self.valid]
-    #     )
-    #     self.scatter.drawInterpolationLine(xs, ys)
-
-    # def smoothedParameters(
-    #     self, xs: np.ndarray, ys: np.ndarray
-
-    #     smoothing = self.smoothing.value()
-    #     if smoothing < 3:
-    #         return xs, ys
-    #     elif smoothing % 2 == 1:
-    #         _xs = np.arange(xs[0], xs[-1] + 1.0, 1.0)
-    #         _ys = np.interp(_xs, xs, ys)
-    #         _ys[smoothing // 2 - 1 : -(smoothing // 2 + 1)] = np.convolve(
-    #             _ys, np.ones(smoothing) / smoothing, mode="valid"
-    #         )
-    #         return xs, np.interp(xs, _xs, _ys)
-    #     else:
-    #         raise ValueError(f"invalid smoothing window {smoothing}")
-
     def accept(self):
-        if self.masses.size > 0:
-            mz, mu = self.smoothedParameters(
-                self.masses[self.valid], self.mus[self.valid]
-            )
-            _, sigma = self.smoothedParameters(
-                self.masses[self.valid], self.sigmas[self.valid]
-            )
-            params = np.empty(
-                mz.size, dtype=[("mass", float), ("mu", float), ("sigma", float)]
-            )
-            params["mass"] = mz
-            params["mu"] = mu
-            params["sigma"] = sigma
-            self.parametersExtracted.emit(params)
+        if self.masses.size > 0 and np.any(self.valid):
+            self.parametersExtracted.emit(self.parameters[self.valid])
         super().accept()
 
 

@@ -74,24 +74,6 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
 
         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
         pen.setCosmetic(True)
-        brush = QtGui.QBrush(QtGui.QColor.fromRgbF(1.0, 0.0, 0.0, 0.1))
-
-        self.guide_mean = pyqtgraph.PlotCurveItem(
-            x=[], y=[], pen=pen, skipFiniteCheck=True
-        )
-        self.guide_std_top = pyqtgraph.PlotCurveItem(
-            x=[], y=[], pen=pen, skipFiniteCheck=True
-        )
-        self.guide_std_bot = pyqtgraph.PlotCurveItem(
-            x=[], y=[], pen=pen, skipFiniteCheck=True
-        )
-
-        self.guide_std = pyqtgraph.FillBetweenItem(
-            self.guide_std_top, self.guide_std_bot, brush=brush
-        )
-
-        self.plot.addItem(self.guide_mean)
-        self.plot.addItem(self.guide_std)
 
         self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
@@ -106,7 +88,3 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
     def drawData(self, x: np.ndarray, y: np.ndarray):
         self.points.setData(x=x, y=y)
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
-
-    def drawGuide(self, xs: np.ndarray, min: np.ndarray, max: np.ndarray):
-        self.guide_std_top.setData(x=xs, y=max)
-        self.guide_std_bot.setData(x=xs, y=min)
