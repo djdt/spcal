@@ -107,67 +107,6 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
         self.points.setData(x=x, y=y)
         self.setDataLimits(-0.05, 1.05, -0.05, 1.05)
 
-    # def setColors(self, indicies: np.ndarray, brushes: list[QtGui.QBrush]):
-    #     if self.points is None:
-    #         return
-    #
-    #     self.points.setBrush([brushes[i] for i in indicies])
-    #
-    # def setValid(self, valid: np.ndarray):
-    #     if self.points is None:
-    #         return
-    #     brush_valid = QtGui.QBrush(QtCore.Qt.GlobalColor.black)
-    #     brush_invalid = QtGui.QBrush(QtCore.Qt.GlobalColor.red)
-    #     brushes = [brush_valid if x else brush_invalid for x in valid]
-    #     self.points.setBrush(brushes)
-
     def drawGuide(self, xs: np.ndarray, min: np.ndarray, max: np.ndarray):
-        # pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
-        # pen.setCosmetic(True)
-
-        # self.guide_mean = pyqtgraph.PlotCurveItem(
-        #     x=xs, y=mean, pen=pen, skipFiniteCheck=True
-        # )
-        # self.guide_mean.setData(x=xs, y=mean)
         self.guide_std_top.setData(x=xs, y=max)
         self.guide_std_bot.setData(x=xs, y=min)
-
-    # def drawMaxDifference(
-    #     self,
-    #     poly: np.polynomial.Polynomial,
-    #     max_difference: float,
-    #     pen: QtGui.QPen | None = None,
-    # ):
-    #     if pen is None:
-    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
-    #         pen.setCosmetic(True)
-    #
-    #     if "max_diff" not in self.lines:
-    #         max_diff = pyqtgraph.PlotCurveItem(pen=pen, connect="pairs", antialias=True)
-    #         self.plot.addItem(max_diff)
-    #         self.lines["max_diff"] = max_diff
-    #
-    #     xs = [poly.domain[0], poly.domain[-1], poly.domain[0], poly.domain[-1]]
-    #     ys = poly(xs)
-    #     ys += [
-    #         max_difference,
-    #         max_difference,
-    #         -max_difference,
-    #         -max_difference,
-    #     ]
-    #     self.lines["max_diff"].setData(x=xs, y=ys)
-    #     self.lines["max_diff"].setPen(pen)
-    #
-    # def drawInterpolationLine(
-    #     self, xs: np.ndarray, ys: np.ndarray, pen: QtGui.QPen | None = None
-    # ):
-    #     if pen is None:
-    #         pen = QtGui.QPen(QtCore.Qt.GlobalColor.blue, 1.0)
-    #         pen.setCosmetic(True)
-    #
-    #     if "interp" not in self.lines:
-    #         interp = pyqtgraph.PlotCurveItem(x=xs, y=ys, pen=pen, skipFiniteCheck=True)
-    #         self.plot.addItem(interp)
-    #         self.lines["interp"] = interp
-    #     else:
-    #         self.lines["interp"].setData(x=xs, y=ys)

@@ -32,14 +32,14 @@ class OddValueSpinBox(QtWidgets.QSpinBox):
         steps = steps * self.singleStep() * 2
         self.setValue(self.value() + steps)
 
-    def validate(self, input: str, pos: int) -> QValidator.State:
+    def validate(self, input: str, pos: int) -> tuple[QValidator.State, str, int]:
         try:
             value = int(input)
         except ValueError:
-            return QValidator.State.Invalid
+            return QValidator.State.Invalid, input, pos
         if value % 2 != 1:
-            return QValidator.State.Intermediate
-        return QValidator.State.Acceptable
+            return QValidator.State.Intermediate, input, pos
+        return QValidator.State.Acceptable, input, pos
 
 
 class SingleIonAreaSignalsPopup(QtWidgets.QDialog):
@@ -484,8 +484,8 @@ if __name__ == "__main__":
     win = SingleIonAreaDialog()
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
     # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
-    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
-    win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
+    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
+    # win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
     win.show()
 
     app.exec()
