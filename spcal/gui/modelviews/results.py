@@ -297,7 +297,7 @@ class ResultOutputView(BasicTableView):
     def contextMenuEvent(self, event: QtGui.QContextMenuEvent):
         event.accept()
         menu = self.basicTableMenu()
-        selected = self.selectedRows()
+        selected = self.selectedIsotopes()
         menu.addSeparator()
         if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
             menu.addAction(self.action_sum)
