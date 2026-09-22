@@ -208,6 +208,7 @@ class ResultOutputView(BasicTableView):
 
         self.setHorizontalHeader(self.header)
         self.verticalHeader().installEventFilter(ContextMenuRedirectFilter(self))
+        self.verticalHeader().sectionDoubleClicked.connect(self.onHeaderDoubleClicked)
         self.verticalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.ResizeMode.Fixed
         )
@@ -276,6 +277,10 @@ class ResultOutputView(BasicTableView):
         if selected != self._previous_rows:
             self._previous_rows = selected
             self.selectedRowsChanged.emit(selected)
+
+    def onHeaderDoubleClicked(self, index: int):
+        isotope = self.model().data(self.model().index(index, 0), IsotopeRole)
+        self.setSelectedIsotopes([isotope])
 
     def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
         return sorted(
