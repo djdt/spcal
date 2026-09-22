@@ -137,6 +137,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.requestAddExpression.connect(self.addExpression)
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
 
+        self.isotope_options.requestRemoveIsotopes.connect(self.removeIsotopes)
+        self.isotope_options.requestAddExpression.connect(self.addExpression)
+        self.isotope_options.requestRemoveExpressions.connect(self.removeExpressions)
+
         self.toolbar.scatterOptionsChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
         self.toolbar.requestFilterDialog.connect(self.dialogFilterDetections)
@@ -771,7 +775,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     self.processing_results[file].pop(isotope)
                 if isotope in file.selected_isotopes:
                     file.selected_isotopes.remove(isotope)
-        self.reprocess()
+        self.updateForDataFiles(self.files.activeDataFiles())
 
     def reprocess(
         self,
