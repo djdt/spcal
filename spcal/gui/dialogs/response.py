@@ -367,12 +367,12 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def reset(self):
         self.model_concs.beginResetModel()
-        self.model_concs.isotopes.clear()
+        self.model_concs.isotopes = []
         self.model_concs.concentrations.clear()
         self.model_concs.endResetModel()
 
         self.model_intensity.beginResetModel()
-        self.model_intensity.isotopes.clear()
+        self.model_intensity.isotopes = []
         self.model_intensity.intensities.clear()
         self.model_intensity.exclusion_regions.clear()
         self.model_intensity.endResetModel()
