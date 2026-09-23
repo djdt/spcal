@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -6,7 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.datafile import SPCalDataFile
 from spcal.gui.modelviews import DataFileRole, IsotopeRole
-from spcal.isotope import SPCalIsotopeBase
+from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class ConcentrationModel(QtCore.QAbstractTableModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.isotopes: list[SPCalIsotopeBase] = []
+        self.isotopes: Sequence[SPCalIsotopeBase] = []
         self.concentrations: dict[
             SPCalDataFile, dict[SPCalIsotopeBase, float | None]
         ] = {}
@@ -58,7 +59,11 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
         if index.isValid():
             data_file = list(self.concentrations.keys())[index.row()]
             isotope = self.isotopes[index.column()]
-            if isotope in data_file.selected_isotopes:
+            if (
+                isinstance(isotope, SPCalIsotopeExpression)
+                and isotope.validForIsotopes(data_file.isotopes)
+                or isotope in data_file.selected_isotopes
+            ):
                 flags |= QtCore.Qt.ItemFlag.ItemIsEditable
             else:
                 flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
@@ -115,7 +120,7 @@ class ConcentrationModel(QtCore.QAbstractTableModel):
 class IntensityModel(QtCore.QAbstractTableModel):
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
-        self.isotopes: list[SPCalIsotopeBase] = []
+        self.isotopes: Sequence[SPCalIsotopeBase] = []
         self.intensities: dict[SPCalDataFile, dict[SPCalIsotopeBase, float | None]] = {}
         self.exclusion_regions: dict[SPCalDataFile, list[tuple[float, float]]] = {}
 
@@ -146,7 +151,11 @@ class IntensityModel(QtCore.QAbstractTableModel):
         if index.isValid():
             data_file = list(self.intensities.keys())[index.row()]
             isotope = self.isotopes[index.column()]
-            if isotope in data_file.selected_isotopes:
+            if (
+                isinstance(isotope, SPCalIsotopeExpression)
+                and isotope.validForIsotopes(data_file.isotopes)
+                or isotope in data_file.selected_isotopes
+            ):
                 flags |= QtCore.Qt.ItemFlag.ItemIsEditable
             else:
                 flags &= ~QtCore.Qt.ItemFlag.ItemIsEnabled
@@ -179,7 +188,10 @@ class IntensityModel(QtCore.QAbstractTableModel):
             data_file = list(self.intensities.keys())[index.row()]
             isotope = self.isotopes[index.column()]
             if isotope not in self.intensities[data_file]:
-                if isotope in data_file.selected_isotopes:
+                if (
+                    isinstance(isotope, SPCalIsotopeExpression)
+                    and isotope.validForIsotopes(data_file.isotopes)
+                ) or isotope in data_file.selected_isotopes:
                     mask = np.ones(data_file[isotope].shape, dtype=bool)
                     for start, end in self.exclusion_regions.get(data_file, []):
                         istart, iend = np.searchsorted(data_file.times, [start, end])
