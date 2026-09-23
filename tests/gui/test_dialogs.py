@@ -307,7 +307,9 @@ def test_filter_dialog_filters(qtbot: QtBot):
             return False
         if len(cluster_filters) != 1 or len(cluster_filters[0]) != 1:
             return False
-        return not (cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7)
+        return not (
+            cluster_filters[0][0].key != "mass" or cluster_filters[0][0].index != 7
+        )
 
     with qtbot.wait_signal(
         dlg.filtersChanged, check_params_cb=check_filters, timeout=100
@@ -670,13 +672,16 @@ def test_select_isotope_screening_dialog(qtbot: QtBot):
 def test_response_dialog(
     qtbot: QtBot, random_datafile_generator: Callable[..., SPCalDataFile]
 ):
-    dlg = ResponseDialog()
+    expressions = [
+        SPCalIsotopeExpression(
+            "+FeCu", ("+", ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Cu", 63)])
+        )
+    ]
+    dlg = ResponseDialog(expressions)
     qtbot.addWidget(dlg)
 
     with qtbot.waitExposed(dlg):
         dlg.show()
-
-    dlg.reset()
 
     df = random_datafile_generator(
         isotopes=[
@@ -689,9 +694,9 @@ def test_response_dialog(
     )
 
     dlg.addDataFile(df)
-    assert dlg.model_concs.columnCount() == 3
+    assert dlg.model_concs.columnCount() == 4
     assert dlg.model_concs.rowCount() == 1
-    assert dlg.model_intensity.columnCount() == 3
+    assert dlg.model_intensity.columnCount() == 4
     assert dlg.model_intensity.rowCount() == 1
     dlg.model_concs.setData(
         dlg.model_concs.index(0, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole
@@ -718,20 +723,27 @@ def test_response_dialog(
     dlg.model_concs.setData(
         dlg.model_concs.index(1, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole
     )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 3), 10.0, QtCore.Qt.ItemDataRole.EditRole
+    )
 
     dlg.combo_unit.setCurrentText("mg/L")
 
     def check_response(responses: dict):
-        if len(responses) != 2:
+        if len(responses) != 3:
             return False
         if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], 1e6, rtol=0.05):
             return False
-        return np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], 1000000.0, rtol=0.05)
+        if not np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], 1000000.0, rtol=0.05):
+            return False
+        return np.isclose(responses[expressions[0]], 2000000.0, rtol=0.05)
 
     with qtbot.wait_signal(
         dlg.responsesSelected, timeout=100, check_params_cb=check_response
     ):
         dlg.accept()
+
+    dlg.reset()
 
 
 def test_response_dialog_save(
@@ -739,7 +751,7 @@ def test_response_dialog_save(
     qtbot: QtBot,
     random_datafile_generator: Callable[..., SPCalDataFile],
 ):
-    dlg = ResponseDialog()
+    dlg = ResponseDialog([])
     qtbot.add_widget(dlg)
 
     df = random_datafile_generator(
