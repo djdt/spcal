@@ -86,6 +86,12 @@ def test_main_window_method_dialogs(qtbot: QtBot, test_data_path: Path):
 def test_main_window_method_functions(qtbot: QtBot, test_data_path: Path):
     win = SPCalMainWindow()
     win.instrument_options.options_widget.efficiency.setValue(0.1)
+    win.currentMethod().isotope_options[ISOTOPE_TABLE[("Ru", 101)]] = (
+        SPCalIsotopeOptions(None, 1.0, None)
+    )
+    win.currentMethod().isotope_options[ISOTOPE_TABLE[("Ru", 104)]] = (
+        SPCalIsotopeOptions(None, 2.0, None)
+    )
 
     df = SPCalTOFWERKDataFile.load(
         test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
@@ -98,13 +104,13 @@ def test_main_window_method_functions(qtbot: QtBot, test_data_path: Path):
     with qtbot.waitExposed(win):
         win.show()
 
+    expr = SPCalIsotopeExpression(
+        "test", (ISOTOPE_TABLE[("Ru", 101)], ISOTOPE_TABLE[("Ru", 104)], "+")
+    )
     with qtbot.waitSignal(win.currentMethodChanged, timeout=100):
-        win.addExpression(
-            SPCalIsotopeExpression(
-                "test", (ISOTOPE_TABLE[("Ru", 101)], ISOTOPE_TABLE[("Ru", 104)], "+")
-            )
-        )
+        win.addExpression(expr)
     assert len(win.currentMethod().expressions) == 1
+    assert win.currentMethod().isotope_options[expr].response is not None
 
     with qtbot.waitSignal(win.currentMethodChanged, timeout=100):
         win.removeExpressions(win.currentMethod().expressions)

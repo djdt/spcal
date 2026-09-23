@@ -17,7 +17,8 @@ from spcal.gui.modelviews.options import IsotopeOptionModel
 from spcal.gui.modelviews.units import UnitsHeaderView
 from spcal.gui.modelviews.values import ValueWidgetDelegate
 from spcal.gui.objects import ContextMenuRedirectFilter
-from spcal.isotope import SPCalIsotopeBase
+from spcal.gui.util import create_action
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing.options import SPCalIsotopeOptions
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class IsotopeOptionTable(BasicTableView):
     isotopeSelected = QtCore.Signal(SPCalIsotopeBase)
+    requestRemoveIsotopes = QtCore.Signal(list)
+    requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
+    requestRemoveExpressions = QtCore.Signal(list)
     requestIonicResponseDialog = (
         QtCore.Signal()
     )  # want to keep isotopes not in table too, so cant set here
@@ -45,6 +49,25 @@ class IsotopeOptionTable(BasicTableView):
         )
 
         self.verticalHeader().sectionClicked.connect(self.onHeaderClicked)
+
+        self.action_sum = create_action(
+            "black_sum",
+            "Sum Isotopes",
+            "Add a calculator expression summing the selected isotopes.",
+            self.sumSelectedIsotopes,
+        )
+        self.action_remove_isotopes = create_action(
+            "entry-delete",
+            "Remove Isotopes",
+            "Delete the selected isotopes and expressions.",
+            self.removeSelectedIsotopes,
+        )
+        self.action_remove_expr = create_action(
+            "entry-delete",
+            "Remove Expressions",
+            "Delete selected expressions.",
+            self.removeSelectedExpressions,
+        )
 
     def setModel(self, model: QtCore.QAbstractItemModel | None):
         if not isinstance(model, IsotopeOptionModel):
@@ -87,6 +110,8 @@ class IsotopeOptionTable(BasicTableView):
         event.accept()
         menu = self.basicTableMenu()
 
+        selected = self.selectedIsotopes()
+
         index = self.indexAt(event.pos())
         if index.isValid() and index.column() in [0, 1, 2]:
             if index.column() == 0:
@@ -113,6 +138,15 @@ class IsotopeOptionTable(BasicTableView):
             menu.insertSeparator(menu.actions()[0])
             menu.insertAction(menu.actions()[0], action)
 
+        menu.addSeparator()
+        if len(selected) > 1 and all(isinstance(iso, SPCalIsotope) for iso in selected):
+            menu.addAction(self.action_sum)
+        if any(isinstance(iso, SPCalIsotopeExpression) for iso in selected):
+            menu.addAction(self.action_remove_expr)
+        if any(isinstance(iso, SPCalIsotope) for iso in selected):
+            menu.addAction(self.action_remove_isotopes)
+        menu.popup(event.globalPos())
+
         menu.popup(event.globalPos())
 
     def setSignificantFigures(self, sf: int):
@@ -122,9 +156,47 @@ class IsotopeOptionTable(BasicTableView):
             delegate.setSigFigs(sf)
             self.setItemDelegateForColumn(i, delegate)
 
+    def selectedRows(self) -> list[int]:
+        return sorted({idx.row() for idx in self.selectedIndexes()})
+
+    def selectedIsotopes(self) -> list[SPCalIsotopeBase]:
+        return sorted(
+            {
+                self.model().index(row, 0).data(IsotopeRole)
+                for row in self.selectedRows()
+            }
+        )
+
+    def sumSelectedIsotopes(self):
+        selected_isotopes = [
+            iso for iso in self.selectedIsotopes() if isinstance(iso, SPCalIsotope)
+        ]
+        if len(selected_isotopes) > 1:
+            expr = SPCalIsotopeExpression.sumIsotopes(selected_isotopes)
+            self.requestAddExpression.emit(expr)
+
+    def removeSelectedIsotopes(self):
+        selected_expr = [
+            iso for iso in self.selectedIsotopes() if isinstance(iso, SPCalIsotope)
+        ]
+        if len(selected_expr) > 0:
+            self.requestRemoveIsotopes.emit(selected_expr)
+
+    def removeSelectedExpressions(self):
+        selected_expr = [
+            iso
+            for iso in self.selectedIsotopes()
+            if isinstance(iso, SPCalIsotopeExpression)
+        ]
+        if len(selected_expr) > 0:
+            self.requestRemoveExpressions.emit(selected_expr)
+
 
 class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     requestCurrentIsotope = QtCore.Signal(SPCalIsotopeBase)
+    requestRemoveIsotopes = QtCore.Signal(list)
+    requestAddExpression = QtCore.Signal(SPCalIsotopeExpression)
+    requestRemoveExpressions = QtCore.Signal(list)
     requestIonicResponseDialog = QtCore.Signal()
     optionChanged = QtCore.Signal(SPCalIsotopeBase)
 
@@ -138,6 +210,9 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
 
         self.table = IsotopeOptionTable()
         self.table.isotopeSelected.connect(self.requestCurrentIsotope)
+        self.table.requestRemoveIsotopes.connect(self.requestRemoveIsotopes)
+        self.table.requestAddExpression.connect(self.requestAddExpression)
+        self.table.requestRemoveExpressions.connect(self.requestRemoveExpressions)
         self.table.requestIonicResponseDialog.connect(self.requestIonicResponseDialog)
         self.table.setModel(self.model)
 

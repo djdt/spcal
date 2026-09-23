@@ -51,6 +51,7 @@ from spcal.gui.log import LoggingDialog
 from spcal.gui.util import create_action
 from spcal.io.session import decode_json_method, save_session_json
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.pratt import Reducer, ReducerException
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.filter import SPCalIndexFilter, SPCalResultFilter
 from spcal.processing.method import SPCalProcessingMethod
@@ -136,6 +137,10 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.outputs.requestRemoveIsotopes.connect(self.removeIsotopes)
         self.outputs.requestAddExpression.connect(self.addExpression)
         self.outputs.requestRemoveExpressions.connect(self.removeExpressions)
+
+        self.isotope_options.requestRemoveIsotopes.connect(self.removeIsotopes)
+        self.isotope_options.requestAddExpression.connect(self.addExpression)
+        self.isotope_options.requestRemoveExpressions.connect(self.removeExpressions)
 
         self.toolbar.scatterOptionsChanged.connect(self.redraw)
         self.toolbar.keyChanged.connect(self.onKeyChanged)
@@ -579,6 +584,34 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         method = self.currentMethod()
         if expr not in method.expressions:
             method.expressions.append(expr)
+            expr_isotopes = [
+                token for token in expr.tokens if isinstance(token, SPCalIsotope)
+            ]
+            # calculate the reponse of the expression if poissible
+            if all(
+                (
+                    iso in method.isotope_options
+                    and method.isotope_options[iso].response is not None
+                )
+                for iso in expr_isotopes
+            ):
+                try:
+                    reducer = Reducer(
+                        variables={
+                            str(token): method.isotope_options[token].response
+                            for token in expr.tokens
+                            if isinstance(token, SPCalIsotope)
+                        }
+                    )
+                    response = reducer.reduceExpr([str(t) for t in expr.tokens])
+                    if not isinstance(response, float):
+                        raise ReducerException(f"bad response type {response}")
+                    method.isotope_options[expr] = SPCalIsotopeOptions(
+                        None, response, None
+                    )
+                except ReducerException:
+                    pass
+
             self.currentMethodChanged.emit(method)
             self.updateForDataFiles(self.files.activeDataFiles())
 
@@ -771,7 +804,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     self.processing_results[file].pop(isotope)
                 if isotope in file.selected_isotopes:
                     file.selected_isotopes.remove(isotope)
-        self.reprocess()
+        self.updateForDataFiles(self.files.activeDataFiles())
 
     def reprocess(
         self,
@@ -1050,7 +1083,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         return dlg
 
     def dialogIonicResponse(self) -> ResponseDialog:
-        dlg = ResponseDialog(parent=self)
+        dlg = ResponseDialog(self.currentMethod().expressions, parent=self)
         dlg.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
         dlg.responsesSelected.connect(self.setResponses)
         dlg.open()
