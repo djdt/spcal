@@ -1115,6 +1115,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             screening_method=self.currentMethod(),
         )
         dlg.dataImported.connect(self.files.addDataFile)
+        dlg.expressionsAdded.connect(self.addExpressions)
         # the importer can take up a lot of memory so delete it
         # dlg.finished.connect(dlg.deleteLater)
         dlg.open()

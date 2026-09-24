@@ -10,7 +10,7 @@ from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io.tofwerk import factor_extraction_to_acquisition
-from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
@@ -54,6 +54,11 @@ class TofwerkImportDialog(ImportDialogBase):
         extraction_time = float(self.h5["TimingData"].attrs["TofPeriod"][0]) * 1e-9
         extraction_time *= factor_extraction_to_acquisition(self.h5)
 
+        self.check_sums = QtWidgets.QCheckBox("Import multi-isotopic elements as sums")
+        self.check_sums.setToolTip(
+            "Elements with more than one isotope selected with be imported as a single isotope expression."
+        )
+
         # Set info and defaults
         config = self.h5.attrs["Configuration File"].decode()
         self.box_info_layout.addRow(
@@ -66,6 +71,7 @@ class TofwerkImportDialog(ImportDialogBase):
         self.box_info_layout.addRow(
             "Event time:", QtWidgets.QLabel(f"{extraction_time * 1e3:.4f} ms")
         )
+        self.box_options_layout.addRow(self.check_sums)
         self.table.setFocus()
 
     def screenDataFile(
@@ -110,6 +116,21 @@ class TofwerkImportDialog(ImportDialogBase):
         button.setEnabled(enabled)
         self.table.setEnabled(enabled)
 
+    def selectedIsotopesAndExpressions(
+        self,
+    ) -> tuple[list[SPCalIsotope], list[SPCalIsotopeExpression]]:
+        isotopes: list[SPCalIsotope] = []
+        expressions: list[SPCalIsotopeExpression] = []
+        for button in self.table.buttons.values():
+            selected = button.selectedIsotopes()
+            if len(selected) == 0:
+                continue
+            elif len(selected) > 1 and self.check_sums.isChecked():
+                expressions.append(SPCalIsotopeExpression.sumIsotopes(selected))
+            else:
+                isotopes.extend(selected)
+        return isotopes, expressions
+
     def accept(self):
         if (  # pragma: no cover
             "PeakData" not in self.h5["PeakData"]
@@ -128,7 +149,10 @@ class TofwerkImportDialog(ImportDialogBase):
             f"TOFWERK instruments data loaded from {self.file_path} ({data_file.num_events} events)."
         )
 
-        data_file.selected_isotopes = self.table.selectedIsotopes()
+        selected, expressions = self.selectedIsotopesAndExpressions()
+        data_file.selected_isotopes = selected
+        if len(expressions) > 0:
+            self.expressionsAdded.emit(expressions)
         self.dataImported.emit(data_file)
         super().accept()
 
