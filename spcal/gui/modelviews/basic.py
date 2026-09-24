@@ -146,7 +146,7 @@ class BasicTableView(QtWidgets.QTableView):
         self.model().dataChanged.emit(
             self.model().index(top, left),
             self.model().index(bottom, right),
-            QtCore.Qt.ItemDataRole.EditRole,
+            [QtCore.Qt.ItemDataRole.EditRole],
         )
 
     def _paste(self):
@@ -183,5 +183,5 @@ class BasicTableView(QtWidgets.QTableView):
         self.model().dataChanged.emit(
             self.model().index(top, left),
             self.model().index(bottom, right),
-            QtCore.Qt.ItemDataRole.EditRole,
+            [QtCore.Qt.ItemDataRole.EditRole],
         )

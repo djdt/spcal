@@ -22,7 +22,7 @@ from spcal.gui.modelviews import DataFileRole, IsotopeRole
 from spcal.gui.modelviews.basic import BasicTableView
 from spcal.gui.modelviews.response import ConcentrationModel, IntensityModel
 from spcal.gui.modelviews.values import ValueWidgetDelegate
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.siunits import mass_concentration_units
 
 logger = logging.getLogger(__name__)
@@ -31,11 +31,17 @@ logger = logging.getLogger(__name__)
 class ResponseDialog(QtWidgets.QDialog):
     responsesSelected = QtCore.Signal(object)
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None):
+    def __init__(
+        self,
+        expressions: list[SPCalIsotopeExpression],
+        parent: QtWidgets.QWidget | None = None,
+    ):
         super().__init__(parent=parent)
         self.setWindowTitle("Ionic Response Calculator")
         self.setMinimumSize(640, 480)
         self.setAcceptDrops(True)
+
+        self.expressions = expressions
 
         self.intensity = ParticleView()
         self.intensity.exclusionRegionsChanged.connect(self.updateExclusionRegions)
@@ -43,7 +49,9 @@ class ResponseDialog(QtWidgets.QDialog):
         self.calibration = CalibrationView()
 
         self.model_concs = ConcentrationModel()
+        self.model_concs.isotopes = expressions
         self.model_intensity = IntensityModel()
+        self.model_intensity.isotopes = expressions
 
         sf = int(QtCore.QSettings().value("SigFigs", 4))  # type: ignore
 
@@ -275,10 +283,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def addDataFile(self, data_file: SPCalDataFile):
         new_isotopes = set(self.model_concs.isotopes)
         new_isotopes = new_isotopes.union(data_file.selected_isotopes)
-        new_isotopes = sorted(
-            new_isotopes,
-            key=lambda i: i.isotope if isinstance(i, SPCalIsotope) else 9999,
-        )
+        new_isotopes = sorted(new_isotopes)
 
         self.model_concs.beginResetModel()
         self.model_concs.concentrations[data_file] = {}
@@ -362,12 +367,12 @@ class ResponseDialog(QtWidgets.QDialog):
 
     def reset(self):
         self.model_concs.beginResetModel()
-        self.model_concs.isotopes.clear()
+        self.model_concs.isotopes = []
         self.model_concs.concentrations.clear()
         self.model_concs.endResetModel()
 
         self.model_intensity.beginResetModel()
-        self.model_intensity.isotopes.clear()
+        self.model_intensity.isotopes = []
         self.model_intensity.intensities.clear()
         self.model_intensity.exclusion_regions.clear()
         self.model_intensity.endResetModel()

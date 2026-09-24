@@ -9,6 +9,7 @@ from spcal.processing.method import SPCalProcessingMethod
 
 class ImportDialogBase(QtWidgets.QDialog):
     dataImported = QtCore.Signal(SPCalDataFile)
+    expressionsAdded = QtCore.Signal(list)
 
     def __init__(
         self,

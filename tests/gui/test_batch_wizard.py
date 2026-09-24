@@ -263,6 +263,7 @@ def test_batch_wizard_tofwerk(
             QtCore.Qt.MouseButton.LeftButton,
             QtCore.Qt.KeyboardModifier.ShiftModifier,
         )
+        qtbot.keyRelease(page.table.buttons["Ru"], QtCore.Qt.Key.Key_Shift)
 
     assert len(page.table.selectedIsotopes()) == 5
     assert page.isComplete()

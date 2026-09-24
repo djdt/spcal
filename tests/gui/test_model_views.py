@@ -48,7 +48,6 @@ from spcal.siunits import (
 
 def test_basic_table(qtbot: QtBot):
     table = BasicTableView()
-    qtbot.addWidget(table)
 
     model = QtGui.QStandardItemModel()
     table.setModel(model)
@@ -73,7 +72,8 @@ def test_basic_table(qtbot: QtBot):
     assert table.currentIndex().row() == 1
 
     table.clearSelection()
-    table.selectRow(0)
+    with qtbot.waitSignal(table.selectionModel().selectionChanged, timeout=100):
+        table.selectRow(0)
     table._copy()
     mime_data = QtWidgets.QApplication.clipboard().mimeData()
     assert mime_data.text() == "a\tb"
@@ -626,13 +626,14 @@ def test_results_output_view(
         qtbot.mouseClick(
             view.verticalHeader().viewport(),
             QtCore.Qt.MouseButton.LeftButton,
+            QtCore.Qt.KeyboardModifier.ShiftModifier,
             pos=QtCore.QPoint(
                 view.verticalHeader().width() // 2,
                 view.verticalHeader().sectionViewportPosition(2)
                 + view.verticalHeader().sectionSize(2) // 2,
             ),
-            stateKey=QtCore.Qt.KeyboardModifier.ShiftModifier,
         )
+        qtbot.keyRelease(view.verticalHeader().viewport(), QtCore.Qt.Key.Key_Shift)
 
     assert view.selectedIsotopes() == list(results.keys())[1:3]
 

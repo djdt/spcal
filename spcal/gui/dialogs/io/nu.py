@@ -10,7 +10,7 @@ from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.io.base import ImportDialogBase
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io import nu
-from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 
 logger = logging.getLogger(__name__)
@@ -166,6 +166,11 @@ class NuImportDialog(ImportDialogBase):
         )
         self.combo_blanking.setCurrentText(autoblanking.title())
 
+        self.check_sums = QtWidgets.QCheckBox("Import multi-isotopic elements as sums")
+        self.check_sums.setToolTip(
+            "Elements with more than one isotope selected with be imported as a single isotope expression."
+        )
+
         self.updateTableIsotopes()
 
         self.table.setSelectedIsotopes(selected)
@@ -204,6 +209,7 @@ class NuImportDialog(ImportDialogBase):
         self.box_options_layout.addRow("Max diff m/z:", self.max_mass_diff)
         # self.box_options.layout().addRow("Max file:", self.file_number)
         self.box_options_layout.addRow("Auto blanking:", self.combo_blanking)
+        self.box_options_layout.addRow(self.check_sums)
 
         self.table.setFocus()
         self.completeChanged()
@@ -345,6 +351,21 @@ class NuImportDialog(ImportDialogBase):
             self.cleanup()
             super().reject()
 
+    def selectedIsotopesAndExpressions(
+        self,
+    ) -> tuple[list[SPCalIsotope], list[SPCalIsotopeExpression]]:
+        isotopes: list[SPCalIsotope] = []
+        expressions: list[SPCalIsotopeExpression] = []
+        for button in self.table.buttons.values():
+            selected = button.selectedIsotopes()
+            if len(selected) == 0:
+                continue
+            elif len(selected) > 1 and self.check_sums.isChecked():
+                expressions.append(SPCalIsotopeExpression.sumIsotopes(selected))
+            else:
+                isotopes.extend(selected)
+        return isotopes, expressions
+
     def reset(self):
         self.cycle_number.setValue(0)
         self.segment_number.setValue(0)
@@ -410,7 +431,10 @@ class NuImportDialog(ImportDialogBase):
             autoblanking=autoblanking,
             integ_files=(self.first_integ.value() - 1, self.last_integ.value() - 1),
         )
-        data_file.selected_isotopes = self.table.selectedIsotopes()
+        selected, expressions = self.selectedIsotopesAndExpressions()
+        data_file.selected_isotopes = selected
+        if len(expressions) > 0:
+            self.expressionsAdded.emit(expressions)
         self.dataImported.emit(data_file)
 
         self.cleanup()

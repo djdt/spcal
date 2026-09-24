@@ -644,6 +644,37 @@ def test_select_isotope_dialog(
     assert df.selected_isotopes[0] == ISOTOPE_TABLE[("Ru", 101)]
 
 
+def test_select_isotope_dialog_expr_sums(
+    test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
+):
+    df = SPCalTOFWERKDataFile.load(
+        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    )
+    df.selected_isotopes = [
+        ISOTOPE_TABLE[("Ag", 107)],
+        ISOTOPE_TABLE[("Ag", 109)],
+        ISOTOPE_TABLE[("Au", 197)],
+    ]
+    dlg = SelectIsotopesDialog(df, default_method)
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    dlg.check_sums.setChecked(True)
+
+    with qtbot.waitSignals(
+        [dlg.accepted, dlg.expressionsSelected],
+        check_params_cbs=[lambda: True, lambda exprs: len(exprs) == 1],
+        timeout=100,
+    ):
+        dlg.accept()
+
+    # expression takes Ag107,109
+    assert len(df.selected_isotopes) == 1
+    assert df.selected_isotopes[0] == ISOTOPE_TABLE[("Au", 197)]
+
+
 def test_select_isotope_screening_dialog(qtbot: QtBot):
     dlg = ScreeningOptionsDialog(100, 1000, False)
     qtbot.addWidget(dlg)
@@ -672,13 +703,16 @@ def test_select_isotope_screening_dialog(qtbot: QtBot):
 def test_response_dialog(
     qtbot: QtBot, random_datafile_generator: Callable[..., SPCalDataFile]
 ):
-    dlg = ResponseDialog()
+    expressions = [
+        SPCalIsotopeExpression(
+            "+FeCu", ("+", ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Cu", 63)])
+        )
+    ]
+    dlg = ResponseDialog(expressions)
     qtbot.addWidget(dlg)
 
     with qtbot.waitExposed(dlg):
         dlg.show()
-
-    dlg.reset()
 
     df = random_datafile_generator(
         isotopes=[
@@ -691,9 +725,9 @@ def test_response_dialog(
     )
 
     dlg.addDataFile(df)
-    assert dlg.model_concs.columnCount() == 3
+    assert dlg.model_concs.columnCount() == 4
     assert dlg.model_concs.rowCount() == 1
-    assert dlg.model_intensity.columnCount() == 3
+    assert dlg.model_intensity.columnCount() == 4
     assert dlg.model_intensity.rowCount() == 1
     dlg.model_concs.setData(
         dlg.model_concs.index(0, 0), 1.0, QtCore.Qt.ItemDataRole.EditRole
@@ -720,20 +754,27 @@ def test_response_dialog(
     dlg.model_concs.setData(
         dlg.model_concs.index(1, 1), 10.0, QtCore.Qt.ItemDataRole.EditRole
     )
+    dlg.model_concs.setData(
+        dlg.model_concs.index(1, 3), 10.0, QtCore.Qt.ItemDataRole.EditRole
+    )
 
     dlg.combo_unit.setCurrentText("mg/L")
 
     def check_response(responses: dict):
-        if len(responses) != 2:
+        if len(responses) != 3:
             return False
         if not np.isclose(responses[ISOTOPE_TABLE[("Fe", 56)]], 1e6, rtol=0.05):
             return False
-        return np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], 1000000.0, rtol=0.05)
+        if not np.isclose(responses[ISOTOPE_TABLE["Cu", 63]], 1000000.0, rtol=0.05):
+            return False
+        return np.isclose(responses[expressions[0]], 2000000.0, rtol=0.05)
 
     with qtbot.wait_signal(
         dlg.responsesSelected, timeout=100, check_params_cb=check_response
     ):
         dlg.accept()
+
+    dlg.reset()
 
 
 def test_response_dialog_save(
@@ -741,7 +782,7 @@ def test_response_dialog_save(
     qtbot: QtBot,
     random_datafile_generator: Callable[..., SPCalDataFile],
 ):
-    dlg = ResponseDialog()
+    dlg = ResponseDialog([])
     qtbot.add_widget(dlg)
 
     df = random_datafile_generator(
@@ -882,8 +923,7 @@ def test_particle_database(qtbot: QtBot):
     qtbot.mouseClick(
         dlg.table,
         QtCore.Qt.MouseButton.LeftButton,
-        QtCore.Qt.KeyboardModifier.NoModifier,
-        dlg.table.visualRect(dlg.proxy.buddy(dlg.proxy.index(1, 0))).center(),
+        pos=dlg.table.visualRect(dlg.proxy.buddy(dlg.proxy.index(1, 0))).center(),
     )
     dlg.table.selectRow(1)
 
