@@ -170,7 +170,7 @@ class IsotopeOptionModel(UnitsModel):
                 self.isotope_options[isotope].mass_response = value
             else:
                 raise ValueError(f"unknown column name '{name}'")
-            self.dataChanged.emit(index, index, [role])
+            self.dataChanged.emit(index, index, [role, QtCore.Qt.ItemDataRole.EditRole])
             return True
         else:
             return super().setData(index, value, role)
