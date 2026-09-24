@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     timer.timeout.connect(lambda: None)
     timer.start(100)
 
-    return app.exec_()
+    return app.exec()
 
 
 if __name__ == "__main__":
