@@ -50,6 +50,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
     selectedDataFilesChanged = QtCore.Signal(list)
     activeDataFilesChanged = QtCore.Signal(list)
 
+    expressionsAdded = QtCore.Signal(list)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("spcal-datafiles-dock")
@@ -196,7 +198,8 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             raise ValueError("screening method has not been set")
         file = index.data(DataFileRole)
         dlg = SelectIsotopesDialog(file, self.screening_method, parent=self)
-        dlg.isotopesSelected.connect(lambda: self.dataFilesChanged.emit(file))
+        dlg.isotopesSelected.connect(self.dataFilesChanged)
+        dlg.expressionsSelected.connect(self.expressionsAdded)
         dlg.open()
 
     def dialogInformation(

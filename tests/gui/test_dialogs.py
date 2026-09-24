@@ -644,6 +644,37 @@ def test_select_isotope_dialog(
     assert df.selected_isotopes[0] == ISOTOPE_TABLE[("Ru", 101)]
 
 
+def test_select_isotope_dialog_expr_sums(
+    test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
+):
+    df = SPCalTOFWERKDataFile.load(
+        test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    )
+    df.selected_isotopes = [
+        ISOTOPE_TABLE[("Ag", 107)],
+        ISOTOPE_TABLE[("Ag", 109)],
+        ISOTOPE_TABLE[("Au", 197)],
+    ]
+    dlg = SelectIsotopesDialog(df, default_method)
+    qtbot.addWidget(dlg)
+
+    with qtbot.waitExposed(dlg):
+        dlg.show()
+
+    dlg.check_sums.setChecked(True)
+
+    with qtbot.waitSignals(
+        [dlg.accepted, dlg.expressionsSelected],
+        check_params_cbs=[lambda: True, lambda exprs: len(exprs) == 1],
+        timeout=100,
+    ):
+        dlg.accept()
+
+    # expression takes Ag107,109
+    assert len(df.selected_isotopes) == 1
+    assert df.selected_isotopes[0] == ISOTOPE_TABLE[("Au", 197)]
+
+
 def test_select_isotope_screening_dialog(qtbot: QtBot):
     dlg = ScreeningOptionsDialog(100, 1000, False)
     qtbot.addWidget(dlg)
