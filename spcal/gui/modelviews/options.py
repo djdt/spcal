@@ -153,7 +153,7 @@ class IsotopeOptionModel(UnitsModel):
                 self.index(index.row(), 0),
                 self.index(index.row(), self.columnCount() - 1),
             )
-            self.dataChanged.emit(tl, br, [role])
+            self.dataChanged.emit(tl, br, [role, QtCore.Qt.ItemDataRole.EditRole])
             return True
         elif role in [BaseValueRole]:
             if name == "Density":
