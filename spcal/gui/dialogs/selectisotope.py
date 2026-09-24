@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from spcal.datafile import SPCalDataFile
 from spcal.gui.graphs.base import SinglePlotGraphicsView
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
-from spcal.isotope import SPCalIsotope
+from spcal.isotope import SPCalIsotope, SPCalIsotopeExpression
 from spcal.processing.method import SPCalProcessingMethod
 
 
@@ -108,6 +108,7 @@ class SignalsPopup(QtWidgets.QDialog):
 
 class SelectIsotopesDialog(QtWidgets.QDialog):
     isotopesSelected = QtCore.Signal(SPCalDataFile)
+    expressionsSelected = QtCore.Signal(list)
 
     def __init__(
         self,
@@ -137,6 +138,11 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         self.table.requestShowIsotopes.connect(self.showIsotopes)
         self.table.isotopesChanged.connect(self.completeChanged)
 
+        self.check_sums = QtWidgets.QCheckBox("Import multi-isotopic elements as sums")
+        self.check_sums.setToolTip(
+            "Elements with more than one isotope selected with be imported as a single isotope expression."
+        )
+
         self.button_box = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.StandardButton.Ok
             | QtWidgets.QDialogButtonBox.StandardButton.Cancel
@@ -156,6 +162,7 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
             QtCore.Qt.AlignmentFlag.AlignHCenter,
         )
         layout.addWidget(self.table, 1)
+        layout.addWidget(self.check_sums, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.button_box, 0)
         self.setLayout(layout)
 
@@ -232,6 +239,17 @@ class SelectIsotopesDialog(QtWidgets.QDialog):
         return len(self.table.selectedIsotopes()) > 0
 
     def accept(self):
-        self.data_file.selected_isotopes = self.table.selectedIsotopes()
+        if self.check_sums.isChecked():
+            selected, expressions = [], []
+            for button in self.table.buttons.values():
+                isotopes = button.selectedIsotopes()
+                if len(isotopes) == 1:
+                    selected.append(isotopes[0])
+                elif len(isotopes) > 0:
+                    expressions.append(SPCalIsotopeExpression.sumIsotopes(isotopes))
+            self.expressionsSelected.emit(expressions)
+        else:
+            selected = self.table.selectedIsotopes()
+        self.data_file.selected_isotopes = selected
         self.isotopesSelected.emit(self.data_file)
         super().accept()

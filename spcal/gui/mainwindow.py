@@ -131,6 +131,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
         self.files.dataFilesChanged.connect(self.updateForDataFiles)
         self.files.activeDataFilesChanged.connect(self.updateForDataFiles)
+        self.files.expressionsAdded.connect(self.addExpressions)
 
         self.outputs.activeResultsChanged.connect(self.redraw)
 
@@ -580,40 +581,47 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
 
     # Method modification
 
-    def addExpression(self, expr: SPCalIsotopeExpression):
+    def addExpressions(self, expr_list: list[SPCalIsotopeExpression]):
         method = self.currentMethod()
-        if expr not in method.expressions:
-            method.expressions.append(expr)
-            expr_isotopes = [
-                token for token in expr.tokens if isinstance(token, SPCalIsotope)
-            ]
-            # calculate the reponse of the expression if poissible
-            if all(
-                (
-                    iso in method.isotope_options
-                    and method.isotope_options[iso].response is not None
-                )
-                for iso in expr_isotopes
-            ):
-                try:
-                    reducer = Reducer(
-                        variables={
-                            str(token): method.isotope_options[token].response
-                            for token in expr.tokens
-                            if isinstance(token, SPCalIsotope)
-                        }
+        changed = False
+        for expr in expr_list:
+            if expr not in method.expressions:
+                method.expressions.append(expr)
+                expr_isotopes = [
+                    token for token in expr.tokens if isinstance(token, SPCalIsotope)
+                ]
+                # calculate the reponse of the expression if poissible
+                if all(
+                    (
+                        iso in method.isotope_options
+                        and method.isotope_options[iso].response is not None
                     )
-                    response = reducer.reduceExpr([str(t) for t in expr.tokens])
-                    if not isinstance(response, float):
-                        raise ReducerException(f"bad response type {response}")
-                    method.isotope_options[expr] = SPCalIsotopeOptions(
-                        None, response, None
-                    )
-                except ReducerException:
-                    pass
+                    for iso in expr_isotopes
+                ):
+                    try:
+                        reducer = Reducer(
+                            variables={
+                                str(token): method.isotope_options[token].response
+                                for token in expr.tokens
+                                if isinstance(token, SPCalIsotope)
+                            }
+                        )
+                        response = reducer.reduceExpr([str(t) for t in expr.tokens])
+                        if not isinstance(response, float):
+                            raise ReducerException(f"bad response type {response}")
+                        method.isotope_options[expr] = SPCalIsotopeOptions(
+                            None, response, None
+                        )
+                        changed = True
+                    except ReducerException:
+                        pass
 
+        if changed:
             self.currentMethodChanged.emit(method)
             self.updateForDataFiles(self.files.activeDataFiles())
+
+    def addExpression(self, expr: SPCalIsotopeExpression):
+        self.addExpressions([expr])
 
     def removeExpressions(self, expressions: list[SPCalIsotopeExpression]):
         method = self.currentMethod()
