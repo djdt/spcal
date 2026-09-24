@@ -175,6 +175,43 @@ def test_import_dialog_nu(test_data_path: Path, qtbot: QtBot):
     assert dlg.combo_blanking.currentText() == "Regions"
 
 
+def test_import_dialog_nu_expr_sums(test_data_path: Path, qtbot: QtBot):
+    def check_data(data_file: SPCalNuDataFile):
+        if len(data_file.isotopes) != 188:
+            return False
+        if str(data_file.selected_isotopes[0]) != "107Ag":
+            return False
+        if str(data_file.selected_isotopes[1]) != "197Au":
+            return False
+        if data_file.num_events != 40:
+            return False
+        return np.isclose(data_file.event_time, 9.824e-05)
+
+    path = test_data_path.joinpath("nu/normal")
+    dlg = NuImportDialog(path)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.open()
+
+    qtbot.mouseClick(dlg.table.buttons["Au"], QtCore.Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(
+        dlg.table.buttons["Ag"],
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.ShiftModifier,
+    )
+
+    assert len(dlg.table.selectedIsotopes()) == 3
+
+    dlg.check_sums.setChecked(True)
+
+    with qtbot.wait_signal(
+        dlg.expressionsAdded,
+        check_params_cb=lambda exprs: exprs[0].name == "ΣAg",
+        timeout=100,
+    ):
+        dlg.accept()
+
+
 def test_import_dialog_nu_screening(
     test_data_path: Path, default_method: SPCalProcessingMethod, qtbot: QtBot
 ):
@@ -251,6 +288,32 @@ def test_import_dialog_tofwerk(test_data_path: Path, qtbot: QtBot):
 
     dlg.reset()
     assert len(dlg.table.selectedIsotopes()) == 0
+
+
+def test_import_dialog_tofwerk_expr_sums(test_data_path: Path, qtbot: QtBot):
+    path = test_data_path.joinpath("tofwerk/tofwerk_testdata.h5")
+    dlg = TofwerkImportDialog(path)
+    qtbot.add_widget(dlg)
+    with qtbot.wait_exposed(dlg):
+        dlg.open()
+
+    qtbot.mouseClick(dlg.table.buttons["Au"], QtCore.Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(
+        dlg.table.buttons["Ag"],
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.ShiftModifier,
+    )
+
+    assert len(dlg.table.selectedIsotopes()) == 3
+
+    dlg.check_sums.setChecked(True)
+
+    with qtbot.wait_signal(
+        dlg.expressionsAdded,
+        check_params_cb=lambda exprs: exprs[0].name == "ΣAg",
+        timeout=100,
+    ):
+        dlg.accept()
 
 
 def test_import_dialog_tofwerk_screening(
