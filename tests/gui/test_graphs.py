@@ -310,6 +310,7 @@ def test_graph_particle(
         QtCore.Qt.KeyboardModifier.ShiftModifier,
         pos=pos,
     )
+    qtbot.keyRelease(view.viewport(), QtCore.Qt.Key.Key_Shift)
     assert item.item.isVisible()
     assert item.detections.isVisible()
 
@@ -340,6 +341,7 @@ def test_graph_particle(
         QtCore.Qt.KeyboardModifier.ShiftModifier,
         pos=pos,
     )
+    qtbot.keyRelease(view.viewport(), QtCore.Qt.Key.Key_Shift)
 
     for line in item.lines:
         assert line.isVisible()
@@ -400,11 +402,7 @@ def test_graph_histogram(
     assert item.item.isVisible()
     assert item2.item.isVisible()
 
-    qtbot.mouseClick(
-        view.viewport(),
-        QtCore.Qt.MouseButton.LeftButton,
-        pos=pos,
-    )
+    qtbot.mouseClick(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pos)
     assert not item.item.isVisible()
 
     qtbot.mouseClick(
@@ -413,6 +411,7 @@ def test_graph_histogram(
         QtCore.Qt.KeyboardModifier.ShiftModifier,
         pos=pos,
     )
+    qtbot.keyRelease(view.viewport(), QtCore.Qt.Key.Key_Shift)
     assert item.item.isVisible()
     assert not item2.item.isVisible()
 

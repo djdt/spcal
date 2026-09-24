@@ -199,6 +199,7 @@ def test_import_dialog_nu_expr_sums(test_data_path: Path, qtbot: QtBot):
         QtCore.Qt.MouseButton.LeftButton,
         QtCore.Qt.KeyboardModifier.ShiftModifier,
     )
+    qtbot.keyRelease(dlg.table.buttons["Ag"], QtCore.Qt.Key.Key_Shift)
 
     assert len(dlg.table.selectedIsotopes()) == 3
 
@@ -303,6 +304,7 @@ def test_import_dialog_tofwerk_expr_sums(test_data_path: Path, qtbot: QtBot):
         QtCore.Qt.MouseButton.LeftButton,
         QtCore.Qt.KeyboardModifier.ShiftModifier,
     )
+    qtbot.keyRelease(dlg.table.buttons["Ag"], QtCore.Qt.Key.Key_Shift)
 
     assert len(dlg.table.selectedIsotopes()) == 3
 

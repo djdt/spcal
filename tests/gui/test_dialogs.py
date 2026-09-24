@@ -923,8 +923,7 @@ def test_particle_database(qtbot: QtBot):
     qtbot.mouseClick(
         dlg.table,
         QtCore.Qt.MouseButton.LeftButton,
-        QtCore.Qt.KeyboardModifier.NoModifier,
-        dlg.table.visualRect(dlg.proxy.buddy(dlg.proxy.index(1, 0))).center(),
+        pos=dlg.table.visualRect(dlg.proxy.buddy(dlg.proxy.index(1, 0))).center(),
     )
     dlg.table.selectRow(1)
 
