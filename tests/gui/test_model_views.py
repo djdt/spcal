@@ -48,7 +48,6 @@ from spcal.siunits import (
 
 def test_basic_table(qtbot: QtBot):
     table = BasicTableView()
-    qtbot.addWidget(table)
 
     model = QtGui.QStandardItemModel()
     table.setModel(model)
@@ -73,7 +72,8 @@ def test_basic_table(qtbot: QtBot):
     assert table.currentIndex().row() == 1
 
     table.clearSelection()
-    table.selectRow(0)
+    with qtbot.waitSignal(table.selectionModel().selectionChanged, timeout=100):
+        table.selectRow(0)
     table._copy()
     mime_data = QtWidgets.QApplication.clipboard().mimeData()
     assert mime_data.text() == "a\tb"
