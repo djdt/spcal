@@ -214,6 +214,14 @@ def test_spcal_isotope_options_dock(qtbot: QtBot):
         assert isinstance(popup, QtWidgets.QMenu)
         assert popup.actions()[0].text() == name
 
+    dock.table.selectAll()
+    with qtbot.waitSignal(
+        dock.model.dataChanged,
+        check_params_cb=lambda tl, br, _: br.row() - tl.row() == 2,
+        timeout=100,
+    ):
+        dock.table._filldown()
+
     # clear
     dock.clear()
     assert len(dock.isotopeOptions()) == 0

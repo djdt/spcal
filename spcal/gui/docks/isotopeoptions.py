@@ -221,14 +221,15 @@ class SPCalIsotopeOptionsDock(QtWidgets.QDockWidget):
     def onDataChanged(
         self,
         topleft: QtCore.QModelIndex,
-        _bottom_right: QtCore.QModelIndex,
+        bottom_right: QtCore.QModelIndex,
         roles: list[QtCore.Qt.ItemDataRole],
     ):
-        isotope = self.model.data(topleft, IsotopeRole)
-        if isotope is not None and any(
-            x in roles for x in [BaseValueRole, IsotopeOptionRole]
-        ):
-            self.optionChanged.emit(isotope)
+        if QtCore.Qt.ItemDataRole.EditRole not in roles:
+            return
+        for row in range(topleft.row(), bottom_right.row() + 1):
+            isotope = self.model.index(row, 0).data(IsotopeRole)
+            if isotope is not None:
+                self.optionChanged.emit(isotope)
 
     def isotopeOptions(self) -> dict[SPCalIsotopeBase, SPCalIsotopeOptions]:
         return self.model.isotope_options
