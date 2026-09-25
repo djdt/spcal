@@ -211,6 +211,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         sia = np.exp(
             self.parameters["mu"][index] + 0.5 * self.parameters["sigma"][index] ** 2
         )
+        if np.isnan(sia):
+            sia = self.reported_mu
         popup = SingleIonAreaSignalsPopup(
             pos.x(), self.counts[:, index] / sia, parent=self
         )
@@ -303,28 +305,28 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         )
         valid_natural = sorted_any_close(natural_masses, self.masses, atol=0.1)
 
-        enabled_isotopes = [
+        selected_isotopes = [
             iso
             for iso in natural_isotopes
             if iso.composition is not None and iso.composition > 0.1
         ]
-        enabled_masses = np.fromiter(
-            (iso.mass for iso in enabled_isotopes), dtype=float
+        selected_masses = np.fromiter(
+            (iso.mass for iso in selected_isotopes), dtype=float
         )
-        valid_enabled = sorted_any_close(enabled_masses, self.masses, atol=0.1)
+        valid_selected = sorted_any_close(selected_masses, self.masses, atol=0.1)
 
         self.enabled_isotopes = [
             iso for iso, v in zip(natural_isotopes, valid_natural) if v
         ]
         self.selected_isotopes = [
-            iso for iso, v in zip(enabled_isotopes, valid_enabled) if v
+            iso for iso, v in zip(selected_isotopes, valid_selected) if v
         ]
 
         # trim to valid masses
-        enabled_masses = np.fromiter(
+        selected_masses = np.fromiter(
             (iso.mass for iso in self.enabled_isotopes), dtype=float
         )
-        valid = sorted_any_close(self.masses, enabled_masses, atol=0.1)
+        valid = sorted_any_close(self.masses, selected_masses, atol=0.1)
 
         self.masses = self.masses[valid]
         self.counts = self.counts[:, valid]
@@ -344,7 +346,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.parameters["mu"] = mus
         self.parameters["sigma"] = sigmas
 
-        self.scatter.drawData(self.masses, sigmas)
+        self.scatter.drawData(self.masses, np.nan_to_num(sigmas))
 
         self.updateValidParameters()
 
