@@ -129,6 +129,10 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
     # def onPointHovered(self, pos: QtCore.QPointF, index: int):
     #     self.label.setPos(pos)
     #
+    def setGuideVisible(self, visible: bool):
+        self.guide_bot.setVisible(visible)
+        self.guide_top.setVisible(visible)
+
     def setGuideOffset(self, mean: float):
         self.guide_top.setPos(0.0, mean - 1.0)
         self.guide_bot.setPos(0.0, mean - 1.0)
