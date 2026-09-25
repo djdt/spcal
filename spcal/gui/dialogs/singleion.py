@@ -168,6 +168,13 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.check_peaks.setChecked(True)
         self.check_peaks.checkStateChanged.connect(self.updateValidParameters)
 
+        self.check_draw_guide = QtWidgets.QCheckBox("Show guide")
+        self.check_draw_guide.setToolTip(
+            "Show a guide for expected σ values (median ± 1.5 * IQR). This guide is calculated from data collected on several Vitesse intsruments."
+        )
+        self.check_draw_guide.setChecked(True)
+        self.check_draw_guide.checkStateChanged.connect(self.setGuideVisible)
+
         self.selected_isotopes = []
         self.button_select_isotopes = QtWidgets.QPushButton("Set isotopes...")
         self.button_select_isotopes.pressed.connect(self.dialogSelectIsotopes)
@@ -178,6 +185,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         controls_layout.addRow("Max σ error:", self.required_nonzero_error)
         controls_layout.addWidget(self.button_select_isotopes)
         controls_layout.addRow(self.check_peaks)
+        controls_layout.addRow(self.check_draw_guide)
         # controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
         self.enableControls(False)
@@ -333,6 +341,9 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
         self.updateExtractedParameters()
         self.enableControls(True)
+
+    def setGuideVisible(self, state: QtCore.Qt.CheckState):
+        self.scatter.setGuideVisible(state == QtCore.Qt.CheckState.Checked)
 
     def updateExtractedParameters(self):
         self.scatter.clear()
