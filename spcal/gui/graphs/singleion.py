@@ -46,7 +46,7 @@ guide_data = np.array(
 
 class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
     pointHovered = QtCore.Signal(QtCore.QPointF, int)
-    pointClicked = QtCore.Signal(QtCore.QPointF, int)
+    pointClicked = QtCore.Signal(QtCore.QPointF, int, QtCore.Qt.MouseButton)
 
     def __init__(
         self,
@@ -64,11 +64,9 @@ class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
         self.label.setVisible(False)
 
     def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent):
-        if event.button() != QtCore.Qt.MouseButton.LeftButton:
-            return
         points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
         if len(points) > 0:
-            self.pointClicked.emit(points[0].pos(), points[0].index())
+            self.pointClicked.emit(points[0].pos(), points[0].index(), event.button())
 
     def hoverMoveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):
         points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
@@ -88,7 +86,7 @@ class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
 
 class SingleIonAreaScatterView(SinglePlotGraphicsView):
     pointHovered = QtCore.Signal(QtCore.QPointF, int)
-    pointClicked = QtCore.Signal(QtCore.QPointF, int)
+    pointClicked = QtCore.Signal(QtCore.QPointF, int, QtCore.Qt.MouseButton)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(

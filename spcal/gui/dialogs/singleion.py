@@ -8,9 +8,7 @@ from PySide6.QtGui import QValidator
 from spcal.calc import sorted_any_close
 from spcal.dists.util import extract_compound_poisson_lognormal_parameters
 from spcal.gui.graphs.base import SinglePlotGraphicsView
-from spcal.gui.graphs.singleion import (
-    SingleIonAreaScatterView,
-)
+from spcal.gui.graphs.singleion import SingleIonAreaScatterView
 from spcal.gui.io import get_open_spcal_path
 from spcal.gui.widgets.periodictable import PeriodicTableSelector
 from spcal.io import nu, tofwerk
@@ -215,16 +213,35 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.scatter.drawData(params["mass"], params["sigma"])
 
     @QtCore.Slot()
-    def onPointClicked(self, pos: QtCore.QPointF, index: int):
-        sia = np.exp(
-            self.parameters["mu"][index] + 0.5 * self.parameters["sigma"][index] ** 2
-        )
-        if np.isnan(sia):
-            sia = self.reported_mu
-        popup = SingleIonAreaSignalsPopup(
-            pos.x(), self.counts[:, index] / sia, parent=self
-        )
-        popup.show()
+    def onPointClicked(
+        self, pos: QtCore.QPointF, index: int, button: QtCore.Qt.MouseButton
+    ):
+        if button == QtCore.Qt.MouseButton.LeftButton:
+            mass = self.masses[index]
+            clicked = [
+                iso
+                for iso in self.enabled_isotopes
+                if np.isclose(iso.mass, mass, atol=0.1)
+            ]
+            if any(
+                iso in self.selected_isotopes for iso in clicked
+            ):  # already selected, deselect
+                selected = [iso for iso in self.selected_isotopes if iso not in clicked]
+            else:
+                selected = self.selected_isotopes + clicked
+
+            self.setSelectedIsotopes(selected)
+        elif button == QtCore.Qt.MouseButton.MiddleButton:
+            sia = np.exp(
+                self.parameters["mu"][index]
+                + 0.5 * self.parameters["sigma"][index] ** 2
+            )
+            if np.isnan(sia):
+                sia = self.reported_mu
+            popup = SingleIonAreaSignalsPopup(
+                pos.x(), self.counts[:, index] / sia, parent=self
+            )
+            popup.show()
 
     def buttonPressed(self, button: QtWidgets.QAbstractButton):
         sb = self.button_box.standardButton(button)
@@ -369,12 +386,14 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateValidParameters(self):
         idx_error = np.zeros(self.counts.shape[1], int)
+        # idx_selected = np.zeros_like(idx_error)
 
         selected_isotope_masses = np.fromiter(
             (iso.mass for iso in self.selected_isotopes), dtype=float
         )
-        not_selected = ~sorted_any_close(self.masses, selected_isotope_masses, atol=0.1)
-        idx_error[not_selected] = 1
+        idx_selected = sorted_any_close(
+            self.masses, selected_isotope_masses, atol=0.1
+        ).astype(int)
 
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
@@ -386,28 +405,34 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         insufficient_zeros = zeros < 150  # approx 5 % error in lambda
         insufficient_nonzeros = nonzeros < required_zeros
 
-        idx_error[insufficient_zeros] = 3
-        idx_error[insufficient_nonzeros] = 4
+        idx_error[insufficient_zeros] = 1
+        idx_error[insufficient_nonzeros] = 2
 
         if self.check_peaks.isChecked():
             nonzero_mean = np.sum(self.counts, axis=0) / nonzeros
             has_peaks = np.count_nonzero(self.counts > nonzero_mean * 10.0, axis=0) > 1
-            idx_error[has_peaks] = 2
+            idx_error[has_peaks] = 3
 
-        self.valid = idx_error == 0
+        self.valid = np.logical_and(idx_error == 0, idx_selected)
 
         if self.scatter.points is not None:
+            pens = np.array(
+                [
+                    QtGui.QPen(QtCore.Qt.GlobalColor.black, 0.0),
+                    QtGui.QPen(QtCore.Qt.GlobalColor.red, 0.0),
+                ]
+            )
             brushes = np.array(
                 [
                     QtGui.QBrush(QtCore.Qt.GlobalColor.black),
-                    QtGui.QBrush(QtCore.Qt.GlobalColor.white),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.red),
-                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
-                    QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                 ]
             )
-            symbols = np.array(["o", "o", "x", "t1", "t"])
+            symbols = np.array(["o", "t1", "t", "x"])
             self.scatter.points.setBrush(brushes[idx_error])
+            self.scatter.points.setPen(pens[idx_selected])
             self.scatter.points.setSymbol(symbols[idx_error])
 
         self.updateGraphTitle()
@@ -428,10 +453,8 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonAreaDialog()
-    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-37-30 1 ppb att")
-    # win.loadSingleIonData("/home/tom/Downloads/NT032/14-36-31 10 ppb att/")
-    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
-    # win.loadSingleIonData("/mnt/storage/TOF/2026 Greenland Ice/13-02-23 mix10ppb/")
+    win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
+    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
     win.show()
 
     app.exec()
