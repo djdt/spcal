@@ -73,7 +73,6 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
             "Shape parameter for the log-normal approximation of the SIA. "
         )
         self.lognormal_sigma.valueChanged.connect(self.optionsChanged)
-        self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
 
         self.button_sia = QtWidgets.QPushButton("Single Ion Options...")
         self.button_sia.pressed.connect(self.dialogSingleIon)
@@ -110,11 +109,14 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
                 "params must be a structured array with names 'mass', 'mu', 'sigma'"
             )
         self.single_ion_parameters = params
-        self.lognormal_sigma.setEnabled(self.single_ion_parameters is None)
         self.optionsChanged.emit()
 
     def parameters(self) -> dict:
-        return {"alpha": self.alpha.value(), "sigma": self.lognormal_sigma.value()}
+        return {
+            "alpha": self.alpha.value(),
+            "sigma": self.lognormal_sigma.value(),
+            "single ion parameters": self.single_ion_parameters,
+        }
 
     def setParameters(self, state: dict):
         self.blockSignals(True)
@@ -129,10 +131,7 @@ class CompoundPoissonOptionsWidget(LimitOptionsBaseWidget):
         self.optionsChanged.emit()
 
     def isComplete(self) -> bool:
-        if (
-            self.lognormal_sigma.isEnabled()
-            and not self.lognormal_sigma.hasAcceptableInput()
-        ):
+        if not self.lognormal_sigma.hasAcceptableInput():
             return False
 
         return self.alpha.hasAcceptableInput()
