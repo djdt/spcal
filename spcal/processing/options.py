@@ -224,7 +224,7 @@ class SPCalLimitOptions:
                     idx = search_sorted_closest(
                         self.compound_poisson_kws["single ion parameters"]["mass"],
                         [isotope.mass],
-                    )
+                    )[0]
                     if np.isclose(
                         self.compound_poisson_kws["single ion parameters"]["mass"][idx],
                         isotope.mass,
