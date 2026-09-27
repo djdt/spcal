@@ -237,7 +237,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
                 + 0.5 * self.parameters["sigma"][index] ** 2
             )
             if np.isnan(sia):
-                sia = self.reported_mu
+                sia = self.reported_sia
             popup = SingleIonAreaSignalsPopup(
                 pos.x(), self.counts[:, index] / sia, parent=self
             )
@@ -297,7 +297,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.masses, self.counts, _, info = nu.read_directory(
                 path, autoblank="all", raw=True
             )
-            self.reported_mu = info["AverageSingleIonArea"]
+            self.reported_sia = info["AverageSingleIonArea"]
         elif tofwerk.is_tofwerk_file(path):
             with h5py.File(path, "r") as h5:
                 if "PeakData" in h5["PeakData"]:
@@ -310,7 +310,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
                     * h5["FullSpectra"].attrs["Single Ion Signal"][0]
                     * tofwerk.factor_extraction_to_acquisition(h5)
                 ).reshape(-1, self.masses.size)
-                self.reported_mu = np.log(
+                self.reported_sia = np.log(
                     h5["FullSpectra"].attrs["Single Ion Signal"][0]
                 )
         else:
@@ -381,8 +381,11 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
     def updateGraphTitle(self):
         mean_mu = np.mean(self.parameters["mu"][self.valid])
         mean_sigma = np.mean(self.parameters["sigma"][self.valid])
+        mean_sia = np.exp(mean_mu + 0.5 * mean_sigma**2)
 
-        self.scatter.plot.setTitle(f"Average: µ={mean_mu:.2f}, σ={mean_sigma:.2f}")
+        self.scatter.plot.setTitle(
+            f"Average: SIA={mean_sia:.0f}, µ={mean_mu:.2f}, σ={mean_sigma:.2f}"
+        )
 
     def updateValidParameters(self):
         idx_error = np.zeros(self.counts.shape[1], int)
