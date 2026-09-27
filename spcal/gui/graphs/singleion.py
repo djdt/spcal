@@ -55,7 +55,7 @@ class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
         pen: QtGui.QPen | None = None,
         brush: QtGui.QBrush | None = None,
     ):
-        super().__init__(x=x, y=y, pen=pen, brush=brush)
+        super().__init__(x=x, y=y, size=10.0, pen=pen, brush=brush)
         self.setAcceptHoverEvents(True)
         self.opts["mouseWidth"] = 50.0
 
@@ -108,25 +108,46 @@ class SingleIonAreaScatterView(SinglePlotGraphicsView):
         self.points.pointClicked.connect(self.pointClicked)
         self.plot.addItem(self.points)
 
-        pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 1.0)
+        pen = QtGui.QPen(QtCore.Qt.GlobalColor.red, 2.0 * self.devicePixelRatioF())
         pen.setCosmetic(True)
 
         self.guide_bot = pyqtgraph.PlotCurveItem(
-            x=np.arange(50, 200), y=guide_data[:, 0], pen=pen, skipFiniteCheck=True
+            x=np.arange(50, 200),
+            y=guide_data[:, 0],
+            pen=pen,
+            skipFiniteCheck=True,
+            antialias=True,
         )
         self.guide_top = pyqtgraph.PlotCurveItem(
-            x=np.arange(50, 200), y=guide_data[:, 1], pen=pen, skipFiniteCheck=True
+            x=np.arange(50, 200),
+            y=guide_data[:, 1],
+            pen=pen,
+            skipFiniteCheck=True,
+            antialias=True,
         )
         self.plot.addItem(self.guide_bot)
         self.plot.addItem(self.guide_top)
 
         self.plot.getViewBox().setLimits(xMin=0.0, yMin=0.0)
 
-    #     self.pointHovered.connect(self.onPointHovered)
-    #
-    # def onPointHovered(self, pos: QtCore.QPointF, index: int):
-    #     self.label.setPos(pos)
-    #
+        assert self.plot.legend is not None
+        for symbol, brush, label in zip(
+            ["o", "t", "t1", "x"],
+            [
+                QtGui.QBrush(QtCore.Qt.GlobalColor.white),
+                QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+                QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
+                QtGui.QBrush(QtCore.Qt.GlobalColor.red),
+            ],
+            ["valid", "Insufficent non-zeros", "Insufficient zeros", "particles"],
+        ):
+            self.plot.legend.addItem(
+                pyqtgraph.ScatterPlotItem(
+                    symbol=symbol, size=10.0, brush=brush, antialias=True
+                ),
+                label,
+            )
+
     def setGuideVisible(self, visible: bool):
         self.guide_bot.setVisible(visible)
         self.guide_top.setVisible(visible)

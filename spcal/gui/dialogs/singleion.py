@@ -405,8 +405,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         insufficient_zeros = zeros < 150  # approx 5 % error in lambda
         insufficient_nonzeros = nonzeros < required_zeros
 
-        idx_error[insufficient_zeros] = 1
-        idx_error[insufficient_nonzeros] = 2
+        idx_error[insufficient_nonzeros] = 1
+        idx_error[insufficient_zeros] = 2
 
         if self.check_peaks.isChecked():
             nonzero_mean = np.sum(self.counts, axis=0) / nonzeros
@@ -416,21 +416,24 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.valid = np.logical_and(idx_error == 0, idx_selected)
 
         if self.scatter.points is not None:
+            pen_size = 1.6 * self.devicePixelRatioF()
             pens = np.array(
                 [
-                    QtGui.QPen(QtCore.Qt.GlobalColor.black, 0.0),
-                    QtGui.QPen(QtCore.Qt.GlobalColor.red, 0.0),
+                    QtGui.QPen(QtCore.Qt.GlobalColor.lightGray, pen_size),
+                    QtGui.QPen(QtCore.Qt.GlobalColor.black, pen_size),
                 ]
             )
+            for pen in pens:
+                pen.setCosmetic(True)
             brushes = np.array(
                 [
-                    QtGui.QBrush(QtCore.Qt.GlobalColor.black),
+                    QtGui.QBrush(QtCore.Qt.GlobalColor.white),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.yellow),
                     QtGui.QBrush(QtCore.Qt.GlobalColor.red),
                 ]
             )
-            symbols = np.array(["o", "t1", "t", "x"])
+            symbols = np.array(["o", "t", "t1", "x"])
             self.scatter.points.setBrush(brushes[idx_error])
             self.scatter.points.setPen(pens[idx_selected])
             self.scatter.points.setSymbol(symbols[idx_error])
@@ -453,8 +456,8 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonAreaDialog()
-    win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
-    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
+    # win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
+    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
     win.show()
 
     app.exec()
