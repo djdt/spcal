@@ -139,7 +139,6 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.counts = np.array([])
 
         self.parameters = np.array([], dtype=SingleIonIsotopesDialog.PARAMETER_DTYPE)
-        self.valid = np.array([], dtype=bool)
 
         self.screening_method = SPCalProcessingMethod()
         self.screening_method.limit_options.limit_method = "poisson"
@@ -260,7 +259,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         button.setEnabled(self.isComplete())
 
     def isComplete(self) -> bool:
-        return bool(self.parameters.size > 0 and np.any(self.valid))
+        return bool(self.parameters.size > 0 and len(self.selected_isotopes) > 0)
 
     def enableControls(self, enabled: bool):
         self.controls_box.setEnabled(enabled)
@@ -330,31 +329,36 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         )
         valid_natural = sorted_any_close(natural_masses, self.masses, atol=0.1)
 
+        self.enabled_isotopes = [
+            iso for iso, v in zip(natural_isotopes, valid_natural) if v
+        ]
+
+        # trim to valid masses
+        enabled_masses = np.fromiter(
+            (iso.mass for iso in self.enabled_isotopes), dtype=float
+        )
+        valid = sorted_any_close(self.masses, enabled_masses, atol=0.1)
+
+        self.masses = self.masses[valid]
+        self.counts = self.counts[:, valid]
+
+        # select some
+
         selected_isotopes = [
             iso
-            for iso in natural_isotopes
+            for iso in self.enabled_isotopes
             if iso.composition is not None and iso.composition > 0.1
         ]
         selected_masses = np.fromiter(
             (iso.mass for iso in selected_isotopes), dtype=float
         )
-        valid_selected = sorted_any_close(selected_masses, self.masses, atol=0.1)
+        valid_selected = sorted_any_close(
+            selected_masses, self.masses[self.invalidMasses() == 0], atol=0.1
+        )
 
-        self.enabled_isotopes = [
-            iso for iso, v in zip(natural_isotopes, valid_natural) if v
-        ]
         self.selected_isotopes = [
             iso for iso, v in zip(selected_isotopes, valid_selected) if v
         ]
-
-        # trim to valid masses
-        selected_masses = np.fromiter(
-            (iso.mass for iso in self.enabled_isotopes), dtype=float
-        )
-        valid = sorted_any_close(self.masses, selected_masses, atol=0.1)
-
-        self.masses = self.masses[valid]
-        self.counts = self.counts[:, valid]
 
         self.updateExtractedParameters()
         self.enableControls(True)
@@ -379,24 +383,17 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.updateValidParameters()
 
     def updateGraphTitle(self):
-        mean_mu = np.mean(self.parameters["mu"][self.valid])
-        mean_sigma = np.mean(self.parameters["sigma"][self.valid])
+        idx = self.selectedIndicies()
+        mean_mu = np.mean(self.parameters["mu"][idx])
+        mean_sigma = np.mean(self.parameters["sigma"][idx])
         mean_sia = np.exp(mean_mu + 0.5 * mean_sigma**2)
 
         self.scatter.plot.setTitle(
             f"Average: SIA={mean_sia:.0f}, µ={mean_mu:.2f}, σ={mean_sigma:.2f}"
         )
 
-    def updateValidParameters(self):
+    def invalidMasses(self) -> np.ndarray:
         idx_error = np.zeros(self.counts.shape[1], int)
-        # idx_selected = np.zeros_like(idx_error)
-
-        selected_isotope_masses = np.fromiter(
-            (iso.mass for iso in self.selected_isotopes), dtype=float
-        )
-        idx_selected = sorted_any_close(
-            self.masses, selected_isotope_masses, atol=0.1
-        ).astype(int)
 
         nonzeros = np.count_nonzero(self.counts, axis=0)
         zeros = self.counts.shape[0] - nonzeros
@@ -416,7 +413,19 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             has_peaks = np.count_nonzero(self.counts > nonzero_mean * 10.0, axis=0) > 1
             idx_error[has_peaks] = 3
 
-        self.valid = np.logical_and(idx_error == 0, idx_selected)
+        return idx_error
+
+    def selectedIndicies(self) -> np.ndarray:
+        selected_isotope_masses = np.fromiter(
+            (iso.mass for iso in self.selected_isotopes), dtype=float
+        )
+        idx_selected = sorted_any_close(self.masses, selected_isotope_masses, atol=0.1)
+        return idx_selected
+
+    def updateValidParameters(self):
+
+        idx_error = self.invalidMasses()
+        idx_selected = self.selectedIndicies().astype(int)
 
         if self.scatter.points is not None:
             pen_size = 1.6 * self.devicePixelRatioF()
@@ -442,13 +451,14 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.scatter.points.setSymbol(symbols[idx_error])
 
         self.updateGraphTitle()
-        self.scatter.setGuideOffset(np.median(self.parameters["sigma"][self.valid]))
+        self.scatter.setGuideOffset(np.median(self.parameters["sigma"][idx_selected]))
 
         self.completeChanged()
 
     def accept(self):
-        if self.masses.size > 0 and np.any(self.valid):
-            self.parametersExtracted.emit(self.parameters[self.valid])
+        idx = self.selectedIndicies()
+        if self.masses.size > 0 and np.any(idx):
+            self.parametersExtracted.emit(self.parameters[idx])
         super().accept()
 
 
