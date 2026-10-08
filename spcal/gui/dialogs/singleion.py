@@ -166,16 +166,13 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.check_draw_guide.checkStateChanged.connect(self.setGuideVisible)
 
         self.selected_isotopes = []
-        self.button_select_isotopes = QtWidgets.QPushButton("Set isotopes...")
+        self.button_select_isotopes = QtWidgets.QPushButton("Select isotopes...")
         self.button_select_isotopes.pressed.connect(self.dialogSelectIsotopes)
 
         self.controls_box = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QFormLayout()
-        # controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
         controls_layout.addRow("Max σ error:", self.required_nonzero_error)
         controls_layout.addWidget(self.button_select_isotopes)
-        controls_layout.addRow(self.check_draw_guide)
-        # controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
         self.enableControls(False)
 
@@ -195,8 +192,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         layout_horz.addWidget(self.controls_box, 0)
         layout_horz.addWidget(self.scatter, 1)
         layout.addLayout(layout_horz, 1)
+        layout.addWidget(self.check_draw_guide, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         layout.addWidget(self.button_box, 0)
-
         self.setLayout(layout)
 
         # A 'read-only' mode for existing parameters
