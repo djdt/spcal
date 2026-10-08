@@ -202,6 +202,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         # A 'read-only' mode for existing parameters
         if params is not None and params.size > 0:
             self.scatter.drawData(params["mass"], params["sigma"])
+            self.scatter.setGuideOffset(np.mean(params["sigma"]))
 
     @QtCore.Slot()
     def onPointClicked(
