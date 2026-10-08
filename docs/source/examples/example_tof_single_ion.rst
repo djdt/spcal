@@ -37,6 +37,7 @@ In the SPCal GUI we can determine SIA values for each mass by loading a low conc
 #. *Left-click* any point to toggle its selection.
    Masses that are not-selected will default to the :math:`\sigma` value provided in the **Compound** tab of the **Limit Options Dock**.
    You can also select isotopes using the *Select isotopes* button.
+   By default all valid masses (correct zero counts and no particles) that correspond to an isotope with greater than 10 % natural abundance are selected.
 
 #. Apply the dialog.
    Clicking *Apply* will use the per-mass SIA for selected isotopes / masses.
