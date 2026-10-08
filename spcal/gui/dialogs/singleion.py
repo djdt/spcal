@@ -423,9 +423,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         return idx_selected
 
     def updateValidParameters(self):
-
         idx_error = self.invalidMasses()
-        idx_selected = self.selectedIndicies().astype(int)
+        idx_selected = self.selectedIndicies()
 
         if self.scatter.points is not None:
             pen_size = 1.6 * self.devicePixelRatioF()
@@ -447,11 +446,11 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             )
             symbols = np.array(["o", "t", "t1", "x"])
             self.scatter.points.setBrush(brushes[idx_error])
-            self.scatter.points.setPen(pens[idx_selected])
+            self.scatter.points.setPen(pens[idx_selected.astype(int)])
             self.scatter.points.setSymbol(symbols[idx_error])
 
         self.updateGraphTitle()
-        self.scatter.setGuideOffset(np.median(self.parameters["sigma"][idx_selected]))
+        self.scatter.setGuideOffset(np.mean(self.parameters["sigma"][idx_selected]))
 
         self.completeChanged()
 
@@ -469,8 +468,8 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication()
 
     win = SingleIonAreaDialog()
-    # win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
-    win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
+    win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
+    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
     win.show()
 
     app.exec()
