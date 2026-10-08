@@ -448,17 +448,3 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         if self.masses.size > 0 and np.any(idx):
             self.parametersExtracted.emit(self.parameters[idx])
         super().accept()
-
-
-if __name__ == "__main__":
-    # options
-    # 1. manual input of single SIA shape (like old)
-    # 2.
-    app = QtWidgets.QApplication()
-
-    win = SingleIonAreaDialog()
-    win.loadSingleIonData("/mnt/storage/TOF/2025 SIA/NT032/14-38-46 1 ppb unatt/")
-    # win.loadSingleIonData("/home/tom/Downloads/SIAs/NT032/14-35-55 10 ppb unatt/")
-    win.show()
-
-    app.exec()
