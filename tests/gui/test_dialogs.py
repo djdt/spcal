@@ -8,6 +8,11 @@ from pytestqt.qtbot import QtBot
 from spcal.datafile import SPCalDataFile, SPCalTOFWERKDataFile
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
+from spcal.gui.dialogs.efficiency import (
+    DensityWidget,
+    MassFractionWidget,
+    TransportEfficiencyDialog,
+)
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import (
     BooleanItemWidget,
@@ -28,11 +33,7 @@ from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
 from spcal.gui.dialogs.selectisotope import ScreeningOptionsDialog, SelectIsotopesDialog
 from spcal.gui.dialogs.singleion import SingleIonAreaDialog
-from spcal.gui.dialogs.tools import (
-    MassFractionCalculatorDialog,
-    ParticleDatabaseDialog,
-    TransportEfficiencyDialog,
-)
+from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.processing.filter import SPCalClusterFilter, SPCalValueFilter
 from spcal.processing.method import SPCalProcessingMethod
@@ -933,6 +934,35 @@ def test_particle_database(qtbot: QtBot):
         dlg.densitySelected, timeout=100, check_params_cb=lambda d: d == 4430.0
     ):
         dlg.accept()
+
+
+def test_transport_efficiency_density_widget(qtbot: QtBot):
+    widget = DensityWidget(1.0)
+    qtbot.addWidget(widget)
+    with qtbot.waitExposed(widget):
+        widget.show()
+
+    dlg = widget.dialogParticleDatabase()
+    dlg.densitySelected.emit(2.0)
+
+    assert widget.baseValue() == 2.0
+
+
+def test_transport_efficiency_massfraction_widget(qtbot: QtBot):
+    widget = MassFractionWidget(1.0)
+    qtbot.addWidget(widget)
+    with qtbot.waitExposed(widget):
+        widget.show()
+
+    dlg = widget.dialogMassFractionCalculator()
+    dlg.ratiosSelected.emit([(0.0, 2.0)])
+
+    assert widget.value() == 2.0
+
+    widget.lineEdit().setText("FeO2")
+    widget.lineEdit().textEdited.emit("FeO2")
+
+    assert widget.value() == 0.6357
 
 
 def test_transport_efficiency_dialog(

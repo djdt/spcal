@@ -78,7 +78,7 @@ class MassFractionWidget(ValueWidget):
             self.dialogMassFractionCalculator,
         )
 
-    def dialogMassFractionCalculator(self) -> QtWidgets.QDialog:
+    def dialogMassFractionCalculator(self):
         def set_major_ratio(ratios: list):
             self.setValue(float(ratios[0][1]))
 
