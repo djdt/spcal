@@ -67,6 +67,8 @@ class SingleIonAreaScatterPlot(pyqtgraph.ScatterPlotItem):
         points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
         if len(points) > 0:
             self.pointClicked.emit(points[0].pos(), points[0].index(), event.button())
+        else:
+            super().mousePressEvent(event)
 
     def hoverMoveEvent(self, event: QtWidgets.QGraphicsSceneHoverEvent):
         points: list[pyqtgraph.SpotItem] = self.pointsAt(event.pos())
