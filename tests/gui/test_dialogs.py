@@ -180,6 +180,8 @@ def test_export_dialog(
     assert not dlg.isComplete()
     dlg.lineedit_path.setText("/fake/path/ok.bad")
     assert not dlg.isComplete()
+    dlg.lineedit_path.setText("C:\\windows\\path\\out.csv")
+    assert dlg.isComplete()
 
     dlg.lineedit_path.setText(str(tmp_path.joinpath("export.csv")))
 
