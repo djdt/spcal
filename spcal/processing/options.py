@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from spcal.calc import search_sorted_closest
 from spcal.datafile import SPCalDataFile
 from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.limit import (
@@ -114,6 +115,8 @@ class SPCalIsotopeOptions:
 
 
 class SPCalLimitOptions:
+    MAX_SIGMA_MASS_DIFF = 0.05
+
     def __init__(
         self,
         limit_method: str = "automatic",
@@ -210,7 +213,7 @@ class SPCalLimitOptions:
         if limit_method == "compound poisson" or (
             limit_method == "highest" and data_file.isTOF()
         ):
-            # Override the default sigma if single ion paramters are present
+            # Override the default sigma if single ion parameters are present
             if (
                 "single ion parameters" in self.compound_poisson_kws
                 and self.compound_poisson_kws["single ion parameters"] is not None
@@ -218,11 +221,24 @@ class SPCalLimitOptions:
                 if isinstance(isotope, SPCalIsotope):
                     if isotope.mass <= 0.0:  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    sigma = np.interp(
-                        isotope.mass,
+                    idx = search_sorted_closest(
                         self.compound_poisson_kws["single ion parameters"]["mass"],
-                        self.compound_poisson_kws["single ion parameters"]["sigma"],
-                    )
+                        [isotope.mass],
+                    )[0]
+                    if np.isclose(
+                        self.compound_poisson_kws["single ion parameters"]["mass"][idx],
+                        isotope.mass,
+                        atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                    ):
+                        sigma = self.compound_poisson_kws["single ion parameters"][
+                            "sigma"
+                        ][idx]
+                    else:
+                        logger.warning(
+                            f"missing SIA for mass {isotope.mass}, falling back to default"
+                        )
+                        sigma = self.compound_poisson_kws["sigma"]
+
                 elif isinstance(isotope, SPCalIsotopeExpression):
                     masses = [
                         token.mass
@@ -231,13 +247,25 @@ class SPCalLimitOptions:
                     ]
                     if any(x <= 0.0 for x in masses):  # pragma: no cover
                         raise ValueError("isotope mass is 0")
-                    sigma = np.mean(
-                        np.interp(
-                            masses,
-                            self.compound_poisson_kws["single ion parameters"]["mass"],
-                            self.compound_poisson_kws["single ion parameters"]["sigma"],
-                        )
+                    idx = search_sorted_closest(
+                        self.compound_poisson_kws["single ion parameters"]["mass"],
+                        masses,
                     )
+                    if np.allclose(
+                        self.compound_poisson_kws["single ion parameters"]["mass"][idx],
+                        masses,
+                        atol=SPCalLimitOptions.MAX_SIGMA_MASS_DIFF,
+                    ):
+                        sigma = np.mean(
+                            self.compound_poisson_kws["single ion parameters"]["sigma"][
+                                idx
+                            ]
+                        )
+                    else:
+                        logger.warning(
+                            f"unable to calculate SIA for expr {isotope}, falling back to default"
+                        )
+                        sigma = self.compound_poisson_kws["sigma"]
                 else:  # pragma: no cover
                     raise ValueError(
                         f"cannot infer sigma from isotope type '{type(isotope)}'"

@@ -4,7 +4,7 @@ Per-mass Single Ion Area on an ICP-ToF
 Determining the :term:`single ion area` (SIA) is essential for accurate thresholding of ICP-ToF data.
 In SPCal we approximate the SIA using a shape parameter, :math:`\sigma`.
 This value can be determined from ionic data using the methods described in :ref:`Recovery of compound-Poisson-lognormal parameters`.
-In the SPCal GUI we can determine SIA values for each mass by loading a low concetration ionic standard into the :ref:`Single Ion Distribution Dialog`, found in the **Limit Options Dock**.
+In the SPCal GUI we can determine SIA values for each mass by loading a low concentration ionic standard (1 - 10 ppb) into the :ref:`Single Ion Distribution Dialog`, found in the **Limit Options Dock**.
 
 
 #. Download the required data file.
@@ -25,14 +25,19 @@ In the SPCal GUI we can determine SIA values for each mass by loading a low conc
 
        The single ion dialog.
 
-   The dialog should now look like :numref:`tutorial single ion`, with a histogram of all signals shown on the left and calcualated shapes on the right.
+   The dialog should now look like :numref:`tutorial single ion`, a scatter plot of masses and calcualated shapes.
+   Two red lines show the IQR of the expected shape values, and are calculated from data collected on several Vitesse instruments.
 
 #. Check the calculated shape values for anomalies.
    The shapes are shown as a scatter plot on the right half of the dialog, as in :numref:`tutorial single ion`.
-   Red points have been excluded due to low or high zero counts (preventing calculation of :math:`\lambda`) or being to far from the mean value.
-   Both silver isotopes (107 and 109) have very high shape values of around 1.2, and are thus excluded.
-   *Left-click* on either point to display the signals.
-   Here you can see spikes from particulate material causing high variance and incorrect retreival of the SIA shape.
+   Yellow points have been excluded due to low or high zero counts (preventing calculation of :math:`\lambda`), by default a maximum error of 1% is allowed.
+   Red points are excluded due to presence of particles, for exmaple both the silver isotopes (107 and 109).
+   *Middle-click* on either point to display the signals and confirm that particles are causing high variance and incorrect retreival of the SIA shape.
+
+#. *Left-click* any point to toggle its selection.
+   Masses that are not-selected will default to the :math:`\sigma` value provided in the **Compound** tab of the **Limit Options Dock**.
+   You can also select isotopes using the *Select isotopes* button.
+   By default all valid masses (correct zero counts and no particles) that correspond to an isotope with greater than 10 % natural abundance are selected.
 
 #. Apply the dialog.
-   Clicking *Apply* will disable the SIA shape option in the **Limit Options Dock** and instead use the per-mass SIA retrieved previously.
+   Clicking *Apply* will use the per-mass SIA for selected isotopes / masses.
