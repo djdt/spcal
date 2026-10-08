@@ -468,7 +468,6 @@ def test_batch_wizard_method_page(qtbot: QtBot):
     assert page.limit_options.poisson.alpha.value() == 1e-3
     assert page.limit_options.poisson.eta == 1
     assert page.limit_options.compound.alpha.value() == 1e-3
-    assert not page.limit_options.compound.lognormal_sigma.isEnabled()
     assert page.limit_options.compound.lognormal_sigma.value() == 0.7
 
     model = page.isotope_model

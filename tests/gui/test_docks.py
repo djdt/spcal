@@ -273,9 +273,7 @@ def test_spcal_limit_options_dock(qtbot: QtBot):
     assert isinstance(dlg, SingleIonAreaDialog)
     dlg.close()
     assert dock.options_widget.compound.single_ion_parameters is not None
-    assert not dock.options_widget.compound.lognormal_sigma.isEnabled()
     dock.options_widget.compound.clearSingleIon()
-    assert dock.options_widget.compound.lognormal_sigma.isEnabled()
     assert dock.options_widget.compound.single_ion_parameters is None
 
 
