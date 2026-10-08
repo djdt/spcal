@@ -294,12 +294,27 @@ class ResponseDialog(QtWidgets.QDialog):
         self.model_intensity.isotopes = new_isotopes
         self.model_intensity.endResetModel()
 
+    def customColors(self) -> list[QtGui.QColor]:
+        settings = QtCore.QSettings()
+        colors = []
+        for i in range(settings.beginReadArray("CustomColors")):
+            settings.setArrayIndex(i)
+            color = settings.value("Color", QtGui.QColor(0, 0, 0))
+            assert isinstance(color, QtGui.QColor)
+            colors.append(color)
+
+        if len(colors) == 0:
+            colors.append(QtGui.QColor(0, 0, 0))
+        return colors
+
     def updateCalibration(self):
         self.calibration.clear()
 
-        scheme = COLOR_SCHEMES[
-            str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
-        ]
+        scheme_name = str(QtCore.QSettings().value("colorscheme", "IBM Carbon"))
+        if scheme_name == "Custom":
+            scheme = self.customColors()
+        else:
+            scheme = COLOR_SCHEMES[scheme_name]
 
         concs = self.concentrations()
         intensities = self.intensities()
