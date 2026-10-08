@@ -158,13 +158,6 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
             self.updateValidParameters
         )
 
-        self.check_peaks = QtWidgets.QCheckBox("Remove signals with particles")
-        self.check_peaks.setToolTip(
-            "Remove signals with values greater than 10 times the non-zero mean."
-        )
-        self.check_peaks.setChecked(True)
-        self.check_peaks.checkStateChanged.connect(self.updateValidParameters)
-
         self.check_draw_guide = QtWidgets.QCheckBox("Show guide")
         self.check_draw_guide.setToolTip(
             "Show a guide for expected σ values (median ± 1.5 * IQR). This guide is calculated from data collected on several Vitesse intsruments."
@@ -181,7 +174,6 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         # controls_layout.addRow("Dist. from mean:", self.max_sigma_difference)
         controls_layout.addRow("Max σ error:", self.required_nonzero_error)
         controls_layout.addWidget(self.button_select_isotopes)
-        controls_layout.addRow(self.check_peaks)
         controls_layout.addRow(self.check_draw_guide)
         # controls_layout.addRow("Smoothing:", self.smoothing)
         self.controls_box.setLayout(controls_layout)
@@ -352,9 +344,8 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         selected_masses = np.fromiter(
             (iso.mass for iso in selected_isotopes), dtype=float
         )
-        valid_selected = sorted_any_close(
-            selected_masses, self.masses[self.invalidMasses() == 0], atol=0.1
-        )
+        valid_masses = self.masses[self.invalidMasses() == 0]
+        valid_selected = sorted_any_close(selected_masses, valid_masses, atol=0.1)
 
         self.selected_isotopes = [
             iso for iso, v in zip(selected_isotopes, valid_selected) if v
@@ -383,7 +374,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.updateValidParameters()
 
     def updateGraphTitle(self):
-        idx = self.selectedIndicies()
+        idx = self.selectedMasses()
         mean_mu = np.mean(self.parameters["mu"][idx])
         mean_sigma = np.mean(self.parameters["sigma"][idx])
         mean_sia = np.exp(mean_mu + 0.5 * mean_sigma**2)
@@ -408,14 +399,14 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         idx_error[insufficient_nonzeros] = 1
         idx_error[insufficient_zeros] = 2
 
-        if self.check_peaks.isChecked():
-            nonzero_mean = np.sum(self.counts, axis=0) / nonzeros
-            has_peaks = np.count_nonzero(self.counts > nonzero_mean * 10.0, axis=0) > 1
-            idx_error[has_peaks] = 3
+        nonzero_mean = np.sum(self.counts, axis=0) / nonzeros
+        has_peaks = np.count_nonzero(self.counts > nonzero_mean * 10.0, axis=0) > 1
+        idx_error[has_peaks] = 3
 
         return idx_error
 
-    def selectedIndicies(self) -> np.ndarray:
+    def selectedMasses(self) -> np.ndarray:
+        """Return a mask of selected masses"""
         selected_isotope_masses = np.fromiter(
             (iso.mass for iso in self.selected_isotopes), dtype=float
         )
@@ -424,7 +415,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
 
     def updateValidParameters(self):
         idx_error = self.invalidMasses()
-        idx_selected = self.selectedIndicies()
+        idx_selected = self.selectedMasses()
 
         if self.scatter.points is not None:
             pen_size = 1.6 * self.devicePixelRatioF()
@@ -455,7 +446,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         self.completeChanged()
 
     def accept(self):
-        idx = self.selectedIndicies()
+        idx = self.selectedMasses()
         if self.masses.size > 0 and np.any(idx):
             self.parametersExtracted.emit(self.parameters[idx])
         super().accept()

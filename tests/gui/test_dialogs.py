@@ -1024,20 +1024,29 @@ def test_single_ion_dialog(test_data_path: Path, qtbot: QtBot):
     assert not dlg.controls_box.isEnabled()
 
     # test nu loads
-    dlg.loadSingleIonData(test_data_path.joinpath("nu/normal"))
+    dlg.loadSingleIonData(test_data_path.joinpath("nu/single_ion_10ppb"))
+    qtbot.wait(10)  # for draw
+    assert dlg.parameters.size > 0
 
-    dlg.loadSingleIonData(test_data_path.joinpath("tofwerk/tofwerk_testdata.h5"))
-    assert dlg.mus.size > 0
-    assert dlg.sigmas.size > 0
-    q1, q3 = np.nanpercentile(dlg.sigmas, [25, 75])
-    assert q1 > 0.3 and q3 < 0.6
-    assert dlg.masses.size == 309
+    particle_idx = np.searchsorted(dlg.masses, (27, 182, 183, 184)) - 1
+    nonzero_idx = np.searchsorted(dlg.masses, (88, 151, 156, 175)) - 1
+    zero_idx = np.searchsorted(dlg.masses, (50, 78, 199, 238)) - 1
+    idx = np.searchsorted(dlg.masses, (56, 81, 112, 161, 206, 233)) - 1
+    valid = dlg.invalidMasses()
+    assert np.all(valid[particle_idx] == 3)
+    assert np.all(valid[nonzero_idx] == 2)
+    assert np.all(valid[zero_idx] == 1)
+    assert np.all(valid[idx] == 0)
 
-    assert np.count_nonzero(dlg.valid) == 260
-    dlg.max_sigma_difference.setValue(0.2)
-    assert np.count_nonzero(dlg.valid) == 285
+    # defaults to select only valid
+    selected = dlg.selectedMasses()
+    assert np.all(valid[selected] == 0)
 
-    with qtbot.waitSignal(dlg.parametersExtracted, timeout=100):
+    with qtbot.waitSignal(
+        dlg.parametersExtracted,
+        check_params_cb=lambda p: p.size == np.count_nonzero(selected),
+        timeout=100,
+    ):
         dlg.accept()
 
     with qtbot.waitSignal(dlg.resetRequested, timeout=100):
