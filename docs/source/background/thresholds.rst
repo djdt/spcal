@@ -8,7 +8,7 @@ At the very low counting rates often seen in spICP-MS work, the typical Gaussian
 Instead Poisson statistics should be used to determine the *critical value*, the threshold above which a signal is considered to be a detected particle [1]_ .
 Confusingly, most Poisson statistics will also define a :term:`detection threshold`, but this should not be used to determine the detection of signal.
 There are a number of different (more or less permissive) formulas for determining these thresholds, most of which are implemented in SPCal.
-In general, the Currie method with an ε value of 0.5 works well and is recommended.
+In general, the Currie method with an ε value of 1.0 works well and is recommended [5]_ .
 
 spICP-ToF: Compound-Poisson
 ---------------------------
@@ -87,26 +87,11 @@ Similar to the :ref:`Log-normal approximation` the lookup table assumes the SIA 
 Threshold selection
 -------------------
 
-.. list-table:: Selection of statistics for determining the :term:`detection threshold`.
-   :header-rows: 1
-
-   * - Number of non-zero values below 5 counts
-     - Number of non-zero values :math:`\mathbb{Z} \pm 0.05`
-     - Threshold method
-   * - :math:`>5%`
-     - 
-     - Gaussian
-   * - :math:`<5%`
-     - :math:`>75%` 
-     - Poissson
-   * - :math:`<5%`
-     - :math:`<75%`
-     - compound-Poisson
-
 The best method to find the :term:`detection threshold` will depend on the data being analysed.
-SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson of compound-Poisson statistics.
-For data that is consistently above five counts, Gaussian statistics are used, otherwise Poisson or compound-Poisson depending on the integer nature of the data.
-Values are considered integer if they are within 0.05 of an integer value, as data exports from ICP-MS often seem to have a small offset from true integers.
+SPCal will use aspects of the loaded sample to choose between using Gaussian, Poisson or compound-Poisson statistics.
+To determine if Gaussian statistics should be used the fraction of non-zero values below 5 counts are compared to the total number of non-zero values.
+If more than 5 % are greater than 5 counts, then Gaussian statistics are used, otherwise Poisson or compound-Poisson depending on the nature of the data (instrument used or number of isotopes).
+In practice this switch occurs around a mean background of 10 counts.
 The detection threshold is then calculated for the chosen :term:`error rate` (:math:`\alpha`).
 
 Error rates
@@ -114,7 +99,7 @@ Error rates
 
 In other analytical techniques a 5% :term:`error rate` (:math:`\alpha = 0.05`) is considered acceptable and is frequently used implemented as the :math:`3 \sigma` rule.
 However, the large number of events collected during spICP-MS makes such low :term:`error rate` lead to a very large number of false detections.
-An :term:`error rate` of :math:`\alpha = 10^{-6}` is fairly standard and will lead to only 1 false detection per million events.
+An :term:`error rate` of :math:`\alpha = 10^{-7}` is recommened [5]_ .
 
 
 .. [1] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
@@ -124,3 +109,5 @@ An :term:`error rate` of :math:`\alpha = 10^{-6}` is fairly standard and will le
 .. [3] Koppenaal, D. W.; Barinaga, C. J.; Denton, M. B.; Sperline, R. P.; Hieftje, G. M.; Schilling, G. D.; Andrade, F. J.; Barnes, J. H.; Iv, I. MS Detectors. Anal. Chem. 2005, 77 (21), 418 A-427 A. https://doi.org/10.1021/ac053495p.
 
 .. [4] Ialongo, C. Confidence Interval for Quantiles and Percentiles. Biochem. med. (Online) 2019, 29 (1), 5–17. https://doi.org/10.11613/BM.2019.010101.
+
+.. [5] Abad-Alvaro, I.; Bolea, E.; Laborda, F. Towards the Harmonization of Raw Data Processing in Single Particle Inductively Coupled Plasma Mass Spectrometry. Talanta 2026, 305, 129575. https://doi.org/10.1016/j.talanta.2026.129575.
