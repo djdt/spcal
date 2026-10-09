@@ -52,6 +52,10 @@ A sample is loaded and then calibrated using the :ref:`Reference Particle` metho
     Enter the :term:`density`, :term:`ionic response` and :term:`mass fraction` into the **Isotope Options Dock**.
     The button next to *Trans. Efficiency* should now be active.
 
+..note::
+  You can *Right-Click* the :term:`density` field to open the :ref:`Density Database` and the :term:`mass fraction` field to open the :ref:`Mass Fraction Calculator`.
+  The mass fraction may also be entered as a molecular formula, in which case the mass fraction of the *first* element in the formula is used.
+
 #. Calculate the :term:`transport efficiency`.
     *Ensure that the reference data file is currently selected* in the **Data Files Dock**!
     Press to button next to the *Trans. Eddiciency* field to open the **Transport Efficiency Calculator**.
