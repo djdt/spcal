@@ -15,10 +15,10 @@ Reference Particle
 ------------------
 
 .. _transport efficiency calculator:
-.. figure:: ../images/usage_te_calculator.png
+.. figure:: ../images/usage_efficiency_dialog.png
    :align: center
 
-   The Transport Efficiency Calculator is enabled once particles are detected and a instrument iptake rate is input.
+   The Transport Efficiency Calculator is enabled once a data file is loaded and particles are detected.
 
 To calculate :term:`transport efficiency` using a reference particle first load the data into SPCal, see :ref:`Data Import`.
 Then input the instrument :term:`uptake` to enable the efficiency calculator button, next to the *Trans. Efficiency* input.
@@ -30,6 +30,11 @@ If the mass concentration of the reference particle solution is known then the a
 Once all parameters are input, click *OK* to apply the efficiency top the instrument method.
 
 The :term:`transport efficiency` is usually assumed to be independent of mass and a single element can be used to calibrate the entire mass range.
+This is only the case for nanosized particles as larger (µm) particles will have a transport efficiency that differs from an ionic solution [3]_ .
+
+.. note::
+  You can *Right-Click* the :term:`density` field to open the :ref:`Density Database` and the :term:`mass fraction` field to open the :ref:`Mass Fraction Calculator`.
+  The mass fraction may also be entered as a molecular formula, in which case the mass fraction of the *first* element in the formula is used.
 
 Mass Response
 -------------
@@ -40,3 +45,5 @@ Using the :term:`mass response` eliminates the need for instrument :term:`uptake
 .. [1] Pace, H. E.; Rogers, N. J.; Jarolimek, C.; Coleman, V. A.; Higgins, C. P.; Ranville, J. F. Determining Transport Efficiency for the Purpose of Counting and Sizing Nanoparticles via Single Particle Inductively Coupled Plasma Mass Spectrometry. Anal. Chem. 2011, 83 (24), 9361–9369. https://doi.org/10.1021/ac201952t.
 
 .. [2] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
+
+.. [3] Grüner, B.; Hauer, R.; Elinkmann, M.; Lockwood, T. E.; Gonzalez De Vega, R.; Hill, C.; Hohenester, U.; Clases, D. Orthogonal In-Line Microscopy Coupled with SP ICP-MS for the Quantitative Analysis of Microparticles. Analytica Chimica Acta 2026, 1422, 346044. https://doi.org/10.1016/j.aca.2026.346044

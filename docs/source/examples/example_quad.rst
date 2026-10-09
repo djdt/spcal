@@ -58,7 +58,7 @@ A sample is loaded and then calibrated using the :ref:`Reference Particle` metho
 
 #. Calculate the :term:`transport efficiency`.
     *Ensure that the reference data file is currently selected* in the **Data Files Dock**!
-    Press to button next to the *Trans. Eddiciency* field to open the **Transport Efficiency Calculator**.
+    Press to button next to the *Trans. Efficiency* field to open the **Transport Efficiency Calculator** (see :ref:`Calibration`).
     Most values should be pre-filled from the existing method.
     Enter the reference particle diameter listed in :numref:`table parameters`.
     The calculated efficiency should be close to 0.0185.
