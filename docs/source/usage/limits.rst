@@ -75,16 +75,15 @@ Single Ion Distribution Dialog
 .. figure:: ../images/usage_sia_dialog.png
    :align: center
 
-   The SIA dialog is used to determine per-mass SIA shapes for compoun Poisson thresholding.
+   The SIA dialog is used to determine per-mass SIA shapes for compound-Poisson thresholding.
 
-This dialog is used to determine the shape (:math:`\sigma`) for individual masses from a low level ionic standard [2]_.
-Once started the dialog will prompt you to load a file then displays the distibution (across all masses) as a histogram and the calculated shapes as a scatter.
-Red points are ignored due to low or high zero counts, or from being to far from the mean shape as specifed by *Dist. from mean*.
-The blue line shows a fit across masses, from which the SIA is interpolated.
-The fit can be modified using the *Smoothing* option.
-*Left-clicking* a point will show the ionic signal for that mass, which can be useful for determining why the shape is higher or lower than predicited (e.g., particles in the ionic sample).
+This dialog is used to determine the shape (:math:`\sigma`) for individual masses from a low level (1 - 10 ppb) ionic standard [2]_.
+Once started the dialog will prompt you to load a file then displays the masses and calculated shape values as a scatter.
+Yellow points are ignored due to low or high zero counts, and red are ignored due to detected particlulate signals.
+*Middle-clicking* a point will show the ionic signal for that mass, which can be useful for determining why the shape is higher or lower than predicited (e.g., particles in the ionic sample).
+You can select which masses will be used for per-mass SIA shapes by *Left-clicking* the points, or by using the *Select isotopes* button.
 
-Pressing *Apply* will apply the shape to all isotopes and disable the *SIA shape* option under :ref:`Compound-Poisson options`.
+Pressing *Apply* will apply the shape to all selected masses / isotopes, other masses will use the value enetered in the :ref:`Compound-Poisson options`.
 To view the SIA for a specific masses hover over the *LOD* option in the **Results Dock**.
 
 Gaussian options

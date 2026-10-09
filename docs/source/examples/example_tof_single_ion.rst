@@ -19,7 +19,7 @@ In the SPCal GUI we can determine SIA values for each mass by loading a low conc
    Load the ``tof_single_ion/run.info`` file.
 
     .. _tutorial single ion:
-    .. figure:: ../images/tutorial_single_ion.png
+    .. figure:: ../images/usgae_single_ion.png
        :width: 60%
        :align: center
 
