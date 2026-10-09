@@ -8,7 +8,7 @@ In the SPCal GUI we can determine SIA values for each mass by loading a low conc
 
 
 #. Download the required data file.
-    The ``tof_single_ion`` directory can be found in the `example_2_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_4_data.zip>`_ archive.
+    The ``tof_single_ion`` directory can be found in the `example_4_data.zip <https://github.com/djdt/djdt.github.io/raw/main/spcal_example_data/example_4_data.zip>`_ archive.
 
 #. Start the :ref:`Single Ion Distribution Dialog`
    Click the *Single Ion Options...* button in the **Compound** tab of the **Limit Options Dock**.
