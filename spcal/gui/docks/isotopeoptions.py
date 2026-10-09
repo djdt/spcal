@@ -145,7 +145,6 @@ class IsotopeOptionTable(BasicTableView):
             menu.addAction(self.action_remove_expr)
         if any(isinstance(iso, SPCalIsotope) for iso in selected):
             menu.addAction(self.action_remove_isotopes)
-        menu.popup(event.globalPos())
 
         menu.popup(event.globalPos())
 

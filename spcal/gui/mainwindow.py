@@ -14,6 +14,7 @@ from spcal.datafile import SPCalDataFile
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
+from spcal.gui.dialogs.efficiency import TransportEfficiencyDialog
 from spcal.gui.dialogs.export import ExportDialog
 from spcal.gui.dialogs.filter import FilterDialog
 from spcal.gui.dialogs.io.base import ImportDialogBase
@@ -23,11 +24,7 @@ from spcal.gui.dialogs.nucompressor import NuBatchCompressorDialog
 from spcal.gui.dialogs.peakproperties import PeakPropertiesDialog
 from spcal.gui.dialogs.processingoptions import ProcessingOptionsDialog
 from spcal.gui.dialogs.response import ResponseDialog
-from spcal.gui.dialogs.tools import (
-    MassFractionCalculatorDialog,
-    ParticleDatabaseDialog,
-    TransportEfficiencyDialog,
-)
+from spcal.gui.dialogs.tools import MassFractionCalculatorDialog, ParticleDatabaseDialog
 from spcal.gui.docks.central import SPCalCentralWidget
 from spcal.gui.docks.datafile import SPCalDataFilesDock
 from spcal.gui.docks.instrumentoptions import SPCalInstrumentOptionsDock
