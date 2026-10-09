@@ -30,7 +30,7 @@ If the mass concentration of the reference particle solution is known then the a
 Once all parameters are input, click *OK* to apply the efficiency top the instrument method.
 
 The :term:`transport efficiency` is usually assumed to be independent of mass and a single element can be used to calibrate the entire mass range.
-This is only the case for nanosized particles as larger (µm) particles will have a transport efficiency that differs from an ionic solution [3]_ .
+This is only the case for nanosized particles as larger (µm) particles will have a transport efficiency that differs from an ionic solution [3]_ [4]_ .
 
 .. note::
   You can *Right-Click* the :term:`density` field to open the :ref:`Density Database` and the :term:`mass fraction` field to open the :ref:`Mass Fraction Calculator`.
@@ -46,4 +46,6 @@ Using the :term:`mass response` eliminates the need for instrument :term:`uptake
 
 .. [2] Lockwood, T. E.; de Vega, R. G.; Clases, D. An Interactive Python-Based Data Processing Platform for Single Particle and Single Cell ICP-MS. Journal of Analytical Atomic Spectrometry 2021, 36 (11), 2536–2544. https://doi.org/10.1039/D1JA00297J.
 
-.. [3] Grüner, B.; Hauer, R.; Elinkmann, M.; Lockwood, T. E.; Gonzalez De Vega, R.; Hill, C.; Hohenester, U.; Clases, D. Orthogonal In-Line Microscopy Coupled with SP ICP-MS for the Quantitative Analysis of Microparticles. Analytica Chimica Acta 2026, 1422, 346044. https://doi.org/10.1016/j.aca.2026.346044
+.. [3] Elinkmann, M.; Kronenberg, K.; Ellmeier, E.; Schwarzenberger, E.; Paton, L.; Gonzalez De Vega, R.; Angiari, S.; Clases, D. Investigation and Correction of Size-Dependent Transport Efficiencies of Microparticles in SP ICP-MS Analysis. Talanta 2026, 308, 129835. https://doi.org/10.1016/j.talanta.2026.129835
+
+.. [4] Grüner, B.; Hauer, R.; Elinkmann, M.; Lockwood, T. E.; Gonzalez De Vega, R.; Hill, C.; Hohenester, U.; Clases, D. Orthogonal In-Line Microscopy Coupled with SP ICP-MS for the Quantitative Analysis of Microparticles. Analytica Chimica Acta 2026, 1422, 346044. https://doi.org/10.1016/j.aca.2026.346044
