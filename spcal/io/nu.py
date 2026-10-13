@@ -76,6 +76,8 @@ def read_autob_binary(
             autob = np.zeros(1, dtype=data_dtype)
             autob.data.cast("B")[:25] = partial
             num = autob["num_edges"][0]
+            if num > 12:
+                raise ValueError("autoblanking not supported for more than 12 edges")
             if num > 0:
                 autob["edges"][:num] = np.frombuffer(fp.read(num * 4), dtype=np.uint32)
             yield autob
@@ -248,32 +250,27 @@ def apply_autoblanking(
     Returns:
         blanked data
     """
-    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
-    start_coef = info["BlMassCalStartCoef"]
-    end_coef = info["BlMassCalEndCoef"]
-
-    regions, mass_regions_list = blanking_regions_from_autob(
-        autob_events, num_acc, start_coef, end_coef
-    )
-    for region, mass_regions in zip(regions, mass_regions_list):
+    regions = blanking_regions_from_autob(autob_events, info)
+    for region in regions:
         if blank_all_signals:
-            signals[region[0] : region[1]] = np.nan
+            signals[region["start"] : region["end"]] = np.nan
         else:
-            mass_idx = np.searchsorted(masses, mass_regions)
+            mass_idx = np.searchsorted(
+                masses, (region["start_mass"], region["end_mass"])
+            )
             # There are a bunch of useless blanking regions
-            mass_idx = mass_idx[mass_idx[:, 0] != mass_idx[:, 1]]
-            for s, e in mass_idx:
-                signals[region[0] : region[1], s:e] = np.nan
+            if mass_idx[0] != mass_idx[1]:
+                signals[
+                    region["start"] : region["end"], mass_idx[0] : mass_idx[1] + 1
+                ] = np.nan
 
     return signals
 
 
 def blanking_regions_from_autob(
     autob_events: np.ndarray,
-    num_acc: int,
-    start_coef: tuple[float, float],
-    end_coef: tuple[float, float],
-) -> tuple[list[tuple[int, int]], list[np.ndarray]]:
+    info: dict,
+) -> np.ndarray:
     """Extract blanking regions from autoblank data.
 
     Args:
@@ -285,41 +282,58 @@ def blanking_regions_from_autob(
     Returns:
         list of (start, end) of each region, array of (start, end) masses
     """
-    regions: list[tuple[int, int]] = []
-    mass_regions = []
+    regions: list[tuple[float, float, int, int]] = []
+
+    start_coef = info["BlMassCalStartCoef"]
+    end_coef = info["BlMassCalEndCoef"]
 
     start_event = None
     for event in autob_events:
         if event["type"] == 0 and start_event is None:
             start_event = event
         elif event["type"] == 1 and start_event is not None:
-            regions.append(
-                (
-                    int(start_event["acq_number"] // num_acc) - 1,
-                    int(event["acq_number"] // num_acc) - 1,
-                )
-            )
+            times = start_event["edges"][: start_event["num_edges"]] * 1.25
+            start_masses = calibrate_to_mass(times[::2], start_coef[0], start_coef[1])
+            end_masses = calibrate_to_mass(times[1::2], end_coef[0], end_coef[1])
 
-            start_masses = (
-                start_coef[0]
-                + start_coef[1]
-                * start_event["edges"][: start_event["num_edges"]][::2]
-                * 1.25
-            ) ** 2
-            end_masses = (
-                end_coef[0]
-                + end_coef[1]
-                * start_event["edges"][: start_event["num_edges"]][1::2]
-                * 1.25
-            ) ** 2
-            valid = start_masses < end_masses
-            mass_regions.append(
-                np.stack([start_masses[valid], end_masses[valid]], axis=1)
-            )
+            for start_mass, end_mass in zip(start_masses, end_masses):
+                if start_mass < end_mass:
+                    regions.append(
+                        (
+                            start_mass,
+                            end_mass,
+                            int(
+                                acquisition_indicies(
+                                    start_event["cyc_number"],
+                                    start_event["seg_number"],
+                                    start_event["acq_number"],
+                                    info,
+                                )
+                            ),
+                            int(
+                                acquisition_indicies(
+                                    event["cyc_number"],
+                                    event["seg_number"],
+                                    event["acq_number"],
+                                    info,
+                                )
+                            ),
+                        )
+                    )
 
             start_event = None
+        elif event["type"] == 2:
+            logger.warning("overflow detected in autoblanking")
 
-    return regions, mass_regions
+    return np.array(
+        regions,
+        dtype=[
+            ("start_mass", float),
+            ("end_mass", float),
+            ("start", int),
+            ("end", int),
+        ],
+    )
 
 
 def eventtime_from_info(info: dict) -> float:
@@ -338,7 +352,9 @@ def eventtime_from_info(info: dict) -> float:
     return np.around(acqtime * accumulations, 9)
 
 
-def indicies_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
+def acquisition_indicies(
+    cyc_number: np.ndarray, seg_number: np.ndarray, acq_number: np.ndarray, info: dict
+) -> np.ndarray:
     """Get the acuisition index from integ files.
 
     Args:
@@ -352,8 +368,8 @@ def indicies_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
     num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
     segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
 
-    idx = (integ["cyc_number"] - 1) * segment_acq[integ["seg_number"] - 1]
-    idx += integ["acq_number"]
+    idx = (cyc_number - 1) * segment_acq[seg_number - 1]
+    idx += acq_number
     return idx // num_acc
 
 
@@ -373,15 +389,45 @@ def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
     signals = np.concatenate([integ["result"]["signal"] for integ in integs], axis=0)
 
     # prevent joining of any signals across missing integs
-    pos = 0
-    for integ, integ2 in zip(integs[:-1], integs[1:]):  # noqa: RUF007
-        pos += integ.size
-        if indicies_from_integ(integ[-1], info) + 1 != indicies_from_integ(
-            integ2[0], info
-        ):
+    end_idx = acquisition_indicies(
+        integs[0]["cyc_number"][-1],
+        integs[0]["seg_number"][-1],
+        integs[0]["acq_number"][-1],
+        info,
+    )
+    pos = integs[0].size
+    for integ in integs[1:]:
+        idx = acquisition_indicies(
+            integ["cyc_number"][0], integ["seg_number"][0], integ["acq_number"][0], info
+        )
+        if end_idx + 1 != idx:
             signals[pos - 1] = np.nan
 
+        end_idx = acquisition_indicies(
+            integ["cyc_number"][-1],
+            integ["seg_number"][-1],
+            integ["acq_number"][-1],
+            info,
+        )
+        pos += integ.size
+
     return signals
+
+
+def calibrate_to_mass(time_ns: np.ndarray, coef_0: float, coef_1: float) -> np.ndarray:
+    """Calibrates masses from flight time (ns) to m/z
+
+    Ticks can be converted to ns by mulitplying by 0.5 and adding "AcquisitionTriggerDelayNs".
+
+    Args:
+        ticks: masses in ticks.
+        coef_0: first calibration coefficient, e.g. from "MassCalCoefficients"
+        coef_1: second calibration coefficient, e.g. from "MassCalCoefficients"
+
+    Returns:
+        masses in m/z
+    """
+    return (coef_0 + coef_1 * time_ns) ** 2
 
 
 def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
@@ -405,9 +451,9 @@ def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
         delays[k - 1] = v
     delays = np.atleast_1d(delays[integ["seg_number"] - 1])
 
-    masses = (integ["result"]["center"] * 0.5) + delays[:, None]
+    times = (integ["result"]["center"] * 0.5) + delays[:, None]
     # Convert from time to mass (sqrt(m/q) = a + t * b)
-    return (cal_coef[0] + masses * cal_coef[1]) ** 2
+    return calibrate_to_mass(times, cal_coef[0], cal_coef[1])
 
 
 def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
