@@ -132,6 +132,7 @@ class ExportDialog(QtWidgets.QDialog):
             "Export Path",
             self.lineedit_path.text(),
             "CSV Documents (*.csv);;All files (*)",
+            options=QtWidgets.QFileDialog.Option.DontConfirmOverwrite,
         )
         if file != "":
             self.lineedit_path.setText(file)
