@@ -105,11 +105,11 @@ def apply_autoblanking(
         if blank_all_signals:
             signals[region["start"] : region["end"]] = np.nan
         else:
-            mass_idx = np.searchsorted(masses, (region["mass"][0], region["mass"][0]))
+            mass_idx = np.searchsorted(masses, (region["mass"][0], region["mass"][1]))
             # There are a bunch of useless blanking regions
             if mass_idx[0] != mass_idx[1]:
                 signals[
-                    region["index"][0] : region["index"][0],
+                    region["index"][0] : region["index"][1],
                     mass_idx[0] : mass_idx[1] + 1,
                 ] = np.nan
 
