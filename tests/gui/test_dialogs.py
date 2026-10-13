@@ -183,6 +183,8 @@ def test_export_dialog(
     assert not dlg.isComplete()
     dlg.lineedit_path.setText("C:\\windows\\path\\out.csv")
     assert dlg.isComplete()
+    dlg.lineedit_path.setText("C:/windows/path/out.csv")  # qt6 converts to this
+    assert dlg.isComplete()
 
     dlg.lineedit_path.setText(str(tmp_path.joinpath("export.csv")))
 
