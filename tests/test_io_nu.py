@@ -5,6 +5,8 @@ import numpy as np
 import pytest
 
 from spcal.io.nu import (
+    acquisition_indicies,
+    acquisition_times,
     eventtime_from_info,
     is_nu_directory,
     is_nu_run_info_file,
@@ -27,9 +29,42 @@ def test_is_nu_dir(test_data_path: Path):
     assert not is_nu_directory(path.joinpath("fake"))
 
 
+def test_acquisition_indicies():
+    info = {
+        "NumAccumulations1": 2,
+        "NumAccumulations2": 4,
+        "SegmentInfo": [{"AcquisitionCount": 5049672}, {"AcquisitionCount": 5049672}],
+    }
+    idx = acquisition_indicies(
+        np.array([1, 1, 1, 2]), np.array([1, 1, 2, 1]), np.array([8, 16, 8, 24]), info
+    )
+    assert idx[0] == 1
+    assert idx[1] == 2
+    assert idx[2] == (5049672 + 8) // 8
+    assert idx[3] == (5049672 * 2 + 24) // 8
+
+
+def test_acquisition_times():
+    info = {
+        "NumAccumulations1": 2,
+        "NumAccumulations2": 4,
+        "SegmentInfo": [
+            {"AcquisitionCount": 5049672, "AcquisitionPeriodNs": 0.1},
+            {"AcquisitionCount": 5049672, "AcquisitionPeriodNs": 0.2},
+        ],
+    }
+    times = acquisition_times(
+        np.array([1, 1, 1, 2]), np.array([1, 1, 2, 1]), np.array([8, 16, 8, 24]), info
+    )
+    assert times[0] == 0.8
+    assert times[1] == 1.6
+    assert times[2] == 5049672 * 0.1 + 8 * 0.2
+    assert times[3] == 5049672 * 0.1 + 5049672 * 0.2 + 24 * 0.1
+
+
 def test_io_nu_import(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
-    masses, signals, _times, info = read_directory(path, cycle=1, segment=1)
+    masses, signals, _, info, _ = read_directory(path, cycle=1, segment=1)
     assert masses.size == 127
     assert signals.shape == (40, 127)
     assert np.isclose(masses[0], 80.90475)
@@ -44,7 +79,7 @@ def test_io_nu_import(test_data_path: Path):
 
 def test_io_nu_import_compressed(test_data_path: Path):
     path = test_data_path.joinpath("nu/compressed")
-    masses, signals, _times, info = read_directory(path)
+    masses, signals, _times, info, _ = read_directory(path)
     assert masses.size == 29
     assert signals.shape == (51725, 29)
 
@@ -55,14 +90,14 @@ def test_io_nu_import_compressed(test_data_path: Path):
 
 def test_io_nu_import_integ_limits(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
-    masses, signals, times, info = read_directory(
+    masses, signals, times, _, _ = read_directory(
         path, last_integ_file=1, cycle=1, segment=1
     )
     assert masses.size == 127
     assert times.shape == (10,)
     assert signals.shape == (10, 127)
 
-    masses, signals, times, info = read_directory(
+    masses, signals, times, _, _ = read_directory(
         path, first_integ_file=1, last_integ_file=3, cycle=1, segment=1
     )
     assert masses.size == 127
@@ -70,41 +105,37 @@ def test_io_nu_import_integ_limits(test_data_path: Path):
     assert signals.shape == (20, 127)
 
     with pytest.raises(ValueError):
-        masses, signals, times, _info = read_directory(
-            path, first_integ_file=1, last_integ_file=1, cycle=1, segment=1
-        )
+        read_directory(path, first_integ_file=1, last_integ_file=1, cycle=1, segment=1)
 
 
 def test_io_nu_import_integ_missing(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
-    _masses, signals, _times, _info = read_directory(path, cycle=1, segment=1)
+    _, signals, _, _, _ = read_directory(path, cycle=1, segment=1)
     assert signals.shape == (40, 127)
     assert np.all(~np.isnan(signals[:29]))
     assert np.all(np.isnan(signals[29]))
     assert np.all(~np.isnan(signals[30:]))
 
 
-def test_io_nu_import_autoblank(test_data_path: Path, tmp_path: Path):
-    path = test_data_path.joinpath("nu/autob.zip")
-    zp = zipfile.ZipFile(path)
-    zp.extractall(tmp_path)
+def test_io_nu_import_autoblank(test_data_path: Path):
+    path = test_data_path.joinpath("nu/autoblank")
 
-    masses, signals, times, info = read_directory(
-        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="regions"
+    _, signals, _, _, regions = read_directory(
+        path, cycle=1, segment=1, autoblank="regions"
     )
     # blanking region of mass idx 10-14 at 32204 - 49999
-    assert np.all(np.isnan(signals[32204:49999, 0:14]))
-    assert np.all(~np.isnan(signals[32204:49999, 14:]))
+    assert regions[0]["start"] == 32205
+    assert regions[0]["end"] == 50000
+    assert regions[0]["start"] == 32205
+    assert regions[0]["end"] == 50000
+    assert np.all(np.isnan(signals[32205:50000, 0:14]))
+    assert np.all(~np.isnan(signals[32205:50000, 14:]))
 
-    masses, signals, times, info = read_directory(
-        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="off"
-    )
-    assert np.all(~np.isnan(signals[32204:49999, 0:14]))
+    _, signals, _, _, _ = read_directory(path, cycle=1, segment=1, autoblank="off")
+    assert np.all(~np.isnan(signals[32205:50000, 0:14]))
 
-    _masses, signals, _times, _info = read_directory(
-        tmp_path.joinpath("autob"), cycle=1, segment=1, autoblank="all"
-    )
-    assert np.all(np.isnan(signals[32204:49999, 0:14]))
+    _, signals, _, _, _ = read_directory(path, cycle=1, segment=1, autoblank="all")
+    assert np.all(np.isnan(signals[32205:50000, 0:14]))
 
 
 def test_select_nu_signals():
