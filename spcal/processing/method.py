@@ -86,13 +86,15 @@ class SPCalProcessingMethod:
         limit_detection = limit.detection_threshold
         limit_accumulation = np.minimum(limit_accumulation, limit_detection)
 
-        signals = data_file[isotope][:max_size]
+        signals, mask = data_file[isotope]
+        signals = signals[:max_size]
+        mask = mask[:max_size]
         times = data_file.times[:max_size]
         # remove exclusion regions
         if len(method.exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, method.exclusion_regions)
             for start, end in idx:
-                signals[start:end] = np.nan
+                mask[start:end] = False
 
         detections, regions = accumulate_detections(
             signals,
@@ -107,6 +109,15 @@ class SPCalProcessingMethod:
             bases = detection_baselines(limit.mean_signal, regions)
             detections -= bases
 
+        if not np.all(mask):
+            ignored_regions = np.flatnonzero(np.diff(mask)).reshape(-1, 2)
+            valid = np.logical_and(
+                regions[:, 1] >= ignored_regions[:, 0][:, None],
+                regions[:, 0] <= ignored_regions[:, 1][:, None],
+            )
+            valid = ~np.any(valid, axis=0)
+            detections, regions = detections[valid], regions[valid]
+
         return SPCalProcessingResult(
             isotope,
             limit=limit,
@@ -117,6 +128,7 @@ class SPCalProcessingMethod:
             times=times,
             detections=detections,
             regions=regions,
+            ignored_regions=ignored_regions,
         )
 
     def processDataFile(

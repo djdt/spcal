@@ -29,6 +29,7 @@ class SPCalProcessingResult:
         detections: np.ndarray,
         regions: np.ndarray,
         indicies: np.ndarray | None = None,
+        ignored_regions: np.ndarray | None = None,
     ):
         self.isotope = isotope
         self.limit = limit
@@ -38,6 +39,8 @@ class SPCalProcessingResult:
 
         self.signals = signals
         self.times = times
+
+        self.ignored_regions = ignored_regions
 
         self.detections = detections
         self.maxima = detection_maxima(signals, regions)

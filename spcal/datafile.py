@@ -61,20 +61,21 @@ class SPCalDataFile:
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.path.stem})"
 
-    def __getitem__(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+    def __getitem__(self, isotope: SPCalIsotopeBase) -> tuple[np.ndarray, np.ndarray]:
+        """Get the signals and a mask of valid regions for a specific isotope or expression"""
         if isinstance(isotope, SPCalIsotope):
-            signals = self.dataForIsotope(isotope).copy()
+            signals, mask = self.dataForIsotope(isotope)
         elif isinstance(isotope, SPCalIsotopeExpression):
-            signals = self.dataForExpression(isotope)
+            signals, mask = self.dataForExpression(isotope)
         else:  # pragma: no cover
             raise TypeError(f"cannot access data for isotope type {type(isotope)}")
 
         if len(self.exclusion_regions) > 0:
             idx = np.searchsorted(self.times, self.exclusion_regions)
             for start, end in idx:
-                signals[start:end] = np.nan
+                mask[start:end] = False
 
-        return signals
+        return signals, mask
 
     @property
     def selected_isotopes(self) -> list[SPCalIsotope]:
@@ -133,24 +134,33 @@ class SPCalDataFile:
         Has the shape (num_events, masses)."""
         raise NotImplementedError
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:  # pragma: no cover
-        """Access signals for `isotope`."""
+    def dataForIsotope(
+        self, isotope: SPCalIsotope
+    ) -> tuple[np.ndarray, np.ndarray]:  # pragma: no cover
+        """Access signals and mask of valid values for `isotope`."""
         raise NotImplementedError
 
-    def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
+    def dataForExpression(
+        self, expr: SPCalIsotopeExpression
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate the result for `expr`."""
-        reducer = Reducer(
-            variables={
-                str(token): self.dataForIsotope(token)
-                for token in expr.tokens
-                if isinstance(token, SPCalIsotope)
-            }
-        )
+        variables = {
+            str(token): self.dataForIsotope(token)
+            for token in expr.tokens
+            if isinstance(token, SPCalIsotope)
+        }
+        reducer = Reducer(variables={k: v[1] for k, v in variables.items()})
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
         if not isinstance(result, np.ndarray):  # pragma: no cover
             raise ReducerException("reduction of expression is not an array")
-        result[~np.isfinite(result)] = np.nan  # set all infinite to nan
-        return result
+
+        mask = np.isfinite(result)
+        result[mask] = np.nan  # set all infinite to nan
+
+        for _, m in variables.values():
+            mask = np.logical_and(mask, m)
+
+        return result, mask
 
     def spectra(self, regions: np.ndarray) -> np.ndarray:
         """Access the entire mass spectra between `regions`.
@@ -234,8 +244,9 @@ class SPCalTextDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return rfn.structured_to_unstructured(self._signals, dtype=np.float32)
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
-        return self._signals[self.isotope_table[isotope]]
+    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
+        signals = self._signals[self.isotope_table[isotope]]
+        return signals, np.ones(signals.shape, bool)
 
     def information(self) -> dict[str, dict[str, str]]:
         info = super().information()
@@ -417,9 +428,18 @@ class SPCalNuDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
         idx = self.isotope_table[isotope]
-        return self.signals[:, idx]
+        signals = self.signals[:, idx]
+        mask = np.ones(signals.shape, bool)
+        if self.autoblanking != "off":
+            for region in self.blanking_regions:
+                if (
+                    self.autoblanking == "all"
+                    or region["mass"][0] < isotope.mass < region["mass"][1]
+                ):
+                    mask[region["index"][0] : region["index"][1]] = False
+        return signals, mask
 
     def generateIsotopeTable(self):
         """Populates `isotope_table` with all available isotopes.
@@ -494,7 +514,7 @@ class SPCalNuDataFile(SPCalDataFile):
             segment=segment_number,
             first_integ_file=first_integ_file,
             last_integ_file=last_integ_file,
-            autoblank=autoblank,
+            autoblank="off",  # autoblanking handled in datafile
             raw=False,
         )
 
@@ -505,6 +525,7 @@ class SPCalNuDataFile(SPCalDataFile):
             masses,
             info,
             regions,
+            autoblanking=autoblank,
             cycle_number=cycle_number,
             segment_number=segment_number,
             integ_files=(first_integ_file, last_integ_file),
@@ -573,9 +594,10 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
         idx = self.isotope_table[isotope]
-        return self.signals[:, idx]
+        signals = self.signals[:, idx]
+        return signals, np.ones(signals.shape, bool)
 
     def information(self) -> dict[str, dict[str, str]]:
         info = super().information()

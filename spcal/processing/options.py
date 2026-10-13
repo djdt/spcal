@@ -186,12 +186,11 @@ class SPCalLimitOptions:
         exclusion_regions: list[tuple[float, float]] | None = None,
         limit_method: str | None = None,
     ) -> SPCalLimit:
-        signals = data_file[isotope]
+        signals, mask = data_file[isotope]
         if exclusion_regions is not None and len(exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, exclusion_regions)
-            signals = signals.copy()
             for start, end in idx:
-                signals[start:end] = np.nan
+                mask[start:end] = False
 
         if limit_method is None:  # pragma: no cover
             limit_method = self.limit_method
@@ -200,7 +199,7 @@ class SPCalLimitOptions:
             if isotope not in self.manual_limits:
                 logger.info(f"no manual limit for isotope '{isotope}', using default")
             threshold = self.manual_limits.get(isotope, self.default_manual_limit)
-            return SPCalLimit("Manual Input", float(np.nanmean(signals)), threshold)
+            return SPCalLimit("Manual Input", float(np.mean(signals[mask])), threshold)
 
         if limit_method == "automatic":
             if SPCalGaussianLimit.isGaussianDistributed(signals):
@@ -275,7 +274,7 @@ class SPCalLimitOptions:
 
         if limit_method == "gaussian":
             return SPCalGaussianLimit(
-                signals,
+                signals[mask],
                 **self.gaussian_kws,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
@@ -286,7 +285,7 @@ class SPCalLimitOptions:
                     "Poisson limit created for TOF data file, use Compound-Poisson"
                 )
             return SPCalPoissonLimit(
-                signals,
+                signals[mask],
                 **self.poisson_kws,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
@@ -296,7 +295,7 @@ class SPCalLimitOptions:
                 logger.warning("Compound-Poisson limit created for non-TOF data file")
 
             return SPCalCompoundPoissonLimit(
-                signals,
+                signals[mask],
                 alpha=self.compound_poisson_kws["alpha"],
                 sigma=sigma,
                 window_size=self.window_size,
@@ -304,14 +303,14 @@ class SPCalLimitOptions:
             )
         elif limit_method == "highest":
             gaussian = SPCalGaussianLimit(
-                signals,
+                signals[mask],
                 **self.gaussian_kws,
                 window_size=self.window_size,
                 max_iterations=self.max_iterations,
             )
             if data_file.isTOF():
                 poisson = SPCalCompoundPoissonLimit(
-                    signals,
+                    signals[mask],
                     alpha=self.compound_poisson_kws["alpha"],
                     sigma=sigma,
                     window_size=self.window_size,
@@ -319,7 +318,7 @@ class SPCalLimitOptions:
                 )
             else:
                 poisson = SPCalPoissonLimit(
-                    signals,
+                    signals[mask],
                     **self.poisson_kws,
                     window_size=self.window_size,
                     max_iterations=self.max_iterations,
