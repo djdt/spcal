@@ -485,7 +485,7 @@ class SPCalNuDataFile(SPCalDataFile):
         if path.is_file() and path.name == "run.info":
             path = path.parent
 
-        masses, signals, times, info = nu.read_directory(
+        masses, signals, times, info, _ = nu.read_directory(
             path,
             cycle=cycle_number,
             segment=segment_number,

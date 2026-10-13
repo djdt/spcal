@@ -103,7 +103,7 @@ def apply_autoblanking(
     """
     for region in regions:
         if blank_all_signals:
-            signals[region["start"] : region["end"]] = np.nan
+            signals[region["index"][0] : region["index"][1]] = np.nan
         else:
             mass_idx = np.searchsorted(masses, (region["mass"][0], region["mass"][1]))
             # There are a bunch of useless blanking regions

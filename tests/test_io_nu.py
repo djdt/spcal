@@ -120,22 +120,29 @@ def test_io_nu_import_integ_missing(test_data_path: Path):
 def test_io_nu_import_autoblank(test_data_path: Path):
     path = test_data_path.joinpath("nu/autoblank")
 
-    _, signals, _, _, regions = read_directory(
+    masses, signals, _, _, regions = read_directory(
         path, cycle=1, segment=1, autoblank="regions"
     )
-    # blanking region of mass idx 10-14 at 32204 - 49999
-    assert regions[0]["start"] == 32205
-    assert regions[0]["end"] == 50000
-    assert regions[0]["start"] == 32205
-    assert regions[0]["end"] == 50000
-    assert np.all(np.isnan(signals[32205:50000, 0:14]))
-    assert np.all(~np.isnan(signals[32205:50000, 14:]))
+    mass_idx = np.searchsorted(masses, (55.5, 89.5))
+
+    # regions 0, 1 are junk
+    assert regions[0]["mass"][1] < masses[0]
+    assert np.allclose(regions[1]["mass"], (31.3255, 36.9595))
+    assert np.searchsorted(masses, regions[2]["mass"][0]) < mass_idx[1]
+    assert np.searchsorted(masses, regions[2]["mass"][1]) >= mass_idx[1]
+    assert np.allclose(regions[2]["time"], (2.1665e9, 2.6150e9))
+    assert np.all(regions[2]["index"] == (20712, 25000))
+
+    assert np.all(np.isnan(signals[20712:25000, mass_idx[1]]))
+    assert np.all(~np.isnan(signals[20712:25000, mass_idx[0]]))
 
     _, signals, _, _, _ = read_directory(path, cycle=1, segment=1, autoblank="off")
-    assert np.all(~np.isnan(signals[32205:50000, 0:14]))
+    assert np.all(~np.isnan(signals[20712:25000, mass_idx[1]]))
+    assert np.all(~np.isnan(signals[20712:25000, mass_idx[0]]))
 
     _, signals, _, _, _ = read_directory(path, cycle=1, segment=1, autoblank="all")
-    assert np.all(np.isnan(signals[32205:50000, 0:14]))
+    assert np.all(np.isnan(signals[20712:25000, mass_idx[1]]))
+    assert np.all(np.isnan(signals[20712:25000, mass_idx[0]]))
 
 
 def test_select_nu_signals():
