@@ -47,11 +47,40 @@ def acquisition_indicies(
         array of indicies
     """
     num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
-    segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
+    seg_acc = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
 
-    idx = (cyc_number - 1) * segment_acq[seg_number - 1]
+    idx = np.sum(seg_acc) * (cyc_number - 1)
+    idx += np.cumulative_sum(seg_acc, include_initial=True)[seg_number - 1]
     idx += acq_number
     return idx // num_acc
+
+
+def acquisition_times(
+    cyc_number: np.ndarray, seg_number: np.ndarray, acq_number: np.ndarray, info: dict
+) -> np.ndarray:
+    """Get the acquisition times from cycle, segment and acquision numbers.
+
+    Args:
+        cyc_number: cycle numbers (1-based)
+        seg_number: segment numbers (1-based)
+        acq_number: acquisition numbers (1-based)
+        info: dict of the run.info file, from `json.load`
+
+    Returns:
+        array of times in ns
+    """
+    seg_times = np.array(
+        [
+            seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]
+            for seg in info["SegmentInfo"]
+        ]
+    )
+    seg_periods = np.array([seg["AcquisitionPeriodNs"] for seg in info["SegmentInfo"]])
+
+    times = np.sum(seg_times) * (cyc_number - 1)
+    times += np.cumulative_sum(seg_times, include_initial=True)[seg_number - 1]
+    times += acq_number * seg_periods[seg_number - 1]
+    return times
 
 
 def apply_autoblanking(
@@ -76,13 +105,12 @@ def apply_autoblanking(
         if blank_all_signals:
             signals[region["start"] : region["end"]] = np.nan
         else:
-            mass_idx = np.searchsorted(
-                masses, (region["start_mass"], region["end_mass"])
-            )
+            mass_idx = np.searchsorted(masses, (region["mass"][0], region["mass"][0]))
             # There are a bunch of useless blanking regions
             if mass_idx[0] != mass_idx[1]:
                 signals[
-                    region["start"] : region["end"], mass_idx[0] : mass_idx[1] + 1
+                    region["index"][0] : region["index"][0],
+                    mass_idx[0] : mass_idx[1] + 1,
                 ] = np.nan
 
     return signals
@@ -101,59 +129,60 @@ def blanking_regions_from_autob(
         end_coef: blanker close coefs 'BlMassCalEndCoef'
 
     Returns:
-        list of (start, end) of each region, array of (start, end) masses
+        structured array od 'start_mass', 'end_mass', 'start_time', 'end_time','start', 'end'
     """
-    regions: list[tuple[float, float, int, int]] = []
+    regions = []
 
     start_coef = info["BlMassCalStartCoef"]
     end_coef = info["BlMassCalEndCoef"]
 
-    start_event = None
+    start = None
     for event in autob_events:
-        if event["type"] == 0 and start_event is None:
-            start_event = event
-        elif event["type"] == 1 and start_event is not None:
-            times = start_event["edges"][: start_event["num_edges"]] * 1.25
+        if event["type"] == 0 and start is None:
+            start = event
+        elif event["type"] == 1 and start is not None:
+            times = start["edges"][: start["num_edges"]] * 1.25
             start_masses = calibrate_to_mass(times[::2], start_coef[0], start_coef[1])
             end_masses = calibrate_to_mass(times[1::2], end_coef[0], end_coef[1])
+
+            start_idx = int(
+                acquisition_indicies(
+                    start["cyc_number"], start["seg_number"], start["acq_number"], info
+                )
+            )
+            end_idx = int(
+                acquisition_indicies(
+                    event["cyc_number"], event["seg_number"], event["acq_number"], info
+                )
+            )
+            start_time = float(
+                acquisition_times(
+                    start["cyc_number"], start["seg_number"], start["acq_number"], info
+                )
+            )
+            end_time = float(
+                acquisition_times(
+                    event["cyc_number"], event["seg_number"], event["acq_number"], info
+                )
+            )
 
             for start_mass, end_mass in zip(start_masses, end_masses):
                 if start_mass < end_mass:
                     regions.append(
                         (
-                            start_mass,
-                            end_mass,
-                            int(
-                                acquisition_indicies(
-                                    start_event["cyc_number"],
-                                    start_event["seg_number"],
-                                    start_event["acq_number"],
-                                    info,
-                                )
-                            ),
-                            int(
-                                acquisition_indicies(
-                                    event["cyc_number"],
-                                    event["seg_number"],
-                                    event["acq_number"],
-                                    info,
-                                )
-                            ),
+                            (start_mass, end_mass),
+                            (start_time, end_time),
+                            (start_idx, end_idx),
                         )
                     )
 
-            start_event = None
+            start = None
         elif event["type"] == 2:
             logger.warning("overflow detected in autoblanking")
 
     return np.array(
         regions,
-        dtype=[
-            ("start_mass", float),
-            ("end_mass", float),
-            ("start", int),
-            ("end", int),
-        ],
+        dtype=[("mass", float, 2), ("time", float, 2), ("index", int, 2)],
     )
 
 
@@ -553,7 +582,12 @@ def read_directory(
     # Get masses from data
     masses = masses_from_integ(integs[0], run_info)[0]
     signals = signals_from_integs(integs, run_info)
-    times = times_from_integs(integs, run_info) * 1e-9
+
+    cyc_numbers = np.concatenate([integ["cyc_number"] for integ in integs])
+    seg_numbers = np.concatenate([integ["seg_number"] for integ in integs])
+    acq_numbers = np.concatenate([integ["acq_number"] for integ in integs])
+
+    times = acquisition_times(cyc_numbers, seg_numbers, acq_numbers, run_info) * 1e-9
 
     if not raw:
         signals /= run_info["AverageSingleIonArea"]
@@ -575,36 +609,3 @@ def read_directory(
         )
 
     return masses, signals, times, run_info, regions
-
-
-def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
-    """Get the acquisition times from a list of .integ files.
-
-    Calculates the times using the acquistion, segment and cycle for each result.
-
-    Args:
-        integs: list of parsed .integ files, from `read_integ_binary`
-        run_info: dict of the run.info file, from `json.load`
-
-    Returns:
-        array of times for each result in all .integs
-    """
-    seg_times = np.array(
-        [
-            seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]
-            for seg in run_info["SegmentInfo"]
-        ]
-    )
-    seg_periods = np.array(
-        [seg["AcquisitionPeriodNs"] for seg in run_info["SegmentInfo"]]
-    )
-
-    times = np.sum(seg_times) * (np.concatenate([x["cyc_number"] for x in integs]) - 1)
-    times += np.cumsum(np.concatenate([[0], seg_times]))[
-        np.concatenate([x["seg_number"] for x in integs]) - 1
-    ]
-    times += (
-        np.concatenate([x["acq_number"] for x in integs])
-        * seg_periods[np.concatenate([x["seg_number"] for x in integs]) - 1]
-    )
-    return times
