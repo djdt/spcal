@@ -432,6 +432,7 @@ class NuImportDialog(ImportDialogBase):
             times,
             masses,
             self.info,
+            regions,
             cycle_number=cyc_number,
             segment_number=seg_number,
             autoblanking=autoblanking,

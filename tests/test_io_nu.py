@@ -127,7 +127,7 @@ def test_io_nu_import_autoblank(test_data_path: Path):
 
     # regions 0, 1 are junk
     assert regions[0]["mass"][1] < masses[0]
-    assert np.allclose(regions[1]["mass"], (31.3255, 36.9595))
+    assert np.allclose(regions[1]["mass"], (31.3255, 36.9595))  # sulphur or O2
     assert np.searchsorted(masses, regions[2]["mass"][0]) < mass_idx[1]
     assert np.searchsorted(masses, regions[2]["mass"][1]) >= mass_idx[1]
     assert np.allclose(regions[2]["time"], (2.1665e9, 2.6150e9))

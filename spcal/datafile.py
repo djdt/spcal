@@ -372,6 +372,7 @@ class SPCalNuDataFile(SPCalDataFile):
         times: np.ndarray,
         masses: np.ndarray,
         info: dict,
+        blanking_regions: np.ndarray,
         cycle_number: int | None,
         segment_number: int | None,
         integ_files: tuple[int, int | None],
@@ -384,6 +385,8 @@ class SPCalNuDataFile(SPCalDataFile):
 
         self._signals = signals
         self._masses = masses
+
+        self.blanking_regions = blanking_regions
 
         self.cycle_number = cycle_number
         self.segment_number = segment_number
@@ -485,7 +488,7 @@ class SPCalNuDataFile(SPCalDataFile):
         if path.is_file() and path.name == "run.info":
             path = path.parent
 
-        masses, signals, times, info, _ = nu.read_directory(
+        masses, signals, times, info, regions = nu.read_directory(
             path,
             cycle=cycle_number,
             segment=segment_number,
@@ -501,6 +504,7 @@ class SPCalNuDataFile(SPCalDataFile):
             times,
             masses,
             info,
+            regions,
             cycle_number=cycle_number,
             segment_number=segment_number,
             integ_files=(first_integ_file, last_integ_file),
