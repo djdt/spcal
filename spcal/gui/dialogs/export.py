@@ -37,7 +37,10 @@ class ExportDialog(QtWidgets.QDialog):
         if units is not None:
             _units.update({k: v[0] for k, v in units.items()})
 
-        filename_regexp = QtCore.QRegularExpression('([A-Z]:\\\\)?[^<>:|?*"]+.csv')
+        filename_regexp = QtCore.QRegularExpression(
+            '([A-Z]:[\\\\/])?[^<>:|?*"]+.csv',
+            QtCore.QRegularExpression.PatternOption.CaseInsensitiveOption,
+        )
 
         self.lineedit_path = QtWidgets.QLineEdit(str(path))
         self.lineedit_path.setMinimumWidth(300)
@@ -129,9 +132,10 @@ class ExportDialog(QtWidgets.QDialog):
             "Export Path",
             self.lineedit_path.text(),
             "CSV Documents (*.csv);;All files (*)",
+            options=QtWidgets.QFileDialog.Option.DontConfirmOverwrite,
         )
         if file != "":
-            self.lineedit_path.setText(file)
+            self.lineedit_path.setText(QtCore.QDir.toNativeSeparators(file))
 
     def accept(self):
         units = {
