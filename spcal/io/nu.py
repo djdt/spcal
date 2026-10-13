@@ -55,26 +55,23 @@ def acquisition_indicies(
 
 
 def apply_autoblanking(
-    autob_events: np.ndarray,
+    regions: np.ndarray,
     signals: np.ndarray,
     masses: np.ndarray,
-    info: dict,
     blank_all_signals: bool = False,
 ) -> np.ndarray:
     """Apply the auto-blanking to the integrated data.
     There must be one cycle / segment and no missing acquisitions / data!
 
     Args:
-        autob: list of events from `read_nu_autob_binary`
+        regions: autoblanking regions from `blanking_regions_from_autob`
         signals: 2d array of signals from `get_signals_from_nu_data`
         masses: 1d array of masses, from `get_masses_from_nu_data`
-        info: dict of parameters, as returned by `read_nu_directory`
         blank_all_signals: apply blanking to all data, not just specified regions
 
     Returns:
         blanked data
     """
-    regions = blanking_regions_from_autob(autob_events, info)
     for region in regions:
         if blank_all_signals:
             signals[region["start"] : region["end"]] = np.nan
@@ -496,7 +493,7 @@ def read_directory(
     cycle: int | None = None,
     segment: int | None = None,
     raw: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict, np.ndarray]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
@@ -518,6 +515,7 @@ def read_directory(
         signals in counts
         times in s
         dict of parameters from run.info
+        blanking regions
 
     Raises:
         ValueError if invalid directory or no integ files are selected
@@ -560,24 +558,23 @@ def read_directory(
     if not raw:
         signals /= run_info["AverageSingleIonArea"]
 
-    # Blank out overrange regions
-    if autoblank in ["regions", "all"]:
-        autobs = np.concatenate(
-            read_binaries_in_index(
-                path,
-                autob_index,
-                "autob",
-                read_autob_binary,
-                cyc_number=cycle,
-                seg_number=segment,
-            )
+    autobs = np.concatenate(
+        read_binaries_in_index(
+            path,
+            autob_index,
+            "autob",
+            read_autob_binary,
+            cyc_number=cycle,
+            seg_number=segment,
         )
+    )
+    regions = blanking_regions_from_autob(autobs, run_info)
+    if autoblank in ["regions", "all"]:
         signals = apply_autoblanking(
-            autobs, signals, masses, run_info, blank_all_signals=autoblank == "all"
+            regions, signals, masses, blank_all_signals=autoblank == "all"
         )
 
-    # Account for any missing integ files
-    return masses, signals, times, run_info
+    return masses, signals, times, run_info, regions
 
 
 def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
