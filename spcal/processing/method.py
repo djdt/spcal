@@ -36,6 +36,15 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalProcessingMethod:
+    """Main class for processing a `SPCalDataFile` into `SPCalProcessingResult`s.
+
+    Attributes:
+        result_filters: detection filters that take an `SPCalProcessingResult`
+        index_filters: detection filters that use detection positions
+        exclusion_regions: regions (start, end time in seconds) to exclude from processing
+        expressions: expressions that are calculated for each datafile if valid
+    """
+
     def __init__(
         self,
         instrument_options: SPCalInstrumentOptions | None = None,
@@ -78,6 +87,17 @@ class SPCalProcessingMethod:
         isotope: SPCalIsotopeBase,
         max_size: int | None,
     ) -> SPCalProcessingResult:
+        """Creates a result for the `isotope` in `data_file` using processing options in `method`.
+
+        Args:
+            method: the processing method to use
+            data_file: data file to draw values from
+            isotope: isotope used
+            max_size: if not None, only process this number of events
+
+        Returns:
+            processed result
+        """
         limit = method.limit_options.limitsForIsotope(
             data_file, isotope, method.exclusion_regions
         )
@@ -132,6 +152,16 @@ class SPCalProcessingMethod:
         isotopes: Sequence[SPCalIsotopeBase] | None = None,
         max_size: int | None = None,
     ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
+        """Calls `SPCalProcessingMethod.calculate_result_for_isotope` in a thread pool.
+
+        Args:
+            data_file: data file to draw values from
+            isotopes: list of isotopes to process, or None for all isotopes
+            max_size: if not None, only process this number of events
+
+        Returns:
+            list of processed results
+        """
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
@@ -157,11 +187,23 @@ class SPCalProcessingMethod:
 
         return results
 
-    def filterResults(
+    def assignPeakIndicies(
         self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
     ) -> np.ndarray:
+        """Assigns shared peak indicies to results.
+
+        Computes unique (non-overlapped) regions for all results and then assigns
+        an index to each. These indicies are saved into `SPCalProcessingResult.peak_indicies`.
+
+        Args:
+            results: dict of results
+
+        Returns:
+            shared regions, shape (N, 2)
+        """
         if len(results) == 0:  # pragma: no cover
             return np.empty((0, 2), dtype=int)
+
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
@@ -173,10 +215,23 @@ class SPCalProcessingMethod:
             )
             result.number_peak_indicies = all_regions.shape[0]
 
+        return all_regions
+
+    def filterResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
+        """Filters results using the methods `result_filters`.
+
+        Results must have their peak indicies assigned by `assignPeakIndicies`.
+
+        Args:
+            results: dict results, e.g., from `SPCalProcessingMethod.processDataFile`
+        """
+        if len(results) == 0:  # pragma: no cover
+            return
+
         # filter results
         valid_peaks = []
         for filter_group in self.result_filters:
-            group_valid = np.arange(all_regions.size)
+            group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
             for filter in filter_group:
                 if isinstance(filter, SPCalValueFilter):
                     if filter.isotope not in results:  # pragma: no cover
@@ -197,13 +252,18 @@ class SPCalProcessingMethod:
                 np.isin(result.peak_indicies, valid_peaks)  # type: ignore , set above
             )
 
-        return all_regions
-
     def filterIndicies(
         self,
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         clusters: dict[str, np.ndarray],
     ):
+        """Filters results using the methods `index_filters`.
+
+        Results must have their peak indicies assigned by `assignPeakIndicies`.
+
+        Args:
+            results: dict results, e.g., from `SPCalProcessingMethod.processDataFile`
+        """
         if len(results) == 0:  # pragma: no cover
             return
 

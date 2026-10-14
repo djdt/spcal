@@ -835,6 +835,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     file, file.selected_isotopes
                 )
 
+            method.assignPeakIndicies(self.processing_results[file])
             method.filterResults(self.processing_results[file])
             # refresh clusters
             if file in self.processing_clusters:
