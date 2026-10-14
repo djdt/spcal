@@ -114,6 +114,7 @@ def test_spcal_central_widget(
     default_method.limit_options.poisson_kws["alpha"] = 1e-6
 
     results = default_method.processDataFile(df)
+    default_method.assignPeakIndicies(results)
     default_method.filterResults(results)
     clusters = default_method.processClusters(results)
 

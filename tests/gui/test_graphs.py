@@ -565,6 +565,7 @@ def test_graph_spectra(qtbot: QtBot):
         np.linspace(0, 1, 100),
         np.arange(20, 120, 1.0),
         {},
+        np.array([]),
         None,
         None,
         (0, None),
@@ -678,6 +679,7 @@ def test_graph_image_export_composition(
     df = random_datafile_generator()
 
     results = default_method.processDataFile(df)
+    default_method.assignPeakIndicies(results)
     default_method.filterResults(results)
     clusters = default_method.processClusters(results)
 

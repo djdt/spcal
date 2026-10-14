@@ -201,6 +201,7 @@ def test_spcal_processing_method(
 
     method = default_method
     results = method.processDataFile(test_datafile, ru)
+    method.assignPeakIndicies(results)
     method.filterResults(results)
     assert len(results) == 3
 
@@ -249,6 +250,7 @@ def test_spcal_processing_method_no_subtract_baslines(
     method = default_method
     method.processing_options.subtract_baselines = False
     results = method.processDataFile(test_datafile, ru)
+    method.assignPeakIndicies(results)
     method.filterResults(results)
     assert len(results) == 3
 
@@ -300,6 +302,7 @@ def test_spcal_processing_method_expr(
     ]
 
     results = method.processDataFile(test_datafile, ru)
+    method.assignPeakIndicies(results)
     method.filterResults(results)
     assert len(results) == 4
     assert "Sum" in [x.name for x in results]
@@ -312,16 +315,20 @@ def test_spcal_processing_method_exclusions(
     ru = ISOTOPE_TABLE[("Ru", 101)]
 
     results = default_method.processDataFile(test_datafile, [ru])
+    peaks = results[ru].times[results[ru].maxima]
     assert np.isclose(np.mean(results[ru].detections), 262.195)
+    assert not np.all(np.logical_or(peaks < 40.0, peaks > 70.0))
+    assert not np.all(np.logical_or(peaks < 20.0, peaks > 40.0))
+
     default_method.exclusion_regions = [(40.0, 70.0)]
     results = default_method.processDataFile(test_datafile, [ru])
-    idx = np.searchsorted(results[ru].times, (40.0, 70.0))
-    assert np.all(np.isnan(results[ru].signals[idx[0] : idx[1]]))
+    peaks = results[ru].times[results[ru].maxima]
+    assert np.all(np.logical_or(peaks < 40.0, peaks > 70.0))
 
-    test_datafile.exclusion_regions = [(30.0, 40.0)]
+    test_datafile.exclusion_regions = [(20.0, 40.0)]
     results = default_method.processDataFile(test_datafile, [ru])
-    idx = np.searchsorted(results[ru].times, (30.0, 70.0))
-    assert np.all(np.isnan(results[ru].signals[idx[0] : idx[1]]))
+    peaks = results[ru].times[results[ru].maxima]
+    assert np.all(np.logical_or(peaks < 20.0, peaks > 40.0))
 
     default_method.exclusion_regions = []
     test_datafile.exclusion_regions = []
@@ -334,6 +341,8 @@ def test_spcal_processing_method_filters(
 
     method = default_method
     results = method.processDataFile(test_datafile, ru)
+
+    method.assignPeakIndicies(results)
 
     method.setFilters([[SPCalValueFilter(ru[0], "signal", np.greater, 200.0)]], [[]])
 
@@ -424,6 +433,7 @@ def test_spcal_processing_results(
 
     assert results[ru[0]].number_concentration is None
 
+    method.assignPeakIndicies(results)
     method.filterResults(results)
 
     assert np.all(results[ru[0]].filter_indicies == [0, 1, 2, 3, 5, 7])

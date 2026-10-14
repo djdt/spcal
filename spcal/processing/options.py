@@ -167,7 +167,7 @@ class SPCalLimitOptions:
         if not all(
             np.all(self.compound_poisson_kws[key] == other.compound_poisson_kws[key])
             for key in self.compound_poisson_kws
-        ):
+        ):  # pragma: no cover
             return False
         return (
             self.limit_method == other.limit_method

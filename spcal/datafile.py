@@ -134,12 +134,13 @@ class SPCalDataFile:
 
     def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
         """Calculate the result for `expr`."""
-        variables = {
-            str(token): self.dataForIsotope(token)
-            for token in expr.tokens
-            if isinstance(token, SPCalIsotope)
-        }
-        reducer = Reducer(variables={k: v[1] for k, v in variables.items()})
+        reducer = Reducer(
+            variables={
+                str(token): self.dataForIsotope(token)
+                for token in expr.tokens
+                if isinstance(token, SPCalIsotope)
+            }
+        )
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
         if not isinstance(result, np.ndarray):  # pragma: no cover
             raise ReducerException("reduction of expression is not an array")
@@ -417,7 +418,9 @@ class SPCalNuDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def blankedRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
+    def blankingForIsotope(
+        self, isotope: SPCalIsotopeBase
+    ) -> list[tuple[float, float]]:
         if isinstance(isotope, SPCalIsotope):
             if self.autoblanking == "off":
                 return []
@@ -435,8 +438,8 @@ class SPCalNuDataFile(SPCalDataFile):
             regions = []
             for t in isotope.tokens:
                 if isinstance(t, SPCalIsotope):
-                    regions.extend(self.blankedRegions(t))
-        else:
+                    regions.extend(self.blankingForIsotope(t))
+        else:  # pragma: no cover
             raise NotImplementedError("only implemented for isotopes and expressions")
         return regions
 
@@ -445,7 +448,7 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals[:, idx]
 
     def exclusionRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
-        return self.exclusion_regions + self.blankedRegions(isotope)
+        return self.exclusion_regions + self.blankingForIsotope(isotope)
 
     def generateIsotopeTable(self):
         """Populates `isotope_table` with all available isotopes.

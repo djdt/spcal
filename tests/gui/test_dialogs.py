@@ -166,6 +166,7 @@ def test_export_dialog(
     for isotope in results:
         default_method.isotope_options[isotope] = SPCalIsotopeOptions(1.0, 1.0, 1.0)
 
+    default_method.assignPeakIndicies(results)
     default_method.filterResults(results)
     clusters = {"signal": default_method.processClusters(results)}
     dlg = ExportDialog(df, results, clusters)

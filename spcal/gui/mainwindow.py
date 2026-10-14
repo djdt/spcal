@@ -962,7 +962,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                 for start, end in data_file.exclusion_regions:
                     self.graph.particle.addExclusionRegion(start, end)
                 if isinstance(data_file, SPCalNuDataFile):
-                    for start, end in data_file.blankedRegions(isotope):
+                    for start, end in data_file.blankingForIsotope(isotope):
                         self.graph.particle.addExclusionRegion(start, end, "fixed")
             for start, end in self.currentMethod().exclusion_regions:
                 self.graph.particle.addGlobalExclusionRegion(start, end)
