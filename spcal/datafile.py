@@ -422,15 +422,14 @@ class SPCalNuDataFile(SPCalDataFile):
             if self.autoblanking == "off":
                 return []
 
-            print("isotope")
             regions = []
             for region in self.blanking_regions:
-                print(region)
                 if (
                     self.autoblanking == "all"
-                    or region["mass"][0] < isotope.mass < region["mass"][1]
+                    or region["mass"][0] - self.max_mass_diff
+                    < isotope.mass
+                    < region["mass"][1] + self.max_mass_diff
                 ):
-                    print("in mass")
                     regions.append((region["time"][0], region["time"][1]))
         elif isinstance(isotope, SPCalIsotopeExpression):
             regions = []
