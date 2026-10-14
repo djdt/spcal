@@ -126,7 +126,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileAdded.connect(self.onDataFileAdded)
         self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
-        self.files.dataFilesChanged.connect(self.updateForDataFiles)
+        self.files.dataFileChanged.connect(self.updateForDataFiles)
         self.files.activeDataFilesChanged.connect(self.updateForDataFiles)
         self.files.expressionsAdded.connect(self.addExpressions)
 
@@ -698,8 +698,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
 
-        reprocess_files = []
-
         for file in data_files:
             exprs = [
                 expr
@@ -708,12 +706,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ]
             isotopes = file.selected_isotopes + exprs
 
+            # TODO: check this is correct
             # Reprocess if new isotopes exist
-            if file not in self.processing_results or any(
-                isotope not in self.processing_results[file] for isotope in isotopes
-            ):
-                reprocess_files.append(file)
-            else:
+            # if file not in self.processing_results or any(
+            #     isotope not in self.processing_results[file] for isotope in isotopes
+            # ):
+            #     pass
+            # else:
+            if file in self.processing_results:
                 remove_isotopes = [
                     iso for iso in self.processing_results[file] if iso not in isotopes
                 ]
@@ -721,7 +721,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     self.processing_results[file].pop(iso)
 
         self.updateIsotopes()
-        self.reprocess(reprocess_files)
+        self.reprocess(data_files)
         self.redraw()
 
     def onInstrumentOptionsChanged(self):
