@@ -445,7 +445,6 @@ class SPCalNuDataFile(SPCalDataFile):
         return self.signals[:, idx]
 
     def exclusionRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
-        print(isotope, self.blankedRegions(isotope), self.autoblanking)
         return self.exclusion_regions + self.blankedRegions(isotope)
 
     def generateIsotopeTable(self):
