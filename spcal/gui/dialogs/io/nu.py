@@ -421,10 +421,6 @@ class NuImportDialog(ImportDialogBase):
             )
         )
         regions = nu.blanking_regions_from_autob(autobs, self.info)
-        # if autoblanking in ["regions", "all"]:
-        #     signals = nu.apply_autoblanking(
-        #         regions, signals, masses, blank_all_signals=autoblanking == "all"
-        #     )
 
         data_file = SPCalNuDataFile(
             self.file_path,
