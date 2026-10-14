@@ -60,21 +60,16 @@ class SPCalDataFile:
     def __repr__(self) -> str:  # pragma: no cover
         return f"{type(self).__name__}({self.path.stem})"
 
-    def __getitem__(self, isotope: SPCalIsotopeBase) -> tuple[np.ndarray, np.ndarray]:
+    def __getitem__(self, isotope: SPCalIsotopeBase) -> np.ndarray:
         """Get the signals and a mask of valid regions for a specific isotope or expression"""
         if isinstance(isotope, SPCalIsotope):
-            signals, mask = self.dataForIsotope(isotope)
+            signals = self.dataForIsotope(isotope)
         elif isinstance(isotope, SPCalIsotopeExpression):
-            signals, mask = self.dataForExpression(isotope)
+            signals = self.dataForExpression(isotope)
         else:  # pragma: no cover
             raise TypeError(f"cannot access data for isotope type {type(isotope)}")
 
-        if len(self.exclusion_regions) > 0:
-            idx = np.searchsorted(self.times, self.exclusion_regions)
-            for start, end in idx:
-                mask[start:end] = False
-
-        return signals, mask
+        return signals
 
     @property
     def selected_isotopes(self) -> list[SPCalIsotope]:
@@ -108,7 +103,7 @@ class SPCalDataFile:
 
     @property
     def total_time(self) -> float:
-        """The total time in seconds, excluding NaN regions."""
+        """The total time in seconds."""
         return self.times[-1] - self.times[0] + self.event_time
 
     @property
@@ -133,15 +128,11 @@ class SPCalDataFile:
         Has the shape (num_events, masses)."""
         raise NotImplementedError
 
-    def dataForIsotope(
-        self, isotope: SPCalIsotope
-    ) -> tuple[np.ndarray, np.ndarray]:  # pragma: no cover
-        """Access signals and mask of valid values for `isotope`."""
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:  # pragma: no cover
+        """Access signals for `isotope`."""
         raise NotImplementedError
 
-    def dataForExpression(
-        self, expr: SPCalIsotopeExpression
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def dataForExpression(self, expr: SPCalIsotopeExpression) -> np.ndarray:
         """Calculate the result for `expr`."""
         variables = {
             str(token): self.dataForIsotope(token)
@@ -153,13 +144,13 @@ class SPCalDataFile:
         if not isinstance(result, np.ndarray):  # pragma: no cover
             raise ReducerException("reduction of expression is not an array")
 
-        mask = np.isfinite(result)
-        result[mask] = np.nan  # set all infinite to nan
+        return result
 
-        for _, m in variables.values():
-            mask = np.logical_and(mask, m)
-
-        return result, mask
+    def exclusionRegions(
+        self, isotope: SPCalIsotopeBase
+    ) -> list[tuple[float, float]]:  # pragma: no cover
+        """List of sart and end times (s) of regions to exclude from processing."""
+        return self.exclusion_regions
 
     def spectra(self, regions: np.ndarray) -> np.ndarray:
         """Access the entire mass spectra between `regions`.
@@ -243,9 +234,8 @@ class SPCalTextDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return rfn.structured_to_unstructured(self._signals, dtype=np.float32)
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
-        signals = self._signals[self.isotope_table[isotope]]
-        return signals, np.ones(signals.shape, bool)
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
+        return self._signals[self.isotope_table[isotope]]
 
     def information(self) -> dict[str, dict[str, str]]:
         info = super().information()
@@ -427,18 +417,37 @@ class SPCalNuDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
-        idx = self.isotope_table[isotope]
-        signals = self.signals[:, idx]
-        mask = np.ones(signals.shape, bool)
-        if self.autoblanking != "off":
+    def blankedRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
+        if isinstance(isotope, SPCalIsotope):
+            if self.autoblanking == "off":
+                return []
+
+            print("isotope")
+            regions = []
             for region in self.blanking_regions:
+                print(region)
                 if (
                     self.autoblanking == "all"
                     or region["mass"][0] < isotope.mass < region["mass"][1]
                 ):
-                    mask[region["index"][0] : region["index"][1]] = False
-        return signals, mask
+                    print("in mass")
+                    regions.append((region["time"][0], region["time"][1]))
+        elif isinstance(isotope, SPCalIsotopeExpression):
+            regions = []
+            for t in isotope.tokens:
+                if isinstance(t, SPCalIsotope):
+                    regions.extend(self.blankedRegions(t))
+        else:
+            raise NotImplementedError("only implemented for isotopes and expressions")
+        return regions
+
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
+        idx = self.isotope_table[isotope]
+        return self.signals[:, idx]
+
+    def exclusionRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
+        print(isotope, self.blankedRegions(isotope), self.autoblanking)
+        return self.exclusion_regions + self.blankedRegions(isotope)
 
     def generateIsotopeTable(self):
         """Populates `isotope_table` with all available isotopes.
@@ -593,10 +602,9 @@ class SPCalTOFWERKDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def dataForIsotope(self, isotope: SPCalIsotope) -> tuple[np.ndarray, np.ndarray]:
+    def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
-        signals = self.signals[:, idx]
-        return signals, np.ones(signals.shape, bool)
+        return self.signals[:, idx]
 
     def information(self) -> dict[str, dict[str, str]]:
         info = super().information()

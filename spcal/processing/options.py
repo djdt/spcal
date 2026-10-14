@@ -186,11 +186,15 @@ class SPCalLimitOptions:
         exclusion_regions: list[tuple[float, float]] | None = None,
         limit_method: str | None = None,
     ) -> SPCalLimit:
-        signals, mask = data_file[isotope]
+        signals = data_file[isotope]
+        mask = np.ones(signals.size, dtype=bool)
         if exclusion_regions is not None and len(exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, exclusion_regions)
             for start, end in idx:
                 mask[start:end] = False
+        idx = np.searchsorted(data_file.times, data_file.exclusionRegions(isotope))
+        for start, end in idx:
+            mask[start:end] = False
 
         if limit_method is None:  # pragma: no cover
             limit_method = self.limit_method

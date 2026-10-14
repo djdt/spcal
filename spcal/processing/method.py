@@ -16,7 +16,7 @@ from spcal.cluster import (
 )
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions, detection_baselines
-from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.filter import (
     SPCalClusterFilter,
@@ -106,15 +106,18 @@ class SPCalProcessingMethod:
         limit_detection = limit.detection_threshold
         limit_accumulation = np.minimum(limit_accumulation, limit_detection)
 
-        signals, mask = data_file[isotope]
-        signals = signals[:max_size]
-        mask = mask[:max_size]
+        signals = data_file[isotope][:max_size]
         times = data_file.times[:max_size]
-        # remove exclusion regions
+
+        # convert exclusion_regions to a mask
+        mask = np.ones(signals.size, dtype=bool)
         if len(method.exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, method.exclusion_regions)
             for start, end in idx:
                 mask[start:end] = False
+        idx = np.searchsorted(data_file.times, data_file.exclusionRegions(isotope))
+        for start, end in idx:
+            mask[start:end] = False
 
         detections, regions = accumulate_detections(
             signals,
