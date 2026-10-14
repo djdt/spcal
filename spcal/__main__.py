@@ -34,8 +34,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             values: Any | list[Any],
             option_string: str | None = None,
         ):
+            isotopes = None
             if isinstance(values, list):
                 path = Path(values[0])
+                isotopes = [SPCalIsotope.fromString(value) for value in values[1:]]
             else:
                 path = Path(values)
 
@@ -54,9 +56,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             else:
                 parser.error(f"{path} is not a valid single particle file")
 
-            if isinstance(values, list):
-                isotopes = [SPCalIsotope.fromString(value) for value in values[1:]]
+            if isotopes is not None:
                 data_file.selected_isotopes = isotopes
+            else:
+                data_file.selected_isotopes = data_file.preferred_isotopes
 
             data_files = namespace.open or []
             data_files.append(data_file)
