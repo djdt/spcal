@@ -11,11 +11,17 @@ from spcal.processing.result import SPCalProcessingResult
 class ExclusionRegion(pyqtgraph.LinearRegionItem):
     requestRemoval = QtCore.Signal()
 
-    def __init__(self, start: float, end: float, global_region: bool = False):
-        if global_region:
+    def __init__(self, start: float, end: float, region_type: str = "local"):
+        if region_type == "global":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.DiagCrossPattern)
-        else:
+        elif region_type == "local":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.FDiagPattern)
+        elif region_type == "fixed":
+            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.Dense7Pattern)
+        else:
+            raise ValueError(f"unknown region type {region_type}")
+
+        self.region_type = region_type
 
         super().__init__(
             values=(start, end),
@@ -23,12 +29,12 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
             hoverPen="red",
             brush=brush,
             hoverBrush=brush,
+            movable=self.region_type != "fixed",
             swapMode="block",
         )
-        self.lines[0].addMarker("|>", 0.9)
-        self.lines[1].addMarker("<|", 0.9)
-
-        self.global_region = global_region
+        if region_type != "fixed":
+            self.lines[0].addMarker("|>", 0.9)
+            self.lines[1].addMarker("<|", 0.9)
 
     @property
     def start(self) -> float:
@@ -39,6 +45,9 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
         return float(self.lines[1].value())
 
     def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        if self.region_type == "fixed":  # ignore as no removal
+            return super().contextMenuEvent(event)
+
         close_action = create_action(
             "window-close",
             "Remove Exclusion",
@@ -109,14 +118,14 @@ class ParticleView(SinglePlotGraphicsView):
     def exclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion) and not item.global_region:
+            if isinstance(item, ExclusionRegion) and item.region_type == "local":
                 regions.append((item.start, item.end))
         return regions
 
     def globalExclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion) and item.global_region:
+            if isinstance(item, ExclusionRegion) and item.region_type == "global":
                 regions.append((item.start, item.end))
         return regions
 
@@ -124,7 +133,7 @@ class ParticleView(SinglePlotGraphicsView):
         self,
         start: float | None = None,
         end: float | None = None,
-        global_region: bool = False,
+        region_type: str = "local",
     ):
         if self.plot.vb is None or self.plot.vb.state["limits"] is None:
             return
@@ -136,18 +145,16 @@ class ParticleView(SinglePlotGraphicsView):
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
 
-        region = ExclusionRegion(start, end, global_region=global_region)
+        region = ExclusionRegion(start, end, region_type=region_type)
         region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
 
     def addGlobalExclusionRegion(
-        self,
-        start: float | None = None,
-        end: float | None = None,
+        self, start: float | None = None, end: float | None = None
     ):
-        self.addExclusionRegion(start, end, global_region=True)
+        self.addExclusionRegion(start, end, region_type="global")
 
     def removeExclusionRegion(self):
         region = self.sender()

@@ -10,7 +10,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.api import compare_version_strings, get_github_release_info
-from spcal.datafile import SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
@@ -958,8 +958,12 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     )
 
             if len(active) == 1:  # single data file
-                for start, end in next(iter(active)).exclusion_regions:
+                data_file = next(iter(active))
+                for start, end in data_file.exclusion_regions:
                     self.graph.particle.addExclusionRegion(start, end)
+                if isinstance(data_file, SPCalNuDataFile):
+                    for start, end in data_file.blankedRegions(isotope):
+                        self.graph.particle.addExclusionRegion(start, end, "fixed")
             for start, end in self.currentMethod().exclusion_regions:
                 self.graph.particle.addGlobalExclusionRegion(start, end)
             self.graph.particle.action_exclusion_region.setEnabled(len(active) == 1)
