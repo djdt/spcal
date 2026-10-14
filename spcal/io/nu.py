@@ -141,7 +141,7 @@ def blanking_regions_from_autob(
         if event["type"] == 0 and start is None:
             start = event
         elif event["type"] == 1 and start is not None:
-            times = start["edges"][2 : start["num_edges"] - 2] * 1.25
+            times = start["edges"][: start["num_edges"]] * 1.25
             start_masses = calibrate_to_mass(times[::2], start_coef[0], start_coef[1])
             end_masses = calibrate_to_mass(times[1::2], end_coef[0], end_coef[1])
 
