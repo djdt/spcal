@@ -25,11 +25,11 @@ class SPCalProcessingResult:
         event_time: float,
         data_file_path: Path,
         signals: np.ndarray,
+        mask: np.ndarray,
         times: np.ndarray,
         detections: np.ndarray,
         regions: np.ndarray,
         indicies: np.ndarray | None = None,
-        ignored_regions: np.ndarray | None = None,
     ):
         self.isotope = isotope
         self.limit = limit
@@ -38,9 +38,8 @@ class SPCalProcessingResult:
         self.method = method
 
         self.signals = signals
+        self.mask = mask
         self.times = times
-
-        self.ignored_regions = ignored_regions
 
         self.detections = detections
         self.maxima = detection_maxima(signals, regions)
@@ -50,10 +49,11 @@ class SPCalProcessingResult:
         self.number_peak_indicies = 0
         self.filter_indicies = np.arange(detections.size)
 
-        mask = background_mask(regions, signals.size)
+        bg_mask = background_mask(regions, signals.size)
+        bg_mask = np.logical_and(bg_mask, self.mask)
 
-        self.background = float(np.nanmean(signals[mask]))
-        self.background_error = float(np.nanstd(signals[mask], mean=self.background))
+        self.background = float(np.nanmean(signals[bg_mask]))
+        self.background_error = float(np.nanstd(signals[bg_mask], mean=self.background))
 
         self.event_time = event_time
 
@@ -62,7 +62,7 @@ class SPCalProcessingResult:
 
     @property
     def num_events(self) -> int:
-        return int(np.count_nonzero(np.isfinite(self.signals)))
+        return int(np.count_nonzero(np.isfinite(self.signals[self.mask])))
 
     @property
     def total_time(self) -> float:
@@ -71,7 +71,7 @@ class SPCalProcessingResult:
     @property
     def valid_events(self) -> int:
         """Number of valid (non nan) events."""
-        return np.count_nonzero(~np.isnan(self.signals))  # type: ignore , numpy int is fine
+        return int(np.count_nonzero(~np.isnan(self.signals[self.mask])))
 
     @property
     def ionic_background(self) -> float | None:
@@ -151,8 +151,7 @@ class SPCalProcessingResult:
         if filtered:
             values = values[self.filter_indicies]
         result = self.method.calibrateTo(values, key, self.isotope, self.event_time)
-        assert isinstance(result, np.ndarray)
-        return result
+        return np.asanyarray(result)
 
     def calibrateTo(
         self, value: float | np.ndarray, key: str

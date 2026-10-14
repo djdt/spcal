@@ -110,12 +110,7 @@ class SPCalProcessingMethod:
             detections -= bases
 
         if not np.all(mask):
-            ignored_regions = np.flatnonzero(np.diff(mask)).reshape(-1, 2)
-            valid = np.logical_and(
-                regions[:, 1] >= ignored_regions[:, 0][:, None],
-                regions[:, 0] <= ignored_regions[:, 1][:, None],
-            )
-            valid = ~np.any(valid, axis=0)
+            valid = np.logical_and.reduceat(mask, regions.flat)[::2]
             detections, regions = detections[valid], regions[valid]
 
         return SPCalProcessingResult(
@@ -125,10 +120,10 @@ class SPCalProcessingMethod:
             event_time=data_file.event_time,
             data_file_path=data_file.path,
             signals=signals,
+            mask=mask,
             times=times,
             detections=detections,
             regions=regions,
-            ignored_regions=ignored_regions,
         )
 
     def processDataFile(
