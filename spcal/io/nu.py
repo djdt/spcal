@@ -87,6 +87,7 @@ def apply_autoblanking(
     regions: np.ndarray,
     signals: np.ndarray,
     masses: np.ndarray,
+    times: np.ndarray,
     blank_all_signals: bool = False,
 ) -> np.ndarray:
     """Apply the auto-blanking to the integrated data.
@@ -101,17 +102,14 @@ def apply_autoblanking(
     Returns:
         blanked data
     """
-    for region in regions:
+    mass_idx = np.searchsorted(masses, regions["mass"]).reshape(-1, 2)
+    time_idx = np.searchsorted(times, regions["time"]).reshape(-1, 2)
+
+    for (m0, m1), (t0, t1) in zip(mass_idx, time_idx):
         if blank_all_signals:
-            signals[region["index"][0] : region["index"][1]] = np.nan
+            signals[t0:t1] = np.nan
         else:
-            mass_idx = np.searchsorted(masses, (region["mass"][0], region["mass"][1]))
-            # There are a bunch of useless blanking regions
-            if mass_idx[0] != mass_idx[1]:
-                signals[
-                    region["index"][0] : region["index"][1],
-                    mass_idx[0] : mass_idx[1] + 1,
-                ] = np.nan
+            signals[t0:t1, m0 : m1 + 1] = np.nan
 
     return signals
 
@@ -122,6 +120,8 @@ def blanking_regions_from_autob(
 ) -> np.ndarray:
     """Extract blanking regions from autoblank data.
 
+    Each blanking region is assigned a mass and time interval in seconds.
+
     Args:
         autob: list of events from `read_nu_autob_binary`
         num_acc: number of accumulations per acquisition
@@ -129,7 +129,7 @@ def blanking_regions_from_autob(
         end_coef: blanker close coefs 'BlMassCalEndCoef'
 
     Returns:
-        structured array od 'start_mass', 'end_mass', 'start_time', 'end_time','start', 'end'
+        structured array of 'start_mass', 'end_mass', 'start_time', 'end_time'
     """
     regions = []
 
@@ -141,20 +141,10 @@ def blanking_regions_from_autob(
         if event["type"] == 0 and start is None:
             start = event
         elif event["type"] == 1 and start is not None:
-            times = start["edges"][: start["num_edges"]] * 1.25
+            times = start["edges"][2 : start["num_edges"] - 2] * 1.25
             start_masses = calibrate_to_mass(times[::2], start_coef[0], start_coef[1])
             end_masses = calibrate_to_mass(times[1::2], end_coef[0], end_coef[1])
 
-            start_idx = int(
-                acquisition_indicies(
-                    start["cyc_number"], start["seg_number"], start["acq_number"], info
-                )
-            )
-            end_idx = int(
-                acquisition_indicies(
-                    event["cyc_number"], event["seg_number"], event["acq_number"], info
-                )
-            )
             start_time = float(
                 acquisition_times(
                     start["cyc_number"], start["seg_number"], start["acq_number"], info
@@ -169,11 +159,7 @@ def blanking_regions_from_autob(
             for start_mass, end_mass in zip(start_masses, end_masses):
                 if start_mass < end_mass:
                     regions.append(
-                        (
-                            (start_mass, end_mass),
-                            (start_time, end_time),
-                            (start_idx, end_idx),
-                        )
+                        ((start_mass, end_mass), (start_time * 1e-9, end_time * 1e-9))
                     )
 
             start = None
@@ -182,7 +168,7 @@ def blanking_regions_from_autob(
 
     return np.array(
         regions,
-        dtype=[("mass", float, 2), ("time", float, 2), ("index", int, 2)],
+        dtype=[("mass", float, 2), ("time", float, 2)],
     )
 
 
@@ -605,7 +591,7 @@ def read_directory(
     regions = blanking_regions_from_autob(autobs, run_info)
     if autoblank in ["regions", "all"]:
         signals = apply_autoblanking(
-            regions, signals, masses, blank_all_signals=autoblank == "all"
+            regions, signals, masses, times, blank_all_signals=autoblank == "all"
         )
 
     return masses, signals, times, run_info, regions
