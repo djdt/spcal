@@ -589,6 +589,12 @@ def read_directory(
         )
     )
     regions = blanking_regions_from_autob(autobs, run_info)
+    # trim regions from mass selection
+    regions = regions[
+        np.logical_and(
+            regions["mass"][:, 1] > masses[0], regions["mass"][:, 0] < masses[-1]
+        )
+    ]
     if autoblank in ["regions", "all"]:
         signals = apply_autoblanking(
             regions, signals, masses, times, blank_all_signals=autoblank == "all"
