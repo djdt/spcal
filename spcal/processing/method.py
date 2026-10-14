@@ -296,6 +296,17 @@ class SPCalProcessingMethod:
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         key: str = "signal",
     ) -> np.ndarray:
+        """Perform HAC and get cluster indicies.
+
+        Indicies are sorted by size (1 = largest).
+
+        Args:
+            results: results to cluster
+            key: which calibration mode to use
+
+        Returns:
+            cluster indicies
+        """
         if any(
             result.peak_indicies is None for result in results.values()
         ):  # pragma: no cover
@@ -315,6 +326,15 @@ class SPCalProcessingMethod:
         return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
+        """Check if the method is valid for a key and isotope pair.
+
+        Args:
+            key: calibration mode
+            isotope: isotope to calibrate
+
+        Returns:
+            True if the method can calibrate
+        """
         if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
         if key == "signal":
@@ -336,6 +356,17 @@ class SPCalProcessingMethod:
         isotope: SPCalIsotopeBase,
         event_time: float,
     ) -> float | np.ndarray:
+        """Calibrate signals values (counts) to mass or size.
+
+        Args:
+            signals: value(s) in cts
+            key: calibration mode
+            isotope: isotope to calibrate
+            event_time: time of a single event in seconds
+
+        Returns:
+            values calibrated to the selected SI unit
+        """
         if key == "signal":
             return signals
         elif key == "mass":
@@ -348,6 +379,16 @@ class SPCalProcessingMethod:
     def calibrateToMass(
         self, signals: float | np.ndarray, isotope: SPCalIsotopeBase, event_time: float
     ) -> float | np.ndarray:
+        """Convert signals into massses.
+
+        Args:
+            signals: value(s) in cts
+            isotope: isotope being calibrated
+            event_time: time of a signel event in seconds
+
+        Returns:
+            masses in kg
+        """
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
 
@@ -373,6 +414,16 @@ class SPCalProcessingMethod:
     def calibrateToSize(
         self, signals: float | np.ndarray, isotope: SPCalIsotopeBase, event_time: float
     ) -> float | np.ndarray:
+        """Convert signals into sizes.
+
+        Args:
+            signals: value(s) in cts
+            isotope: isotope being calibrated
+            event_time: time of a signel event in seconds
+
+        Returns:
+            sizes in m
+        """
         density = self.isotope_options[isotope].density
         assert density is not None
         return particle.particle_size(

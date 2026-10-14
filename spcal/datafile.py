@@ -30,7 +30,6 @@ class SPCalDataFile:
     """A base class for data files.
 
     Attributes:
-
         exclusion_regions: array of start, end times to exclude from processing.
             These regions are set to NaN, shape (..., 2)
     """
@@ -41,11 +40,11 @@ class SPCalDataFile:
         path: Path,
         times: np.ndarray,
     ):
-        """Args:
-
-        format: the type of data file ('text', 'nu', 'tofwerk')
-        path: Path to the data file
-        times: array of event times
+        """
+        Args:
+            format: the type of data file ('text', 'nu', 'tofwerk')
+            path: Path to the data file
+            times: array of event times
         """
         self.path = path
         self.format = format
