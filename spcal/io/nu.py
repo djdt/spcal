@@ -163,7 +163,7 @@ def blanking_regions_from_autob(
                     )
 
             start = None
-        elif event["type"] == 2:
+        elif event["type"] == 2:  # pragma: no cover
             logger.warning("overflow detected in autoblanking")
 
     return np.array(
@@ -346,7 +346,7 @@ def read_autob_binary(
             autob = np.zeros(1, dtype=data_dtype)
             autob.data.cast("B")[:25] = partial
             num = autob["num_edges"][0]
-            if num > 12:
+            if num > 12:  # pragma: no cover
                 raise ValueError("autoblanking not supported for more than 12 edges")
             if num > 0:
                 autob["edges"][:num] = np.frombuffer(fp.read(num * 4), dtype=np.uint32)

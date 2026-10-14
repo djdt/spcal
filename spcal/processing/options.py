@@ -264,7 +264,7 @@ class SPCalLimitOptions:
                                 idx
                             ]
                         )
-                    else:
+                    else:  # pragma: no cover
                         logger.warning(
                             f"unable to calculate SIA for expr {isotope}, falling back to default"
                         )

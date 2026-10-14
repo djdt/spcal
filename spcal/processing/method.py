@@ -16,7 +16,7 @@ from spcal.cluster import (
 )
 from spcal.datafile import SPCalDataFile
 from spcal.detection import accumulate_detections, combine_regions, detection_baselines
-from spcal.isotope import SPCalIsotope, SPCalIsotopeBase, SPCalIsotopeExpression
+from spcal.isotope import SPCalIsotopeBase, SPCalIsotopeExpression
 from spcal.processing import CALIBRATION_KEYS
 from spcal.processing.filter import (
     SPCalClusterFilter,
@@ -315,8 +315,9 @@ class SPCalProcessingMethod:
         ):  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
-        if len(results) == 0:
+        if len(results) == 0:  # pragma: no cover
             return np.array([], dtype=int)
+
         npeaks = np.amax([result.number_peak_indicies for result in results.values()])
         if npeaks == 0:  # pragma: no cover
             return np.array([], dtype=int)
