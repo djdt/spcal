@@ -418,37 +418,33 @@ class SPCalNuDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
-    def blankingForIsotope(
-        self, isotope: SPCalIsotopeBase
-    ) -> list[tuple[float, float]]:
+    def blankingForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+        if self.autoblanking == "off":
+            return np.array([], dtype=self.blanking_regions.dtype)
+        elif self.autoblanking == "all":
+            return self.blanking_regions
         if isinstance(isotope, SPCalIsotope):
-            if self.autoblanking == "off":
-                return []
-
-            regions = []
-            for region in self.blanking_regions:
-                if (
-                    self.autoblanking == "all"
-                    or region["mass"][0] - self.max_mass_diff
-                    < isotope.mass
-                    < region["mass"][1] + self.max_mass_diff
-                ):
-                    regions.append((region["time"][0], region["time"][1]))
+            valid = np.logical_and(
+                self.blanking_regions["mass"][:, 0] - self.max_mass_diff < isotope.mass,
+                self.blanking_regions["mass"][:, 1] + self.max_mass_diff > isotope.mass,
+            )
+            return self.blanking_regions[valid]
         elif isinstance(isotope, SPCalIsotopeExpression):
             regions = []
             for t in isotope.tokens:
                 if isinstance(t, SPCalIsotope):
-                    regions.extend(self.blankingForIsotope(t))
+                    regions.append(self.blankingForIsotope(t))
+            return np.concatenate(regions)
         else:  # pragma: no cover
             raise NotImplementedError("only implemented for isotopes and expressions")
-        return regions
 
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
 
     def exclusionRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
-        return self.exclusion_regions + self.blankingForIsotope(isotope)
+        blanking = self.blankingForIsotope(isotope)
+        return self.exclusion_regions + [(r["time"][0], r["time"][1]) for r in blanking]
 
     def generateIsotopeTable(self):
         """Populates `isotope_table` with all available isotopes.

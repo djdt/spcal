@@ -11,7 +11,9 @@ from spcal.processing.result import SPCalProcessingResult
 class ExclusionRegion(pyqtgraph.LinearRegionItem):
     requestRemoval = QtCore.Signal()
 
-    def __init__(self, start: float, end: float, region_type: str = "local"):
+    def __init__(
+        self, start: float, end: float, region_type: str = "local", tooltip: str = ""
+    ):
         if region_type == "global":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.DiagCrossPattern)
         elif region_type == "local":
@@ -32,6 +34,8 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
             movable=self.region_type != "fixed",
             swapMode="block",
         )
+        self.setToolTip(tooltip)
+
         if region_type != "fixed":
             self.lines[0].addMarker("|>", 0.9)
             self.lines[1].addMarker("<|", 0.9)
@@ -134,6 +138,7 @@ class ParticleView(SinglePlotGraphicsView):
         start: float | None = None,
         end: float | None = None,
         region_type: str = "local",
+        tooltip: str = "({:.3f} - {:.3f} s)",
     ):
         if self.plot.vb is None or self.plot.vb.state["limits"] is None:
             return
@@ -145,7 +150,9 @@ class ParticleView(SinglePlotGraphicsView):
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
 
-        region = ExclusionRegion(start, end, region_type=region_type)
+        region = ExclusionRegion(
+            start, end, region_type=region_type, tooltip=tooltip.format(start, end)
+        )
         region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
@@ -154,7 +161,12 @@ class ParticleView(SinglePlotGraphicsView):
     def addGlobalExclusionRegion(
         self, start: float | None = None, end: float | None = None
     ):
-        self.addExclusionRegion(start, end, region_type="global")
+        self.addExclusionRegion(
+            start,
+            end,
+            region_type="global",
+            tooltip="Global Exclusion ({:.3f} - {:.3f} s)",
+        )
 
     def removeExclusionRegion(self):
         region = self.sender()

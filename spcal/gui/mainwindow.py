@@ -960,10 +960,18 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             if len(active) == 1:  # single data file
                 data_file = next(iter(active))
                 for start, end in data_file.exclusion_regions:
-                    self.graph.particle.addExclusionRegion(start, end)
+                    self.graph.particle.addExclusionRegion(
+                        start, end, tooltip="Datafile Exclusion ({:.3f} - {:.3f} s)"
+                    )
                 if isinstance(data_file, SPCalNuDataFile):
-                    for start, end in data_file.blankingForIsotope(isotope):
-                        self.graph.particle.addExclusionRegion(start, end, "fixed")
+                    for region in data_file.blankingForIsotope(isotope):
+                        tooltip = f"Blanking {region['mass'][0]:.2f} - {region['mass'][1]:.2f} m/z ({{:.3f}} - {{:.3f}} s)"
+                        self.graph.particle.addExclusionRegion(
+                            region["time"][0],
+                            region["time"][1],
+                            "fixed",
+                            tooltip=tooltip,
+                        )
             for start, end in self.currentMethod().exclusion_regions:
                 self.graph.particle.addGlobalExclusionRegion(start, end)
             self.graph.particle.action_exclusion_region.setEnabled(len(active) == 1)
