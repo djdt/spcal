@@ -423,6 +423,7 @@ class SPCalNuDataFile(SPCalDataFile):
             return np.array([], dtype=self.blanking_regions.dtype)
         elif self.autoblanking == "all":
             return self.blanking_regions
+
         if isinstance(isotope, SPCalIsotope):
             valid = np.logical_and(
                 self.blanking_regions["mass"][:, 0] - self.max_mass_diff < isotope.mass,

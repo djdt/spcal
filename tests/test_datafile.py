@@ -207,6 +207,9 @@ def test_spcal_datafile_nu_blanking(test_data_path: Path):
     regions = df.blankingForIsotope(ISOTOPE_TABLE[("Fe", 56)])
     assert len(regions) == 64
 
+    regions = df.blankingForIsotope(expr)
+    assert len(regions) == 64  # no duplication
+
 
 def test_spcal_datafile_nu_integ_range(test_data_path: Path):
     path = test_data_path.joinpath("nu/normal")
