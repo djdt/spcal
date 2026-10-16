@@ -97,11 +97,6 @@ class SPCalProcessingResult:
         return self.event_time * self.num_events
 
     @property
-    def valid_events(self) -> int:
-        """Number of valid (non nan) events."""
-        return int(np.count_nonzero(~np.isnan(self.signals[self.mask])))
-
-    @property
     def ionic_background(self) -> float | None:
         """Background in kg/L.
 

@@ -428,7 +428,6 @@ def test_spcal_processing_results(
 
     assert results[ru[0]].num_events == results[ru[0]].signals.size
     assert np.isclose(results[ru[0]].total_time, 90.068)
-    assert results[ru[0]].valid_events == results[ru[0]].num_events
     assert results[ru[0]].number == 8
 
     assert results[ru[0]].number_concentration is None
