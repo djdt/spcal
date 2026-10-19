@@ -203,6 +203,11 @@ def test_spcal_datafile_nu_blanking(test_data_path: Path):
     regions = df.blankingForIsotope(expr)
     assert len(regions) == 32
 
+    # this data is not tuned correctly so without diff the Zr90 is not blanked
+    df.max_mass_diff = 0.01
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Zr", 90)])
+    assert len(regions) == 0
+
     df.autoblanking = "all"
     regions = df.blankingForIsotope(ISOTOPE_TABLE[("Fe", 56)])
     assert len(regions) == 64

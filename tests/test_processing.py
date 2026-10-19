@@ -5,7 +5,12 @@ import numpy as np
 import pytest
 
 from spcal import particle
-from spcal.datafile import SPCalDataFile, SPCalTextDataFile, SPCalTOFWERKDataFile
+from spcal.datafile import (
+    SPCalDataFile,
+    SPCalNuDataFile,
+    SPCalTextDataFile,
+    SPCalTOFWERKDataFile,
+)
 from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 from spcal.limit import SPCalLimit
 from spcal.processing import options
@@ -482,3 +487,19 @@ def test_spcal_processing_results_standard_file(
         ),
     )
     assert np.isclose(np.mean(result.calibrated("size")), 50.0e-9, atol=1e-9)
+
+
+def test_spcal_processing_results_partial_blanking(
+    default_method: SPCalProcessingMethod, test_data_path: Path
+):
+    df = SPCalNuDataFile.load(test_data_path.joinpath("nu/autoblank"))
+    df.selected_isotopes = [ISOTOPE_TABLE[("Zr", 90)]]
+
+    df.autoblanking = "off"
+    result = next(iter(default_method.processDataFile(df).values()))
+    assert np.any(np.abs(result.times[result.maxima] - 2.166) < 0.01)
+
+    # Test that a partially blanked peak is no longer included in detections
+    df.autoblanking = "regions"
+    result = next(iter(default_method.processDataFile(df).values()))
+    assert not np.any(np.abs(result.times[result.maxima] - 2.166) < 0.01)
