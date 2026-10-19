@@ -20,7 +20,7 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.FDiagPattern)
         elif region_type == "fixed":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.Dense7Pattern)
-        else:
+        else:  # pragma: no cover
             raise ValueError(f"unknown region type {region_type}")
 
         self.region_type = region_type
@@ -140,7 +140,9 @@ class ParticleView(SinglePlotGraphicsView):
         region_type: str = "file",
         tooltip: str = "({:.3f} - {:.3f} s)",
     ) -> ExclusionRegion | None:
-        if self.plot.vb is None or self.plot.vb.state["limits"] is None:
+        if (
+            self.plot.vb is None or self.plot.vb.state["limits"] is None
+        ):  # pragma: no cover
             return None
         x0, x1 = self.plot.vb.state["limits"]["xLimits"]  # type: ignore
         assert isinstance(x0, float) and isinstance(x1, float)
@@ -179,7 +181,7 @@ class ParticleView(SinglePlotGraphicsView):
             obj = self.sender()
             if isinstance(obj, ExclusionRegion):
                 region = obj
-            else:
+            else:  # pragma: no cover
                 return
         self.plot.removeItem(region)
         self.onRegionsChanged()
