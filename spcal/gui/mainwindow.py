@@ -32,11 +32,7 @@ from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
-from spcal.gui.graphs.colors import (
-    BRUSH_STYLES,
-    COLOR_SCHEMES,
-    scheme_icon,
-)
+from spcal.gui.graphs.colors import BRUSH_STYLES, COLOR_SCHEMES, scheme_icon
 from spcal.gui.io import (
     SessionImportWorker,
     get_import_dialog_for_path,
@@ -100,7 +96,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
-        self.graph.particle.exclusionRegionsChanged.connect(self.setExclusionRegions)
+        self.graph.particle.fileExclusionRegionsChanged.connect(
+            self.setFileExclusionRegions
+        )
         self.graph.particle.globalExclusionRegionsChanged.connect(
             self.setGlobalExclusionRegions
         )
@@ -639,7 +637,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.currentMethodChanged.emit(method)
             self.reprocess()
 
-    def setExclusionRegions(
+    def setFileExclusionRegions(
         self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
     ):
         if data_file is None:

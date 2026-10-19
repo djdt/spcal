@@ -44,7 +44,7 @@ class ResponseDialog(QtWidgets.QDialog):
         self.expressions = expressions
 
         self.intensity = ParticleView()
-        self.intensity.exclusionRegionsChanged.connect(self.updateExclusionRegions)
+        self.intensity.fileExclusionRegionsChanged.connect(self.updateExclusionRegions)
 
         self.calibration = CalibrationView()
 
@@ -210,7 +210,7 @@ class ResponseDialog(QtWidgets.QDialog):
     def updateExclusionRegions(self):
         index = self.table_concs.currentIndex()
         data_file = index.data(DataFileRole)
-        regions = self.intensity.exclusionRegions()
+        regions = self.intensity.fileExclusionRegions()
 
         self.model_intensity.exclusion_regions[data_file] = regions
         self.model_intensity.intensities[data_file] = {}

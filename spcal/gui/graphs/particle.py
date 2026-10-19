@@ -12,11 +12,11 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
     requestRemoval = QtCore.Signal()
 
     def __init__(
-        self, start: float, end: float, region_type: str = "local", tooltip: str = ""
+        self, start: float, end: float, region_type: str = "file", tooltip: str = ""
     ):
         if region_type == "global":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.DiagCrossPattern)
-        elif region_type == "local":
+        elif region_type == "file":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.FDiagPattern)
         elif region_type == "fixed":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.Dense7Pattern)
@@ -64,7 +64,7 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
 
 
 class ParticleView(SinglePlotGraphicsView):
-    exclusionRegionsChanged = QtCore.Signal(list)
+    fileExclusionRegionsChanged = QtCore.Signal(list)
     globalExclusionRegionsChanged = QtCore.Signal(list)
     requestPeakProperties = QtCore.Signal()
 
@@ -99,7 +99,7 @@ class ParticleView(SinglePlotGraphicsView):
 
         self.action_exclusion_region = create_action(
             "removecell",
-            "Add Exclusion Region",
+            "Add File Exclusion Region",
             "Prevent analysis in a region of the datafile.",
             self.addExclusionRegion,
         )
@@ -116,13 +116,13 @@ class ParticleView(SinglePlotGraphicsView):
         self.context_menu_actions.append(self.action_exclusion_region_global)
 
     def onRegionsChanged(self):
-        self.exclusionRegionsChanged.emit(self.exclusionRegions())
+        self.fileExclusionRegionsChanged.emit(self.fileExclusionRegions())
         self.globalExclusionRegionsChanged.emit(self.globalExclusionRegions())
 
-    def exclusionRegions(self) -> list[tuple[float, float]]:
+    def fileExclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion) and item.region_type == "local":
+            if isinstance(item, ExclusionRegion) and item.region_type == "file":
                 regions.append((item.start, item.end))
         return regions
 
@@ -137,11 +137,11 @@ class ParticleView(SinglePlotGraphicsView):
         self,
         start: float | None = None,
         end: float | None = None,
-        region_type: str = "local",
+        region_type: str = "file",
         tooltip: str = "({:.3f} - {:.3f} s)",
-    ):
+    ) -> ExclusionRegion | None:
         if self.plot.vb is None or self.plot.vb.state["limits"] is None:
-            return
+            return None
         x0, x1 = self.plot.vb.state["limits"]["xLimits"]  # type: ignore
         assert isinstance(x0, float) and isinstance(x1, float)
 
@@ -157,21 +157,30 @@ class ParticleView(SinglePlotGraphicsView):
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
+        return region
 
     def addGlobalExclusionRegion(
         self, start: float | None = None, end: float | None = None
-    ):
-        self.addExclusionRegion(
+    ) -> ExclusionRegion | None:
+        return self.addExclusionRegion(
             start,
             end,
             region_type="global",
             tooltip="Global Exclusion ({:.3f} - {:.3f} s)",
         )
 
-    def removeExclusionRegion(self):
-        region = self.sender()
-        if not isinstance(region, ExclusionRegion):
-            return
+    def removeExclusionRegion(self, region: ExclusionRegion | None = None):
+        """Remove a region.
+
+        If no region is passed then the sender is checked and removed if a region.
+
+        """
+        if region is None:
+            obj = self.sender()
+            if isinstance(obj, ExclusionRegion):
+                region = obj
+            else:
+                return
         self.plot.removeItem(region)
         self.onRegionsChanged()
 
