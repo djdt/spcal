@@ -62,6 +62,7 @@ def test_simulated_compositions(test_data_path: Path):
     df.selected_isotopes = df.isotopes
 
     results = method.processDataFile(df)
+    method.assignPeakIndicies(results)
     method.filterResults(results)
 
     npeaks = next(iter(results.values())).number_peak_indicies

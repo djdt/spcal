@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from spcal import datafile
-from spcal.isotope import ISOTOPE_TABLE
+from spcal.isotope import ISOTOPE_TABLE, SPCalIsotopeExpression
 
 
 def test_spcal_datafile():
@@ -182,6 +182,38 @@ def test_spcal_datafile_nu(test_data_path: Path):
     assert info["NuOptions"]["integ files used"] == "0 to end"
 
     assert "RunInfo" in info
+
+
+def test_spcal_datafile_nu_blanking(test_data_path: Path):
+    path = test_data_path.joinpath("nu/autoblank/run.info")
+    df = datafile.SPCalNuDataFile.load(path, autoblank="off")
+
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Fe", 56)])
+    assert len(regions) == 0
+
+    df.autoblanking = "regions"
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Fe", 56)])
+    assert len(regions) == 6
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Zr", 90)])
+    assert len(regions) == 26
+
+    expr = SPCalIsotopeExpression(
+        "FeZr", ("+", ISOTOPE_TABLE[("Fe", 56)], ISOTOPE_TABLE[("Zr", 90)])
+    )
+    regions = df.blankingForIsotope(expr)
+    assert len(regions) == 32
+
+    # this data is not tuned correctly so without diff the Zr90 is not blanked
+    df.max_mass_diff = 0.01
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Zr", 90)])
+    assert len(regions) == 0
+
+    df.autoblanking = "all"
+    regions = df.blankingForIsotope(ISOTOPE_TABLE[("Fe", 56)])
+    assert len(regions) == 64
+
+    regions = df.blankingForIsotope(expr)
+    assert len(regions) == 64  # no duplication
 
 
 def test_spcal_datafile_nu_integ_range(test_data_path: Path):

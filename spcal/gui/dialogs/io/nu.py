@@ -395,30 +395,32 @@ class NuImportDialog(ImportDialogBase):
         masses = nu.masses_from_integ(self.import_data[0], self.info)[0]
         signals = nu.signals_from_integs(self.import_data, self.info)
 
-        times = nu.times_from_integs(self.import_data, self.info) * 1e-9
+        times = (
+            nu.acquisition_times(
+                np.concatenate([i["cyc_number"] for i in self.import_data]),
+                np.concatenate([i["seg_number"] for i in self.import_data]),
+                np.concatenate([i["acq_number"] for i in self.import_data]),
+                self.info,
+            )
+            * 1e-9
+        )
 
         # if not raw:
         signals /= self.info["AverageSingleIonArea"]
 
         autoblanking = self.combo_blanking.currentText().lower()
-        if autoblanking != "off":
-            autobs = np.concatenate(
-                nu.read_binaries_in_index(
-                    self.file_path,
-                    self.autob_index,
-                    "autob",
-                    nu.read_autob_binary,
-                    cyc_number=cyc_number,
-                    seg_number=seg_number,
-                )
+
+        autobs = np.concatenate(
+            nu.read_binaries_in_index(
+                self.file_path,
+                self.autob_index,
+                "autob",
+                nu.read_autob_binary,
+                cyc_number=cyc_number,
+                seg_number=seg_number,
             )
-            signals = nu.apply_autoblanking(
-                autobs,
-                signals,
-                masses,
-                self.info,
-                blank_all_signals=autoblanking == "all",
-            )
+        )
+        regions = nu.blanking_regions_from_autob(autobs, self.info)
 
         data_file = SPCalNuDataFile(
             self.file_path,
@@ -426,6 +428,7 @@ class NuImportDialog(ImportDialogBase):
             times,
             masses,
             self.info,
+            regions,
             cycle_number=cyc_number,
             segment_number=seg_number,
             autoblanking=autoblanking,

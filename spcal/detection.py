@@ -55,7 +55,7 @@ def accumulate_detections(
 
     # First we remove any peaks lower than the lod - base
     if isinstance(min_prominence, np.ndarray):
-        detected = prominence >= min_prominence[possible_detections]  # type: ignore
+        detected = prominence >= min_prominence[possible_detections]
     else:
         detected = prominence >= min_prominence
     prominence, lefts, rights = (

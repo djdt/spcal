@@ -58,6 +58,7 @@ def test_export_spcal_processing_results_known(
     units = {"signal": ("cts", 1.0), "mass": ("fg", 1e-18), "size": ("nm", 1e-9)}
 
     results = export_method.processDataFile(export_datafile)
+    export_method.assignPeakIndicies(results)
     export_method.filterResults(results)
     clusters = {
         key: export_method.processClusters(results, key)
@@ -99,6 +100,7 @@ def test_export_spcal_append_summary(
     units = {"signal": ("cts", 1.0), "mass": ("fg", 1e-18), "size": ("nm", 1e-9)}
 
     results = export_method.processDataFile(export_datafile)
+    export_method.assignPeakIndicies(results)
     export_method.filterResults(results)
 
     tmp = tmp_path.joinpath("test_summary.csv")

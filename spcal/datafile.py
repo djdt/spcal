@@ -30,7 +30,6 @@ class SPCalDataFile:
     """A base class for data files.
 
     Attributes:
-
         exclusion_regions: array of start, end times to exclude from processing.
             These regions are set to NaN, shape (..., 2)
     """
@@ -41,11 +40,11 @@ class SPCalDataFile:
         path: Path,
         times: np.ndarray,
     ):
-        """Args:
-
-        format: the type of data file ('text', 'nu', 'tofwerk')
-        path: Path to the data file
-        times: array of event times
+        """
+        Args:
+            format: the type of data file ('text', 'nu', 'tofwerk')
+            path: Path to the data file
+            times: array of event times
         """
         self.path = path
         self.format = format
@@ -62,17 +61,13 @@ class SPCalDataFile:
         return f"{type(self).__name__}({self.path.stem})"
 
     def __getitem__(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+        """Get the signals and a mask of valid regions for a specific isotope or expression"""
         if isinstance(isotope, SPCalIsotope):
-            signals = self.dataForIsotope(isotope).copy()
+            signals = self.dataForIsotope(isotope)
         elif isinstance(isotope, SPCalIsotopeExpression):
             signals = self.dataForExpression(isotope)
         else:  # pragma: no cover
             raise TypeError(f"cannot access data for isotope type {type(isotope)}")
-
-        if len(self.exclusion_regions) > 0:
-            idx = np.searchsorted(self.times, self.exclusion_regions)
-            for start, end in idx:
-                signals[start:end] = np.nan
 
         return signals
 
@@ -108,7 +103,7 @@ class SPCalDataFile:
 
     @property
     def total_time(self) -> float:
-        """The total time in seconds, excluding NaN regions."""
+        """The total time in seconds."""
         return self.times[-1] - self.times[0] + self.event_time
 
     @property
@@ -149,8 +144,14 @@ class SPCalDataFile:
         result = reducer.reduceExpr([str(t) for t in expr.tokens])
         if not isinstance(result, np.ndarray):  # pragma: no cover
             raise ReducerException("reduction of expression is not an array")
-        result[~np.isfinite(result)] = np.nan  # set all infinite to nan
+
         return result
+
+    def exclusionRegions(
+        self, isotope: SPCalIsotopeBase
+    ) -> list[tuple[float, float]]:  # pragma: no cover
+        """List of sart and end times (s) of regions to exclude from processing."""
+        return self.exclusion_regions
 
     def spectra(self, regions: np.ndarray) -> np.ndarray:
         """Access the entire mass spectra between `regions`.
@@ -372,6 +373,7 @@ class SPCalNuDataFile(SPCalDataFile):
         times: np.ndarray,
         masses: np.ndarray,
         info: dict,
+        blanking_regions: np.ndarray,
         cycle_number: int | None,
         segment_number: int | None,
         integ_files: tuple[int, int | None],
@@ -384,6 +386,8 @@ class SPCalNuDataFile(SPCalDataFile):
 
         self._signals = signals
         self._masses = masses
+
+        self.blanking_regions = blanking_regions
 
         self.cycle_number = cycle_number
         self.segment_number = segment_number
@@ -414,9 +418,34 @@ class SPCalNuDataFile(SPCalDataFile):
     def signals(self) -> np.ndarray:
         return self._signals
 
+    def blankingForIsotope(self, isotope: SPCalIsotopeBase) -> np.ndarray:
+        if self.autoblanking == "off":
+            return np.array([], dtype=self.blanking_regions.dtype)
+        elif self.autoblanking == "all":
+            return self.blanking_regions
+
+        if isinstance(isotope, SPCalIsotope):
+            valid = np.logical_and(
+                self.blanking_regions["mass"][:, 0] - self.max_mass_diff < isotope.mass,
+                self.blanking_regions["mass"][:, 1] + self.max_mass_diff > isotope.mass,
+            )
+            return self.blanking_regions[valid]
+        elif isinstance(isotope, SPCalIsotopeExpression):
+            regions = []
+            for t in isotope.tokens:
+                if isinstance(t, SPCalIsotope):
+                    regions.append(self.blankingForIsotope(t))
+            return np.concatenate(regions)
+        else:  # pragma: no cover
+            raise NotImplementedError("only implemented for isotopes and expressions")
+
     def dataForIsotope(self, isotope: SPCalIsotope) -> np.ndarray:
         idx = self.isotope_table[isotope]
         return self.signals[:, idx]
+
+    def exclusionRegions(self, isotope: SPCalIsotopeBase) -> list[tuple[float, float]]:
+        blanking = self.blankingForIsotope(isotope)
+        return self.exclusion_regions + [(r["time"][0], r["time"][1]) for r in blanking]
 
     def generateIsotopeTable(self):
         """Populates `isotope_table` with all available isotopes.
@@ -485,13 +514,13 @@ class SPCalNuDataFile(SPCalDataFile):
         if path.is_file() and path.name == "run.info":
             path = path.parent
 
-        masses, signals, times, info = nu.read_directory(
+        masses, signals, times, info, regions = nu.read_directory(
             path,
             cycle=cycle_number,
             segment=segment_number,
             first_integ_file=first_integ_file,
             last_integ_file=last_integ_file,
-            autoblank=autoblank,
+            autoblank="off",  # autoblanking handled in datafile
             raw=False,
         )
 
@@ -501,6 +530,8 @@ class SPCalNuDataFile(SPCalDataFile):
             times,
             masses,
             info,
+            regions,
+            autoblanking=autoblank,
             cycle_number=cycle_number,
             segment_number=segment_number,
             integ_files=(first_integ_file, last_integ_file),

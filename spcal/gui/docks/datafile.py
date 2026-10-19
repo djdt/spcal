@@ -2,7 +2,7 @@ import pickle
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from spcal.datafile import SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.dialogs.selectisotope import SelectIsotopesDialog
 from spcal.gui.modelviews import DataFileRole
 from spcal.gui.modelviews.datafile import DataFileDelegate, DataFileModel
@@ -43,7 +43,7 @@ class DataFileInformationDialog(QtWidgets.QDialog):
 
 class SPCalDataFilesDock(QtWidgets.QDockWidget):
     dataFileAdded = QtCore.Signal(SPCalDataFile)
-    dataFilesChanged = QtCore.Signal(SPCalDataFile)
+    dataFileChanged = QtCore.Signal(SPCalDataFile)
     dataFileRemoved = QtCore.Signal(SPCalDataFile)
 
     currentDataFileChanged = QtCore.Signal(SPCalDataFile)
@@ -88,6 +88,36 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             return [current]
         return files
 
+    def onBlankingSelected(self, action: QtGui.QAction):
+        index = action.data()
+        data_file = self.model.data(index, DataFileRole)
+        if not isinstance(data_file, SPCalNuDataFile):
+            raise TypeError("blanking can only be set for Nu data files")
+        opt = action.text().replace("&", "").rstrip(".").lower()
+        data_file.autoblanking = opt
+        self.dataFileChanged.emit(data_file)
+
+    def menuForDataFile(self, index: QtCore.QModelIndex) -> QtWidgets.QMenu:
+        data_file = self.model.data(index, DataFileRole)
+
+        menu = QtWidgets.QMenu(self)
+        if isinstance(data_file, SPCalNuDataFile):
+            group_blanking = QtGui.QActionGroup(self)
+
+            for option in ["off", "regions", "all"]:
+                action_blanking = QtGui.QAction(option.title(), checkable=True)
+                action_blanking.setChecked(option == data_file.autoblanking)
+                action_blanking.setData(index)
+                group_blanking.addAction(action_blanking)
+
+            group_blanking.triggered.connect(self.onBlankingSelected)
+
+            menu_blanking = menu.addMenu("Auto-blanking")
+            menu_blanking.addActions(group_blanking.actions())
+            menu.addSeparator()
+
+        return menu
+
     def contextMenuEvent(
         self, event: QtGui.QContextMenuEvent
     ):  # pragma: no cover, dialog and event
@@ -96,7 +126,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
         if not index.isValid():
             return super().contextMenuEvent(event)
 
-        menu = QtWidgets.QMenu(self)
+        menu = self.menuForDataFile(index)
 
         action_copy_isotopes = create_action(
             "edit-copy",
@@ -198,7 +228,7 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
             raise ValueError("screening method has not been set")
         file = index.data(DataFileRole)
         dlg = SelectIsotopesDialog(file, self.screening_method, parent=self)
-        dlg.isotopesSelected.connect(self.dataFilesChanged)
+        dlg.isotopesSelected.connect(self.dataFileChanged)
         dlg.expressionsSelected.connect(self.expressionsAdded)
         dlg.open()
 
@@ -239,4 +269,4 @@ class SPCalDataFilesDock(QtWidgets.QDockWidget):
 
         for df in self.selectedDataFiles():
             df.selected_isotopes = [iso for iso in isotopes if iso in df.isotopes]
-            self.dataFilesChanged.emit(df)
+            self.dataFileChanged.emit(df)

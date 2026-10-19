@@ -348,19 +348,56 @@ def test_graph_particle(
     for line in item2.lines:
         assert not line.isVisible()
 
-    view.update()  # force draw
-    QtWidgets.QApplication.processEvents()
+    view.clear()
 
-    view.addExclusionRegion(0.1, 0.3)
-    assert view.exclusionRegions() == [(0.1, 0.3)]
+
+def test_graph_particle_exclusion_regions(
+    qtbot: QtBot,
+    default_method: SPCalProcessingMethod,
+    random_datafile_generator: Callable[..., SPCalDataFile],
+):
+    view = ParticleView()
+    qtbot.addWidget(view)
+
+    with qtbot.waitExposed(view):
+        view.show()
+
+    df = random_datafile_generator(
+        size=10000, number=100, isotopes=[ISOTOPE_TABLE[("Ag", 107)]]
+    )
+    results = default_method.processDataFile(df)
+    view.drawResult(next(iter(results.values())))
+
+    region = view.addExclusionRegion(0.1, 0.3)
+    assert isinstance(region, ExclusionRegion)
+    assert region.lines[0].pos().x() == 0.1
+    assert region.lines[1].pos().x() == 0.3
+    assert view.fileExclusionRegions() == [(0.1, 0.3)]
+
+    region = view.addExclusionRegion(0.4, 0.6, "fixed")
+    assert isinstance(region, ExclusionRegion)
+    assert region.lines[0].pos().x() == 0.4
+    assert region.lines[1].pos().x() == 0.6
+    assert view.fileExclusionRegions() == [(0.1, 0.3)]  # fixed not added
+    assert not region.movable
+
+    region = view.addGlobalExclusionRegion(0.2, 0.4)
+    assert isinstance(region, ExclusionRegion)
+    assert region.lines[0].pos().x() == 0.2
+    assert region.lines[1].pos().x() == 0.4
+    assert view.globalExclusionRegions() == [(0.2, 0.4)]
+
+    with qtbot.waitSignals(
+        [view.fileExclusionRegionsChanged, view.globalExclusionRegionsChanged],
+        timeout=100,
+    ):
+        region.sigRegionChangeFinished.emit(region)
 
     for item in view.plot.items:
         if isinstance(item, ExclusionRegion):
             item.requestRemoval.emit()
 
-    assert view.exclusionRegions() == []
-
-    view.clear()
+    assert view.fileExclusionRegions() == []
 
 
 def test_graph_histogram(
@@ -565,6 +602,7 @@ def test_graph_spectra(qtbot: QtBot):
         np.linspace(0, 1, 100),
         np.arange(20, 120, 1.0),
         {},
+        np.array([]),
         None,
         None,
         (0, None),
@@ -678,6 +716,7 @@ def test_graph_image_export_composition(
     df = random_datafile_generator()
 
     results = default_method.processDataFile(df)
+    default_method.assignPeakIndicies(results)
     default_method.filterResults(results)
     clusters = default_method.processClusters(results)
 

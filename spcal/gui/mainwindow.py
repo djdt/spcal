@@ -10,7 +10,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from spcal.api import compare_version_strings, get_github_release_info
-from spcal.datafile import SPCalDataFile
+from spcal.datafile import SPCalDataFile, SPCalNuDataFile
 from spcal.gui.batch.wizard import SPCalBatchProcessingWizard
 from spcal.gui.dialogs.calculator import CalculatorDialog
 from spcal.gui.dialogs.color import ColorDialog
@@ -32,11 +32,7 @@ from spcal.gui.docks.isotopeoptions import SPCalIsotopeOptionsDock
 from spcal.gui.docks.limitoptions import SPCalLimitOptionsDock
 from spcal.gui.docks.outputs import SPCalOutputsDock
 from spcal.gui.docks.toolbar import SPCalOptionsToolBar, SPCalViewToolBar
-from spcal.gui.graphs.colors import (
-    BRUSH_STYLES,
-    COLOR_SCHEMES,
-    scheme_icon,
-)
+from spcal.gui.graphs.colors import BRUSH_STYLES, COLOR_SCHEMES, scheme_icon
 from spcal.gui.io import (
     SessionImportWorker,
     get_import_dialog_for_path,
@@ -100,7 +96,9 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.processing_clusters: dict[SPCalDataFile, dict[str, np.ndarray]] = {}
 
         self.graph.particle.requestPeakProperties.connect(self.dialogPeakProperties)
-        self.graph.particle.exclusionRegionsChanged.connect(self.setExclusionRegions)
+        self.graph.particle.fileExclusionRegionsChanged.connect(
+            self.setFileExclusionRegions
+        )
         self.graph.particle.globalExclusionRegionsChanged.connect(
             self.setGlobalExclusionRegions
         )
@@ -126,7 +124,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         self.files.dataFileAdded.connect(self.onDataFileAdded)
         self.files.dataFileAdded.connect(self.updateRecentFiles)
         self.files.dataFileRemoved.connect(self.removeFileFromResults)
-        self.files.dataFilesChanged.connect(self.updateForDataFiles)
+        self.files.dataFileChanged.connect(self.updateForDataFiles)
         self.files.activeDataFilesChanged.connect(self.updateForDataFiles)
         self.files.expressionsAdded.connect(self.addExpressions)
 
@@ -639,7 +637,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             self.currentMethodChanged.emit(method)
             self.reprocess()
 
-    def setExclusionRegions(
+    def setFileExclusionRegions(
         self, regions: list[tuple[float, float]], data_file: SPCalDataFile | None = None
     ):
         if data_file is None:
@@ -698,8 +696,6 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
         # Set the options to current
         method: SPCalProcessingMethod = self.currentMethod()
 
-        reprocess_files = []
-
         for file in data_files:
             exprs = [
                 expr
@@ -708,12 +704,14 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
             ]
             isotopes = file.selected_isotopes + exprs
 
+            # TODO: check this is correct
             # Reprocess if new isotopes exist
-            if file not in self.processing_results or any(
-                isotope not in self.processing_results[file] for isotope in isotopes
-            ):
-                reprocess_files.append(file)
-            else:
+            # if file not in self.processing_results or any(
+            #     isotope not in self.processing_results[file] for isotope in isotopes
+            # ):
+            #     pass
+            # else:
+            if file in self.processing_results:
                 remove_isotopes = [
                     iso for iso in self.processing_results[file] if iso not in isotopes
                 ]
@@ -721,7 +719,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     self.processing_results[file].pop(iso)
 
         self.updateIsotopes()
-        self.reprocess(reprocess_files)
+        self.reprocess(data_files)
         self.redraw()
 
     def onInstrumentOptionsChanged(self):
@@ -835,6 +833,7 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     file, file.selected_isotopes
                 )
 
+            method.assignPeakIndicies(self.processing_results[file])
             method.filterResults(self.processing_results[file])
             # refresh clusters
             if file in self.processing_clusters:
@@ -957,8 +956,20 @@ class SPCalMainWindow(QtWidgets.QMainWindow):
                     )
 
             if len(active) == 1:  # single data file
-                for start, end in next(iter(active)).exclusion_regions:
-                    self.graph.particle.addExclusionRegion(start, end)
+                data_file = next(iter(active))
+                for start, end in data_file.exclusion_regions:
+                    self.graph.particle.addExclusionRegion(
+                        start, end, tooltip="Datafile Exclusion ({:.3f} - {:.3f} s)"
+                    )
+                if isinstance(data_file, SPCalNuDataFile):
+                    for region in data_file.blankingForIsotope(isotope):
+                        tooltip = f"Blanking {region['mass'][0]:.2f} - {region['mass'][1]:.2f} m/z ({{:.3f}} - {{:.3f}} s)"
+                        self.graph.particle.addExclusionRegion(
+                            region["time"][0],
+                            region["time"][1],
+                            "fixed",
+                            tooltip=tooltip,
+                        )
             for start, end in self.currentMethod().exclusion_regions:
                 self.graph.particle.addGlobalExclusionRegion(start, end)
             self.graph.particle.action_exclusion_region.setEnabled(len(active) == 1)

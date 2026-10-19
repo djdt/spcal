@@ -36,6 +36,15 @@ logger = logging.getLogger(__name__)
 
 
 class SPCalProcessingMethod:
+    """Main class for processing a `SPCalDataFile` into `SPCalProcessingResult`s.
+
+    Attributes:
+        result_filters: detection filters that take an `SPCalProcessingResult`
+        index_filters: detection filters that use detection positions
+        exclusion_regions: regions (start, end time in seconds) to exclude from processing
+        expressions: expressions that are calculated for each datafile if valid
+    """
+
     def __init__(
         self,
         instrument_options: SPCalInstrumentOptions | None = None,
@@ -78,6 +87,17 @@ class SPCalProcessingMethod:
         isotope: SPCalIsotopeBase,
         max_size: int | None,
     ) -> SPCalProcessingResult:
+        """Creates a result for the `isotope` in `data_file` using processing options in `method`.
+
+        Args:
+            method: the processing method to use
+            data_file: data file to draw values from
+            isotope: isotope used
+            max_size: if not None, only process this number of events
+
+        Returns:
+            processed result
+        """
         limit = method.limit_options.limitsForIsotope(
             data_file, isotope, method.exclusion_regions
         )
@@ -88,11 +108,16 @@ class SPCalProcessingMethod:
 
         signals = data_file[isotope][:max_size]
         times = data_file.times[:max_size]
-        # remove exclusion regions
+
+        # convert exclusion_regions to a mask
+        mask = np.ones(signals.size, dtype=bool)
         if len(method.exclusion_regions) > 0:
             idx = np.searchsorted(data_file.times, method.exclusion_regions)
             for start, end in idx:
-                signals[start:end] = np.nan
+                mask[start:end] = False
+        idx = np.searchsorted(data_file.times, data_file.exclusionRegions(isotope))
+        for start, end in idx:
+            mask[start:end] = False
 
         detections, regions = accumulate_detections(
             signals,
@@ -107,6 +132,10 @@ class SPCalProcessingMethod:
             bases = detection_baselines(limit.mean_signal, regions)
             detections -= bases
 
+        if not np.all(mask):
+            valid = np.logical_and.reduceat(mask, regions.flat)[::2]
+            detections, regions = detections[valid], regions[valid]
+
         return SPCalProcessingResult(
             isotope,
             limit=limit,
@@ -114,6 +143,7 @@ class SPCalProcessingMethod:
             event_time=data_file.event_time,
             data_file_path=data_file.path,
             signals=signals,
+            mask=mask,
             times=times,
             detections=detections,
             regions=regions,
@@ -125,6 +155,16 @@ class SPCalProcessingMethod:
         isotopes: Sequence[SPCalIsotopeBase] | None = None,
         max_size: int | None = None,
     ) -> dict[SPCalIsotopeBase, SPCalProcessingResult]:
+        """Calls `SPCalProcessingMethod.calculate_result_for_isotope` in a thread pool.
+
+        Args:
+            data_file: data file to draw values from
+            isotopes: list of isotopes to process, or None for all isotopes
+            max_size: if not None, only process this number of events
+
+        Returns:
+            list of processed results
+        """
         if isotopes is None:
             isotopes = data_file.selected_isotopes
 
@@ -150,11 +190,23 @@ class SPCalProcessingMethod:
 
         return results
 
-    def filterResults(
+    def assignPeakIndicies(
         self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]
     ) -> np.ndarray:
+        """Assigns shared peak indicies to results.
+
+        Computes unique (non-overlapped) regions for all results and then assigns
+        an index to each. These indicies are saved into `SPCalProcessingResult.peak_indicies`.
+
+        Args:
+            results: dict of results
+
+        Returns:
+            shared regions, shape (N, 2)
+        """
         if len(results) == 0:  # pragma: no cover
             return np.empty((0, 2), dtype=int)
+
         # combined regions for multi-element peaks
         all_regions = combine_regions(
             [result.regions for result in results.values()], 2
@@ -166,10 +218,23 @@ class SPCalProcessingMethod:
             )
             result.number_peak_indicies = all_regions.shape[0]
 
+        return all_regions
+
+    def filterResults(self, results: dict[SPCalIsotopeBase, SPCalProcessingResult]):
+        """Filters results using the methods `result_filters`.
+
+        Results must have their peak indicies assigned by `assignPeakIndicies`.
+
+        Args:
+            results: dict results, e.g., from `SPCalProcessingMethod.processDataFile`
+        """
+        if len(results) == 0:  # pragma: no cover
+            return
+
         # filter results
         valid_peaks = []
         for filter_group in self.result_filters:
-            group_valid = np.arange(all_regions.size)
+            group_valid = np.arange(next(iter(results.values())).number_peak_indicies)
             for filter in filter_group:
                 if isinstance(filter, SPCalValueFilter):
                     if filter.isotope not in results:  # pragma: no cover
@@ -190,13 +255,18 @@ class SPCalProcessingMethod:
                 np.isin(result.peak_indicies, valid_peaks)  # type: ignore , set above
             )
 
-        return all_regions
-
     def filterIndicies(
         self,
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         clusters: dict[str, np.ndarray],
     ):
+        """Filters results using the methods `index_filters`.
+
+        Results must have their peak indicies assigned by `assignPeakIndicies`.
+
+        Args:
+            results: dict results, e.g., from `SPCalProcessingMethod.processDataFile`
+        """
         if len(results) == 0:  # pragma: no cover
             return
 
@@ -229,13 +299,25 @@ class SPCalProcessingMethod:
         results: dict[SPCalIsotopeBase, SPCalProcessingResult],
         key: str = "signal",
     ) -> np.ndarray:
+        """Perform HAC and get cluster indicies.
+
+        Indicies are sorted by size (1 = largest).
+
+        Args:
+            results: results to cluster
+            key: which calibration mode to use
+
+        Returns:
+            cluster indicies
+        """
         if any(
             result.peak_indicies is None for result in results.values()
         ):  # pragma: no cover
             raise ValueError("cannot cluster, peak_indicies have not been generated")
 
-        if len(results) == 0:
+        if len(results) == 0:  # pragma: no cover
             return np.array([], dtype=int)
+
         npeaks = np.amax([result.number_peak_indicies for result in results.values()])
         if npeaks == 0:  # pragma: no cover
             return np.array([], dtype=int)
@@ -248,6 +330,15 @@ class SPCalProcessingMethod:
         return clusters
 
     def canCalibrate(self, key: str, isotope: SPCalIsotopeBase) -> bool:
+        """Check if the method is valid for a key and isotope pair.
+
+        Args:
+            key: calibration mode
+            isotope: isotope to calibrate
+
+        Returns:
+            True if the method can calibrate
+        """
         if key not in CALIBRATION_KEYS:  # pragma: no cover
             raise ValueError(f"unknown calibration key '{key}'")
         if key == "signal":
@@ -269,6 +360,17 @@ class SPCalProcessingMethod:
         isotope: SPCalIsotopeBase,
         event_time: float,
     ) -> float | np.ndarray:
+        """Calibrate signals values (counts) to mass or size.
+
+        Args:
+            signals: value(s) in cts
+            key: calibration mode
+            isotope: isotope to calibrate
+            event_time: time of a single event in seconds
+
+        Returns:
+            values calibrated to the selected SI unit
+        """
         if key == "signal":
             return signals
         elif key == "mass":
@@ -281,6 +383,16 @@ class SPCalProcessingMethod:
     def calibrateToMass(
         self, signals: float | np.ndarray, isotope: SPCalIsotopeBase, event_time: float
     ) -> float | np.ndarray:
+        """Convert signals into massses.
+
+        Args:
+            signals: value(s) in cts
+            isotope: isotope being calibrated
+            event_time: time of a signel event in seconds
+
+        Returns:
+            masses in kg
+        """
         mass_fraction = self.isotope_options[isotope].mass_fraction
         assert mass_fraction is not None
 
@@ -306,6 +418,16 @@ class SPCalProcessingMethod:
     def calibrateToSize(
         self, signals: float | np.ndarray, isotope: SPCalIsotopeBase, event_time: float
     ) -> float | np.ndarray:
+        """Convert signals into sizes.
+
+        Args:
+            signals: value(s) in cts
+            isotope: isotope being calibrated
+            event_time: time of a signel event in seconds
+
+        Returns:
+            sizes in m
+        """
         density = self.isotope_options[isotope].density
         assert density is not None
         return particle.particle_size(

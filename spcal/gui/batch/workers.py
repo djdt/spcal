@@ -31,6 +31,7 @@ def _batch_process_data_file(
     process_clusters: bool = False,
 ) -> tuple[list[SPCalProcessingResult], dict[str, np.ndarray]]:
     results = method.processDataFile(data_file, isotopes)
+    method.assignPeakIndicies(results)
     method.filterResults(results)
     if process_clusters:
         clusters = {

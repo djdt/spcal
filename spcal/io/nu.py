@@ -32,6 +32,276 @@ def is_nu_directory(path: Path) -> bool:
     return path.joinpath("integrated.index").exists()
 
 
+def acquisition_indicies(
+    cyc_number: np.ndarray, seg_number: np.ndarray, acq_number: np.ndarray, info: dict
+) -> np.ndarray:
+    """Get the acquisition index from cycle, segment and acquision numbers.
+
+    Args:
+        cyc_number: cycle numbers (1-based)
+        seg_number: segment numbers (1-based)
+        acq_number: acquisition numbers (1-based)
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        array of indicies
+    """
+    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
+    seg_acc = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
+
+    idx = np.sum(seg_acc) * (cyc_number - 1)
+    idx += np.cumulative_sum(seg_acc, include_initial=True)[seg_number - 1]
+    idx += acq_number
+    return idx // num_acc
+
+
+def acquisition_times(
+    cyc_number: np.ndarray, seg_number: np.ndarray, acq_number: np.ndarray, info: dict
+) -> np.ndarray:
+    """Get the acquisition times from cycle, segment and acquision numbers.
+
+    Args:
+        cyc_number: cycle numbers (1-based)
+        seg_number: segment numbers (1-based)
+        acq_number: acquisition numbers (1-based)
+        info: dict of the run.info file, from `json.load`
+
+    Returns:
+        array of times in ns
+    """
+    seg_times = np.array(
+        [
+            seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]
+            for seg in info["SegmentInfo"]
+        ]
+    )
+    seg_periods = np.array([seg["AcquisitionPeriodNs"] for seg in info["SegmentInfo"]])
+
+    times = np.sum(seg_times) * (cyc_number - 1)
+    times += np.cumulative_sum(seg_times, include_initial=True)[seg_number - 1]
+    times += acq_number * seg_periods[seg_number - 1]
+    return times
+
+
+def apply_autoblanking(
+    regions: np.ndarray,
+    signals: np.ndarray,
+    masses: np.ndarray,
+    times: np.ndarray,
+    blank_all_signals: bool = False,
+) -> np.ndarray:
+    """Apply the auto-blanking to the integrated data.
+    There must be one cycle / segment and no missing acquisitions / data!
+
+    Args:
+        regions: autoblanking regions from `blanking_regions_from_autob`
+        signals: 2d array of signals from `get_signals_from_nu_data`
+        masses: 1d array of masses, from `get_masses_from_nu_data`
+        blank_all_signals: apply blanking to all data, not just specified regions
+
+    Returns:
+        blanked data
+    """
+    mass_idx = np.searchsorted(masses, regions["mass"]).reshape(-1, 2)
+    time_idx = np.searchsorted(times, regions["time"]).reshape(-1, 2)
+
+    for (m0, m1), (t0, t1) in zip(mass_idx, time_idx):
+        if blank_all_signals:
+            signals[t0:t1] = np.nan
+        else:
+            signals[t0:t1, m0 : m1 + 1] = np.nan
+
+    return signals
+
+
+def blanking_regions_from_autob(
+    autob_events: np.ndarray,
+    info: dict,
+) -> np.ndarray:
+    """Extract blanking regions from autoblank data.
+
+    Each blanking region is assigned a mass and time interval in seconds.
+
+    Args:
+        autob: list of events from `read_nu_autob_binary`
+        num_acc: number of accumulations per acquisition
+        start_coef: blanker open coefs 'BlMassCalStartCoef'
+        end_coef: blanker close coefs 'BlMassCalEndCoef'
+
+    Returns:
+        structured array of 'start_mass', 'end_mass', 'start_time', 'end_time'
+    """
+    regions = []
+
+    start_coef = info["BlMassCalStartCoef"]
+    end_coef = info["BlMassCalEndCoef"]
+
+    start = None
+    for event in autob_events:
+        if event["type"] == 0 and start is None:
+            start = event
+        elif event["type"] == 1 and start is not None:
+            times = start["edges"][: start["num_edges"]] * 1.25
+            start_masses = calibrate_to_mass(times[::2], start_coef[0], start_coef[1])
+            end_masses = calibrate_to_mass(times[1::2], end_coef[0], end_coef[1])
+
+            start_time = float(
+                acquisition_times(
+                    start["cyc_number"], start["seg_number"], start["acq_number"], info
+                )
+            )
+            end_time = float(
+                acquisition_times(
+                    event["cyc_number"], event["seg_number"], event["acq_number"], info
+                )
+            )
+
+            for start_mass, end_mass in zip(start_masses, end_masses):
+                if start_mass < end_mass:
+                    regions.append(
+                        ((start_mass, end_mass), (start_time * 1e-9, end_time * 1e-9))
+                    )
+
+            start = None
+        elif event["type"] == 2:  # pragma: no cover
+            logger.warning("overflow detected in autoblanking")
+
+    return np.array(
+        regions,
+        dtype=[("mass", float, 2), ("time", float, 2)],
+    )
+
+
+def calibrate_to_mass(time_ns: np.ndarray, coef_0: float, coef_1: float) -> np.ndarray:
+    """Calibrates masses from flight time (ns) to m/z
+
+    Ticks can be converted to ns by mulitplying by 0.5 and adding "AcquisitionTriggerDelayNs".
+
+    Args:
+        ticks: masses in ticks.
+        coef_0: first calibration coefficient, e.g. from "MassCalCoefficients"
+        coef_1: second calibration coefficient, e.g. from "MassCalCoefficients"
+
+    Returns:
+        masses in m/z
+    """
+    return (coef_0 + coef_1 * time_ns) ** 2
+
+
+def eventtime_from_info(info: dict) -> float:
+    """Reads the dwelltime (total acquistion time) from run.info.
+    Rounds to the nearest ns.
+
+    Args:
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        dwelltime in s
+    """
+    seg = info["SegmentInfo"][0]
+    acqtime = seg["AcquisitionPeriodNs"] * 1e-9
+    accumulations = info["NumAccumulations1"] * info["NumAccumulations2"]
+    return np.around(acqtime * accumulations, 9)
+
+
+def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
+    """Converts Nu peak centers into masses.
+
+    Args:
+        integ: from `read_integ_binary`
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        2d array of masses
+    """
+
+    cal_coef = info["MassCalCoefficients"]
+    segment_delays = {
+        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in info["SegmentInfo"]
+    }
+
+    delays = np.zeros(max(segment_delays.keys()))
+    for k, v in segment_delays.items():
+        delays[k - 1] = v
+    delays = np.atleast_1d(delays[integ["seg_number"] - 1])
+
+    times = (integ["result"]["center"] * 0.5) + delays[:, None]
+    # Convert from time to mass (sqrt(m/q) = a + t * b)
+    return calibrate_to_mass(times, cal_coef[0], cal_coef[1])
+
+
+def select_nu_signals(
+    masses: np.ndarray,
+    signals: np.ndarray,
+    selected_masses: dict[str, float],
+    max_mass_diff: float = 0.1,
+) -> np.ndarray:
+    """Reduces signals to the isotopes in selected_masses.
+    'masses' must be sorted
+
+    Args:
+        masses: from `read_nu_directory`
+        signals: from `read_nu_directory`
+        selected_masses: dict of isotope name: mass
+        max_mass_diff: maximum difference (Da) from mass to allow
+
+    Returns:
+        structured array of signals
+
+    Raises:
+        ValueError if the smallest mass difference from 'selected_masses' is
+            greater than 'max_mass_diff'
+    """
+    selected = np.fromiter(selected_masses.values(), dtype=np.float32)
+    idx = search_sorted_closest(masses, selected)
+    if not np.allclose(masses[idx], selected, atol=max_mass_diff):
+        raise ValueError(f"mass difference greater than '{max_mass_diff}' from data")
+
+    dtype = np.dtype([(name, np.float32) for name in selected_masses])
+    return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
+
+
+def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
+    """Converts signals from integ data to counts.
+
+    Inserts nan values for discontinuities in integ index.
+
+    Args:
+        integ: from `read_integ_binary`
+        info: dict of parameters, as returned by `read_nu_directory`
+
+    Returns:
+        signals in counts
+    """
+
+    signals = np.concatenate([integ["result"]["signal"] for integ in integs], axis=0)
+
+    # prevent joining of any signals across missing integs
+    end_idx = acquisition_indicies(
+        integs[0]["cyc_number"][-1],
+        integs[0]["seg_number"][-1],
+        integs[0]["acq_number"][-1],
+        info,
+    )
+    pos = integs[0].size
+    for integ in integs[1:]:
+        idx = acquisition_indicies(
+            integ["cyc_number"][0], integ["seg_number"][0], integ["acq_number"][0], info
+        )
+        if end_idx + 1 != idx:
+            signals[pos - 1] = np.nan
+
+        end_idx = acquisition_indicies(
+            integ["cyc_number"][-1],
+            integ["seg_number"][-1],
+            integ["acq_number"][-1],
+            info,
+        )
+        pos += integ.size
+
+    return signals
+
+
 def read_autob_binary(
     path: Path,
     first_cyc_number: int | None = None,
@@ -76,6 +346,8 @@ def read_autob_binary(
             autob = np.zeros(1, dtype=data_dtype)
             autob.data.cast("B")[:25] = partial
             num = autob["num_edges"][0]
+            if num > 12:  # pragma: no cover
+                raise ValueError("autoblanking not supported for more than 12 edges")
             if num > 0:
                 autob["edges"][:num] = np.frombuffer(fp.read(num * 4), dtype=np.uint32)
             yield autob
@@ -228,221 +500,6 @@ def read_binaries_in_index(
     return datas
 
 
-def apply_autoblanking(
-    autob_events: np.ndarray,
-    signals: np.ndarray,
-    masses: np.ndarray,
-    info: dict,
-    blank_all_signals: bool = False,
-) -> np.ndarray:
-    """Apply the auto-blanking to the integrated data.
-    There must be one cycle / segment and no missing acquisitions / data!
-
-    Args:
-        autob: list of events from `read_nu_autob_binary`
-        signals: 2d array of signals from `get_signals_from_nu_data`
-        masses: 1d array of masses, from `get_masses_from_nu_data`
-        info: dict of parameters, as returned by `read_nu_directory`
-        blank_all_signals: apply blanking to all data, not just specified regions
-
-    Returns:
-        blanked data
-    """
-    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
-    start_coef = info["BlMassCalStartCoef"]
-    end_coef = info["BlMassCalEndCoef"]
-
-    regions, mass_regions_list = blanking_regions_from_autob(
-        autob_events, num_acc, start_coef, end_coef
-    )
-    for region, mass_regions in zip(regions, mass_regions_list):
-        if blank_all_signals:
-            signals[region[0] : region[1]] = np.nan
-        else:
-            mass_idx = np.searchsorted(masses, mass_regions)
-            # There are a bunch of useless blanking regions
-            mass_idx = mass_idx[mass_idx[:, 0] != mass_idx[:, 1]]
-            for s, e in mass_idx:
-                signals[region[0] : region[1], s:e] = np.nan
-
-    return signals
-
-
-def blanking_regions_from_autob(
-    autob_events: np.ndarray,
-    num_acc: int,
-    start_coef: tuple[float, float],
-    end_coef: tuple[float, float],
-) -> tuple[list[tuple[int, int]], list[np.ndarray]]:
-    """Extract blanking regions from autoblank data.
-
-    Args:
-        autob: list of events from `read_nu_autob_binary`
-        num_acc: number of accumulations per acquisition
-        start_coef: blanker open coefs 'BlMassCalStartCoef'
-        end_coef: blanker close coefs 'BlMassCalEndCoef'
-
-    Returns:
-        list of (start, end) of each region, array of (start, end) masses
-    """
-    regions: list[tuple[int, int]] = []
-    mass_regions = []
-
-    start_event = None
-    for event in autob_events:
-        if event["type"] == 0 and start_event is None:
-            start_event = event
-        elif event["type"] == 1 and start_event is not None:
-            regions.append(
-                (
-                    int(start_event["acq_number"] // num_acc) - 1,
-                    int(event["acq_number"] // num_acc) - 1,
-                )
-            )
-
-            start_masses = (
-                start_coef[0]
-                + start_coef[1]
-                * start_event["edges"][: start_event["num_edges"]][::2]
-                * 1.25
-            ) ** 2
-            end_masses = (
-                end_coef[0]
-                + end_coef[1]
-                * start_event["edges"][: start_event["num_edges"]][1::2]
-                * 1.25
-            ) ** 2
-            valid = start_masses < end_masses
-            mass_regions.append(
-                np.stack([start_masses[valid], end_masses[valid]], axis=1)
-            )
-
-            start_event = None
-
-    return regions, mass_regions
-
-
-def eventtime_from_info(info: dict) -> float:
-    """Reads the dwelltime (total acquistion time) from run.info.
-    Rounds to the nearest ns.
-
-    Args:
-        info: dict of parameters, as returned by `read_nu_directory`
-
-    Returns:
-        dwelltime in s
-    """
-    seg = info["SegmentInfo"][0]
-    acqtime = seg["AcquisitionPeriodNs"] * 1e-9
-    accumulations = info["NumAccumulations1"] * info["NumAccumulations2"]
-    return np.around(acqtime * accumulations, 9)
-
-
-def indicies_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
-    """Get the acuisition index from integ files.
-
-    Args:
-        integ: from `read_integ_binary`
-        info: dict of parameters, as returned by `read_nu_directory`
-
-    Returns:
-        array of indicies
-
-    """
-    num_acc = info["NumAccumulations1"] * info["NumAccumulations2"]
-    segment_acq = np.array([seg["AcquisitionCount"] for seg in info["SegmentInfo"]])
-
-    idx = (integ["cyc_number"] - 1) * segment_acq[integ["seg_number"] - 1]
-    idx += integ["acq_number"]
-    return idx // num_acc
-
-
-def signals_from_integs(integs: list[np.ndarray], info: dict) -> np.ndarray:
-    """Converts signals from integ data to counts.
-
-    Inserts nan values for discontinuities in integ index.
-
-    Args:
-        integ: from `read_integ_binary`
-        info: dict of parameters, as returned by `read_nu_directory`
-
-    Returns:
-        signals in counts
-    """
-
-    signals = np.concatenate([integ["result"]["signal"] for integ in integs], axis=0)
-
-    # prevent joining of any signals across missing integs
-    pos = 0
-    for integ, integ2 in zip(integs[:-1], integs[1:]):  # noqa: RUF007
-        pos += integ.size
-        if indicies_from_integ(integ[-1], info) + 1 != indicies_from_integ(
-            integ2[0], info
-        ):
-            signals[pos - 1] = np.nan
-
-    return signals
-
-
-def masses_from_integ(integ: np.ndarray, info: dict) -> np.ndarray:
-    """Converts Nu peak centers into masses.
-
-    Args:
-        integ: from `read_integ_binary`
-        info: dict of parameters, as returned by `read_nu_directory`
-
-    Returns:
-        2d array of masses
-    """
-
-    cal_coef = info["MassCalCoefficients"]
-    segment_delays = {
-        s["Num"]: s["AcquisitionTriggerDelayNs"] for s in info["SegmentInfo"]
-    }
-
-    delays = np.zeros(max(segment_delays.keys()))
-    for k, v in segment_delays.items():
-        delays[k - 1] = v
-    delays = np.atleast_1d(delays[integ["seg_number"] - 1])
-
-    masses = (integ["result"]["center"] * 0.5) + delays[:, None]
-    # Convert from time to mass (sqrt(m/q) = a + t * b)
-    return (cal_coef[0] + masses * cal_coef[1]) ** 2
-
-
-def times_from_integs(integs: list[np.ndarray], run_info: dict) -> np.ndarray:
-    """Get the acquisition times from a list of .integ files.
-
-    Calculates the times using the acquistion, segment and cycle for each result.
-
-    Args:
-        integs: list of parsed .integ files, from `read_integ_binary`
-        run_info: dict of the run.info file, from `json.load`
-
-    Returns:
-        array of times for each result in all .integs
-    """
-    seg_times = np.array(
-        [
-            seg["AcquisitionPeriodNs"] * seg["AcquisitionCount"]
-            for seg in run_info["SegmentInfo"]
-        ]
-    )
-    seg_periods = np.array(
-        [seg["AcquisitionPeriodNs"] for seg in run_info["SegmentInfo"]]
-    )
-
-    times = np.sum(seg_times) * (np.concatenate([x["cyc_number"] for x in integs]) - 1)
-    times += np.cumsum(np.concatenate([[0], seg_times]))[
-        np.concatenate([x["seg_number"] for x in integs]) - 1
-    ]
-    times += (
-        np.concatenate([x["acq_number"] for x in integs])
-        * seg_periods[np.concatenate([x["seg_number"] for x in integs]) - 1]
-    )
-    return times
-
-
 def read_directory(
     path: str | Path,
     first_integ_file: int = 0,
@@ -451,7 +508,7 @@ def read_directory(
     cycle: int | None = None,
     segment: int | None = None,
     raw: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict, np.ndarray]:
     """Read the Nu Instruments raw data directory, retuning data and run info.
 
     Directory must contain 'run.info', 'integrated.index' and at least one '.integ'
@@ -473,6 +530,7 @@ def read_directory(
         signals in counts
         times in s
         dict of parameters from run.info
+        blanking regions
 
     Raises:
         ValueError if invalid directory or no integ files are selected
@@ -510,57 +568,36 @@ def read_directory(
     # Get masses from data
     masses = masses_from_integ(integs[0], run_info)[0]
     signals = signals_from_integs(integs, run_info)
-    times = times_from_integs(integs, run_info) * 1e-9
+
+    cyc_numbers = np.concatenate([integ["cyc_number"] for integ in integs])
+    seg_numbers = np.concatenate([integ["seg_number"] for integ in integs])
+    acq_numbers = np.concatenate([integ["acq_number"] for integ in integs])
+
+    times = acquisition_times(cyc_numbers, seg_numbers, acq_numbers, run_info) * 1e-9
 
     if not raw:
         signals /= run_info["AverageSingleIonArea"]
 
-    # Blank out overrange regions
+    autobs = np.concatenate(
+        read_binaries_in_index(
+            path,
+            autob_index,
+            "autob",
+            read_autob_binary,
+            cyc_number=cycle,
+            seg_number=segment,
+        )
+    )
+    regions = blanking_regions_from_autob(autobs, run_info)
+    # trim regions from mass selection
+    regions = regions[
+        np.logical_and(
+            regions["mass"][:, 1] > masses[0], regions["mass"][:, 0] < masses[-1]
+        )
+    ]
     if autoblank in ["regions", "all"]:
-        autobs = np.concatenate(
-            read_binaries_in_index(
-                path,
-                autob_index,
-                "autob",
-                read_autob_binary,
-                cyc_number=cycle,
-                seg_number=segment,
-            )
-        )
         signals = apply_autoblanking(
-            autobs, signals, masses, run_info, blank_all_signals=autoblank == "all"
+            regions, signals, masses, times, blank_all_signals=autoblank == "all"
         )
 
-    # Account for any missing integ files
-    return masses, signals, times, run_info
-
-
-def select_nu_signals(
-    masses: np.ndarray,
-    signals: np.ndarray,
-    selected_masses: dict[str, float],
-    max_mass_diff: float = 0.1,
-) -> np.ndarray:
-    """Reduces signals to the isotopes in selected_masses.
-    'masses' must be sorted
-
-    Args:
-        masses: from `read_nu_directory`
-        signals: from `read_nu_directory`
-        selected_masses: dict of isotope name: mass
-        max_mass_diff: maximum difference (Da) from mass to allow
-
-    Returns:
-        structured array of signals
-
-    Raises:
-        ValueError if the smallest mass difference from 'selected_masses' is
-            greater than 'max_mass_diff'
-    """
-    selected = np.fromiter(selected_masses.values(), dtype=np.float32)
-    idx = search_sorted_closest(masses, selected)
-    if not np.allclose(masses[idx], selected, atol=max_mass_diff):
-        raise ValueError(f"mass difference greater than '{max_mass_diff}' from data")
-
-    dtype = np.dtype([(name, np.float32) for name in selected_masses])
-    return rfn.unstructured_to_structured(signals[:, idx], dtype=dtype)
+    return masses, signals, times, run_info, regions

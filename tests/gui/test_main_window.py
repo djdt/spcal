@@ -122,10 +122,10 @@ def test_main_window_method_functions(qtbot: QtBot, test_data_path: Path):
     with qtbot.assertNotEmitted(win.currentMethodChanged):
         win.setGlobalExclusionRegions([(1.0, 2.0)])
 
-    win.setExclusionRegions([(2.0, 3.0)], df)
+    win.setFileExclusionRegions([(2.0, 3.0)], df)
     assert df.exclusion_regions == [(2.0, 3.0)]
 
-    win.setExclusionRegions([(1.0, 3.0)])
+    win.setFileExclusionRegions([(1.0, 3.0)])
     assert df.exclusion_regions == [(1.0, 3.0)]
 
     with qtbot.waitSignals(

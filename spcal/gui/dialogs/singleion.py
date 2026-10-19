@@ -283,7 +283,7 @@ class SingleIonAreaDialog(QtWidgets.QDialog):
         else:
             path = Path(path)
         if nu.is_nu_directory(path) or nu.is_nu_run_info_file(path):
-            self.masses, self.counts, _, info = nu.read_directory(
+            self.masses, self.counts, _, info, _ = nu.read_directory(
                 path, autoblank="all", raw=True
             )
             self.reported_sia = info["AverageSingleIonArea"]

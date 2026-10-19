@@ -11,11 +11,19 @@ from spcal.processing.result import SPCalProcessingResult
 class ExclusionRegion(pyqtgraph.LinearRegionItem):
     requestRemoval = QtCore.Signal()
 
-    def __init__(self, start: float, end: float, global_region: bool = False):
-        if global_region:
+    def __init__(
+        self, start: float, end: float, region_type: str = "file", tooltip: str = ""
+    ):
+        if region_type == "global":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.DiagCrossPattern)
-        else:
+        elif region_type == "file":
             brush = QtGui.QBrush(QtCore.Qt.BrushStyle.FDiagPattern)
+        elif region_type == "fixed":
+            brush = QtGui.QBrush(QtCore.Qt.BrushStyle.Dense7Pattern)
+        else:  # pragma: no cover
+            raise ValueError(f"unknown region type {region_type}")
+
+        self.region_type = region_type
 
         super().__init__(
             values=(start, end),
@@ -23,12 +31,14 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
             hoverPen="red",
             brush=brush,
             hoverBrush=brush,
+            movable=self.region_type != "fixed",
             swapMode="block",
         )
-        self.lines[0].addMarker("|>", 0.9)
-        self.lines[1].addMarker("<|", 0.9)
+        self.setToolTip(tooltip)
 
-        self.global_region = global_region
+        if region_type != "fixed":
+            self.lines[0].addMarker("|>", 0.9)
+            self.lines[1].addMarker("<|", 0.9)
 
     @property
     def start(self) -> float:
@@ -39,6 +49,9 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
         return float(self.lines[1].value())
 
     def contextMenuEvent(self, event: QtWidgets.QGraphicsSceneContextMenuEvent):
+        if self.region_type == "fixed":  # ignore as no removal
+            return super().contextMenuEvent(event)
+
         close_action = create_action(
             "window-close",
             "Remove Exclusion",
@@ -51,7 +64,7 @@ class ExclusionRegion(pyqtgraph.LinearRegionItem):
 
 
 class ParticleView(SinglePlotGraphicsView):
-    exclusionRegionsChanged = QtCore.Signal(list)
+    fileExclusionRegionsChanged = QtCore.Signal(list)
     globalExclusionRegionsChanged = QtCore.Signal(list)
     requestPeakProperties = QtCore.Signal()
 
@@ -86,7 +99,7 @@ class ParticleView(SinglePlotGraphicsView):
 
         self.action_exclusion_region = create_action(
             "removecell",
-            "Add Exclusion Region",
+            "Add File Exclusion Region",
             "Prevent analysis in a region of the datafile.",
             self.addExclusionRegion,
         )
@@ -103,20 +116,20 @@ class ParticleView(SinglePlotGraphicsView):
         self.context_menu_actions.append(self.action_exclusion_region_global)
 
     def onRegionsChanged(self):
-        self.exclusionRegionsChanged.emit(self.exclusionRegions())
+        self.fileExclusionRegionsChanged.emit(self.fileExclusionRegions())
         self.globalExclusionRegionsChanged.emit(self.globalExclusionRegions())
 
-    def exclusionRegions(self) -> list[tuple[float, float]]:
+    def fileExclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion) and not item.global_region:
+            if isinstance(item, ExclusionRegion) and item.region_type == "file":
                 regions.append((item.start, item.end))
         return regions
 
     def globalExclusionRegions(self) -> list[tuple[float, float]]:
         regions = []
         for item in self.plot.items:
-            if isinstance(item, ExclusionRegion) and item.global_region:
+            if isinstance(item, ExclusionRegion) and item.region_type == "global":
                 regions.append((item.start, item.end))
         return regions
 
@@ -124,10 +137,13 @@ class ParticleView(SinglePlotGraphicsView):
         self,
         start: float | None = None,
         end: float | None = None,
-        global_region: bool = False,
-    ):
-        if self.plot.vb is None or self.plot.vb.state["limits"] is None:
-            return
+        region_type: str = "file",
+        tooltip: str = "({:.3f} - {:.3f} s)",
+    ) -> ExclusionRegion | None:
+        if (
+            self.plot.vb is None or self.plot.vb.state["limits"] is None
+        ):  # pragma: no cover
+            return None
         x0, x1 = self.plot.vb.state["limits"]["xLimits"]  # type: ignore
         assert isinstance(x0, float) and isinstance(x1, float)
 
@@ -136,23 +152,37 @@ class ParticleView(SinglePlotGraphicsView):
             start = pos.x() - (x1 - x0) * 0.05
             end = pos.x() + (x1 - x0) * 0.05
 
-        region = ExclusionRegion(start, end, global_region=global_region)
+        region = ExclusionRegion(
+            start, end, region_type=region_type, tooltip=tooltip.format(start, end)
+        )
         region.sigRegionChangeFinished.connect(self.onRegionsChanged)
         region.requestRemoval.connect(self.removeExclusionRegion)
         region.setBounds((x0, x1))
         self.plot.addItem(region)
+        return region
 
     def addGlobalExclusionRegion(
-        self,
-        start: float | None = None,
-        end: float | None = None,
-    ):
-        self.addExclusionRegion(start, end, global_region=True)
+        self, start: float | None = None, end: float | None = None
+    ) -> ExclusionRegion | None:
+        return self.addExclusionRegion(
+            start,
+            end,
+            region_type="global",
+            tooltip="Global Exclusion ({:.3f} - {:.3f} s)",
+        )
 
-    def removeExclusionRegion(self):
-        region = self.sender()
-        if not isinstance(region, ExclusionRegion):
-            return
+    def removeExclusionRegion(self, region: ExclusionRegion | None = None):
+        """Remove a region.
+
+        If no region is passed then the sender is checked and removed if a region.
+
+        """
+        if region is None:
+            obj = self.sender()
+            if isinstance(obj, ExclusionRegion):
+                region = obj
+            else:  # pragma: no cover
+                return
         self.plot.removeItem(region)
         self.onRegionsChanged()
 
