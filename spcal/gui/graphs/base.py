@@ -15,7 +15,9 @@ from spcal.gui.util import create_action
 def create_export_view(
     title: str = "",
     xlabel: str = "",
+    xunits: str | None = None,
     ylabel: str = "",
+    yunits: str | None = None,
     size: QtCore.QSize | None = None,
     dpi: int = 96,
     font: QtGui.QFont | None = None,
@@ -31,7 +33,14 @@ def create_export_view(
     font_scale = dpi / QtGui.QFontMetrics(font).fontDpi()
     scaled_font.setPointSizeF(font.pointSize() * font_scale)
 
-    view = SinglePlotGraphicsView(title, xlabel=xlabel, ylabel=ylabel, font=scaled_font)
+    view = SinglePlotGraphicsView(
+        title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xunits=xunits,
+        yunits=yunits,
+        font=scaled_font,
+    )
     if size is not None:
         view.viewport().resize(size)
         view.plot.resize(size)
@@ -770,8 +779,10 @@ class SinglePlotGraphicsView(pyqtgraph.GraphicsView):
             font_color = QtCore.Qt.GlobalColor.black
 
         view = create_export_view(
-            xlabel=self.plot.xaxis.labelString(),
-            ylabel=self.plot.yaxis.labelString(),
+            xlabel=self.plot.xaxis.labelText,
+            xunits=self.plot.xaxis.labelUnits,
+            ylabel=self.plot.yaxis.labelText,
+            yunits=self.plot.xaxis.labelUnits,
             size=size,
             dpi=dpi,
             font=font,
