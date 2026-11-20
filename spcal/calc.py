@@ -115,7 +115,7 @@ def mode(x: np.ndarray, bins: int | np.ndarray | str = "auto") -> float:
     Returns:
         mode
     """
-    if np.any(np.isnan(x)):
+    if not np.all(np.isfinite(x)):
         return np.nan
     hist, edges = np.histogram(x, bins=bins)
     mode_idx = np.argmax(hist)
