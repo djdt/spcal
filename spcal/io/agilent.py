@@ -8,25 +8,52 @@ from xml.etree import ElementTree
 import numpy as np
 
 
-def binary_read_datafile(path: Path) -> np.ndarray:
+def datafile_mass_info(path: Path) -> np.ndarray:
+    """Reads the names and masses from `MSTS_XSpecific.xml`.
+
+    If a MS/MS instrument is used, the masses are updated using `MSTS_XAddition.xml`.
+
+    Args:
+        path: path to datafile firectory
+
+    Returns:
+        structured array of type (time_segment, name, mz, mz2, acctime)
+    """
+
+    msts_xspecific_path = path.joinpath("AcqData", "MSTS_XSpecific.xml")
+    msts_xaddition_path = path.joinpath("MSTS_XAddition.xml")
+
+    if msts_xspecific_path.exists():
+        masses = read_xml_msts_xspecific(msts_xspecific_path)
+    else:  # pragma: no cover
+        raise FileNotFoundError("MSTS_XSpecific.xml not found.")
+
+    if msts_xaddition_path.exists():
+        xaddition = read_xml_msts_xaddition(msts_xaddition_path)
+        for record in xaddition:
+            masses["mz"][masses["segment"] == record["segment"]] = record["mz"]
+            masses["mz2"][masses["segment"] == record["segment"]] = record["mz2"]
+
+    return masses
+
+
+def read_datafile(
+    path: Path, time_segment: int = 1
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    masses = datafile_mass_info(path)
     msscan = read_msscan(path.joinpath("AcqData", "MSScan.bin"))
     msprofile = read_msprofile(path.joinpath("AcqData", "MSProfile.bin"), len(masses))
-    offsets = (
-        msscan["SpectrumParamValues"]["SpectrumOffset"]
-        // msscan["SpectrumParamValues"]["ByteCount"]
-    )
-    dtype = [(str(mass), np.float64) for mass in masses] + [("Time", np.float64)]
-    data = np.empty(offsets.size, dtype=dtype)
-    for mass in masses:
-        size = np.minimum(
-            (offsets * len(masses)) + (mass.id - 1), msprofile.shape[0] - 1
-        )
-        data[str(mass)] = msprofile[size]["Analog"]
 
-    data["Time"] = msscan["ScanTime"] * 60.0  # ScanTime in minutes
-    return data
+    mask = msscan["TimeSegmentID"] == time_segment
+
+    offsets = (msscan["SpectrumParamValues"]["SpectrumOffset"] - 68) // msscan[
+        "SpectrumParamValues"
+    ]["ByteCount"]
+    signals = msprofile[offsets[mask]]["Counts"]
+    return signals, masses, msscan["ScanTime"][mask]
 
 
+# binary import
 def read_msscan(path: Path):
     msscan_magic_number = 257
     msscan_header_size = 68
@@ -78,16 +105,16 @@ def read_msscan(path: Path):
         return np.frombuffer(fp.read(), dtype=msscan_dtype)
 
 
-# def read_msscan_xspecific(path: Path) -> np.ndarray:  # pragma: no cover
-#     msscan_xspecific_magic_number = 275
-#     msscan_xspecific_header_size = 68
-#     msscan_xspecific_dtype = np.dtype([("_", np.int32), ("MZ", np.float64)])
-#
-#     with path.open("rb") as fp:
-#         if int.from_bytes(fp.read(4), "little") != msscan_xspecific_magic_number:
-#             raise OSError("Invalid header for MSScan.")
-#         fp.seek(msscan_xspecific_header_size)
-#         return np.frombuffer(fp.read(), dtype=msscan_xspecific_dtype)
+def read_msscan_xspecific(path: Path) -> np.ndarray:  # pragma: no cover
+    msscan_xspecific_magic_number = 275
+    msscan_xspecific_header_size = 68
+    msscan_xspecific_dtype = np.dtype([("_", np.int32), ("MZ", np.float64)])
+
+    with path.open("rb") as fp:
+        if int.from_bytes(fp.read(4), "little") != msscan_xspecific_magic_number:
+            raise OSError("Invalid header for MSScan.")
+        fp.seek(msscan_xspecific_header_size)
+        return np.frombuffer(fp.read(), dtype=msscan_xspecific_dtype)
 
 
 def read_msprofile(path: Path, n: int) -> np.ndarray:
@@ -98,9 +125,9 @@ def read_msprofile(path: Path, n: int) -> np.ndarray:
         return np.dtype(
             [
                 ("ID", np.float32, n),
-                ("Analog", np.float64, n),
-                ("Analog2", np.float64, n),
+                ("Counts", np.float64, n),
                 ("Digital", np.float64, n),
+                ("Analog", np.float64, n),
             ]
         )
 
@@ -110,39 +137,11 @@ def read_msprofile(path: Path, n: int) -> np.ndarray:
         ):  # pragma: no cover
             raise OSError("Invalid header for MSProfile.")
         fp.seek(msprofile_header_size)
-        data = np.frombuffer(fp.read(), dtype=get_msprofile_dtype(n))
-
-    flattened = np.empty(np.prod(data.size * n), dtype=get_msprofile_dtype(1))
-    for name in data.dtype.names:
-        flattened[name] = data[name].flat
-    return flattened
+        return np.frombuffer(fp.read(), dtype=get_msprofile_dtype(n))
 
 
-# def mass_info_datafile(path: Path) -> list[XSpecificMass]:
-#     msts_xspecific_path = path.joinpath("AcqData", "MSTS_XSpecific.xml")
-#     msts_xaddition_path = path.joinpath("MSTS_XAddition.xml")
-#
-#     if msts_xspecific_path.exists():
-#         xspecific = msts_xspecific_xml_read_info(msts_xspecific_path)
-#     else:  # pragma: no cover
-#         raise FileNotFoundError("MSTS_XSpecific.xml not found.")
-#
-#     masses = {
-#         idx: XSpecificMass(idx, name=name, acctime=acctime, mz=mz)
-#         for idx, (name, mz, acctime) in xspecific.items()
-#     }
-#
-#     if msts_xaddition_path.exists():
-#         xaddition, scan_type = msts_xaddition_xml_read_info(msts_xaddition_path)
-#         for idx, (mz, mz2) in xaddition.items():
-#             masses[idx].mz = mz
-#             if scan_type == "MS_MS":
-#                 masses[idx].mz2 = mz2
-#
-#     return sorted(masses.values(), key=lambda x: x.id)
-#
-#
-def read_msts_xspecific_xml(path: Path) -> np.ndarray:
+# xml import
+def read_xml_msts_xspecific(path: Path) -> np.ndarray:
     xspecific_dtype = np.dtype(
         [
             # ("id", np.int32),
@@ -165,7 +164,7 @@ def read_msts_xspecific_xml(path: Path) -> np.ndarray:
     return np.array(mass_list, dtype=xspecific_dtype)
 
 
-def read_msts_xaddition_xml(path: Path) -> np.ndarray:
+def read_xml_msts_xaddition(path: Path) -> np.ndarray:
     xaddition_dtype = np.dtype(
         [
             # ("id", np.int32),
@@ -190,27 +189,7 @@ def read_msts_xaddition_xml(path: Path) -> np.ndarray:
     return np.array(mass_list, dtype=xaddition_dtype)
 
 
-def datafile_mass_info(path: Path) -> np.ndarray:
-    msts_xspecific_path = path.joinpath("AcqData", "MSTS_XSpecific.xml")
-    msts_xaddition_path = path.joinpath("MSTS_XAddition.xml")
-
-    if msts_xspecific_path.exists():
-        masses = read_msts_xspecific_xml(msts_xspecific_path)
-    else:  # pragma: no cover
-        raise FileNotFoundError("MSTS_XSpecific.xml not found.")
-
-    if msts_xaddition_path.exists():
-        xaddition = read_msts_xaddition_xml(msts_xaddition_path)
-        for record in xaddition:
-            masses["mz"][masses["segment"] == record["segment"]] = record["mz"]
-            masses["mz2"][masses["segment"] == record["segment"]] = record["mz2"]
-
-    return masses
-
-
 if __name__ == "__main__":
-    mscan = datafile_mass_info(
-        Path("/mnt/storage/ICPMS/20261123_diamonds_sc.b/100ppmc.d")
+    mscan, masses, times = read_datafile(
+        Path("/mnt/storage/ICPMS/20261123_diamonds_sc.b/100nmau.d/")
     )
-    print(mscan)
-    print(mscan.dtype)
