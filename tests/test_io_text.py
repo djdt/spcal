@@ -96,7 +96,16 @@ def test_io_text_import_agilent(test_data_path: Path):
     data = read_single_particle_file(path, delimiter=",", skip_rows=4)
     assert data.shape[0] == 9996
     assert np.all(np.isfinite(data["Au197"]))
+    assert np.all(np.isfinite(data["Time_[Sec]"]))
     assert np.isclose(data["Au197"].mean(), 6.2062)
+
+
+def test_io_text_import_agilent_new_with_comma(test_data_path: Path):
+    path = test_data_path.joinpath("text/agilent_new_comma.csv")
+    data = read_single_particle_file(path, delimiter=",", skip_rows=5)
+    assert data.shape[0] == 9995  # one more header row
+    assert np.all(np.isfinite(data["Ag107_->_107"]))
+    assert np.all(np.isfinite(data["Time_[Sec]"]))
 
 
 def test_io_text_import_perkin_elmer(test_data_path: Path):
