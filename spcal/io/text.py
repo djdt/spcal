@@ -146,7 +146,12 @@ def replace_comma_decimal(fp, ncols: int, delimiter: str = ","):
         line with comma replaced, when number of columns is correct
     """
     for line in fp:
-        if line.count(delimiter) < ncols - 1:
+        if line.startswith(
+            "          Printed:"
+        ):  # files in Agilent post 2026-11-xx have delimiter on last line
+            break
+        line = line.rstrip("\r\n")
+        if line.count(delimiter) < ncols - 1 or len(line) < ncols:
             continue
         if delimiter != ",":
             yield line.replace(",", ".")
