@@ -109,6 +109,11 @@ class SPCalProcessingMethod:
         signals = data_file[isotope][:max_size]
         times = data_file.times[:max_size]
 
+        if not np.all(np.isfinite(signals)):
+            logger.warning("non-finite signals detected")
+        if not np.all(np.isfinite(times)):
+            raise ValueError("non-finite times detetected")
+
         # convert exclusion_regions to a mask
         mask = np.ones(signals.size, dtype=bool)
         if len(method.exclusion_regions) > 0:
